@@ -123,9 +123,18 @@ Commands:
 
   identity erase        delete local identity from this machine
 
-  key copy              copy private key to clipboard, use Ctrl+V to paste it
+  key list              list details for known private keys
 
-  key backup <a filename for copy of private key>
+  key create <key_id> [size]
+                        generate a new private key with given ID
+
+  key delete <key_id>
+                        erase given private key
+                        WARNING!!! all data encrypted with that key will be lost
+
+  key copy <key_id>     copy given private key to clipboard, use Ctrl+V to paste it
+
+  key backup <key_id> <filename>
                         copy private key into file
 
   key print             print private key to console
@@ -237,26 +246,8 @@ Commands:
 
 '''
 
-
-# recover <private key filename> [idurl or username]
-#                       recover existing account with your private key file
-#
-#  schedule <folder> [schedule in compact format]
-#                        set or get a schedule for a folder to start backups automatically
-#   help schedule         print format description to set scheduled backup
-#  money                 show the financial status
-#
-#  money transfer <username or idurl> <amount>
-#                        transfer money to another user
-#
-#  money receipts        show receipts history
-#
-#  money receipt <receipt ID>
-#                        show single receipt info
-#
-
-
 #------------------------------------------------------------------------------
+
 
 def schedule_format():
     return '''
