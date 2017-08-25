@@ -499,6 +499,22 @@ def cmd_identity(opts, args, overDict, running):
 
 
 def cmd_key(opts, args, overDict, running, executablePath):
+    if not running:
+        print_text('BitDust is not running at the moment\n')
+        return 0
+
+    if len(args) == 1 or (len(args) == 2 and args[1] == 'list'):
+        tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
+        return call_jsonrpc_method_template_and_stop('keys_list', tpl)
+
+    if len(args) >= 3 and args[1] in ['create', 'new', 'gen', 'generate', 'make', ]:
+        key_id = args[2]
+        key_sz = 4096
+        if len(args) > 3:
+            key_sz = int(args[3])
+        tpl = jsontemplate.Template(templ.TPL_KEY_CREATE)
+        return call_jsonrpc_method_template_and_stop('key_create', tpl, key_id, key_sz)
+
     from main import settings
     from lib import misc
     from system import bpio
@@ -513,13 +529,6 @@ def cmd_key(opts, args, overDict, running, executablePath):
     if not my_id.isLocalIdentityReady():
         print_text('local identity not exist, please run "bitdust id create <nickname>" command\n')
         return 0
-
-    if len(args) == 1 or (len(args) == 2 and args[1] == 'list'):
-        if not running:
-            print_text('BitDust is not running at the moment\n')
-            return 0
-        tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
-        return call_jsonrpc_method_template_and_stop('keys_list', tpl)
 
     if len(args) == 2:
         if args[1] == 'copy':

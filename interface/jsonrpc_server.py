@@ -181,6 +181,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_keys_list(self, sort=False):
         return api.keys_list(sort)
 
+    def jsonrpc_key_create(self, key_id, key_size=4096):
+        return api.key_create(key_id, key_size)
+
+    def jsonrpc_key_erase(self, key_id):
+        return api.key_erase(key_id)
+
     def jsonrpc_backups_update(self):
         return api.backups_update()
 

@@ -250,7 +250,7 @@ def config_list(sort=False):
             'type': 'diskspace',
             'value': '128 MB',
             'key': 'services/backups/max-block-size'
-        }]}"
+        }]}
     """
     lg.out(4, 'api.config_list')
     from main import config
@@ -273,9 +273,9 @@ def keys_list(sort=False):
     from crypt import my_keys
     from crypt import key
     r = []
-    for key_name, key_object in my_keys.known_keys().items():
+    for key_id, key_object in my_keys.known_keys().items():
         r.append({
-            'name': key_name,
+            'id': key_id,
             'fingerprint': str(key_object.fingerprint()),
             'type': str(key_object.type()),
             'ssh_type': str(key_object.sshType()),
@@ -285,7 +285,7 @@ def keys_list(sort=False):
     if sort:
         r = sorted(r, key=lambda i: i['name'])
     r.insert(0, {
-        'name': 'master',
+        'id': 'master',
         'fingerprint': key.MyPrivateKeyObject().fingerprint(),
         'type': str(key.MyPrivateKeyObject().type()),
         'ssh_type': str(key.MyPrivateKeyObject().sshType()),
@@ -295,9 +295,33 @@ def keys_list(sort=False):
     return RESULT(r)
 
 
-def key_create(key_id):
+def key_create(key_id, key_size=4096):
     """
     """
+    lg.out(4, 'api.keys_list')
+    from crypt import my_keys
+    key_object = my_keys.generate_key(key_id, key_size=key_size)
+    if key_object is None:
+        return ERROR('failed to generate private key "%s"' % key_id)
+    return OK({
+        'id': key_id,
+        'fingerprint': str(key_object.fingerprint()),
+        'type': str(key_object.type()),
+        'ssh_type': str(key_object.sshType()),
+        'size': str(key_object.size()),
+        'public': str(key_object.public().toString('openssh')),
+    }, message='new private key "%s" was generated successfully' % key_id, )
+
+
+def key_erase(key_id):
+    """
+    """
+    lg.out(4, 'api.keys_list')
+    from crypt import my_keys
+    if not my_keys.erase_key(key_id):
+        return ERROR('failed to erase private key "%s"' % key_id)
+    return OK(message='private key "%s" was erased successfully' % key_id)
+
 
 #------------------------------------------------------------------------------
 
@@ -386,7 +410,7 @@ def backups_list():
             'type': 'file',
             'id': '0/0/1/0/0',
             'size': 5754439
-        }]}"
+        }]}
     """
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')

@@ -134,18 +134,37 @@ def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh')
     """
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
-        return known_keys()[key_id]
+        return None
     lg.out(4, 'my_keys.generate_key %s of %d bits' % (key_id, key_size))
     rsa_key = RSA.generate(key_size, os.urandom)
     key_object = keys.Key(rsa_key)
     known_keys()[key_id] = key_object
-    if keys_folder:
-        key_string = key_object.toString(output_type)
-        key_filepath = os.path.join(keys_folder, key_id)
-        bpio.WriteFile(key_filepath, key_string)
-        if _Debug:
-            lg.out(_DebugLevel, '    key %s saved to %s' % (key_id, key_filepath))
+    if not keys_folder:
+        keys_folder = settings.PrivateKeysDir()
+    key_string = key_object.toString(output_type)
+    key_filepath = os.path.join(keys_folder, key_id)
+    bpio.WriteFile(key_filepath, key_string)
+    if _Debug:
+        lg.out(_DebugLevel, '    key %s saved to %s' % (key_id, key_filepath))
     return key_object
+
+
+def erase_key(key_id, keys_folder=None):
+    """
+    """
+    if key_id not in known_keys():
+        lg.warn('key %s is not found' % key_id)
+        return False
+    if not keys_folder:
+        keys_folder = settings.PrivateKeysDir()
+    key_filepath = os.path.join(keys_folder, key_id)
+    try:
+        os.remove(key_filepath)
+    except:
+        lg.exc()
+        return False
+    known_keys().pop(key_id)
+    return True
 
 
 def validate_key(key_object):
