@@ -140,12 +140,14 @@ class BitDustJsonRPCServer(JSONRPCServer):
         try:
             fm_result = self._catch_filemanager_methods(request_dict)
             if fm_result is None:
-                result = fm_result or JSONRPCServer._callMethod(self, request_dict)
+                result = JSONRPCServer._callMethod(self, request_dict)
             else:
                 result = fm_result
         except JSONRPCError as exc:
+            lg.err(exc.strerror)
             result = api.ERROR(exc.strerror)
         except Exception as exc:
+            lg.exc()
             result = api.ERROR(str(traceback.format_exc()), message=exc.message)
         if isinstance(result, Deferred):
             result.addCallback(

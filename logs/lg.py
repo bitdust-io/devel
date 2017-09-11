@@ -35,12 +35,14 @@ import sys
 import time
 import threading
 import traceback
+import platform
 
 #------------------------------------------------------------------------------
 
 _GlobalDebugLevel = 0
 _LogLinesCounter = 0
 _LogsEnabled = True
+_UseColors = None
 _RedirectStdOut = False
 _NoOutput = False
 _OriginalStdOut = None
@@ -78,6 +80,7 @@ def out(_DebugLevel, msg, nl='\n'):
     global _NoOutput
     global _LogLinesCounter
     global _LogsEnabled
+    global _UseColors
     global _GlobalDebugLevel
     if not _LogsEnabled:
         return
@@ -93,16 +96,22 @@ def out(_DebugLevel, msg, nl='\n'):
     if level:
         s = ' ' * level + s
     if _ShowTime and level > 0:
+        tm_string = ''
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
             mn = dt // 60
             sc = dt - mn * 60
             if _GlobalDebugLevel >= 10:
-                s = ('%02d:%06.3f' % (mn, sc)) + s
+                tm_string = '%02d:%06.3f' % (mn, sc)
             else:
-                s = ('%02d:%02d' % (mn, sc)) + s
+                tm_string = '%02d:%02d' % (mn, sc)
         else:
-            s = time.strftime('%H:%M:%S') + s
+            tm_string = time.strftime('%H:%M:%S')
+        if _UseColors is None:
+            _UseColors = platform.uname()[0] != 'Windows'
+        if _UseColors:
+            tm_string = '\033[2;32m%s\033[0m' % tm_string
+        s = tm_string + s
     if is_debug(30):
         currentThreadName = threading.currentThread().getName()
         s = s + ' {%s}' % currentThreadName.lower()
@@ -128,25 +137,43 @@ def out(_DebugLevel, msg, nl='\n'):
 
 
 def warn(message, level=2):
+    global _UseColors
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    out(level, '%s.%s WARNING %s' % (modul, caller, message))
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
+    if _UseColors:
+        output_string = '\033[0;35mWARNING!!!  in  %s.%s() :\n%s%s\033[0m' % (modul, caller, ' ' * (level + 9), message)
+    else:
+        output_string = 'WARNING!!!  in  %s.%s :\n%s' % (modul, caller, message)
+    out(level, output_string)
 
 
 def err(message, level=0):
+    global _UseColors
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    if not message.count('ERROR'):
-        message = 'ERROR ' + message
     funcname = '%s.%s' % (modul, caller)
     if not message.count(funcname):
-        message = funcname + ' ' + message
+        message = ' in %s() : "%s"' % (funcname, message)
+    if not message.count('ERROR'):
+        message = 'ERROR!!!  ' + message
+    message = '\n%s%s   ' % ((' ' * (level + 9)), message)
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
+    if _UseColors:
+        message = '\033[6;37;41m%s\033[0m' % message
     out(level, message)
 
 
 def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None):
+    global _UseColors
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
+    if _UseColors:
+        msg = '\033[1;31m%s\033[0m' % msg
     if msg:
         out(level, msg)
     if exc_value:
@@ -161,6 +188,7 @@ def exception(level, maxTBlevel, exc_info):
     """
     global _LogFileName
     global _StoreExceptionsEnabled
+    global _UseColors
     if exc_info is None:
         _, value, trbk = sys.exc_info()
     else:
@@ -173,16 +201,27 @@ def exception(level, maxTBlevel, exc_info):
         excTb = traceback.format_tb(trbk, maxTBlevel)
     else:
         excTb = []
-    s = 'Exception: <' + exception_name(value) + '>\n'
-    out(level, s.strip())
+    s = 'Exception: <' + exception_name(value) + '>'
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
+    if _UseColors:
+        out(level, '\033[1;31m%s\033[0m' % (s.strip()))
+    else:
+        out(level, s.strip())
     if excArgs:
         s += '  args:' + excArgs + '\n'
-        out(level, '  args:' + excArgs)
+        if _UseColors:
+            out(level, '\033[1;31m  args: %s\033[0m' % excArgs)
+        else:
+            out(level, '  args: %s' % excArgs)
     s += '\n'
     # excTb.reverse()
     for l in excTb:
-        out(level, l.replace('\n', ''))
         s += l + '\n'
+        if _UseColors:
+            out(level, '\033[1;31m%s\033[0m' % (l.replace('\n', '')))
+        else:
+            out(level, l.replace('\n', ''))
     if _StoreExceptionsEnabled:
         import tempfile
         fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
@@ -256,7 +295,7 @@ def set_debug_level(level):
 
 def get_debug_level():
     """
-    
+
     """
     global _GlobalDebugLevel
     return _GlobalDebugLevel
@@ -264,7 +303,7 @@ def get_debug_level():
 
 def get_loging_level():
     """
-    
+
     """
     global _GlobalDebugLevel
     return max(0, (30 - _GlobalDebugLevel) * 2)

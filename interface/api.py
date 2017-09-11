@@ -56,7 +56,9 @@ def on_api_result_prepared(result):
 
 
 def OK(result='', message=None, status='OK', extra_fields=None):
-    o = {'status': status, 'result': [result, ]}
+    o = {'status': status, }
+    if result:
+        o['result'] = result if isinstance(result, list) else [result, ]
     if message is not None:
         o['message'] = message
     if extra_fields is not None:
@@ -267,7 +269,25 @@ def config_list(sort=False):
 
 def keys_list(sort=False):
     """
-    List details for known private keys.
+    List details for known Private Keys.
+
+    Return:
+        {'status': u'OK',
+         'result': [{
+             'fingerprint': u'60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
+             'id': u'master',
+             'public': u'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbpo3VYR5zvLe5...',
+             'size': u'2048',
+             'ssh_type': u'ssh-rsa',
+             'type': u'RSA'
+         }, {
+             'fingerprint': u'43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
+             'id': u'another_key01',
+             'public': u'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmgX6j2MwEyY...',
+             'size': u'4096',
+             'ssh_type': u'ssh-rsa',
+             'type': u'RSA'
+        }]}
     """
     lg.out(4, 'api.keys_list')
     from crypt import my_keys
@@ -297,8 +317,22 @@ def keys_list(sort=False):
 
 def key_create(key_id, key_size=4096):
     """
+    Generate new Private Key and add it to the list of known keys with given `key_id`.
+
+    Return:
+
+        {'status': u'OK',
+         'message': 'new private key "abcd" was generated successfully',
+         'result': [{
+            'fingerprint': u'bb:16:97:65:59:23:c2:5d:62:9d:ce:7d:36:73:c6:1f',
+            'id': u'abcd',
+            'public': u'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8w2MhOPR/IoQ...',
+            'size': u'4096',
+            'ssh_type': u'ssh-rsa',
+            'type': u'RSA'
+        }]}
     """
-    lg.out(4, 'api.keys_list')
+    lg.out(4, 'api.key_create %s, size=%s' % (key_id, key_size))
     from crypt import my_keys
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:
@@ -315,6 +349,13 @@ def key_create(key_id, key_size=4096):
 
 def key_erase(key_id):
     """
+    Removes Private Key from the list of known keys and erase local file.
+
+    Return:
+
+        {'status': u'OK',
+         'message': u'private key "ccc2" was erased successfully',
+        }
     """
     lg.out(4, 'api.keys_list')
     from crypt import my_keys
@@ -355,6 +396,7 @@ def filemanager(json_request):
 
     You can also access those methods with another API "alias": `filemanager_{ mode }({ extra params })`
 
+    WARNING: Those methods here will be deprecated and removed, use regular API methods instead.
     """
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
