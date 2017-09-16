@@ -160,7 +160,9 @@ def sync(callback_func=None):
             if retcode != 0:
                 result = 'sync-error'
         if retcode == 0:
-            run(['reset', '--hard', 'origin/master', ],
+#             run(['reset', '--hard', 'origin/master', ],
+#                 callback_func=lambda resp, ret: _reset_done(resp, ret, result))
+            run(['rebase', 'origin/master', ],
                 callback_func=lambda resp, ret: _reset_done(resp, ret, result))
         else:
             if callback_func:
