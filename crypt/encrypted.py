@@ -116,7 +116,7 @@ class Block:
         elif isinstance(EncryptKey, basestring):
             self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
         else:
-            self.EncryptedSessionKey = key.EncryptLocalPK(SessionKey)
+            self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
         self.SessionKeyType = SessionKeyType
         self.Length = len(Data)
         self.LastBlock = bool(LastBlock)
@@ -133,13 +133,13 @@ class Block:
     def SessionKey(self):
         """
         Return original SessionKey from ``EncryptedSessionKey`` using
-        ``crypt.key.DecryptLocalPK()`` method.
+        ``crypt.key.DecryptLocalPrivateKey()`` method.
         """
         if callable(self.DecryptKey):
             return self.DecryptKey(self.EncryptedSessionKey)
         elif isinstance(self.DecryptKey, basestring):
             return my_keys.decrypt(self.DecryptKey, self.EncryptedSessionKey)
-        return key.DecryptLocalPK(self.EncryptedSessionKey)
+        return key.DecryptLocalPrivateKey(self.EncryptedSessionKey)
 
     def GenerateHashBase(self):
         """

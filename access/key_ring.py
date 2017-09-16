@@ -24,7 +24,7 @@
 #
 
 """
-.. module:: key_ring.
+.. module:: key_ring
 
 """
 
@@ -80,7 +80,7 @@ def share_private_key(key_id, idurl):
     return result
 
 
-def transfer_private_key(key_id, id_obj):
+def transfer_private_key(key_id, recipient_id_obj):
     result = Deferred()
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
@@ -107,10 +107,11 @@ def transfer_private_key(key_id, id_obj):
         BackupID=key_id,
         Data=key_data,
         SessionKey=key.NewSessionKey(),
-        EncryptKey=lambda inp: id_obj.encrypt(inp),
+        # encrypt data using public key of recipient
+        EncryptKey=lambda inp: recipient_id_obj.encrypt(inp),
     )
     p2p_service.SendKey(
-        remote_idurl=id_obj.getIDURL(),
+        remote_idurl=recipient_id_obj.getIDURL(),
         encrypted_key_data=block.Serialize,
         packet_id=key_id,
         callbacks={
@@ -137,5 +138,6 @@ def received_private_key(newpacket, info, status, error_message):
     except:
         lg.exc()
         return False
-    
+    my_keys.register_key(key_id, private_key_string)
+    здесь
     return True

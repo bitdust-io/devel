@@ -354,42 +354,29 @@ def EncryptWithSessionKey(session_key, inp, session_key_type=SessionKeyType()):
 
 #------------------------------------------------------------------------------
 
-
-def DecryptLocalPK(inp):
-    """
-    Decrypt ``inp`` string with your Private Key.
-
-    We only decrypt with our local private key so no argument for that.
-    """
-    global _MyRsaKey
-    InitMyKey()
-    atuple = (inp,)
-    padresult = _MyRsaKey.decrypt(atuple)
-    # remove the "1" added in EncryptBinaryPK
-    result = padresult[1:]
-    return result
-
-
-def EncryptLocalPK(inp):
-    """
-    This is just using local key, encrypt ``inp`` string.
-    """
-    global _MyKeyObject
-    InitMyKey()
-    return EncryptBinaryPK(_MyKeyObject, inp)
-
-#------------------------------------------------------------------------------
-
-
-def EncryptStringPK(publickeystring, inp):
+def EncryptOpenSSHPublicKey(openssh_string_public, inp):
     """
     Encrypt ``inp`` string with given Public Key.
     """
-    keyobj = keys.Key.fromString(publickeystring)
-    return EncryptBinaryPK(keyobj, inp)
+    keyobj = keys.Key.fromString(openssh_string_public)
+    return EncryptBinaryPublicKey(keyobj, inp)
 
 
-def EncryptBinaryPK(publickey, inp):
+def DecryptOpenSSHPrivateKey(openssh_string_private, inp):
+    """
+    Decrypt ``inp`` string with a Private Key provided as string in openssh format.
+    """
+    key_object = keys.Key.fromString(openssh_string_private)
+    rsa_key = key_object.keyObject
+    atuple = (inp,)
+    padresult = rsa_key.decrypt(atuple)
+    # remove the "1" added in EncryptBinaryPublicKey
+    result = padresult[1:]
+    return result
+
+#------------------------------------------------------------------------------
+
+def EncryptBinaryPublicKey(publickey, inp):
     """
     Encrypt ``inp`` string using given Public Key in the ``publickey`` object.
 
@@ -401,6 +388,29 @@ def EncryptBinaryPK(publickey, inp):
     # So we add a 1 in front.
     atuple = publickey.keyObject.encrypt('1' + inp, "")
     return atuple[0]
+
+
+def EncryptLocalPublicKey(inp):
+    """
+    This is just using local key, encrypt ``inp`` string.
+    """
+    global _MyKeyObject
+    InitMyKey()
+    return EncryptBinaryPublicKey(_MyKeyObject, inp)
+
+
+def DecryptLocalPrivateKey(inp):
+    """
+    Decrypt ``inp`` string with your Private Key.
+    Here we decrypt with our local private key - so no argument for that.
+    """
+    global _MyRsaKey
+    InitMyKey()
+    atuple = (inp,)
+    padresult = _MyRsaKey.decrypt(atuple)
+    # remove the "1" added in EncryptBinaryPublicKey
+    result = padresult[1:]
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -420,7 +430,7 @@ def SpeedTest():
     for i in range(loops):
         Data = os.urandom(dataSZ)
         SessionKey = NewSessionKey()
-        EncryptedSessionKey = EncryptLocalPK(SessionKey)
+        EncryptedSessionKey = EncryptLocalPublicKey(SessionKey)
         EncryptedData = EncryptWithSessionKey(SessionKey, Data)
         Signature = Sign(Hash(EncryptedData))
         packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
@@ -430,7 +440,7 @@ def SpeedTest():
     dt = time.time()
     print 'decrypt now'
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
-        SessionKey = DecryptLocalPK(EncryptedSessionKey)
+        SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
         paddedData = DecryptWithSessionKey(SessionKey, EncryptedData)
         newData = paddedData[:Length]
         if not VerifySignature(MyPublicKey(), Hash(EncryptedData), Signature):

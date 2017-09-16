@@ -128,9 +128,27 @@ def split_key_id(key_id):
         "secret_key_xyz", "http://remote-server.net/bob.xml"
     """
     parts = nameurl.ParseGlobalID(key_id)
-    if not (parts['key'] and parts['idurl']):
+    if not parts['key'] or not parts['idurl']:
         return None, None
     return parts['key'], parts['idurl']
+
+def is_valid_key_id(key_id):
+    """
+    """
+    parts = nameurl.ParseGlobalID(key_id)
+    if not parts['key'] or not parts['idurl']:
+        return False
+    if len(parts['key']) > settings.MaximumUsernameLength():
+        lg.warn("key alias: %s" % parts['key'])
+        return False
+    if len(parts['key']) < settings.MinimumUsernameLength():
+        lg.warn("key alias: %s" % parts['key'])
+        return False
+    for c in parts['key']:
+        if c not in settings.LegalUsernameChars():
+            lg.warn("key alias: %s" % parts['key'])
+            return False
+    return True
 
 #------------------------------------------------------------------------------
 

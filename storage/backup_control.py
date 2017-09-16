@@ -306,7 +306,7 @@ def IncomingSupplierBackupIndex(newpacket):
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         return
     try:
-        session_key = key.DecryptLocalPK(b.EncryptedSessionKey)
+        session_key = key.DecryptLocalPrivateKey(b.EncryptedSessionKey)
         padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData)
         inpt = cStringIO.StringIO(padded_data[:int(b.Length)])
         supplier_revision = inpt.readline().rstrip('\n')

@@ -115,7 +115,7 @@ def UrlFilename(url):
     result = re.sub('(\:)(\d+)', '(#\g<2>#)', result)
     result = result.lower()
 #    global legalset
-#    # SECURITY  Test that all characters are legal ones
+#    # TODO:   SECURITY  Test that all characters are legal ones
 #    for x in result:
 #        if x not in legalset:
 #            raise Exception("nameurl.UrlFilename ERROR illegal character: \n" + url)

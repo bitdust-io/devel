@@ -109,12 +109,12 @@ class MessageClass:
     def __init__(self, destinationidentity, messagebody):
         lg.out(8, "message.MessageClass making message of %d bytes" % len(messagebody))
         sessionkey = key.NewSessionKey()
-        self.encryptedKey = key.EncryptStringPK(
+        self.encryptedKey = key.EncryptOpenSSHPublicKey(
             destinationidentity.publickey, sessionkey)
         self.encryptedMessage = key.EncryptWithSessionKey(sessionkey, messagebody)
 
     def ClearBody(self):
-        sessionkey = key.DecryptLocalPK(self.encryptedKey)
+        sessionkey = key.DecryptLocalPrivateKey(self.encryptedKey)
         # we only decrypt with LocalIdentity
         return key.DecryptWithSessionKey(sessionkey, self.encryptedMessage)
 

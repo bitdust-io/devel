@@ -298,7 +298,7 @@ class ProxyRouter(automat.Automat):
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
             return
         try:
-            session_key = key.DecryptLocalPK(block.EncryptedSessionKey)
+            session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
             inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
             sender_idurl = inpt.readline().rstrip('\n')
@@ -369,7 +369,7 @@ class ProxyRouter(automat.Automat):
             key.SessionKeyType(),
             True,
             src,
-            EncryptKey=lambda inp: key.EncryptStringPK(publickey, inp))
+            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp))
         routed_packet = signed.Packet(
             commands.Relay(),
             newpacket.OwnerID,

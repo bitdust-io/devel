@@ -190,7 +190,10 @@ def saveLocalIdentity():
     """
     global _LocalIdentity
     if not isLocalIdentityReady():
-        lg.out(2, "my_id.saveLocalIdentity ERROR localidentity not exist!")
+        lg.warn("ERROR local identity not exist!")
+        return
+    if not _LocalIdentity.isCorrect():
+        lg.warn('local identity is not correct')
         return
     _LocalIdentity.sign()
     xmlid = _LocalIdentity.serialize()

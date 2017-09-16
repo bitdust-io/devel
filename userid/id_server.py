@@ -224,7 +224,6 @@ class IdServer(automat.Automat):
 
     def _save_identity(self, inputfilename):
         """
-        
         """
         lg.out(6, "id_server._save_identity " + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
@@ -312,7 +311,6 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def connectionMade(self):
         """
-        
         """
         # lg.out(8, 'id_server.connectionMade from ' + str(self.transport.getPeer()))
 
@@ -365,7 +363,6 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def connectionLost(self, reason):
         """
-        
         """
 
 #------------------------------------------------------------------------------

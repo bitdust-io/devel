@@ -127,7 +127,6 @@ to help keep all of them updated.
 
 import os
 import sys
-import time
 
 from xml.dom import minidom, Node
 from xml.dom.minidom import getDOMImplementation
@@ -274,6 +273,29 @@ class identity:
         try:
             int(self.revision)
         except:
+            lg.warn('identity revision: %s' % self.revision)
+            return False
+        names = set()
+        for source in self.sources:
+            proto, host, port, filename = nameurl.UrlParse(source)
+            name, justxml = filename.split('.')
+            names.add(name)
+            # SECURITY check that name is simple
+            if justxml != "xml":
+                lg.warn("identity name: %s" % filename)
+                return False
+            if len(name) > settings.MaximumUsernameLength():
+                lg.warn("identity name: %s" % filename)
+                return False
+            if len(name) < settings.MinimumUsernameLength():
+                lg.warn("identity name: %s" % filename)
+                return False
+            for c in name:
+                if c not in settings.LegalUsernameChars():
+                    lg.warn("identity name: %s" % filename)
+                    return False
+        if len(names) > 1:
+            lg.warn('different names: %s' % str(names))
             return False
         return True
 
@@ -326,11 +348,9 @@ class identity:
         """
         hashcode = self.makehash()
         self.signature = key.Sign(hashcode)
-# if self.Valid():
-##            lg.out(12, "identity.sign tested after making and it looks good")
-# else:
-##            lg.out(1, "identity.sign ERROR tested after making sign ")
-##            raise Exception("sign fails")
+        if not self.Valid():
+            lg.warn("identity is not valid after making sign!")
+            raise Exception("identity sign fails")
 
     def Valid(self):
         """
@@ -351,6 +371,29 @@ class identity:
                 hashcode,
                 str(self.signature))
         return result
+
+    #------------------------------------------------------------------------------
+
+    def encrypt(self, inp):
+        """
+        Encrypt some `inp` data with public key from this identity object.
+        You can use this method to send a private messages addressed to the onwer of this identity.
+        """
+        return key.EncryptOpenSSHPublicKey(self.publickey, inp)
+
+    def decrypt(self, inp, private_key=None):
+        """
+        Decrypt `inp` data with private key provided (callable, key_id or openssh format),
+        or by using locally stored "master" key.
+        """
+        if private_key is None:
+            return key.DecryptLocalPrivateKey(inp)
+        if callable(private_key):
+            return private_key(inp)
+        from crypt import my_keys
+        if my_keys.is_valid_key_id(private_key):
+            return my_keys.decrypt(private_key, inp)
+        return key.DecryptOpenSSHPrivateKey(private_key, inp)
 
     #------------------------------------------------------------------------------
 
@@ -651,7 +694,6 @@ class identity:
 
     def getContactsAsTuples(self):
         """
-        
         """
         result = []
         for c in self.contacts:
@@ -694,13 +736,11 @@ class identity:
 
     def setContacts(self, contacts_list):
         """
-        
         """
         self.contacts = contacts_list
 
     def setContactsFromDict(self, contacts_dict, contacts_order=None):
         """
-        
         """
         if contacts_order is None:
             contacts_order = contacts_dict.keys()
