@@ -148,6 +148,17 @@ def sync(callback_func=None):
             return
         callback_func(result)
 
+    def _rebase_done(response, retcode, result):
+        if callback_func is None:
+            return
+        if retcode != 0:
+            result = 'sync-error'
+        if response.count('Changes from'):
+            result = 'new-data'
+        else:
+            result = 'up-to-date'
+        callback_func(result)
+
     def _fetch_done(response, retcode):
         result = 'up-to-date'
         if response.count('Unpacking') or \
@@ -162,8 +173,8 @@ def sync(callback_func=None):
         if retcode == 0:
 #             run(['reset', '--hard', 'origin/master', ],
 #                 callback_func=lambda resp, ret: _reset_done(resp, ret, result))
-            run(['rebase', 'origin/master', ],
-                callback_func=lambda resp, ret: _reset_done(resp, ret, result))
+            run(['rebase', 'origin/master', '-v'],
+                callback_func=lambda resp, ret: _rebase_done(resp, ret, result))
         else:
             if callback_func:
                 callback_func(result)
