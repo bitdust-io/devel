@@ -832,6 +832,7 @@ def ContractChainDir():
     """
     return os.path.join(BaseDir(), 'contracts')
 
+
 def PrivateKeysDir():
     """
     """
@@ -2512,6 +2513,9 @@ def _checkStaticDirectories():
     if not os.path.exists(RatingsDir()):
         lg.out(6, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
+    if not os.path.exists(PrivateKeysDir()):
+        lg.out(6, 'settings.init want to create folder: ' + PrivateKeysDir())
+        os.makedirs(PrivateKeysDir())
 
 
 def _checkCustomDirectories():
