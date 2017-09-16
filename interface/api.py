@@ -272,30 +272,41 @@ def keys_list(sort=False):
     List details for known Private Keys.
 
     Return:
-        {'status': u'OK',
+        {'status': 'OK',
          'result': [{
-             'fingerprint': u'60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
-             'id': u'master',
-             'public': u'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbpo3VYR5zvLe5...',
-             'size': u'2048',
-             'ssh_type': u'ssh-rsa',
-             'type': u'RSA'
+             'fingerprint': '60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
+             'id': 'veselin!master@p2p-id.r',
+             'alias': 'master',
+             'creator': 'http://p2p-id.ru/veselin.xml',
+             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbpo3VYR5zvLe5...',
+             'size': '2048',
+             'ssh_type': 'ssh-rsa',
+             'type': 'RSA'
          }, {
-             'fingerprint': u'43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
-             'id': u'another_key01',
-             'public': u'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmgX6j2MwEyY...',
-             'size': u'4096',
-             'ssh_type': u'ssh-rsa',
-             'type': u'RSA'
+             'fingerprint': '43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
+             'id': 'veselin!another_key01@p2p-id.r',
+             'alias': 'another_key01',
+             'creator': 'http://p2p-id.ru/veselin.xml',
+             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmgX6j2MwEyY...',
+             'size': '4096',
+             'ssh_type': 'ssh-rsa',
+             'type': 'RSA'
         }]}
     """
     lg.out(4, 'api.keys_list')
     from crypt import my_keys
     from crypt import key
+    from userid import my_id
     r = []
     for key_id, key_object in my_keys.known_keys().items():
+        key_alias, creator_idurl = my_keys.split_key_id(key_id)
+        if not key_alias or not creator_idurl:
+            lg.warn('incorrect key_id: %s' % key_id)
+            continue
         r.append({
             'id': key_id,
+            'alias': key_alias,
+            'creator': creator_idurl,
             'fingerprint': str(key_object.fingerprint()),
             'type': str(key_object.type()),
             'ssh_type': str(key_object.sshType()),
@@ -305,7 +316,9 @@ def keys_list(sort=False):
     if sort:
         r = sorted(r, key=lambda i: i['name'])
     r.insert(0, {
-        'id': 'master',
+        'id': my_keys.make_key_id('master', creator_idurl=my_id.getLocalID()),
+        'alias': 'master',
+        'creator': my_id.getLocalID(),
         'fingerprint': key.MyPrivateKeyObject().fingerprint(),
         'type': str(key.MyPrivateKeyObject().type()),
         'ssh_type': str(key.MyPrivateKeyObject().sshType()),
@@ -315,36 +328,44 @@ def keys_list(sort=False):
     return RESULT(r)
 
 
-def key_create(key_id, key_size=4096):
+def key_create(key_alias, key_size=4096):
     """
     Generate new Private Key and add it to the list of known keys with given `key_id`.
 
     Return:
 
-        {'status': u'OK',
+        {'status': 'OK',
          'message': 'new private key "abcd" was generated successfully',
          'result': [{
-            'fingerprint': u'bb:16:97:65:59:23:c2:5d:62:9d:ce:7d:36:73:c6:1f',
-            'id': u'abcd',
-            'public': u'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8w2MhOPR/IoQ...',
-            'size': u'4096',
-            'ssh_type': u'ssh-rsa',
-            'type': u'RSA'
+            'fingerprint': 'bb:16:97:65:59:23:c2:5d:62:9d:ce:7d:36:73:c6:1f',
+            'id': 'veselin!abcd@p2p-id.r',
+            'alias': 'abcd',
+            'creator': 'http://p2p-id.ru/veselin.xml',
+            'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8w2MhOPR/IoQ...',
+            'size': '4096',
+            'ssh_type': 'ssh-rsa',
+            'type': 'RSA'
         }]}
     """
-    lg.out(4, 'api.key_create %s, size=%s' % (key_id, key_size))
     from crypt import my_keys
+    from userid import my_id
+    # TODO: add validation for key_alias
+    key_alias = key_alias.strip().lower()
+    key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getLocalID())
+    lg.out(4, 'api.key_create id=%s, size=%s' % (key_id, key_size))
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
     return OK({
         'id': key_id,
+        'alias': key_alias,
+        'creator': my_id.getLocalID(),
         'fingerprint': str(key_object.fingerprint()),
         'type': str(key_object.type()),
         'ssh_type': str(key_object.sshType()),
         'size': str(key_object.size()),
         'public': str(key_object.public().toString('openssh')),
-    }, message='new private key "%s" was generated successfully' % key_id, )
+    }, message='new private key "%s" was generated successfully' % key_alias, )
 
 
 def key_erase(key_id):
@@ -353,16 +374,39 @@ def key_erase(key_id):
 
     Return:
 
-        {'status': u'OK',
-         'message': u'private key "ccc2" was erased successfully',
+        {'status': 'OK',
+         'message': 'private key "ccc2" was erased successfully',
         }
     """
     lg.out(4, 'api.keys_list')
     from crypt import my_keys
+    key_alias, creator_idurl = my_keys.split_key_id(key_id)
+    if not key_alias or not creator_idurl:
+        return ERROR('icorrect key_id format')
     if not my_keys.erase_key(key_id):
-        return ERROR('failed to erase private key "%s"' % key_id)
-    return OK(message='private key "%s" was erased successfully' % key_id)
+        return ERROR('failed to erase private key "%s"' % key_alias)
+    return OK(message='private key "%s" was erased successfully' % key_alias)
 
+
+def key_share(key_id, idurl):
+    """
+    """
+    if not driver.is_started('service_keys_registry'):
+        return succeed(ERROR('service_keys_registry() is not started'))
+    from crypt import my_keys
+    key_alias, creator_idurl = my_keys.split_key_id(key_id)
+    if not key_alias or not creator_idurl:
+        return ERROR('icorrect key_id format')
+    from access import key_ring
+    result = Deferred()
+    d = key_ring.share_private_key(key_id, idurl)
+    d.addCallback(
+        lambda resp: result.callback(
+            OK(str(resp))))
+    d.addErrback(
+        lambda err: result.callback(
+            ERROR(err.getErrorMessage())))
+    return result
 
 #------------------------------------------------------------------------------
 

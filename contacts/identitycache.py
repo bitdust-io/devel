@@ -142,6 +142,22 @@ def FromCache(idurl):
     return identitydb.get(idurl)
 
 
+def GetLatest(idurl):
+    """
+    Returns latest copy from cache or fire `immediatelyCaching`,
+    result is a `Deferred` object.
+    """
+    known = FromCache(idurl)
+    result = Deferred()
+    if known:
+        result.callback(known)
+    else:
+        d = immediatelyCaching(idurl)
+        d.addCallback(lambda _: result.callback(FromCache(idurl)))
+        d.addErrback(lambda _: result.errback(None))
+    return result
+
+
 def GetIDURLsByContact(contact):
     """
     In the ``identitydb`` code we keep track of all identity objects and

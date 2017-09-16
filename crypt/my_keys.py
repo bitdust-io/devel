@@ -55,7 +55,11 @@ from logs import lg
 
 from system import bpio
 
+from lib import nameurl
+
 from main import settings
+
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -86,6 +90,50 @@ def known_keys():
     return _KnownKeys
 
 #------------------------------------------------------------------------------
+
+def make_key_id(alias, creator_idurl=None):
+    """
+    Every key has a creator, and we include his IDURL in the final key_id string.
+    Here is a global unique address to a remote copy of `cat.png` file:
+
+        alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM
+
+    key_id here is:
+
+        alice!group_abc@first-machine.com
+
+    key alias is `group_abc` and creator IDURL is:
+
+        http://first-machine.com/alice.xml
+
+    By knowing full key_id we can find and connect to the correct node(s)
+    who is supporting that resource.
+    """
+    if creator_idurl is None:
+        creator_idurl = my_id.getLocalID()
+    return nameurl.MakeGlobalID(
+        idurl=creator_idurl,
+        key_alias=alias,
+    )
+
+def split_key_id(key_id):
+    """
+    Return "alias" and "creator" IDURL of that key as a tuple object.
+    For example from input string:
+
+        "bob!secret_key_xyz@remote-server.net"
+
+    output will be like that:
+
+        "secret_key_xyz", "http://remote-server.net/bob.xml"
+    """
+    parts = nameurl.ParseGlobalID(key_id)
+    if not (parts['key'] and parts['idurl']):
+        return None, None
+    return parts['key'], parts['idurl']
+
+#------------------------------------------------------------------------------
+
 def load_local_keys(keys_folder=None):
     """
     """
@@ -147,6 +195,13 @@ def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh')
     if _Debug:
         lg.out(_DebugLevel, '    key %s saved to %s' % (key_id, key_filepath))
     return key_object
+
+
+def register_key(key_id, openssh_string):
+    """
+    """
+    key_object = unserialize_key_to_object(openssh_string)
+    return True
 
 
 def erase_key(key_id, keys_folder=None):
@@ -260,11 +315,11 @@ def serialize_key(key_id, output_type='openssh'):
     return key_object.toString(output_type)
 
 
-def unserialize_key_to_object(inp):
+def unserialize_key_to_object(openssh_string):
     """
     """
     try:
-        key_object = keys.Key.fromString(inp)
+        key_object = keys.Key.fromString(openssh_string)
     except:
         lg.exc()
         return None

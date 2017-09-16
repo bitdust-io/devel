@@ -839,3 +839,23 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
         json.dumps(query), remote_idurl)
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
+
+#------------------------------------------------------------------------------
+
+def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}):
+    # full_key_data = json.dumps(key_data) if isinstance(key_data, dict) else key_data
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendKey to %s with %d bytes encrypted key data" % (
+            remote_idurl, len(encrypted_key_data)))
+    if packet_id is None:
+        packet_id = packetid.UniqueID()
+    outpacket = signed.Packet(
+        Command=commands.Key(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packet_id,
+        Payload=encrypted_key_data,
+        RemoteID=remote_idurl,
+    )
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
+    return outpacket

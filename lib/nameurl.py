@@ -152,6 +152,16 @@ def UrlFilenameHTML(url):
             o += x
     return o
 
+#------------------------------------------------------------------------------
+
+def IdContactSplit(contact):
+    """
+    """
+    try:
+        return contact.split('://')
+    except:
+        return '', ''
+
 
 def GetName(url):
     """
@@ -175,6 +185,91 @@ def GetFileName(url):
         return ''
     return url[url.rfind("/") + 1:]
 
+#------------------------------------------------------------------------------
+
+def MakeGlobalID(
+    idurl=None,
+    user_name=None,
+    host=None,
+    key_alias=None,
+    backup_id=None,
+    version=None,
+):
+    """
+    Based on input parameters returns string like this:
+
+        alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM
+    """
+    out = ''
+    if idurl:
+        _, host, port, filename = UrlParse(idurl)
+        if port:
+            host += ':' + str(port)
+        user_name = filename.strip()[0:-4]
+    out += user_name
+    if key_alias:
+        out += '!{}'.format(key_alias)
+    out += '@{}'.format(host)
+    if backup_id:
+        out += ':{}'.format(backup_id)
+        if version:
+            out += '#{}'.format(version)
+    return out
+
+def ParseGlobalID(inp):
+    """
+    Split such input string:
+
+        "alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM"
+
+    into such dictionary object:
+
+        {
+            "user": "alice",
+            "key": "group_abc",
+            "idhost": "first-machine.com",
+            "idurl": "http://first-machine.com/alice.xml",
+            "path": "animals/cat.png",
+            "version": "F20160313043757PM"
+        }
+    """
+    result = {
+        "user": "",
+        "key": "",
+        "idhost": "",
+        "idurl": "",
+        "path": "",
+        "version": "",
+    }
+    try:
+        user_and_key, idhost_and_path = inp.strip().split('@', 2)
+    except:
+        return result
+    try:
+        if not user_and_key.count('!'):
+            result['user'] = user_and_key
+        else:
+            user_name, key_alias = user_and_key.split('!', 2)
+            result['user'] = user_name
+            result['key'] = key_alias
+    except:
+        return result
+    try:
+        if not idhost_and_path.count(':'):
+            result['idhost'] = idhost_and_path
+        else:
+            idhost, path = idhost_and_path.rsplit(':', 2)
+            result['idhost'] = idhost
+            if path.count('#'):
+                path, version = path.split('#', 2)
+                result['version'] = version
+            result['path'] = path
+    except:
+        return result
+    result['idurl'] = 'http://{}/{}.xml'.format(result['idhost'], result['user'])
+    return result
+
+#------------------------------------------------------------------------------
 
 def Quote(s):
     """
@@ -190,12 +285,7 @@ def UnQuote(s):
     return urllib.unquote(s)
 
 
-def IdContactSplit(contact):
-    try:
-        return contact.split('://')
-    except:
-        return '', ''
-
+#------------------------------------------------------------------------------
 
 def DjangoQuote(s):
     """

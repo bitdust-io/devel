@@ -49,7 +49,29 @@ class KeysRegistryService(LocalService):
                 ]
 
     def start(self):
+        from access import key_ring
+        from transport import callback
+        key_ring.init()
+        callback.add_outbox_callback(self._outbox_packet_sent)
+        callback.append_inbox_callback(self._inbox_packet_received)
         return True
 
     def stop(self):
+        from access import key_ring
+        from transport import callback
+        callback.remove_inbox_callback(self._inbox_packet_received)
+        callback.remove_outbox_callback(self._outbox_packet_sent)
+        key_ring.shutdown()
         return True
+
+    def _outbox_packet_sent(self, pkt_out):
+        pass
+
+    def _inbox_packet_received(self, newpacket, info, status, error_message):
+        if status != 'finished':
+            return False
+        from p2p import commands
+        from access import key_ring
+        if newpacket.Command != commands.Key():
+            return False
+        return key_ring.received_private_key(newpacket, info, status, error_message)

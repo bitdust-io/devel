@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: encrypted_block.
+.. module:: encrypted.
 
 Higher level code interfaces with ``encrypted`` so that it does not have to deal
 with ECC stuff.  We write or read a large block at a time (maybe 64 MB say).
@@ -45,13 +45,13 @@ We number them with our block number and the supplier numbers.
 
 Going to disk should let us do restarts after crashes without much trouble.
 
-Digital signatures and timestamps are done on ``encrypted_blocks``.
-Signatures are also done on ``packets``.
+Digital signatures and timestamps are done on ``encrypted`` blocks of data.
+Signatures are also done on ``packets`` and ``encrypted`` blocks.
 
 RAIDMAKE:
-    This object can be asked to generate any/all ``packet(s)`` that would come from this ``encrypted_block``.
+    This object can be asked to generate any/all ``packet(s)`` that would come from this ``encrypted``.
 RAIDREAD:
-    It can also rebuild the ``encrypted_block`` from packets and will
+    It can also rebuild the ``encrypted`` from packets and will
     generate the read requests to get fetch the packets.
 """
 
@@ -67,6 +67,7 @@ from logs import lg
 from lib import misc
 
 from contacts import contactsdb
+
 from userid import my_id
 
 from crypt import key
@@ -96,16 +97,18 @@ class Block:
     """
 
     def __init__(self,
-                 CreatorID,
-                 BackupID,
-                 BlockNumber,
-                 SessionKey,
-                 SessionKeyType,
-                 LastBlock,
-                 Data,
+                 CreatorID=None,
+                 BackupID='',
+                 BlockNumber=0,
+                 SessionKey='',
+                 SessionKeyType=None,
+                 LastBlock=True,
+                 Data='',
                  EncryptKey=None,
                  DecryptKey=None, ):
         self.CreatorID = CreatorID
+        if not self.CreatorID:
+            self.CreatorID = my_id.getLocalID()
         self.BackupID = BackupID
         self.BlockNumber = BlockNumber
         if callable(EncryptKey):
