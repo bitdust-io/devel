@@ -422,13 +422,9 @@ class Initializer(automat.Automat):
         lg.out(2, "initializer._init_modules")
         from updates import git_proc
         git_proc.init()
-        if True:  # TODO: add an option to settings
+        if True:
+            # TODO: add an option to the settings
             events.add_subscriber(self._on_software_code_updated, 'source-code-fetched')
-        # from updates import os_windows_update
-        # from web import webcontrol
-        # os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
-        # reactor.callLater(0, os_windows_update.init)
-        # reactor.callLater(0, webcontrol.OnInitFinalDone)
 
     def _on_tray_icon_command(self, cmd):
         lg.out(2, "initializer._on_tray_icon_command : [%s]" % cmd)
