@@ -1397,16 +1397,10 @@ def DoRestart(param='', detach=False):
             lg.out(2, "misc.DoRestart os.fork returned: " + str(pid))
             return None
         if detach:
-            #     from lib import child_process
-            #     return child_process.detach(cmdargs)
-            # return os.spawnv(os.P_DETACH, pypath, cmdargs)
             cmdargs[1] = os.path.abspath(cmdargs[1])
-            # cmdargs.insert(0, '/usr/bin/nohup')
             cmdargs.append('1>/dev/null')
             cmdargs.append('2>/dev/null')
-            # return os.spawnve(os.P_NOWAIT, '/usr/bin/nohup', cmdargs, os.environ)
-            cmd = 'nohup ' + (' '.join(cmdargs)) + ' &'
-            # lg.out(0, 'run "%s"' % cmd)
+            cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
             return os.system(cmd)
         lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
         return os.execvpe(pypyth, cmdargs, os.environ)

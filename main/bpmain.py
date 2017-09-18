@@ -698,9 +698,8 @@ def main(executable_path=None):
         bpio.shutdown()
         return ret
 
-    #---detach---
+    #---daemon---
     elif cmd == 'detach' or cmd == 'daemon' or cmd == 'background':
-        # lg.set_debug_level(20)
         appList = bpio.find_process([
             'bitdust.exe',
             'bpmain.py',
@@ -712,21 +711,17 @@ def main(executable_path=None):
             bpio.shutdown()
             return 0
         from lib import misc
-        # from twisted.internet import reactor
-        # def _detach():
-        #     result = misc.DoRestart(detach=True)
-        #     lg.out(0, 'run and detach main BitDust process: %s' % str(result))
-        #     reactor.callLater(2, reactor.stop)
-        # reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, detach=True)
-        # reactor.callLater(0.01, _detach)
-        # reactor.run()
-        lg.out(0, 'main BitDust process started in daemon mode\n')
+        lg.out(0, 'new BitDust process will be started in daemon mode, finishing current process\n')
         bpio.shutdown()
         result = misc.DoRestart(detach=True)
-        try:
-            result = result.pid
-        except:
-            pass
+        if result is not None:
+            try:
+                result = int(result)
+            except:
+                try:
+                    result = result.pid
+                except:
+                    pass
         return 0
 
     #---restart---
@@ -738,8 +733,6 @@ def main(executable_path=None):
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
         ])
         ui = False
-        # if cmd == 'restart':
-        # ui = True
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
 
