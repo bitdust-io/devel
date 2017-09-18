@@ -412,7 +412,13 @@ class Initializer(automat.Automat):
 #                lg.out(2, "guppy package is not installed")
 
     def _on_software_code_updated(self, evt):
-        # TODO: add checks to prevent restart if any important jobs running at the moment
+        lg.out(2, 'initializer._on_software_code_updated will RESTART BitDust now! "source-code-fetched" event received')
+        if False:
+            # TODO: add checks to prevent restart if any important jobs running at the moment
+            return
+        if False:
+            # TODO: add an option to the settings
+            return
         shutdowner.A('stop', 'restart')
 
     def _init_modules(self):
@@ -422,9 +428,7 @@ class Initializer(automat.Automat):
         lg.out(2, "initializer._init_modules")
         from updates import git_proc
         git_proc.init()
-        if True:
-            # TODO: add an option to the settings
-            events.add_subscriber(self._on_software_code_updated, 'source-code-fetched')
+        events.add_subscriber(self._on_software_code_updated, 'source-code-fetched')
 
     def _on_tray_icon_command(self, cmd):
         lg.out(2, "initializer._on_tray_icon_command : [%s]" % cmd)
