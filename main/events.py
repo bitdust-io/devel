@@ -112,6 +112,8 @@ def remove_subscriber(subscriber_callback):
     return removed
 
 def clear_subscribers(event_id='*'):
+    """
+    """
     removed = False
     for _event_id, subscriber_callbacks in subscribers().items():
         if _event_id == event_id or event_id == '*':
