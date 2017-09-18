@@ -100,11 +100,9 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 
-def update_callback():
-    lg.out(6, 'git_proc.update_callback')
-
-
 def sync_callback(result):
+    """
+    """
     lg.out(6, 'git_proc.sync_callback: %s' % result)
 
     if result == 'code-fetched':

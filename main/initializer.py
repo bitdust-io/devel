@@ -463,7 +463,7 @@ class Initializer(automat.Automat):
                             tray_icon.draw_icon('error')
                             reactor.callLater(5, tray_icon.restore_icon)
                             return
-                        elif result == 'new-data':
+                        elif result == 'source-code-fetched':
                             tray_icon.draw_icon('updated')
                             reactor.callLater(5, tray_icon.restore_icon)
                             return
