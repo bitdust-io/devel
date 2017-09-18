@@ -72,7 +72,7 @@ from main import settings
 #------------------------------------------------------------------------------
 
 _CurrentProcess = None
-_FirstRunDelay = 3 # 3600
+_FirstRunDelay = 30
 _LoopInterval = 3600 * 6
 _ShedulerTask = None
 
