@@ -164,11 +164,8 @@ def sync(callback_func=None, update_method='rebase'):
         if retcode != 0:
             result = 'sync-error'
         else:
-            if result == 'new-code':
-                if response.count('Changes from'):
-                    result = 'code-fetched'
-                else:
-                    result = 'sync-failed'
+            if response.count('Changes from') or response.count('Fast-forwarded'):
+                result = 'code-fetched'
             else:
                 result = 'up-to-date'
         callback_func(result)
