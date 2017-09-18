@@ -411,7 +411,7 @@ class Initializer(automat.Automat):
 #            except:
 #                lg.out(2, "guppy package is not installed")
 
-    def _on_software_code_updated(self):
+    def _on_software_code_updated(self, evt):
         # TODO: add checks to prevent restart if any important jobs running at the moment
         shutdowner.A('stop', 'restart')
 
