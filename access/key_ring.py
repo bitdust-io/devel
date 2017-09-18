@@ -94,7 +94,7 @@ def transfer_private_key(key_id, recipient_id_obj):
         'id': key_id,
         'alias': key_alias,
         'creator': creator_idurl,
-        'owner': my_id.getLocalID(),
+        # 'owner': my_id.getLocalID(),
         'fingerprint': str(key_object.fingerprint()),
         'type': str(key_object.type()),
         'ssh_type': str(key_object.sshType()),
@@ -131,9 +131,9 @@ def on_private_key_received(newpacket, info, status, error_message):
         key_data = block.Data()
         key_json = json.loads(key_data)
         key_id = key_json['id']
-        key_alias = key_json['alias']
-        key_creator = key_json['creator']
-        key_owner = key_json['owner']
+        # key_alias = key_json['alias']
+        # key_creator = key_json['creator']
+        # key_owner = key_json['owner']
         private_key_string = key_json['private']
     except:
         lg.exc()

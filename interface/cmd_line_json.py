@@ -175,7 +175,7 @@ def fail_and_stop(err):
 #------------------------------------------------------------------------------
 
 
-def call_jsonrpc_method(method, *args):
+def call_jsonrpc_method(method, *args, **kwargs):
     """
     Method to communicate with existing BitDust process.
 
@@ -189,39 +189,38 @@ def call_jsonrpc_method(method, *args):
     except:
         local_port = settings.DefaultJsonRPCPort()
     proxy = jsonProxy('http://127.0.0.1:' + str(local_port))
-    return proxy.callRemote(method, *args)
+    return proxy.callRemote(method, *args, **kwargs)
 
 
-def call_jsonrpc_method_and_stop(method, *args):
+def call_jsonrpc_method_and_stop(method, *args, **kwargs):
     """
-    
     """
     from twisted.internet import reactor
-    d = call_jsonrpc_method(method, *args)
+    d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(print_and_stop)
     d.addErrback(fail_and_stop)
     reactor.run()
     return 0
 
 
-def call_jsonrpc_method_template_and_stop(method, template, *args):
+def call_jsonrpc_method_template_and_stop(method, template, *args, **kwargs):
     """
     
     """
     from twisted.internet import reactor
-    d = call_jsonrpc_method(method, *args)
+    d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(print_template_and_stop, template)
     d.addErrback(fail_and_stop)
     reactor.run()
     return 0
 
 
-def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args):
+def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args, **kwargs):
     """
     
     """
     from twisted.internet import reactor
-    d = call_jsonrpc_method(method, *args)
+    d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(lambda result: print_template_and_stop(transform(result), template))
     d.addErrback(fail_and_stop)
     reactor.run()
@@ -515,53 +514,78 @@ def cmd_key(opts, args, overDict, running, executablePath):
         tpl = jsontemplate.Template(templ.TPL_KEY_CREATE)
         return call_jsonrpc_method_template_and_stop('key_create', tpl, key_id, key_sz)
 
-    from main import settings
-    from lib import misc
-    from system import bpio
-    from userid import my_id
-    from crypt import key
-    settings.init()
-    my_id.init()
+    if len(args) >= 2 and args[1] in ['copy', 'cp', ]:
+        from twisted.internet import reactor
 
-    if not key.LoadMyKey():
-        print_text('private key not exist or is not valid\n')
-        return 0
-    if not my_id.isLocalIdentityReady():
-        print_text('local identity not exist, please run "bitdust id create <nickname>" command\n')
-        return 0
-
-    if len(args) == 2:
-        if args[1] == 'copy':
-            TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
+        def _on_key(key_json):
+            from lib import misc
+            TextToSave = key_json['result']['creator'] + "\n" + key_json['result']['private']
             misc.setClipboardText(TextToSave)
             del TextToSave
-            print_text('now you can "paste" with Ctr+V your private key where you want')
-            print_text('WARNING! keep your key in safe place, do not publish it!\n')
-            return 0
-        elif args[1] == 'print':
-            TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
-            print_text('\n' + TextToSave + '\n')
-            del TextToSave
-            print_text('WARNING! keep your key in safe place, do not publish it!\n')
-            return 0
-    elif len(args) == 3:
-        if args[1] == 'copy' or args[1] == 'save' or args[1] == 'backup':
-            from system import bpio
-            curpath = os.getcwd()
-            os.chdir(executablePath)
-            filenameto = bpio.portablePath(args[2])
-            os.chdir(curpath)
-            TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
-            if not bpio.AtomicWriteFile(filenameto, TextToSave):
-                del TextToSave
-                print_text('error writing to %s\n' % filenameto)
-                return 1
-            del TextToSave
-            print_text('your private key were copied to file %s' % filenameto)
-            print_text('WARNING! keep your key in safe place, do not publish it!\n')
-            return 0
+            print_text('Key %s was sent to clipboard,' % key_json['result']['id'])
+            print_text('You can type Ctr+V to place your private key where you want.')
+            if key_json['result']['alias'] == 'master':
+                print_text('WARNING! keep your Mater Key in safe place, do not publish it!\n')
+            reactor.stop()
+            return
+
+        key_id = 'master' if len(args) < 3 else args[2]
+        d = call_jsonrpc_method('key_get', key_id=key_id, include_private=True)
+        d.addCallback(_on_key)
+        d.addErrback(fail_and_stop)
+        reactor.run()
+        return 0
+
+    if len(args) >= 4 and args[1] in ['share', 'send', 'transfer', 'access', ]:
+        # HERE TODO:
+        return 0
 
     return 2
+
+#     from main import settings
+#     from lib import misc
+#     from system import bpio
+#     from userid import my_id
+#     from crypt import key
+#     settings.init()
+#     my_id.init()
+#     if not key.LoadMyKey():
+#         print_text('private key not exist or is not valid\n')
+#         return 0
+#     if not my_id.isLocalIdentityReady():
+#         print_text('local identity not exist, please run "bitdust id create <nickname>" command\n')
+#         return 0
+#     if len(args) == 2:
+#         if args[1] == 'copy':
+#             TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
+#             misc.setClipboardText(TextToSave)
+#             del TextToSave
+#             print_text('now you can "paste" with Ctr+V your private key where you want')
+#             print_text('WARNING! keep your key in safe place, do not publish it!\n')
+#             return 0
+#         elif args[1] == 'print':
+#             TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
+#             print_text('\n' + TextToSave + '\n')
+#             del TextToSave
+#             print_text('WARNING! keep your key in safe place, do not publish it!\n')
+#             return 0
+#     elif len(args) == 3:
+#         if args[1] == 'copy' or args[1] == 'save' or args[1] == 'backup':
+#             from system import bpio
+#             curpath = os.getcwd()
+#             os.chdir(executablePath)
+#             filenameto = bpio.portablePath(args[2])
+#             os.chdir(curpath)
+#             TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
+#             if not bpio.AtomicWriteFile(filenameto, TextToSave):
+#                 del TextToSave
+#                 print_text('error writing to %s\n' % filenameto)
+#                 return 1
+#             del TextToSave
+#             print_text('your private key were copied to file %s' % filenameto)
+#             print_text('WARNING! keep your key in safe place, do not publish it!\n')
+#             return 0
+#     return 2
 
 #------------------------------------------------------------------------------
 

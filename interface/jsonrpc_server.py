@@ -180,8 +180,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_config_set(self, key, value):
         return api.config_set(key, value)
 
-    def jsonrpc_keys_list(self, sort=False):
-        return api.keys_list(sort)
+    def jsonrpc_key_get(self, key_id, include_private=False):
+        return api.key_get(key_id, include_private=include_private)
+
+    def jsonrpc_keys_list(self, sort=False, include_private=False):
+        return api.keys_list(sort, include_private=include_private)
 
     def jsonrpc_key_create(self, key_alias, key_size=4096):
         return api.key_create(key_alias, key_size)

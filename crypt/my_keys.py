@@ -91,7 +91,7 @@ def known_keys():
 
 #------------------------------------------------------------------------------
 
-def make_key_id(alias, creator_idurl=None):
+def make_key_id(alias, creator_idurl=None, output_format=None):
     """
     Every key has a creator, and we include his IDURL in the final key_id string.
     Here is a global unique address to a remote copy of `cat.png` file:
@@ -114,6 +114,7 @@ def make_key_id(alias, creator_idurl=None):
     return nameurl.MakeGlobalID(
         idurl=creator_idurl,
         key_alias=alias,
+        output_format=output_format,
     )
 
 def split_key_id(key_id):

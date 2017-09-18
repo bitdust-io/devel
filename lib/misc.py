@@ -1033,6 +1033,7 @@ def setClipboardText(txt):
             win32clipboard.CloseClipboard()
         except:
             lg.exc()
+
     elif bpio.Linux():
         try:
             import wx
@@ -1044,6 +1045,7 @@ def setClipboardText(txt):
                 wx.TheClipboard.Close()
         except:
             lg.exc()
+
     elif bpio.Mac():
         #         import tempfile
         #         fd, fname = tempfile.mkstemp()
@@ -1052,7 +1054,7 @@ def setClipboardText(txt):
         #         subprocess.Popen('')
         #         os.system('cat %s | pbcopy')
         # TODO
-        return
+        pass
 
 #------------------------------------------------------------------------------
 

@@ -267,30 +267,90 @@ def config_list(sort=False):
 
 #------------------------------------------------------------------------------
 
-def keys_list(sort=False):
+def key_get(key_id, include_private=False):
+    """
+    Returns details of known private key.
+    Use `include_private=True` to get Private Key as openssh formated string.
+
+    Return:
+
+        {'status': 'OK'.
+         'result': {
+            'alias': 'cool',
+            'creator': 'http://p2p-id.ru/testveselin.xml',
+            'id': 'cool$testveselin@p2p-id.ru',
+            'fingerprint': '50:f9:f1:6d:e3:e4:25:61:0c:81:6f:79:24:4e:78:17',
+            'size': '4096',
+            'ssh_type': 'ssh-rsa',
+            'type': 'RSA'
+            'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCPy7AXI0HuQSdmMF...',
+            'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...',
+        }
+    """
+    lg.out(4, 'api.key_get')
+    from crypt import my_keys
+    from crypt import key
+    from userid import my_id
+    if key_id == 'master':
+        r = {
+            'id': key_id,
+            'alias': 'master',
+            'creator': my_id.getLocalID(),
+            'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
+            'type': str(key.MyPrivateKeyObject().type()),
+            'ssh_type': str(key.MyPrivateKeyObject().sshType()),
+            'size': str(key.MyPrivateKeyObject().size()),
+            'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
+        }
+        if include_private:
+            r['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
+        return RESULT(r)
+    key_alias, creator_idurl = my_keys.split_key_id(key_id)
+    if not key_alias or not creator_idurl:
+        return ERROR('icorrect key_id format')
+    key_object = my_keys.known_keys().get(key_id)
+    if not key_object:
+        return ERROR('key not found')
+    r = {
+        'id': key_id,
+        'alias': key_alias,
+        'creator': creator_idurl,
+        'fingerprint': str(key_object.fingerprint()),
+        'type': str(key_object.type()),
+        'ssh_type': str(key_object.sshType()),
+        'size': str(key_object.size()),
+        'public': str(key_object.public().toString('openssh')),
+    }
+    if include_private:
+        r['private'] = str(key_object.toString('openssh'))
+    return RESULT(r)
+
+
+def keys_list(sort=False, include_private=False):
     """
     List details for known Private Keys.
+    Use `include_private=True` to get Private Keys as openssh formated strings.
 
     Return:
         {'status': 'OK',
          'result': [{
-             'fingerprint': '60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
-             'id': 'veselin!master@p2p-id.r',
              'alias': 'master',
+             'id': 'veselin!master@p2p-id.ru',
              'creator': 'http://p2p-id.ru/veselin.xml',
-             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbpo3VYR5zvLe5...',
+             'fingerprint': '60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
              'size': '2048',
              'ssh_type': 'ssh-rsa',
              'type': 'RSA'
+             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbpo3VYR5zvLe5...',
          }, {
-             'fingerprint': '43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
-             'id': 'veselin!another_key01@p2p-id.r',
              'alias': 'another_key01',
+             'id': 'veselin!another_key01@p2p-id.ru',
              'creator': 'http://p2p-id.ru/veselin.xml',
-             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmgX6j2MwEyY...',
+             'fingerprint': '43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
              'size': '4096',
              'ssh_type': 'ssh-rsa',
              'type': 'RSA'
+             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmgX6j2MwEyY...',
         }]}
     """
     lg.out(4, 'api.keys_list')
@@ -303,7 +363,7 @@ def keys_list(sort=False):
         if not key_alias or not creator_idurl:
             lg.warn('incorrect key_id: %s' % key_id)
             continue
-        r.append({
+        i = {
             'id': key_id,
             'alias': key_alias,
             'creator': creator_idurl,
@@ -312,10 +372,13 @@ def keys_list(sort=False):
             'ssh_type': str(key_object.sshType()),
             'size': str(key_object.size()),
             'public': str(key_object.public().toString('openssh')),
-        })
+        }
+        if include_private:
+            i['private'] = str(key_object.toString('openssh'))
+        r.append(i)
     if sort:
-        r = sorted(r, key=lambda i: i['name'])
-    r.insert(0, {
+        r = sorted(r, key=lambda i: i['alias'])
+    i = {
         'id': my_keys.make_key_id('master', creator_idurl=my_id.getLocalID()),
         'alias': 'master',
         'creator': my_id.getLocalID(),
@@ -324,7 +387,10 @@ def keys_list(sort=False):
         'ssh_type': str(key.MyPrivateKeyObject().sshType()),
         'size': str(key.MyPrivateKeyObject().size()),
         'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
-    })
+    }
+    if include_private:
+        i['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
+    r.insert(0, i)
     return RESULT(r)
 
 
@@ -337,14 +403,14 @@ def key_create(key_alias, key_size=4096):
         {'status': 'OK',
          'message': 'new private key "abcd" was generated successfully',
          'result': [{
-            'fingerprint': 'bb:16:97:65:59:23:c2:5d:62:9d:ce:7d:36:73:c6:1f',
-            'id': 'veselin!abcd@p2p-id.r',
             'alias': 'abcd',
+            'id': 'veselin!abcd@p2p-id.ru',
             'creator': 'http://p2p-id.ru/veselin.xml',
-            'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8w2MhOPR/IoQ...',
+            'fingerprint': 'bb:16:97:65:59:23:c2:5d:62:9d:ce:7d:36:73:c6:1f',
             'size': '4096',
             'ssh_type': 'ssh-rsa',
             'type': 'RSA'
+            'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8w2MhOPR/IoQ...',
         }]}
     """
     from crypt import my_keys

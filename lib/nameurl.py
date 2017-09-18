@@ -49,6 +49,11 @@ import urlparse
 legalchars = "#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 legalset = set(legalchars)
 
+_FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key}'
+_FORMAT_GLOBAL_ID_KEY_USER = '{key}${user}'
+_REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key>[a-z0-9-_]+)$'
+_REGEX_GLOBAL_ID_KEY_USER = '^(?P<key>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
+
 #------------------------------------------------------------------------------
 
 
@@ -194,21 +199,29 @@ def MakeGlobalID(
     key_alias=None,
     backup_id=None,
     version=None,
+    output_format=None,
 ):
     """
     Based on input parameters returns string like this:
 
         alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM
+
+    You can use another form if you set it in `output_format` parameter:
+
+        group_abc$alice@first-machine.com:animals/cat.png#F20160313043757PM
     """
+    if output_format is None:
+        output_format = _FORMAT_GLOBAL_ID_KEY_USER
     out = ''
     if idurl:
         _, host, port, filename = UrlParse(idurl)
         if port:
             host += ':' + str(port)
         user_name = filename.strip()[0:-4]
-    out += user_name
     if key_alias:
-        out += '!{}'.format(key_alias)
+        out = output_format.format(user=user_name, key=key_alias)
+    else:
+        out = user_name
     out += '@{}'.format(host)
     if backup_id:
         out += ':{}'.format(backup_id)
@@ -246,12 +259,14 @@ def ParseGlobalID(inp):
     except:
         return result
     try:
-        if not user_and_key.count('!'):
-            result['user'] = user_and_key
+        user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
+        if not user_key:
+            user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
+        if user_key:
+            result['user'] = user_key.group('user')
+            result['key'] = user_key.group('key')
         else:
-            user_name, key_alias = user_and_key.split('!', 2)
-            result['user'] = user_name
-            result['key'] = key_alias
+            result['user'] = user_and_key
     except:
         return result
     try:

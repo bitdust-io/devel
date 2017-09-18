@@ -59,7 +59,7 @@ def main():
     # proxy.callRemote('filemanager_list', 'path=/').addBoth(output)
     # proxy.callRemote('keys_list').addBoth(output)
     # proxy.callRemote('key_create', 'ccc2').addBoth(output)
-    proxy.callRemote('key_erase1', 'ccc2').addBoth(output)
+    proxy.callRemote('key_get', key_id='cool$testveselin@p2p-id.ru', include_private=True).addBoth(output)
     reactor.run()
 
 

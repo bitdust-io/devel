@@ -46,8 +46,11 @@ Commands:
   identity create <username> [private key size]
   identity restore <private key source file> [IDURL]
   identity erase
-  key copy
-  key backup <destination filename to write your private key>
+  key list
+  key create <key id>
+  key delete <key id>
+  key copy <key id>
+  key backup <key id> <destination filename to write your private key>
   key print
   get <option>
   set <option> [value]
@@ -82,7 +85,7 @@ Commands:
   service <service name>
   ping <IDURL>
   chat
-  chat send <IDURL> <"text message">
+  chat send <IDURL> "<text message>"
   api <method> [params]
   version
   help
@@ -233,7 +236,7 @@ Commands:
   chat                  start a chat session, send/listen text
                         messages from other users
 
-  chat send <IDURL> <"text message">
+  chat send <IDURL> "<text message>"
                         send a single text message to remote user
 
   api <method> [params] execute API method and return JSON response
