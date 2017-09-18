@@ -122,7 +122,7 @@ def transfer_private_key(key_id, recipient_id_obj):
     return result
 
 
-def received_private_key(newpacket, info, status, error_message):
+def on_private_key_received(newpacket, info, status, error_message):
     block = encrypted.Unserialize(newpacket.Payload)
     if block is None:
         lg.out(2, 'key_ring.received_private_key ERROR reading data from %s' % newpacket.RemoteID)
@@ -138,6 +138,8 @@ def received_private_key(newpacket, info, status, error_message):
     except:
         lg.exc()
         return False
-    my_keys.register_key(key_id, private_key_string)
-    здесь
+    key_object = my_keys.register_key(key_id, private_key_string)
+    if not key_object:
+        return False
+    p2p_service.SendAck(newpacket)
     return True

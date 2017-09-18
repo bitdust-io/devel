@@ -74,4 +74,4 @@ class KeysRegistryService(LocalService):
         from access import key_ring
         if newpacket.Command != commands.Key():
             return False
-        return key_ring.received_private_key(newpacket, info, status, error_message)
+        return key_ring.on_private_key_received(newpacket, info, status, error_message)

@@ -78,6 +78,12 @@ _ShedulerTask = None
 
 #------------------------------------------------------------------------------
 
+def write2log(txt):
+    out_file = file(settings.UpdateLogFilename(), 'a')
+    print >>out_file, txt
+    out_file.close()
+
+#------------------------------------------------------------------------------
 
 def init():
     lg.out(4, 'git_proc.init')
@@ -222,6 +228,7 @@ def execute_in_shell(cmdargs, base_dir=None):
     import subprocess
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
+    write2log('execute_in_shell: %s, base_dir=%s' % (cmdargs, base_dir))
     _CurrentProcess = nonblocking.Popen(
         cmdargs,
         shell=True,
@@ -230,6 +237,7 @@ def execute_in_shell(cmdargs, base_dir=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,)
     out_data = _CurrentProcess.communicate()[0]
+    write2log(out_data)
     returncode = _CurrentProcess.returncode
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.execute_in_shell returned: %s\n%s' % (returncode, out_data))
@@ -240,8 +248,8 @@ def execute_in_shell(cmdargs, base_dir=None):
 
 class GitProcessProtocol(protocol.ProcessProtocol):
 
-    def __init__(self, callback):
-        self.callback = callback
+    def __init__(self, callbacks=[]):
+        self.callbacks = callbacks
         self.out = ''
         self.err = ''
 
@@ -260,14 +268,15 @@ class GitProcessProtocol(protocol.ProcessProtocol):
     def processEnded(self, reason):
         if _Debug:
             lg.out(_DebugLevel, 'git process FINISHED : %s' % reason.value.exitCode)
-        if self.callback:
-            self.callback(self.out, reason.value.exitCode)
+        for cb in self.callbacks:
+            cb(self.out, reason.value.exitCode)
 
 
 def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=None):
     global _CurrentProcess
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.execute: "%s" in %s' % (' '.join(cmdargs), base_dir))
+    write2log('execute: %s, base_dir=%s' % (cmdargs, base_dir))
     executable = cmdargs[0]
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
@@ -288,7 +297,10 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
         setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
 
     if process_protocol is None:
-        process_protocol = GitProcessProtocol(callback)
+        process_protocol = GitProcessProtocol(callbacks=[
+            lambda outpt, ret_code: write2log(outpt),
+            callback,
+        ])
     try:
         _CurrentProcess = reactor.spawnProcess(
             process_protocol, executable, cmdargs, path=base_dir, env=env)
@@ -300,6 +312,7 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
     return _CurrentProcess
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     bpio.init()
