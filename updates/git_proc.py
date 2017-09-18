@@ -62,12 +62,10 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from lib import schedule
-from lib import maths
-
 from system import bpio
 
 from main import settings
+from main import events
 
 #------------------------------------------------------------------------------
 
@@ -108,13 +106,21 @@ def update_callback():
 
 def sync_callback(result):
     lg.out(6, 'git_proc.sync_callback: %s' % result)
+
+    if result == 'code-fetched':
+        events.send('source-code-fetched')
+    elif result == 'up-to-date':
+        events.send('source-code-up-to-date')
+    else:
+        events.send('source-code-update-error', dict(result=result))
+
     try:
         from system import tray_icon
         if result == 'error':
             # tray_icon.draw_icon('error')
             # reactor.callLater(5, tray_icon.restore_icon)
             return
-        elif result == 'new-data':
+        elif result == 'code-fetched':
             tray_icon.set_icon('updated')
             return
     except:
@@ -160,8 +166,11 @@ def sync(callback_func=None, update_method='rebase'):
         if retcode != 0:
             result = 'sync-error'
         else:
-            if response.count('Changes from'):
-                result = 'new-data'
+            if result == 'new-code':
+                if response.count('Changes from'):
+                    result = 'code-fetched'
+                else:
+                    result = 'sync-failed'
             else:
                 result = 'up-to-date'
         callback_func(result)
@@ -171,13 +180,13 @@ def sync(callback_func=None, update_method='rebase'):
             if callback_func:
                 callback_func('sync-error')
             return
-        result = ''
+        result = 'sync-error'
         if response.count('Unpacking') or \
             (response.count('master') and response.count('->')) or \
             response.count('Updating') or \
             response.count('Receiving') or \
                 response.count('Counting'):
-            result = 'new-data'
+            result = 'new-code'
         if update_method == 'reset':
             run(['reset', '--hard', 'origin/master', ],
                 callback=lambda resp, err, ret: _reset_done(resp, err, ret, result))

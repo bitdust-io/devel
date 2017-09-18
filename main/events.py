@@ -111,6 +111,15 @@ def remove_subscriber(subscriber_callback):
             removed = True
     return removed
 
+def clear_subscribers(event_id='*'):
+    removed = False
+    for _event_id, subscriber_callbacks in subscribers().items():
+        if _event_id == event_id or event_id == '*':
+            for _cb in list(subscriber_callbacks):
+                subscribers()[_event_id].remove(_cb)
+                removed = True
+    return removed
+
 #------------------------------------------------------------------------------
 
 def dispatch(evt):
@@ -137,6 +146,7 @@ def dispatch(evt):
         if not handled:
             lg.warn('event {} was not handled'.format(evt.event_id))
     return handled
+
 
 def send(event_id, data=None):
     """

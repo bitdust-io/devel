@@ -79,7 +79,7 @@ from logs import lg
 from system import bpio
 
 from main import settings
-from main import config
+from main import events
 
 from automats import automat
 from automats import global_state
@@ -236,7 +236,6 @@ class Initializer(automat.Automat):
 
     def doInitLocal(self, arg):
         """
-        
         """
         self.flagGUI = arg.strip() == 'show'
         lg.out(2, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
@@ -412,6 +411,10 @@ class Initializer(automat.Automat):
 #            except:
 #                lg.out(2, "guppy package is not installed")
 
+    def _on_software_code_updated(self):
+        # TODO: add checks to prevent restart if any important jobs running at the moment
+        shutdowner.A('stop', 'restart')
+
     def _init_modules(self):
         """
         Finish initialization part, run delayed methods.
@@ -419,6 +422,8 @@ class Initializer(automat.Automat):
         lg.out(2, "initializer._init_modules")
         from updates import git_proc
         git_proc.init()
+        if True:  # TODO: add an option to settings
+            events.add_subscriber(self._on_software_code_updated, 'source-code-fetched')
         # from updates import os_windows_update
         # from web import webcontrol
         # os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)

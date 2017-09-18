@@ -187,7 +187,10 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     automat.LifeBegins(lg.when_life_begins())
     automat.OpenLogFile(settings.AutomatsLog())
 
-    import initializer
+    from main import events
+    events.init()
+
+    from main import initializer
     IA = initializer.A()
     lg.out(4, 'sending event "run" to initializer()')
     reactor.callWhenRunning(IA.automat, 'run', UI)
@@ -204,6 +207,9 @@ def shutdown():
 
     import shutdowner
     shutdowner.A('reactor-stopped')
+
+    from main import events
+    events.shutdown()
 
     from automats import automat
     automat.objects().clear()

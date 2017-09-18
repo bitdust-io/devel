@@ -86,6 +86,7 @@ def shutdown(x=None):
     lg.out(2, "shutdowner.shutdown " + str(x))
     from services import driver
     from main import settings
+    from main import events
     from logs import weblog
     from logs import webtraffic
     from system import tmpfile
@@ -107,6 +108,7 @@ def shutdown(x=None):
     run_upnpc.shutdown()
     net_misc.shutdown()
     git_proc.shutdown()
+    events.clear_subscribers()
     tmpfile.shutdown()
     if settings.NewWebGUI():
         from web import control
