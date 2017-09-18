@@ -152,6 +152,11 @@ def loop(first_start=False):
 
 def sync(callback_func=None, update_method='rebase'):
     """
+    Runs commands and process stdout and stderr to recogneze the result:
+
+        git fetch --all -v
+        git rebase origin/master -v
+
     """
     def _reset_done(response, error, retcode, result):
         if callback_func is None:
