@@ -20,6 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+#------------------------------------------------------------------------------
 
 def ls(tpl, tag='result'):
     return "{.section %s}{.repeated section @}%s{.end}{.end}" % (tag, tpl)
@@ -53,14 +54,14 @@ TPL_RAW = tpl_5_items.format(
 TPL_KEYS_LIST = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls("\n[{id}]\ntype:{type} size:{size} fingerprint:{fingerprint}\n{public}\n"),
+    ls("\n[{id}]\ntype:{type} size:{size} fingerprint:{fingerprint}\n{public}\n{private}\n"),
     tpl_errors)
 
 TPL_KEY_CREATE = tpl_5_items.format(
     tpl_status,
     tpl_execution,
     tpl_message,
-    ls("\n\n[{id}]\ntype:{type} size:{size} fingerprint:{fingerprint}\n{public}\n"),
+    ls("\n\n[{id}]\ntype:{type} size:{size} fingerprint:{fingerprint}\n{public}\n{private}\n"),
     tpl_errors)
 
 #------------------------------------------------------------------------------

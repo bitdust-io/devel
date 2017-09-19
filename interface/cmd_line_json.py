@@ -502,9 +502,9 @@ def cmd_key(opts, args, overDict, running, executablePath):
         print_text('BitDust is not running at the moment\n')
         return 0
 
-    if len(args) == 1 or (len(args) == 2 and args[1] == 'list'):
+    if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls', ]):
         tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
-        return call_jsonrpc_method_template_and_stop('keys_list', tpl)
+        return call_jsonrpc_method_template_and_stop('keys_list', tpl, include_private=True)
 
     if len(args) >= 3 and args[1] in ['create', 'new', 'gen', 'generate', 'make', ]:
         key_id = args[2]
@@ -535,6 +535,11 @@ def cmd_key(opts, args, overDict, running, executablePath):
         d.addErrback(fail_and_stop)
         reactor.run()
         return 0
+
+    if len(args) >= 2 and args[1] in ['print', 'get', 'show', ]:
+        tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
+        key_id = 'master' if len(args) < 3 else args[2]
+        return call_jsonrpc_method_template_and_stop('key_get', tpl, key_id=key_id, include_private=True)
 
     if len(args) >= 4 and args[1] in ['share', 'send', 'transfer', 'access', ]:
         # HERE TODO:
