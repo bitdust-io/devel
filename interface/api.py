@@ -68,6 +68,7 @@ def OK(result='', message=None, status='OK', extra_fields=None):
 
 
 def RESULT(result=[], message=None, status='OK', errors=None, source=None):
+    
     o = {}
     if source is not None:
         o.update(source)
@@ -456,6 +457,8 @@ def key_erase(key_id):
         }
     """
     lg.out(4, 'api.keys_list')
+    if key_id == 'master':
+        return ERROR('"master" key can not be removed')
     from crypt import my_keys
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:

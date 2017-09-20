@@ -49,9 +49,9 @@ Commands:
   key list
   key create <key id>
   key delete <key id>
-  key copy <key id>
-  key backup <key id> <destination filename to write your private key>
-  key print
+  key get [key_id]
+  key copy [key id]
+  key backup <key id> <filename>
   get <option>
   set <option> [value]
   set list
@@ -135,13 +135,14 @@ Commands:
                         erase given private key
                         WARNING!!! all data encrypted with that key will be lost
 
-  key copy <key_id>     copy given private key to clipboard, use Ctrl+V to paste it
+  key get [key_id]      prints private key details to console
+                        WARNING!!! never publish your "master" key
+
+  key copy [key_id]     copy given private key to clipboard, use Ctrl+V to paste it
+                        WARNING!!! never publish your "master" key
 
   key backup <key_id> <filename>
                         copy private key into file
-
-  key print             print private key to console
-                        WARNING!!! do not publish your key
 
   get <option>          print current value for given program setting
 
