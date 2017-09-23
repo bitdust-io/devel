@@ -405,6 +405,8 @@ def cmd_identity(opts, args, overDict, running):
             print_text('local identity is not exist')
         return 0
 
+    from twisted.internet import reactor
+
     def _register():
         if len(args) <= 2:
             return 2
@@ -415,18 +417,21 @@ def cmd_identity(opts, args, overDict, running):
             except:
                 print_text('incorrect private key size\n')
                 return 0
-        from twisted.internet import reactor
         from automats import automat
         from main import initializer
         from lib import misc
+        from logs import lg
         if not misc.ValidUserName(args[2]):
+            print_text('invalid user name')
             return 0
+        automat.LifeBegins(lg.when_life_begins())
+        automat.OpenLogFile(settings.AutomatsLog())
         initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
         reactor.run()
         automat.objects().clear()
+        my_id.loadLocalIdentity()
         if my_id.isLocalIdentityReady():
-            print_text('new identity created:')
-            print_text(my_id.getLocalIdentity().serialize())
+            print_text('\n' + my_id.getLocalIdentity().serialize())
         else:
             print_text('identity creation FAILED')
         return 0
@@ -457,12 +462,15 @@ def cmd_identity(opts, args, overDict, running):
             return 2
         from automats import automat
         from main import initializer
+        from logs import lg
+        automat.LifeBegins(lg.when_life_begins())
+        automat.OpenLogFile(settings.AutomatsLog())
         initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
         reactor.run()
         automat.objects().clear()
+        my_id.loadLocalIdentity()
         if my_id.isLocalIdentityReady():
-            print_text('your identity were restored:')
-            print_text(my_id.getLocalIdentity().serialize())
+            print_text('\n' + my_id.getLocalIdentity().serialize())
         else:
             print_text('identity recovery FAILED')
         return 0
@@ -472,19 +480,19 @@ def cmd_identity(opts, args, overDict, running):
             print_text('local identity [%s] already exist\n' % my_id.getIDName())
             return 1
         if running:
-            print_text('BitDust is running at the moment, need to stop the software at first\n')
+            print_text('BitDust is running at the moment, need to stop the software first\n')
             return 0
         return _register()
 
     if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
         if running:
-            print_text('BitDust is running at the moment, need to stop the software at first\n')
+            print_text('BitDust is running at the moment, need to stop the software first\n')
             return 0
         return _recover()
 
     if args[1].lower() in ['delete', 'remove', 'erase', 'del', 'rm', 'kill']:
         if running:
-            print_text('BitDust is running at the moment, need to stop the software at first\n')
+            print_text('BitDust is running at the moment, need to stop the software first\n')
             return 0
         oldname = my_id.getIDName()
         my_id.forgetLocalIdentity()
@@ -504,7 +512,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
 
     if len(args) == 1 or (len(args) == 2 and args[1] in ['list', 'ls', ]):
         tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
-        return call_jsonrpc_method_template_and_stop('keys_list', tpl, include_private=True)
+        return call_jsonrpc_method_template_and_stop('keys_list', tpl, include_private=False)
 
     if len(args) >= 3 and args[1] in ['create', 'new', 'gen', 'generate', 'make', ]:
         key_id = args[2]
@@ -550,7 +558,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
         return 0
 
     if len(args) >= 2 and args[1] in ['print', 'get', 'show', ]:
-        tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
+        tpl = jsontemplate.Template(templ.TPL_KEY_GET)
         key_id = 'master' if len(args) < 3 else args[2]
         return call_jsonrpc_method_template_and_stop('key_get', tpl, key_id=key_id, include_private=True)
 
@@ -560,7 +568,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
 
     if len(args) >= 4 and args[1] in ['share', 'send', 'transfer', 'access', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop('key_erase', tpl, key_id=args[2])
+        return call_jsonrpc_method_template_and_stop('key_share', tpl, key_id=args[2], idurl=args[3])
 
     return 2
 
@@ -1198,7 +1206,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             for k in config.conf().listAllEntries():
                 print k, config.conf().getData(k)
         else:
-            print_text(help.help())
+            print_text(help.help_text())
             print_text(pars.format_option_help())
         return 0
 

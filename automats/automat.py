@@ -378,7 +378,7 @@ class Automat(object):
         object.
         """
 
-    def destroy(self):
+    def destroy(self, dead_state='NOT_EXIST'):
         """
         Call this method to remove the state machine from the ``objects()``
         dictionary and delete that instance.
@@ -388,7 +388,7 @@ class Automat(object):
         """
         self._state_callbacks.clear()
         self.stopTimers()
-        self.state = 'NOT_EXIST'
+        self.state = dead_state
         objects().pop(self.index)
 
     def state_changed(self, oldstate, newstate, event_string, arg):

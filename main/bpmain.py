@@ -503,7 +503,7 @@ def monitorDelayedCalls(r):
 
 def usage_text():
     """
-    Calls ``p2p.help.usage()`` method to print out how to run BitDust software
+    Calls ``p2p.help.usage_text()`` method to print out how to run BitDust software
     from command line.
     """
     try:
@@ -515,7 +515,7 @@ def usage_text():
 
 def help_text():
     """
-    Same thing, calls ``p2p.help.help()`` to show detailed instructions.
+    Same thing, calls ``p2p.help.help_text()`` to show detailed instructions.
     """
     try:
         import help

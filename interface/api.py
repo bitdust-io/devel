@@ -354,6 +354,7 @@ def keys_list(sort=False, include_private=False):
              'ssh_type': 'ssh-rsa',
              'type': 'RSA',
              'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbpo3VYR5zvLe5...'
+             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
          }, {
              'alias': 'another_key01',
              'id': 'another_key01$veselin@p2p-id.ru',
@@ -363,6 +364,7 @@ def keys_list(sort=False, include_private=False):
              'ssh_type': 'ssh-rsa',
              'type': 'RSA',
              'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCmgX6j2MwEyY...'
+             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
         }]}
     """
     lg.out(4, 'api.keys_list')
@@ -406,7 +408,7 @@ def keys_list(sort=False, include_private=False):
     return RESULT(r)
 
 
-def key_create(key_alias, key_size=4096):
+def key_create(key_alias, key_size=4096, include_private=False):
     """
     Generate new Private Key and add it to the list of known keys with given `key_id`.
 
@@ -423,6 +425,7 @@ def key_create(key_alias, key_size=4096):
             'ssh_type': 'ssh-rsa',
             'type': 'RSA',
             'public': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8w2MhOPR/IoQ...'
+            'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
         }]}
     """
     from crypt import my_keys
@@ -434,7 +437,7 @@ def key_create(key_alias, key_size=4096):
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
-    return OK({
+    r = {
         'id': key_id,
         'alias': key_alias,
         'creator': my_id.getLocalID(),
@@ -443,7 +446,10 @@ def key_create(key_alias, key_size=4096):
         'ssh_type': str(key_object.sshType()),
         'size': str(key_object.size()),
         'public': str(key_object.public().toString('openssh')),
-    }, message='new private key "%s" was generated successfully' % key_alias, )
+    }
+    if include_private:
+        r['private'] = str(key_object.toString('openssh'))
+    return OK(r, message='new private key "%s" was generated successfully' % key_alias, )
 
 
 def key_erase(key_id):
@@ -470,9 +476,16 @@ def key_erase(key_id):
 
 def key_share(key_id, idurl):
     """
+    Connect to remote node identified by `idurl` parameter and transfer private key `key_id` to that machine.
+    This way remote user will be able to access those of your files which were encrypted with that private key.
+
+    Returns:
+
     """
     if not driver.is_started('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
+    if key_id == 'master':
+        return ERROR('"master" key can not be shared')
     from crypt import my_keys
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:

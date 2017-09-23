@@ -93,7 +93,7 @@ def A(event=None, arg=None):
     global _IdRegistrator
     if _IdRegistrator is None:
         # set automat name and starting state here
-        _IdRegistrator = IdRegistrator('id_registrator', 'AT_STARTUP', 2)
+        _IdRegistrator = IdRegistrator('id_registrator', 'AT_STARTUP', 2, True)
     if event is not None:
         _IdRegistrator.automat(event, arg)
     return _IdRegistrator
@@ -460,7 +460,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        self.destroy()
+        self.destroy(dead_state=self.state)
         global _IdRegistrator
         _IdRegistrator = None
 

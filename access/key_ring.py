@@ -81,6 +81,7 @@ def share_private_key(key_id, idurl):
 
 
 def transfer_private_key(key_id, recipient_id_obj):
+    # import pdb; pdb.set_trace()
     result = Deferred()
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:

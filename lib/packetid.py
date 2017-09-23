@@ -62,7 +62,6 @@ def UniqueID():
         _LastUniqueNumber = int(time.time() * 100.0)
     _LastUniqueNumber += 1
     if _LastUniqueNumber > 100000000000000:
-        import pdb; pdb.set_trace()
         _LastUniqueNumber = int(time.time() * 100.0)
     # inttime = int(time.time() * 100.0)
     # if _LastUniqueNumber < inttime:

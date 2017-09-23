@@ -66,7 +66,6 @@ EVENTS:
     * :red:`restore-start`
 """
 
-import os
 import sys
 
 try:
@@ -102,7 +101,6 @@ _Installer = None
 
 def IsExist():
     """
-    
     """
     global _Installer
     return _Installer is not None
@@ -116,7 +114,7 @@ def A(event=None, arg=None):
     """
     global _Installer
     if _Installer is None:
-        _Installer = Installer('installer', 'AT_STARTUP', 2)
+        _Installer = Installer('installer', 'AT_STARTUP', 2, True)
     if event is not None:
         _Installer.automat(event, arg)
     return _Installer
@@ -255,8 +253,12 @@ class Installer(automat.Automat):
             elif (event == 'id_restorer.state' and arg == 'FAILED') and self.flagCmdLine:
                 self.state = 'DONE'
                 self.doUpdate(arg)
-            elif event == 'id_restorer.state' and arg == 'RESTORED!':
+            elif (event == 'id_restorer.state' and arg == 'RESTORED!') and not self.flagCmdLine:
                 self.state = 'RESTORED'
+                self.doRestoreSettings(arg)
+                self.doUpdate(arg)
+            elif (event == 'id_restorer.state' and arg == 'RESTORED!') and self.flagCmdLine:
+                self.state = 'DONE'
                 self.doRestoreSettings(arg)
                 self.doUpdate(arg)
         #---DONE---
