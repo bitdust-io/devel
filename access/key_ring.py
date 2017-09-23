@@ -74,8 +74,8 @@ def share_private_key(key_id, idurl, timeout=10):
     result = Deferred()
     d = propagate.PingContact(idurl, timeout=timeout)
     d.addCallback(
-        lambda resp: transfer_private_key(
-            key_id, idurl
+        lambda resp: request_service_keys_registry(
+            key_id, idurl,
         ).addCallbacks(
             callback=result.callback,
             errback=result.errback
@@ -83,6 +83,27 @@ def share_private_key(key_id, idurl, timeout=10):
     )
     d.addErrback(result.errback)
     return result
+
+
+def request_service_keys_registry(key_id, idurl):
+    result = Deferred()
+    p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
+        commands.Ack(): lambda response, indo:
+            on_service_keys_registry_response(response, indo, key_id, idurl, result),
+        commands.Fail(): lambda response, indo:
+            result.errback(Exception('"service_keys_registry" not started on remote node'))
+    })
+    return result
+
+
+def on_service_keys_registry_response(response, info, key_id, idurl, result):
+    if not response.Payload.startswith('accepted'):
+        result.errback(Exception('request for "service_keys_registry" refused by remote node'))
+        return
+    transfer_private_key(key_id, idurl).addCallbacks(
+        callback=result.callback,
+        errback=result.errback
+    )
 
 
 def transfer_private_key(key_id, idurl):
@@ -103,7 +124,6 @@ def transfer_private_key(key_id, idurl):
         'id': key_id,
         'alias': key_alias,
         'creator': creator_idurl,
-        # 'owner': my_id.getLocalID(),
         'fingerprint': str(key_object.fingerprint()),
         'type': str(key_object.type()),
         'ssh_type': str(key_object.sshType()),
@@ -140,11 +160,11 @@ def on_private_key_received(newpacket, info, status, error_message):
     try:
         key_data = block.Data()
         key_json = json.loads(key_data)
-        key_id = key_json['id']
+        key_id = str(key_json['id'])
         # key_alias = key_json['alias']
         # key_creator = key_json['creator']
         # key_owner = key_json['owner']
-        private_key_string = key_json['private']
+        private_key_string = str(key_json['private'])
     except:
         lg.exc()
         return False
