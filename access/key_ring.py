@@ -49,6 +49,7 @@ from contacts import identitycache
 
 from userid import my_id
 
+from p2p import propagate
 from p2p import p2p_service
 from p2p import commands
 
@@ -69,20 +70,27 @@ def shutdown():
 
 #-------------------------------------------------------------------------------
 
-def share_private_key(key_id, idurl):
+def share_private_key(key_id, idurl, timeout=10):
     result = Deferred()
-    d = identitycache.GetLatest(idurl)
-    d.addCallback(lambda id_obj: transfer_private_key(key_id, id_obj).addCallbacks(
-        callback=result.callback,
-        errback=result.errback
-    ))
-    d.addErrback(lambda err: result.errback(err))
+    d = propagate.PingContact(idurl, timeout=timeout)
+    d.addCallback(
+        lambda resp: transfer_private_key(
+            key_id, idurl
+        ).addCallbacks(
+            callback=result.callback,
+            errback=result.errback
+        )
+    )
+    d.addErrback(result.errback)
     return result
 
 
-def transfer_private_key(key_id, recipient_id_obj):
-    # import pdb; pdb.set_trace()
+def transfer_private_key(key_id, idurl):
     result = Deferred()
+    recipient_id_obj = identitycache.FromCache(idurl)
+    if not recipient_id_obj:
+        result.errback(Exception(idurl))
+        return result
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
         result.errback(Exception(key_id))
@@ -111,9 +119,10 @@ def transfer_private_key(key_id, recipient_id_obj):
         # encrypt data using public key of recipient
         EncryptKey=lambda inp: recipient_id_obj.encrypt(inp),
     )
+    encrypted_key_data = block.Serialize()
     p2p_service.SendKey(
         remote_idurl=recipient_id_obj.getIDURL(),
-        encrypted_key_data=block.Serialize,
+        encrypted_key_data=encrypted_key_data,
         packet_id=key_id,
         callbacks={
             commands.Ack(): lambda response, info: result.callback(response),

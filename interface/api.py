@@ -293,6 +293,7 @@ def key_get(key_id, include_private=False):
     from crypt import key
     from userid import my_id
     from lib import nameurl
+    key_id = str(key_id)
     if key_id == 'master':
         r = {
             'id': key_id,
@@ -430,6 +431,7 @@ def key_create(key_alias, key_size=4096, include_private=False):
     """
     from crypt import my_keys
     from userid import my_id
+    key_alias = str(key_alias)
     # TODO: add validation for key_alias
     key_alias = key_alias.strip().lower()
     key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getLocalID())
@@ -462,10 +464,11 @@ def key_erase(key_id):
          'message': 'private key "ccc2" was erased successfully',
         }
     """
+    from crypt import my_keys
+    key_id = str(key_id)
     lg.out(4, 'api.keys_list')
     if key_id == 'master':
         return ERROR('"master" key can not be removed')
-    from crypt import my_keys
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
         return ERROR('icorrect key_id format')
@@ -482,11 +485,13 @@ def key_share(key_id, idurl):
     Returns:
 
     """
+    from crypt import my_keys
+    key_id = str(key_id)
+    idurl = str(idurl)
     if not driver.is_started('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
     if key_id == 'master':
         return ERROR('"master" key can not be shared')
-    from crypt import my_keys
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
         return ERROR('icorrect key_id format')

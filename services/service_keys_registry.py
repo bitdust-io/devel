@@ -65,7 +65,10 @@ class KeysRegistryService(LocalService):
         return True
 
     def _outbox_packet_sent(self, pkt_out):
-        pass
+        from p2p import commands
+        if pkt_out.outpacket.Command == commands.Key():
+            from logs import lg
+            lg.out(2, 'Packet Sent: %s' % pkt_out)
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if status != 'finished':

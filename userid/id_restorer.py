@@ -134,8 +134,16 @@ class IdRestorer(automat.Automat):
         installer.A('id_restorer.state', newstate)
 
     def A(self, event, arg):
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'start':
+                self.state = 'MY_ID'
+                self.doPrint(self.msg('MSG_01', arg))
+                self.doSetWorkingIDURL(arg)
+                self.doSetWorkingKey(arg)
+                self.doRequestMyIdentity(arg)
         #---MY_ID---
-        if self.state == 'MY_ID':
+        elif self.state == 'MY_ID':
             if event == 'my-id-received':
                 self.state = 'VERIFY'
                 self.doPrint(self.msg('MSG_05', arg))
@@ -146,9 +154,6 @@ class IdRestorer(automat.Automat):
                 self.doClearWorkingIDURL(arg)
                 self.doClearWorkingKey(arg)
                 self.doDestroyMe(arg)
-        #---RESTORED!---
-        elif self.state == 'RESTORED!':
-            pass
         #---VERIFY---
         elif self.state == 'VERIFY':
             if event == 'restore-failed':
@@ -162,14 +167,9 @@ class IdRestorer(automat.Automat):
                 self.doPrint(self.msg('MSG_06', arg))
                 self.doRestoreSave(arg)
                 self.doDestroyMe(arg)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'start':
-                self.state = 'MY_ID'
-                self.doPrint(self.msg('MSG_01', arg))
-                self.doSetWorkingIDURL(arg)
-                self.doSetWorkingKey(arg)
-                self.doRequestMyIdentity(arg)
+        #---RESTORED!---
+        elif self.state == 'RESTORED!':
+            pass
         #---FAILED---
         elif self.state == 'FAILED':
             pass
