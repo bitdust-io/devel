@@ -299,7 +299,6 @@ def add_begin_file_receiving_callback(cb):
 
 def add_finish_file_receiving_callback(cb):
     """
-    
     """
     global _FinishFileReceivingCallbacksList
     if cb not in _FinishFileReceivingCallbacksList:

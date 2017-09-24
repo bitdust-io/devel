@@ -64,8 +64,16 @@ class KeysRegistryService(LocalService):
         key_ring.shutdown()
         return True
 
+    def request(self, request, info):
+        from main import events
+        from p2p import p2p_service
+        events.send('key-registry-request', dict(idurl=request.OwnerID))
+        return p2p_service.SendAck(request, 'accepted')
+
     def _outbox_packet_sent(self, pkt_out):
-        pass
+        from p2p import commands
+        if pkt_out.outpacket.Command == commands.Key():
+            pass
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if status != 'finished':

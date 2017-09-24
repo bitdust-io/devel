@@ -54,7 +54,13 @@ TPL_RAW = tpl_5_items.format(
 TPL_KEYS_LIST = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls("\n[{id}]\ntype:{type} size:{size} fingerprint:{fingerprint}\n{public}\n{private}\n"),
+    ls("{id}\n"),
+    tpl_errors)
+
+TPL_KEY_GET = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls("{id} : {type}, {size} bits, {fingerprint}\n\n{public}\n\n{private}\n"),
     tpl_errors)
 
 TPL_KEY_CREATE = tpl_5_items.format(

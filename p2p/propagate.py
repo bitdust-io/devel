@@ -482,10 +482,11 @@ def PingContact(idurl, timeout=30):
     def _identity_cached(x, idsrc, timeout_call, result):
         lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes" % len(idsrc))
         # TODO Verify()
-        SendToIDs([idurl],
-                  lambda response, info:
-                  _ack_handler(response, info, timeout_call, result),
-                  wide=True,)
+        SendToIDs(
+            idlist=[idurl, ],
+            ack_handler=lambda response, info: _ack_handler(response, info, timeout_call, result),
+            wide=True,
+        )
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout)
     if timeout:
         timeout_call = reactor.callLater(timeout, _ack_timed_out, timeout, idcache_defer)

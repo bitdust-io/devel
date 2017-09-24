@@ -49,6 +49,7 @@ from contacts import identitycache
 
 from userid import my_id
 
+from p2p import propagate
 from p2p import p2p_service
 from p2p import commands
 
@@ -69,19 +70,48 @@ def shutdown():
 
 #-------------------------------------------------------------------------------
 
-def share_private_key(key_id, idurl):
+def share_private_key(key_id, idurl, timeout=10):
     result = Deferred()
-    d = identitycache.GetLatest(idurl)
-    d.addCallback(lambda id_obj: transfer_private_key(key_id, id_obj).addCallbacks(
-        callback=result.callback,
-        errback=result.errback
-    ))
-    d.addErrback(lambda err: result.errback(err))
+    d = propagate.PingContact(idurl, timeout=timeout)
+    d.addCallback(
+        lambda resp: request_service_keys_registry(
+            key_id, idurl,
+        ).addCallbacks(
+            callback=result.callback,
+            errback=result.errback
+        )
+    )
+    d.addErrback(result.errback)
     return result
 
 
-def transfer_private_key(key_id, recipient_id_obj):
+def request_service_keys_registry(key_id, idurl):
     result = Deferred()
+    p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
+        commands.Ack(): lambda response, indo:
+            on_service_keys_registry_response(response, indo, key_id, idurl, result),
+        commands.Fail(): lambda response, indo:
+            result.errback(Exception('"service_keys_registry" not started on remote node'))
+    })
+    return result
+
+
+def on_service_keys_registry_response(response, info, key_id, idurl, result):
+    if not response.Payload.startswith('accepted'):
+        result.errback(Exception('request for "service_keys_registry" refused by remote node'))
+        return
+    transfer_private_key(key_id, idurl).addCallbacks(
+        callback=result.callback,
+        errback=result.errback
+    )
+
+
+def transfer_private_key(key_id, idurl):
+    result = Deferred()
+    recipient_id_obj = identitycache.FromCache(idurl)
+    if not recipient_id_obj:
+        result.errback(Exception(idurl))
+        return result
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
         result.errback(Exception(key_id))
@@ -94,7 +124,6 @@ def transfer_private_key(key_id, recipient_id_obj):
         'id': key_id,
         'alias': key_alias,
         'creator': creator_idurl,
-        # 'owner': my_id.getLocalID(),
         'fingerprint': str(key_object.fingerprint()),
         'type': str(key_object.type()),
         'ssh_type': str(key_object.sshType()),
@@ -110,9 +139,10 @@ def transfer_private_key(key_id, recipient_id_obj):
         # encrypt data using public key of recipient
         EncryptKey=lambda inp: recipient_id_obj.encrypt(inp),
     )
+    encrypted_key_data = block.Serialize()
     p2p_service.SendKey(
         remote_idurl=recipient_id_obj.getIDURL(),
-        encrypted_key_data=block.Serialize,
+        encrypted_key_data=encrypted_key_data,
         packet_id=key_id,
         callbacks={
             commands.Ack(): lambda response, info: result.callback(response),
@@ -130,11 +160,11 @@ def on_private_key_received(newpacket, info, status, error_message):
     try:
         key_data = block.Data()
         key_json = json.loads(key_data)
-        key_id = key_json['id']
+        key_id = str(key_json['id'])
         # key_alias = key_json['alias']
         # key_creator = key_json['creator']
         # key_owner = key_json['owner']
-        private_key_string = key_json['private']
+        private_key_string = str(key_json['private'])
     except:
         lg.exc()
         return False

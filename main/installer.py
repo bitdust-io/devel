@@ -66,7 +66,6 @@ EVENTS:
     * :red:`restore-start`
 """
 
-import os
 import sys
 
 try:
@@ -102,7 +101,6 @@ _Installer = None
 
 def IsExist():
     """
-    
     """
     global _Installer
     return _Installer is not None
@@ -116,7 +114,7 @@ def A(event=None, arg=None):
     """
     global _Installer
     if _Installer is None:
-        _Installer = Installer('installer', 'AT_STARTUP', 2)
+        _Installer = Installer('installer', 'AT_STARTUP', 2, True)
     if event is not None:
         _Installer.automat(event, arg)
     return _Installer
@@ -162,15 +160,15 @@ class Installer(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'WHAT_TO_DO?'
-                self.flagCmdLine = False
+                self.flagCmdLine=False
             elif event == 'register-cmd-line':
                 self.state = 'REGISTER'
-                self.flagCmdLine = True
+                self.flagCmdLine=True
                 self.doInit(arg)
                 id_registrator.A('start', arg)
             elif event == 'recover-cmd-line':
                 self.state = 'RECOVER'
-                self.flagCmdLine = True
+                self.flagCmdLine=True
                 self.doInit(arg)
                 id_restorer.A('start', arg)
         #---WHAT_TO_DO?---
@@ -225,16 +223,16 @@ class Installer(automat.Automat):
             if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
-            elif (event == 'id_registrator.state' and arg in ['DONE', 'FAILED']) and self.flagCmdLine:
-                self.state = 'DONE'
-                self.doUpdate(arg)
-            elif (event == 'id_registrator.state' and arg == 'FAILED') and not self.flagCmdLine:
+            elif ( event == 'id_registrator.state' and arg == 'FAILED' ) and not self.flagCmdLine:
                 self.state = 'INPUT_NAME'
                 self.doShowOutput(arg)
                 self.doUpdate(arg)
-            elif (event == 'id_registrator.state' and arg == 'DONE') and not self.flagCmdLine:
+            elif ( event == 'id_registrator.state' and arg == 'DONE' ) and not self.flagCmdLine:
                 self.state = 'AUTHORIZED'
                 self.doPrepareSettings(arg)
+                self.doUpdate(arg)
+            elif ( event == 'id_registrator.state' and arg in [ 'DONE' , 'FAILED' ] ) and self.flagCmdLine:
+                self.state = 'DONE'
                 self.doUpdate(arg)
         #---AUTHORIZED---
         elif self.state == 'AUTHORIZED':
@@ -249,15 +247,15 @@ class Installer(automat.Automat):
             if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
-            elif (event == 'id_restorer.state' and arg == 'FAILED') and not self.flagCmdLine:
-                self.state = 'LOAD_KEY'
-                self.doUpdate(arg)
-            elif (event == 'id_restorer.state' and arg == 'FAILED') and self.flagCmdLine:
+            elif ( event == 'id_restorer.state' and arg in [ 'RESTORED!' , 'FAILED' ] ) and self.flagCmdLine:
                 self.state = 'DONE'
                 self.doUpdate(arg)
-            elif event == 'id_restorer.state' and arg == 'RESTORED!':
+            elif ( event == 'id_restorer.state' and arg == 'RESTORED!' ) and not self.flagCmdLine:
                 self.state = 'RESTORED'
                 self.doRestoreSettings(arg)
+                self.doUpdate(arg)
+            elif ( event == 'id_restorer.state' and arg == 'FAILED' ) and not self.flagCmdLine:
+                self.state = 'LOAD_KEY'
                 self.doUpdate(arg)
         #---DONE---
         elif self.state == 'DONE':
@@ -269,7 +267,7 @@ class Installer(automat.Automat):
             if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
-            elif (event == 'install_wizard.state' and arg == 'DONE'):
+            elif ( event == 'install_wizard.state' and arg == 'DONE' ):
                 self.state = 'DONE'
                 self.doUpdate(arg)
         #---RESTORED---

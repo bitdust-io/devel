@@ -192,6 +192,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_key_erase(self, key_id):
         return api.key_erase(key_id)
 
+    def jsonrpc_key_share(self, key_id, idurl):
+        return api.key_share(key_id, idurl)
+
     def jsonrpc_backups_update(self):
         return api.backups_update()
 

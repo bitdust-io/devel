@@ -109,7 +109,7 @@ class Block:
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getLocalID()
-        self.BackupID = BackupID
+        self.BackupID = str(BackupID)
         self.BlockNumber = BlockNumber
         if callable(EncryptKey):
             self.EncryptedSessionKey = EncryptKey(SessionKey)
@@ -118,6 +118,8 @@ class Block:
         else:
             self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
         self.SessionKeyType = SessionKeyType
+        if not self.SessionKeyType:
+            self.SessionKeyType = key.SessionKeyType()
         self.Length = len(Data)
         self.LastBlock = bool(LastBlock)
         self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data)  # DataLonger

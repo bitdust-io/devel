@@ -139,6 +139,7 @@ class Initializer(automat.Automat):
         global_state.set_global_state('INIT ' + newstate)
 
     def A(self, event, arg):
+        #--- AT_STARTUP
         if self.state == 'AT_STARTUP':
             if event == 'run':
                 self.state = 'LOCAL'
@@ -157,6 +158,7 @@ class Initializer(automat.Automat):
                 self.flagCmdLine = True
                 installer.A('recover-cmd-line', arg)
                 shutdowner.A('ready')
+        #--- LOCAL
         elif self.state == 'LOCAL':
             if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg):
                 self.state = 'INSTALL'
@@ -172,6 +174,7 @@ class Initializer(automat.Automat):
             elif event == 'init-local-done' and self.isInstalled(arg):
                 self.state = 'INTERFACES'
                 self.doInitInterfaces(arg)
+        #--- MODULES
         elif self.state == 'MODULES':
             if event == 'init-modules-done':
                 self.state = 'READY'
@@ -180,6 +183,7 @@ class Initializer(automat.Automat):
             elif (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
+        #--- INSTALL
         elif self.state == 'INSTALL':
             if not self.flagCmdLine and (event == 'installer.state' and arg == 'DONE'):
                 self.state = 'STOPPING'
@@ -190,17 +194,21 @@ class Initializer(automat.Automat):
             elif (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
+        #--- READY
         elif self.state == 'READY':
             if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
+        #--- STOPPING
         elif self.state == 'STOPPING':
             if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doUpdate(arg)
                 self.doDestroyMe(arg)
+        #--- EXIT
         elif self.state == 'EXIT':
             pass
+        #--- SERVICES
         elif self.state == 'SERVICES':
             if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
@@ -209,6 +217,7 @@ class Initializer(automat.Automat):
                 self.state = 'MODULES'
                 self.doInitModules(arg)
                 shutdowner.A('ready')
+        #--- INTERFACES
         elif self.state == 'INTERFACES':
             if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'

@@ -99,7 +99,7 @@ def A(event=None, arg=None):
     global _IdRestorer
     if _IdRestorer is None:
         # set automat name and starting state here
-        _IdRestorer = IdRestorer('id_restorer', 'AT_STARTUP', 2)
+        _IdRestorer = IdRestorer('id_restorer', 'AT_STARTUP', 2, True)
     if event is not None:
         _IdRestorer.automat(event, arg)
     return _IdRestorer
@@ -113,12 +113,12 @@ class IdRestorer(automat.Automat):
     """
 
     MESSAGES = {
-        'MSG_01': ['download user identity from remote host'],
+        'MSG_01': ['download user identity from remote ID server'],
         'MSG_02': ['key verification failed!', 'red'],
-        'MSG_03': ['download user identity from remote host'],
+        'MSG_03': ['download user identity from remote ID server'],
         'MSG_04': ['incorrect IDURL or user identity not exist', 'red'],
         'MSG_05': ['verifying user identity and private key'],
-        'MSG_06': ['your identity were restored!', 'green'], }
+        'MSG_06': ['your identity restored successfully!', 'green'], }
 
     def msg(self, msgid, arg=None):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
@@ -134,8 +134,16 @@ class IdRestorer(automat.Automat):
         installer.A('id_restorer.state', newstate)
 
     def A(self, event, arg):
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'start':
+                self.state = 'MY_ID'
+                self.doPrint(self.msg('MSG_01', arg))
+                self.doSetWorkingIDURL(arg)
+                self.doSetWorkingKey(arg)
+                self.doRequestMyIdentity(arg)
         #---MY_ID---
-        if self.state == 'MY_ID':
+        elif self.state == 'MY_ID':
             if event == 'my-id-received':
                 self.state = 'VERIFY'
                 self.doPrint(self.msg('MSG_05', arg))
@@ -146,9 +154,6 @@ class IdRestorer(automat.Automat):
                 self.doClearWorkingIDURL(arg)
                 self.doClearWorkingKey(arg)
                 self.doDestroyMe(arg)
-        #---RESTORED!---
-        elif self.state == 'RESTORED!':
-            pass
         #---VERIFY---
         elif self.state == 'VERIFY':
             if event == 'restore-failed':
@@ -162,14 +167,9 @@ class IdRestorer(automat.Automat):
                 self.doPrint(self.msg('MSG_06', arg))
                 self.doRestoreSave(arg)
                 self.doDestroyMe(arg)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'start':
-                self.state = 'MY_ID'
-                self.doPrint(self.msg('MSG_01', arg))
-                self.doSetWorkingIDURL(arg)
-                self.doSetWorkingKey(arg)
-                self.doRequestMyIdentity(arg)
+        #---RESTORED!---
+        elif self.state == 'RESTORED!':
+            pass
         #---FAILED---
         elif self.state == 'FAILED':
             pass
@@ -301,6 +301,6 @@ class IdRestorer(automat.Automat):
         """
         Action method.
         """
-        self.destroy()
+        self.destroy(dead_state=self.state)
         global _IdRestorer
         _IdRestorer = None
