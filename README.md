@@ -29,7 +29,7 @@ BitDust is written in Python using pure Twisted framework and published under GN
 
 
 
-## Install
+## Install BitDust
 
 
 ### Get the software
@@ -97,26 +97,17 @@ To get some more insights or just to know how to start playing with software
 you can visit [BitDust Commands](https://bitdust.io/commands.html) page. 
 
 
-
 ## Dependencies
 
-python 2.6 or 2.7, python3 is not supported
-    http://python.org/download/releases
-    
-twisted 11.0 or higher: 
-    http://twistedmatrix.com
-    
-pyasn1: 
-    http://pyasn1.sourceforge.net
-    
-pyOpenSSL: 
-    https://launchpad.net/pyopenssl
-    
-pycrypto: 
-    https://www.dlitz.net/software/pycrypto/
+If you are installing BitDust on Windows platforms, you may require some binary packages already compiled and packaged for Microsoft Windows platforms, you can check following locations and download needed binaries and libraries:
 
-wxgtk2.8: 
-    http://wiki.wxpython.org/InstallingOnUbuntuOrDebian
+* cygwin: [cygwin.com](https://cygwin.com/install.html)
+* git: [git-scm.com](https://git-scm.com/download/win)
+* python 2.7 (python3 is not supported yet): [python.org](http://python.org/download/releases)
+* twisted 11.0 or higher: [twistedmatrix.com](http://twistedmatrix.com)
+* pyasn1: [pyasn1.sourceforge.net](http://pyasn1.sourceforge.net)
+* pyOpenSSL: [launchpad.net/pyopenssl](https://launchpad.net/pyopenssl)
+* pycrypto: [dlitz.net/software/pycrypto](https://www.dlitz.net/software/pycrypto/)
+* wxgtk2.8: [wxpython.org](http://wiki.wxpython.org/InstallingOnUbuntuOrDebian)
+* miniupnpc: [miniupnp.tuxfamily.org](http://miniupnp.tuxfamily.org/)
 
-miniupnpc:
-    http://miniupnp.tuxfamily.org/

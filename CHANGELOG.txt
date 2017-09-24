@@ -2,6 +2,40 @@ Change Log
 ==========
 
 
+2017-08-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added colors to terminal logs
+* added "service_keys_registry" request in the API key_share() method flow
+* added private keys managment commands to API methods
+* storing catalog index in json format now
+* store key_id in the catalog
+* implemented multiple encryption/decryption keys in backup index
+* added access/key_ring.py
+* added service_keys_registry()
+* added local FTP server and FTP interface bridge to access distributed data via FTP client
+* added Query class to contract_chain_node
+* software should be autmatically restarted after receiving an update
+* added logging to git_proc, git_proc will start in 30 sec after startup
+* changed "git reset --hard" to "git rebase origin/master" in git_proc.py
+* added coins_index.py, working on coins storage, codernity db indexes now are located in the source code
+* added added contract_chain_node.py
+* fix in accountant_node() to prevent infinite loop
+* added contract_chain_consumer() automat
+* added service_contract_chain()
+* added service_customer_contracts()
+* added service_supplier_contracts()
+* added state machine p2p_service_seeker()
+* added simple global events system with listeners
+* added Coin() and RetreiveCoin() commands
+* change in broadcaster_node() automat, improved lookup and dht code, default N of broadcasters set to 3
+* fix in storage/backup_matrix.py
+* update help/usage, added "install" command to cmd_line interface
+* setup a virtual environment folder in ~/.bitdust/venv/ to isolate BitDust software from system Python
+* added one seed node
+* started playing with Ethereum, continue working on contracts chains
+
+
+
 2017-03-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * migration of genezis nodes to another vps machines
