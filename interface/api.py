@@ -559,12 +559,14 @@ def backups_list():
             'versions': [],
             'type': 'parent',
             'id': '0/0/1',
+            'key_id': 'key01$user@idhost.net',
             'size': 38992196
           }, {
             'path': '/Users/veselin/Documents/python',
             'versions': [],
             'type': 'parent',
             'id': '0/0/1/0',
+            'key_id': 'key02$user@idhost.net',
             'size': 5754439
           }, {
             'path': '/Users/veselin/Documents/python/python27.chm',
@@ -575,6 +577,7 @@ def backups_list():
             }],
             'type': 'file',
             'id': '0/0/1/0/0',
+            'key_id': 'root$another_user@secondhost.org',
             'size': 5754439
         }]}
     """
@@ -589,6 +592,7 @@ def backups_list():
             'path': localPath,
             'type': backup_fs.TYPES.get(item.type, '').lower(),
             'size': item.size,
+            'key_id': item.key_id,
             'versions': map(
                 lambda v: {
                     'version': v,
@@ -609,10 +613,12 @@ def backups_id_list():
          'result': [{
             'backupid': '0/0/1/0/0/F20160313043757PM',
             'path': '/Users/veselin/Documents/python/python27.chm',
+            'key_id': 'key01$user@idhost.net',
             'size': '11 MB'
          }, {
             'backupid': '0/0/0/0/0/0/F20160315052257PM',
             'path': '/Users/veselin/Music/Bob Marley/01-Soul Rebels (1970)/01-Put It On.mp3',
+            'key_id': 'key02$user@idhost.net',
             'size': '8.27 MB'
         }]}
     """
@@ -622,7 +628,7 @@ def backups_id_list():
     from contacts import contactsdb
     from lib import diskspace
     result = []
-    for _, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
+    for _, backupID, versionInfo, localPath, itemInfo in backup_fs.ListAllBackupIDsFull(True, True):
         if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
             szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1] / contactsdb.num_suppliers())
         else:
@@ -631,6 +637,7 @@ def backups_id_list():
         result.append({
             'backupid': backupID,
             'size': szver,
+            'key_id': itemInfo.key_id,
             'path': localPath})
     lg.out(4, 'api.backups_id_list %d items returned' % len(result))
     return RESULT(result)

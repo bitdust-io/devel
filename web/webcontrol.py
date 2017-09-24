@@ -3105,7 +3105,7 @@ class MainPage(Page):
         elif action == 'idlist':
             src = ''
             src += html_comment('  %s %s %s' % ('[path ID]'.ljust(37), '[size]'.ljust(20), '[local path]'))
-            for itemName, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
+            for itemName, backupID, versionInfo, localPath, itemInfo in backup_fs.ListAllBackupIDsFull(True, True):
                 if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
                     szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1] / contactsdb.num_suppliers())
                 else:

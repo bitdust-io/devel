@@ -1500,7 +1500,7 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
     def visitor(path_id, path, info):
         for version in info.list_versions(sorted, reverse):
             backupID = (path_id + '/' + version).lstrip('/')
-            lst.append((info.name(), backupID, info.get_version_info(version), path))
+            lst.append((info.name(), backupID, info.get_version_info(version), path, info))
     TraverseByID(visitor)
     return lst
 

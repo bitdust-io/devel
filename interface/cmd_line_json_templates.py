@@ -69,7 +69,7 @@ TPL_KEY_CREATE = tpl_5_items.format(
 TPL_BACKUPS_LIST = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls("{id} {type} {size} {path} {.section versions}{.repeated section @}[{version}: {size} (#{blocks})]{.end}{.end}\n"),
+    ls("{id} {type} {size} {path} {.section versions}{.repeated section @}[{version}: {size} (#{blocks})]{.end}{.end}{.section key_id}@{.end}\n"),
     tpl_errors)
 
 TPL_BACKUPS_LIST_IDS = tpl_4_items.format(
