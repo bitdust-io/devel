@@ -52,6 +52,7 @@ from automats import automat
 from system import bpio
 
 from main import settings
+from main import events
 
 from contacts import contactsdb
 
@@ -298,6 +299,7 @@ class CustomersRejector(automat.Automat):
         space_dict, spent_bytes, current_customers, removed_customers = arg
         for customer_idurl in removed_customers:
             p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
+            events.send('existing-customer-terminated', dict(idurl=customer_idurl))
         self.automat('packets-sent')
 
     def doRestartLocalTester(self, arg):

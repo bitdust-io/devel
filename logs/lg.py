@@ -156,6 +156,8 @@ def err(message, level=0):
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     funcname = '%s.%s' % (modul, caller)
+    if isinstance(message, Exception):
+        message = str(message)
     if not message.count(funcname):
         message = ' in %s() : "%s"' % (funcname, message)
     if not message.count('ERROR'):

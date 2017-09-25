@@ -2387,11 +2387,11 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/customer/needed-space',
                                   diskspace.MakeStringFromBytes(DefaultNeededBytes()))
     config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
-    
+
     config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
-    
+
     config.conf().setDefaultValue('services/customer-support/enabled', 'true')
-    
+
     config.conf().setDefaultValue('services/customer-contracts/enabled', 'false')
 
     config.conf().setDefaultValue('services/data-motion/enabled', 'true')
@@ -2457,6 +2457,8 @@ def _setUpDefaultSettings():
                                   diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
 
     config.conf().setDefaultValue('services/supplier-contracts/enabled', 'false')
+
+    config.conf().setDefaultValue('services/supplier-relations/enabled', 'true')
 
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())

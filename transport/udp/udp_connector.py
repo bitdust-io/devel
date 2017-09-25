@@ -207,7 +207,7 @@ class DHTUDPConnector(automat.Automat):
             0], self.my_address[1], str(time.time()))
         if _Debug:
             lg.out(_DebugLevel, 'doDHTWriteIncoming  key=%s' % key)
-        self.working_deferred = dht_service.set_value(key, value)
+        self.working_deferred = dht_service.set_value(key, value, age=int(time.time()))
         self.working_deferred.addCallback(self._wrote_peer_incoming)
         self.working_deferred.addErrback(
             lambda x: self.automat('dht-write-failed'))

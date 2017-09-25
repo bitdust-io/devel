@@ -342,8 +342,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_broadcast_send_message(self, payload):
         return api.broadcast_send_message(payload)
 
-    # def jsonrpc_:
-    #     return api.
+    def jsonrpc_event_send(self, event_id, json_data=None):
+        return api.event_send(event_id, json_data=json_data)
 
 #------------------------------------------------------------------------------
 

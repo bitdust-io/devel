@@ -68,7 +68,6 @@ def OK(result='', message=None, status='OK', extra_fields=None):
 
 
 def RESULT(result=[], message=None, status='OK', errors=None, source=None):
-    
     o = {}
     if source is not None:
         o.update(source)
@@ -1450,6 +1449,7 @@ def customer_reject(idurl):
     from contacts import contactsdb
     from storage import accounting
     from main import settings
+    from main import events
     from supplier import local_tester
     from p2p import p2p_service
     from lib import packetid
@@ -1469,6 +1469,7 @@ def customer_reject(idurl):
     consumed_space = accounting.count_consumed_space(space_dict)
     space_dict['free'] = settings.getDonatedBytes() - int(consumed_space)
     accounting.write_customers_quotas(space_dict)
+    events.send('existing-customer-terminated', dict(idurl=idurl))
     # restart local tester
     local_tester.TestUpdateCustomers()
     return OK('customer %s rejected, %s bytes were freed' % (idurl, consumed_by_cutomer))
@@ -2114,3 +2115,13 @@ def broadcast_send_message(payload):
         current_states[broadcast_listener.A().name] = broadcast_listener.A().state
     lg.out(4, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
     return RESULT([msg, current_states, ])
+
+#------------------------------------------------------------------------------
+
+def event_send(event_id, json_data=None):
+    import json
+    from main import events
+    events.send(event_id, json.loads(json_data or '{}'))
+    return OK('event "%s" sent' % event_id)
+
+#------------------------------------------------------------------------------

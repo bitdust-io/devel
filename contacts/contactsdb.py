@@ -170,11 +170,14 @@ def add_customer(idurl):
     return len(_CustomersList) - 1
 
 
-def add_supplier(idurl):
+def add_supplier(idurl, position=-1):
     """
     Add supplier and return its position in the list.
     """
     global _SuppliersList
+    if position >= 0:
+        _SuppliersList[position] = idurl
+        return position
     _SuppliersList.append(idurl)
     return len(_SuppliersList) - 1
 

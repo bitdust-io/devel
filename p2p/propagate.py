@@ -51,6 +51,7 @@ _DebugLevel = 8
 
 import os
 import sys
+import time
 
 try:
     from twisted.internet import reactor
@@ -197,11 +198,15 @@ def update():
 
 def write_to_dht():
     """
-    
+
     """
     lg.out(6, "propagate.write_to_dht")
     LocalIdentity = my_id.getLocalIdentity()
-    return dht_service.set_value(LocalIdentity.getIDURL(), LocalIdentity.serialize())
+    return dht_service.set_value(
+        LocalIdentity.getIDURL(),
+        LocalIdentity.serialize(),
+        age=int(time.time()),
+    )
 
 #------------------------------------------------------------------------------
 

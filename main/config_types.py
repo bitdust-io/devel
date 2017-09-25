@@ -150,6 +150,7 @@ def defaults():
         'services/supplier/donated-space': TYPE_DISK_SPACE,
         'services/supplier/enabled': TYPE_BOOLEAN,
         'services/supplier-contracts/enabled': TYPE_BOOLEAN,
+        'services/supplier-relations/enabled': TYPE_BOOLEAN,
         'services/tcp-connections/enabled': TYPE_BOOLEAN,
         'services/tcp-connections/tcp-port': TYPE_POSITIVE_INTEGER,
         'services/tcp-connections/upnp-enabled': TYPE_BOOLEAN,

@@ -43,6 +43,17 @@ EVENTS:
     * :red:`timer-1sec`
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------
+
+import time
+
+#------------------------------------------------------------------------------
+
 from twisted.internet import reactor
 
 from logs import lg
@@ -59,11 +70,6 @@ from services import driver
 
 from transport.udp import udp_connector
 from transport.udp import udp_session
-
-#------------------------------------------------------------------------------
-
-_Debug = False
-_DebugLevel = 18
 
 #------------------------------------------------------------------------------
 
@@ -412,7 +418,9 @@ class UDPNode(automat.Automat):
         """
         d = dht_service.set_value(
             self.my_id + ':address', '%s:%d' %
-            (self.my_address[0], self.my_address[1]))
+            (self.my_address[0], self.my_address[1]),
+            age=int(time.time()),
+        )
         d.addCallback(self._wrote_my_address)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
