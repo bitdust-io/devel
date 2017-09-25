@@ -48,14 +48,16 @@ class SupplierRelationsService(LocalService):
                 ]
 
     def start(self):
-        from supplier import customers_relations
+        from dht import dht_relations
         from contacts import contactsdb
+        from userid import my_id
         from main import events
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
         for customer_idurl in contactsdb.customers():
-            customers_relations.publish_customer_relation(customer_idurl)
+            dht_relations.publish_customer_supplier_relation(customer_idurl)
+        dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
         return True
 
     def stop(self):
@@ -69,15 +71,15 @@ class SupplierRelationsService(LocalService):
 
     def _on_new_customer_accepted(self, evt):
         from twisted.internet import reactor
-        from supplier import customers_relations
-        reactor.callLater(0, customers_relations.publish_customer_relation, evt.data['idurl'])
+        from dht import dht_relations
+        reactor.callLater(0, dht_relations.publish_customer_supplier_relation, evt.data['idurl'])
 
     def _on_existing_customer_accepted(self, evt):
         from twisted.internet import reactor
-        from supplier import customers_relations
-        reactor.callLater(0, customers_relations.publish_customer_relation, evt.data['idurl'])
+        from dht import dht_relations
+        reactor.callLater(0, dht_relations.publish_customer_supplier_relation, evt.data['idurl'])
 
     def _on_existing_customer_terminated(self, evt):
         from twisted.internet import reactor
-        from supplier import customers_relations
-        reactor.callLater(0, customers_relations.close_customer_relation, evt.data['idurl'])
+        from dht import dht_relations
+        reactor.callLater(0, dht_relations.close_customer_supplier_relation, evt.data['idurl'])
