@@ -125,12 +125,12 @@ def do_verify(value, customer_idurl, index, new_data):
         return do_write(customer_idurl, index, new_data)
     if old_data['customer_idurl'] != customer_idurl:
         if _Debug:
-            lg.out(_DebugLevel, 'customers_relations.do_verify ERROR, found invalid data % at %s' % (
+            lg.out(_DebugLevel, 'customers_relations.do_verify ERROR, found invalid data %s at %s' % (
                 customer_idurl, index))
         return do_write(customer_idurl, index, new_data)
     if old_data['supplier_idurl'] != my_id.getLocalID():
         if _Debug:
-            lg.out(_DebugLevel, 'customers_relations.do_verify SKIP %s, found another supplier % at %s' % (
+            lg.out(_DebugLevel, 'customers_relations.do_verify SKIP %s, found another supplier %s at %s' % (
                 old_data['supplier_idurl'], customer_idurl, index))
         return do_read(customer_idurl, index + 1, new_data)
     if not new_data:
