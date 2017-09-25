@@ -60,7 +60,8 @@ def make_dht_key(key, index):
 #------------------------------------------------------------------------------
 
 def cb_get_value(value, customer_idurl, index, new_data):
-    lg.out(_DebugLevel, 'customers_relations.cb_get_value %s: %s' % (index, value))
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'customers_relations.cb_get_value %s: %s' % (index, value))
     if not isinstance(value, dict):
         return do_write(customer_idurl, index, new_data)
     try:
@@ -72,7 +73,8 @@ def cb_get_value(value, customer_idurl, index, new_data):
 
 
 def eb_get_value(err, customer_idurl, index, new_data):
-    lg.out(_DebugLevel, 'customers_relations.eb_get_value %s: %s' % (index, err))
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'customers_relations.eb_get_value %s: %s' % (index, err))
     return err
 #     if not new_data:
 #         return do_read(customer_idurl, index + 1, new_data)
@@ -80,18 +82,21 @@ def eb_get_value(err, customer_idurl, index, new_data):
 
 
 def cb_set_value(value, customer_idurl, index, new_data):
-    lg.out(_DebugLevel, 'customers_relations.cb_set_value %s: %s' % (index, value))
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'customers_relations.cb_set_value %s: %s' % (index, value))
     return value
 
 
 def eb_set_value(err, customer_idurl, index, new_data):
-    lg.out(_DebugLevel, 'customers_relations.eb_set_value %s: %s' % (index, err))
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'customers_relations.eb_set_value %s: %s' % (index, err))
     return err
 
 #------------------------------------------------------------------------------
 
 def do_write(customer_idurl, index, new_data):
-    lg.out(_DebugLevel, 'customers_relations.do_write %s' % index)
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'customers_relations.do_write %s' % index)
     if not new_data:
         d = dht_service.delete_key(make_dht_key(customer_idurl, index))
         d.addCallback(cb_set_value, customer_idurl, index, new_data)
@@ -105,7 +110,8 @@ def do_write(customer_idurl, index, new_data):
 
 
 def do_read(customer_idurl, index, new_data):
-    lg.out(_DebugLevel, 'customers_relations.do_read %s' % index)
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'customers_relations.do_read %s' % index)
     d = dht_service.get_value(make_dht_key(customer_idurl, index))
     d.addCallback(cb_get_value, customer_idurl, index, new_data)
     d.addErrback(eb_get_value, customer_idurl, index, new_data)
@@ -113,7 +119,8 @@ def do_read(customer_idurl, index, new_data):
 
 
 def do_verify(value, customer_idurl, index, new_data):
-    lg.out(_DebugLevel, 'customers_relations.do_verify %s' % index)
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'customers_relations.do_verify %s' % index)
     try:
         old_data = json.loads(value)
         old_data['customer_idurl']
@@ -125,12 +132,12 @@ def do_verify(value, customer_idurl, index, new_data):
         return do_write(customer_idurl, index, new_data)
     if old_data['customer_idurl'] != customer_idurl:
         if _Debug:
-            lg.out(_DebugLevel, 'customers_relations.do_verify ERROR, found invalid data %s at %s' % (
+            lg.out(_DebugLevel - 4, 'customers_relations.do_verify ERROR, found invalid data %s at %s' % (
                 customer_idurl, index))
         return do_write(customer_idurl, index, new_data)
     if old_data['supplier_idurl'] != my_id.getLocalID():
         if _Debug:
-            lg.out(_DebugLevel, 'customers_relations.do_verify SKIP %s, found another supplier %s at %s' % (
+            lg.out(_DebugLevel + 10, 'customers_relations.do_verify SKIP %s, found another supplier %s at %s' % (
                 old_data['supplier_idurl'], customer_idurl, index))
         return do_read(customer_idurl, index + 1, new_data)
     if not new_data:
