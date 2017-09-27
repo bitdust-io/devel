@@ -32,12 +32,17 @@
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 4
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import time
 import json
+
+#------------------------------------------------------------------------------
+
+from twisted.internet import reactor
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -62,133 +67,184 @@ def make_dht_key(key, index):
 
 class RelationsLookup(object):
 
-    def __init__(self, customer_idurl, new_data=None, publish=False, limit_lookups=100):
+    def __init__(self, customer_idurl, new_data=None, publish=False, limit_lookups=100, max_misses_in_row=3):
         self.customer_idurl = customer_idurl
+        self._result_defer = Deferred()
         self._new_data = new_data
         self._publish = publish
         self._limit_lookups = limit_lookups
         self._index = 0
+        self._last_success_index = -1
+        self._last_missed_index = -1
+        self._max_misses_in_row = max_misses_in_row
+        self._misses_in_row = 0
         self._missed = 0
-        self._result = []
+        self._result = {}
 
-    def cb_get_value(self, value):
-#         if _Debug:
-#             lg.out(_DebugLevel + 10, 'dht_relations.cb_get_value %s: %s' % (self._index, value))
-        if not isinstance(value, dict):
-            if self._publish:
-                return self.do_write()
-            else:
-                self._index += 1
-                self._missed += 1
-                return self.do_read()
-        try:
-            value = value[dht_service.key_to_hash(make_dht_key(self.customer_idurl, self._index))]
-        except:
-            lg.warn('dht key not found or bad value: %s' % value)
-            if self._publish:
-                return self.do_write()
-            else:
-                self._index += 1
-                self._missed += 1
-                return self.do_read()
-        return self.do_verify(value)
-
-    def eb_get_value(self, err, customer_idurl, index, new_data, publish):
-#         if _Debug:
-#             lg.out(_DebugLevel + 10, 'dht_relations.eb_get_value %s: %s' % (index, err))
-        return err
-    #     if not new_data:
-    #         return do_read(customer_idurl, index + 1, new_data)
-    #     return do_write(customer_idurl, index, new_data)
-
-    def cb_set_value(self, value):
-#         if _Debug:
-#             lg.out(_DebugLevel + 10, 'dht_relations.cb_set_value %s: %s' % (self._index, value))
-        return value
-
-    def eb_set_value(self, err):
-#         if _Debug:
-#             lg.out(_DebugLevel + 10, 'dht_relations.eb_set_value %s: %s' % (self._index, err))
-        return err
+    def start(self):
+        reactor.callLater(0, self.do_read)
+        return self._result_defer
 
     #------------------------------------------------------------------------------
+
+    def do_read(self):
+        if self._index >= self._limit_lookups:  # TODO: more smart and fault sensitive method
+            if _Debug:
+                lg.out(_DebugLevel + 6, 'dht_relations.do_read STOP %s, limit lookups riched' % self.customer_idurl)
+            self.do_report_success()
+            return None
+        if self._last_missed_index >= 0 and self._index - self._last_missed_index > self._max_misses_in_row:
+            if _Debug:
+                lg.out(_DebugLevel + 6, 'dht_relations.do_read STOP %s, last missed index is %d' % (
+                    self.customer_idurl, self._last_missed_index))
+            self.do_report_success()
+            return None
+#         if self._index >= 3 and self._missed >= 3:
+#             if float(self._missed) / float(self._index) > 0.5:
+#                 return None
+        if _Debug:
+            lg.out(_DebugLevel + 6, 'dht_relations.do_read %s index:%d missed:%d' % (
+                self.customer_idurl, self._index, self._missed))
+        d = dht_service.get_value(make_dht_key(self.customer_idurl, self._index))
+        d.addCallback(self.do_verify)
+        d.addErrback(self.do_report_failed)
+        return d
+
+    def do_erase(self):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.do_erase %s' % self._index)
+        d = dht_service.delete_key(make_dht_key(self.customer_idurl, self._index))
+        d.addCallback(self.do_report_success)
+        d.addErrback(self.do_report_failed)
+        return 3
 
     def do_write(self):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_write %s' % self._index)
-        if not self._new_data:
-            d = dht_service.delete_key(make_dht_key(self.customer_idurl, self._index))
-            d.addCallback(self.cb_set_value)
-            d.addErrback(self.eb_set_value)
-            return d
         new_payload = json.dumps(self._new_data)
         d = dht_service.set_value(make_dht_key(self.customer_idurl, self._index), new_payload, age=int(time.time()))
-        d.addCallback(self.cb_set_value)
-        d.addErrback(self.eb_set_value)
-        return d
+        d.addCallback(self.do_report_success)
+        d.addErrback(self.do_report_failed)
+        return 2
 
-    def do_read(self):
+    def do_next(self, verified):
         if _Debug:
-            lg.out(_DebugLevel + 6, 'dht_relations.do_read index:%d missed:%d' % (self._index, self._missed))
-        if self._index >= self._limit_lookups:  # TODO: more smart and fault sensitive method
-            return None
-        if self._index >= 3 and self._missed >= 3:
-            if float(self._missed) / float(self._index) > 0.5:
-                return None
-        d = dht_service.get_value(make_dht_key(self.customer_idurl, self._index))
-        d.addCallback(self.cb_get_value)
-        d.addErrback(self.eb_get_value)
-        return d
+            lg.out(_DebugLevel + 6, 'dht_relations.do_next %s %d, last_missed:%d' % (
+                self.customer_idurl, self._index, self._last_missed_index))
+        if verified == -1:
+            self._missed += 1
+            if self._last_missed_index == -1:
+                self._last_missed_index = self._index
+        self._index += 1
 
-    def do_verify(self, value):
-        if _Debug:
-            lg.out(_DebugLevel + 6, 'dht_relations.do_verify %s' % self._index)
+    def do_verify(self, dht_value):
         try:
-            old_data = json.loads(value)
-            old_data['customer_idurl']
-            old_data['supplier_idurl']
-            int(old_data['time'])
-            old_data['signature']
+            json_value = dht_value[dht_service.key_to_hash(make_dht_key(self.customer_idurl, self._index))]
+            record = json.loads(json_value)
+            record['customer_idurl'] = str(record['customer_idurl'])
+            record['supplier_idurl'] = str(record['supplier_idurl'])
+            record['time'] = int(record['time'])
+            record['signature'] = str(record['signature'])
         except:
-            lg.exc()
-            if self._publish:
-                return self.do_write()
-            else:
-                self._index += 1
-                return self.do_read()
-        if old_data['customer_idurl'] != self.customer_idurl:
-            if _Debug:
-                lg.out(_DebugLevel - 4, 'dht_relations.do_verify ERROR, found invalid data %s at %s' % (
-                    self.customer_idurl, self._index))
-            if self._publish:
-                return self.do_write()
-            else:
-                self._index += 1
-                return self.do_read()
-        if old_data['supplier_idurl'] != my_id.getLocalID():
-            if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_verify SKIP %s, found another supplier %s at %s' % (
-                    old_data['supplier_idurl'], self.customer_idurl, self._index))
-            self._index += 1
-            return self.do_read()
-        return self.do_process(value)
+            record = None
 
-    def do_process(self, value):
-        if not self._new_data:
+        if not record:
             if _Debug:
-                lg.out(_DebugLevel, 'dht_relations.do_process will REMOVE data for %s at %s' % (
+                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
                     self.customer_idurl, self._index))
-            if self._publish:
-                return self.do_write()
-            else:
-                self._index += 1
-                return self.do_read()
-        # TODO: verify signature
-        # TODO: check expiration time
+            # record not exist or invalid
+            return self.do_process(record, -1)
+
+        if record['customer_idurl'] != self.customer_idurl:
+            if _Debug:
+                lg.out(_DebugLevel + 6, 'dht_relations.do_verify ERROR, found invalid record %s at %s' % (
+                    self.customer_idurl, self._index))
+            # record exist but stored for another customer - can be overwritten
+            return self.do_process(record, -1)
+
+        if record['supplier_idurl'] == my_id.getLocalID():
+            # TODO: verify signature
+            # TODO: check expiration time
+            if _Debug:
+                lg.out(_DebugLevel + 6, 'dht_relations.do_verify SUCCESS, found own data %s at %s' % (
+                    self.customer_idurl, self._index))
+            # record exist and store relation to me
+            return self.do_process(record, 1)
+
+        if record['supplier_idurl'] in self._result.values():
+            lg.out(_DebugLevel + 6, 'dht_relations.do_verify DUPLICATED %s, found second record for supplier %s at %s' % (
+                self.customer_idurl, record['supplier_idurl'], self._index))
+            # this record from another supplier is duplicated - we can overwrite it
+            return self.do_process(record, -1)
+
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.do_process SUCCESS, found valid data %s at %s' % (
-                self.customer_idurl, self._index))
-        return value
+            lg.out(_DebugLevel + 6, 'dht_relations.do_verify NEXT %s, found another supplier record %s at %s' % (
+                record['supplier_idurl'], self.customer_idurl, self._index))
+        # this is a correct record from another supplier
+        return self.do_process(record, 0)
+
+    def do_process(self, record, verified):
+        if verified == -1:
+            # record #N is not exist, invalid or duplicated
+            if self._publish:
+                if self._new_data:
+                    return self.do_write()
+                return self.do_erase()
+            self.do_next(verified)
+            self.do_read()
+            return verified
+
+        if verified == 0:
+            # record #N from another supplier
+            self._last_success_index = self._index
+            self._result[self._index] = record['supplier_idurl']
+            self.do_next(verified)
+            self.do_read()
+            return verified
+
+        if verified == 1:
+            # record #N from me
+            self._last_success_index = self._index
+            self._result[self._index] = record['supplier_idurl']
+            if self._publish:
+                if self._new_data:
+                    return self.do_write()
+                return self.do_erase()
+            # still want to continue further to get all list
+            self.do_next(verified)
+            self.do_read()
+            return verified
+
+        raise Exception()
+
+    def do_close(self):
+        self._result_defer = None
+        self._new_data = None
+        self._publish = False
+        self._index = 0
+        self._last_success_index = -1
+        self._last_missed_index = -1
+        self._max_misses_in_row = 0
+        self._misses_in_row = 0
+        self._missed = 0
+        self._result = {}
+
+    def do_report_success(self, x=None):
+        result_list = []
+        for i in xrange(self._last_success_index + 1):
+            result_list.append(self._result.get(i, ''))
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.do_report_success %s: %s -> %s' % (
+                self.customer_idurl, self._result, result_list))
+        self._result_defer.callback(result_list)
+        self.do_close()
+        return x
+
+    def do_report_failed(self, err):
+        lg.warn(err)
+        self._result_defer.errback(None)
+        self.do_close()
+        return err
 
 #------------------------------------------------------------------------------
 
@@ -201,13 +257,12 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
         'time': utime.utcnow_to_sec1970(),
         'signature': '',  # TODO: add signature and verification
     }
-    ll = RelationsLookup(customer_idurl, new_data=new_data, publish=True)
-    ll.do_read()
+    return RelationsLookup(customer_idurl, new_data=new_data, publish=True).start()
 
 
 def close_customer_supplier_relation(customer_idurl):
-    RelationsLookup(customer_idurl, new_data=None, publish=True).do_read()
+    return RelationsLookup(customer_idurl, new_data=None, publish=True).start()
 
 
 def scan_customer_supplier_relations(customer_idurl):
-    RelationsLookup(customer_idurl, new_data=None, publish=False).do_read()
+    return RelationsLookup(customer_idurl, new_data=None, publish=False).start()
