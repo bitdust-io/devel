@@ -109,9 +109,9 @@ def ParseGlobalID(inp):
     }
     if not inp or not str(inp):
         return result
-    user, path = inp.strip().rsplit(':', 1)
+    user, _, path = inp.strip().rpartition(':')
     if user:
-        user_and_key, idhost = user.strip().rsplit('@', 1)
+        user_and_key, _, idhost = user.strip().rpartition('@')
         if not user_and_key or not idhost:
             return result
         try:
@@ -141,6 +141,7 @@ def ParseGlobalID(inp):
         if path.count('#'):
             path, _, version = path.rpartition('#')
             result['version'] = version
+        result['path'] = path
     return result
 
 #------------------------------------------------------------------------------
@@ -178,8 +179,37 @@ def UrlToGlobalID(url):
     return '%s@%s' % (username, host)
 
 
-def GlobalIDToUrl(inp):
+def GlobalUserToIDURL(inp):
     """
     """
-    parts = ParseGlobalID(inp)
-    return parts['idurl']
+    user, _, idhost = inp.strip().rpartition('@')
+    if not user:
+        return None
+    if not idhost:
+        return None
+    if idhost.count('_'):
+        _pos = idhost.rfind('_')
+        port = idhost[_pos + 1:]
+        try:
+            port = int(port)
+        except:
+            port = -1
+        if port >= 0:
+            idhost = "%s:%d" % (idhost[:_pos], port)
+    return 'http://{}/{}.xml'.format(idhost, user)
+
+#------------------------------------------------------------------------------
+
+def IsValidGlobalUser(inp):
+    """
+    """
+    if not inp:
+        return False
+    if inp.count('@') != 1:
+        return False
+    user, _, idhost = inp.strip().rpartition('@')
+    if not user:
+        return False
+    if not idhost:
+        return False
+    return True

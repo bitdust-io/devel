@@ -157,12 +157,12 @@ class restore(automat.Automat):
     def __init__(self, BackupID, OutputFile, KeyID=None):  # OutputFileName
         self.CreatorID = my_id.getLocalID()
         self.BackupID = BackupID
-        self.PathID, self.Version = packetid.SplitBackupID(self.BackupID)
-        self.File = OutputFile
-        _parts = packetid.SplitPacketID(self.BackupID)
+        _parts = packetid.SplitBackupID(self.BackupID)
         self.CustomerGlobalID = _parts[0]
         self.RemotePath = _parts[1]
-        self.CustomerIDURL = global_id.GlobalIDToUrl(self.CustomerGlobalID)
+        self.Version = _parts[2]
+        self.File = OutputFile
+        self.CustomerIDURL = global_id.GlobalUserToIDURL(self.CustomerGlobalID)
         self.KeyID = KeyID
         # is current active block - so when add 1 we get to first, which is 0
         self.BlockNumber = -1

@@ -721,7 +721,7 @@ def SendRequestListFiles(supplierNumORidurl, customer_idurl=None):
         return None
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendRequestListFiles [%s]" % nameurl.GetName(RemoteID))
-    PacketID = "%s#%s" % (packetid.UniqueID(), global_id.UrlToGlobalID(customer_idurl))
+    PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
     Payload = settings.ListFilesFormat()
     result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
     gateway.outbox(result)

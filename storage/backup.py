@@ -148,7 +148,7 @@ class backup(automat.Automat):
         _parts = packetid.SplitPacketID(self.BackupID)
         self.customerGlobalID = _parts[0]
         self.remotePath = _parts[1]
-        self.customerIDURL = global_id.GlobalIDToUrl(self.CustomerGlobalID)
+        self.customerIDURL = global_id.GlobalUserToIDURL(self.CustomerGlobalID)
         self.sourcePath = sourcePath
         self.keyID = keyID
         self.eccmap = eccmap.Current()

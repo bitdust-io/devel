@@ -752,22 +752,11 @@ def download_start(remote_path, destination_path=None):
     from web import control
     from system import bpio
     from lib import packetid
-    from lib import nameurl
+    from main import settings
     from userid import my_id
     from userid import global_id
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
-    if not packetid.Valid(glob_path['path']):
-        remotePath = bpio.portablePath(unicode(glob_path['path']))
-        pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
-        if not pathID:
-            return ERROR('path %s was not found in catalog' % remotePath)
-        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['idurl']))
-        if not item:
-            return ERROR('item %s is not found in catalog' % pathID)
-        if not glob_path['version']:
-            glob_path['version'] = item.get_latest_version()
-        backupID = packetid.MakeBackupID(glob_path['user'], pathID) + '/' + glob_path['version']
-    else:
+    if packetid.Valid(glob_path['path']):
         customerGlobalID, remotePath, version = packetid.SplitBackupID(remote_path)
         if not customerGlobalID:
             customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
@@ -780,36 +769,40 @@ def download_start(remote_path, destination_path=None):
             version = item.get_latest_version()
             if not version:
                 return ERROR('not found any remote versions for %s' % remote_path)
-            backupID = packetid.MakeBackupID(glob_path['customer'], remote_path) + '/' + version
+            backupID = packetid.MakeBackupID(customerGlobalID, remotePath) + '/' + version
         else:
-            lg.out(4, 'api.restore_single %s not valid location' % remote_path)
             return ERROR('not valid location')
+    else:
+        remotePath = bpio.portablePath(unicode(glob_path['path']))
+        knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
+        if not knownPathID:
+            return ERROR('path %s was not found in catalog' % remotePath)
+        item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(glob_path['idurl']))
+        if not item:
+            return ERROR('item %s is not found in catalog' % knownPathID)
+        if not glob_path['version']:
+            glob_path['version'] = item.get_latest_version()
+        backupID = packetid.MakeBackupID(glob_path['user'], knownPathID) + '/' + glob_path['version']
     if backup_control.IsBackupInProcess(backupID):
-        lg.out(4, 'api.restore_single %s in process' % backupID)
         return ERROR('download not possible, uploading %s is in process' % backupID)
     if restore_monitor.IsWorking(backupID):
-        lg.out(4, 'api.restore_single %s scheduled already' % backupID)
         return OK('downloading task for %s already scheduled' % backupID)
     customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
     if not customerGlobalID:
         customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
-    localPath = backup_fs.ToPath(remotePath, iterID=backup_fs.fsID(global_id.GlobalIDToUrl(customerGlobalID)))
-    if not localPath:
-        lg.out(4, 'api.restore_single %s not found' % pathID)
-        return ERROR('location %s not found in catalog' % pathID)
-    if destination_path:
-        if len(localPath) > 3 and localPath[1] == ':' and localPath[2] == '/':
-            # TODO: - also may need to check other options like network drive (//) or so
-            localPath = localPath[3:]
-        localDir = os.path.dirname(localPath.lstrip('/'))
-        restoreDir = os.path.join(destination_path, localDir)
-        restore_monitor.Start(backupID, restoreDir)
-        control.request_update([('pathID', pathID), ])
-    else:
-        restoreDir = os.path.dirname(localPath)
-        restore_monitor.Start(backupID, restoreDir)
-        control.request_update([('pathID', pathID), ])
-    lg.out(4, 'api.restore_single %s OK!' % backupID)
+    knownPath = backup_fs.ToPath(remotePath, iterID=backup_fs.fsID(global_id.GlobalUserToIDURL(customerGlobalID)))
+    if not knownPath:
+        return ERROR('location %s not found in catalog' % knownPath)
+    if not destination_path:
+        destination_path = settings.getRestoreDir()
+    if bpio.Windows() and len(knownPath) > 3 and knownPath[1] == ':' and knownPath[2] == '/':
+        # TODO: - also may need to check other options like network drive (//) or so
+        knownPath = knownPath[3:]
+    localDir = os.path.dirname(knownPath.lstrip('/'))
+    restoreDir = os.path.join(destination_path, localDir)
+    restore_monitor.Start(backupID, restoreDir, keyID=glob_path['key'])
+    control.request_update([('pathID', knownPath), ])
+    lg.out(4, 'api.download_start %s to %s OK!' % (backupID, restoreDir))
     return OK('downloading of version %s has been started to %s' % (backupID, restoreDir))
 
 
@@ -1472,6 +1465,7 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
     from lib import packetid
     from lib import nameurl
     from userid import my_id
+    from userid import global_id
     if not packetid.Valid(pathID_or_backupID_or_localPath):
         localPath = bpio.portablePath(unicode(pathID_or_backupID_or_localPath))
         pathID = backup_fs.ToID(localPath)
@@ -1512,7 +1506,7 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
         return OK('downloading task for %s already scheduled' % backupID)
     customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
     if not customerGlobalID:
-        customerGlobalID = nameurl.UrlToGlobalID(my_id.getLocalID())
+        customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
     localPath = backup_fs.ToPath(pathID)
     if not localPath:
         lg.out(4, 'api.restore_single %s not found' % pathID)

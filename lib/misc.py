@@ -229,12 +229,12 @@ def backup_id_compare(backupID1, backupID2):
     if isinstance(backupID1, tuple):
         backupID1 = backupID1[0]
         backupID2 = backupID2[0]
-    pathID1, version1 = packetid.SplitBackupID(backupID1)
-    pathID2, version2 = packetid.SplitBackupID(backupID2)
-    if pathID1 is None or pathID2 is None:
+    customerGlobalID1, remotePath1, version1 = packetid.SplitBackupID(backupID1)
+    customerGlobalID2, remotePath2, version2 = packetid.SplitBackupID(backupID2)
+    if remotePath1 is None or remotePath2 is None:
         return 0
-    if pathID1 != pathID2:
-        return cmp(pathID1, pathID2)
+    if remotePath1 != remotePath2:
+        return cmp(remotePath1, remotePath2)
     return version_compare(version1, version2)
 
 

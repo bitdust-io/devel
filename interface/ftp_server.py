@@ -100,6 +100,7 @@ from storage import restore_monitor
 from storage import backup_monitor
 
 from userid import my_id
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -360,11 +361,10 @@ class BitDustFTP(FTP):
         version = item.get_latest_version()
         if version is None:
             return defer.fail(FileNotFoundError(path))
-        backupID = path_id + '/' + version
+        backupID = packetid.MakeBackupID(my_id.getGlobalID(), path_id, version)
         if backup_control.IsBackupInProcess(backupID):
             # TODO: try older version, or return another error
             return defer.fail(FileNotFoundError(path))
-        path_id, version = packetid.SplitBackupID(backupID)
         if restore_monitor.IsWorking(backupID):
             # TODO: wrap and consume existing restore process
             return defer.fail(FileNotFoundError(path))

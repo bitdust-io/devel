@@ -350,7 +350,12 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 lg.warn('incorrect line (words count): [%s]' % line)
                 continue
             _, remotePath, versionName = packetid.SplitBackupID(words[0])
-            backupID = packetid.MakeBackupID(global_id.UrlToGlobalID(customer_idurl), remotePath) + '/' + versionName
+            try:
+                backupID = packetid.MakeBackupID(global_id.UrlToGlobalID(customer_idurl), remotePath) + '/' + versionName
+            except:
+                import pdb; pdb.set_trace()
+                lg.warn('incorrect line (global id format): [%s]' % line)
+                continue
             try:
                 lineSupplierNum = int(words[1])
                 _, maxBlockNum = words[2].split('-')
@@ -437,8 +442,8 @@ def ReadLatestRawListFiles(customer_idurl=None):
         if idurl:
             filename = os.path.join(settings.SupplierPath(idurl, customer_idurl, 'listfiles'))
             if os.path.isfile(filename):
-                listFileText = bpio.ReadTextFile(filename)
-                if listFileText.strip() != '':
+                listFileText = bpio.ReadTextFile(filename).strip()
+                if listFileText != '':
                     ReadRawListFiles(
                         contactsdb.supplier_position(idurl),
                         listFileText,
@@ -476,6 +481,9 @@ def ReadLocalFiles():
 
     for customer in os.listdir(settings.getLocalBackupsDir()):
         customer_path = os.path.join(settings.getLocalBackupsDir(), customer)
+        if not global_id.IsValidGlobalUser(customer):
+            lg.warn('found incorrect folder name, not a customer: %s' % customer_path)
+            continue
         if os.path.isdir(customer_path):
             bpio.traverse_dir_recursive(
                 lambda r, s, n: visit(customer, r, s, n), customer_path)
@@ -562,7 +570,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         dataORparity = dataORparity
         packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
     customer, filename = packetid.SplitPacketID(packetID)
-    customer_idurl = global_id.GlobalIDToUrl(customer)
+    customer_idurl = global_id.GlobalUserToIDURL(customer)
     if dataORparity not in ['Data', 'Parity']:
         lg.warn('Data or Parity? ' + filename)
         return
@@ -609,7 +617,7 @@ def LocalBlockReport(backupID, blockNumber, result):
         lg.exc()
         return
     customer, remotePath = packetid.SplitPacketID(backupID)
-    customer_idurl = global_id.GlobalIDToUrl(customer)
+    customer_idurl = global_id.GlobalUserToIDURL(customer)
     repaint_flag = False
     for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         for dataORparity in ('Data', 'Parity'):
@@ -889,11 +897,13 @@ def ClearRemoteInfo():
     remote_max_block_numbers().clear()
 
 
-def ClearSupplierRemoteInfo(supplierNum, customer_idurl):
+def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
     """
     Clear only "single column" in the "remote" matrix corresponding to given
     supplier.
     """
+    if customer_idurl is None:
+        customer_idurl = my_id.getLocalID()
     files = 0
     for backupID in remote_files().keys():
         _customer_idurl = packetid.CustomerIDURL(backupID)

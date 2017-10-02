@@ -250,7 +250,7 @@ class FileToRequest:
         self.creatorID = creatorID
         self.packetID = packetID
         self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
-        self.customerIDURL = global_id.GlobalIDToUrl(self.customerID)
+        self.customerIDURL = global_id.GlobalUserToIDURL(self.customerID)
         self.ownerID = ownerID
         self.remoteID = remoteID
         self.backupID, x, self.fileName = packetID.rpartition('/')  # [0:packetID.find("-")]
@@ -277,7 +277,7 @@ class FileToSend:
             self.fileSize = 0
         self.packetID = packetID
         self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
-        self.customerIDURL = global_id.GlobalIDToUrl(self.customerID)
+        self.customerIDURL = global_id.GlobalUserToIDURL(self.customerID)
         self.remoteID = remoteID
         self.ownerID = ownerID
         self.callOnAck = callOnAck

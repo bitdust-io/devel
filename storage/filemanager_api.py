@@ -56,6 +56,9 @@ from storage import backup_control
 from storage import backup_monitor
 from storage import restore_monitor
 
+from userid import my_id
+from userid import global_id
+
 from web import control
 
 #------------------------------------------------------------------------------
@@ -274,21 +277,25 @@ def _download(params):
     # overwrite = params['overwrite']
     if not packetid.Valid(backupID):
         return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
-    pathID, version = packetid.SplitBackupID(backupID)
-    if not pathID:
+    customerGlobalID, remotePath, _ = packetid.SplitBackupID(backupID)
+    if not customerGlobalID:
+        customerGlobalID = my_id.getGlobalID()
+    if not remotePath:
         return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
     if backup_control.IsBackupInProcess(backupID):
         return {'result': {"success": True, "error": None}}
-    if backup_control.HasTask(pathID):
+    if backup_control.HasTask(remotePath):
         return {'result': {"success": True, "error": None}}
-    localPath = backup_fs.ToPath(pathID)
+    localPath = backup_fs.ToPath(remotePath, )
     if localPath == restorePath:
         restorePath = os.path.dirname(restorePath)
 
     def _itemRestored(backupID, result):
-        backup_fs.ScanID(packetid.SplitBackupID(backupID)[0])
+        customerGlobalID, remotePath, _ = packetid.SplitBackupID(backupID)
+        backup_fs.ScanID(remotePath, customer_idurl=global_id.GlobalUserToIDURL(customerGlobalID))
         backup_fs.Calculate()
-    restore_monitor.Start(backupID, restorePath, _itemRestored)
+
+    restore_monitor.Start(backupID, restorePath, callback=_itemRestored)
     return {'result': {"success": True, "error": None}}
 
 
@@ -315,9 +322,11 @@ def _delete_version(params):
     backupID = params['backupid']
     if not packetid.Valid(backupID):
         return {'result': {"success": False, "error": "backupID %s is not valid" % backupID}}
-    pathID, version = packetid.SplitBackupID(backupID)
-    if not backup_fs.ExistsID(pathID):
-        return {'result': {"success": False, "error": "path %s not found" % pathID}}
+    customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
+    if not customerGlobalID:
+        customerGlobalID = my_id.getGlobalID()
+    if not backup_fs.ExistsID(remotePath, iterID=backup_fs.fsID(global_id.GlobalUserToIDURL(customerGlobalID))):
+        return {'result': {"success": False, "error": "path %s not found" % remotePath}}
     if version:
         backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
     backup_fs.Scan()
@@ -340,16 +349,18 @@ def _list_active_tasks(params):
             'path': os.path.dirname(tsk.localPath),
             'id': tsk.pathID,
             'version': '',
+            'customer': '',
             'mode': 'up',
             'progress': '0%', })
     for backupID in backup_control.ListRunningBackups():
         backup_obj = backup_control.GetRunningBackupObject(backupID)
-        pathID, versionName = packetid.SplitBackupID(backupID)
+        customerGlobalID, remotePath, versionName = packetid.SplitBackupID(backupID)
         result.append({
             'name': os.path.basename(backup_obj.sourcePath),
             'path': os.path.dirname(backup_obj.sourcePath),
-            'id': pathID,
+            'id': remotePath,
             'version': versionName,
+            'customer': customerGlobalID,
             'mode': 'up',
             'progress': misc.percent2string(backup_obj.progress()), })
     # for backupID in restore_monitor.GetWorkingIDs():

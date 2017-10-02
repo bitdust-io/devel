@@ -83,12 +83,14 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
     return backupID + '/' + str(blockNumber) + '-' + str(supplierNumber) + '-' + dataORparity
 
 
-def MakeBackupID(customer, path_id):
+def MakeBackupID(customer, path_id, version=None):
     """
     Will create something like:
 
         "alice@idhost.org:0/0/1/0/F20131120053803PM"
     """
+    if version:
+        return '{}:{}/{}'.format(customer, path_id, version)
     return '{}:{}'.format(customer, path_id)
 
 
@@ -148,7 +150,7 @@ def Split(packetID):
         blockNum, supplierNum, dataORparity = fileName.split('-')
         blockNum = int(blockNum)
         supplierNum = int(supplierNum)
-        customerGlobalID, remotePathWithVersion = backupID.rsplit(':')
+        customerGlobalID, _, remotePathWithVersion = backupID.rpartition(':')
     except:
         return None, None, None, None, None
     return customerGlobalID, remotePathWithVersion, blockNum, supplierNum, dataORparity
@@ -167,7 +169,7 @@ def SplitFull(packetID):
         blockNum, supplierNum, dataORparity = fileName.split('-')
         blockNum = int(blockNum)
         supplierNum = int(supplierNum)
-        customerGlobalID, remotePath = pathID.rsplit(':')
+        customerGlobalID, _, remotePath = pathID.rpartition(':')
     except:
         return None, None, None, None, None, None
     return customerGlobalID, remotePath, versionName, blockNum, supplierNum, dataORparity
@@ -183,7 +185,7 @@ def SplitVersionFilename(packetID):
     try:
         backupID, _, fileName = packetID.rpartition('/')
         pathID, _, versionName = backupID.rpartition('/')
-        customerGlobalID, remotePath = pathID.rsplit(':')
+        customerGlobalID, _, remotePath = pathID.rpartition(':')
     except:
         return None, None, None, None
     return customerGlobalID, remotePath, versionName, fileName
@@ -198,7 +200,7 @@ def SplitBackupID(backupID):
     """
     try:
         pathID, _, versionName = backupID.rpartition('/')
-        customerGlobalID, remotePath = pathID.rsplit(':')
+        customerGlobalID, _, remotePath = pathID.rpartition(':')
     except:
         return None, None, None
     return customerGlobalID, remotePath, versionName
@@ -212,7 +214,7 @@ def SplitPacketID(backupID):
         ('alice@idhost.org', '0/0/1/0/F20131120053803PM')
     """
     try:
-        customerGlobalID, remotePath = backupID.rsplit(':')
+        customerGlobalID, _, remotePath = backupID.rpartition(':')
     except:
         return None, None
     return customerGlobalID, remotePath
@@ -243,7 +245,7 @@ def IsPathIDCorrect(pathID, customer_id_mandatory=False):
         return False
     if customer_id_mandatory:
         try:
-            user, host = customerGlobalID.split('@')
+            user, _, host = customerGlobalID.rpartition('@')
         except:
             return False
         if not user:
@@ -260,10 +262,10 @@ def IsBackupIDCorrect(backupID, customer_id_mandatory=False):
 
         alice@idhost.org:0/0/1/0/F20131120053803PM.
     """
-    if not IsPathIDCorrect(backupID, customer_id_mandatory=customer_id_mandatory):
-        return False
-    _, _, version = backupID.rpartition('/')
+    pathID, _, version = backupID.rpartition('/')
     if not IsCanonicalVersion(version):
+        return False
+    if not IsPathIDCorrect(pathID, customer_id_mandatory=customer_id_mandatory):
         return False
     # TODO: more strict validation
     return True
@@ -305,8 +307,21 @@ def CustomerIDURL(backupID):
     """
     A wrapper for ``Split()`` method to get customer idurl from backup ID.
     """
+    user, _, _ = backupID.strip().rpartition('@')
+    if not user:
+        return ''
     from userid import global_id
-    return global_id.GlobalIDToUrl(Split(backupID)[0])
+    return global_id.GlobalUserToIDURL(user)
+
+
+def RemotePath(backupID):
+    """
+    A wrapper for ``Split()`` method to get only remote_path from backup ID.
+    """
+    _, _, remote_path = backupID.split().rpartition('@')
+    if not remote_path:
+        return ''
+    return remote_path
 
 
 def BackupID(packetID):

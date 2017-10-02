@@ -77,6 +77,7 @@ from crypt import encrypted
 from crypt import key
 
 from userid import global_id
+from userid import my_id
 
 from web import control
 
@@ -270,11 +271,13 @@ def IncomingSupplierListFiles(newpacket):
     """
     from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
-    try:
-        customer_idurl = global_id.GlobalIDToUrl(newpacket.PacketID.split('#')[0])
-    except:
-        lg.exc()
-        customer_idurl = None
+    customer_idurl = my_id.getLocalID()
+    if newpacket.PacketID.count(':') and newpacket.PacketID.count('@'):
+        try:
+            customer_idurl = global_id.GlobalUserToIDURL(newpacket.PacketID.split(':')[0])
+        except:
+            import pdb; pdb.set_trace()
+            lg.exc()
     num = contactsdb.supplier_position(supplier_idurl, customer_idurl=customer_idurl)
     if num < -1:
         lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
@@ -437,7 +440,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     from customer import io_throttle
     # get the working item
     customer, path = packetid.SplitPacketID(pathID)
-    customer_idurl = global_id.GlobalIDToUrl(customer)
+    customer_idurl = global_id.GlobalUserToIDURL(customer)
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if item is None:
         return False
@@ -502,7 +505,7 @@ class Task():
         _parts = packetid.SplitPacketID(self.pathID)
         self.customerGlobID = _parts[0]
         self.remotePath = _parts[1]
-        self.customerIDURL = global_id.GlobalIDToUrl(self.customerGlobID)
+        self.customerIDURL = global_id.GlobalUserToIDURL(self.customerGlobID)
         self.localPath = localPath
         self.created = time.time()
         self.backupID = None
@@ -687,17 +690,18 @@ def OnJobDone(backupID, result):
     lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     lg.out(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
-    pathID, version = packetid.SplitBackupID(backupID)
+    customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
+    customer_idurl = global_id.GlobalUserToIDURL(customerGlobalID)
     if result == 'done':
         maxBackupsNum = settings.getBackupsMaxCopies()
         if maxBackupsNum:
-            item = backup_fs.GetByID(pathID)
+            item = backup_fs.GetByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
             if item:
                 versions = item.list_versions(sorted=True, reverse=True)
                 if len(versions) > maxBackupsNum:
                     for version in versions[maxBackupsNum:]:
                         item.delete_version(version)
-                        backupID = pathID + '/' + version
+                        backupID = packetid.MakeBackupID(customerGlobalID, remotePath, version)
                         backup_rebuilder.RemoveBackupToWork(backupID)
                         io_throttle.DeleteBackupRequests(backupID)
                         io_throttle.DeleteBackupSendings(backupID)
@@ -705,10 +709,10 @@ def OnJobDone(backupID, result):
                         backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
-        backup_fs.ScanID(pathID)
+        backup_fs.ScanID(remotePath)
         backup_fs.Calculate()
         Save()
-        control.request_update([('pathID', pathID), ])
+        control.request_update([('pathID', remotePath), ])
         # TODO: check used space, if we have over use - stop all tasks immediately
         backup_matrix.RepaintBackup(backupID)
     elif result == 'abort':

@@ -904,14 +904,16 @@ def DeleteBackupID(backupID, iterID=None):
     """
     Return backup from the index by its full ID.
     """
-    pathID, versionName = packetid.SplitBackupID(backupID)
-    if pathID is None:
+    customerGlobalID, remotePath, versionName = packetid.SplitBackupID(backupID)
+    if not remotePath:
         return False
-    info = GetByID(pathID, iterID=iterID)
+    if not iterID:
+        iterID = fsID(global_id.GlobalUserToIDURL(customerGlobalID))
+    info = GetByID(remotePath, iterID=iterID)
     if info is None:
         return False
     if not info.has_version(versionName):
-        lg.warn('%s do not have version %s' % (pathID, versionName))
+        lg.warn('%s do not have version %s' % (remotePath, versionName))
         return False
     info.delete_version(versionName)
     return True
@@ -1072,10 +1074,12 @@ def ExistsBackupID(backupID, iterID=None):
     """
     Return True if backup with that ``backupID`` exist in the index.
     """
-    pathID, version = packetid.SplitBackupID(backupID)
-    if not pathID:
+    customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
+    if not remotePath:
         return False
-    iter_and_path = WalkByID(pathID, iterID=iterID)
+    if not iterID:
+        iterID = fsID(global_id.GlobalUserToIDURL(customerGlobalID))
+    iter_and_path = WalkByID(remotePath, iterID=iterID)
     if iter_and_path is None:
         return False
     iter, path = iter_and_path
