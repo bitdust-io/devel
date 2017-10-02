@@ -83,10 +83,13 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
     return backupID + '/' + str(blockNumber) + '-' + str(supplierNumber) + '-' + dataORparity
 
 
-def MakeBackupID(customer, remote_path):
+def MakeBackupID(customer, path_id):
     """
+    Will create something like:
+
+        "alice@idhost.org:0/0/1/0/F20131120053803PM"
     """
-    return '{}:{}'.format(customer, remote_path)
+    return '{}:{}'.format(customer, path_id)
 
 
 def Valid(packetID):
@@ -147,7 +150,7 @@ def Split(packetID):
         supplierNum = int(supplierNum)
         customerGlobalID, remotePathWithVersion = backupID.rsplit(':')
     except:
-        return None, None, None, None
+        return None, None, None, None, None
     return customerGlobalID, remotePathWithVersion, blockNum, supplierNum, dataORparity
 
 
@@ -166,7 +169,7 @@ def SplitFull(packetID):
         supplierNum = int(supplierNum)
         customerGlobalID, remotePath = pathID.rsplit(':')
     except:
-        return None, None, None, None, None
+        return None, None, None, None, None, None
     return customerGlobalID, remotePath, versionName, blockNum, supplierNum, dataORparity
 
 
@@ -182,7 +185,7 @@ def SplitVersionFilename(packetID):
         pathID, _, versionName = backupID.rpartition('/')
         customerGlobalID, remotePath = pathID.rsplit(':')
     except:
-        return None, None, None
+        return None, None, None, None
     return customerGlobalID, remotePath, versionName, fileName
 
 
@@ -197,7 +200,7 @@ def SplitBackupID(backupID):
         pathID, _, versionName = backupID.rpartition('/')
         customerGlobalID, remotePath = pathID.rsplit(':')
     except:
-        return None, None
+        return None, None, None
     return customerGlobalID, remotePath, versionName
 
 
@@ -257,7 +260,7 @@ def IsBackupIDCorrect(backupID, customer_id_mandatory=False):
 
         alice@idhost.org:0/0/1/0/F20131120053803PM.
     """
-    if not IsPathIDCorrect(backupID):
+    if not IsPathIDCorrect(backupID, customer_id_mandatory=customer_id_mandatory):
         return False
     _, _, version = backupID.rpartition('/')
     if not IsCanonicalVersion(version):
@@ -302,8 +305,8 @@ def CustomerIDURL(backupID):
     """
     A wrapper for ``Split()`` method to get customer idurl from backup ID.
     """
-    from lib import nameurl
-    return nameurl.GlobalIDToUrl(Split(backupID)[0])
+    from userid import global_id
+    return global_id.GlobalIDToUrl(Split(backupID)[0])
 
 
 def BackupID(packetID):

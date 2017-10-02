@@ -46,7 +46,6 @@ from logs import lg
 from system import bpio
 
 from lib import diskspace
-from lib import nameurl
 
 from main import config
 
@@ -1071,7 +1070,9 @@ def SupplierPath(idurl, customer_idurl, filename=None):
         - "disconnected" : date and time when this suppler was fired
         - "listfiles" : a list of our local files stored on his machine
     """
-    customer = nameurl.UrlToGlobalID(customer_idurl)
+    from userid import global_id
+    from lib import nameurl
+    customer = global_id.UrlToGlobalID(customer_idurl)
     if filename is not None:
         return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(idurl), filename)
     return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(idurl))
@@ -1411,6 +1412,7 @@ def getCustomerFilesDir(idurl):
     Alias to get a given customer's files inside our donated location from
     settings.
     """
+    from lib import nameurl
     return os.path.join(getCustomersFilesDir(), nameurl.UrlFilename(idurl))
 
 

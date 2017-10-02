@@ -66,6 +66,7 @@ from lib import packetid
 from main import settings
 
 from userid import my_id
+from userid import global_id
 
 from p2p import commands
 from p2p import contact_status
@@ -249,7 +250,7 @@ class FileToRequest:
         self.creatorID = creatorID
         self.packetID = packetID
         self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
-        self.customerIDURL = nameurl.GlobalIDToUrl(self.customerID)
+        self.customerIDURL = global_id.GlobalIDToUrl(self.customerID)
         self.ownerID = ownerID
         self.remoteID = remoteID
         self.backupID, x, self.fileName = packetID.rpartition('/')  # [0:packetID.find("-")]
@@ -276,7 +277,7 @@ class FileToSend:
             self.fileSize = 0
         self.packetID = packetID
         self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
-        self.customerIDURL = nameurl.GlobalIDToUrl(self.customerID)
+        self.customerIDURL = global_id.GlobalIDToUrl(self.customerID)
         self.remoteID = remoteID
         self.ownerID = ownerID
         self.callOnAck = callOnAck

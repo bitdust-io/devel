@@ -78,6 +78,7 @@ from services import driver
 from storage import backup_fs
 
 from userid import my_id
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -243,7 +244,7 @@ def SaveLatestRawListFiles(idurl, listFileText, customer_idurl=None):
 def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     """
     Read ListFiles packet for given supplier and build a "remote" matrix. All
-    lines are something like that::
+    lines are something like that:
 
       Findex 5456
       D0 -1
@@ -254,11 +255,11 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
       V0/0/123/4567/F20090709034221PM 3 0-11 434353 missing Data:1,3
       V0/0/123/4/F20090709012331PM 3 0-5 434353 missing Data:1,3 Parity:0,1,2
 
-    First character can be::
+    First character can be:
 
       "F" for files
       "D" for folders
-      "V" for backed up data
+      "V" for stored data
     """
     from storage import backup_control
     if customer_idurl is None:
@@ -273,7 +274,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     backups2remove = set()
     paths2remove = set()
     missed_backups = set(remote_files().keys())
-    oldfiles = ClearSupplierRemoteInfo(supplierNum, nameurl.UrlToGlobalID(customer_idurl))
+    oldfiles = ClearSupplierRemoteInfo(supplierNum, global_id.UrlToGlobalID(customer_idurl))
     newfiles = 0
     lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, is_in_sync=%s' % (
         len(listFileText), supplierNum, backup_control.revision(), is_in_sync))
@@ -346,29 +347,29 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
             # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
             if len(words) < 4:
-                lg.warn('incorrect line:[%s]' % line)
+                lg.warn('incorrect line (words count): [%s]' % line)
                 continue
+            _, remotePath, versionName = packetid.SplitBackupID(words[0])
+            backupID = packetid.MakeBackupID(global_id.UrlToGlobalID(customer_idurl), remotePath) + '/' + versionName
             try:
-                customerGlobalID, remotePath, versionName = packetid.SplitBackupID(words[0])
-                backupID = pathID + '/' + versionName
                 lineSupplierNum = int(words[1])
                 _, maxBlockNum = words[2].split('-')
                 maxBlockNum = int(maxBlockNum)
             except:
-                lg.warn('incorrect line:[%s]' % line)
+                lg.warn('incorrect line (digits format): [%s]' % line)
                 continue
             if lineSupplierNum != supplierNum:
                 # this mean supplier have old files and we do not need those files
                 backups2remove.add(backupID)
                 lg.out(8, '        V%s - remove, different supplier number' % backupID)
                 continue
-            iter_path = backup_fs.WalkByID(pathID)
+            iter_path = backup_fs.WalkByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
             if iter_path is None:
                 # this version is not found in the index
                 if is_in_sync:
                     backups2remove.add(backupID)
-                    paths2remove.add(pathID)
-                    lg.out(8, '        V%s - remove, path not found in the index' % pathID)
+                    paths2remove.add(remotePath)
+                    lg.out(8, '        V%s - remove, path not found in the index' % remotePath)
                 continue
             item, _ = iter_path
             if isinstance(item, dict):
@@ -561,7 +562,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         dataORparity = dataORparity
         packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
     customer, filename = packetid.SplitPacketID(packetID)
-    customer_idurl = nameurl.GlobalIDToUrl(customer)
+    customer_idurl = global_id.GlobalIDToUrl(customer)
     if dataORparity not in ['Data', 'Parity']:
         lg.warn('Data or Parity? ' + filename)
         return
@@ -608,7 +609,7 @@ def LocalBlockReport(backupID, blockNumber, result):
         lg.exc()
         return
     customer, remotePath = packetid.SplitPacketID(backupID)
-    customer_idurl = nameurl.GlobalIDToUrl(customer)
+    customer_idurl = global_id.GlobalIDToUrl(customer)
     repaint_flag = False
     for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         for dataORparity in ('Data', 'Parity'):

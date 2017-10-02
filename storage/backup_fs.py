@@ -79,9 +79,9 @@ from main import settings
 from lib import misc
 from lib import packetid
 from lib import diskspace
-from lib import nameurl
 
 from userid import my_id
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -919,11 +919,11 @@ def DeleteBackupID(backupID, iterID=None):
 #------------------------------------------------------------------------------
 
 
-def ToID(localPath, iter=None):
+def ToID(lookup_path, iter=None):
     """
     A wrapper for ``WalkByPath()`` method.
     """
-    iter_and_id = WalkByPath(localPath, iter)
+    iter_and_id = WalkByPath(lookup_path, iter)
     if iter_and_id is None:
         return None
     return iter_and_id[1]
@@ -1700,7 +1700,7 @@ def Scan(basedir=None, customer_idurl=None):
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
-        basedir = os.path.join(settings.getLocalBackupsDir(), nameurl.UrlToGlobalID(customer_idurl))
+        basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
     iterID = fsID(customer_idurl)
     summ = [0, 0, ]
 
@@ -1722,7 +1722,7 @@ def ScanID(pathID, basedir=None, customer_idurl=None):
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
-        basedir = os.path.join(settings.getLocalBackupsDir(), nameurl.UrlToGlobalID(customer_idurl))
+        basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
     iter_and_path = WalkByID(pathID, iterID=fs(customer_idurl))
     if not iter_and_path:
         return

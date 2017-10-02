@@ -60,6 +60,7 @@ from lib import nameurl
 from main import settings
 
 from userid import my_id
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -111,7 +112,7 @@ def make_key_id(alias, creator_idurl=None, output_format=None):
     """
     if creator_idurl is None:
         creator_idurl = my_id.getLocalID()
-    return nameurl.MakeGlobalID(
+    return global_id.MakeGlobalID(
         idurl=creator_idurl,
         key_alias=alias,
         output_format=output_format,
@@ -128,7 +129,7 @@ def split_key_id(key_id):
 
         "secret_key_xyz", "http://remote-server.net/bob.xml"
     """
-    parts = nameurl.ParseGlobalID(key_id)
+    parts = global_id.ParseGlobalID(key_id)
     if not parts['key'] or not parts['idurl']:
         return None, None
     return parts['key'], parts['idurl']
@@ -136,7 +137,7 @@ def split_key_id(key_id):
 def is_valid_key_id(key_id):
     """
     """
-    parts = nameurl.ParseGlobalID(key_id)
+    parts = global_id.ParseGlobalID(key_id)
     if not parts['key'] or not parts['idurl']:
         return False
     if len(parts['key']) > settings.MaximumUsernameLength():

@@ -117,10 +117,11 @@ from main import settings
 from main import events
 
 from lib import packetid
-from lib import nameurl
 
 from contacts import contactsdb
+
 from userid import my_id
+from userid import global_id
 
 from automats import automat
 
@@ -161,7 +162,7 @@ class restore(automat.Automat):
         _parts = packetid.SplitPacketID(self.BackupID)
         self.CustomerGlobalID = _parts[0]
         self.RemotePath = _parts[1]
-        self.CustomerIDURL = nameurl.GlobalIDToUrl(self.CustomerGlobalID)
+        self.CustomerIDURL = global_id.GlobalIDToUrl(self.CustomerGlobalID)
         self.KeyID = KeyID
         # is current active block - so when add 1 we get to first, which is 0
         self.BlockNumber = -1

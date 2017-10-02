@@ -64,10 +64,11 @@ from automats import global_state
 from lib import misc
 
 from lib import packetid
-from lib import nameurl
 
 from contacts import contactsdb
+
 from userid import my_id
+from userid import global_id
 
 from main import settings
 
@@ -206,7 +207,7 @@ class DataSender(automat.Automat):
                             #     continue
                             filename = os.path.join(
                                 settings.getLocalBackupsDir(),
-                                nameurl.UrlToGlobalID(customer_idurl),
+                                global_id.UrlToGlobalID(customer_idurl),
                                 packetID,
                             )
                             if not os.path.isfile(filename):

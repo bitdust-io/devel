@@ -65,9 +65,10 @@ from logs import lg
 from system import bpio
 
 from userid import my_id
-from contacts import contactsdb
-
 from userid import identity
+from userid import global_id
+
+from contacts import contactsdb
 
 from contacts import identitycache
 
@@ -505,7 +506,6 @@ def Data(request):
 
 def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
     """
-    
     """
     # TODO:
     newpacket = signed.Packet(
@@ -721,7 +721,7 @@ def SendRequestListFiles(supplierNumORidurl, customer_idurl=None):
         return None
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendRequestListFiles [%s]" % nameurl.GetName(RemoteID))
-    PacketID = "%s#%s" % (packetid.UniqueID(), nameurl.UrlToGlobalID(customer_idurl))
+    PacketID = "%s#%s" % (packetid.UniqueID(), global_id.UrlToGlobalID(customer_idurl))
     Payload = settings.ListFilesFormat()
     result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
     gateway.outbox(result)

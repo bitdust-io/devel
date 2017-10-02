@@ -76,6 +76,8 @@ from raid import eccmap
 from crypt import encrypted
 from crypt import key
 
+from userid import global_id
+
 from web import control
 
 from services import driver
@@ -269,7 +271,7 @@ def IncomingSupplierListFiles(newpacket):
     from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
     try:
-        customer_idurl = nameurl.GlobalIDToUrl(newpacket.PacketID.split('#')[0])
+        customer_idurl = global_id.GlobalIDToUrl(newpacket.PacketID.split('#')[0])
     except:
         lg.exc()
         customer_idurl = None
@@ -435,7 +437,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     from customer import io_throttle
     # get the working item
     customer, path = packetid.SplitPacketID(pathID)
-    customer_idurl = nameurl.GlobalIDToUrl(customer)
+    customer_idurl = global_id.GlobalIDToUrl(customer)
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if item is None:
         return False
@@ -500,7 +502,7 @@ class Task():
         _parts = packetid.SplitPacketID(self.pathID)
         self.customerGlobID = _parts[0]
         self.remotePath = _parts[1]
-        self.customerIDURL = nameurl.GlobalIDToUrl(self.customerGlobID)
+        self.customerIDURL = global_id.GlobalIDToUrl(self.customerGlobID)
         self.localPath = localPath
         self.created = time.time()
         self.backupID = None
@@ -567,7 +569,7 @@ class Task():
                 i += 1
             dataID += str(i)
         self.backupID = '%s:%s/%s' % (
-            nameurl.UrlToGlobalID(self.customerIDURL),
+            global_id.UrlToGlobalID(self.customerIDURL),
             self.remotePath,
             dataID,
         )
@@ -952,6 +954,7 @@ def test2():
     reactor.run()
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     bpio.init()

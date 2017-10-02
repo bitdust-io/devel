@@ -38,6 +38,7 @@ from system import bpio
 from main import settings
 
 from userid import my_id
+from userid import global_id
 
 import identitycache
 
@@ -437,7 +438,7 @@ def save_suppliers(path=None, customer_idurl=None):
     if path is None:
         path = settings.SupplierIDsFilename()
     if customer_idurl is not None:
-        path += ('_%s' % nameurl.UrlToGlobalID(customer_idurl))
+        path += ('_%s' % global_id.UrlToGlobalID(customer_idurl))
     bpio._write_list(path, suppliers())
 
 

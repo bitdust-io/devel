@@ -612,21 +612,21 @@ class identity:
         except:
             return None
 
-    def getContactHost(self, index):
+    def getContactHost(self, index=0):
         """
         Get the host name part of the contact.
         """
         protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
         return host
 
-    def getContactPort(self, index):
+    def getContactPort(self, index=0):
         """
         Get the port part of the contact.
         """
         protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
         return port
 
-    def getContactParts(self, index):
+    def getContactParts(self, index=0):
         """
         Return tuple with 4 parts of the contact: (proto, host, port, filename)
         """
