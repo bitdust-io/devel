@@ -268,7 +268,12 @@ def IncomingSupplierListFiles(newpacket):
     """
     from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
-    num = contactsdb.supplier_position(supplier_idurl)
+    try:
+        customer_idurl = nameurl.GlobalIDToUrl(newpacket.PacketID.split('#')[0])
+    except:
+        lg.exc()
+        customer_idurl = None
+    num = contactsdb.supplier_position(supplier_idurl, customer_idurl=customer_idurl)
     if num < -1:
         lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
         return
@@ -423,14 +428,15 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
 
 def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=True):
     """
-    This removes all backups of given path ID.
-
+    This removes all backups of given path ID
     Doing same operations as ``DeleteBackup()``.
     """
     import backup_rebuilder
     from customer import io_throttle
     # get the working item
-    item = backup_fs.GetByID(pathID)
+    customer, path = packetid.SplitPacketID(pathID)
+    customer_idurl = nameurl.GlobalIDToUrl(customer)
+    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if item is None:
         return False
     # this is a list of all known backups of this path
@@ -491,6 +497,10 @@ class Task():
         self.number = NewTaskNumber()                   # index number for the task
         self.pathID = pathID                            # source path to backup
         self.keyID = keyID
+        _parts = packetid.SplitPacketID(self.pathID)
+        self.customerGlobID = _parts[0]
+        self.remotePath = _parts[1]
+        self.customerIDURL = nameurl.GlobalIDToUrl(self.customerGlobID)
         self.localPath = localPath
         self.created = time.time()
         self.backupID = None
@@ -527,7 +537,7 @@ class Task():
         new task - the maximum number of simultaneously running ``Jobs``
         is limited.
         """
-        iter_and_path = backup_fs.WalkByID(self.pathID)
+        iter_and_path = backup_fs.WalkByID(self.remotePath, iterID=backup_fs.fsID(self.customerIDURL))
         if iter_and_path is None:
             lg.out(4, 'backup_control.Task.run ERROR %s not found in the index' % self.pathID)
             # self.defer.callback('error', self.pathID)
@@ -556,7 +566,11 @@ class Task():
             while itemInfo.has_version(dataID + str(i)):
                 i += 1
             dataID += str(i)
-        self.backupID = self.pathID + '/' + dataID
+        self.backupID = '%s:%s/%s' % (
+            nameurl.UrlToGlobalID(self.customerIDURL),
+            self.remotePath,
+            dataID,
+        )
         if self.backupID in jobs():
             lg.warn('backup job %s already started' % self.backupID)
             return

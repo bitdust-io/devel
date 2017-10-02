@@ -57,21 +57,12 @@ Commands:
   set list
   file list
   file idlist
-  dir make <catalog path> [key id]
-  file add <local file or folder>
-  file addtree <folder path>
-  file start <local path or ID>
-  file delete <local path, ID or full version ID>
-  file delete local <full backup ID>
-  file abort <path ID or full backup ID>
+  file upload <local path> <remote path>
+  file download <local path> <remote path>
+  file delete <remote path>
   file queue
   file progress
   file sync
-  restore list
-  restore start <backup ID>
-  restore start <backup ID> <destination folder>
-  restore abort <backup ID>
-  restore progress
   supplier list
   supplier replace <IDURL or position>
   supplier change <IDURL or position> <new IDURL>
@@ -148,36 +139,23 @@ Commands:
 
   set <option> [value]  assign a new value for program setting
 
-  set list              print all available settings and values
+  set list              print all available options and current values
 
-  file list             show a full catalog of registered files and folders
+  file list             show a list of known files and folders on remote peers
 
-  file idlist           show a list of items already uploaded on remote peers
+  file upload <local path> <remote path>
+                        start uploading a file or folder to remote peers,
+                        "remote path" have such format:
+                        {key_id}${user_name}@{id_host}:{remote_path}
 
-  dir make <catalog path> [key id]
-                        create an empty folder under given path in catalog
+  file download <remote path> [local path]
+                        download file or folder from remote peers to local drive
+                        save to current folder if "local path" was not set
 
-  file add <local path>
-                        replicate given path into the catalog,
-                        this will add to catalog all parent folders too
-
-  file addtree <local folder path>
-                        replicate given folder with all sub folders to the catalog,
-                        be aware if you add too much items to catalog
-                        the software may operate inefficient
-
-  file start <local path or ID>
-                        start uploading a catalog item on to remote peers,
-                        bind a new local file/folder if path is not yet
-                        existing in the catalog
-
-  file delete <local path, ID or full backup ID>
+  file delete <remote path>
                         remove a file or folder (with all sub folders)
-                        from catalog or only erase a given remote copy
-
-  file delete local <full backup ID>
-                        remove only local copy of given backup,
-                        keep remote copy on suppliers HDD
+                        from remote peers, "remote path" have such format:
+                        {key_id}${user_name}@{id_host}:{remote_path}
 
   file queue            show a list of paths to be uploaded
 

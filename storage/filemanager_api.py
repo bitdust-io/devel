@@ -251,10 +251,10 @@ def _upload(params):
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
         if bpio.pathIsDir(localPath):
-            pathID, iter, iterID = backup_fs.AddDir(localPath, True)
+            pathID, iter, iterID = backup_fs.AddDir(localPath, read_stats=True)
             result.append('new folder was added: %s' % localPath)
         else:
-            pathID, iter, iterID = backup_fs.AddFile(localPath, True)
+            pathID, iter, iterID = backup_fs.AddFile(localPath, read_stats=True)
             result.append('new file was added: %s' % localPath)
     backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()

@@ -104,6 +104,9 @@ if __name__ == "__main__":
 
 from logs import lg
 
+from lib import packetid
+from lib import nameurl
+
 from userid import my_id
 
 from system import nonblocking
@@ -142,6 +145,10 @@ class backup(automat.Automat):
                  sourcePath=None,
                  keyID=None, ):
         self.backupID = backupID
+        _parts = packetid.SplitPacketID(self.BackupID)
+        self.customerGlobalID = _parts[0]
+        self.remotePath = _parts[1]
+        self.customerIDURL = nameurl.GlobalIDToUrl(self.CustomerGlobalID)
         self.sourcePath = sourcePath
         self.keyID = keyID
         self.eccmap = eccmap.Current()
@@ -341,7 +348,7 @@ class backup(automat.Automat):
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
         dt = time.time()
-        outputpath = os.path.join(settings.getLocalBackupsDir(), self.backupID)
+        outputpath = os.path.join(settings.getLocalBackupsDir(), self.customerGlobalID, self.remotePath)
         task_params = (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, outputpath)
         raid_worker.add_task('make', task_params,
                              lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
@@ -423,7 +430,6 @@ class backup(automat.Automat):
 
     def progress(self):
         """
-        
         """
         if self.totalSize <= 0:
             return 0.0
@@ -474,12 +480,13 @@ def main():
 
     def _bk_done(bid, result):
         from crypt import signed
+        customer, remotePath = packetid.SplitPacketID(bid)
         try:
-            os.mkdir(os.path.join(settings.getLocalBackupsDir(), bid + '.out'))
+            os.mkdir(os.path.join(settings.getLocalBackupsDir(), customer, remotePath + '.out'))
         except:
             pass
-        for filename in os.listdir(os.path.join(settings.getLocalBackupsDir(), bid)):
-            filepath = os.path.join(settings.getLocalBackupsDir(), bid, filename)
+        for filename in os.listdir(os.path.join(settings.getLocalBackupsDir(), customer, remotePath)):
+            filepath = os.path.join(settings.getLocalBackupsDir(), customer, remotePath, filename)
             payld = str(bpio.ReadBinaryFile(filepath))
             newpacket = signed.Packet(
                 'Data',
@@ -488,12 +495,13 @@ def main():
                 filename,
                 payld,
                 'http://megafaq.ru/cvps1010.xml')
-            newfilepath = os.path.join(settings.getLocalBackupsDir(), bid + '.out', filename)
+            newfilepath = os.path.join(settings.getLocalBackupsDir(), customer, remotePath + '.out', filename)
             bpio.AtomicWriteFile(newfilepath, newpacket.Serialize())
         reactor.stop()
     job = backup(backupID, backupPipe, _bk_done)
     reactor.callLater(1, job.automat, 'start')
     reactor.run()
+
 
 if __name__ == "__main__":
     main()

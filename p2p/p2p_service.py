@@ -701,25 +701,27 @@ def Correspondent(request):
 
 #------------------------------------------------------------------------------
 
-def RequestListFilesAll():
+def RequestListFilesAll(customer_idurl=None):
     r = []
-    for supi in range(contactsdb.num_suppliers()):
-        r.append(SendRequestListFiles(supi))
+    for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
+        r.append(SendRequestListFiles(supplier_idurl, customer_idurl=customer_idurl))
     return r
 
 
-def SendRequestListFiles(supplierNumORidurl):
+def SendRequestListFiles(supplierNumORidurl, customer_idurl=None):
+    MyID = my_id.getLocalID()
+    if customer_idurl is None:
+        customer_idurl = MyID
     if not str(supplierNumORidurl).isdigit():
         RemoteID = supplierNumORidurl
     else:
-        RemoteID = contactsdb.supplier(supplierNumORidurl)
+        RemoteID = contactsdb.supplier(supplierNumORidurl, customer_idurl=customer_idurl)
     if not RemoteID:
         lg.warn("RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
         return None
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendRequestListFiles [%s]" % nameurl.GetName(RemoteID))
-    MyID = my_id.getLocalID()
-    PacketID = packetid.UniqueID()
+    PacketID = "%s#%s" % (packetid.UniqueID(), nameurl.UrlToGlobalID(customer_idurl))
     Payload = settings.ListFilesFormat()
     result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
     gateway.outbox(result)
@@ -733,8 +735,8 @@ def RequestDeleteBackup(BackupID):
     """
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.RequestDeleteBackup with BackupID=" + str(BackupID))
-    for supplier in contactsdb.suppliers():
-        if not supplier:
+    for supplier_idurl in contactsdb.suppliers(customer_idurl=packetid.CustomerIDURL(BackupID)):
+        if not supplier_idurl:
             continue
 #         prevItems = [] # transport_control.SendQueueSearch(BackupID)
 #         found = False
@@ -744,39 +746,37 @@ def RequestDeleteBackup(BackupID):
 #                 break
 #         if found:
 #             continue
-        SendDeleteBackup(supplier, BackupID)
+        SendDeleteBackup(supplier_idurl, BackupID)
 
 
 def RequestDeleteListBackups(backupIDs):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.RequestDeleteListBackups wish to delete %d backups" % len(backupIDs))
-    for supplier in contactsdb.suppliers():
-        if not supplier:
-            continue
-        # found = False
-        # for workitem in transport_control.SendQueue():
-        #     if workitem.command == commands.DeleteBackup() and workitem.remoteid == supplier:
-        #         found = True
-        #         break
-        # if found:
-        #     continue
-        SendDeleteListBackups(supplier, backupIDs)
+    customers = {}
+    for backupID in backupIDs:
+        customer_idurl = packetid.CustomerIDURL(backupID)
+        if customer_idurl not in customers:
+            customers[customer_idurl] = set()
+        customers[customer_idurl].add(backupID)
+    for customer_idurl, backupID_set in customers.items():
+        for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
+            if supplier_idurl:
+                SendDeleteListBackups(supplier_idurl, list(backupID_set))
 
 
 def RequestDeleteListPaths(pathIDs):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.RequestDeleteListPaths wish to delete %d paths" % len(pathIDs))
-    for supplier in contactsdb.suppliers():
-        if not supplier:
-            continue
-        # found = False
-        # for workitem in transport_control.SendQueue():
-        #     if workitem.command == commands.DeleteFile() and workitem.remoteid == supplier:
-        #         found = True
-        #         break
-        # if found:
-        #     continue
-        SendDeleteListPaths(supplier, pathIDs)
+    customers = {}
+    for pathID in pathIDs:
+        customer_idurl = packetid.CustomerIDURL(pathID)
+        if customer_idurl not in customers:
+            customers[customer_idurl] = set()
+        customers[customer_idurl].add(pathID)
+    for customer_idurl, pathID_set in customers.items():
+        for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
+            if supplier_idurl:
+                SendDeleteListPaths(supplier_idurl, list(pathID_set))
 
 
 def CheckWholeBackup(BackupID):

@@ -204,11 +204,12 @@ def MakeGlobalID(
     """
     Based on input parameters returns string like this:
 
-        alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM
+        group_abc$alice@first-machine.com:animals/cat.png#F20160313043757PM
 
     You can use another form if you set it in `output_format` parameter:
 
-        group_abc$alice@first-machine.com:animals/cat.png#F20160313043757PM
+        alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM
+
     """
     if output_format is None:
         output_format = _FORMAT_GLOBAL_ID_KEY_USER
@@ -233,7 +234,7 @@ def ParseGlobalID(inp):
     """
     Split such input string:
 
-        "alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM"
+        "group_abc$alice@first-machine.com:animals/cat.png#F20160313043757PM"
 
     into such dictionary object:
 
@@ -281,8 +282,36 @@ def ParseGlobalID(inp):
             result['path'] = path
     except:
         return result
+    if result['idhost'].count('_'):
+        _pos = result['idhost'].rfind('_')
+        port = result['idhost'][_pos + 1:]
+        try:
+            port = int(port)
+        except:
+            port = -1
+        if port >= 0:
+            result['idhost'] = "%s:%d" % (result['idhost'][:_pos], port)
     result['idurl'] = 'http://{}/{}.xml'.format(result['idhost'], result['user'])
     return result
+
+#------------------------------------------------------------------------------
+
+def UrlToGlobalID(url):
+    """
+    """
+    _, host, port, filename = UrlParse(url)
+    if filename.count('.'):
+        username = filename.split('.')[0]
+    if port:
+        host = '%s_%s' % (host, port)
+    return '%s@%s' % (username, host)
+
+
+def GlobalIDToUrl(inp):
+    """
+    """
+    parts = ParseGlobalID(inp)
+    return parts['idurl']
 
 #------------------------------------------------------------------------------
 

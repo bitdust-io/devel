@@ -50,8 +50,6 @@ from lib import nameurl
 
 from main import config
 
-# import userconfig
-
 #------------------------------------------------------------------------------
 
 _BaseDirPath = ''   # location for ".bitdust" folder, lets keep all program DB in one place
@@ -197,6 +195,7 @@ def convert_key(key):
 #------------------------------------------------------------------------------
 #--- CONSTANTS ----------------------------------------------------------------
 #------------------------------------------------------------------------------
+
 
 """
 Below is a set of global constants.
@@ -1061,9 +1060,9 @@ def BackupIndexFilePath():
     return os.path.join(MetaDataDir(), BackupIndexFileName())
 
 
-def SupplierPath(idurl, filename=None):
+def SupplierPath(idurl, customer_idurl, filename=None):
     """
-    A location to given supplie's data.
+    A location to given supplier's data.
 
     If ``filename`` is provided - return a full path to that file.
     Currently those data are stored for every supplier:
@@ -1072,23 +1071,24 @@ def SupplierPath(idurl, filename=None):
         - "disconnected" : date and time when this suppler was fired
         - "listfiles" : a list of our local files stored on his machine
     """
+    customer = nameurl.UrlToGlobalID(customer_idurl)
     if filename is not None:
-        return os.path.join(SuppliersDir(), nameurl.UrlFilename(idurl), filename)
-    return os.path.join(SuppliersDir(), nameurl.UrlFilename(idurl))
+        return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(idurl), filename)
+    return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(idurl))
 
 
-def SupplierListFilesFilename(idurl):
+def SupplierListFilesFilename(idurl, customer_idurl):
     """
     Return a "listfiles" file location for given supplier.
     """
-    return os.path.join(SupplierPath(idurl), 'listfiles')
+    return os.path.join(SupplierPath(idurl, customer_idurl), 'listfiles')
 
 
-def SupplierServiceFilename(idurl):
+def SupplierServiceFilename(idurl, customer_idurl):
     """
     Return a "service" file location for given supplier.
     """
-    return os.path.join(SupplierPath(idurl), 'service')
+    return os.path.join(SupplierPath(idurl, customer_idurl), 'service')
 
 
 def LocalTesterLogFilename():

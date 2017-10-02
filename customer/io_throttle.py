@@ -61,6 +61,7 @@ from system import bpio
 
 from lib import misc
 from lib import nameurl
+from lib import packetid
 
 from main import settings
 
@@ -183,21 +184,18 @@ def DeleteSuppliers(suppliers_IDURLs):
 
 def DeleteAllSuppliers():
     """
-    
     """
     return throttle().DeleteSuppliers(throttle().supplierQueues.keys())
 
 
 def OutboxStatus(pkt_out, status, error):
     """
-    
     """
     return throttle().OutboxStatus(pkt_out, status, error)
 
 
 def IsSendingQueueEmpty():
     """
-    
     """
     return throttle().IsSendingQueueEmpty()
 
@@ -250,6 +248,8 @@ class FileToRequest:
         self.callOnReceived.append(callOnReceived)
         self.creatorID = creatorID
         self.packetID = packetID
+        self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
+        self.customerIDURL = nameurl.GlobalIDToUrl(self.customerID)
         self.ownerID = ownerID
         self.remoteID = remoteID
         self.backupID, x, self.fileName = packetID.rpartition('/')  # [0:packetID.find("-")]
@@ -275,6 +275,8 @@ class FileToSend:
             lg.exc()
             self.fileSize = 0
         self.packetID = packetID
+        self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
+        self.customerIDURL = nameurl.GlobalIDToUrl(self.customerID)
         self.remoteID = remoteID
         self.ownerID = ownerID
         self.callOnAck = callOnAck
@@ -295,7 +297,10 @@ class FileToSend:
 
 class SupplierQueue:
 
-    def __init__(self, supplierIdentity, creatorID):
+    def __init__(self, supplierIdentity, creatorID, customerIDURL=None):
+        self.customerIDURL = customerIDURL
+        if self.customerIDURL is None:
+            self.customerIDURL = my_id.getLocalID()
         self.creatorID = creatorID
         self.remoteID = supplierIdentity
         self.remoteName = nameurl.GetName(self.remoteID)
@@ -337,7 +342,6 @@ class SupplierQueue:
 
     def RemoveSupplierWork(self):
         """
-        
         """
         # in the case that we're doing work with a supplier who has just been replaced ...
         # Need to remove the register interests
@@ -606,7 +610,8 @@ class SupplierQueue:
                     self.fileRequestDict[packetID].result = 'received'
                     packetsToRemove.add(packetID)
             if self.fileRequestDict[packetID].requestTime is None:
-                if not os.path.exists(os.path.join(settings.getLocalBackupsDir(), packetID)):
+                customer, pth = packetid.SplitPacketID(packetID)
+                if not os.path.exists(os.path.join(settings.getLocalBackupsDir(), customer, pth)):
                     fileRequest = self.fileRequestDict[packetID]
                     lg.out(10, "io_throttle.RunRequest for packetID " + fileRequest.packetID)
                     # transport_control.RegisterInterest(self.DataReceived,fileRequest.creatorID,fileRequest.packetID)
@@ -802,7 +807,8 @@ class IOThrottle:
         # make sure that we don't actually already have the file
         # if packetID != settings.BackupInfoFileName():
         if packetID not in [settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName(), ]:
-            filename = os.path.join(settings.getLocalBackupsDir(), packetID)
+            customer, pth = packetid.SplitPacketID(packetID)
+            filename = os.path.join(settings.getLocalBackupsDir(), customer, pth)
             if os.path.exists(filename):
                 lg.warn("%s already exist " % filename)
                 if callOnReceived:

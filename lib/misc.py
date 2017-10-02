@@ -62,8 +62,6 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from userid import identity
-
 from system import bpio
 
 from main import settings
@@ -159,7 +157,6 @@ def NewBackupID(time_st=None):
 
 def TimeStructFromVersion(backupID):
     """
-    
     """
     try:
         if backupID.endswith('AM') or backupID.endswith('PM'):
@@ -258,6 +255,7 @@ def sorted_versions(versions, reverse=False):
 
 #------------------------------------------------------------------------------
 
+
 BASE_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!()+-#$^&_=@[]{}`~'
 BASE_LIST = BASE_ALPHABET
 BASE_DICT = dict((c, i) for i, c in enumerate(BASE_LIST))
@@ -288,132 +286,44 @@ def base_encode(string, base=BASE_LIST):
 #    return ret
 
 
-def FilePathToBackupID(filepath):
-    """
-    The idea was to hide the original file and folders names on suppliers
-    machines but keep the directory structure.
-
-    Finally I came to index file wich is encrypted and all data is
-    stored in the same directory tree, but files and folders names are
-    replaced with numbers. Not used at the moment.
-    """
-    # be sure the string is in unicode
-    fp = bpio.portablePath(filepath)
-    # now convert to string with char codes as numbers
-    result = ''
-    for part in fp.split('/'):
-        if part == '':
-            result += '/'
-            continue
-        if len(result) > 0:
-            # skip first separator
-            # if this is Linux absolute path
-            result += '/'
-        # switch from unicode if it was
-        part = str(part)  # unicode(part).encode()
-        # word = base64.b64encode(part).replace('+', '-').replace('/', '_')
-        # word = base64.b64encode(hashlib.sha1(part+os.urandom(8)).digest()).replace('+', '-').replace('/', '_').replace('=', '')
-        # word = hashlib.sha1(part+os.urandom(8)).hexdigest()
-        print base64.b64encode(os.urandom(6))
-        word = hashlib.md5(part + os.urandom(4)).hexdigest()
-        print len(word)
-#        # compress the string
-#        if compress:
-#            # import zlib
-#            # word = base_encode(zlib.compress(upart, 9))
-#            word = base_encode(upart)
-#        else:
-#            word = u''
-#            for c in upart:
-#                word += '%04d' % ord(c)
-#        word = word.strip()
-        # print '[%s]' % word
-        result += word
-    return result
-
-
-def BackupIDToFilePath(backupID, decompress=False):
-    """
-    Not used.
-    """
-    result = ''
-    part = ''
-    ch = ''
-    for c in backupID:
-        if c == '/':
-            if part != '':
-                # base64.b64encode(part).replace('+', '-').replace('/', '_')
-                result += base64.b64decode(part.replace('-', '+').replace('_', '/'))
-#                if decompress:
-#                    import zlib
-#                    # result += zlib.decompress(base_decode(part))
-#                    result += base_decode(part)
-#                else:
-#                    result += part
-            result += c
-            part = ''
-        else:
-            part += c
-#            if decompress:
-#                part += c
-#            else:
-#                ch += c
-#                if len(ch) == 4:
-#                    try:
-#                        v = int(ch)
-#                    except:
-#                        lg.exc()
-#                    part += unichr(v)
-#                    ch = ''
-    if part:
-        result += base64.b64decode(part.replace('-', '+').replace('_', '/'))
-        # result += part
-#        if decompress:
-#            import zlib
-#            result += zlib.decompress(base_decode(part))
-#        else:
-#            result += part
-    # we return string in unicode
-    return unicode(result)
-
 #------------------------------------------------------------------------------
 
 
-def DigitsOnly(input, includes=''):
+def DigitsOnly(inpt, includes=''):
     """
     Very basic method to convert string to number.
 
     This returns same string but with digits only.
     """
-    return ''.join([c for c in input if c in '0123456789' + includes])
+    return ''.join([c for c in inpt if c in '0123456789' + includes])
 
 
-def IsDigitsOnly(input):
+def IsDigitsOnly(inpt):
     """
     Return True if ``input`` string contains only digits.
     """
-    for c in input:
+    for c in inpt:
         if c not in '0123456789':
             return False
     return True
 
 
-def ToInt(input, default=0):
+def ToInt(inpt, default=0):
     """
     Convert a string to number using built-in int() method.
     """
     try:
-        return int(input)
+        return int(inpt)
     except:
         return default
 
 
-def ToFloat(input, default=0.0):
+def ToFloat(inpt, default=0.0):
     """
     Convert a string to number using built-in float() method.
     """
     try:
-        return float(input)
+        return float(inpt)
     except:
         return default
 
@@ -562,7 +472,6 @@ def RoundupFile(filename, stepsize):
 
 def RoundupString(data, stepsize):
     """
-    
     """
     size = len(data)
     mod = size % stepsize
@@ -595,21 +504,21 @@ def Parity():
     return "Parity"
 
 
-def BinaryToAscii(input):
+def BinaryToAscii(inpt):
     """
     Not used right now.
 
     Have had some troubles with jelly/banana. Plan to move to my own
     serialization of objects but leaving this here for now.
     """
-    return base64.encodestring(input)
+    return base64.encodestring(inpt)
 
 
-def AsciiToBinary(input):
+def AsciiToBinary(inpt):
     """
     Uses built-in method ``base64.decodestring``.
     """
-    return base64.decodestring(input)
+    return base64.decodestring(inpt)
 
 
 def ObjectToString_old(obj):

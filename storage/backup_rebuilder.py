@@ -73,6 +73,7 @@ except:
 from logs import lg
 
 from lib import packetid
+from lib import nameurl
 
 from automats import automat
 
@@ -137,6 +138,7 @@ class BackupRebuilder(automat.Automat):
         Initialize needed variables.
         """
         self.currentBackupID = None             # currently working on this backup
+        self.currentCustomerIDURL = None        # stored by this customer
         # list of missing blocks we work on for current backup
         self.workingBlocksQueue = []
         self.backupsWasRebuilt = []
@@ -309,6 +311,7 @@ class BackupRebuilder(automat.Automat):
             return
         # take a first backup from queue to work on it
         self.currentBackupID = _BackupIDsQueue.pop(0)
+        self.currentCustomerIDURL = packetid.CustomerIDURL(self.currentBackupID)
 
     def doCloseThisBackup(self, arg):
         """
@@ -320,6 +323,7 @@ class BackupRebuilder(automat.Automat):
             from customer import io_throttle
             io_throttle.DeleteBackupRequests(self.currentBackupID)
         self.currentBackupID = None
+        self.currentCustomerIDURL = None
 
     def doScanBrokenBlocks(self, arg):
         """
@@ -410,16 +414,16 @@ class BackupRebuilder(automat.Automat):
         self.missingPackets = 0
         # here we want to request some packets before we start working to
         # rebuild the missed blocks
-        availableSuppliers = backup_matrix.GetActiveArray()
+        availableSuppliers = backup_matrix.GetActiveArray(customer_idurl=self.currentCustomerIDURL)
         # remember how many requests we did on this iteration
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
-        if '' in contactsdb.suppliers():
+        if '' in contactsdb.suppliers(customer_idurl=self.currentCustomerIDURL):
             lg.out(8, 'backup_rebuilder._request_files SKIP - empty supplier')
             self.automat('no-requests')
             return
-        for supplierNum in range(contactsdb.num_suppliers()):
-            supplierID = contactsdb.supplier(supplierNum)
+        for supplierNum in range(contactsdb.num_suppliers(customer_idurl=self.currentCustomerIDURL)):
+            supplierID = contactsdb.supplier(supplierNum, customer_idurl=self.currentCustomerIDURL)
             requests_count = 0
             # we do requests in reverse order because we start rebuilding from
             # the last block
@@ -450,7 +454,12 @@ class BackupRebuilder(automat.Automat):
                             # him
                             if not io_throttle.HasPacketInRequestQueue(
                                     supplierID, PacketID):
-                                filename = os.path.join(settings.getLocalBackupsDir(), PacketID)
+                                customer, remotePath = packetid.SplitPacketID(PacketID)
+                                filename = os.path.join(
+                                    settings.getLocalBackupsDir(),
+                                    customer,
+                                    remotePath,
+                                )
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
                                             self._file_received,
@@ -476,7 +485,12 @@ class BackupRebuilder(automat.Automat):
                         if availableSuppliers[supplierNum]:
                             if not io_throttle.HasPacketInRequestQueue(
                                     supplierID, PacketID):
-                                filename = os.path.join(settings.getLocalBackupsDir(), PacketID)
+                                customer, remotePath = packetid.SplitPacketID(PacketID)
+                                filename = os.path.join(
+                                    settings.getLocalBackupsDir(),
+                                    customer,
+                                    remotePath,
+                                )
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
                                             self._file_received,
@@ -509,13 +523,14 @@ class BackupRebuilder(automat.Automat):
                 "incorrect state [%s] for packet %s" %
                 (str(state), str(newpacket)))
             return
-        packetID = newpacket.PacketID
-        filename = os.path.join(settings.getLocalBackupsDir(), packetID)
         if not newpacket.Valid():
             # TODO: if we didn't get a valid packet ... re-request it or delete
             # it?
-            lg.warn("%s is not a valid packet: %r" % (packetID, newpacket))
+            lg.warn("%s is not a valid packet: %r" % (newpacket.PacketID, newpacket))
             return
+        packetID = newpacket.PacketID
+        customer, remotePath = packetid.SplitPacketID(packetID)
+        filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
         if os.path.isfile(filename):
             lg.warn("found existed file" + filename)
             self.automat('inbox-data-packet', packetID)
@@ -593,7 +608,8 @@ class BackupRebuilder(automat.Automat):
             from storage import backup_matrix
             from customer import data_sender
             count = 0
-            for supplierNum in xrange(contactsdb.num_suppliers()):
+            customer_idurl = packetid.CustomerIDURL(_backupID)
+            for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
                 if localData[supplierNum] == 1 and reconstructedData[
                         supplierNum] == 1:
                     backup_matrix.LocalFileReport(

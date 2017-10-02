@@ -31,13 +31,6 @@ import raid.read
 
 def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix):
     # try:
-
-    def _build_raid_file_name(supplierNumber, dataOrParity):
-        return os.path.join(
-            main.settings.getLocalBackupsDir(),
-            lib.packetid.MakePacketID(backupID, blockNum,
-                                      supplierNumber, dataOrParity))
-
     supplierCount = len(availableSuppliers)
     missingData = [0] * supplierCount
     missingParity = [0] * supplierCount
@@ -47,6 +40,15 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
     remoteParity = list(remoteMatrix['P'])
     localData = list(localMatrix['D'])
     localParity = list(localMatrix['P'])
+    customer, localPath = lib.packetid.SplitPacketID(backupID)
+
+    def _build_raid_file_name(supplierNumber, dataOrParity):
+        return os.path.join(
+            main.settings.getLocalBackupsDir(),
+            customer,
+            localPath,
+            str(blockNum) + '-' + str(supplierNumber) + '-' + dataOrParity)
+
     # This builds a list of missing pieces.
     # The file is missing if value in the corresponding cell
     # in the "remote" matrix (see ``p2p.backup_matrix``) is -1 or 0

@@ -871,7 +871,7 @@ def _encode(s):
 #    return p
 
 
-def portablePath(path):
+def portablePath(path, remote=False):
     """
     Fix path to fit for our use:
 
@@ -884,10 +884,13 @@ def portablePath(path):
     if path == '' or path == '/':
         return path
     if Windows() and len(path) == 2 and path[1] == ':':
-        path += '/'
-    if path.count('~'):
-        path = os.path.expanduser(path)
-    p = os.path.abspath(path)
+        path += '/'  # "C:" -> "C:/"
+    if not remote:
+        if path.count('~'):
+            path = os.path.expanduser(path)
+        p = os.path.abspath(path)
+    else:
+        p = '/' + (path.lstrip('/').lstrip('\\'))
     if not isinstance(p, unicode):
         # p = p.encode('utf-8')
         p = unicode(p)
