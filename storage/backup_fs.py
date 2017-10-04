@@ -408,26 +408,30 @@ class FSItemInfo():
 #------------------------------------------------------------------------------
 
 
-def MakeID(begin_iter, startID=-1):
+def MakeID(itr, startID=-1):
     """
     Create a new unique number for the folder to create a index ID.
 
-    Parameter ``iter`` is a reference for a single item in the ``fs()``.
+    Parameter ``itrID`` is a reference for a single item in the ``fs()``.
     """
     _id = 0
     if startID >= 0:
         _id = startID
-    while _id in map(
-        lambda k: '' if k == 0 else (begin_iter[k] if isinstance(begin_iter[k], int) else begin_iter[k][0]),
-            begin_iter.keys(),
-    ):
+    _ids = []
+    for k in itr.keys():
+        if k != 0:
+            if isinstance(itr[k], int):
+                _ids.append(itr[k])
+                continue
+            _ids.append(itr[k][0])
+    while _id in _ids:
         _id += 1
     return _id
 
 #------------------------------------------------------------------------------
 
 
-def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
+def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
     """
     Scan all components of the ``path`` and create an item in the index for
     that file.
@@ -465,7 +469,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
             # build a unique backup id for that file including all indexed ids
             resultID += '/' + str(id)
             # make new sub folder
-            ii = FSItemInfo(name=name, path_id=resultID.lstrip('/'), typ=DIR, key_id=keyID or parentKeyID)
+            ii = FSItemInfo(name=name, path_id=resultID.lstrip('/'), typ=DIR, key_id=(key_id or parentKeyID))
             if read_stats:
                 ii.read_stats(p)
             # we use 0 key as decimal value, all files and folders are strings - no conflicts possible 0 != '0'
@@ -487,7 +491,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
     id = MakeID(iter)
     resultID += '/' + str(id)
     resultID = resultID.lstrip('/')
-    ii = FSItemInfo(name=filename, path_id=resultID, typ=FILE, key_id=keyID or parentKeyID)
+    ii = FSItemInfo(name=filename, path_id=resultID, typ=FILE, key_id=(key_id or parentKeyID))
     if read_stats:
         ii.read_stats(path)
     iter[ii.name()] = id
@@ -496,7 +500,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
     return resultID, iter, iterID
 
 
-def AddDir(path, read_stats=False, iter=None, iterID=None, keyID=None):
+def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
     """
     Add directory to the index, but do not read folder content.
 
@@ -531,7 +535,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, keyID=None):
         if name not in iter:
             id = MakeID(iter)
             resultID += '/' + str(id)
-            ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=DIR, key_id=keyID or parentKeyID)
+            ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=DIR, key_id=(key_id or parentKeyID))
             if read_stats:
                 ii.read_stats(p)
             iter[ii.name()] = {0: id}
@@ -610,7 +614,7 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
     localpath = bpio.portablePath(localpath)
     if bpio.pathIsDir(localpath):
         path_id, iter, iterID = AddDir(
-            localpath, read_stats=read_stats, iter=iter, iterID=iterID, keyID=key_id)
+            localpath, read_stats=read_stats, iter=iter, iterID=iterID, key_id=key_id)
         num = recursive_read_dir(localpath, path_id, iter, iterID)
         return path_id, iter, iterID, num
     else:
@@ -626,7 +630,7 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, key_id=N
     "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
     The name of new item will be equal to the local path.
     """
-    path = bpio.portablePath(path)
+    path = bpio.portablePath(path, remote=True)
     if not os.path.exists(path):
         raise Exception('File or folder not exist')
     if not iter:
@@ -639,6 +643,25 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, key_id=N
     ii = FSItemInfo(path, path_id=resultID, typ=typ, key_id=key_id)
     if read_stats:
         ii.read_stats(path)
+    iter[ii.name()] = resultID
+    iterID[resultID] = ii
+    return str(resultID), iter, iterID
+
+
+def MapFile(filename, iter=None, iterID=None, startID=-1, key_id=None):
+    """
+    Acts like AddFile() but do not follow the directory structure. This just
+    "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
+    The name of new item will be equal to the local path.
+    """
+    path = bpio.portablePath(filename, remote=True)
+    if not iter:
+        iter = fs()
+    if not iterID:
+        iterID = fsID()
+    # make an ID for the filename
+    resultID = MakeID(iter, startID=startID)
+    ii = FSItemInfo(path, path_id=resultID, typ=FILE, key_id=key_id)
     iter[ii.name()] = resultID
     iterID[resultID] = ii
     return str(resultID), iter, iterID
@@ -925,7 +948,7 @@ def ToID(lookup_path, iter=None):
     """
     A wrapper for ``WalkByPath()`` method.
     """
-    iter_and_id = WalkByPath(lookup_path, iter)
+    iter_and_id = WalkByPath(lookup_path, iter=iter)
     if iter_and_id is None:
         return None
     return iter_and_id[1]
@@ -987,7 +1010,7 @@ def GetIteratorsByPath(path, iter=None, iterID=None):
     iter_and_path = WalkByID(iter_and_id[1], iterID=iterID)
     if iter_and_path is None:
         return None
-    return iter_and_path[0], iter_and_id[0]
+    return iter_and_id[0], iter_and_path[0]
 
 #------------------------------------------------------------------------------
 
@@ -1017,9 +1040,11 @@ def IsFile(path, iter=None):
     if iter_and_id is None:
         return False
     iter, pathid = iter_and_id
-    if not isinstance(iter, int):
-        return False
-    return True
+    if isinstance(iter, int):
+        return True
+    if path in iter and isinstance(iter[path], int):
+        return True
+    return False
 
 
 def IsDirID(pathID, iterID=None):
@@ -1638,7 +1663,9 @@ def MakeLocalDir(basedir, backupID):
     """
     if not bpio.pathIsDir(basedir):
         raise Exception('Directory not exist: %s' % basedir)
-    customerGlobalID, remotePath, _, _, _ = packetid.Split(backupID)
+    customerGlobalID, remotePath = packetid.SplitPacketID(backupID)
+    if not customerGlobalID:
+        customerGlobalID = my_id.getGlobalID()
     path = os.path.join(basedir, customerGlobalID, remotePath)
     if os.path.exists(path):
         if not bpio.pathIsDir(path):
@@ -1943,22 +1970,23 @@ def _test():
     import pprint
     settings.init()
     filepath = settings.BackupIndexFilePath()
-    print filepath
+    # print filepath
     src = bpio.ReadTextFile(filepath)
     inpt = cStringIO.StringIO(src)
     inpt.readline()
     # count = Unserialize(inpt)
     count = Unserialize(inpt.read(), from_json=True)
     inpt.close()
-    print count
+    # print count
     Scan()
     Calculate()
     pprint.pprint(fs())
+    print
     pprint.pprint(fsID())
+    print
 
 #     parent_path = os.path.dirname(bpio.portablePath(unicode('/some/remote/path')))
-#     if IsFile(parent_path):
-#         raise
+    print IsFile(sys.argv[1])
 #     iter_and_iterID = GetIteratorsByPath(parent_path)
 #     if iter_and_iterID is None:
 #         _, parent_iter, parent_iterID = AddDir(parent_path, read_stats=False)

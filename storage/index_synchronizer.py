@@ -90,6 +90,7 @@ from logs import lg
 from automats import automat
 
 from lib import nameurl
+from lib import packetid
 
 from p2p import commands
 from p2p import contact_status
@@ -289,7 +290,7 @@ class IndexSynchronizer(automat.Automat):
                 commands.Retrieve(),
                 localID,
                 localID,
-                packetID,
+                packetid.RemotePath(packetID),
                 '',
                 supplierId)
             pkt_out = gateway.outbox(newpacket, callbacks={

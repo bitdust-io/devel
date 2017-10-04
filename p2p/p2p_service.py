@@ -673,7 +673,7 @@ def SendDeleteBackup(SupplierID, BackupID):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendDeleteBackup SupplierID=%s  BackupID=%s " % (SupplierID, BackupID))
     MyID = my_id.getLocalID()
-    PacketID = BackupID
+    PacketID = packetid.RemotePath(BackupID)
     RemoteID = SupplierID
     result = signed.Packet(commands.DeleteBackup(), MyID, MyID, PacketID, "", RemoteID)
     gateway.outbox(result)

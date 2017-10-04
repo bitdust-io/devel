@@ -307,7 +307,7 @@ def CustomerIDURL(backupID):
     """
     A wrapper for ``Split()`` method to get customer idurl from backup ID.
     """
-    user, _, _ = backupID.strip().rpartition('@')
+    user, _, _ = backupID.strip().rpartition(':')
     if not user:
         return ''
     from userid import global_id
@@ -318,7 +318,7 @@ def RemotePath(backupID):
     """
     A wrapper for ``Split()`` method to get only remote_path from backup ID.
     """
-    _, _, remote_path = backupID.split().rpartition('@')
+    _, _, remote_path = backupID.strip().rpartition(':')
     if not remote_path:
         return ''
     return remote_path

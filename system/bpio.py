@@ -903,6 +903,8 @@ def portablePath(path, remote=False):
                 p = '\\\\' + p[2:]
     if p.endswith('/') and len(p) > 1:
         p = p.rstrip('/')
+    if remote:
+        p = p.lstrip('/')
     return p  # unicode(p) #.encode('utf-8')
 
 

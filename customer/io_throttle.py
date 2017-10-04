@@ -621,7 +621,7 @@ class SupplierQueue:
                         commands.Retrieve(),
                         fileRequest.ownerID,
                         fileRequest.creatorID,
-                        fileRequest.packetID,
+                        packetid.RemotePath(fileRequest.packetID),
                         "",
                         fileRequest.remoteID)
                     # transport_control.outboxNoAck(newpacket)

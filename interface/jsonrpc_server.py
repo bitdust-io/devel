@@ -195,8 +195,17 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_key_share(self, key_id, idurl):
         return api.key_share(key_id, idurl)
 
+    def jsonrpc_files_list(self, customer_idurl=None):
+        return api.files_list(customer_idurl=customer_idurl)
+
+    def jsonrpc_file_create(self, remote_path):
+        return api.file_create(remote_path)
+
     def jsonrpc_download_start(self, remote_path, destination_path=None):
         return api.download_start(remote_path, destination_path=destination_path)
+
+    def jsonrpc_upload_start(self, local_path, remote_path):
+        return api.upload_start(local_path, remote_path)
 
     def jsonrpc_backups_update(self):
         return api.backups_update()

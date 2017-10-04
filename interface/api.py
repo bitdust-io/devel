@@ -560,11 +560,11 @@ def files_list(customer_idurl=None):
         from userid import my_id
         customers = [my_id.getLocalID(), ]
     for customer_idurl in customers:
-        for pathID, localPath, item in backup_fs.IterateIDs(customer_idurl=customer_idurl):
+        for pathID, localPath, item in backup_fs.IterateIDs(iterID=backup_fs.fsID(customer_idurl)):
             result.append({
                 'customer': customer_idurl,
                 'id': pathID,
-                'path': localPath,
+                'path': localPath.lstrip('/'),
                 'type': backup_fs.TYPES.get(item.type, '').lower(),
                 'size': item.size,
                 'key_id': item.key_id,
@@ -587,11 +587,10 @@ def file_create(remote_path):
     from storage import backup_control
     from system import bpio
     from web import control
-    from lib import nameurl
     from userid import global_id
-    parts = global_id.ParseGlobalID(remote_path)
+    parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     lg.out(4, 'api.file_create %s' % parts)
-    if not parts['idurl'] or not parts['path']:
+    if not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.portablePath(parts['path'], remote=True)
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
@@ -611,25 +610,25 @@ def file_create(remote_path):
             read_stats=False,
             iter=backup_fs.fs(parts['idurl']),
             iterID=backup_fs.fsID(parts['idurl']),
-            key_id=parts['key_id'],
+            key_id=parts['key'],
         )
     else:
         parent_iter, parent_iterID = iter_and_iterID
-    newPathID, _, _ = backup_fs.MapPath(
-        path,
-        read_stats=False,
+    newPathID, _, _ = backup_fs.MapFile(
+        os.path.basename(path),
         iter=parent_iter,
         iterID=parent_iterID,
-        key_id=parts['key_id'],
+        key_id=parts['key'],
     )
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
     return OK(
-        'new item was added: %s, local path is %s' % (newPathID, path),
+        'new item was added: %s, remote path is %s' % (newPathID, path),
         extra_fields={
             'id': newPathID,
-            'key_id': parts['key_id'],
+            'key_id': parts['key'],
             'customer': parts['idurl'],
+            'path': path,
         })
 
 
@@ -702,16 +701,21 @@ def upload_start(local_path, remote_path):
     lg.out(4, 'api.upload_start %s' % remote_path)
     if not bpio.pathExist(local_path):
         return ERROR('local file or folder %s not exist' % local_path)
-    parts = global_id.ParseGlobalID(remote_path)
+    parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
-    local_path = backup_fs.ToPath(remote_path, iterID=parts['idurl'])
-    if local_path is None:
-        return ERROR('item %s not found' % remote_path)
-    tsk = backup_control.StartSingle(remote_path, local_path, keyID=parts['key_id'])
+    path = bpio.portablePath(parts['path'], remote=True)
+    pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
+    if not pathID:
+        return ERROR('path %s not registered yet' % path)
+#     local_path = backup_fs.ToPath(remote_path, iterID=backup_fs.fsID(parts['idurl']))
+#     if local_path is None:
+#         return ERROR('item %s not found' % remote_path)
+    pathID = packetid.MakeBackupID(parts['customer'], pathID)
+    tsk = backup_control.StartSingle(pathID, local_path, keyID=parts['key'])
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update([('pathID', remote_path), ])
+    control.request_update([('pathID', pathID), ])
     return OK(
         'uploading %s started, local path is: %s' % (remote_path, local_path),
         extra_fields={'id': remote_path, 'key_id': tsk.keyID})
@@ -1100,7 +1104,7 @@ def backup_dir_make(dirpath, key_id=None):
     pathID = backup_fs.ToID(dirpath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=False, keyID=key_id)
+    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=False, key_id=key_id)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
@@ -1130,7 +1134,7 @@ def backup_dir_add(dirpath, key_id=None):
     pathID = backup_fs.ToID(dirpath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=True, keyID=key_id)
+    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=True, key_id=key_id)
     dirsize.ask(dirpath, backup_control.OnFoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
@@ -1160,7 +1164,7 @@ def backup_file_add(filepath, key_id=None):
     pathID = backup_fs.ToID(filepath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.AddFile(filepath, read_stats=True, keyID=key_id)
+    newPathID, _, _ = backup_fs.AddFile(filepath, read_stats=True, key_id=key_id)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
