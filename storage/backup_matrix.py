@@ -228,7 +228,7 @@ def SaveLatestRawListFiles(idurl, listFileText, customer_idurl=None):
     """
     Save a ListFiles packet from given supplier on local HDD.
     """
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     lg.out(4, 'backup_matrix.SaveLatestRawListFiles, %s, customer_idurl=%s' % (idurl, customer_idurl))
     supplierPath = settings.SupplierPath(idurl, customer_idurl)
@@ -262,7 +262,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
       "V" for stored data
     """
     from storage import backup_control
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if driver.is_started('service_backup_db'):
         from storage import index_synchronizer
@@ -436,7 +436,7 @@ def ReadLatestRawListFiles(customer_idurl=None):
     whole "remote" matrix.
     """
     lg.out(4, 'backup_matrix.ReadLatestRawListFiles')
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     for idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
         if idurl:
@@ -902,7 +902,7 @@ def ClearSupplierRemoteInfo(supplierNum, customer_idurl=None):
     Clear only "single column" in the "remote" matrix corresponding to given
     supplier.
     """
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     files = 0
     for backupID in remote_files().keys():

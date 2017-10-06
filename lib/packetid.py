@@ -35,8 +35,22 @@ Note - we return strings and not integers.
 Packet ID consists of several parts:
     <path ID>/<version Name>/<block number>-<supplier number>-<'Data'|'Parity'>
 
-So Backup ID is just a short form:
+Backup ID is just a short form:
     <path ID>/<version Name>
+
+Remote ID may have a different forms:
+    - full:     alice@idhost.org:0/0/1/0/F20131120053803PM/0-1-Data
+    - backupID: alice@idhost.org:0/0/1/0/F20131120053803PM
+    - pathID:   alice@idhost.org:0/0/1/0
+
+Here is:
+    - customer:      alice@idhost.org
+    - pathID:        0/0/1/0
+    - versionName:   F20131120053803PM
+    - blockNum :     0
+    - supplierNum :  1
+    - dataORparity : Data
+
 
 See module ``p2p.backup_fs`` to learn how Path ID is generated from file or folder path.
 """
@@ -83,32 +97,23 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
     return backupID + '/' + str(blockNumber) + '-' + str(supplierNumber) + '-' + dataORparity
 
 
-def MakeBackupID(customer, path_id, version=None):
+def MakeBackupID(customer=None, path_id=None, version=None):
     """
     Will create something like:
 
         "alice@idhost.org:0/0/1/0/F20131120053803PM"
     """
+    if customer:
+        if version:
+            return '{}:{}/{}'.format(customer, path_id, version)
+        return '{}:{}'.format(customer, path_id)
     if version:
-        return '{}:{}/{}'.format(customer, path_id, version)
-    return '{}:{}'.format(customer, path_id)
+        return '{}/{}'.format(path_id, version)
+    return path_id
 
 
 def Valid(packetID):
     """
-    The packet ID may have a different forms:
-
-        - full:     alice@idhost.org:0/0/1/0/F20131120053803PM/0-1-Data
-        - backupID: alice@idhost.org:0/0/1/0/F20131120053803PM
-        - pathID:   alice@idhost.org:0/0/1/0
-
-    Here is:
-        - customer:      alice@idhost.org
-        - pathID:        0/0/1/0
-        - versionName:   F20131120053803PM
-        - blockNum :     0
-        - supplierNum :  1
-        - dataORparity : Data
     """
     head, x, tail = packetID.rpartition('/')
     if x == '' and head == '':
@@ -200,24 +205,24 @@ def SplitBackupID(backupID):
     """
     try:
         pathID, _, versionName = backupID.rpartition('/')
-        customerGlobalID, _, remotePath = pathID.rpartition(':')
+        customerGlobalID, _, pathID = pathID.rpartition(':')
     except:
         return None, None, None
-    return customerGlobalID, remotePath, versionName
+    return customerGlobalID, pathID, versionName
 
 
-def SplitPacketID(backupID):
+def SplitPacketID(packetID):
     """
     This takes a backup ID string and split by 2 parts:
 
-        packetid.SplitBackupID('alice@idhost.org:0/0/1/0/F20131120053803PM')
-        ('alice@idhost.org', '0/0/1/0/F20131120053803PM')
+        packetid.SplitBackupID('alice@idhost.org:0/0/1/0/F20131120053803PM/1-2-Data')
+        ('alice@idhost.org', '0/0/1/0/F20131120053803PM/1-2-Data')
     """
     try:
-        customerGlobalID, _, remotePath = backupID.rpartition(':')
+        customerGlobalID, _, pathID = packetID.rpartition(':')
     except:
         return None, None
-    return customerGlobalID, remotePath
+    return customerGlobalID, pathID
 
 
 def IsCanonicalVersion(versionName):
@@ -275,11 +280,12 @@ def IsGlobalPathCorrect(globPath, customer_id_mandatory=False):
     """
     Validate a given ``globPath``, must have such format:
 
-        alice@idhost.org:myfiles/flowers/cactus.png
+        some_key$alice@idhost.org:myfiles/flowers/cactus.png
     """
     customerGlobalID, remotePath = SplitPacketID(globPath)
-    if not customerGlobalID and customer_id_mandatory:
-        return False
+    if customer_id_mandatory:
+        from userid import global_id
+        return global_id.IsValidGlobalUser(customerGlobalID)
     if not remotePath:
         return False
     parts = remotePath.split('/')
@@ -291,9 +297,10 @@ def IsGlobalPathCorrect(globPath, customer_id_mandatory=False):
 
 def BidBnSnDp(packetID):
     """
-    A wrapper for ``Split()`` method.
+    A wrapper for ``Split()`` method, returns tuple of 4 items.
     """
-    return Split(packetID)[1:]
+    tupl5 = Split(packetID)
+    return MakeBackupID(tupl5[0], tupl5[1]), tupl5[2], tupl5[3], tupl5[4]
 
 
 def UsrBidBnSnDp(packetID):

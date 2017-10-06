@@ -55,9 +55,9 @@ from logs import lg
 
 from system import bpio
 
-from lib import nameurl
-
 from main import settings
+
+from crypt import key
 
 from userid import my_id
 from userid import global_id
@@ -97,11 +97,11 @@ def make_key_id(alias, creator_idurl=None, output_format=None):
     Every key has a creator, and we include his IDURL in the final key_id string.
     Here is a global unique address to a remote copy of `cat.png` file:
 
-        alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM
+        group_abc$alice@first-machine.com:animals/cat.png#F20160313043757PM
 
     key_id here is:
 
-        alice!group_abc@first-machine.com
+        group_abc$alice@first-machine.com
 
     key alias is `group_abc` and creator IDURL is:
 
@@ -123,7 +123,7 @@ def split_key_id(key_id):
     Return "alias" and "creator" IDURL of that key as a tuple object.
     For example from input string:
 
-        "bob!secret_key_xyz@remote-server.net"
+        "secret_key_xyz$bob@remote-server.net"
 
     output will be like that:
 
@@ -309,6 +309,8 @@ def encrypt(key_id, inp):
 
     Return encrypted string.
     """
+    if key_id == 'master':
+        return key.EncryptLocalPublicKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
@@ -329,6 +331,8 @@ def decrypt(key_id, inp):
 
     Return decrypted string or raise exception.
     """
+    if key_id == 'master':
+        return key.DecryptLocalPrivateKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
         lg.warn('key %s is unknown' % key_id)

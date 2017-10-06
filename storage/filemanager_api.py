@@ -259,6 +259,7 @@ def _upload(params):
         else:
             pathID, iter, iterID = backup_fs.AddFile(localPath, read_stats=True)
             result.append('new file was added: %s' % localPath)
+    pathID = global_id.CanonicalID(pathID)
     backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()

@@ -184,8 +184,7 @@ class DataSender(automat.Automat):
                             lg.warn('?supplierNum? %s for %s' % (supplierNum, backupID))
                             continue
                         for packetID in packetsBySupplier[supplierNum]:
-                            backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(
-                                packetID)
+                            backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
                             if backupID_ != backupID:
                                 lg.warn('?backupID? %s for %s' % (packetID, backupID))
                                 continue

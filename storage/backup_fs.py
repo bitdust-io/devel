@@ -116,7 +116,7 @@ def fs(customer_idurl=None):
     Access method for forward index: [path] -> [ID].
     """
     global _FileSystemIndexByName
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if customer_idurl not in _FileSystemIndexByName:
         _FileSystemIndexByName[customer_idurl] = {}
@@ -128,7 +128,7 @@ def fsID(customer_idurl=None):
     Access method for backward index: [ID] -> [path].
     """
     global _FileSystemIndexByID
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if customer_idurl not in _FileSystemIndexByID:
         _FileSystemIndexByID[customer_idurl] = {}
@@ -263,8 +263,8 @@ class FSItemInfo():
         self.size = long(s.st_size)
         return True
 
-    def read_versions(self, path):
-        path = bpio.portablePath(path)
+    def read_versions(self, local_path):
+        path = bpio.portablePath(local_path)
         if not bpio.pathExist(path):
             return 0
         if not os.access(path, os.R_OK):
@@ -444,7 +444,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
     """
     # if not os.path.isfile(path):
     #     raise Exception('File not exist')
-    parts = bpio.portablePath(path, remote=True).lstrip('/').split('/')
+    parts = bpio.remotePath(path).split('/')
     if not iter:
         iter = fs()
     if not iterID:
@@ -516,7 +516,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
 
     Parameter ``path`` must be in "portable" form.
     """
-    parts = bpio.portablePath(path, remote=True).lstrip('/').split('/')
+    parts = bpio.remotePath(path).split('/')
     if not iter:
         iter = fs()
     if not iterID:
@@ -579,10 +579,10 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
                                                u'Uninstall.exe': 11,
                                                u'descript.ion': 9}}}}
     """
-    def recursive_read_dir(path, path_id, iter, iterID):
+    def recursive_read_dir(local_path, path_id, iter, iterID):
         c = 0
         lastID = -1
-        path = bpio.portablePath(path)
+        path = bpio.portablePath(local_path)
         if not os.access(path, os.R_OK):
             return c
         for localname in bpio.list_dir_safe(path):
@@ -630,7 +630,7 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, key_id=N
     "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
     The name of new item will be equal to the local path.
     """
-    path = bpio.portablePath(path, remote=True)
+    path = bpio.remotePath(path)
     if not os.path.exists(path):
         raise Exception('File or folder not exist')
     if not iter:
@@ -654,7 +654,7 @@ def MapFile(filename, iter=None, iterID=None, startID=-1, key_id=None):
     "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
     The name of new item will be equal to the local path.
     """
-    path = bpio.portablePath(filename, remote=True)
+    path = bpio.remotePath(filename)
     if not iter:
         iter = fs()
     if not iterID:
@@ -767,7 +767,7 @@ def WalkByPath(path, iter=None):
     """
     if iter is None:
         iter = fs()
-    ppath = bpio.portablePath(path, remote=True)
+    ppath = bpio.remotePath(path)
     if ppath in iter:
         return iter, str(iter[ppath])
     if ppath == '' or ppath == '/':
@@ -889,7 +889,7 @@ def DeleteByPath(path, iter=None, iterID=None):
     if iterID is None:
         iterID = fsID()
     path_id = ''
-    ppath = bpio.portablePath(path, remote=True)
+    ppath = bpio.remotePath(path)
     parts = ppath.lstrip('/').split('/')
     if ppath in iter:
         path_id = iter[ppath]
@@ -1477,7 +1477,7 @@ def ListByPath(path, iter=None):
     lg.out(4, 'backup_fs.ListByPath %s' % (path))
     if path in ['', '/']:
         return ListRootItems()
-    path = bpio.portablePath(path, remote=True)
+    path = bpio.remotePath(path)
     iter_and_id = WalkByPath(path, iter=iter)
     if iter_and_id is None:
         return None
@@ -1594,7 +1594,7 @@ def ListByPathAdvanced(path, iter=None, iterID=None):
     """
     if path == '/':
         path = ''
-    path = bpio.portablePath(path, remote=True)
+    path = bpio.remotePath(path)
     # lg.out(4, 'backup_fs.ListByPathAdvanced %s' % (path))
     iter_and_id = WalkByPath(path, iter=iter)
     if iter_and_id is None:
@@ -1728,7 +1728,7 @@ def Scan(basedir=None, customer_idurl=None):
     ``lib.settings.getLocalBackupsDir()``. Also calculate size of the
     files.
     """
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
         basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
@@ -1750,7 +1750,7 @@ def ScanID(pathID, basedir=None, customer_idurl=None):
     """
     Same as `Scan`, but check only single item in the index.
     """
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
         basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))

@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# nameurl.py
+# global_id.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (nameurl.py) is part of BitDust Software.
+# This file (global_id.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -25,17 +25,13 @@
 #
 
 """
-.. module:: nameurl.
+.. module:: global_id.
 
 """
 
 #------------------------------------------------------------------------------
 
 import re
-
-#------------------------------------------------------------------------------
-
-from lib import nameurl
 
 #------------------------------------------------------------------------------
 
@@ -50,6 +46,7 @@ def MakeGlobalID(
     idurl=None,
     user=None,
     idhost=None,
+    customer=None,
     key=None,
     path=None,
     version=None,
@@ -62,7 +59,10 @@ def MakeGlobalID(
     """
     output_format = _FORMAT_GLOBAL_ID_KEY_USER
     out = ''
+    if customer:
+        idurl = GlobalUserToIDURL(customer)
     if idurl:
+        from lib import nameurl
         _, idhost, port, filename = nameurl.UrlParse(idurl)
         if port:
             idhost += ':' + str(port)
@@ -78,7 +78,6 @@ def MakeGlobalID(
             out += '#{}'.format(version)
     return out
 
-#------------------------------------------------------------------------------
 
 def ParseGlobalID(inp):
     """
@@ -144,7 +143,6 @@ def ParseGlobalID(inp):
         result['path'] = path
     return result
 
-#------------------------------------------------------------------------------
 
 def NormalizeGlobalID(inp):
     """
@@ -163,14 +161,25 @@ def NormalizeGlobalID(inp):
     if not g['key']:
         g['key'] = 'master'
     if not g['idhost']:
-        g['idhost'] = my_id.getLocalIdentity().getContactHost()
+        from lib import nameurl
+        g['idhost'] = nameurl.GetHost(g['idurl'])
     return g
+
+
+def CanonicalID(inp, include_key=False):
+    """
+    """
+    parts = NormalizeGlobalID(ParseGlobalID(inp))
+    if not include_key:
+        parts['key'] = ''
+    return MakeGlobalID(**parts)
 
 #------------------------------------------------------------------------------
 
 def UrlToGlobalID(url):
     """
     """
+    from lib import nameurl
     _, host, port, filename = nameurl.UrlParse(url)
     if filename.count('.'):
         username = filename.split('.')[0]
@@ -211,5 +220,18 @@ def IsValidGlobalUser(inp):
     if not user:
         return False
     if not idhost:
+        return False
+    return True
+
+
+def IsFullGlobalID(inp):
+    """
+    """
+    if not inp:
+        return False
+    user, _, remote_path = inp.strip().rpartition(':')
+    if not IsValidGlobalUser(user):
+        return False
+    if not remote_path:
         return False
     return True

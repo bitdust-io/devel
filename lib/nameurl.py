@@ -185,6 +185,12 @@ def GetFileName(url):
         return ''
     return url[url.rfind("/") + 1:]
 
+def GetHost(url):
+    """
+    Return host name value from url.
+    """
+    return UrlParse(url)[1]
+
 #------------------------------------------------------------------------------
 
 def Quote(s):

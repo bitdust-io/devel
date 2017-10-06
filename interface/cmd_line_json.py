@@ -602,7 +602,7 @@ def cmd_api(opts, args, overDict, executablePath):
                 doc_line = ''
             else:
                 doc_line = doc_line.strip().split('\n')[0]
-            print_text('    %s(%s)' % (item, ', '.join(params.args),))
+            print_text('\n    %s(%s)' % (item, ', '.join(params.args),))
             print_text('        %s' % doc_line)
         return 0
     return call_jsonrpc_method_and_stop(args[1], *args[2:])

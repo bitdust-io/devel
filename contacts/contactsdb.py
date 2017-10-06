@@ -99,7 +99,7 @@ def suppliers(customer_idurl=None):
     Return list of suppliers ID's for given customer.
     """
     global _SuppliersList
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
@@ -155,7 +155,7 @@ def set_suppliers(idlist, customer_idurl=None):
     Set suppliers ID's list.
     """
     global _SuppliersList
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
@@ -184,7 +184,7 @@ def add_supplier(idurl, position=-1, customer_idurl=None):
     Add supplier and return its position in the list.
     """
     global _SuppliersList
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
@@ -200,7 +200,7 @@ def clear_suppliers(customer_idurl=None):
     Remove all suppliers.
     """
     global _SuppliersList
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     _SuppliersList.pop(customer_idurl)
 

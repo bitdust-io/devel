@@ -581,6 +581,8 @@ def DeleteFile(request):
     filescount = 0
     dirscount = 0
     for pathID in ids:
+        customerGlobID, pathID = packetid.SplitPacketID(pathID)
+        # TODO: add validation of customerGlobID
         filename = makeFilename(request.OwnerID, pathID)
         if filename == "":
             filename = constructFilename(request.OwnerID, pathID)
@@ -620,7 +622,8 @@ def SendDeleteFile(SupplierID, pathID):
 
 def SendDeleteListPaths(SupplierID, ListPathIDs):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs number: %d" % (SupplierID, len(ListPathIDs)))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs number: %d" % (
+            SupplierID, len(ListPathIDs)))
     MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
@@ -710,7 +713,7 @@ def RequestListFilesAll(customer_idurl=None):
 
 def SendRequestListFiles(supplierNumORidurl, customer_idurl=None):
     MyID = my_id.getLocalID()
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = MyID
     if not str(supplierNumORidurl).isdigit():
         RemoteID = supplierNumORidurl
