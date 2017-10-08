@@ -1164,15 +1164,15 @@ def HasChildsID(pathID, iterID=None):
 #------------------------------------------------------------------------------
 
 
-def ResolvePath(head, tail):
+def ResolvePath(head, tail=''):
     """
     Smart join of path locations when read items from catalog.
     """
-    if tail.startswith('/'):
-        return tail
-    if head in ['', '/']:
-        return '/' + tail
-    return head + '/' + tail
+    if not head or head.strip().lstrip('/') == '':
+        return tail.strip().lstrip('/')
+    if not tail or tail.strip().lstrip('/') == '':
+        return head.strip().lstrip('/') if head else ''
+    return head.strip().lstrip('/') + '/' + tail.strip().lstrip('/')
 
 
 def TraverseByID(callback, iterID=None):
@@ -1189,21 +1189,23 @@ def TraverseByID(callback, iterID=None):
         if path not in ['', '/']:
             path += '/'
         if isinstance(i, FSItemInfo):
-            cb(path_id, path, i)
+            cb(path_id, ResolvePath(path), i)
             return
         if INFO_KEY in i:
             name = i[INFO_KEY].name()
             path += name
-            cb(path_id, path, i[INFO_KEY])
+            cb(path_id, ResolvePath(path), i[INFO_KEY])
         for id in i.keys():
             if id == INFO_KEY:
                 continue
             if isinstance(i[id], dict):
                 recursive_traverse(i[id], path_id + '/' + str(id) if path_id else str(id), path, cb)
             elif isinstance(i[id], FSItemInfo):
-                cb((path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
-                    ResolvePath(path, i[id].name()),
-                    i[id])
+                cb(
+                    (path_id + '/' + str(id)).lstrip('/') if path_id else str(id),  # pathID
+                    ResolvePath(path, i[id].name()),                                # remotePath
+                    i[id],                                                          # item
+                )
             else:
                 raise Exception('Error, wrong item type in the index')
 
@@ -1225,12 +1227,12 @@ def TraverseByIDSorted(callback, iterID=None):
         if path not in ['', '/']:
             path += '/'
         if isinstance(i, FSItemInfo):
-            cb(path_id, path, i, False)
+            cb(path_id, ResolvePath(path), i, False)
             return
         if INFO_KEY in i:
             name = i[INFO_KEY].name()
             path += name
-            cb(path_id, path, i[INFO_KEY], len(i) > 1)
+            cb(path_id, ResolvePath(path), i[INFO_KEY], len(i) > 1)
         dirs = []
         files = []
         for id in i.keys():
@@ -1247,7 +1249,7 @@ def TraverseByIDSorted(callback, iterID=None):
         for id, pth in dirs:
             recursive_traverse(i[id], (path_id + '/' + str(id)).lstrip('/') if path_id else str(id), path, cb)
         for id, pth in files:
-            cb((path_id + '/' + str(id)).lstrip('/') if path_id else str(id), pth, i[id], False)
+            cb((path_id + '/' + str(id)).lstrip('/') if path_id else str(id), ResolvePath(pth), i[id], False)
         del dirs
         del files
 
@@ -1292,13 +1294,13 @@ def TraverseChildsByID(callback, iterID=None):
         files.sort(key=lambda e: e[1])
         for id, pth, has_childs in dirs:
             cb(DIR,
-               pth,
+               ResolvePath(pth),
                (path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
                i[id][INFO_KEY],
                has_childs)
         for id, pth in files:
             cb(FILE,
-               pth,
+               ResolvePath(pth),
                (path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
                i[id],
                False)
@@ -1346,7 +1348,7 @@ def IterateIDs(iterID=None):
         if INFO_KEY in i:
             name = i[INFO_KEY].name()
             path += name
-            yield path_id, path, i[INFO_KEY]
+            yield path_id, ResolvePath(path), i[INFO_KEY]
         for id in i.keys():
             if id == INFO_KEY:
                 continue
@@ -1354,10 +1356,11 @@ def IterateIDs(iterID=None):
                 for t in recursive_iterate(i[id], (path_id + '/' + str(id)).lstrip('/') if path_id else str(id), path):
                     yield t
             elif isinstance(i[id], FSItemInfo):
-                yield ((path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
-                       ResolvePath(path, i[id].name()),
-                       # path+'/'+i[id].name() if path not in ['', '/'] else ('/'+i[id].name()).replace('//', '/'),
-                       i[id])
+                yield (
+                    (path_id + '/' + str(id)).lstrip('/') if path_id else str(id),  # pathID
+                    ResolvePath(path, i[id].name()),                                # remotePath
+                    i[id],                                                          # item
+                )
             else:
                 raise Exception('Error, wrong item type in the index')
 
@@ -1490,7 +1493,7 @@ def ListByID(pathID, iterID=None):
     result = []
     iterID, path = iter_and_path
     if isinstance(iterID, FSItemInfo):
-        return [(pathID, path, iterID), ]
+        return [(pathID, ResolvePath(path), iterID), ]
     if not isinstance(iterID, dict):
         raise Exception('Wrong data type in the index')
     if INFO_KEY not in iterID and pathID.strip() != '':
@@ -1508,7 +1511,7 @@ def ListByID(pathID, iterID=None):
             itm = iterID[id]
         else:
             raise Exception('Wrong data type in the index')
-        result.append(((pathID + '/' + str(id)).lstrip('/'), path + '/' + name, itm))
+        result.append(((pathID + '/' + str(id)).lstrip('/'), ResolvePath(path, name), itm))
     return result
 
 
@@ -1530,7 +1533,7 @@ def ListByPath(path, iter=None):
     result = []
     iter, path_id = iter_and_id
     if isinstance(iter, int):
-        return [(path_id, path, None), ]
+        return [(path_id, ResolvePath(path), None), ]
     if not isinstance(iter, dict):
         raise Exception('Wrong data type in the index')
     if 0 not in iter:
@@ -1546,7 +1549,7 @@ def ListByPath(path, iter=None):
             id = iter[key]
         else:
             raise Exception('Wrong data type in the index')
-        result.append(((path_id + '/' + str(id)).lstrip('/'), path + '/' + key))
+        result.append(((path_id + '/' + str(id)).lstrip('/'), ResolvePath(path, key)))
     return result
 
 
@@ -1560,7 +1563,7 @@ def ListAllBackupIDs(sorted=False, reverse=False, iterID=None):
     customer_id = global_id.UrlToGlobalID(customer_idurl)
     lst = []
 
-    def visitor(path_id, path, info):
+    def visitor(path_id, _, info):
         for version in info.list_versions(sorted, reverse):
             lst.append(packetid.MakeBackupID(customer_id, path_id.lstrip('/'), version))
 
@@ -1581,7 +1584,7 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
     def visitor(path_id, path, info):
         for version in info.list_versions(sorted, reverse):
             backupID = packetid.MakeBackupID(customer_id, path_id.lstrip('/'), version)
-            lst.append((info.name(), backupID, info.get_version_info(version), path, info))
+            lst.append((info.name(), backupID, info.get_version_info(version), ResolvePath(path), info))
 
     TraverseByID(visitor, iterID=iterID)
     return lst
@@ -1601,7 +1604,7 @@ def ListSelectedFolders(selected_dirs_ids, sorted=False, reverse=False, iterID=N
     def visitor(path_id, path, info, has_childs):
         basepathid = path_id[:path_id.rfind('/')] if path_id.count('/') else ''
         if basepathid in selected_dirs_ids:
-            lst.append((info.type, path_id, path, info.size, info.list_versions(sorted, reverse)))
+            lst.append((info.type, path_id, ResolvePath(path), info.size, info.list_versions(sorted, reverse)))
         return True
 
     TraverseByIDSorted(visitor, iterID=iterID)
@@ -1618,7 +1621,7 @@ def ListExpandedFoldersAndBackups(expanded_dirs, selected_items, iterID=None):
     def visitor(path_id, path, info, has_childs):
         basepathid = path_id[:path_id.rfind('/')] if path_id.count('/') else ''
         if basepathid in expanded_dirs:
-            lst.append((info.type, path_id, path, info.size, info.get_versions()))
+            lst.append((info.type, path_id, ResolvePath(path), info.size, info.get_versions()))
         if path_id in selected_items:
             for version in info.list_versions():
                 backups.append((path_id + '/' + version).lstrip('/'))
