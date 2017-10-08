@@ -112,7 +112,7 @@ def MakeBackupID(customer=None, path_id=None, version=None):
     return path_id
 
 
-def Valid(shortPacketID):
+def Valid(packetID):
     """
     Must be in short form, without global user ID:
 
@@ -121,26 +121,29 @@ def Valid(shortPacketID):
         0/1/2
 
     """
-    user, _, _ = shortPacketID.rpartition(':')
+    user, _, shortPacketID = packetID.rpartition(':')
     if user:
         return False
     head, x, tail = shortPacketID.rpartition('/')
-    pathID = shortPacketID
-    versionName = ''
-    if x == '' and head == '':
+    pathID = ''
+    version = ''
+    if not x and not head:
         # this seems to be a shortest pathID: 0, 1, 2, ...
         try:
-            x = int(tail)
+            int(tail)
         except:
             return False
         pathID = tail
     if tail.endswith('-Data') or tail.endswith('-Parity'):
         if not IsPacketNameCorrect(tail):
             return False
-        pathID, x, versionName = head.rpartition('/')
+        pathID, _, version = head.rpartition('/')
     else:
-        versionName = tail
-    if not IsCanonicalVersion(versionName):
+        pathID = shortPacketID
+        if IsCanonicalVersion(tail):
+            version = tail
+            pathID = head
+    if version and not IsCanonicalVersion(version):
         return False
     if not IsPathIDCorrect(pathID):
         return False

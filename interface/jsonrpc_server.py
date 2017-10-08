@@ -207,71 +207,77 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_file_download_start(self, remote_path, destination_path=None):
         return api.file_download_start(remote_path, destination_path=destination_path)
 
+    def jsonrpc_file_download_stop(self, remote_path):
+        return api.file_download_stop(remote_path)
+
     def jsonrpc_file_upload_start(self, local_path, remote_path):
         return api.file_upload_start(local_path, remote_path)
 
     def jsonrpc_file_upload_stop(self, remote_path):
         return api.file_upload_stop(remote_path)
 
-    def jsonrpc_backups_update(self):
-        return api.backups_update()
+    def jsonrpc_file_delete(self, remote_path):
+        return api.file_delete(remote_path)
 
-    def jsonrpc_backups_list(self):
-        return api.backups_list()
-
-    def jsonrpc_backups_id_list(self):
-        return api.backups_id_list()
-
-    def jsonrpc_backup_start_path(self, path, mount_path=None, key_id=None):
-        return api.backup_start_path(path, mount_path=mount_path, key_id=key_id)
-
-    def jsonrpc_backup_start_id(self, pathID):
-        return api.backup_start_id(pathID)
-
-    def jsonrpc_backup_map_path(self, dirpath, mount_path, key_id=None):
-        return api.backup_map_path(dirpath, mount_path=mount_path, key_id=key_id)
-
-    def jsonrpc_backup_dir_add(self, dirpath, key_id=None):
-        return api.backup_dir_add(dirpath, key_id=key_id)
-
-    def jsonrpc_backup_dir_make(self, dirpath, key_id=None):
-        return api.backup_dir_make(dirpath, key_id=key_id)
-
-    def jsonrpc_backup_file_add(self, filepath, key_id=None):
-        return api.backup_file_add(filepath, key_id=key_id)
-
-    def jsonrpc_backup_tree_add(self, dirpath):
-        return api.backup_tree_add(dirpath)
-
-    def jsonrpc_backup_delete_local(self, backupID):
-        return api.backup_delete_local(backupID)
-
-    def jsonrpc_backup_delete_id(self, pathID):
-        return api.backup_delete_id(pathID)
-
-    def jsonrpc_backup_delete_path(self, path):
-        return api.backup_delete_path(path)
-
-    def jsonrpc_restore_single(self, pathID_or_backupID_or_loca_path, destination_path=None):
-        return api.restore_single(pathID_or_backupID_or_loca_path, destination_path)
-
-    def jsonrpc_backups_queue(self):
-        return api.backups_queue()
-
-    def jsonrpc_backups_running(self):
-        return api.backups_running()
-
-    def jsonrpc_backup_cancel_pending(self, pathID):
-        return api.backup_cancel_pending(pathID)
-
-    def jsonrpc_backup_abort_running(self, backupID):
-        return api.backup_abort_running(backupID)
-
-    def jsonrpc_restores_running(self):
-        return api.restores_running()
-
-    def jsonrpc_restore_abort(self, backupID):
-        return api.restore_abort(backupID)
+#     def jsonrpc_backups_update(self):
+#         return api.backups_update()
+# 
+#     def jsonrpc_backups_list(self):
+#         return api.backups_list()
+# 
+#     def jsonrpc_backups_id_list(self):
+#         return api.backups_id_list()
+# 
+#     def jsonrpc_backup_start_path(self, path, mount_path=None, key_id=None):
+#         return api.backup_start_path(path, mount_path=mount_path, key_id=key_id)
+# 
+#     def jsonrpc_backup_start_id(self, pathID):
+#         return api.backup_start_id(pathID)
+# 
+#     def jsonrpc_backup_map_path(self, dirpath, mount_path, key_id=None):
+#         return api.backup_map_path(dirpath, mount_path=mount_path, key_id=key_id)
+# 
+#     def jsonrpc_backup_dir_add(self, dirpath, key_id=None):
+#         return api.backup_dir_add(dirpath, key_id=key_id)
+# 
+#     def jsonrpc_backup_dir_make(self, dirpath, key_id=None):
+#         return api.backup_dir_make(dirpath, key_id=key_id)
+# 
+#     def jsonrpc_backup_file_add(self, filepath, key_id=None):
+#         return api.backup_file_add(filepath, key_id=key_id)
+# 
+#     def jsonrpc_backup_tree_add(self, dirpath):
+#         return api.backup_tree_add(dirpath)
+# 
+#     def jsonrpc_backup_delete_local(self, backupID):
+#         return api.backup_delete_local(backupID)
+# 
+#     def jsonrpc_backup_delete_id(self, pathID):
+#         return api.backup_delete_id(pathID)
+# 
+#     def jsonrpc_backup_delete_path(self, path):
+#         return api.backup_delete_path(path)
+# 
+#     def jsonrpc_restore_single(self, pathID_or_backupID_or_loca_path, destination_path=None):
+#         return api.restore_single(pathID_or_backupID_or_loca_path, destination_path)
+# 
+#     def jsonrpc_backups_queue(self):
+#         return api.backups_queue()
+# 
+#     def jsonrpc_backups_running(self):
+#         return api.backups_running()
+# 
+#     def jsonrpc_backup_cancel_pending(self, pathID):
+#         return api.backup_cancel_pending(pathID)
+# 
+#     def jsonrpc_backup_abort_running(self, backupID):
+#         return api.backup_abort_running(backupID)
+# 
+#     def jsonrpc_restores_running(self):
+#         return api.restores_running()
+# 
+#     def jsonrpc_restore_abort(self, backupID):
+#         return api.restore_abort(backupID)
 
     def jsonrpc_suppliers_list(self):
         return api.suppliers_list()
