@@ -159,10 +159,10 @@ class restore(automat.Automat):
         self.BackupID = BackupID
         _parts = packetid.SplitBackupID(self.BackupID)
         self.CustomerGlobalID = _parts[0]
+        self.CustomerIDURL = global_id.GlobalUserToIDURL(self.CustomerGlobalID)
         self.RemotePath = _parts[1]
         self.Version = _parts[2]
         self.File = OutputFile
-        self.CustomerIDURL = global_id.GlobalUserToIDURL(self.CustomerGlobalID)
         self.KeyID = KeyID
         # is current active block - so when add 1 we get to first, which is 0
         self.BlockNumber = -1
@@ -359,13 +359,15 @@ class restore(automat.Automat):
         self.automat('request-done')
 
     def doReadRaid(self, arg):
-        fd, filename = tmpfile.make('restore',
-                                    prefix=self.BackupID.replace('/', '_') + '_' + str(self.BlockNumber) + '_')
+        fd, outfilename = tmpfile.make(
+            'restore',
+            prefix=self.BackupID.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.BlockNumber) + '_',
+        )
         os.close(fd)
-        task_params = (filename, eccmap.CurrentName(), self.Version, self.BlockNumber,
-                       os.path.join(settings.getLocalBackupsDir(), self.CustomerGlobalID, self.RemotePath))
+        inputpath = os.path.join(settings.getLocalBackupsDir(), self.CustomerGlobalID, self.RemotePath)
+        task_params = (outfilename, eccmap.CurrentName(), self.Version, self.BlockNumber, inputpath)
         raid_worker.add_task('read', task_params,
-                             lambda cmd, params, result: self._blockRestoreResult(result, filename))
+                             lambda cmd, params, result: self._blockRestoreResult(result, outfilename))
 
     def doReadPacketsQueue(self, arg):
         reactor.callLater(0, self._process_inbox_queue)
@@ -436,7 +438,9 @@ class restore(automat.Automat):
 
     def doDeleteBlockRequests(self, arg):
         from customer import io_throttle
-        io_throttle.DeleteBackupRequests(self.BackupID + "-" + str(self.BlockNumber))
+        backupID_pattern = self.BackupID + '/' + str(self.BlockNumber) + '-'
+        lg.out(12, 'restore.doDeleteBlockRequests %s' % backupID_pattern)
+        io_throttle.DeleteBackupRequests(backupID_pattern)
 
     def doRemoveTempFile(self, arg):
         try:

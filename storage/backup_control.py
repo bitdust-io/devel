@@ -501,8 +501,8 @@ class Task():
 
     def __init__(self, pathID, localPath=None, keyID=None):
         self.number = NewTaskNumber()                   # index number for the task
-        self.pathID = pathID                            # source path to backup
         parts = global_id.ParseGlobalID(pathID)
+        self.pathID = pathID                            # source path to backup
         self.keyID = keyID or parts['key']
         self.customerGlobID = parts['customer']
         self.customerIDURL = parts['idurl']
@@ -674,11 +674,13 @@ def OnFoundFolderSize(pth, sz, arg):
     """
     try:
         pathID, version = arg
-        item = backup_fs.GetByID(pathID)
+        customerID, pathID = packetid.SplitPacketID(pathID)
+        customerIDURL = global_id.GlobalUserToIDURL(customerID)
+        item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customerIDURL))
         if item:
             item.set_size(sz)
         if version:
-            backupID = pathID + '/' + version
+            backupID = packetid.MakeBackupID(customerID, pathID, version)
             job = GetRunningBackupObject(backupID)
             if job:
                 job.totalSize = sz
@@ -828,9 +830,9 @@ def StartRecursive(pathID, keyID=None):
     from storage import backup_monitor
     startedtasks = []
 
-    def visitor(path_id, path, info):
+    def visitor(_pathID, path, info):
         if info.type == backup_fs.FILE:
-            if pathID.count(path_id):
+            if pathID.count(_pathID):
                 t = PutTask(pathID=pathID, localPath=path, keyID=keyID)
                 startedtasks.append(t)
 
@@ -896,7 +898,7 @@ def IsPathInProcess(pathID):
     """
     pathID = global_id.CanonicalID(pathID)
     for backupID in jobs().keys():
-        if backupID.startswith(pathID + '/'):
+        if backupID.startswith(pathID):
             return True
     return False
 

@@ -165,7 +165,7 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
         return None
     outfd, outfilename = tmpfile.make(
         'restore', '.tar.gz',
-        backupID.replace('.', '_').replace('/', '_').replace(':', '_') + '_')
+        backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_')
     r = restore.restore(backupID, outfd, KeyID=keyID)
     r.MyDeferred.addCallback(restore_done, backupID, outfilename, outputLocation, callback)
     # r.MyDeferred.addErrback(restore_failed, outfilename, callback)

@@ -179,6 +179,8 @@ def CanonicalID(inp, include_key=False):
 def UrlToGlobalID(url):
     """
     """
+    if not url:
+        return url
     from lib import nameurl
     _, host, port, filename = nameurl.UrlParse(url)
     if filename.count('.'):

@@ -215,12 +215,12 @@ class BitDustFTP(FTP):
 #         consumer.fObj.close()
 #         consumer.close()
         full_path = '/' + ('/'.join(newsegs))
-        path_id = backup_fs.ToID(full_path)
-        if not path_id:
-            path_id, _, _ = backup_fs.AddFile(full_path, read_stats=False)
-        item = backup_fs.GetByID(path_id)
+        shortPathID = backup_fs.ToID(full_path)
+        if not shortPathID:
+            shortPathID, _, _ = backup_fs.AddFile(full_path, read_stats=False)
+        item = backup_fs.GetByID(shortPathID)
         item.read_stats(upload_filename)
-        backup_control.StartSingle(path_id, upload_filename)
+        backup_control.StartSingle(shortPathID, upload_filename)
         # upload_task.result_defer.addCallback(self._cbFileBackup, result_defer, newsegs)
         backup_fs.Calculate()
         backup_control.Save()
@@ -352,16 +352,16 @@ class BitDustFTP(FTP):
         else:
             consumer = self.dtpInstance
         pth = '/' + ('/'.join(newsegs))
-        path_id = backup_fs.ToID(pth)
-        if not path_id:
+        shortPathID = backup_fs.ToID(pth)
+        if not shortPathID:
             return defer.fail(FileNotFoundError(path))
-        item = backup_fs.GetByID(path_id)
+        item = backup_fs.GetByID(shortPathID)
         if not item:
             return defer.fail(FileNotFoundError(path))
         version = item.get_latest_version()
         if version is None:
             return defer.fail(FileNotFoundError(path))
-        backupID = packetid.MakeBackupID(my_id.getGlobalID(), path_id, version)
+        backupID = packetid.MakeBackupID(my_id.getGlobalID(), shortPathID, version)
         if backup_control.IsBackupInProcess(backupID):
             # TODO: try older version, or return another error
             return defer.fail(FileNotFoundError(path))
@@ -379,8 +379,8 @@ class BitDustFTP(FTP):
         restore_monitor.Start(
             backupID,
             restore_dir,
-            callback=lambda backup_id, result: self._cbRestoreDone(
-                backup_id, result, restore_path, newsegs, d,
+            callback=lambda backupID, result: self._cbRestoreDone(
+                backupID, result, restore_path, newsegs, d,
             ),
         )
         return d
@@ -441,10 +441,10 @@ class BitDustFTP(FTP):
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
         full_path = '/' + ('/'.join(newsegs))
-        path_id = backup_fs.ToID(full_path)
-        if path_id is None:
+        shortPathID = backup_fs.ToID(full_path)
+        if shortPathID is None:
             return defer.fail(FileNotFoundError(path))
-        item = backup_fs.GetByID(path_id)
+        item = backup_fs.GetByID(shortPathID)
         if item is None:
             return defer.fail(FileNotFoundError(path))
         return succeed((FILE_STATUS, str(item.size), ))
@@ -458,7 +458,7 @@ class BitDustFTP(FTP):
         full_path = '/' + ('/'.join(newsegs))
         if backup_fs.Exists(full_path):
             return defer.fail(FileExistsError(path))
-        path_id, _, _ = backup_fs.AddDir(path)
+        shortPathID, _, _ = backup_fs.AddDir(path)
         backup_control.Save()
         return succeed((MKD_REPLY, path))
 
@@ -468,15 +468,15 @@ class BitDustFTP(FTP):
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
         full_path = '/' + ('/'.join(newsegs))
-        path_id = backup_fs.ToID(full_path)
-        if path_id is None:
+        shortPathID = backup_fs.ToID(full_path)
+        if shortPathID is None:
             return defer.fail(FileNotFoundError(path))
-        item = backup_fs.GetByID(path_id)
+        item = backup_fs.GetByID(shortPathID)
         if item is None:
             return defer.fail(FileNotFoundError(path))
-        backup_control.DeletePathBackups(path_id, saveDB=False, calculate=False)
-        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), path_id)
-        backup_fs.DeleteByID(path_id)
+        backup_control.DeletePathBackups(shortPathID, saveDB=False, calculate=False)
+        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), shortPathID)
+        backup_fs.DeleteByID(shortPathID)
         backup_fs.Scan()
         backup_fs.Calculate()
         backup_control.Save()
@@ -489,15 +489,15 @@ class BitDustFTP(FTP):
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
         full_path = '/' + ('/'.join(newsegs))
-        path_id = backup_fs.ToID(full_path)
-        if path_id is None:
+        shortPathID = backup_fs.ToID(full_path)
+        if shortPathID is None:
             return defer.fail(FileNotFoundError(path))
-        item = backup_fs.GetByID(path_id)
+        item = backup_fs.GetByID(shortPathID)
         if item is None:
             return defer.fail(FileNotFoundError(path))
-        backup_control.DeletePathBackups(path_id, saveDB=False, calculate=False)
-        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), path_id)
-        backup_fs.DeleteByID(path_id)
+        backup_control.DeletePathBackups(shortPathID, saveDB=False, calculate=False)
+        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), shortPathID)
+        backup_fs.DeleteByID(shortPathID)
         backup_fs.Scan()
         backup_fs.Calculate()
         backup_control.Save()

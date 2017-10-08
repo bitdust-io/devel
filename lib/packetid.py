@@ -112,35 +112,39 @@ def MakeBackupID(customer=None, path_id=None, version=None):
     return path_id
 
 
-def Valid(packetID):
+def Valid(shortPacketID):
     """
+    Must be in short form, without global user ID:
+
+        0/1/2/F20131120053803PM/3-4-Data
+        0/1/2/F20131120053803PM
+        0/1/2
+
     """
-    head, x, tail = packetID.rpartition('/')
+    user, _, _ = shortPacketID.rpartition(':')
+    if user:
+        return False
+    head, x, tail = shortPacketID.rpartition('/')
+    pathID = shortPacketID
+    versionName = ''
     if x == '' and head == '':
         # this seems to be a shortest pathID: 0, 1, 2, ...
         try:
             x = int(tail)
         except:
             return False
-        return True
+        pathID = tail
     if tail.endswith('-Data') or tail.endswith('-Parity'):
-        # seems to be in the full form
         if not IsPacketNameCorrect(tail):
             return False
         pathID, x, versionName = head.rpartition('/')
-        if not IsCanonicalVersion(versionName):
-            return False
-        if not IsPathIDCorrect(pathID):
-            return False
-        return True
-    if IsPathIDCorrect(packetID):
-        # we have only two options now, let's if this is a pathID
-        return True
-        # this should be a backupID - no other cases
-    if IsCanonicalVersion(tail) and IsPathIDCorrect(head):
-        return True
-    # something is not fine with that string
-    return False
+    else:
+        versionName = tail
+    if not IsCanonicalVersion(versionName):
+        return False
+    if not IsPathIDCorrect(pathID):
+        return False
+    return True
 
 
 def Split(packetID):
@@ -316,7 +320,8 @@ def CustomerIDURL(backupID):
     """
     user, _, _ = backupID.strip().rpartition(':')
     if not user:
-        return ''
+        from userid import my_id
+        return my_id.getLocalID()
     from userid import global_id
     return global_id.GlobalUserToIDURL(user)
 
@@ -335,7 +340,8 @@ def BackupID(packetID):
     """
     A wrapper for ``Split()`` method to get the first part - backup ID.
     """
-    return Split(packetID)[1]
+    customerGlobalID, remotePathWithVersion, _, _, _ = Split(packetID)[1]
+    return MakeBackupID(customerGlobalID, remotePathWithVersion)
 
 
 def BlockNumber(packetID):

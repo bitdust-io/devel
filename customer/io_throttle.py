@@ -249,11 +249,15 @@ class FileToRequest:
         self.callOnReceived.append(callOnReceived)
         self.creatorID = creatorID
         self.packetID = packetID
-        self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
-        self.customerIDURL = global_id.GlobalUserToIDURL(self.customerID)
+        parts = global_id.ParseGlobalID(packetID)
+        self.customerID = parts['customer']
+        self.remotePath = parts['path']
+        self.customerIDURL = parts['idurl']
+        customerGlobalID, remotePath, versionName, fileName = packetid.SplitVersionFilename(packetID)
+        self.backupID = packetid.MakeBackupID(customerGlobalID, remotePath, versionName)
+        self.fileName = fileName
         self.ownerID = ownerID
         self.remoteID = remoteID
-        self.backupID, x, self.fileName = packetID.rpartition('/')  # [0:packetID.find("-")]
         self.requestTime = None
         self.fileReceivedTime = None
         self.requestTimeout = max(30, 2 * int(settings.getBackupBlockSize() / settings.SendingSpeedLimit()))
@@ -276,8 +280,13 @@ class FileToSend:
             lg.exc()
             self.fileSize = 0
         self.packetID = packetID
-        self.customerID, self.remotePath = packetid.SplitPacketID(packetID)
-        self.customerIDURL = global_id.GlobalUserToIDURL(self.customerID)
+        parts = global_id.ParseGlobalID(packetID)
+        self.customerID = parts['customer']
+        self.remotePath = parts['path']
+        self.customerIDURL = parts['idurl']
+        customerGlobalID, remotePath, versionName, fileName = packetid.SplitVersionFilename(packetID)
+        self.backupID = packetid.MakeBackupID(customerGlobalID, remotePath, versionName)
+        self.fileName = fileName
         self.remoteID = remoteID
         self.ownerID = ownerID
         self.callOnAck = callOnAck

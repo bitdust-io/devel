@@ -349,11 +349,10 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
             if len(words) < 4:
                 lg.warn('incorrect line (words count): [%s]' % line)
                 continue
-            _, remotePath, versionName = packetid.SplitBackupID(words[0])
+            customerID, remotePath, versionName = packetid.SplitBackupID(words[0])
             try:
                 backupID = packetid.MakeBackupID(global_id.UrlToGlobalID(customer_idurl), remotePath) + '/' + versionName
             except:
-                import pdb; pdb.set_trace()
                 lg.warn('incorrect line (global id format): [%s]' % line)
                 continue
             try:

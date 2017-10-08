@@ -145,9 +145,10 @@ class backup(automat.Automat):
                  sourcePath=None,
                  keyID=None, ):
         self.backupID = backupID
-        _parts = packetid.SplitPacketID(self.backupID)
+        _parts = packetid.SplitBackupID(self.backupID)
         self.customerGlobalID = _parts[0]
-        self.remotePath = _parts[1]
+        self.pathID = _parts[1]
+        self.version = _parts[2]
         self.customerIDURL = global_id.GlobalUserToIDURL(self.customerGlobalID)
         self.sourcePath = sourcePath
         self.keyID = keyID
@@ -348,8 +349,9 @@ class backup(automat.Automat):
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
         dt = time.time()
-        outputpath = os.path.join(settings.getLocalBackupsDir(), self.customerGlobalID, self.remotePath)
-        task_params = (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, outputpath)
+        outputpath = os.path.join(
+            settings.getLocalBackupsDir(), self.customerGlobalID, self.pathID, self.version)
+        task_params = (filename, self.eccmap.name, self.version, newblock.BlockNumber, outputpath)
         raid_worker.add_task('make', task_params,
                              lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
         self.automat('block-raid-started', newblock)

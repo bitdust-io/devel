@@ -223,9 +223,9 @@ class Packet:
 
     def BackupID(self):
         """
-        A wrapper for ``lib.packetid.BackupID``.
         """
-        return packetid.BackupID(self.PacketID)
+        backupID, _, _ = self.PacketID.rpartition('/')
+        return backupID
 
     def BlockNumber(self):
         """

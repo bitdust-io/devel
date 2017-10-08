@@ -184,8 +184,14 @@ def outbox(outpacket):
 #------------------------------------------------------------------------------
 
 
-def constructFilename(customerID, packetID):
-    customerDirName = nameurl.UrlFilename(customerID)
+def constructFilename(customerIDURL, packetID):
+    customerGlobID, packetID = packetid.SplitPacketID(packetID)
+    if customerGlobID:
+        customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
+        if customerIDURL_packet != customerIDURL:
+            lg.warn('construct filename for another customer: %s != %s' % (
+                customerIDURL_packet, customerIDURL))
+    customerDirName = nameurl.UrlFilename(customerIDURL)
     customersDir = settings.getCustomersFilesDir()
     if not os.path.exists(customersDir):
         bpio._dir_make(customersDir)
@@ -196,11 +202,12 @@ def constructFilename(customerID, packetID):
     return filename
 
 
-def makeFilename(customerID, packetID):
+def makeFilename(customerIDURL, packetID):
     """
     Must be a customer, and then we make full path filename for where this
     packet is stored locally.
     """
+    customerGlobID, packetID = packetid.SplitPacketID(packetID)
     if not packetid.Valid(packetID):  # SECURITY
         if packetID not in [settings.BackupInfoFileName(),
                             settings.BackupInfoFileNameOld(),
@@ -208,10 +215,15 @@ def makeFilename(customerID, packetID):
                             settings.BackupIndexFileName()]:
             # lg.out(1, "p2p_service.makeFilename ERROR failed packetID format: " + packetID )
             return ''
-    if not contactsdb.is_customer(customerID):  # SECURITY
-        lg.warn("%s is not a customer" % (customerID))
+    if not contactsdb.is_customer(customerIDURL):  # SECURITY
+        lg.warn("%s is not a customer" % (customerIDURL))
         return ''
-    return constructFilename(customerID, packetID)
+    if customerGlobID:
+        customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
+        if customerIDURL_packet != customerIDURL:
+            lg.warn('making filename for another customer: %s != %s' % (
+                customerIDURL_packet, customerIDURL))
+    return constructFilename(customerIDURL, packetID)
 
 #------------------------------------------------------------------------------
 

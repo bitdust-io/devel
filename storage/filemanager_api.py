@@ -270,24 +270,27 @@ def _upload(params):
 
 def _download(params):
     # localName = params['name']
-    backupID = params['backupid']
+    backupID = global_id.CanonicalID(params['backupid'])
     destpath = params['dest_path']
     if bpio.Linux() or bpio.Mac():
         destpath = '/' + destpath.lstrip('/')
     restorePath = bpio.portablePath(destpath)
     # overwrite = params['overwrite']
-    if not packetid.Valid(backupID):
-        return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
-    customerGlobalID, remotePath, _ = packetid.SplitBackupID(backupID)
+    customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
+    pathID = packetid.MakeBackupID(customerGlobalID, remotePath)
     if not customerGlobalID:
         customerGlobalID = my_id.getGlobalID()
+    if not packetid.IsCanonicalVersion(version):
+        return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
     if not remotePath:
+        return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
+    if not packetid.Valid(remotePath):
         return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
     if backup_control.IsBackupInProcess(backupID):
         return {'result': {"success": True, "error": None}}
-    if backup_control.HasTask(remotePath):
+    if backup_control.HasTask(pathID):
         return {'result': {"success": True, "error": None}}
-    localPath = backup_fs.ToPath(remotePath, )
+    localPath = backup_fs.ToPath(remotePath)
     if localPath == restorePath:
         restorePath = os.path.dirname(restorePath)
 

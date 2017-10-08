@@ -97,6 +97,7 @@ from storage import backup_fs
 from storage import backup_control
 
 from userid import global_id
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -305,6 +306,7 @@ class BackupMonitor(automat.Automat):
         versionsToKeep = settings.getBackupsMaxCopies()
         bytesUsed = backup_fs.sizebackups() / contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
+        customerID = my_id.getGlobalID()
         lg.out(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
         delete_count = 0
         if versionsToKeep > 0:
@@ -315,7 +317,7 @@ class BackupMonitor(automat.Automat):
                 versions = itemInfo.list_versions()
                 # TODO: do we need to sort the list? it comes from a set, so must be sorted may be
                 while len(versions) > versionsToKeep:
-                    backupID = packetid.MakeBackupID(path_id=pathID, version=versions.pop(0))
+                    backupID = packetid.MakeBackupID(customerID, pathID, versions.pop(0))
                     lg.out(6, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (
                         len(versions), versionsToKeep, localPath, backupID))
                     backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
@@ -334,7 +336,7 @@ class BackupMonitor(automat.Automat):
                 if len(versions) <= 1:
                     continue
                 for version in versions[1:]:
-                    backupID = packetid.MakeBackupID(path_id=pathID, version=version)
+                    backupID = packetid.MakeBackupID(customerID, pathID, version)
                     versionInfo = itemInfo.get_version_info(version)
                     if versionInfo[1] > 0:
                         lg.out(6, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (

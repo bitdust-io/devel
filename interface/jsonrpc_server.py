@@ -243,8 +243,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backup_tree_add(self, dirpath):
         return api.backup_tree_add(dirpath)
 
-    def jsonrpc_backup_delete_local(self, backup_id):
-        return api.backup_delete_local(backup_id)
+    def jsonrpc_backup_delete_local(self, backupID):
+        return api.backup_delete_local(backupID)
 
     def jsonrpc_backup_delete_id(self, pathID):
         return api.backup_delete_id(pathID)
@@ -252,8 +252,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backup_delete_path(self, path):
         return api.backup_delete_path(path)
 
-    def jsonrpc_restore_single(self, path_id_or_backup_id_or_loca_path, destination_path=None):
-        return api.restore_single(path_id_or_backup_id_or_loca_path, destination_path)
+    def jsonrpc_restore_single(self, pathID_or_backupID_or_loca_path, destination_path=None):
+        return api.restore_single(pathID_or_backupID_or_loca_path, destination_path)
 
     def jsonrpc_backups_queue(self):
         return api.backups_queue()
@@ -261,17 +261,17 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backups_running(self):
         return api.backups_running()
 
-    def jsonrpc_backup_cancel_pending(self, path_id):
-        return api.backup_cancel_pending(path_id)
+    def jsonrpc_backup_cancel_pending(self, pathID):
+        return api.backup_cancel_pending(pathID)
 
-    def jsonrpc_backup_abort_running(self, backup_id):
-        return api.backup_abort_running(backup_id)
+    def jsonrpc_backup_abort_running(self, backupID):
+        return api.backup_abort_running(backupID)
 
     def jsonrpc_restores_running(self):
         return api.restores_running()
 
-    def jsonrpc_restore_abort(self, backup_id):
-        return api.restore_abort(backup_id)
+    def jsonrpc_restore_abort(self, backupID):
+        return api.restore_abort(backupID)
 
     def jsonrpc_suppliers_list(self):
         return api.suppliers_list()

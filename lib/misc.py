@@ -235,6 +235,8 @@ def backup_id_compare(backupID1, backupID2):
         return 0
     if remotePath1 != remotePath2:
         return cmp(remotePath1, remotePath2)
+    if customerGlobalID1 != customerGlobalID2:
+        return cmp(customerGlobalID1, customerGlobalID2)
     return version_compare(version1, version2)
 
 
