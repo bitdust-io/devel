@@ -644,44 +644,21 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
     return None, None, None, 0
 
 
-def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, key_id=None):
+def PutItem(name, as_folder=False, iter=None, iterID=None, startID=-1, key_id=None):
     """
     Acts like AddFile() but do not follow the directory structure. This just
     "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
     The name of new item will be equal to the local path.
     """
-    path = bpio.remotePath(path)
-    if not os.path.exists(path):
-        raise Exception('File or folder not exist')
-    if not iter:
-        iter = fs()
-    if not iterID:
-        iterID = fsID()
-    # make an ID for the filename
-    typ = DIR if bpio.pathIsDir(path) else FILE
-    resultID = MakeID(iter, startID=startID)
-    ii = FSItemInfo(path, path_id=resultID, typ=typ, key_id=key_id)
-    if read_stats:
-        ii.read_stats(path)
-    iter[ii.name()] = resultID
-    iterID[resultID] = ii
-    return str(resultID), iter, iterID
-
-
-def MapFile(filename, iter=None, iterID=None, startID=-1, key_id=None):
-    """
-    Acts like AddFile() but do not follow the directory structure. This just
-    "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
-    The name of new item will be equal to the local path.
-    """
-    path = bpio.remotePath(filename)
+    remote_path = bpio.remotePath(name)
     if not iter:
         iter = fs()
     if not iterID:
         iterID = fsID()
     # make an ID for the filename
     resultID = MakeID(iter, startID=startID)
-    ii = FSItemInfo(path, path_id=resultID, typ=FILE, key_id=key_id)
+    typ = DIR if as_folder else FILE
+    ii = FSItemInfo(name=remote_path, path_id=resultID, typ=typ, key_id=key_id)
     iter[ii.name()] = resultID
     iterID[resultID] = ii
     return str(resultID), iter, iterID

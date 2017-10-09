@@ -20,31 +20,42 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 #
-#
-#
-#
-#
-# manage currently restoring backups
+
+"""
+.. module:: restore_monitor.
+
+Manages currently restoring backups.
+
+"""
+
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import time
 
-from twisted.internet import reactor, threads
+from twisted.internet import threads
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from system import bpio
 from system import tmpfile
 
-import restore
-import backup_tar
-import backup_matrix
+from storage import restore
+from storage import backup_tar
+from storage import backup_matrix
+
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
 _WorkingBackupIDs = {}
 _WorkingRestoreProgress = {}
+
+#------------------------------------------------------------------------------
+
 OnRestorePacketFunc = None
 OnRestoreDoneFunc = None
 OnRestoreBlockFunc = None
@@ -59,6 +70,7 @@ def init():
 def shutdown():
     lg.out(4, 'restore_monitor.shutdown')
 
+#------------------------------------------------------------------------------
 
 def block_restored_callback(backupID, block):
     global OnRestoreBlockFunc
@@ -67,10 +79,10 @@ def block_restored_callback(backupID, block):
 
 
 def packet_in_callback(backupID, newpacket):
-    # lg.out(8, 'restore_monitor.packet_in_callback ' + backupID)
     global _WorkingRestoreProgress
     global OnRestorePacketFunc
     SupplierNumber = newpacket.SupplierNumber()
+    lg.out(12, 'restore_monitor.packet_in_callback %s from suppier %s' % (backupID, SupplierNumber))
 
     # want to count the data we restoring
     if SupplierNumber not in _WorkingRestoreProgress[backupID].keys():
@@ -156,13 +168,14 @@ def restore_done(result, backupID, tarfilename, outputlocation, callback_method)
 #     if callback:
 #         callback(backupID, result)
 
+#------------------------------------------------------------------------------
 
 def Start(backupID, outputLocation, callback=None, keyID=None):
     lg.out(8, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if backupID in _WorkingBackupIDs.keys():
-        return None
+        return _WorkingBackupIDs[backupID]
     outfd, outfilename = tmpfile.make(
         'restore', '.tar.gz',
         backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_')
@@ -178,14 +191,17 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
 
 
 def Abort(backupID):
-    lg.out(8, 'restore_monitor.Abort %s' % backupID)
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if backupID not in _WorkingBackupIDs.keys():
+        lg.warn('%s not found in working list' % backupID)
         return False
     r = _WorkingBackupIDs[backupID]
     r.abort()
+    lg.out(8, 'restore_monitor.Abort %s' % backupID)
     return True
+
+#------------------------------------------------------------------------------
 
 
 def GetWorkingIDs():
@@ -211,3 +227,18 @@ def GetProgress(backupID):
 def GetWorkingRestoreObject(backupID):
     global _WorkingBackupIDs
     return _WorkingBackupIDs.get(backupID, None)
+
+
+def FindWorking(pathID=None, customer=None):
+    global _WorkingBackupIDs
+    if pathID:
+        pathID = global_id.CanonicalID(pathID)
+    result = set()
+    for backupID in _WorkingBackupIDs:
+        if pathID:
+            if backupID.count(pathID):
+                result.add(backupID)
+        if customer:
+            if backupID.count(customer + ':'):
+                result.add(backupID)
+    return list(result)

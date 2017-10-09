@@ -23,6 +23,7 @@
 #
 #
 #
+from twisted.conch.test.test_recvline import down
 
 """
 .. module:: api.
@@ -546,14 +547,18 @@ def filemanager(json_request):
 
 #------------------------------------------------------------------------------
 
-def files_list(customer_idurl=None):
+def files_list(customer=None):
     """
     """
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_fs
     from lib import diskspace
+    from userid import global_id
     result = []
+    customer_idurl = customer
+    if global_id.IsValidGlobalUser(customer):
+        customer_idurl = global_id.GlobalUserToIDURL(customer)
     if not customer_idurl:
         customers = backup_fs.known_customers()
     else:
@@ -562,6 +567,7 @@ def files_list(customer_idurl=None):
     for customer_idurl in customers:
         for pathID, remotePath, item in backup_fs.IterateIDs(iterID=backup_fs.fsID(customer_idurl)):
             result.append({
+                'glob_id': global_id.MakeGlobalID(idurl=customer_idurl, path=remotePath),
                 'customer': customer_idurl,
                 'id': pathID,
                 'path': remotePath,
@@ -578,13 +584,14 @@ def files_list(customer_idurl=None):
     return RESULT(result)
 
 
-def file_info(remote_path):
+def file_info(remote_path, include_uploads=True, include_downloads=True):
     """
     """
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import backup_fs
     from lib import diskspace
+    from lib import misc
     from system import bpio
     from userid import global_id
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
@@ -596,6 +603,7 @@ def file_info(remote_path):
     if not item:
         return ERROR('item %s is not found in catalog' % pathID)
     r = {
+        'glob_id': global_id.MakeGlobalID(**glob_path),
         'customer': glob_path['idurl'],
         'id': pathID,
         'path': remotePath,
@@ -607,8 +615,65 @@ def file_info(remote_path):
             'blocks': max(0, item.versions[v][0] + 1),
             'size': diskspace.MakeStringFromBytes(max(0, item.versions[v][1])),
         }, item.versions.keys()),
+        'uploads': [],
+        'downloads': [],
     }
-    lg.out(4, 'api.file_info returned info for %s' % global_id.MakeGlobalID(**glob_path))
+    if include_uploads:
+        from storage import backup_control
+        backup_control.tasks()
+        uploads = []
+        for backupID in backup_control.FindRunningBackup(pathID=pathID):
+            j = backup_control.jobs().get(backupID)
+            if j:
+                uploads.append({
+                    'state': 'running',
+                    'backup_id': j.backupID,
+                    'key_id': j.keyID,
+                    'source_path': j.sourcePath,
+                    'eccmap': j.eccmap.name,
+                    'pipe': 'closed' if not j.pipe else j.pipe.state(),
+                    'block_size': j.blockSize,
+                    'aborting': j.ask4abort,
+                    'terminating': j.terminating,
+                    'eof_state': j.stateEOF,
+                    'reading': j.stateReading,
+                    'closed': j.closed,
+                    'work_blocks': len(j.workBlocks),
+                    'block_number': j.blockNumber,
+                    'bytes_processed': j.dataSent,
+                    'progress': misc.percent2string(j.progress()),
+                    'total_size': j.totalSize,
+                })
+        t = backup_control.GetPendingTask(pathID)
+        if t:
+            uploads.append({
+                'state': 'pending',
+                'id': t.number,
+                'path_id': t.pathID,
+                'source_path': t.localPath,
+                'created': time.asctime(time.localtime(t.created)),
+            })
+        r['uploads'] = uploads
+    if include_downloads:
+        from storage import restore_monitor
+        downloads = []
+        for backupID in restore_monitor.FindWorking(pathID=pathID):
+            d = restore_monitor.GetWorkingRestoreObject(backupID)
+            if d:
+                downloads.append({
+                    'backup_id': r.BackupID,
+                    'creator_id': r.CreatorID,
+                    'path_id': r.PathID,
+                    'version': r.Version,
+                    'block_number': r.BlockNumber,
+                    'bytes_processed': r.BytesWritten,
+                    'created': time.asctime(time.localtime(r.Started)),
+                    'aborted': r.AbortState,
+                    'done': r.Done,
+                    'eccmap': '' if not r.EccMap else r.EccMap.name,
+                })
+        r['downloads'] = downloads
+    lg.out(4, 'api.file_info %s' % r['glob_id'])
     return RESULT([r, ])
 
 
@@ -647,8 +712,9 @@ def file_create(remote_path, as_folder=False):
         )
     else:
         parent_iter, parent_iterID = iter_and_iterID
-    newPathID, _, _ = backup_fs.MapFile(
-        os.path.basename(path),
+    newPathID, _, _ = backup_fs.PutItem(
+        name=os.path.basename(path),
+        as_folder=as_folder,
         iter=parent_iter,
         iterID=parent_iterID,
         key_id=parts['key'],
@@ -702,6 +768,79 @@ def file_delete(remote_path):
     control.request_update([('pathID', pathIDfull), ])
     lg.out(4, 'api.file_delete %s' % parts)
     return OK('item %s was deleted from remote peers' % pathIDfull)
+
+
+def files_uploads(include_running=True, include_pending=True):
+    """
+    Returns a list of currently running uploads and
+    list of pending items to be uploaded.
+
+    Return:
+
+        {
+            'status': 'OK',
+            'result': [{
+                'state': 'running',
+                'aborting': False,
+                'backup_id': '0/0/3/1/F20160424013912PM',
+                'block_number': 4,
+                'block_size': 16777216,
+                'bytes_processed': 67108864,
+                'closed': False,
+                'eccmap': 'ecc/4x4',
+                'eof_state': False,
+                'pipe': 0,
+                'progress': 75.0142815704418,
+                'reading': False,
+                'source_path': '/Users/veselin/Downloads/some-ZIP-file.zip',
+                'terminating': False,
+                'total_size': 89461450,
+                'work_blocks': 4
+            }, {
+                'state': 'pending',
+                'created': 'Wed Apr 27 15:11:13 2016',
+                'id': 3,
+                'source_path': '/Users/veselin/Downloads/another-ZIP-file.zip',
+                'path_id': '0/0/3/2'
+            }]
+        }
+    """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
+    from lib import misc
+    from storage import backup_control
+    lg.out(4, 'api.files_uploads  %d is running, %d is pending' % (
+        len(backup_control.jobs()), len(backup_control.tasks())))
+    r = []
+    if include_running:
+        r.extend([{
+            'state': 'running',
+            'backup_id': j.backupID,
+            'key_id': j.keyID,
+            'source_path': j.sourcePath,
+            'eccmap': j.eccmap.name,
+            'pipe': 'closed' if not j.pipe else j.pipe.state(),
+            'block_size': j.blockSize,
+            'aborting': j.ask4abort,
+            'terminating': j.terminating,
+            'eof_state': j.stateEOF,
+            'reading': j.stateReading,
+            'closed': j.closed,
+            'work_blocks': len(j.workBlocks),
+            'block_number': j.blockNumber,
+            'bytes_processed': j.dataSent,
+            'progress': misc.percent2string(j.progress()),
+            'total_size': j.totalSize,
+        } for j in backup_control.jobs().values()])
+    if include_pending:
+        r.extend([{
+            'state': 'pending',
+            'id': t.number,
+            'path_id': t.pathID,
+            'source_path': t.localPath,
+            'created': time.asctime(time.localtime(t.created)),
+        } for t in backup_control.tasks()])
+    return RESULT(r)
 
 
 def file_upload_start(local_path, remote_path):
@@ -768,6 +907,44 @@ def file_upload_stop(remote_path):
         return ERROR('no running or pending tasks for "%s" found' % pathIDfull)
     lg.out(4, 'api.file_upload_stop %s' % r)
     return RESULT(r, message=(', '.join(msg)))
+
+
+def files_downloads():
+    """
+    Returns a list of currently running downloads.
+
+    Return:
+
+        {'status': 'OK',
+         'result': [{
+            'aborted': False,
+            'backup_id': '0/0/3/1/F20160427011209PM',
+            'block_number': 0,
+            'bytes_processed': 0,
+            'creator_id': 'http://veselin-p2p.ru/veselin.xml',
+            'done': False,
+            'created': 'Wed Apr 27 15:11:13 2016',
+            'eccmap': 'ecc/4x4',
+            'path_id': '0/0/3/1',
+            'version': 'F20160427011209PM'
+        }]}
+    """
+    if not driver.is_started('service_restores'):
+        return ERROR('service_restores() is not started')
+    from storage import restore_monitor
+    lg.out(4, 'api.restores_running %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
+    return RESULT([{
+        'backup_id': r.BackupID,
+        'creator_id': r.CreatorID,
+        'path_id': r.PathID,
+        'version': r.Version,
+        'block_number': r.BlockNumber,
+        'bytes_processed': r.BytesWritten,
+        'created': time.asctime(time.localtime(r.Started)),
+        'aborted': r.AbortState,
+        'done': r.Done,
+        'eccmap': '' if not r.EccMap else r.EccMap.name,
+    } for r in restore_monitor.GetWorkingObjects()])
 
 
 def file_download_start(remote_path, destination_path=None):
@@ -904,14 +1081,6 @@ def file_download_stop(remote_path):
     lg.out(4, 'api.file_download_stop %s' % r)
     return RESULT(r)
 
-
-def files_uploads():
-    """
-    """
-
-def files_downloads():
-    """
-    """
 
 #------------------------------------------------------------------------------
 

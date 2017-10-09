@@ -22,7 +22,6 @@
 #
 #
 #
-#
 
 """
 .. module:: backup_control.
@@ -49,7 +48,7 @@ import cStringIO
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor backup_db.py')
+    sys.exit('Error initializing twisted.internet.reactor backup_control.py')
 
 from twisted.internet.defer import Deferred
 
@@ -68,6 +67,7 @@ from lib import packetid
 from lib import nameurl
 
 from main import settings
+from main import events
 
 from transport import callback
 
@@ -501,18 +501,28 @@ class Task():
 
     def __init__(self, pathID, localPath=None, keyID=None):
         self.number = NewTaskNumber()                   # index number for the task
-        parts = global_id.ParseGlobalID(pathID)
-        self.pathID = pathID                            # source path to backup
-        self.keyID = keyID or parts['key']
-        self.customerGlobID = parts['customer']
-        self.customerIDURL = parts['idurl']
-        self.remotePath = parts['path']
-        self.localPath = localPath
         self.created = time.time()
         self.backupID = None
         self.result_defer = Deferred()
+        parts = self.set_path_id(pathID)
+        self.set_key_id(keyID or parts['key'])
+        self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)
+
+    def set_path_id(self, pathID):
+        parts = global_id.ParseGlobalID(pathID)
+        self.pathID = pathID                            # source path to backup
+        self.customerGlobID = parts['customer']
+        self.customerIDURL = parts['idurl']
+        self.remotePath = parts['path']
+        return parts
+
+    def set_key_id(self, key_id):
+        self.keyID = key_id
+
+    def set_local_path(self, localPath):
+        self.localPath = localPath
 
     def __repr__(self):
         """
@@ -526,27 +536,17 @@ class Task():
         reactor.callLater(0, OnJobDone, backupID, result)
         if self.result_defer is not None:
             self.result_defer.callback((backupID, result))
+            self.result_defer = None
 
     def _on_job_failed(self, backupID, err=None):
         if self.result_defer is not None:
             self.result_defer.errback((backupID, err))
+            self.result_defer = None
         return err
-
-    def job(self):
-        """
-        """
-        if self.backupID is None:
-            return None
-        if self.backupID not in jobs():
-            return None
-        return jobs()[self.backupID]
 
     def run(self):
         """
-        Runs a new ``Job`` from that ``Task``
-        Called from ``RunTasks()`` method if it is possible to start a
-        new task - the maximum number of simultaneously running ``Jobs``
-        is limited.
+        Runs a new ``Job`` from that ``Task``.
         """
         iter_and_path = backup_fs.WalkByID(self.remotePath, iterID=backup_fs.fsID(self.customerIDURL))
         if iter_and_path is None:
@@ -587,7 +587,7 @@ class Task():
         )
         if self.backupID in jobs():
             lg.warn('backup job %s already started' % self.backupID)
-            return
+            return 'backup job %s already started' % self.backupID
         try:
             backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), self.backupID)
         except:
@@ -595,7 +595,7 @@ class Task():
             lg.out(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
             self._on_job_failed(self.backupID)
-            return
+            return 'failed creating destination folder for %s' % self.pathID
         compress_mode = 'bz2'  # 'none' # 'gz'
         if bpio.pathIsDir(self.localPath):
             backupPipe = backup_tar.backuptar(self.localPath, compress=compress_mode)
@@ -621,6 +621,14 @@ class Task():
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
         lg.out(4, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (
             self.number, self.pathID, dataID, itemInfo.size, self.localPath))
+        return None
+
+    def destroy(self):
+        lg.out(4, 'backup_control.Task-%d.destroy %s -> %s' % (
+            self.number, self.localPath, self.backupID))
+        if self.result_defer and not self.result_defer.called:
+            self.result_defer.cancel()
+            self.result_defer = None
 
 #------------------------------------------------------------------------------
 
@@ -630,9 +638,45 @@ def PutTask(pathID, localPath=None, keyID=None):
     Creates a new backup ``Task`` and append it to the list of tasks.
     """
     pathID = global_id.CanonicalID(pathID, include_key=True)
+    current_task = GetPendingTask(pathID)
+    if current_task:
+        current_task.set_path_id(pathID)
+        if localPath:
+            current_task.set_local_path(localPath)
+        if keyID:
+            current_task.set_key_id(keyID)
+        return current_task
     t = Task(pathID=pathID, localPath=localPath, keyID=keyID)
     tasks().append(t)
     return t
+
+
+def DeleteAllTasks():
+    """
+    Clear the tasks list.
+    """
+    global _Tasks
+    _Tasks = []
+
+
+def RunTask():
+    """
+    Checks current jobs and run a one task if it is possible.
+    Verifies if it is possible to start a new task,
+    the maximum number of simultaneously running ``Jobs`` is limited.
+    """
+    if len(tasks()) == 0:
+        return False
+    if len(jobs()) >= MAXIMUM_JOBS_STARTED:
+        return False
+    T = tasks().pop(0)
+    message = T.run()
+    if message:
+        events.send('backup-task-failed', data=dict(path_id=T.pathID, message=message, ))
+    else:
+        events.send('backup-task-executed', data=dict(path_id=T.pathID, backup_id=T.backupID, ))
+    T.destroy()
+    return True
 
 
 def HasTask(pathID):
@@ -646,24 +690,31 @@ def HasTask(pathID):
     return False
 
 
-def DeleteAllTasks():
+def GetPendingTask(pathID):
     """
-    Clear the tasks list.
     """
-    global _Tasks
-    _Tasks = []
+    pathID = global_id.CanonicalID(pathID)
+    for t in tasks():
+        if t.pathID == pathID:
+            return t
+    return None
 
 
-def RunTasks():
+def ListPendingTasks():
     """
-    Checks current jobs and run a one task if it is possible.
     """
-    if len(tasks()) == 0:
-        return
-    if len(jobs()) >= MAXIMUM_JOBS_STARTED:
-        return
-    T = tasks().pop(0)
-    T.run()
+    return tasks()
+
+
+def AbortPendingTask(pathID):
+    """
+    """
+    pathID = global_id.CanonicalID(pathID)
+    for t in tasks():
+        if t.pathID == pathID:
+            tasks().remove(t)
+            return True
+    return False
 
 #------------------------------------------------------------------------------
 
@@ -735,7 +786,7 @@ def OnJobDone(backupID, result):
         # because user will probably leave BitDust working after starting a long running operations
         from storage import backup_monitor
         backup_monitor.A('restart')
-    RunTasks()
+    RunTask()
     reactor.callLater(0, FireTaskFinishedCallbacks, remotePath, version, result)
 
 
@@ -744,7 +795,7 @@ def OnTaskFailed(pathID, result):
     Called when backup process get failed somehow.
     """
     lg.out(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
-    RunTasks()
+    RunTask()
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)
 
 
@@ -811,10 +862,9 @@ def StartSingle(pathID, localPath=None, keyID=None):
     """
     A high level method to start a backup of single file or folder.
     """
-    pathID = global_id.CanonicalID(pathID, include_key=True)
     from storage import backup_monitor
     t = PutTask(pathID=pathID, localPath=localPath, keyID=keyID)
-    reactor.callLater(0, RunTasks)
+    reactor.callLater(0, RunTask)
     reactor.callLater(0, backup_monitor.A, 'restart')
     return t
 
@@ -832,54 +882,15 @@ def StartRecursive(pathID, keyID=None):
 
     def visitor(_pathID, path, info):
         if info.type == backup_fs.FILE:
-            if pathID.count(_pathID):
+            if _pathID.startswith(pathID):
                 t = PutTask(pathID=pathID, localPath=path, keyID=keyID)
                 startedtasks.append(t)
 
     backup_fs.TraverseByID(visitor)
-    reactor.callLater(0, RunTasks)
+    reactor.callLater(0, RunTask)
     reactor.callLater(0, backup_monitor.A, 'restart')
     lg.out(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
-
-#------------------------------------------------------------------------------
-
-
-def IsTaskScheduled(pathID):
-    """
-    """
-    pathID = global_id.CanonicalID(pathID)
-    for t in tasks():
-        if t.pathID == pathID:
-            return True
-    return False
-
-
-def GetPendingTask(pathID):
-    """
-    """
-    pathID = global_id.CanonicalID(pathID)
-    for t in tasks():
-        if t.pathID == pathID:
-            return t
-    return None
-
-
-def ListPendingTasks():
-    """
-    """
-    return tasks()
-
-
-def AbortPendingTask(pathID):
-    """
-    """
-    pathID = global_id.CanonicalID(pathID)
-    for t in tasks():
-        if t.pathID == pathID:
-            tasks().remove(t)
-            return True
-    return False
 
 #------------------------------------------------------------------------------
 
@@ -908,17 +919,17 @@ def FindRunningBackup(pathID=None, customer=None):
     """
     if pathID:
         pathID = global_id.CanonicalID(pathID)
-    result = []
+    result = set()
     for backupID in jobs().keys():
         if pathID:
-            if backupID.startswith(pathID):
-                result.append(backupID)
+            if backupID.count(pathID):
+                result.add(backupID)
                 continue
         if customer:
             if backupID.count(customer + ':'):
-                result.append(backupID)
+                result.add(backupID)
                 continue
-    return result
+    return list(result)
 
 
 def HasRunningBackup():

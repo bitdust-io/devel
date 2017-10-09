@@ -204,11 +204,17 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_file_create(self, remote_path):
         return api.file_create(remote_path)
 
+    def jsonrpc_file_delete(self, remote_path):
+        return api.file_delete(remote_path)
+
     def jsonrpc_file_download_start(self, remote_path, destination_path=None):
         return api.file_download_start(remote_path, destination_path=destination_path)
 
     def jsonrpc_file_download_stop(self, remote_path):
         return api.file_download_stop(remote_path)
+
+    def jsonrpc_files_uploads(self, include_running=True, include_pending=True):
+        return api.files_uploads(include_running=include_running, include_pending=include_pending)
 
     def jsonrpc_file_upload_start(self, local_path, remote_path):
         return api.file_upload_start(local_path, remote_path)
@@ -216,8 +222,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_file_upload_stop(self, remote_path):
         return api.file_upload_stop(remote_path)
 
-    def jsonrpc_file_delete(self, remote_path):
-        return api.file_delete(remote_path)
+    
 
 #     def jsonrpc_backups_update(self):
 #         return api.backups_update()
