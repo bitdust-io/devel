@@ -611,84 +611,91 @@ def cmd_api(opts, args, overDict, executablePath):
 
 
 def cmd_backup(opts, args, overDict, executablePath):
-    if len(args) < 2 or args[1] in ['list', 'ls']:
-        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
-        return call_jsonrpc_method_template_and_stop('backups_list', tpl)
+    from lib import packetid
 
-    if len(args) == 2 and args[1] in ['idlist', 'ids']:
-        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
-        return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
+    if len(args) < 2 or args[1] in ['list', 'ls']:
+        remote_path = args[2] if len(args) > 2 else None
+        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
+        return call_jsonrpc_method_template_and_stop('files_list', tpl, remote_path)
+
+#     if len(args) == 2 and args[1] in ['idlist', 'ids']:
+#         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
+#         return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
 
     if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop('backups_update', tpl)
+        return call_jsonrpc_method_template_and_stop('files_sync', tpl)
 
-    if len(args) >= 2 and args[1] in ['running', 'progress', 'status']:
+    if len(args) >= 2 and args[1] in ['running', 'progress', 'status', 'prog']:
+        if len(args) >= 3:
+            if args[2] in ['download', 'down', ]:
+                tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
+                return call_jsonrpc_method_template_and_stop('files_downloads', tpl)
+            elif args[2] in ['upload', 'up', ]:
+                tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
+                return call_jsonrpc_method_template_and_stop('files_uploads', tpl)
+            return 2
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
-        return call_jsonrpc_method_template_and_stop('backups_running', tpl)
+        return call_jsonrpc_method_template_and_stop('files_uploads', tpl)
 
-    if len(args) >= 2 and args[1] in ['queue', 'pending', 'qu', 'tasks']:
-        tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
-        return call_jsonrpc_method_template_and_stop('backups_queue', tpl)
+#     if len(args) >= 2 and args[1] in ['queue', 'pending', 'qu', 'tasks']:
+#         tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
+#         return call_jsonrpc_method_template_and_stop('backups_queue', tpl)
 
-    if len(args) > 3 and args[1] in ['bind', 'map', ]:
+#     if len(args) > 3 and args[1] in ['bind', 'map', ]:
+#         tpl = jsontemplate.Template(templ.TPL_RAW)
+#         key_id = args[4] if len(args) > 4 else None
+#         if os.path.exists(args[2]):
+#             return call_jsonrpc_method_template_and_stop('backup_map_path', tpl, args[2], args[3], key_id)
+#         print_text('path %s not exist\n' % args[2])
+#         return 1
+
+    if len(args) > 2 and args[1] in ['upload', 'up', 'store', 'start', 'send', 'write', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        key_id = args[4] if len(args) > 4 else None
-        if os.path.exists(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_map_path', tpl, args[2], args[3], key_id)
-        print_text('path %s not exist\n' % args[2])
-        return 1
-
-    if len(args) >= 2 and args[1] in ['add', 'append', 'insert', 'make', 'create', ]:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
-        key_id = args[3] if len(args) > 3 else None
-        if args[1] in ['make', 'create', ]:
-            if args[0] in ['dir', 'folder', ]:
-                return call_jsonrpc_method_template_and_stop('backup_dir_make', tpl, args[2], key_id)
-            else:
-                return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2], key_id)
-        if os.path.isdir(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2], key_id)
-        elif os.path.isfile(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2], key_id)
-        print_text('path %s not exist\n' % args[2])
-        return 1
-
-    if len(args) >= 2 and args[1] in ['tree', 'addtree', 'buildtree', 'replicate', ]:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
-        if not os.path.isdir(args[2]):
-            print_text('path %s not exist\n' % args[2])
-            return 1
-        return call_jsonrpc_method_template_and_stop('backup_tree_add', tpl, args[2])
-
-    from lib import packetid
-    if len(args) >= 3 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ]:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
-        if args[2] == 'local':
-            if len(args) < 4:
-                return 2
-            return call_jsonrpc_method_template_and_stop('backup_delete_local', tpl, args[3])
-        if packetid.Valid(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_delete_id', tpl, args[2])
-        return call_jsonrpc_method_template_and_stop('backup_delete_path', tpl, args[2])
-
-    if len(args) > 2 and args[1] in ['cancel', 'abort', ]:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
-        if packetid.IsBackupIDCorrect(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_abort_running', tpl, args[2])
-        if packetid.IsPathIDCorrect(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_cancel_pending', tpl, args[2])
-        print_text('path %s not exist\n' % args[2])
-        return 1
-
-    if len(args) > 2 and args[1] == 'start':
-        tpl = jsontemplate.Template(templ.TPL_RAW)
-        if packetid.Valid(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[2])
         if not os.path.exists(os.path.abspath(args[2])):
             print_text('path %s not exist\n' % args[2])
             return 1
-        return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('file_upload_start', tpl, args[2])
+
+    if len(args) > 2 and args[1] in ['download', 'down', 'load', 'request', 'read', 'restore', ]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('file_download_start', tpl, args[2])
+
+#     if len(args) >= 2 and args[1] in ['add', 'append', 'insert', 'make', 'create', ]:
+#         tpl = jsontemplate.Template(templ.TPL_RAW)
+#         key_id = args[3] if len(args) > 3 else None
+#         if args[1] in ['make', 'create', ]:
+#             if args[0] in ['dir', 'folder', ]:
+#                 return call_jsonrpc_method_template_and_stop('backup_dir_make', tpl, args[2], key_id)
+#             else:
+#                 return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2], key_id)
+#         if os.path.isdir(args[2]):
+#             return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2], key_id)
+#         elif os.path.isfile(args[2]):
+#             return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2], key_id)
+#         print_text('path %s not exist\n' % args[2])
+#         return 1
+
+#     if len(args) >= 2 and args[1] in ['tree', 'addtree', 'buildtree', 'replicate', ]:
+#         tpl = jsontemplate.Template(templ.TPL_RAW)
+#         if not os.path.isdir(args[2]):
+#             print_text('path %s not exist\n' % args[2])
+#             return 1
+#         return call_jsonrpc_method_template_and_stop('backup_tree_add', tpl, args[2])
+
+    if len(args) > 2 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('file_delete', tpl, args[2])
+
+    if len(args) >= 3 and args[1] in ['cancel', 'abort', ]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        if len(args) > 3:
+            if args[2] in ['download', 'down', ]:
+                return call_jsonrpc_method_template_and_stop('file_download_stop', tpl, args[3])
+            elif args[2] in ['upload', 'up', ]:
+                return call_jsonrpc_method_template_and_stop('file_upload_stop', tpl, args[3])
+            return 2
+        return call_jsonrpc_method_template_and_stop('file_upload_stop', tpl, args[2])
 
 #     if len(args) == 2:
 #         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -704,29 +711,29 @@ def cmd_backup(opts, args, overDict, executablePath):
 #------------------------------------------------------------------------------
 
 
-def cmd_restore(opts, args, overDict, executablePath):
-    if len(args) < 2 or args[1] in ['list', 'ls']:
-        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
-        return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
-
-    if len(args) >= 2 and args[1] in ['running', 'progress', 'status']:
-        tpl = jsontemplate.Template(templ.TPL_RESTORES_RUNNING_LIST)
-        return call_jsonrpc_method_template_and_stop('restores_running', tpl)
-
-    tpl = jsontemplate.Template(templ.TPL_RAW)
-    if len(args) > 2 and args[1] in ['cancel', 'abort']:
-        return call_jsonrpc_method_template_and_stop('restore_abort', tpl, args[2])
-
-    if len(args) > 3 and args[1] in ['start', 'go', 'run', ]:
-        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[2], args[3])
-
-    if len(args) == 2:
-        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1])
-
-    if len(args) == 3:
-        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1], args[2])
-
-    return 2
+# def cmd_restore(opts, args, overDict, executablePath):
+#     if len(args) < 2 or args[1] in ['list', 'ls']:
+#         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
+#         return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
+# 
+#     if len(args) >= 2 and args[1] in ['running', 'progress', 'status']:
+#         tpl = jsontemplate.Template(templ.TPL_RESTORES_RUNNING_LIST)
+#         return call_jsonrpc_method_template_and_stop('restores_running', tpl)
+# 
+#     tpl = jsontemplate.Template(templ.TPL_RAW)
+#     if len(args) > 2 and args[1] in ['cancel', 'abort']:
+#         return call_jsonrpc_method_template_and_stop('restore_abort', tpl, args[2])
+# 
+#     if len(args) > 3 and args[1] in ['start', 'go', 'run', ]:
+#         return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[2], args[3])
+# 
+#     if len(args) == 2:
+#         return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1])
+# 
+#     if len(args) == 3:
+#         return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1], args[2])
+# 
+#     return 2
 
 #------------------------------------------------------------------------------
 
@@ -1314,12 +1321,12 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             return 0
         return cmd_backup(opts, args, overDict, executablePath)
 
-    #---restore---
-    elif cmd in ['restore', 'rest', 'download', 'down', ]:
-        if not running:
-            print_text('BitDust is not running at the moment\n')
-            return 0
-        return cmd_restore(opts, args, overDict, executablePath)
+#     #---restore---
+#     elif cmd in ['restore', 'rest', 'download', 'down', ]:
+#         if not running:
+#             print_text('BitDust is not running at the moment\n')
+#             return 0
+#         return cmd_restore(opts, args, overDict, executablePath)
 
     #---version---
     elif cmd in ['version', 'v', 'ver']:

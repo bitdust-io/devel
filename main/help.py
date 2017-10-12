@@ -55,14 +55,13 @@ Commands:
   get <option>
   set <option> [value]
   set list
-  file list
-  file idlist
-  file upload <local path> <remote path>
-  file download <local path> <remote path>
-  file delete <remote path>
-  file queue
-  file progress
   file sync
+  file list
+  file upload <local path> <remote path>
+  file download <remote path> <local path>
+  file cancel <upload | download> <remote path>
+  file delete <remote path>
+  file progress [upload | download]
   supplier list
   supplier replace <IDURL or position>
   supplier change <IDURL or position> <new IDURL>
@@ -141,6 +140,8 @@ Commands:
 
   set list              print all available options and current values
 
+  file sync             ping all suppliers and recheck/restart uploads
+
   file list             show a list of known files and folders on remote peers
 
   file upload <local path> <remote path>
@@ -152,30 +153,16 @@ Commands:
                         download file or folder from remote peers to local drive
                         save to current folder if "local path" was not set
 
+  file cancel <upload | download> <remote path>
+                        abort currently running file upload or download process
+
   file delete <remote path>
                         remove a file or folder (with all sub folders)
                         from remote peers, "remote path" have such format:
                         {key_id}${user_name}@{id_host}:{remote_path}
 
-  file queue            show a list of paths to be uploaded
-
-  file progress         show a list of currently running uploads
-
-  file sync             request all suppliers to check/restart uploads
-
-  restore list          show a list of items already uploaded on remote peers
-
-  restore start <local path or ID> [destination path]
-                        download personal data back to local machine
-                        from remote peers, you can specify
-                        the destination path on your local drive,
-                        WARNING! source path is default location,
-                        so it will overwrite existing files by default
-
-  restore abort <backup ID>
-                        abort currently running restore process of given item
-
-  restore progress      show currently running downloads
+  file progress <upload | download>
+                        show a list of currently running uploads or/and downloads
 
   supplier list         show list of your suppliers
                         nodes who stores your data on own machines

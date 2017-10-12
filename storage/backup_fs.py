@@ -89,12 +89,10 @@ INFO_KEY = 'i'
 UNKNOWN = -1
 FILE = 0
 DIR = 1
-PARENT = 2
 TYPES = {
     UNKNOWN: 'UNKNOWN',
     FILE: 'FILE',
     DIR: 'DIR',
-    PARENT: 'PARENT',
 }
 
 #------------------------------------------------------------------------------
@@ -766,7 +764,7 @@ def WalkByPath(path, iter=None):
         iter = fs()
     ppath = bpio.remotePath(path)
     if ppath in iter:
-        return iter, str(iter[ppath])
+        return iter, iter[0] if 0 in iter else ''
     if ppath == '' or ppath == '/':
         return iter, iter[0] if 0 in iter else ''
     path_id = ''
@@ -829,7 +827,7 @@ def WalkByID(pathID, iterID=None):
         else:
             raise Exception('Wrong data type in the index')
         if j == len(parts) - 1:
-            return iterID[id], path
+            return iterID[id], ResolvePath(path)
         iterID = iterID[id]
     return None
 
@@ -1261,7 +1259,7 @@ def TraverseChildsByID(callback, iterID=None):
                 continue
             if isinstance(i[id], dict):
                 item_name = i[id][INFO_KEY].name()
-                dirs.append((id, item_name, len(i[id]) > 1))
+                dirs.append((id, item_name, len(i[id]) - 1))
             elif isinstance(i[id], FSItemInfo):
                 item_name = i[id].name()
                 files.append((id, item_name))
@@ -1269,12 +1267,12 @@ def TraverseChildsByID(callback, iterID=None):
                 raise Exception('Error, wrong item type in the index')
         dirs.sort(key=lambda e: e[1])
         files.sort(key=lambda e: e[1])
-        for id, pth, has_childs in dirs:
+        for id, pth, num_childs in dirs:
             cb(DIR,
                ResolvePath(pth),
                (path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
                i[id][INFO_KEY],
-               has_childs)
+               num_childs)
         for id, pth in files:
             cb(FILE,
                ResolvePath(pth),
@@ -1372,13 +1370,13 @@ def GetBackupStatus(backupID, item_info, item_name, parent_path_existed=None):
     return 'ready', misc.percent2string(weakPercent)
 
 
-def ExtractVersions(item_id, item_info, path_exist=None, customer_id=None):
+def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
     item_size = 0
     item_time = 0
     # item_status = ''
     versions = []
     for version, version_info in item_info.versions.items():
-        backupID = packetid.MakeBackupID(customer_id, item_id, version)
+        backupID = packetid.MakeBackupID(customer_id, pathID, version)
         version_time = misc.TimeFromBackupID(version)
         if version_time and version_time > item_time:
             item_time = version_time
@@ -1395,12 +1393,14 @@ def ExtractVersions(item_id, item_info, path_exist=None, customer_id=None):
             version_label = backupID
         version_state, version_status = GetBackupStatus(backupID, item_info, item_info.name(), path_exist)
         # item_status += version_status + ' '
-        versions.append({'backupid': backupID,
-                         'label': version_label,
-                         'time': version_time,
-                         'size': version_size,
-                         'status': version_status,
-                         'state': version_state, })
+        versions.append({
+            'backupid': backupID,
+            'label': version_label,
+            'time': version_time,
+            'size': version_size,
+            'status': version_status,
+            'state': version_state,
+        })
     # if not item_status:
         # item_status = '-'
     item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
@@ -1559,7 +1559,7 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
     lst = []
 
     def visitor(path_id, path, info):
-        for version in info.list_versions(sorted, reverse):
+        for version in info.list_versions(sorted=sorted, reverse=reverse):
             backupID = packetid.MakeBackupID(customer_id, path_id.lstrip('/'), version)
             lst.append((info.name(), backupID, info.get_version_info(version), ResolvePath(path), info))
 
@@ -1578,7 +1578,7 @@ def ListSelectedFolders(selected_dirs_ids, sorted=False, reverse=False, iterID=N
     # customer_id = global_id.UrlToGlobalID(customer_idurl)
     lst = []
 
-    def visitor(path_id, path, info, has_childs):
+    def visitor(path_id, path, info, num_childs):
         basepathid = path_id[:path_id.rfind('/')] if path_id.count('/') else ''
         if basepathid in selected_dirs_ids:
             lst.append((info.type, path_id, ResolvePath(path), info.size, info.list_versions(sorted, reverse)))
@@ -1595,7 +1595,7 @@ def ListExpandedFoldersAndBackups(expanded_dirs, selected_items, iterID=None):
     lst = []
     backups = []
 
-    def visitor(path_id, path, info, has_childs):
+    def visitor(path_id, path, info, num_childs):
         basepathid = path_id[:path_id.rfind('/')] if path_id.count('/') else ''
         if basepathid in expanded_dirs:
             lst.append((info.type, path_id, ResolvePath(path), info.size, info.get_versions()))
@@ -1607,12 +1607,61 @@ def ListExpandedFoldersAndBackups(expanded_dirs, selected_items, iterID=None):
     TraverseByIDSorted(visitor, iterID=iterID)
     return lst, backups
 
-#------------------------------------------------------------------------------
+
+def ListChildsByPath(path, iter=None, iterID=None):
+    """
+    List all items at given ``path`` and return data as a list of dict objects.
+    Return string with error message if operation failed.
+    """
+    if iter is None:
+        iter = fs()
+    if iterID is None:
+        iterID = fsID()
+    customer_idurl = customerIDURLFromRootItem(iter)
+    customer_id = global_id.UrlToGlobalID(customer_idurl)
+    if path == '/':
+        path = ''
+    path = bpio.remotePath(path)
+    # lg.out(4, 'backup_fs.ListByPathAdvanced %s' % (path))
+    iter_and_id = WalkByPath(path, iter=iter)
+    if iter_and_id is None:
+        return 'path "%s" not found' % path
+    iter, pathID = iter_and_id
+    iter_and_path = WalkByID(pathID, iterID=iterID)
+    if iter_and_path is None:
+        return 'item "%s" exist, but not path "%s" not found, catalog index is not consistent' % (pathID, path)
+    iterID, path_exist = iter_and_path
+    if path != path_exist:
+        return 'item "%s" exist, but path "%s" is not valid, catalog index is not consistent' % (path_exist, path)
+    if isinstance(iterID, FSItemInfo):
+        return 'path "%s" is a file' % path
+    result = []
+
+    def visitor(item_type, item_name, item_path_id, item_info, num_childs):
+        item_id = (pathID + '/' + item_path_id).strip('/')
+        (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist, customer_id)
+        result.append({
+            'type': item_type,
+            'name': item_info.name(),
+            'path': ResolvePath(path, item_info.name()),
+            'path_id': item_id,
+            'total_size': item_size,
+            'latest': item_time,
+            'childs': num_childs,
+            'item': item_info.serialize(to_json=True),
+            'versions': versions,
+        })
+
+    TraverseChildsByID(visitor, iterID)
+    return result
 
 
 def ListByPathAdvanced(path, iter=None, iterID=None):
     """
-    List all items at given ``path`` and return data in tuples.
+    List all items at given ``path`` and return data in tuples:
+
+        (type, name, path_id, size, time, remote_path, num_childs, item, versions)
+
     """
     if iter is None:
         iter = fs()
@@ -1636,12 +1685,12 @@ def ListByPathAdvanced(path, iter=None, iterID=None):
         return '%s exist, but not valid: %s' % (path_exist, path)
     result = []
 
-    def visitor(item_type, item_name, item_path_id, item_info, has_childs):
+    def visitor(item_type, item_name, item_path_id, item_info, num_childs):
         if item_type == DIR:
             item_id = (pathID + '/' + item_path_id).strip('/')
             (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist, customer_id)
             result.append(('dir', item_info.name(), item_id,
-                           item_size, item_time, path, has_childs, item_info, versions))
+                           item_size, item_time, path, num_childs, item_info, versions))
         elif item_type == FILE:
             item_id = (pathID + '/' + item_path_id).strip('/')
             (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist, customer_id)
@@ -1663,17 +1712,17 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
 
     result = []
 
-    def visitor(path_id, path, info, has_childs):
+    def visitor(path_id, path, info, num_childs):
         if (len(info.versions) == 0):
             return
         dirpath = os.path.dirname(path)
         (item_size, item_time, versions) = ExtractVersions(path_id, info, dirpath, customer_id)
         if info.type == DIR:
             result.append(('dir', info.name(), path_id,
-                           item_size, item_time, dirpath, has_childs, info.exist(), versions,))
+                           item_size, item_time, dirpath, num_childs, info.exist(), versions,))
         elif info.type == FILE:
             result.append(('file', info.name(), path_id,
-                           item_size, item_time, dirpath, has_childs, info.exist(), versions,))
+                           item_size, item_time, dirpath, num_childs, info.exist(), versions,))
 
     TraverseByIDSorted(visitor, iterID=iterID)
     return result
@@ -1931,10 +1980,10 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
                     lg.warn('Can not put FILE item into the tree: %s' % str(item))
                     raise ValueError('Can not put FILE item into the tree: %s' % str(item))
                 count += 1
-            elif item.type == DIR or item.type == PARENT:
+            elif item.type == DIR:
                 if not SetDir(item, iter=iter, iterID=iterID):
-                    lg.warn('Can not put DIR or PARENT item into the tree: %s' % str(item))
-                    raise ValueError('Can not put DIR or PARENT item into the tree: %s' % str(item))
+                    lg.warn('Can not put DIR item into the tree: %s' % str(item))
+                    raise ValueError('Can not put DIR item into the tree: %s' % str(item))
                 count += 1
             else:
                 raise ValueError('Incorrect entry type')
@@ -1952,11 +2001,11 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
                     lg.warn('Can not put FILE item into the tree: %s' % str(item))
                     raise ValueError('Can not put FILE item into the tree: %s' % str(item))
                 count += 1
-            elif item.type == DIR or item.type == PARENT:
+            elif item.type == DIR:
                 if not SetDir(item, iter=iter, iterID=iterID):
                     inpt.close()
-                    lg.warn('Can not put DIR or PARENT item into the tree: %s' % str(item))
-                    raise ValueError('Can not put DIR or PARENT item into the tree: %s' % str(item))
+                    lg.warn('Can not put DIR item into the tree: %s' % str(item))
+                    raise ValueError('Can not put DIR item into the tree: %s' % str(item))
                 count += 1
             else:
                 inpt.close()

@@ -547,39 +547,64 @@ def filemanager(json_request):
 
 #------------------------------------------------------------------------------
 
-def files_list(customer=None):
+
+def files_sync():
+    """
+    Sends "restart" event to backup_monitor() Automat, this should start "data
+    synchronization" process with remote nodes. Normally all situations
+    should be handled automatically so you wont run this method manually,
+    but just in case.
+
+    Return:
+
+        {'status': 'OK', 'result': 'the main files sync loop has been restarted'}
+    """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
+    from storage import backup_monitor
+    backup_monitor.A('restart')
+    lg.out(4, 'api.files_sync')
+    return OK('the main files sync loop has been restarted')
+
+
+def files_list(remote_path=None):
     """
     """
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_fs
-    from lib import diskspace
+    from system import bpio
     from userid import global_id
+    glob_path = global_id.ParseGlobalID(remote_path)
+    norm_path = global_id.NormalizeGlobalID(glob_path.copy())
+    remotePath = bpio.remotePath(norm_path['path'])
     result = []
-    customer_idurl = customer
-    if global_id.IsValidGlobalUser(customer):
-        customer_idurl = global_id.GlobalUserToIDURL(customer)
-    if not customer_idurl:
-        customers = backup_fs.known_customers()
-    else:
-        from userid import my_id
-        customers = [my_id.getLocalID(), ]
-    for customer_idurl in customers:
-        for pathID, remotePath, item in backup_fs.IterateIDs(iterID=backup_fs.fsID(customer_idurl)):
-            result.append({
-                'glob_id': global_id.MakeGlobalID(idurl=customer_idurl, path=remotePath),
-                'customer': customer_idurl,
-                'id': pathID,
-                'path': remotePath,
-                'type': backup_fs.TYPES.get(item.type, '').lower(),
-                'size': item.size,
-                'key_id': item.key_id,
-                'versions': map(lambda v: {
-                    'version': v,
-                    'blocks': max(0, item.versions[v][0] + 1),
-                    'size': diskspace.MakeStringFromBytes(max(0, item.versions[v][1])),
-                }, item.versions.keys()),
-            })
+    lookup = backup_fs.ListChildsByPath(
+        remotePath,
+        iter=backup_fs.fs(norm_path['idurl']),
+        iterID=backup_fs.fsID(norm_path['idurl']),
+    )
+    if not isinstance(lookup, list):
+        return ERROR(lookup)
+    for i in lookup:
+        glob_path_child = norm_path.copy()
+        glob_path_child['path'] = i['path']
+        if not i['item']['k']:
+            i['item']['k'] = 'master'
+        if glob_path['key'] and i['item']['k']:
+            if i['item']['k'] != glob_path['key']:
+                continue
+        result.append({
+            'glob_id': global_id.MakeGlobalID(**glob_path_child),
+            'customer': norm_path['idurl'],
+            'id': i['path_id'],
+            'path': i['path'],
+            'type': backup_fs.TYPES.get(i['type'], '').lower(),
+            'size': i['total_size'],
+            'latest': i['latest'],
+            'key_id': i['item']['k'],
+            'versions': i['versions'],
+        })
     lg.out(4, 'api.files_list %d items returned' % len(result))
     return RESULT(result)
 
@@ -590,43 +615,44 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import backup_fs
-    from lib import diskspace
     from lib import misc
     from system import bpio
     from userid import global_id
-    glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
-    remotePath = bpio.remotePath(glob_path['path'])
-    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
+    glob_path = global_id.ParseGlobalID(remote_path)
+    norm_path = global_id.NormalizeGlobalID(glob_path.copy())
+    remotePath = bpio.remotePath(norm_path['path'])
+    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(norm_path['idurl']))
     if not pathID:
         return ERROR('path %s was not found in catalog' % remotePath)
-    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['idurl']))
+    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(norm_path['idurl']))
     if not item:
         return ERROR('item %s is not found in catalog' % pathID)
+    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, customer_id=norm_path['customer'])
+    item_key = item.key_id
     r = {
         'glob_id': global_id.MakeGlobalID(**glob_path),
         'customer': glob_path['idurl'],
         'id': pathID,
         'path': remotePath,
         'type': backup_fs.TYPES.get(item.type, '').lower(),
-        'size': item.size,
-        'key_id': item.key_id,
-        'versions': map(lambda v: {
-            'version': v,
-            'blocks': max(0, item.versions[v][0] + 1),
-            'size': diskspace.MakeStringFromBytes(max(0, item.versions[v][1])),
-        }, item.versions.keys()),
-        'uploads': [],
+        'size': item_size,
+        'latest': item_time,
+        'key_id': item_key,
+        'versions': versions,
+        'uploads': {
+            'running': [],
+            'pending': [],
+        },
         'downloads': [],
     }
     if include_uploads:
         from storage import backup_control
         backup_control.tasks()
-        uploads = []
+        running = []
         for backupID in backup_control.FindRunningBackup(pathID=pathID):
             j = backup_control.jobs().get(backupID)
             if j:
-                uploads.append({
-                    'state': 'running',
+                running.append({
                     'backup_id': j.backupID,
                     'key_id': j.keyID,
                     'source_path': j.sourcePath,
@@ -644,16 +670,17 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
                     'progress': misc.percent2string(j.progress()),
                     'total_size': j.totalSize,
                 })
+        pending = []
         t = backup_control.GetPendingTask(pathID)
         if t:
-            uploads.append({
-                'state': 'pending',
+            pending.append({
                 'id': t.number,
                 'path_id': t.pathID,
                 'source_path': t.localPath,
                 'created': time.asctime(time.localtime(t.created)),
             })
-        r['uploads'] = uploads
+        r['uploads']['running'] = running
+        r['uploads']['pending'] = pending
     if include_downloads:
         from storage import restore_monitor
         downloads = []
@@ -723,7 +750,7 @@ def file_create(remote_path, as_folder=False):
     control.request_update([('pathID', newPathID), ])
     lg.out(4, 'api.file_create %s with %s' % (global_id.MakeGlobalID(parts), newPathID))
     return OK(
-        'new item was added: %s, remote path is %s' % (newPathID, path),
+        'new item was added: "%s", remote path is "%s"' % (newPathID, path),
         extra_fields={
             'id': newPathID,
             'key_id': parts['key'],
@@ -751,14 +778,14 @@ def file_delete(remote_path):
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
     if not pathID:
-        return ERROR('remote path %s was not found' % parts['path'])
+        return ERROR('remote path "%s" was not found' % parts['path'])
     if not packetid.Valid(pathID):
-        return ERROR('invalid item found: %s' % pathID)
+        return ERROR('invalid item found: "%s"' % pathID)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
     result = backup_control.DeletePathBackups(
         pathIDfull, saveDB=False, calculate=False)
     if not result:
-        return ERROR('remote item %s was not found' % pathIDfull)
+        return ERROR('remote item "%s" was not found' % pathIDfull)
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathIDfull)
     backup_fs.DeleteByID(pathID, iter=backup_fs.fs(parts['idurl']), iterID=backup_fs.fsID(parts['idurl']))
     backup_fs.Scan()
@@ -767,7 +794,7 @@ def file_delete(remote_path):
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
     lg.out(4, 'api.file_delete %s' % parts)
-    return OK('item %s was deleted from remote peers' % pathIDfull)
+    return OK('item "%s" was deleted from remote peers' % pathIDfull)
 
 
 def files_uploads(include_running=True, include_pending=True):
@@ -777,12 +804,11 @@ def files_uploads(include_running=True, include_pending=True):
 
     Return:
 
-        {
-            'status': 'OK',
-            'result': [{
-                'state': 'running',
+        { 'status': 'OK',
+          'result': {
+            'running': [{
                 'aborting': False,
-                'backup_id': '0/0/3/1/F20160424013912PM',
+                'version': '0/0/3/1/F20160424013912PM',
                 'block_number': 4,
                 'block_size': 16777216,
                 'bytes_processed': 67108864,
@@ -796,8 +822,8 @@ def files_uploads(include_running=True, include_pending=True):
                 'terminating': False,
                 'total_size': 89461450,
                 'work_blocks': 4
-            }, {
-                'state': 'pending',
+            }],
+            'pending': [{
                 'created': 'Wed Apr 27 15:11:13 2016',
                 'id': 3,
                 'source_path': '/Users/veselin/Downloads/another-ZIP-file.zip',
@@ -811,11 +837,10 @@ def files_uploads(include_running=True, include_pending=True):
     from storage import backup_control
     lg.out(4, 'api.files_uploads  %d is running, %d is pending' % (
         len(backup_control.jobs()), len(backup_control.tasks())))
-    r = []
+    r = {'running': [], 'pending': [], }
     if include_running:
-        r.extend([{
-            'state': 'running',
-            'backup_id': j.backupID,
+        r['running'].extend([{
+            'version': j.backupID,
             'key_id': j.keyID,
             'source_path': j.sourcePath,
             'eccmap': j.eccmap.name,
@@ -833,8 +858,7 @@ def files_uploads(include_running=True, include_pending=True):
             'total_size': j.totalSize,
         } for j in backup_control.jobs().values()])
     if include_pending:
-        r.extend([{
-            'state': 'pending',
+        r['pending'].extend([{
             'id': t.number,
             'path_id': t.pathID,
             'source_path': t.localPath,
@@ -843,7 +867,7 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path):
+def file_upload_start(local_path, remote_path, wait_result=True):
     """
     """
     if not driver.is_started('service_backups'):
@@ -868,10 +892,29 @@ def file_upload_start(local_path, remote_path):
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathIDfull), ])
+    if wait_result:
+        d = Deferred()
+        tsk.result_defer.addCallback(lambda backupID, result: d.callback(OK(
+            'item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
+            extra_fields={
+                'id': remote_path,
+                'version': backupID,
+                'key_id': tsk.keyID,
+                'source_path': local_path,
+                'path_id': pathID,
+            }
+        )))
+        lg.out(4, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
+        return d
     lg.out(4, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
-        'uploading %s started, local path is: %s' % (remote_path, local_path),
-        extra_fields={'id': remote_path, 'key_id': tsk.keyID})
+        'uploading "%s" started, local path is: "%s"' % (remote_path, local_path),
+        extra_fields={
+            'id': remote_path,
+            'key_id': tsk.keyID,
+            'source_path': local_path,
+            'path_id': pathID,
+        })
 
 
 def file_upload_stop(remote_path):
@@ -932,7 +975,7 @@ def files_downloads():
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import restore_monitor
-    lg.out(4, 'api.restores_running %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
+    lg.out(4, 'api.files_downloads %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
     return RESULT([{
         'backup_id': r.BackupID,
         'creator_id': r.CreatorID,
@@ -947,7 +990,7 @@ def files_downloads():
     } for r in restore_monitor.GetWorkingObjects()])
 
 
-def file_download_start(remote_path, destination_path=None):
+def file_download_start(remote_path, destination_path=None, wait_result=False):
     """
     Download data from remote peers to your local machine. You can use
     different methods to select the target data with `remote_path` input:
@@ -1007,23 +1050,34 @@ def file_download_start(remote_path, destination_path=None):
         return ERROR('download not possible, uploading %s is in process' % backupID)
     if restore_monitor.IsWorking(backupID):
         return OK('downloading task for %s already scheduled' % backupID)
-    customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
+    customerGlobalID, pathID_target, version = packetid.SplitBackupID(backupID)
     if not customerGlobalID:
         customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
-    knownPath = backup_fs.ToPath(remotePath, iterID=backup_fs.fsID(global_id.GlobalUserToIDURL(customerGlobalID)))
+    knownPath = backup_fs.ToPath(pathID_target, iterID=backup_fs.fsID(global_id.GlobalUserToIDURL(customerGlobalID)))
     if not knownPath:
         return ERROR('location %s not found in catalog' % knownPath)
     if not destination_path:
         destination_path = settings.getRestoreDir()
-    if bpio.Windows() and len(knownPath) > 3 and knownPath[1] == ':' and knownPath[2] == '/':
-        # TODO: - also may need to check other options like network drive (//) or so
-        knownPath = knownPath[3:]
-    localDir = os.path.dirname(knownPath.lstrip('/'))
-    restoreDir = os.path.join(destination_path, localDir)
-    restore_monitor.Start(backupID, restoreDir, keyID=glob_path['key'])
+    if wait_result:
+        d = Deferred()
+        restore_monitor.Start(
+            backupID, destination_path, keyID=glob_path['key'],
+            callback=lambda backupID, result: d.callback(OK(extra_fields={
+                'backup_id': backupID,
+                'state': result,
+                'local_path': destination_path,
+            })))
+        control.request_update([('pathID', knownPath), ])
+        return d
+    restore_monitor.Start(backupID, destination_path, keyID=glob_path['key'])
     control.request_update([('pathID', knownPath), ])
-    lg.out(4, 'api.download_start %s to %s OK!' % (backupID, restoreDir))
-    return OK('downloading of version %s has been started to %s' % (backupID, restoreDir))
+    lg.out(4, 'api.download_start %s to %s OK!' % (backupID, destination_path))
+    return OK(
+        'downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
+        extra_fields={
+            'backup_id': backupID,
+            'state': 'started',
+            'local_path': destination_path, }, )
 
 
 def file_download_stop(remote_path):
@@ -1032,7 +1086,7 @@ def file_download_stop(remote_path):
 
     Return:
 
-        {'status': 'OK',  'result': 'restoring of alice@p2p-host.com:0/1/2 aborted'}
+        {'status': 'OK', 'result': 'restoring of "alice@p2p-host.com:0/1/2" aborted'}
     """
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
