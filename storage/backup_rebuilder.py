@@ -58,10 +58,12 @@ EVENTS:
     * :red:`start`
     * :red:`timer-1sec`
 """
+#------------------------------------------------------------------------------
 
 import os
 import sys
 
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor
@@ -82,7 +84,9 @@ from system import bpio
 from main import settings
 
 from contacts import contactsdb
+
 from userid import my_id
+from userid import global_id
 
 from raid import eccmap
 from raid import raid_worker
@@ -528,7 +532,8 @@ class BackupRebuilder(automat.Automat):
             # it?
             lg.warn("%s is not a valid packet: %r" % (newpacket.PacketID, newpacket))
             return
-        packetID = newpacket.PacketID
+        # packetID = newpacket.PacketID
+        packetID = global_id.CanonicalID(newpacket.PacketID)
         customer, remotePath = packetid.SplitPacketID(packetID)
         filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
         if os.path.isfile(filename):

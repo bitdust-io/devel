@@ -89,7 +89,8 @@ def packet_in_callback(backupID, newpacket):
         _WorkingRestoreProgress[backupID][SupplierNumber] = 0
     _WorkingRestoreProgress[backupID][SupplierNumber] += len(newpacket.Payload)
 
-    backup_matrix.LocalFileReport(newpacket.PacketID)
+    packetID = global_id.CanonicalID(newpacket.PacketID)
+    backup_matrix.LocalFileReport(packetID)
 
     if OnRestorePacketFunc is not None:
         OnRestorePacketFunc(backupID, SupplierNumber, newpacket)
@@ -108,7 +109,10 @@ def extract_done(retcode, backupID, tarfilename, callback_method):
         OnRestoreDoneFunc(backupID, 'restore done')
 
     if callback_method:
-        callback_method(backupID, 'restore done')
+        try:
+            callback_method(backupID, 'restore done')
+        except:
+            lg.exc()
 
     return retcode
 
@@ -116,7 +120,10 @@ def extract_done(retcode, backupID, tarfilename, callback_method):
 def extract_failed(err, backupID, callback_method):
     lg.warn(str(err))
     if callback_method:
-        callback_method(backupID, 'extract failed')
+        try:
+            callback_method(backupID, 'extract failed')
+        except:
+            lg.exc()
     return err
 
 
@@ -140,7 +147,10 @@ def restore_done(result, backupID, tarfilename, outputlocation, callback_method)
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, result)
     if callback_method:
-        callback_method(backupID, result)
+        try:
+            callback_method(backupID, result)
+        except:
+            lg.exc()
     return result
 
 

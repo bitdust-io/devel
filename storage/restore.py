@@ -379,7 +379,7 @@ class restore(automat.Automat):
             self.InboxQueueWorker = None
 
     def doSavePacket(self, NewPacket):
-        packetID = NewPacket.PacketID
+        packetID = global_id.CanonicalID(NewPacket.PacketID)
         cusGlobID, remotePath, version, packetBlockNum, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
         if dataORparity == 'Data':
             self.OnHandData[SupplierNumber] = True
@@ -524,6 +524,8 @@ class restore(automat.Automat):
             self.automat('raid-done', filename)
 
     def _packet_came_in(self, NewPacket, state):
+        if _Debug:
+            lg.out(_DebugLevel, 'restore._packet_came_in %s : %s' % (state, NewPacket))
         if state == 'received':
             self.InboxPacketsQueue.append(NewPacket)
         elif state == 'failed':

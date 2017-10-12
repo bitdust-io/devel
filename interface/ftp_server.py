@@ -23,6 +23,7 @@
 #
 #
 #
+from fileinput import fileno
 
 """
 ..
@@ -271,14 +272,17 @@ class BitDustFTP(FTP):
         consumer.close()
         return d
 
-    def _cbRestoreDone(self, backupID, result, restore_path, path_segments, result_defer):
-        if result != 'restore done':
-            return result_defer.errback(None, path_segments)
-        fp = filepath.FilePath(restore_path)
+    def _cbRestoreDone(self, ret, path_segments, result_defer):
+        pth = '/'.join(path_segments)
+        if ret['status'] != 'OK':
+            return result_defer.errback(FileNotFoundError(pth))
+        if ret['result'][0] != 'restore done':
+            return result_defer.errback(FileNotFoundError(pth))
+        fp = filepath.FilePath(ret['local_path'])
         try:
             fobj = fp.open('r')
         except:
-            return result_defer.errback(None, path_segments)
+            return result_defer.errback(FileNotFoundError(pth))
         fr = _FileReader(fobj)
         return result_defer.callback(fr)
 
@@ -374,15 +378,12 @@ class BitDustFTP(FTP):
         d.addErrback(self._ebReadOpened, newsegs)
         d.addBoth(self._enableTimeoutLater)
         if isinstance(ret, dict):
-            if ret['status'] != 'OK':
-                return defer.fail(FileNotFoundError(path))
-            self._cbRestoreDone(
-                ret['backup_id'], ret['state'], ret['local_path'], newsegs, d,
-            )
+#             if ret['status'] != 'OK':
+#                 return defer.fail(FileNotFoundError(path))
+            self._cbRestoreDone(ret, newsegs, d)
             return d
-        ret.addCallback(lambda ok: self._cbRestoreDone(
-            ok['backup_id'], ok['state'], ok['local_path'], newsegs, d,
-        ))
+        ret.addCallback(self._cbRestoreDone, newsegs, d)
+        ret.addErrback(lambda err: lg.exc(err))
         return d
 
     def ftp_STOR(self, path):

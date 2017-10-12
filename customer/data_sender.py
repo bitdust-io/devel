@@ -295,8 +295,8 @@ class DataSender(automat.Automat):
             packets = backup_matrix.ScanBlocksToRemove(
                 backupID, settings.getGeneralWaitSuppliers())
             for packetID in packets:
-                customer, path = packetid.SplitPacketID(packetID)
-                filename = os.path.join(settings.getLocalBackupsDir(), customer, path)
+                customer, pathID = packetid.SplitPacketID(packetID)
+                filename = os.path.join(settings.getLocalBackupsDir(), customer, pathID)
                 if os.path.isfile(filename):
                     try:
                         os.remove(filename)
@@ -311,8 +311,7 @@ class DataSender(automat.Automat):
 
     def _packetAcked(self, packet, ownerID, packetID):
         from storage import backup_matrix
-        backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(
-            packetID)
+        backupID, blockNum, supplierNum, dataORparity = packetid.BidBnSnDp(packetID)
         backup_matrix.RemoteFileReport(
             backupID, blockNum, supplierNum, dataORparity, True)
         if ownerID not in self.statistic:

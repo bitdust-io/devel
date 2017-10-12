@@ -468,8 +468,14 @@ def Data(request):
         lg.warn("%s not a customer, packetID=%s" % (request.OwnerID, request.PacketID))
         SendFail(request, 'not a customer')
         return
-    filename = makeFilename(request.OwnerID, request.PacketID)
-    if filename == "":
+    glob_path = global_id.ParseGlobalID(request.PacketID)
+    if not glob_path['path']:
+        lg.warn("got incorrect PacketID")
+        SendFail(request, 'incorrect PacketID')
+        return
+    # TODO: process files from another customer : glob_path['idurl']
+    filename = makeFilename(request.OwnerID, glob_path['path'])
+    if not filename:
         lg.warn("got empty filename, bad customer or wrong packetID? ")
         SendFail(request, 'empty filename')
         return
@@ -545,7 +551,13 @@ def Retrieve(request):
         lg.warn("had unknown customer " + request.OwnerID)
         SendFail(request, 'not a customer')
         return
-    filename = makeFilename(request.OwnerID, request.PacketID)
+    glob_path = global_id.ParseGlobalID(request.PacketID)
+    if not glob_path['path']:
+        lg.warn("got incorrect PacketID")
+        SendFail(request, 'incorrect PacketID')
+        return
+    # TODO: process requests from another customer : glob_path['idurl']
+    filename = makeFilename(request.OwnerID, glob_path['path'])
     if filename == '':
         lg.warn("had empty filename")
         SendFail(request, 'empty filename')
@@ -592,14 +604,20 @@ def DeleteFile(request):
         ids = request.Payload.split('\n')
     filescount = 0
     dirscount = 0
-    for pathID in ids:
-        customerGlobID, pathID = packetid.SplitPacketID(pathID)
+    for pcktID in ids:
+        glob_path = global_id.ParseGlobalID(pcktID)
+        if not glob_path['path']:
+            lg.warn("got incorrect PacketID")
+            SendFail(request, 'incorrect PacketID')
+            return
         # TODO: add validation of customerGlobID
-        filename = makeFilename(request.OwnerID, pathID)
+        # TODO: process requests from another customer
+        filename = makeFilename(request.OwnerID, glob_path['path'])
         if filename == "":
-            filename = constructFilename(request.OwnerID, pathID)
+            filename = constructFilename(request.OwnerID, glob_path['path'])
             if not os.path.exists(filename):
-                lg.warn("had unknown customer: %s or pathID is not correct or not exist: %s" % (nameurl.GetName(request.OwnerID), pathID))
+                lg.warn("had unknown customer: %s or pathID is not correct or not exist: %s" % (
+                    nameurl.GetName(request.OwnerID), glob_path['path']))
                 return SendFail(request, 'not a customer, or file not found')
         if os.path.isfile(filename):
             try:
@@ -658,12 +676,19 @@ def DeleteBackup(request):
     else:
         ids = request.Payload.split('\n')
     count = 0
-    for backupID in ids:
-        filename = makeFilename(request.OwnerID, backupID)
+    for bkpID in ids:
+        glob_path = global_id.ParseGlobalID(bkpID)
+        if not glob_path['path']:
+            lg.warn("got incorrect backupID")
+            SendFail(request, 'incorrect backupID')
+            return
+        # TODO: add validation of customerGlobID
+        # TODO: process requests from another customer
+        filename = makeFilename(request.OwnerID, glob_path['path'])
         if filename == "":
-            filename = constructFilename(request.OwnerID, backupID)
+            filename = constructFilename(request.OwnerID, glob_path['path'])
             if not os.path.exists(filename):
-                lg.warn("had unknown customer " + request.OwnerID + " or backupID " + backupID)
+                lg.warn("had unknown customer: %s or backupID: %s" (bkpID, request.OwnerID))
                 return SendFail(request, 'not a customer, or file not found')
         if os.path.isdir(filename):
             try:

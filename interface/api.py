@@ -81,11 +81,13 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     return o
 
 
-def ERROR(errors=[], message=None, status='ERROR'):
+def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
     o = {'status': status,
          'errors': errors if isinstance(errors, list) else [errors, ]}
     if message is not None:
         o['message'] = message
+    if extra_fields is not None:
+        o.update(extra_fields)
     o = on_api_result_prepared(o)
     return o
 
@@ -1019,6 +1021,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
     from main import settings
     from userid import my_id
     from userid import global_id
+    lg.out(4, 'api.download_start %s to %s, wait_result=%s' % (
+        remote_path, destination_path, wait_result))
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if packetid.Valid(glob_path['path']):
         customerGlobalID, pathID, version = packetid.SplitBackupID(remote_path)
@@ -1060,13 +1064,31 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
         destination_path = settings.getRestoreDir()
     if wait_result:
         d = Deferred()
+
+        def _on_result(backupID, result):
+            if result == 'done':
+                d.callback(OK(
+                    result,
+                    'version "%s" downloaded to "%s"' % (backupID, destination_path),
+                    extra_fields={
+                        'backup_id': backupID,
+                        'local_path': destination_path,
+                    },
+                ))
+            else:
+                d.callback(ERROR(
+                    'downloading version "%s" failed, result: %s' % (backupID, result),
+                    extra_fields={
+                        'backup_id': backupID,
+                        'local_path': destination_path,
+                    },
+                ))
+            return True
+
         restore_monitor.Start(
-            backupID, destination_path, keyID=glob_path['key'],
-            callback=lambda backupID, result: d.callback(OK(extra_fields={
-                'backup_id': backupID,
-                'state': result,
-                'local_path': destination_path,
-            })))
+            backupID, destination_path,
+            keyID=glob_path['key'],
+            callback=_on_result)
         control.request_update([('pathID', knownPath), ])
         lg.out(4, 'api.download_start %s to %s, wait_result=True' % (backupID, destination_path))
         return d
@@ -1074,10 +1096,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
     control.request_update([('pathID', knownPath), ])
     lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
     return OK(
+        'started',
         'downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
         extra_fields={
             'backup_id': backupID,
-            'state': 'started',
             'local_path': destination_path, }, )
 
 

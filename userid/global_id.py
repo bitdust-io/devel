@@ -79,9 +79,11 @@ def MakeGlobalID(
     return out
 
 
-def ParseGlobalID(inp):
+def ParseGlobalID(inp, detect_version=False):
     """
     Split input string by parts according to different global ID formats:
+
+    For such input (global resource path):
 
         "group_abc$alice@first-machine.com:myfiles/animals/cat.png#F20160313043757PM"
 
@@ -94,6 +96,22 @@ def ParseGlobalID(inp):
             "customer": "alice@first-machine.com",
             "idurl": "http://first-machine.com/alice.xml",
             "path": "myfiles/animals/cat.png",
+            "version": "F20160313043757PM",
+        }
+
+    For such input (global path ID) with `detect_version=True`:
+
+        "group_abc$alice@first-machine.com:1/2/3/F20160313043757PM/4-5-Parity"
+
+    returns such dictionary object:
+
+        {
+            "user": "alice",
+            "key": "group_abc",
+            "idhost": "first-machine.com",
+            "customer": "alice@first-machine.com",
+            "idurl": "http://first-machine.com/alice.xml",
+            "path": "1/2/3/F20160313043757PM/4-5-Parity",
             "version": "F20160313043757PM",
         }
     """
@@ -141,6 +159,15 @@ def ParseGlobalID(inp):
             path, _, version = path.rpartition('#')
             result['version'] = version
         result['path'] = path
+        if detect_version:
+            try:
+                from lib import packetid
+                backupID, _, fileName = path.rpartition('/')
+                if packetid.IsPacketNameCorrect(fileName):
+                    _, _, versionName = backupID.rpartition('/')
+                    result['version'] = versionName
+            except:
+                pass
     return result
 
 
