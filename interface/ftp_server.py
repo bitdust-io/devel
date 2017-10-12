@@ -376,7 +376,6 @@ class BitDustFTP(FTP):
         if isinstance(ret, dict):
             if ret['status'] != 'OK':
                 return defer.fail(FileNotFoundError(path))
-            import pdb; pdb.set_trace()
             self._cbRestoreDone(
                 ret['backup_id'], ret['state'], ret['local_path'], newsegs, d,
             )

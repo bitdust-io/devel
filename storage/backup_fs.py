@@ -764,7 +764,9 @@ def WalkByPath(path, iter=None):
         iter = fs()
     ppath = bpio.remotePath(path)
     if ppath in iter:
-        return iter, iter[0] if 0 in iter else ''
+        if isinstance(iter[ppath], int):
+            return iter, str(iter[path])
+        return iter, str(iter[ppath][0])
     if ppath == '' or ppath == '/':
         return iter, iter[0] if 0 in iter else ''
     path_id = ''
@@ -1394,7 +1396,7 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
         version_state, version_status = GetBackupStatus(backupID, item_info, item_info.name(), path_exist)
         # item_status += version_status + ' '
         versions.append({
-            'backupid': backupID,
+            'backup_id': backupID,
             'label': version_label,
             'time': version_time,
             'size': version_size,
@@ -2034,10 +2036,17 @@ def _test():
     # print count
     Scan()
     Calculate()
-    pprint.pprint(fs())
-    print
-    pprint.pprint(fsID())
-    print
+    # pprint.pprint(fs())
+    # print
+    # pprint.pprint(fsID())
+    # print
+
+#     print ListByPathAdvanced('TestKey2')
+#     return
+
+#     for i in ListByPathAdvanced('TestKey2'):
+#         print i # , i[1] # , WalkByPath(i[1])[1]
+#         print
 
 #     parent_path = os.path.dirname(bpio.portablePath(unicode('/some/remote/path')))
 #     print IsFile(sys.argv[1])
@@ -2077,8 +2086,8 @@ def _test():
     # import pdb
     # pdb.set_trace()
     # pprint.pprint(ListRootItems())
-    pprint.pprint(ListAllBackupIDs())
-    # pprint.pprint(ListByPathAdvanced(sys.argv[1]))
+    # pprint.pprint(ListAllBackupIDs())
+    pprint.pprint(ListChildsByPath((sys.argv[1])))
 
     # print ListByPathAdvanced("")
     # pth = '~/Downloads/test/asd'

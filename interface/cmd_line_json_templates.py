@@ -81,7 +81,7 @@ TPL_BACKUPS_LIST = tpl_4_items.format(
 TPL_BACKUPS_LIST_IDS = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls("{backupid} {size} {path}\n"),
+    ls("{backup_id} {size} {path}\n"),
     tpl_errors)
 
 TPL_BACKUPS_RUNNING_LIST = tpl_5_items.format(

@@ -623,15 +623,15 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     remotePath = bpio.remotePath(norm_path['path'])
     pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(norm_path['idurl']))
     if not pathID:
-        return ERROR('path %s was not found in catalog' % remotePath)
+        return ERROR('path "%s" was not found in catalog' % remotePath)
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(norm_path['idurl']))
     if not item:
-        return ERROR('item %s is not found in catalog' % pathID)
+        return ERROR('item "%s" is not found in catalog' % pathID)
     (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, customer_id=norm_path['customer'])
     item_key = item.key_id
     r = {
-        'glob_id': global_id.MakeGlobalID(**glob_path),
-        'customer': glob_path['idurl'],
+        'glob_id': global_id.MakeGlobalID(**norm_path),
+        'customer': norm_path['idurl'],
         'id': pathID,
         'path': remotePath,
         'type': backup_fs.TYPES.get(item.type, '').lower(),
@@ -720,10 +720,10 @@ def file_create(remote_path, as_folder=False):
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
     if pathID:
-        return ERROR('remote path "%s" already exist in catalog: %s' % (path, pathID))
+        return ERROR('remote path "%s" already exist in catalog: "%s"' % (path, pathID))
     parent_path = os.path.dirname(path)
     if backup_fs.IsFile(parent_path, iter=backup_fs.fs(parts['idurl'])):
-        return ERROR('remote path can not be assigned, file already exist: %s' % parent_path)
+        return ERROR('remote path can not be assigned, file already exist: "%s"' % parent_path)
     iter_and_iterID = backup_fs.GetIteratorsByPath(
         parent_path,
         iter=backup_fs.fs(parts['idurl']),
@@ -879,14 +879,14 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     from web import control
     from userid import global_id
     if not bpio.pathExist(local_path):
-        return ERROR('local file or folder %s not exist' % local_path)
+        return ERROR('local file or folder "%s" not exist' % local_path)
     parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
     if not pathID:
-        return ERROR('path %s not registered yet' % path)
+        return ERROR('path "%s" not registered yet' % path)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
     tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key'])
     backup_fs.Calculate()
@@ -935,7 +935,7 @@ def file_upload_stop(remote_path):
     if not pathID:
         return ERROR('remote path "%s" was not found' % parts['path'])
     if not packetid.Valid(pathID):
-        return ERROR('invalid item found: %s' % pathID)
+        return ERROR('invalid item found: "%s"' % pathID)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
     r = []
     msg = []
@@ -1026,36 +1026,36 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
             customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
         if not item:
-            return ERROR('path %s is not found in catalog' % remote_path)
+            return ERROR('path "%s" is not found in catalog' % remote_path)
         if not version:
             version = item.get_latest_version()
         if not version:
-            return ERROR('not found any remote versions for %s' % remote_path)
+            return ERROR('not found any remote versions for "%s"' % remote_path)
         backupID = packetid.MakeBackupID(customerGlobalID, pathID, version)
     else:
         remotePath = bpio.remotePath(glob_path['path'])
         knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
         if not knownPathID:
-            return ERROR('path %s was not found in catalog' % remotePath)
+            return ERROR('path "%s" was not found in catalog' % remotePath)
         item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(glob_path['idurl']))
         if not item:
-            return ERROR('item %s is not found in catalog' % knownPathID)
+            return ERROR('item "%s" is not found in catalog' % knownPathID)
         version = glob_path['version']
         if not version:
             version = item.get_latest_version()
         if not version:
-            return ERROR('not found any remote versions for %s' % remote_path)
-        backupID = packetid.MakeBackupID(glob_path['user'], knownPathID, glob_path['version'])
+            return ERROR('not found any remote versions for "%s"' % remote_path)
+        backupID = packetid.MakeBackupID(glob_path['user'], knownPathID, version)
     if backup_control.IsBackupInProcess(backupID):
-        return ERROR('download not possible, uploading %s is in process' % backupID)
+        return ERROR('download not possible, uploading "%s" is in process' % backupID)
     if restore_monitor.IsWorking(backupID):
-        return OK('downloading task for %s already scheduled' % backupID)
+        return ERROR('downloading task for "%s" already scheduled' % backupID)
     customerGlobalID, pathID_target, version = packetid.SplitBackupID(backupID)
     if not customerGlobalID:
         customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
     knownPath = backup_fs.ToPath(pathID_target, iterID=backup_fs.fsID(global_id.GlobalUserToIDURL(customerGlobalID)))
     if not knownPath:
-        return ERROR('location %s not found in catalog' % knownPath)
+        return ERROR('location "%s" not found in catalog' % knownPath)
     if not destination_path:
         destination_path = settings.getRestoreDir()
     if wait_result:
@@ -1068,10 +1068,11 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
                 'local_path': destination_path,
             })))
         control.request_update([('pathID', knownPath), ])
+        lg.out(4, 'api.download_start %s to %s, wait_result=True' % (backupID, destination_path))
         return d
     restore_monitor.Start(backupID, destination_path, keyID=glob_path['key'])
     control.request_update([('pathID', knownPath), ])
-    lg.out(4, 'api.download_start %s to %s OK!' % (backupID, destination_path))
+    lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
     return OK(
         'downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
         extra_fields={
@@ -1104,7 +1105,7 @@ def file_download_stop(remote_path):
             customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
         if not item:
-            return ERROR('path %s is not found in catalog' % remote_path)
+            return ERROR('path "%s" is not found in catalog' % remote_path)
         versions = []
         if version:
             versions.append(version)
@@ -1116,10 +1117,10 @@ def file_download_stop(remote_path):
         remotePath = bpio.remotePath(glob_path['path'])
         knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
         if not knownPathID:
-            return ERROR('path %s was not found in catalog' % remotePath)
+            return ERROR('path "%s" was not found in catalog' % remotePath)
         item = backup_fs.GetByID(knownPathID, iterID=backup_fs.fsID(glob_path['idurl']))
         if not item:
-            return ERROR('item %s is not found in catalog' % knownPathID)
+            return ERROR('item "%s" is not found in catalog' % knownPathID)
         versions = []
         if glob_path['version']:
             versions.append(glob_path['version'])
@@ -1128,7 +1129,7 @@ def file_download_stop(remote_path):
         for version in versions:
             backupIDs.append(packetid.MakeBackupID(glob_path['user'], knownPathID, version))
     if not backupIDs:
-        return ERROR('not found any remote versions for %s' % remote_path)
+        return ERROR('not found any remote versions for "%s"' % remote_path)
     r = []
     for backupID in backupIDs:
         r.append({'backup_id': backupID, 'aborted': restore_monitor.Abort(backupID), })
@@ -1195,7 +1196,7 @@ def supplier_replace(index_or_idurl):
         from customer import fire_hire
         fire_hire.AddSupplierToFire(idurl)
         fire_hire.A('restart')
-        return OK('supplier %s will be replaced by new peer' % idurl)
+        return OK('supplier "%s" will be replaced by new peer' % idurl)
     return ERROR('supplier not found')
 
 
@@ -1216,13 +1217,13 @@ def supplier_change(index_or_idurl, new_idurl):
     if not idurl or not contactsdb.is_supplier(idurl):
         return ERROR('supplier not found')
     if contactsdb.is_supplier(new_idurl):
-        return ERROR('peer %s is your supplier already' % new_idurl)
+        return ERROR('peer "%s" is your supplier already' % new_idurl)
     from customer import fire_hire
     from customer import supplier_finder
     supplier_finder.AddSupplierToHire(new_idurl)
     fire_hire.AddSupplierToFire(idurl)
     fire_hire.A('restart')
-    return OK('supplier %s will be replaced by %s' % (idurl, new_idurl))
+    return OK('supplier "%s" will be replaced by "%s"' % (idurl, new_idurl))
 
 
 def suppliers_ping():
@@ -1302,7 +1303,7 @@ def customer_reject(idurl):
     events.send('existing-customer-terminated', dict(idurl=idurl))
     # restart local tester
     local_tester.TestUpdateCustomers()
-    return OK('customer %s rejected, %s bytes were freed' % (idurl, consumed_by_cutomer))
+    return OK('customer "%s" rejected, "%s" bytes were freed' % (idurl, consumed_by_cutomer))
 
 
 def customers_ping():
@@ -1510,7 +1511,7 @@ def service_info(service_name):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        return ERROR('service %s not found' % service_name)
+        return ERROR('service "%s" not found' % service_name)
     return RESULT([{
         'index': svc.index,
         'name': svc.service_name,
@@ -1543,17 +1544,17 @@ def service_start(service_name):
         svc = driver.services().get(service_name, None)
     if svc is None:
         lg.out(4, 'api.service_start %s not found' % service_name)
-        return ERROR('service %s was not found' % service_name)
+        return ERROR('service "%s" was not found' % service_name)
     if svc.state == 'ON':
         lg.out(4, 'api.service_start %s already started' % service_name)
-        return ERROR('service %s already started' % service_name)
+        return ERROR('service "%s" already started' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config:
         lg.out(4, 'api.service_start %s already enabled' % service_name)
-        return ERROR('service %s already enabled' % service_name)
+        return ERROR('service "%s" already enabled' % service_name)
     config.conf().setBool(svc.config_path, True)
     lg.out(4, 'api.service_start (%s)' % service_name)
-    return OK('%s was switched on' % service_name)
+    return OK('"%s" was switched on' % service_name)
 
 
 def service_stop(service_name):
@@ -1576,17 +1577,17 @@ def service_stop(service_name):
         svc = driver.services().get(service_name, None)
     if svc is None:
         lg.out(4, 'api.service_stop %s not found' % service_name)
-        return ERROR('service %s not found' % service_name)
+        return ERROR('service "%s" not found' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config is None:
         lg.out(4, 'api.service_stop config item %s was not found' % svc.config_path)
-        return ERROR('config item %s was not found' % svc.config_path)
+        return ERROR('config item "%s" was not found' % svc.config_path)
     if current_config is False:
         lg.out(4, 'api.service_stop %s already disabled' % service_name)
-        return ERROR('service %s already disabled' % service_name)
+        return ERROR('service "%s" already disabled' % service_name)
     config.conf().setBool(svc.config_path, False)
     lg.out(4, 'api.service_stop (%s)' % service_name)
-    return OK('%s was switched off' % service_name)
+    return OK('"%s" was switched off' % service_name)
 
 #------------------------------------------------------------------------------
 
