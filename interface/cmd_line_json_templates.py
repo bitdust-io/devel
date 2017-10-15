@@ -81,13 +81,17 @@ TPL_BACKUPS_LIST = tpl_4_items.format(
 TPL_BACKUPS_LIST_IDS = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls("{backupid} {size} {path}\n"),
+    ls("{backup_id} {size} {path}\n"),
     tpl_errors)
 
 TPL_BACKUPS_RUNNING_LIST = tpl_5_items.format(
     tpl_status,
     tpl_execution,
-    ls("{backup_id} from {source_path} of total {total_size}, currently {bytes_processed} bytes processed, ready by {progress}%\n"),
+    '{.section result}\n%s\n\n%s{.end}' % (
+        ls("{backup_id} from {source_path} of total {total_size}, currently {bytes_processed} bytes processed, ready by {progress}%\n",
+           tag='running'),
+        ls("{id}: {path_id} from {local_path} created at {created}\n", tag='pending'),
+    ),
     tpl_message,
     tpl_errors)
 

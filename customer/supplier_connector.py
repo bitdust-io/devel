@@ -66,10 +66,13 @@ from system import bpio
 from main import settings
 
 from lib import nameurl
-from p2p import commands
 from lib import diskspace
 
+from p2p import commands
+
 from p2p import p2p_service
+
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -144,14 +147,17 @@ class SupplierConnector(automat.Automat):
         changed.
         """
         if newstate in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE']:
-            supplierPath = settings.SupplierPath(self.idurl)
+            supplierPath = settings.SupplierPath(self.idurl, customer_idurl=my_id.getLocalID())
             if not os.path.isdir(supplierPath):
                 try:
                     os.makedirs(supplierPath)
                 except:
                     lg.exc()
                     return
-            bpio.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
+            bpio.WriteFile(
+                settings.SupplierServiceFilename(self.idurl, customer_idurl=my_id.getLocalID(), ),
+                newstate,
+            )
 
     def set_callback(self, name, cb):
         self.callbacks[name] = cb

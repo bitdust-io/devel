@@ -200,7 +200,7 @@ def TreeSummary(ownerdir):
             if not packetid.Valid(packetID):
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue
-            pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
+            customer, pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
             if None in [pathID, versionName, blockNum, supplierNum, dataORparity]:
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue

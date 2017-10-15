@@ -77,6 +77,7 @@ from logs import lg
 from automats import automat
 
 from lib import nameurl
+from lib import packetid
 
 from p2p import commands
 
@@ -207,7 +208,7 @@ class BackupDBKeeper(automat.Automat):
                 commands.Retrieve(),
                 localID,
                 localID,
-                packetID,
+                packetid.RemotePath(packetID),
                 Payload,
                 supplierId)
             gateway.outbox(newpacket, callbacks={

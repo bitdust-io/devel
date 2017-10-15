@@ -49,11 +49,6 @@ import urlparse
 legalchars = "#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 legalset = set(legalchars)
 
-_FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key}'
-_FORMAT_GLOBAL_ID_KEY_USER = '{key}${user}'
-_REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key>[a-z0-9-_]+)$'
-_REGEX_GLOBAL_ID_KEY_USER = '^(?P<key>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
-
 #------------------------------------------------------------------------------
 
 
@@ -190,99 +185,11 @@ def GetFileName(url):
         return ''
     return url[url.rfind("/") + 1:]
 
-#------------------------------------------------------------------------------
-
-def MakeGlobalID(
-    idurl=None,
-    user_name=None,
-    host=None,
-    key_alias=None,
-    backup_id=None,
-    version=None,
-    output_format=None,
-):
+def GetHost(url):
     """
-    Based on input parameters returns string like this:
-
-        alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM
-
-    You can use another form if you set it in `output_format` parameter:
-
-        group_abc$alice@first-machine.com:animals/cat.png#F20160313043757PM
+    Return host name value from url.
     """
-    if output_format is None:
-        output_format = _FORMAT_GLOBAL_ID_KEY_USER
-    out = ''
-    if idurl:
-        _, host, port, filename = UrlParse(idurl)
-        if port:
-            host += ':' + str(port)
-        user_name = filename.strip()[0:-4]
-    if key_alias:
-        out = output_format.format(user=user_name, key=key_alias)
-    else:
-        out = user_name
-    out += '@{}'.format(host)
-    if backup_id:
-        out += ':{}'.format(backup_id)
-        if version:
-            out += '#{}'.format(version)
-    return out
-
-def ParseGlobalID(inp):
-    """
-    Split such input string:
-
-        "alice!group_abc@first-machine.com:animals/cat.png#F20160313043757PM"
-
-    into such dictionary object:
-
-        {
-            "user": "alice",
-            "key": "group_abc",
-            "idhost": "first-machine.com",
-            "idurl": "http://first-machine.com/alice.xml",
-            "path": "animals/cat.png",
-            "version": "F20160313043757PM"
-        }
-    """
-    result = {
-        "user": "",
-        "key": "",
-        "idhost": "",
-        "idurl": "",
-        "path": "",
-        "version": "",
-    }
-    try:
-        user_and_key, idhost_and_path = inp.strip().split('@', 2)
-    except:
-        return result
-    try:
-        user_key = re.match(_REGEX_GLOBAL_ID_USER_KEY, user_and_key)
-        if not user_key:
-            user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
-        if user_key:
-            result['user'] = user_key.group('user')
-            result['key'] = user_key.group('key')
-        else:
-            result['user'] = user_and_key
-    except:
-        return result
-    try:
-        if not idhost_and_path.count(':'):
-            result['idhost'] = idhost_and_path
-        else:
-            idhost, path = idhost_and_path.rsplit(':', 2)
-            result['idhost'] = idhost
-            if path.count('#'):
-                path, version = path.split('#', 2)
-                result['version'] = version
-            result['path'] = path
-    except:
-        return result
-    result['idurl'] = 'http://{}/{}.xml'.format(result['idhost'], result['user'])
-    return result
+    return UrlParse(url)[1]
 
 #------------------------------------------------------------------------------
 

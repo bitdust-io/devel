@@ -119,7 +119,9 @@ from main import events
 from lib import packetid
 
 from contacts import contactsdb
+
 from userid import my_id
+from userid import global_id
 
 from automats import automat
 
@@ -155,7 +157,11 @@ class restore(automat.Automat):
     def __init__(self, BackupID, OutputFile, KeyID=None):  # OutputFileName
         self.CreatorID = my_id.getLocalID()
         self.BackupID = BackupID
-        self.PathID, self.Version = packetid.SplitBackupID(self.BackupID)
+        _parts = packetid.SplitBackupID(self.BackupID)
+        self.CustomerGlobalID = _parts[0]
+        self.CustomerIDURL = global_id.GlobalUserToIDURL(self.CustomerGlobalID)
+        self.RemotePath = _parts[1]
+        self.Version = _parts[2]
         self.File = OutputFile
         self.KeyID = KeyID
         # is current active block - so when add 1 we get to first, which is 0
@@ -317,22 +323,26 @@ class restore(automat.Automat):
     def doScanExistingPackets(self, arg):
         for SupplierNumber in range(self.EccMap.datasegments):
             PacketID = packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Data')
-            self.OnHandData[SupplierNumber] = os.path.exists(os.path.join(settings.getLocalBackupsDir(), PacketID))
+            customer, remotePath = packetid.SplitPacketID(PacketID)
+            self.OnHandData[SupplierNumber] = os.path.exists(os.path.join(
+                settings.getLocalBackupsDir(), customer, remotePath))
         for SupplierNumber in range(self.EccMap.paritysegments):
             PacketID = packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')
-            self.OnHandParity[SupplierNumber] = os.path.exists(os.path.join(settings.getLocalBackupsDir(), PacketID))
+            customer, remotePath = packetid.SplitPacketID(PacketID)
+            self.OnHandParity[SupplierNumber] = os.path.exists(os.path.join(
+                settings.getLocalBackupsDir(), customer, remotePath))
 
     def doRequestPackets(self, arg):
         from customer import io_throttle
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
-            SupplierID = contactsdb.supplier(SupplierNumber)
+            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.CustomerIDURL)
             if not SupplierID:
                 continue
             if not self.OnHandData[SupplierNumber] and contact_status.isOnline(SupplierID):
                 packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Data')))
         for SupplierNumber in range(self.EccMap.paritysegments):
-            SupplierID = contactsdb.supplier(SupplierNumber)
+            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.CustomerIDURL)
             if not SupplierID:
                 continue
             if not self.OnHandParity[SupplierNumber] and contact_status.isOnline(SupplierID):
@@ -349,13 +359,15 @@ class restore(automat.Automat):
         self.automat('request-done')
 
     def doReadRaid(self, arg):
-        fd, filename = tmpfile.make('restore',
-                                    prefix=self.BackupID.replace('/', '_') + '_' + str(self.BlockNumber) + '_')
+        fd, outfilename = tmpfile.make(
+            'restore',
+            prefix=self.BackupID.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.BlockNumber) + '_',
+        )
         os.close(fd)
-        task_params = (filename, eccmap.CurrentName(), self.Version, self.BlockNumber,
-                       os.path.join(settings.getLocalBackupsDir(), self.PathID))
+        inputpath = os.path.join(settings.getLocalBackupsDir(), self.CustomerGlobalID, self.RemotePath)
+        task_params = (outfilename, eccmap.CurrentName(), self.Version, self.BlockNumber, inputpath)
         raid_worker.add_task('read', task_params,
-                             lambda cmd, params, result: self._blockRestoreResult(result, filename))
+                             lambda cmd, params, result: self._blockRestoreResult(result, outfilename))
 
     def doReadPacketsQueue(self, arg):
         reactor.callLater(0, self._process_inbox_queue)
@@ -367,13 +379,13 @@ class restore(automat.Automat):
             self.InboxQueueWorker = None
 
     def doSavePacket(self, NewPacket):
-        packetID = NewPacket.PacketID
-        pathID, version, packetBlockNum, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
+        packetID = global_id.CanonicalID(NewPacket.PacketID)
+        cusGlobID, remotePath, version, packetBlockNum, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
         if dataORparity == 'Data':
             self.OnHandData[SupplierNumber] = True
         elif NewPacket.DataOrParity() == 'Parity':
             self.OnHandParity[SupplierNumber] = True
-        filename = os.path.join(settings.getLocalBackupsDir(), packetID)
+        filename = os.path.join(settings.getLocalBackupsDir(), cusGlobID, remotePath)
         dirpath = os.path.dirname(filename)
         if not os.path.exists(dirpath):
             try:
@@ -426,7 +438,9 @@ class restore(automat.Automat):
 
     def doDeleteBlockRequests(self, arg):
         from customer import io_throttle
-        io_throttle.DeleteBackupRequests(self.BackupID + "-" + str(self.BlockNumber))
+        backupID_pattern = self.BackupID + '/' + str(self.BlockNumber) + '-'
+        lg.out(12, 'restore.doDeleteBlockRequests %s' % backupID_pattern)
+        io_throttle.DeleteBackupRequests(backupID_pattern)
 
     def doRemoveTempFile(self, arg):
         try:
@@ -444,14 +458,15 @@ class restore(automat.Automat):
                     lg.out(6, 'restore.doRemoveTempFile SKIP because rebuilding in process')
                     return
         count = 0
-        for supplierNum in xrange(contactsdb.num_suppliers()):
-            supplierIDURL = contactsdb.supplier(supplierNum)
+        for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=self.CustomerIDURL)):
+            supplierIDURL = contactsdb.supplier(supplierNum, customer_idurl=self.CustomerIDURL)
             if not supplierIDURL:
                 continue
             for dataORparity in ['Data', 'Parity']:
                 packetID = packetid.MakePacketID(self.BackupID, self.BlockNumber,
                                                  supplierNum, dataORparity)
-                filename = os.path.join(settings.getLocalBackupsDir(), packetID)
+                customer, remotePath = packetid.SplitPacketID(packetID)
+                filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
                 if os.path.isfile(filename):
                     try:
                         os.remove(filename)
@@ -509,6 +524,8 @@ class restore(automat.Automat):
             self.automat('raid-done', filename)
 
     def _packet_came_in(self, NewPacket, state):
+        if _Debug:
+            lg.out(_DebugLevel, 'restore._packet_came_in %s : %s' % (state, NewPacket))
         if state == 'received':
             self.InboxPacketsQueue.append(NewPacket)
         elif state == 'failed':

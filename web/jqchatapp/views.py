@@ -61,6 +61,12 @@ JQCHAT_DISPLAY_COUNT = getattr(settings, 'JQCHAT_DISPLAY_COUNT', 100)
 
 #------------------------------------------------------------------------------
 
+def first_page(request):
+    return render_to_response('jqchat/first_page.html',
+                              {'known_ids': [], },
+                              context_instance=RequestContext(request))
+
+#------------------------------------------------------------------------------
 
 def open_room(request):
     roomid = request.REQUEST.get('id', '')
@@ -72,7 +78,7 @@ def open_room(request):
             roomid = int(roomid)
         except:
             lg.exc()
-            return Http404('incorrect Room ID')
+            raise Http404('incorrect Room ID')
         try:
             ThisRoom = get_object_or_404(Room, id=roomid)
         except:
@@ -98,7 +104,7 @@ def open_room(request):
                                              room=ThisRoom)
         return HttpResponseRedirect('/chat/room/%d' % ThisRoom.id)
 
-    return Http404('need to provide a room info')
+    raise Http404('need to provide a room info')
 
 #------------------------------------------------------------------------------
 
@@ -106,8 +112,8 @@ def open_room(request):
 def room_by_id(request, id):
     try:
         ThisRoom = get_object_or_404(Room, id=id)
-    except:
-        raise Http404
+    except Exception as e:
+        raise e
     return render_to_response('jqchat/chat_test.html',
                               {'room': ThisRoom},
                               context_instance=RequestContext(request))

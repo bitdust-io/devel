@@ -135,7 +135,7 @@ def WriteFile(filename, data):
 #    return dataNum, parityNum
 
 
-def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
+def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     # try:
     myeccmap = raid.eccmap.eccmap(eccmapname)
     INTSIZE = 4  # settings.IntSize()
@@ -232,7 +232,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     #     return None
 
 
-def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
+def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
     INTSIZE = 4  # settings.IntSize()
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)      # any padding at end and block.Length fixes

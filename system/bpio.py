@@ -871,6 +871,20 @@ def _encode(s):
 #    return p
 
 
+def remotePath(path):
+    """
+    Simplify and clean "remote" path value.
+    """
+    if path == '' or path == '/':
+        return path
+    p = path.lstrip('/').lstrip('\\')
+    if not isinstance(p, unicode):
+        p = unicode(p)
+    if p.endswith('/') and len(p) > 1:
+        p = p.rstrip('/')
+    return p
+
+
 def portablePath(path):
     """
     Fix path to fit for our use:
@@ -884,7 +898,7 @@ def portablePath(path):
     if path == '' or path == '/':
         return path
     if Windows() and len(path) == 2 and path[1] == ':':
-        path += '/'
+        path += '/'  # "C:" -> "C:/"
     if path.count('~'):
         path = os.path.expanduser(path)
     p = os.path.abspath(path)

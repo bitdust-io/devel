@@ -188,7 +188,7 @@ def RebuildOne_orig(inlist, listlen, outfilename):
 def raidread(
         OutputFileName,
         eccmapname,
-        backupId,
+        version,
         blockNumber,
         data_parity_dir):
     # try:
@@ -202,7 +202,7 @@ def raidread(
         for PSegNum in xrange(myeccmap.paritysegments):
             PFileName = os.path.join(
                 data_parity_dir,
-                backupId,
+                version,
                 str(blockNumber) +
                 '-' +
                 str(PSegNum) +
@@ -215,7 +215,7 @@ def raidread(
                     TotalDSegs += 1
                     FileName = os.path.join(
                         data_parity_dir,
-                        backupId,
+                        version,
                         str(blockNumber) +
                         '-' +
                         str(DSegNum) +
@@ -236,7 +236,7 @@ def raidread(
     for DSegNum in xrange(myeccmap.datasegments):
         FileName = os.path.join(
             data_parity_dir,
-            backupId,
+            version,
             str(blockNumber) +
             '-' +
             str(DSegNum) +

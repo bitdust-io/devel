@@ -55,23 +55,13 @@ Commands:
   get <option>
   set <option> [value]
   set list
-  file list
-  file idlist
-  dir make <catalog path> [key id]
-  file add <local file or folder>
-  file addtree <folder path>
-  file start <local path or ID>
-  file delete <local path, ID or full version ID>
-  file delete local <full backup ID>
-  file abort <path ID or full backup ID>
-  file queue
-  file progress
   file sync
-  restore list
-  restore start <backup ID>
-  restore start <backup ID> <destination folder>
-  restore abort <backup ID>
-  restore progress
+  file list
+  file upload <local path> <remote path>
+  file download <remote path> <local path>
+  file cancel <upload | download> <remote path>
+  file delete <remote path>
+  file progress [upload | download]
   supplier list
   supplier replace <IDURL or position>
   supplier change <IDURL or position> <new IDURL>
@@ -148,56 +138,31 @@ Commands:
 
   set <option> [value]  assign a new value for program setting
 
-  set list              print all available settings and values
+  set list              print all available options and current values
 
-  file list             show a full catalog of registered files and folders
+  file sync             ping all suppliers and recheck/restart uploads
 
-  file idlist           show a list of items already uploaded on remote peers
+  file list             show a list of known files and folders on remote peers
 
-  dir make <catalog path> [key id]
-                        create an empty folder under given path in catalog
+  file upload <local path> <remote path>
+                        start uploading a file or folder to remote peers,
+                        "remote path" have such format:
+                        {key_id}${user_name}@{id_host}:{remote_path}
 
-  file add <local path>
-                        replicate given path into the catalog,
-                        this will add to catalog all parent folders too
+  file download <remote path> [local path]
+                        download file or folder from remote peers to local drive
+                        save to current folder if "local path" was not set
 
-  file addtree <local folder path>
-                        replicate given folder with all sub folders to the catalog,
-                        be aware if you add too much items to catalog
-                        the software may operate inefficient
+  file cancel <upload | download> <remote path>
+                        abort currently running file upload or download process
 
-  file start <local path or ID>
-                        start uploading a catalog item on to remote peers,
-                        bind a new local file/folder if path is not yet
-                        existing in the catalog
-
-  file delete <local path, ID or full backup ID>
+  file delete <remote path>
                         remove a file or folder (with all sub folders)
-                        from catalog or only erase a given remote copy
+                        from remote peers, "remote path" have such format:
+                        {key_id}${user_name}@{id_host}:{remote_path}
 
-  file delete local <full backup ID>
-                        remove only local copy of given backup,
-                        keep remote copy on suppliers HDD
-
-  file queue            show a list of paths to be uploaded
-
-  file progress         show a list of currently running uploads
-
-  file sync             request all suppliers to check/restart uploads
-
-  restore list          show a list of items already uploaded on remote peers
-
-  restore start <local path or ID> [destination path]
-                        download personal data back to local machine
-                        from remote peers, you can specify
-                        the destination path on your local drive,
-                        WARNING! source path is default location,
-                        so it will overwrite existing files by default
-
-  restore abort <backup ID>
-                        abort currently running restore process of given item
-
-  restore progress      show currently running downloads
+  file progress <upload | download>
+                        show a list of currently running uploads or/and downloads
 
   supplier list         show list of your suppliers
                         nodes who stores your data on own machines

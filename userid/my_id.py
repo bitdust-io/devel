@@ -146,6 +146,14 @@ def getIDName():
             _LocalName = localIdent.getIDName()
     return _LocalName
 
+
+def getGlobalID():
+    """
+    Return my global user id - according to my current IDURL.
+    """
+    from userid import global_id
+    return global_id.UrlToGlobalID(getLocalID())
+
 #------------------------------------------------------------------------------
 
 

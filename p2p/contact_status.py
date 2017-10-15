@@ -236,13 +236,13 @@ def getStatusIcon(idurl):
     return _StatusIcons.get(A(idurl).state, '?')
 
 
-def listOfflineSuppliers():
+def listOfflineSuppliers(customer_idurl=None):
     """
     Loops all suppliers and check their state, return a list of those with
     state OFFLINE.
     """
     result = []
-    for idurl in contactsdb.suppliers():
+    for idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
         if not idurl:
             result.append(idurl)
         elif isOffline(idurl):

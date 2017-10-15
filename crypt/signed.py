@@ -223,25 +223,25 @@ class Packet:
 
     def BackupID(self):
         """
-        A wrapper for ``lib.packetid.BackupID``.
         """
-        return packetid.BackupID(self.PacketID)
+        backupID, _, _ = self.PacketID.rpartition('/')
+        return backupID
 
     def BlockNumber(self):
         """
-        A wrapper for ``lib.packetid.BlockNumber``.
+        A wrapper for ``lib.packetid.BlockNumber`` on top of self.PacketID.
         """
         return packetid.BlockNumber(self.PacketID)
 
     def DataOrParity(self):
         """
-        A wrapper for ``lib.packetid.DataOrParity``.
+        A wrapper for ``lib.packetid.DataOrParity`` on top of self.PacketID.
         """
         return packetid.DataOrParity(self.PacketID)
 
     def SupplierNumber(self):
         """
-        A wrapper for ``lib.packetid.SupplierNumber``.
+        A wrapper for ``lib.packetid.SupplierNumber`` on top of self.PacketID.
         """
         return packetid.SupplierNumber(self.PacketID)
 

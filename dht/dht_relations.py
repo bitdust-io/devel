@@ -234,8 +234,8 @@ class RelationsLookup(object):
         for i in xrange(self._last_success_index + 1):
             result_list.append(self._result.get(i, ''))
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.do_report_success %s: %s -> %s' % (
-                self.customer_idurl, self._result, result_list))
+            lg.out(_DebugLevel, 'dht_relations.do_report_success %s: %s' % (
+                self.customer_idurl, result_list))
         self._result_defer.callback(result_list)
         self.do_close()
         return x
