@@ -445,7 +445,7 @@ class BitDustFTP(FTP):
         ret = api.file_info(full_path)
         if ret['status'] != 'OK':
             return defer.fail(FileNotFoundError(path))
-        return succeed((FILE_STATUS, str(item.size), ))
+        return succeed((FILE_STATUS, str(ret['size']), ))
 
 #         shortPathID = backup_fs.ToID(full_path)
 #         if shortPathID is None:
@@ -460,11 +460,10 @@ class BitDustFTP(FTP):
             newsegs = toSegments(self.workingDirectory, path)
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
-        full_path = '/' + ('/'.join(newsegs))
-        if backup_fs.Exists(full_path):
-            return defer.fail(FileExistsError(path))
-        shortPathID, _, _ = backup_fs.AddDir(path)
-        backup_control.Save()
+        full_path = '/'.join(newsegs)
+        ret = api.file_create(full_path, as_folder=True)
+        if ret['status'] != 'OK':
+            return defer.fail(FileExistsError(str(ret['errors'])))
         return succeed((MKD_REPLY, path))
 
     def ftp_RMD(self, path):
@@ -472,20 +471,10 @@ class BitDustFTP(FTP):
             newsegs = toSegments(self.workingDirectory, path)
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
-        full_path = '/' + ('/'.join(newsegs))
-        shortPathID = backup_fs.ToID(full_path)
-        if shortPathID is None:
-            return defer.fail(FileNotFoundError(path))
-        item = backup_fs.GetByID(shortPathID)
-        if item is None:
-            return defer.fail(FileNotFoundError(path))
-        backup_control.DeletePathBackups(shortPathID, saveDB=False, calculate=False)
-        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), shortPathID)
-        backup_fs.DeleteByID(shortPathID)
-        backup_fs.Scan()
-        backup_fs.Calculate()
-        backup_control.Save()
-        backup_monitor.A('restart')
+        full_path = '/'.join(newsegs)
+        ret = api.file_delete(full_path)
+        if ret['status'] != 'OK':
+            return defer.fail(FileNotFoundError(str(ret['errors'])))
         return succeed((REQ_FILE_ACTN_COMPLETED_OK,))
 
     def ftp_DELE(self, path):
@@ -493,20 +482,10 @@ class BitDustFTP(FTP):
             newsegs = toSegments(self.workingDirectory, path)
         except InvalidPath:
             return defer.fail(FileNotFoundError(path))
-        full_path = '/' + ('/'.join(newsegs))
-        shortPathID = backup_fs.ToID(full_path)
-        if shortPathID is None:
-            return defer.fail(FileNotFoundError(path))
-        item = backup_fs.GetByID(shortPathID)
-        if item is None:
-            return defer.fail(FileNotFoundError(path))
-        backup_control.DeletePathBackups(shortPathID, saveDB=False, calculate=False)
-        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), shortPathID)
-        backup_fs.DeleteByID(shortPathID)
-        backup_fs.Scan()
-        backup_fs.Calculate()
-        backup_control.Save()
-        backup_monitor.A('restart')
+        full_path = '/'.join(newsegs)
+        ret = api.file_delete(full_path)
+        if ret['status'] != 'OK':
+            return defer.fail(FileNotFoundError(str(ret['errors'])))
         return succeed((REQ_FILE_ACTN_COMPLETED_OK,))
 
     def ftp_RNTO(self, toName):

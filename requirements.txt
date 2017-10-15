@@ -8,5 +8,8 @@ CodernityDB
 cryptography
 service_identity
 psutil
+enum34
+ipaddress
+cffi
 django==1.7  # if only you want to have a gui
 pkgversion

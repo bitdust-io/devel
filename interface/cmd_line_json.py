@@ -976,6 +976,7 @@ def cmd_services(opts, args, overDict):
 
 
 def cmd_message(opts, args, overDict):
+    from twisted.internet import reactor
     #     if len(args) < 2 or args[1] == 'list':
     #         tpl = jsontemplate.Template(templ.TPL_RAW)
     #         return call_jsonrpc_method_template_and_stop('list_messages', tpl)
