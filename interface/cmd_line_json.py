@@ -348,6 +348,10 @@ def cmd_deploy(opts, args, overDict):
     if status != 0:
         print_text('\nFailed to create virtual environment, please check/install virtualenv package\n')
         return status
+    status = os.system('{}/bin/pip install -U pip'.format(venv_path))
+    if status != 0:
+        print_text('\nFailed to install latest pip version, please check/install latest pip version manually\n')
+        return status
     status = os.system('{}/bin/pip install -r "{}/requirements.txt"'.format(venv_path, source_dir))
     if status != 0:
         depends = [
