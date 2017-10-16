@@ -36,9 +36,7 @@ BitDust is written in Python using pure Twisted framework and published under GN
 
 Seems like in Ubuntu (probably most other distros) you can install all dependencies in that way:
 
-        sudo apt-get install git python-dev python-setuptools python-pip python-virtualenv
-        
-        sudo apt-get install python-twisted python-django python-crypto python-pyasn1 python-psutil libffi-dev
+        sudo apt-get install git python-dev python-setuptools python-pip python-virtualenv python-twisted python-django python-crypto python-pyasn1 python-psutil libffi-dev libssl-dev
 
 
 Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:

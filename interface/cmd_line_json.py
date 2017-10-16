@@ -356,6 +356,11 @@ def cmd_deploy(opts, args, overDict):
             'python-setuptools',
             'python-pip',
             'python-virtualenv',
+            'python-twisted',
+            'python-django',
+            'python-crypto',
+            'python-pyasn1',
+            'python-psutil',
             'libffi-dev',
             'libssl-dev',
         ]

@@ -14,7 +14,15 @@ TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
 TOX_PY_LIST="$(shell $(TOX) -l | grep ^py | xargs | sed -e 's/ /,/g')"
 
-.PHONY: clean docsclean pyclean test lint isort docs docker setup.py
+.DEFAULT_GOAL := install
+
+.PHONY: install
+
+install: clean venv deploy
+	@echo "Building BitDust environemt and installing requirements"
+
+deploy:
+	$(PYTHON) bitdust.py deploy
 
 tox: venv setup.py
 	$(TOX)
@@ -28,13 +36,14 @@ docsclean:
 	@rm -fr docs/_build/
 
 clean: pyclean docsclean
+	@echo "Cleanup current BitDust environemt"
 	@rm -rf ${VENV}
 
 venv:
 	@echo "Creating new virtual environment in ${VENV}"
 	@virtualenv -p python2.7 ${VENV}
 	@$(PIP) install -U "pip>=7.0" -q
-	@$(PIP) install -r $(DEPS)
+	# @$(PIP) install -r $(DEPS)
 
 test: clean tox
 
