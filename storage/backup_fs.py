@@ -1382,6 +1382,7 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
         version_time = misc.TimeFromBackupID(version)
         if version_time and version_time > item_time:
             item_time = version_time
+        version_maxblocknum = version_info[0]
         version_size = version_info[1]
         if version_size > 0:
             item_size += version_size
@@ -1402,6 +1403,7 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
             'size': version_size,
             'status': version_status,
             'state': version_state,
+            'blocks': version_maxblocknum + 1,
         })
     # if not item_status:
         # item_status = '-'

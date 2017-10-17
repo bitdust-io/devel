@@ -622,7 +622,7 @@ def cmd_api(opts, args, overDict, executablePath):
 def cmd_backup(opts, args, overDict, executablePath):
     from lib import packetid
 
-    if len(args) < 2 or args[1] in ['list', 'ls']:
+    if len(args) < 2 or args[1] in ['list', 'ls', ]:
         remote_path = args[2] if len(args) > 2 else None
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
         return call_jsonrpc_method_template_and_stop('files_list', tpl, remote_path)
@@ -635,7 +635,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('files_sync', tpl)
 
-    if len(args) >= 2 and args[1] in ['running', 'progress', 'status', 'prog']:
+    if len(args) >= 2 and args[1] in ['running', 'progress', 'status', 'prog', ]:
         if len(args) >= 3:
             if args[2] in ['download', 'down', ]:
                 tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
@@ -717,7 +717,6 @@ def cmd_backup(opts, args, overDict, executablePath):
 
     return 2
 
-#------------------------------------------------------------------------------
 
 
 # def cmd_restore(opts, args, overDict, executablePath):
