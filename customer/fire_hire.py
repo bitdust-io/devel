@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: fire_hire.
+.. module:: fire_hire
 
 .. role:: red
 
@@ -97,6 +97,8 @@ EVENTS:
     * :red:`timer-15sec`
 """
 
+#------------------------------------------------------------------------------
+
 import sys
 import time
 
@@ -125,6 +127,8 @@ from services import driver
 
 from customer import supplier_finder
 from customer import supplier_connector
+
+from userid import my_id
 
 #-------------------------------------------------------------------------
 
@@ -480,7 +484,9 @@ class FireHire(automat.Automat):
         misc.writeSupplierData(
             new_idurl,
             'connected',
-            time.strftime('%d-%m-%Y %H:%M:%S'))
+            time.strftime('%d-%m-%Y %H:%M:%S'),
+            my_id.getLocalID(),
+        )
         if settings.NewWebGUI():
             from web import control
             control.on_suppliers_changed(current_suppliers)
@@ -527,6 +533,7 @@ class FireHire(automat.Automat):
                 supplier_idurl,
                 'disconnected',
                 time.strftime('%d-%m-%Y %H:%M:%S'),
+                my_id.getLocalID(),
             )
         current_suppliers = current_suppliers[:desired_suppliers]
         contactsdb.update_suppliers(current_suppliers)

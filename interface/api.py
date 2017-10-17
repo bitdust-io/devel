@@ -1188,11 +1188,12 @@ def suppliers_list():
     from contacts import contactsdb
     from p2p import contact_status
     from lib import misc
+    from userid import my_id
     return RESULT([{
         'position': s[0],
         'idurl': s[1],
-        'connected': misc.readSupplierData(s[1], 'connected'),
-        'numfiles': len(misc.readSupplierData(s[1], 'listfiles').split('\n')) - 1,
+        'connected': misc.readSupplierData(s[1], 'connected', my_id.getLocalID()),
+        'numfiles': len(misc.readSupplierData(s[1], 'listfiles', my_id.getLocalID()).split('\n')) - 1,
         'status': contact_status.getStatusLabel(s[1]),
     } for s in enumerate(contactsdb.suppliers())])
 
