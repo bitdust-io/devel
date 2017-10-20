@@ -323,15 +323,15 @@ def immediatelyCaching(idurl, timeout=0):
         res.errback(x)
         if _Debug:
             lg.out(14, '    [cache failed] %s' % idurl)
-        return None
-    result = Deferred()
+        return x
+
+    _CachingTasks[idurl] = Deferred()
     d = net_misc.getPageTwisted(idurl, timeout)
-    d.addCallback(_getPageSuccess, idurl, result)
-    d.addErrback(_getPageFail, idurl, result)
-    _CachingTasks[idurl] = result
+    d.addCallback(_getPageSuccess, idurl, _CachingTasks[idurl])
+    d.addErrback(_getPageFail, idurl, _CachingTasks[idurl])
     if _Debug:
         lg.out(14, 'identitycache.immediatelyCaching %s' % idurl)
-    return result
+    return _CachingTasks[idurl]
 
 #------------------------------------------------------------------------------
 

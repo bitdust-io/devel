@@ -62,9 +62,11 @@ JQCHAT_DISPLAY_COUNT = getattr(settings, 'JQCHAT_DISPLAY_COUNT', 100)
 #------------------------------------------------------------------------------
 
 def first_page(request):
-    return render_to_response('jqchat/first_page.html',
-                              {'known_ids': [], },
-                              context_instance=RequestContext(request))
+    return render_to_response('jqchat/first_page.html', {
+        # 'known_ids': [],
+        # 'rooms': '<br>'.join(map(lambda r: '<a href="/chat/room/%d">%s</a>' % (r.id, r.name), Room.objects.all())),
+        'rooms': Room.objects.all(),
+    }, context_instance=RequestContext(request))
 
 #------------------------------------------------------------------------------
 

@@ -762,6 +762,7 @@ def cmd_integrate(opts, args, overDict):
     def print_text(msg, nl='\n'):
         sys.stdout.write(msg + nl)
         sys.stdout.flush()
+
     from system import bpio
     if bpio.Windows():
         print_text('this feature is not yet available in OS Windows.')
@@ -859,6 +860,7 @@ def cmd_set_request(opts, args, overDict):
             for i in xrange(len(result['result'])):
                 result['result'][i]['value'] = result['result'][i]['value'][:60]
             return result
+
         return call_jsonrpc_method_transform_template_and_stop('config_list', tpl, _limit_length, sort)
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
@@ -913,6 +915,7 @@ def cmd_customers(opts, args, overDict):
 
 def cmd_storage(opts, args, overDict):
     if len(args) < 2:
+
         def _got_local(result3, result2, result1):
             result = {
                 'status': 'OK',
@@ -935,6 +938,7 @@ def cmd_storage(opts, args, overDict):
             d2 = call_jsonrpc_method('space_consumed')
             d2.addCallback(_got_needed, result1)
             d2.addErrback(fail_and_stop)
+
         d1 = call_jsonrpc_method('space_donated')
         d1.addCallback(_got_donated)
         d1.addErrback(fail_and_stop)
@@ -960,6 +964,7 @@ def cmd_automats(opts, args, overDict):
 
 def cmd_services(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls', ]:
+
         def _services_update(result):
             for i in xrange(len(result['result'])):
                 r = result['result'][i]
@@ -967,17 +972,22 @@ def cmd_services(opts, args, overDict):
                 r['num_depends'] = len(r['depends'])
                 result['result'][i] = r
             return result
+
         tpl = jsontemplate.Template(templ.TPL_SERVICES)
         return call_jsonrpc_method_transform_template_and_stop('services_list', tpl, _services_update)
+
     if len(args) >= 3 and args[1] in ['start', 'enable', 'on', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('service_start', tpl, args[2])
+
     if len(args) >= 3 and args[1] in ['stop', 'disable', 'off', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('service_stop', tpl, args[2])
+
     if len(args) >= 2:
         tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
         return call_jsonrpc_method_template_and_stop('service_info', tpl, args[1])
+
     return 2
 
 #------------------------------------------------------------------------------
@@ -995,8 +1005,15 @@ def cmd_message(opts, args, overDict):
         from chat import terminal_chat
 
         def _send_message(to, msg):
-            call_jsonrpc_method('send_message', to, msg)
-        terminal_chat.init(do_send_message_func=_send_message)
+            return call_jsonrpc_method('send_message', to, msg)
+
+        def _search_user(inp):
+            return call_jsonrpc_method('find_peer_by_nickname', inp)
+
+        terminal_chat.init(
+            do_send_message_func=_send_message,
+            do_search_user_func=_search_user,
+        )
         errors = []
 
         def _error(x):
@@ -1015,10 +1032,12 @@ def cmd_message(opts, args, overDict):
                     return x
                 else:
                     terminal_chat.on_incoming_message(x)
+
             d = call_jsonrpc_method('receive_one_message')
             d.addCallback(_next_message)
             d.addErrback(_error)
             return x
+
         _next_message()
         reactor.callInThread(terminal_chat.run)
         reactor.run()
@@ -1058,6 +1077,7 @@ def cmd_friend(opts, args, overDict):
                 from logs import lg
                 lg.exc()
                 return 0
+
         d = call_jsonrpc_method('find_peer_by_nickname', inp)
         d.addCallback(_lookup)
         d.addErrback(fail_and_stop)
@@ -1152,6 +1172,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         except:
             print_exception()
             return 1
+
         return 0
 
     #---show---

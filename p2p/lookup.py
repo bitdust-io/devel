@@ -32,7 +32,7 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -55,7 +55,9 @@ from logs import lg
 
 _KnownIDURLsDict = {}
 _DiscoveredIDURLsList = []
-_NextLookupTask = None
+_LookupTasks = []
+_CurrentLookupTask = None
+# _NextLookupTask = None
 _LookupMethod = None  # method to get a list of random nodes
 _ObserveMethod = None  # method to get IDURL from given node
 _ProcessMethod = None  # method to do some stuff with discovered IDURL
@@ -127,32 +129,32 @@ def extract_discovered_idurls(count=1):
     return results
 
 
-def schedule_next_lookup(current_lookup_task, delay=60):
-    global _NextLookupTask
-    if _NextLookupTask:
-        if _Debug:
-            lg.out(_DebugLevel, 'lookup.schedule_next_lookup SKIP, next lookup will start soon')
-        return
-    if _Debug:
-        lg.out(_DebugLevel, 'lookup.schedule_next_lookup after %d seconds' % delay)
-    _NextLookupTask = reactor.callLater(
-        delay,
-        start,
-        count=current_lookup_task.count,
-        consume=current_lookup_task.consume,
-        lookup_method=current_lookup_task.lookup_method,
-        observe_method=current_lookup_task.observe_method,
-        process_method=current_lookup_task.process_method
-    )
+# def schedule_next_lookup(current_lookup_task, delay=60):
+#     global _NextLookupTask
+#     if _NextLookupTask:
+#         if _Debug:
+#             lg.out(_DebugLevel, 'lookup.schedule_next_lookup SKIP, next lookup will start soon')
+#         return
+#     if _Debug:
+#         lg.out(_DebugLevel, 'lookup.schedule_next_lookup after %d seconds' % delay)
+#     _NextLookupTask = reactor.callLater(
+#         delay,
+#         start,
+#         count=current_lookup_task.count,
+#         consume=current_lookup_task.consume,
+#         lookup_method=current_lookup_task.lookup_method,
+#         observe_method=current_lookup_task.observe_method,
+#         process_method=current_lookup_task.process_method
+#     )
 
 
-def reset_next_lookup():
-    """
-    """
-    global _NextLookupTask
-    if _NextLookupTask and not _NextLookupTask.called and not _NextLookupTask.cancelled:
-        _NextLookupTask.cancel()
-        _NextLookupTask = None
+# def reset_next_lookup():
+#     """
+#     """
+#     global _NextLookupTask
+#     if _NextLookupTask and not _NextLookupTask.called and not _NextLookupTask.cancelled:
+#         _NextLookupTask.cancel()
+#         _NextLookupTask = None
 
 #------------------------------------------------------------------------------
 
@@ -160,6 +162,7 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
     """
     NOTE: no parallel threads, DHT lookup can be started only one at time.
     """
+    global _LookupTasks
     t = DiscoveryTask(
         count=count,
         consume=consume,
@@ -177,11 +180,51 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
             idurls = extract_discovered_idurls(count)
         reactor.callLater(0, t.result_defer.callback, idurls)
         return t
-    reset_next_lookup()
+    _LookupTasks.append(t)
+    reactor.callLater(0, work)
+    # reset_next_lookup()
     if _Debug:
         lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes' % count)
-    t.start()
-    return t  # .result_defer
+    return t
+
+#------------------------------------------------------------------------------
+
+def on_lookup_task_success(result):
+    global _CurrentLookupTask
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'lookup.on_lookup_task_success %s' % result)
+    _CurrentLookupTask = None
+    reactor.callLater(0, work)
+    return result
+
+
+def on_lookup_task_failed(err):
+    global _CurrentLookupTask
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'lookup.on_lookup_task_failed: %s' % err)
+    _CurrentLookupTask = None
+    reactor.callLater(0, work)
+    return err
+
+
+def work():
+    """
+    """
+    global _CurrentLookupTask
+    global _LookupTasks
+    if _CurrentLookupTask:
+        if _Debug:
+            lg.out(_DebugLevel - 4, 'lookup.work SKIP, %s is in progress' % _CurrentLookupTask)
+        return
+    if not _LookupTasks:
+        if _Debug:
+            lg.out(_DebugLevel - 4, 'lookup.work SKIP no lookup tasks in the queue')
+        return
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'lookup.work starting next task in the queue')
+    _CurrentLookupTask = _LookupTasks.pop(0)
+    _CurrentLookupTask.start()
+    _CurrentLookupTask.result_defer.addCallback(on_lookup_task_success)
 
 #------------------------------------------------------------------------------
 

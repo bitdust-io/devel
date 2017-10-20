@@ -41,7 +41,12 @@
 <div class="scroll_outer">
   <div class="scroll_inner">
     <div id="chatwindow">
-      You need a Fried? <a href="/friend/search">Explore!</a> 
+      You need a Fried? <a href="/friend/search">Explore!</a>
+      <br>
+      Current chat rooms:
+      {% for room in rooms %}
+          <br><a href='/chat/room/{{ room.id }}'>{{ room.name }}</a>
+	  {% endfor %}
     </div>
   </div>
 </div>

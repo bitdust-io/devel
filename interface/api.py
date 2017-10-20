@@ -1941,6 +1941,7 @@ def receive_one_message():
         }))
         message.RemoveIncomingMessageCallback(_message_received)
         return True
+
     message.AddIncomingMessageCallback(_message_received)
     return ret
 

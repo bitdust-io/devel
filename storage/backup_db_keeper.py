@@ -241,13 +241,13 @@ class BackupDBKeeper(automat.Automat):
             newpacket = signed.Packet(
                 commands.Data(), localID, localID, packetID,
                 Payload, supplierId)
-            pkt_out = gateway.outbox(newpacket, callbacks={
+            gateway.outbox(newpacket, callbacks={
                 commands.Ack(): self._supplier_acked,
                 commands.Fail(): self._supplier_acked, })
             self.sentSuppliers.add(supplierId)
             lg.out(
                 4, '    %s sending to %s' %
-                (pkt_out, nameurl.GetName(supplierId)))
+                (newpacket, nameurl.GetName(supplierId)))
 
     def doSetSyncFlag(self, arg):
         if not self.syncFlag:

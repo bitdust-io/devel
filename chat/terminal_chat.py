@@ -30,6 +30,8 @@
 module:: terminal_chat
 """
 
+#------------------------------------------------------------------------------
+
 import time
 import random
 import sys
@@ -63,13 +65,15 @@ _SimpleTerminalChat = None
 #------------------------------------------------------------------------------
 
 
-def init(do_send_message_func=None):
+def init(do_send_message_func=None, do_search_user_func=None):
     """
     
     """
     global _SimpleTerminalChat
     _SimpleTerminalChat = SimpleTerminalChat(
-        send_message_func=do_send_message_func)
+        send_message_func=do_send_message_func,
+        search_user_func=do_search_user_func,
+    )
 
 
 def shutdown():
@@ -110,6 +114,7 @@ def on_incoming_message(result):
     """
     
     """
+    open('r', 'a').write(str(result) + '\n')
     global _SimpleTerminalChat
     for msg in result['result']:
         _SimpleTerminalChat.on_inbox_message(msg['from'], msg['message'])
@@ -120,7 +125,7 @@ def on_incoming_message(result):
 
 class SimpleTerminalChat(object):
 
-    def __init__(self, send_message_func=None):
+    def __init__(self, send_message_func=None, search_user_func=None):
         self.chars = []
         self.input = []
         self.history = []
@@ -128,6 +133,7 @@ class SimpleTerminalChat(object):
         self.quitnow = 0
         self.users = []
         self.send_message_func = send_message_func
+        self.search_user_func = search_user_func
 
     def on_inbox_message(self, sender, message):
         name = nameurl.GetName(sender)
@@ -145,6 +151,21 @@ class SimpleTerminalChat(object):
             'time': time.time(),
         })
 
+    def on_nickname_search_result(self, results):
+        if results['status'] != 'OK':
+            self.history.append({
+                'text': 'search failed: %s' % results['errors'],
+                'name': '',
+                'time': time.time(),
+            })
+            return None
+        for r in results['result']:
+            self.history.append({
+                'text': '%s' % (r['idurl'] if r['idurl'] else 'not found'),
+                'name': '',
+                'time': time.time(),
+            })
+
     def on_my_message(self, message):
         if message.startswith('!add '):
             idurl = message[5:]
@@ -156,6 +177,22 @@ class SimpleTerminalChat(object):
                     'name': '',
                     'time': time.time(),
                 })
+            return
+        if message.startswith('!find ') or message.startswith('!search '):
+            _, _, inp = message.partition(' ')
+            if not self.search_user_func:
+                self.history.append({
+                    'text': 'search failed, method not defined',
+                    'name': '',
+                    'time': time.time(),
+                })
+                return
+            self.search_user_func(inp).addBoth(self.on_nickname_search_result)
+            self.history.append({
+                'text': 'looking for "%s" ...' % inp,
+                'name': '',
+                'time': time.time(),
+            })
             return
         self.history.append({
             'text': message,

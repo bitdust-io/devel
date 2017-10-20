@@ -308,9 +308,9 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        # self._find_random_node()
+        self._find_random_node()
         # TODO: this is still under construction - so I am using this node for tests
-        self.automat('found-one-node', 'http://veselin-p2p.ru/bitdust_j2_vps1001.xml')
+        # self.automat('found-one-node', 'http://veselin-p2p.ru/bitdust_j2_vps1001.xml')
 
     def doSendMyIdentity(self, arg):
         """
@@ -529,14 +529,20 @@ class ProxyReceiver(automat.Automat):
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
             if len(myprotos.intersection(remoteprotos)) > 0:
-                self.automat('found-one-user', idurl)
+                self.automat('found-one-node', idurl)
                 return
-        self.automat('users-not-found')
+        self.automat('nodes-not-found')
 
     def _find_random_node(self):
-        d = lookup.start()
-        d.addCallback(self._on_nodes_lookup_finished)
-        d.addErrback(lambda err: self.automat('users-not-found'))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
+        tsk = lookup.start()
+        if tsk:
+            tsk.result_defer.addCallback(self._on_nodes_lookup_finished)
+            tsk.result_defer.addErrback(lambda err: self.automat('nodes-not-found'))
+        else:
+            self.automat('nodes-not-found')
+
 #         if _Debug:
 #             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
 #         # DEBUG
