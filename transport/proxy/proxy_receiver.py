@@ -535,9 +535,9 @@ class ProxyReceiver(automat.Automat):
 
     def _find_random_node(self):
         # DEBUG
-        self.automat('found-one-node', 'http://p2p-id.ru/seed0.xml')
+        # self.automat('found-one-node', 'http://p2p-id.ru/seed0.xml')
         # self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
-        return
+        # return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         tsk = lookup.start()
@@ -611,12 +611,12 @@ class ProxyReceiver(automat.Automat):
         self.automat('service-refused', (response, info))
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-        if  newpacket.Command == commands.Identity() and \
+        if newpacket.Command == commands.Identity() and \
                 newpacket.CreatorID == self.router_idurl and \
                 newpacket.RemoteID == my_id.getLocalID():
             self.automat('router-id-received', (newpacket, info))
             return True
-        if  newpacket.Command == commands.Fail() and \
+        if newpacket.Command == commands.Fail() and \
                 newpacket.CreatorID == self.router_idurl and \
                 newpacket.RemoteID == my_id.getLocalID():
             # newpacket.Payload == 'route not exist':
