@@ -35,8 +35,8 @@ import re
 
 #------------------------------------------------------------------------------
 
-_FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key}'
-_FORMAT_GLOBAL_ID_KEY_USER = '{key}${user}'
+_FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key_id}'
+_FORMAT_GLOBAL_ID_KEY_USER = '{key_id}${user}'
 _REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key_id>[a-z0-9-_]+)$'
 _REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_id>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
 
@@ -47,7 +47,7 @@ def MakeGlobalID(
     user=None,
     idhost=None,
     customer=None,
-    key=None,
+    key_id=None,
     path=None,
     version=None,
 ):
@@ -67,8 +67,8 @@ def MakeGlobalID(
         if port:
             idhost += ':' + str(port)
         user = filename.strip()[0:-4]
-    if key:
-        out = output_format.format(user=user, key=key)
+    if key_id:
+        out = output_format.format(user=user, key_id=key_id)
     else:
         out = user
     out += '@{}'.format(idhost)
@@ -186,8 +186,8 @@ def NormalizeGlobalID(inp):
         g['customer'] = UrlToGlobalID(g['idurl'])
     if not g['user']:
         g['user'] = g['customer'].split('@')[0]
-    if not g['key']:
-        g['key'] = 'master'
+    if not g['key_id']:
+        g['key_id'] = 'master'
     if not g['idhost']:
         from lib import nameurl
         g['idhost'] = nameurl.GetHost(g['idurl'])
@@ -199,7 +199,7 @@ def CanonicalID(inp, include_key=False):
     """
     parts = NormalizeGlobalID(ParseGlobalID(inp))
     if not include_key:
-        parts['key'] = ''
+        parts['key_id'] = ''
     return MakeGlobalID(**parts)
 
 #------------------------------------------------------------------------------

@@ -182,7 +182,10 @@ class Ajax(object):
                         self.ThisRoom,
                         escape(msg_text))
                     key_id = self.ThisRoom.name or 'master'
-                    recipient = '%s$%s' % (key_id, global_id.UrlToGlobalID(str(self.ThisRoom.idurl)))
+                    recipient = global_id.MakeGlobalID(
+                        idurl=str(self.ThisRoom.idurl), key_id=key_id,
+                    )
+                    # recipient = '%s$%s' % (key_id, global_id.UrlToGlobalID(str(self.ThisRoom.idurl)))
                     api.send_message(recipient, str(msg_text))
 #                     message.SendMessage(
 #                         str(msg_text),

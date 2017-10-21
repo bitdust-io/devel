@@ -114,7 +114,7 @@ def make_key_id(alias, creator_idurl=None, output_format=None):
         creator_idurl = my_id.getLocalID()
     return global_id.MakeGlobalID(
         idurl=creator_idurl,
-        key_alias=alias,
+        key_id=alias,
         output_format=output_format,
     )
 
