@@ -65,7 +65,7 @@ def MakeGlobalID(
         from lib import nameurl
         _, idhost, port, filename = nameurl.UrlParse(idurl)
         if port:
-            idhost += ':' + str(port)
+            idhost += '_' + str(port)
         user = filename.strip()[0:-4]
     if key_id:
         out = output_format.format(user=user, key_id=key_id)
