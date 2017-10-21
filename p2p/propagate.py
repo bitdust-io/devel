@@ -177,14 +177,14 @@ def allcontacts(AckHandler=None, wide=False):
     return propagate(contactsdb.contacts_full(), AckHandler, wide)
 
 
-def single(idurl, ack_handler=None, wide=False):
+def single(idurl, ack_handler=None, wide=False, fail_handler=None):
     """
     Do "propagate" for a single contact.
     """
     d = FetchSingle(idurl)
-    d.addCallback(lambda x: SendToIDs([idurl], ack_handler, wide))
+    d.addCallback(lambda x: SendToIDs([idurl, ], ack_handler, wide))
     if ack_handler:
-        d.addErrback(lambda err: ack_handler(err))
+        d.addErrback(fail_handler or ack_handler)
     return d
 
 

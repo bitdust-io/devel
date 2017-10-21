@@ -37,8 +37,8 @@ import re
 
 _FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key}'
 _FORMAT_GLOBAL_ID_KEY_USER = '{key}${user}'
-_REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key>[a-z0-9-_]+)$'
-_REGEX_GLOBAL_ID_KEY_USER = '^(?P<key>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
+_REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key_id>[a-z0-9-_]+)$'
+_REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_id>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
 
 #------------------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ def ParseGlobalID(inp, detect_version=False):
 
         {
             "user": "alice",
-            "key": "group_abc",
+            "key_id": "group_abc",
             "idhost": "first-machine.com",
             "customer": "alice@first-machine.com",
             "idurl": "http://first-machine.com/alice.xml",
@@ -107,7 +107,7 @@ def ParseGlobalID(inp, detect_version=False):
 
         {
             "user": "alice",
-            "key": "group_abc",
+            "key_id": "group_abc",
             "idhost": "first-machine.com",
             "customer": "alice@first-machine.com",
             "idurl": "http://first-machine.com/alice.xml",
@@ -117,7 +117,7 @@ def ParseGlobalID(inp, detect_version=False):
     """
     result = {
         "user": "",
-        "key": "",
+        "key_id": "",
         "idhost": "",
         "customer": "",
         "idurl": "",
@@ -137,7 +137,7 @@ def ParseGlobalID(inp, detect_version=False):
                 user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
             if user_key:
                 result['user'] = user_key.group('user')
-                result['key'] = user_key.group('key')
+                result['key_id'] = user_key.group('key_id')
             else:
                 result['user'] = user_and_key
         except:
@@ -152,8 +152,9 @@ def ParseGlobalID(inp, detect_version=False):
                 port = -1
             if port >= 0:
                 result['idhost'] = "%s:%d" % (result['idhost'][:_pos], port)
-        result['idurl'] = 'http://{}/{}.xml'.format(result['idhost'], result['user'])
-        result['customer'] = '{}@{}'.format(result['user'], result['idhost'].replace(':', '_'))
+        if result['user'] and result['idhost']:
+            result['idurl'] = 'http://{}/{}.xml'.format(result['idhost'], result['user'])
+            result['customer'] = '{}@{}'.format(result['user'], result['idhost'].replace(':', '_'))
     if path:
         if path.count('#'):
             path, _, version = path.rpartition('#')
@@ -184,7 +185,7 @@ def NormalizeGlobalID(inp):
     if not g['customer']:
         g['customer'] = UrlToGlobalID(g['idurl'])
     if not g['user']:
-        g['user'] = UrlToGlobalID(g['idurl'])
+        g['user'] = g['customer'].split('@')[0]
     if not g['key']:
         g['key'] = 'master'
     if not g['idhost']:

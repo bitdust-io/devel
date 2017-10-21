@@ -48,6 +48,9 @@ from chat import message
 from contacts import contactsdb
 
 from userid import my_id
+from userid import global_id
+
+from interface import api
 
 #------------------------------------------------------------------------------
 
@@ -178,9 +181,14 @@ class Ajax(object):
                         my_id.getLocalID(),
                         self.ThisRoom,
                         escape(msg_text))
-                    message.SendMessage(
-                        str(self.ThisRoom.idurl),
-                        str(msg_text))
+                    key_id = self.ThisRoom.name or 'master'
+                    recipient = '%s$%s' % (key_id, global_id.UrlToGlobalID(str(self.ThisRoom.idurl)))
+                    api.send_message(recipient, str(msg_text))
+#                     message.SendMessage(
+#                         str(msg_text),
+#                         str(self.ThisRoom.idurl),
+#                         'master',
+#                     )
             else:
                 # If a GET, make sure that no action was specified.
                 if self.request.GET.get('action', None):

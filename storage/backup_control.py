@@ -505,7 +505,7 @@ class Task():
         self.backupID = None
         self.result_defer = Deferred()
         parts = self.set_path_id(pathID)
-        self.set_key_id(keyID or parts['key'])
+        self.set_key_id(keyID or parts['key_id'])
         self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)

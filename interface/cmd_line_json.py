@@ -827,8 +827,9 @@ def cmd_set(opts, args, overDict):
     name = args[1].lower()
     if name in ['list', 'ls', 'all', 'show', 'print', ]:
         settings.init()
-        sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
-        result = api.config_list(sort)
+        # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
+        sort = True
+        result = api.config_list(sort=sort)
         for i in xrange(len(result['result'])):
             result['result'][i]['value'] = result['result'][i]['value'][:60]
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
@@ -853,7 +854,8 @@ def cmd_set_request(opts, args, overDict):
     print_text('connecting to already started BitDust process ...')
     name = args[1].lower()
     if name in ['list', 'ls', 'all', 'show', 'print', ]:
-        sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
+        # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
+        sort = True
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
 
         def _limit_length(result):

@@ -151,11 +151,7 @@ def inbox(newpacket, info, status, error_message):
         DeleteBackup(newpacket)
         commandhandled = True
     elif newpacket.Command == commands.Message():
-        # contact asking for our current identity
-        if driver.is_started('service_private_messages'):
-            from chat import message
-            message.Message(newpacket)
-            commandhandled = True
+        commandhandled = True
     elif newpacket.Command == commands.Correspondent():
         # contact asking for our current identity
         Correspondent(newpacket)

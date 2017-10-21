@@ -130,25 +130,29 @@ def split_key_id(key_id):
         "secret_key_xyz", "http://remote-server.net/bob.xml"
     """
     parts = global_id.ParseGlobalID(key_id)
-    if not parts['key'] or not parts['idurl']:
+    if not parts['key_id'] or not parts['idurl']:
         return None, None
-    return parts['key'], parts['idurl']
+    return parts['key_id'], parts['idurl']
 
 def is_valid_key_id(key_id):
     """
     """
     parts = global_id.ParseGlobalID(key_id)
-    if not parts['key'] or not parts['idurl']:
+    if not parts['key_id']:
+        lg.warn('no key_id found')
         return False
-    if len(parts['key']) > settings.MaximumUsernameLength():
-        lg.warn("key alias: %s" % parts['key'])
+    if not parts['idurl']:
+        lg.warn('no idurl found')
         return False
-    if len(parts['key']) < settings.MinimumUsernameLength():
-        lg.warn("key alias: %s" % parts['key'])
+    if len(parts['key_id']) > settings.MaximumUsernameLength():
+        lg.warn("key_id: %s" % parts['key_id'])
         return False
-    for c in parts['key']:
+    if len(parts['key_id']) < settings.MinimumUsernameLength():
+        lg.warn("key_id: %s" % parts['key_id'])
+        return False
+    for c in parts['key_id']:
         if c not in settings.LegalUsernameChars():
-            lg.warn("key alias: %s" % parts['key'])
+            lg.warn("key_id: %s" % parts['key_id'])
             return False
     return True
 

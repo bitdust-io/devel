@@ -134,9 +134,9 @@ def nickname_observer_result(sessionkey, target_username, result, nik, pos, idur
             else:
                 propagate.single(idurl,
                                  ack_handler=lambda ackpacket, info:
-                                 contact_acked(sessionkey, target_username, ackpacket, info),
+                                     contact_acked(sessionkey, target_username, ackpacket, info),
                                  fail_handler=lambda failpacket, info:
-                                 contact_failed(sessionkey, target_username, failpacket, info),
+                                     contact_failed(sessionkey, target_username, failpacket, info),
                                  wide=True)
                 status = 'checking'
             _SearchLookups[sessionkey][target_username].append({

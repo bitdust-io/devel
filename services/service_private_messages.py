@@ -49,16 +49,27 @@ class PrivateMessagesService(LocalService):
 
     def start(self):
         from chat import message
-        from main import settings
-        message.init()
-        if not settings.NewWebGUI():
-            from web import webcontrol
-            message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
+        from transport import callback
         from chat import nickname_holder
+        message.init()
         nickname_holder.A('set', None)
+        callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
+        from chat import message
         from chat import nickname_holder
+        from transport import callback
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
+        message.shutdown()
         return True
+
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        from p2p import commands
+        from chat import message
+        if status != 'finished':
+            return False
+        if newpacket.Command != commands.Message():
+            return False
+        return message.Message(newpacket)

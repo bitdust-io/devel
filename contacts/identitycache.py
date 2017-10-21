@@ -304,31 +304,38 @@ def immediatelyCaching(idurl, timeout=0):
     if idurl in _CachingTasks:
         return _CachingTasks[idurl]
 
-    def _getPageSuccess(src, idurl, res):
+    def _getPageSuccess(src, idurl):
         global _CachingTasks
-        _CachingTasks.pop(idurl)
+        result = _CachingTasks.pop(idurl, None)
+        if not result:
+            lg.warn('caching task for %s was not found' % idurl)
         if UpdateAfterChecking(idurl, src):
-            res.callback(src)
+            if result:
+                result.callback(src)
             if _Debug:
                 lg.out(14, '    [cached] %s' % idurl)
         else:
-            res.errback(Exception(src))
+            if result:
+                result.errback(Exception(src))
             if _Debug:
                 lg.out(14, '    [cache error] %s' % idurl)
         return src
 
-    def _getPageFail(x, idurl, res):
+    def _getPageFail(x, idurl):
         global _CachingTasks
-        _CachingTasks.pop(idurl)
-        res.errback(x)
+        result = _CachingTasks.pop(idurl)
+        if result:
+            result.errback(x)
+        else:
+            lg.warn('caching task for %s was not found' % idurl)
         if _Debug:
             lg.out(14, '    [cache failed] %s' % idurl)
         return x
 
     _CachingTasks[idurl] = Deferred()
     d = net_misc.getPageTwisted(idurl, timeout)
-    d.addCallback(_getPageSuccess, idurl, _CachingTasks[idurl])
-    d.addErrback(_getPageFail, idurl, _CachingTasks[idurl])
+    d.addCallback(_getPageSuccess, idurl)
+    d.addErrback(_getPageFail, idurl)
     if _Debug:
         lg.out(14, 'identitycache.immediatelyCaching %s' % idurl)
     return _CachingTasks[idurl]

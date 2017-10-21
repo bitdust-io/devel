@@ -593,8 +593,8 @@ def files_list(remote_path=None):
         glob_path_child['path'] = i['path']
         if not i['item']['k']:
             i['item']['k'] = 'master'
-        if glob_path['key'] and i['item']['k']:
-            if i['item']['k'] != glob_path['key']:
+        if glob_path['key_id'] and i['item']['k']:
+            if i['item']['k'] != glob_path['key_id']:
                 continue
         result.append({
             'glob_id': global_id.MakeGlobalID(**glob_path_child),
@@ -737,7 +737,7 @@ def file_create(remote_path, as_folder=False):
             read_stats=False,
             iter=backup_fs.fs(parts['idurl']),
             iterID=backup_fs.fsID(parts['idurl']),
-            key_id=parts['key'],
+            key_id=parts['key_id'],
         )
     else:
         parent_iter, parent_iterID = iter_and_iterID
@@ -746,7 +746,7 @@ def file_create(remote_path, as_folder=False):
         as_folder=as_folder,
         iter=parent_iter,
         iterID=parent_iterID,
-        key_id=parts['key'],
+        key_id=parts['key_id'],
     )
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
@@ -755,7 +755,7 @@ def file_create(remote_path, as_folder=False):
         'new item was added: "%s", remote path is "%s"' % (newPathID, path),
         extra_fields={
             'id': newPathID,
-            'key_id': parts['key'],
+            'key_id': parts['key_id'],
             'customer': parts['idurl'],
             'path': path,
         })
@@ -890,7 +890,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     if not pathID:
         return ERROR('path "%s" not registered yet' % path)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
-    tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key'])
+    tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key_id'])
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathIDfull), ])
@@ -968,6 +968,7 @@ def files_downloads():
             'bytes_processed': 0,
             'creator_id': 'http://veselin-p2p.ru/veselin.xml',
             'done': False,
+            'key_id': 'abc',
             'created': 'Wed Apr 27 15:11:13 2016',
             'eccmap': 'ecc/4x4',
             'path_id': '0/0/3/1',
@@ -988,6 +989,7 @@ def files_downloads():
         'created': time.asctime(time.localtime(r.Started)),
         'aborted': r.AbortState,
         'done': r.Done,
+        'key_id': r.KeyID,
         'eccmap': '' if not r.EccMap else r.EccMap.name,
     } for r in restore_monitor.GetWorkingObjects()])
 
@@ -1087,12 +1089,12 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
 
         restore_monitor.Start(
             backupID, destination_path,
-            keyID=glob_path['key'],
+            keyID=glob_path['key_id'],
             callback=_on_result)
         control.request_update([('pathID', knownPath), ])
         lg.out(4, 'api.download_start %s to %s, wait_result=True' % (backupID, destination_path))
         return d
-    restore_monitor.Start(backupID, destination_path, keyID=glob_path['key'])
+    restore_monitor.Start(backupID, destination_path, keyID=glob_path['key_id'])
     control.request_update([('pathID', knownPath), ])
     lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
     return OK(
@@ -1884,7 +1886,7 @@ def find_peer_by_nickname(nickname):
 
 def send_message(recipient, message_body):
     """
-    Sends a text message to remote peer.
+    Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
 
     Return:
 
@@ -1893,11 +1895,19 @@ def send_message(recipient, message_body):
     if not driver.is_started('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import message
-    recipient = str(recipient)
-    if not recipient.startswith('http://'):
+    from userid import global_id
+    if not recipient.count('@'):
         from contacts import contactsdb
-        recipient = contactsdb.find_correspondent_by_nickname(recipient) or recipient
-    result = message.SendMessage(recipient, message_body)
+        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient)
+        if not recipient_idurl:
+            return ERROR('recipient not found')
+        recipient = global_id.UrlToGlobalID(recipient_idurl)
+    glob_id = global_id.ParseGlobalID(recipient)
+    if not glob_id['idurl']:
+        return ERROR('wrong recipient')
+    if not glob_id['key_id']:
+        glob_id['key_id'] = 'master'
+    result = message.SendMessage(message_body, glob_id['idurl'], glob_id['key_id'])
     if isinstance(result, Deferred):
         ret = Deferred()
         result.addCallback(

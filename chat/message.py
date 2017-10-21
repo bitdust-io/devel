@@ -45,20 +45,18 @@ except:
 
 from logs import lg
 
-from main import settings
-
 from p2p import commands
 
 from lib import packetid
-from lib import nameurl
 
 from lib import misc
 
 from crypt import signed
 from crypt import key
+from crypt import my_keys
 
 from contacts import identitycache
-from contacts import contactsdb
+
 from userid import my_id
 
 from transport import gateway
@@ -73,12 +71,15 @@ _InboxHistory = []
 
 
 def init():
+    global _InboxHistory
     lg.out(4, "message.init")
-# guimessage.UpdateCorrespondents()
+    _InboxHistory = []
 
 
 def shutdown():
+    global _InboxHistory
     lg.out(4, "message.shutdown")
+    _InboxHistory = []
 
 #------------------------------------------------------------------------------
 
@@ -98,7 +99,7 @@ def inbox_history():
 #------------------------------------------------------------------------------
 
 
-class MessageClass:
+class PrivateMessage:
     """
     A class to represent a message.
 
@@ -106,17 +107,28 @@ class MessageClass:
     with encrypted body.
     """
 
-    def __init__(self, destinationidentity, messagebody):
-        lg.out(8, "message.MessageClass making message of %d bytes" % len(messagebody))
-        sessionkey = key.NewSessionKey()
-        self.encryptedKey = key.EncryptOpenSSHPublicKey(
-            destinationidentity.publickey, sessionkey)
-        self.encryptedMessage = key.EncryptWithSessionKey(sessionkey, messagebody)
+    def __init__(self, key_id):
+        self.key_id = key_id
+        self.encrypted_session = None
+        self.encrypted_body = None
 
-    def ClearBody(self):
-        sessionkey = key.DecryptLocalPrivateKey(self.encryptedKey)
-        # we only decrypt with LocalIdentity
-        return key.DecryptWithSessionKey(sessionkey, self.encryptedMessage)
+    def encrypt_body(self, message_body):
+        lg.out(8, "message.PrivateMessage ENCRYPT message of %d bytes with %s key" % (
+            len(message_body), self.key_id))
+        if self.key_id not in my_keys.known_keys():
+            raise Exception('key %s not exist, can not encrypt message' % self.key_id)
+        sessionkey = key.NewSessionKey()
+        self.encrypted_session = my_keys.encrypt(self.key_id, sessionkey)
+        self.encrypted_body = key.EncryptWithSessionKey(sessionkey, message_body)
+        return self.encrypted_session, self.encrypted_body
+
+    def decrypt_body(self):
+        lg.out(8, "message.PrivateMessage DECRYPT message from %d encrypted bytes with %s key" % (
+            len(self.encrypted_body), self.key_id))
+        if self.key_id not in my_keys.known_keys():
+            raise Exception('key %s not exist, can not decrypt message' % self.key_id)
+        sessionkey = my_keys.decrypt(self.key_id, self.encrypted_session)
+        return key.DecryptWithSessionKey(sessionkey, self.encrypted_body)
 
 #------------------------------------------------------------------------------
 
@@ -129,46 +141,42 @@ def Message(request):
     """
     global _IncomingMessageCallbacks
     lg.out(6, "message.Message from " + str(request.OwnerID))
-#    senderidentity = contactsdb.get_correspondent_identity(request.OwnerID)
-#    if not senderidentity:
-#        lg.warn("had sender not in correspondents list " + request.OwnerID)
-#        # return
-#        contactsdb.add_correspondent(request.OwnerID, nameurl.GetName(request.OwnerID))
-#        contactsdb.save_correspondents()
-    new_message = misc.StringToObject(request.Payload)
-    if new_message is None:
+    Amessage = misc.StringToObject(request.Payload)
+    if Amessage is None:
         lg.warn("wrong Payload, can not extract message from request")
-        return
+        return False
+    clear_message = Amessage.decrypt_body()
     for old_id, old_message in inbox_history():
         if old_id == request.PacketID:
             lg.out(6, "message.Message SKIP, message %s found in history" % old_message)
-            return
-    inbox_history().append((request.PacketID, new_message))
-    clear_message = new_message.ClearBody()
-    # SaveMessage(clearmessage)
+            return False
+    inbox_history().append((request.PacketID, Amessage))
     from p2p import p2p_service
     p2p_service.SendAck(request)
     for cb in _IncomingMessageCallbacks:
         cb(request, clear_message)
+    return True
 
 #------------------------------------------------------------------------------
 
 
-def SendMessage(remote_idurl, messagebody, packet_id=None):
+def SendMessage(message_body, remote_idurl, ket_id, packet_id=None):
     """
     Send command.Message() packet to remote peer.
+    Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
     """
     global _OutgoingMessageCallback
     if not packet_id:
         packet_id = packetid.UniqueID()
     remote_identity = identitycache.FromCache(remote_idurl)
     if remote_identity is None:
-        d = identitycache.immediatelyCaching(remote_idurl, 20)
+        d = identitycache.immediatelyCaching(remote_idurl, timeout=10)
         d.addCallback(lambda src: SendMessage(
-            remote_idurl, messagebody, packet_id))
-        d.addErrback(lambda err: lg.warn('failed to retrieve ' + remote_idurl))
+            message_body, remote_idurl, ket_id, packet_id))
+        d.addErrback(lambda err: lg.warn('failed to retrieve %s : %s' (remote_idurl, err)))
         return d
-    Amessage = MessageClass(remote_identity, messagebody)
+    Amessage = PrivateMessage(ket_id=ket_id)
+    Amessage.encrypt_body(message_body)
     Payload = misc.ObjectToString(Amessage)
     lg.out(6, "message.SendMessage to %s with %d bytes" % (remote_idurl, len(Payload)))
     outpacket = signed.Packet(
@@ -177,10 +185,11 @@ def SendMessage(remote_idurl, messagebody, packet_id=None):
         my_id.getLocalID(),
         packet_id,
         Payload,
-        remote_idurl)
+        remote_idurl,
+    )
     result = gateway.outbox(outpacket, wide=True)
     if _OutgoingMessageCallback:
-        _OutgoingMessageCallback(result, messagebody, remote_identity, packet_id)
+        _OutgoingMessageCallback(result, Amessage, remote_identity, packet_id)
     return result
 
 #------------------------------------------------------------------------------
@@ -213,6 +222,7 @@ def RemoveIncomingMessageCallback(cb):
         _IncomingMessageCallbacks.remove(cb)
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     init()
