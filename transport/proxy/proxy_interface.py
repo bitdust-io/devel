@@ -37,9 +37,9 @@ _Debug = True
 
 #------------------------------------------------------------------------------
 
-
 from twisted.web import xmlrpc
 from twisted.internet.defer import succeed, fail, Deferred
+from twisted.python.failure import Failure
 
 from logs import lg
 
@@ -236,28 +236,28 @@ def interface_transport_initialized(xmlrpcurl):
     if proxy():
         return proxy().callRemote('transport_initialized', 'proxy', xmlrpcurl)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_receiving_started(host, new_options={}):
     if proxy():
         return proxy().callRemote('receiving_started', 'proxy', host, new_options)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_receiving_failed(error_code=None):
     if proxy():
         return proxy().callRemote('receiving_failed', 'proxy', error_code)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_disconnected(result=None):
     if proxy():
         return proxy().callRemote('disconnected', 'proxy', result)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
@@ -266,7 +266,7 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
     if proxy():
         return proxy().callRemote('register_file_sending', 'proxy', '%s:%d' % host, receiver_idurl, filename, size, description)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
@@ -275,7 +275,7 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     if proxy():
         return proxy().callRemote('register_file_receiving', 'proxy', '%s:%d' % host, sender_idurl, filename, size)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
@@ -284,7 +284,7 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
     if proxy():
         return proxy().callRemote('unregister_file_sending', transfer_id, status, size, error_message)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
@@ -293,7 +293,7 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status, size, error_message)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))
 
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
@@ -302,4 +302,4 @@ def interface_cancelled_file_sending(host, filename, size=0, description=None, e
     if proxy():
         return proxy().callRemote('cancelled_file_sending', 'proxy', '%s:%d' % host, filename, size, description, error_message)
     lg.warn('transport_proxy is not ready')
-    return fail('transport_proxy is not ready')
+    return fail(Failure(Exception('transport_proxy is not ready')))

@@ -48,6 +48,7 @@ except:
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import fail
+from twisted.python.failure import Failure
 
 from logs import lg
 
@@ -75,7 +76,6 @@ class GateInterface():
 
     def init(self, xml_rpc_url_or_object):
         """
-        
         """
         global _GateProxy
         if _Debug:
@@ -89,7 +89,6 @@ class GateInterface():
 
     def shutdown(self):
         """
-        
         """
         if _Debug:
             lg.out(4, 'tcp_interface.shutdown')
@@ -102,7 +101,6 @@ class GateInterface():
 
     def connect(self, options):
         """
-        
         """
         if _Debug:
             lg.out(4, 'tcp_interface.connect %s' % str(options))
@@ -111,7 +109,6 @@ class GateInterface():
 
     def disconnect(self):
         """
-        
         """
         if _Debug:
             lg.out(4, 'tcp_interface.disconnect')
@@ -121,7 +118,6 @@ class GateInterface():
 
     def build_contacts(self, id_obj):
         """
-        
         """
         result = []
         nowip = misc.readExternalIP()
@@ -138,7 +134,6 @@ class GateInterface():
 
     def verify_contacts(self, id_obj):
         """
-        
         """
         nowip = misc.readExternalIP()
         tcp_contact = 'tcp://%s:%s' % (nowip, str(settings.getTCPPort()))
@@ -156,7 +151,6 @@ class GateInterface():
 
     def send_file(self, remote_idurl, filename, host, description=''):
         """
-        
         """
         host = host.split(':')
         host = (host[0], int(host[1]))
@@ -164,7 +158,6 @@ class GateInterface():
 
     def send_file_single(self, remote_idurl, filename, host, description=''):
         """
-        
         """
         host = host.split(':')
         host = (host[0], int(host[1]))
@@ -172,37 +165,31 @@ class GateInterface():
 
     def connect_to(self, host):
         """
-        
         """
         return tcp_node.connect_to(host)
 
     def disconnect_from(self, host):
         """
-        
         """
         return tcp_node.disconnect_from(host)
 
     def cancel_file_sending(self, transferID):
         """
-        
         """
         return tcp_node.cancel_file_sending(transferID)
 
     def cancel_file_receiving(self, transferID):
         """
-        
         """
         return tcp_node.cancel_file_receiving(transferID)
 
     def cancel_outbox_file(self, host, filename):
         """
-        
         """
         return tcp_node.cancel_outbox_file(host, filename)
 
     def list_sessions(self):
         """
-        
         """
         result = []
         for opened_connection in tcp_node.opened_connections().values():
@@ -214,7 +201,6 @@ class GateInterface():
 
     def list_streams(self, sorted_by_time=True):
         """
-        
         """
         result = []
         result.extend(tcp_node.list_input_streams(sorted_by_time))
@@ -225,78 +211,81 @@ class GateInterface():
 
 
 def interface_transport_initialized(xmlrpcurl):
+    """
+    """
     if proxy():
         return proxy().callRemote('transport_initialized', 'tcp', xmlrpcurl)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_receiving_started(host, new_options={}):
+    """
+    """
     if proxy():
         return proxy().callRemote('receiving_started', 'tcp', host, new_options)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_receiving_failed(error_code=None):
+    """
+    """
     if proxy():
         return proxy().callRemote('receiving_failed', 'tcp', error_code)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_disconnected(result=None):
+    """
+    """
     if proxy():
         return proxy().callRemote('disconnected', 'tcp', result)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     """
-    
     """
     if proxy():
         return proxy().callRemote('register_file_sending', 'tcp', '%s:%d' % host, receiver_idurl, filename, size, description)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     """
-    
     """
     if proxy():
         return proxy().callRemote('register_file_receiving', 'tcp', '%s:%d' % host, sender_idurl, filename, size)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote('unregister_file_sending', transfer_id, status, size, error_message)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status, size, error_message)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote('cancelled_file_sending', 'tcp', '%s:%d' % host, filename, size, description, error_message)
     lg.warn('transport_tcp is not ready')
-    return fail('transport_tcp is not ready')
+    return fail(Failure(Exception('transport_tcp is not ready')))

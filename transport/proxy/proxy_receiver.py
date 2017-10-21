@@ -504,7 +504,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        proxy_interface.interface_disconnected()
+        proxy_interface.interface_disconnected().addErrback(lambda _: None)
 
     def doNotifyFailed(self, arg):
         """
@@ -534,6 +534,10 @@ class ProxyReceiver(automat.Automat):
         self.automat('nodes-not-found')
 
     def _find_random_node(self):
+        # DEBUG
+        self.automat('found-one-node', 'http://p2p-id.ru/seed0.xml')
+        # self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
+        return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         tsk = lookup.start()

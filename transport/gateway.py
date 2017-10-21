@@ -972,7 +972,8 @@ class TransportGateLocalProxy():
         m = self.methods.get(method)
         if not m:
             lg.warn('unsupported method: %s' % method)
-            return fail('unsupported method: %s' % method)
+            from twisted.python.failure import Failure
+            return fail(Failure(Exception('unsupported method: %s' % method)))
         _d = Deferred()
 
         def _call():

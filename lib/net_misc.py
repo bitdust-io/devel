@@ -41,7 +41,7 @@ import urlparse
 import platform
 import mimetypes
 import subprocess
-# fun mountain from imports :-)))
+# fun mountain from python imports :-)))
 
 
 try:
@@ -52,6 +52,7 @@ except:
 from twisted.internet.defer import Deferred, DeferredList, succeed, fail
 from twisted.internet import ssl
 from twisted.internet import protocol
+from twisted.python.failure import Failure
 # from twisted.internet.utils import getProcessOutput
 from twisted.web import iweb
 from twisted.web import client
@@ -409,7 +410,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
             cert_found = True
             break
     if not cert_found:
-        return fail('no one ssl certificate found')
+        return fail(Failure(Exception('no one ssl certificate found')))
     factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
     contextFactory = MyClientContextFactory(certificates_filenames)
     reactor.connectSSL(host, port, factory, contextFactory)

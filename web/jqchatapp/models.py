@@ -152,6 +152,9 @@ class Message(models.Model):
 
 class memberManager(models.Manager):
 
+    def find_member(self, idurl):
+        return RoomMember.objects.filter(idurl=idurl)
+
     def remove_member(self, idurl, room):
         usr_prev_rooms = RoomMember.objects.filter(idurl=idurl)
         for prev_room in usr_prev_rooms:

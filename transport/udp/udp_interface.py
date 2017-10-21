@@ -47,6 +47,7 @@ except:
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import Deferred, succeed, fail
+from twisted.python.failure import Failure
 
 from logs import lg
 
@@ -68,7 +69,6 @@ def proxy():
 
 def idurl_to_id(idurl):
     """
-    
     """
     proto, host, port, filename = nameurl.UrlParse(idurl)
     assert proto == 'http'
@@ -93,7 +93,6 @@ class GateInterface():
 
     def init(self, xml_rpc_url_or_object):
         """
-        
         """
         global _GateProxy
         if _Debug:
@@ -107,7 +106,6 @@ class GateInterface():
 
     def shutdown(self):
         """
-        
         """
         from transport.udp import udp_node
         global _GateProxy
@@ -121,7 +119,6 @@ class GateInterface():
 
     def connect(self, options):
         """
-        
         """
         from transport.udp import udp_node
         if _Debug:
@@ -131,7 +128,6 @@ class GateInterface():
 
     def disconnect(self):
         """
-        
         """
         from transport.udp import udp_node
         if _Debug:
@@ -141,7 +137,6 @@ class GateInterface():
 
     def build_contacts(self, id_obj):
         """
-        
         """
         result = []
         result.append(
@@ -154,7 +149,6 @@ class GateInterface():
 
     def verify_contacts(self, id_obj):
         """
-        
         """
         udp_contact = 'udp://%s@%s' % (id_obj.getIDName().lower(),
                                        id_obj.getIDHost())
@@ -176,7 +170,6 @@ class GateInterface():
             description='',
             single=False):
         """
-        
         """
         from transport.udp import udp_session
         from transport.udp import udp_node
@@ -209,7 +202,6 @@ class GateInterface():
             description='',
             single=True):
         """
-        
         """
         return self.send_file(
             self,
@@ -221,7 +213,6 @@ class GateInterface():
 
     def connect_to_host(self, host=None, idurl=None):
         """
-        
         """
         from transport.udp import udp_node
         if not host:
@@ -232,12 +223,10 @@ class GateInterface():
 
     def disconnect_from_host(self, host):
         """
-        
         """
 
     def cancel_outbox_file(self, host, filename):
         """
-        
         """
         from transport.udp import udp_session
         ok = False
@@ -267,7 +256,6 @@ class GateInterface():
 
     def cancel_file_sending(self, transferID):
         """
-        
         """
         from transport.udp import udp_session
         for sess in udp_session.sessions().values():
@@ -279,7 +267,6 @@ class GateInterface():
 
     def cancel_file_receiving(self, transferID):
         """
-        
         """
         # at the moment for UDP transport we can not stop particular file transfer
         # we can only close the whole session which is not we really want
@@ -295,14 +282,12 @@ class GateInterface():
 
     def list_sessions(self):
         """
-        
         """
         from transport.udp import udp_session
         return udp_session.sessions().values()
 
     def list_streams(self, sorted_by_time=True):
         """
-        
         """
         from transport.udp import udp_stream
         result = udp_stream.streams().values()
@@ -322,42 +307,38 @@ def proxy_errback(x):
 
 def interface_transport_initialized():
     """
-    
     """
     if proxy():
         return proxy().callRemote('transport_initialized', 'udp')
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_receiving_started(host, new_options={}):
     """
-    
     """
     if proxy():
         return proxy().callRemote('receiving_started', 'udp', host, new_options)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_receiving_failed(error_code=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote('receiving_failed', 'udp', error_code)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_disconnected(result=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote('disconnected', 'udp', result)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_register_file_sending(
@@ -367,7 +348,6 @@ def interface_register_file_sending(
         size,
         description=''):
     """
-    
     """
     if proxy():
         return proxy().callRemote(
@@ -379,18 +359,17 @@ def interface_register_file_sending(
             size,
             description)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size):
     """
-    
     """
     if proxy():
         return proxy().callRemote('register_file_receiving',
                                   'udp', host, sender_idurl, filename, size)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_unregister_file_sending(
@@ -399,7 +378,6 @@ def interface_unregister_file_sending(
         bytes_sent,
         error_message=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote(
@@ -410,7 +388,7 @@ def interface_unregister_file_sending(
             error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_unregister_file_receiving(
@@ -419,13 +397,12 @@ def interface_unregister_file_receiving(
         bytes_received,
         error_message=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status,
                                   bytes_received, error_message).addErrback(proxy_errback)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_cancelled_file_sending(
@@ -435,7 +412,6 @@ def interface_cancelled_file_sending(
         description=None,
         error_message=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote(
@@ -447,16 +423,15 @@ def interface_cancelled_file_sending(
             description,
             error_message)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))
 
 
 def interface_cancelled_file_receiving(
         host, filename, size, error_message=None):
     """
-    
     """
     if proxy():
         return proxy().callRemote('cancelled_file_receiving',
                                   'udp', host, filename, size, error_message)
     lg.warn('transport_udp is not ready')
-    return fail('transport_udp is not ready')
+    return fail(Failure(Exception('transport_udp is not ready')))

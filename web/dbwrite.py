@@ -102,7 +102,7 @@ def update_friends(old_friends_list, friends_list):
 
 
 def incoming_message(request, message_text):
-    lg.out(16, 'dbwrite.incoming_message of %d bytes, type=%s' %
+    lg.out(6, 'dbwrite.incoming_message of %d bytes, type=%s' %
            (len(message_text), type(message_text)))
     from django.shortcuts import get_object_or_404
     from django.utils.html import escape
@@ -127,6 +127,7 @@ def incoming_message(request, message_text):
         ThisRoom.save()
     message_text = escape(unicode(message_text))
     Message.objects.create_message(idurl, ThisRoom, message_text)
-    RoomMember.objects.create_member(idurl=idurl,
-                                     # name=nameurl.GetName(idurl),
-                                     room=ThisRoom)
+    if not RoomMember.objects.find_member(idurl=idurl):
+        RoomMember.objects.create_member(idurl=idurl,
+                                         # name=nameurl.GetName(idurl),
+                                         room=ThisRoom)

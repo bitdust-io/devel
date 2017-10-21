@@ -73,6 +73,7 @@ import traceback
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred, fail
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -178,7 +179,7 @@ def communicate(index, event, arg=None):
     """
     A = objects().get(index, None)
     if not A:
-        return fail('Sate with index %d machine not exist' % index)
+        return fail(Failure(Exception('state machine with index %d not exist' % index)))
     d = Deferred()
     args = (d, arg)
     A.automat(event, args)
