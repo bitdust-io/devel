@@ -36,13 +36,13 @@ def by_host():
     So other nodes will be able to use your machine to host their identities.
     """
     return {
-        'bitdust.io': (8084, 6661),
+        # 'bitdust.io': (8084, 6661),
         'p2p-id.ru': (80, 6661),
         # 'veselin-p2p.ru': (80, 6661),
         # 'bitdust.ai': (80, 6661),
         'datahaven.net': (80, 6661),
         'identity.datahaven.net': (80, 6661),
-        'work.offshore.ai': (8084, 6661),
+        # 'work.offshore.ai': (8084, 6661),
         # 'whmcs.whois.ai': (8084, 6661),
         # 'p2p-machines.net': (80, 6661),
     }
