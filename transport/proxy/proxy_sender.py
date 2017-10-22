@@ -238,13 +238,14 @@ class ProxySender(automat.Automat):
 
     def _on_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None):
         """
-        
         """
         if not driver.is_started('service_proxy_transport'):
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet skip because service_proxy_transport is not started')
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP because service_proxy_transport is not started')
             return None
         if proxy_receiver.A() and proxy_receiver.A().state != 'LISTEN':
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP because proxy_receiver state is not LISTEN')
             return self._add_pending_packet(outpacket, wide, callbacks)
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
@@ -253,10 +254,12 @@ class ProxySender(automat.Automat):
         publickey = router_identity_obj.publickey
         my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
         if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP because remote router not ready')
             return self._add_pending_packet(outpacket, wide, callbacks)
         if outpacket.RemoteID == router_idurl:
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet skip, packet addressed to router and must be sent in a usual way')
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP, packet addressed to router and must be sent in a usual way')
             return None
         src = ''
         src += my_id.getLocalID() + '\n'

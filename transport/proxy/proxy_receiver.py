@@ -319,12 +319,14 @@ class ProxyReceiver(automat.Automat):
         identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if identity_source:
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity use my previously stored identity')
+                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s, use my previously stored identity of %d bytes' % (
+                    self.router_idurl, len(identity_source)))
         else:
             identity_source = my_id.getLocalIdentity().serialize()
             cur_contacts = my_id.getLocalIdentity().getContacts()
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity using my current identity, contacts=%s' % cur_contacts)
+                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s, using my current identity, contacts=%s' % (
+                    self.router_idurl, cur_contacts))
         newpacket = signed.Packet(
             commands.Identity(), my_id.getLocalID(),
             my_id.getLocalID(), 'identity',

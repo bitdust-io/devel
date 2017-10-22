@@ -63,7 +63,8 @@ class ProxyTransportService(LocalService):
         if len(self._available_transports()) == 0:
             lg.warn('no transports available')
             return False
-        self._check_update_original_identity()
+        # self._check_update_original_identity()
+        self._reset_my_original_identity()
         self.starting_deferred = Deferred()
         self.interface = proxy_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(

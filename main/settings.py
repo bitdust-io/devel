@@ -237,7 +237,7 @@ def defaultDebugLevel():
     """
     Default debug level, lower values produce less messages.
     """
-    return 0
+    return 10
 
 
 def IntSize():
@@ -2348,9 +2348,9 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('logs/memdebug-enabled', 'false')
     config.conf().setDefaultValue('logs/memdebug-port', '9996')
     config.conf().setDefaultValue('logs/memprofile-enabled', 'false')
-    config.conf().setDefaultValue('logs/stream-enabled', 'false')
+    config.conf().setDefaultValue('logs/stream-enabled', 'true')
     config.conf().setDefaultValue('logs/stream-port', DefaultWebLogPort())
-    config.conf().setDefaultValue('logs/traffic-enabled', 'false')
+    config.conf().setDefaultValue('logs/traffic-enabled', 'true')
     config.conf().setDefaultValue('logs/traffic-port', DefaultWebTrafficPort())
 
     config.conf().setDefaultValue('paths/backups', '')
@@ -2377,7 +2377,7 @@ def _setUpDefaultSettings():
                                   diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
     config.conf().setDefaultValue('services/backups/max-copies', '2')
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
-    config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
+    config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'false')
 
     config.conf().setDefaultValue('services/broadcasting/enabled', 'true')
     config.conf().setDefaultValue('services/broadcasting/routing-enabled', 'false')
@@ -2435,15 +2435,15 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/p2p-hookups/enabled', 'true')
 
-    config.conf().setDefaultValue('services/private-messages/enabled', 'false')
+    config.conf().setDefaultValue('services/private-messages/enabled', 'true')
 
     config.conf().setDefaultValue('services/proxy-server/enabled', 'false')
     config.conf().setDefaultValue('services/proxy-server/routes-limit', 10)
     config.conf().setDefaultValue('services/proxy-server/current-routes', '{}')
 
-    config.conf().setDefaultValue('services/proxy-transport/enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-transport/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/sending-enabled', 'true')
-    config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/priority', 30)
     config.conf().setDefaultValue('services/proxy-transport/my-original-identity', '')
     config.conf().setDefaultValue('services/proxy-transport/current-router', '')
