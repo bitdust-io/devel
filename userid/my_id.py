@@ -224,6 +224,12 @@ def forgetLocalIdentity():
 
 def eraseLocalIdentity():
     filename = bpio.portablePath(settings.LocalIdentityFilename())
+    if not os.path.exists(filename):
+        lg.out(6, "my_id.eraseLocalIdentity SKIP file %s not exist" % filename)
+        return True
+    if not os.path.isfile(filename):
+        lg.out(6, "my_id.eraseLocalIdentity ERROR path %s is not a file" % filename)
+        return False
     try:
         os.remove(filename)
     except:
