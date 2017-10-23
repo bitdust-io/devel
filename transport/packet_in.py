@@ -198,9 +198,6 @@ class PacketIn(automat.Automat):
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
-    def __repr__(self):
-        return self.label
-
     def is_timed_out(self):
         return False
 #         if self.time is None or self.timeout is None:

@@ -139,8 +139,11 @@ def search(proto, host, filename, remote_idurl=None):
                 return p, i
     if _Debug:
         for p in queue():
-            lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(p.filename),
-                                             ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
+            if p.failname:
+                lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(p.filename),
+                                                 ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
+            else:
+                lg.warn('%s was not initialized yet' % str(p))
     return None, None
 
 
