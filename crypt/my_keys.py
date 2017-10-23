@@ -92,6 +92,15 @@ def known_keys():
 
 #------------------------------------------------------------------------------
 
+def is_key_registered(key_id, include_master=True):
+    """
+    Returns True if this key is known.
+    """
+    if include_master and key_id == global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_id='master'):
+        return True
+    return key_id in known_keys()
+
+
 def make_key_id(alias, creator_idurl=None, output_format=None):
     """
     Every key has a creator, and we include his IDURL in the final key_id string.
@@ -115,7 +124,6 @@ def make_key_id(alias, creator_idurl=None, output_format=None):
     return global_id.MakeGlobalID(
         idurl=creator_idurl,
         key_id=alias,
-        output_format=output_format,
     )
 
 def split_key_id(key_id):
@@ -134,26 +142,29 @@ def split_key_id(key_id):
         return None, None
     return parts['key_id'], parts['idurl']
 
-def is_valid_key_id(key_id):
+def is_valid_key_id(global_key_id):
     """
     """
-    parts = global_id.ParseGlobalID(key_id)
+    parts = global_id.ParseGlobalID(global_key_id)
     if not parts['key_id']:
-        lg.warn('no key_id found')
+        lg.warn('no key_id found in the input')
         return False
     if not parts['idurl']:
-        lg.warn('no idurl found')
+        lg.warn('no idurl found in the input')
         return False
-    if len(parts['key_id']) > settings.MaximumUsernameLength():
-        lg.warn("key_id: %s" % parts['key_id'])
+    key_id = parts['key_id']
+    if len(key_id) > settings.MaximumUsernameLength():
+        lg.warn("key_id too long: %d" % len(key_id))
         return False
-    if len(parts['key_id']) < settings.MinimumUsernameLength():
-        lg.warn("key_id: %s" % parts['key_id'])
+    if len(key_id) < settings.MinimumUsernameLength():
+        lg.warn("key_id too short: %d" % len(key_id))
         return False
-    for c in parts['key_id']:
+    pos = 0
+    for c in key_id:
         if c not in settings.LegalUsernameChars():
-            lg.warn("key_id: %s" % parts['key_id'])
+            lg.warn("key_id has illegal character at position: %d" % pos)
             return False
+        pos += 1
     return True
 
 #------------------------------------------------------------------------------

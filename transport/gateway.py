@@ -689,7 +689,6 @@ def monitoring():
 
 def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
     """
-    
     """
     started_packets = packet_out.search_similar_packets(outpacket)
     if started_packets:
@@ -707,7 +706,6 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
 
 def on_transport_state_changed(transport, oldstate, newstate):
     """
-    
     """
     global _TransportStateChangedCallbacksList
     if _Debug:
@@ -722,7 +720,6 @@ def on_transport_state_changed(transport, oldstate, newstate):
 
 def on_transport_initialized(proto, xmlrpcurl=None):
     """
-    
     """
     transport(proto).automat('transport-initialized', xmlrpcurl)
     return True
@@ -730,7 +727,6 @@ def on_transport_initialized(proto, xmlrpcurl=None):
 
 def on_receiving_started(proto, host, options_modified=None):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel - 8, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
@@ -740,7 +736,6 @@ def on_receiving_started(proto, host, options_modified=None):
 
 def on_receiving_failed(proto, error_code=None):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel - 8, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
@@ -750,7 +745,6 @@ def on_receiving_failed(proto, error_code=None):
 
 def on_disconnected(proto, result=None):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel - 8, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
@@ -761,32 +755,27 @@ def on_disconnected(proto, result=None):
 
 def on_start_connecting(host):
     """
-    
     """
     return True
 
 
 def on_session_opened(host, remote_user_id):
     """
-    
     """
 
 
 def on_connection_failed(host, error_message=None):
     """
-    
     """
 
 
 def on_session_closed(host, remote_user_id, reason=None):
     """
-    
     """
 
 
 def on_message_received(host, remote_user_id, data):
     """
-    
     """
 
 

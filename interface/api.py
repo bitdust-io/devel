@@ -450,6 +450,7 @@ def key_create(key_alias, key_size=4096, include_private=False):
         'ssh_type': str(key_object.sshType()),
         'size': str(key_object.size()),
         'public': str(key_object.public().toString('openssh')),
+        'private': '',
     }
     if include_private:
         r['private'] = str(key_object.toString('openssh'))
@@ -1896,6 +1897,7 @@ def send_message(recipient, message_body):
         return ERROR('service_private_messages() is not started')
     from chat import message
     from userid import global_id
+    from crypt import my_keys
     if not recipient.count('@'):
         from contacts import contactsdb
         recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient)
@@ -1907,10 +1909,14 @@ def send_message(recipient, message_body):
         return ERROR('wrong recipient')
     if not glob_id['key_id']:
         glob_id['key_id'] = 'master'
+    target_glob_id = global_id.MakeGlobalID(**glob_id)
+    if not my_keys.is_valid_key_id(target_glob_id):
+        return ERROR('invalid key_id: %s' % target_glob_id)
+#     if not my_keys.is_key_registered(glob_id['key_id']):
+#         return ERROR('unknown key_id: %s' % glob_id['key_id'])
     result = message.SendMessage(
         message_body=message_body,
-        remote_idurl=glob_id['idurl'],
-        key_id=glob_id['key_id'],
+        recipient_global_id=target_glob_id,
     )
     if isinstance(result, Deferred):
         ret = Deferred()

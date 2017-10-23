@@ -41,6 +41,8 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in message.py')
 
+from twisted.internet.defer import fail
+
 #------------------------------------------------------------------------------
 
 from logs import lg
@@ -58,6 +60,7 @@ from crypt import my_keys
 from contacts import identitycache
 
 from userid import my_id
+from userid import global_id
 
 from transport import gateway
 
@@ -107,27 +110,34 @@ class PrivateMessage:
     with encrypted body.
     """
 
-    def __init__(self, key_id):
-        self.key_id = key_id
+    def __init__(self, recipient_global_id):
+        self.recipient = recipient_global_id
         self.encrypted_session = None
         self.encrypted_body = None
 
+    def _which_key(self):
+        if my_keys.is_key_registered(self.recipient):
+            return self.recipient
+        glob_id = global_id.ParseGlobalID(self.recipient)
+        own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_id=glob_id['key_id'])
+        if my_keys.is_key_registered(own_key):
+            return own_key
+        raise Exception('can not find key for given recipient')
+
     def encrypt_body(self, message_body):
-        lg.out(8, "message.PrivateMessage ENCRYPT message of %d bytes with %s key" % (
-            len(message_body), self.key_id))
-        if self.key_id not in my_keys.known_keys() and self.key_id != 'master':
-            raise Exception('key %s not exist, can not encrypt message' % self.key_id)
+        target_key_id = self._which_key()
+        lg.out(8, "message.PrivateMessage will ENCRYPT message of %d bytes for %s" % (
+            len(message_body), target_key_id))
         sessionkey = key.NewSessionKey()
-        self.encrypted_session = my_keys.encrypt(self.key_id, sessionkey)
+        self.encrypted_session = my_keys.encrypt(target_key_id, sessionkey)
         self.encrypted_body = key.EncryptWithSessionKey(sessionkey, message_body)
         return self.encrypted_session, self.encrypted_body
 
     def decrypt_body(self):
-        lg.out(8, "message.PrivateMessage DECRYPT message from %d encrypted bytes with %s key" % (
-            len(self.encrypted_body), self.key_id))
-        if self.key_id not in my_keys.known_keys() and self.key_id != 'master':
-            raise Exception('key %s not exist, can not decrypt message' % self.key_id)
-        sessionkey = my_keys.decrypt(self.key_id, self.encrypted_session)
+        target_key_id = self._which_key()
+        lg.out(8, "message.PrivateMessage will DECRYPT message from %d encrypted bytes with %s key" % (
+            len(self.encrypted_body), target_key_id))
+        sessionkey = my_keys.decrypt(target_key_id, self.encrypted_session)
         return key.DecryptWithSessionKey(sessionkey, self.encrypted_body)
 
 #------------------------------------------------------------------------------
@@ -141,11 +151,14 @@ def Message(request):
     """
     global _IncomingMessageCallbacks
     lg.out(6, "message.Message from " + str(request.OwnerID))
-    Amessage = misc.StringToObject(request.Payload)
-    if Amessage is None:
-        lg.warn("wrong Payload, can not extract message from request")
+    try:
+        Amessage = misc.StringToObject(request.Payload)
+        if Amessage is None:
+            raise Exception("wrong Payload, can not extract message from request")
+        clear_message = Amessage.decrypt_body()
+    except:
+        lg.exc()
         return False
-    clear_message = Amessage.decrypt_body()
     for old_id, old_message in inbox_history():
         if old_id == request.PacketID:
             lg.out(6, "message.Message SKIP, message %s found in history" % old_message)
@@ -160,7 +173,7 @@ def Message(request):
 #------------------------------------------------------------------------------
 
 
-def SendMessage(message_body, remote_idurl, key_id, packet_id=None):
+def SendMessage(message_body, recipient_global_id, packet_id=None):
     """
     Send command.Message() packet to remote peer.
     Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
@@ -168,15 +181,19 @@ def SendMessage(message_body, remote_idurl, key_id, packet_id=None):
     global _OutgoingMessageCallback
     if not packet_id:
         packet_id = packetid.UniqueID()
+    remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id)
     remote_identity = identitycache.FromCache(remote_idurl)
     if remote_identity is None:
         d = identitycache.immediatelyCaching(remote_idurl, timeout=10)
         d.addCallback(lambda src: SendMessage(
-            message_body, remote_idurl, key_id, packet_id))
+            message_body, recipient_global_id, packet_id))
         d.addErrback(lambda err: lg.warn('failed to retrieve %s : %s' (remote_idurl, err)))
         return d
-    Amessage = PrivateMessage(key_id=key_id)
-    Amessage.encrypt_body(message_body)
+    try:
+        Amessage = PrivateMessage(recipient_global_id=recipient_global_id)
+        Amessage.encrypt_body(message_body)
+    except Exception as exc:
+        return fail(exc)
     Payload = misc.ObjectToString(Amessage)
     lg.out(6, "message.SendMessage to %s with %d bytes" % (remote_idurl, len(Payload)))
     outpacket = signed.Packet(

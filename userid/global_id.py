@@ -230,6 +230,7 @@ def GlobalUserToIDURL(inp):
         return None
     if not idhost:
         return None
+    _, _, user = user.strip().rpartition('$')
     if idhost.count('_'):
         _pos = idhost.rfind('_')
         port = idhost[_pos + 1:]

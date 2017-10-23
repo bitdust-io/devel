@@ -134,6 +134,7 @@ def out(_DebugLevel, msg, nl='\n'):
     _LogLinesCounter += 1
     if _LogLinesCounter % 10000 == 0:
         out(2, '[%s]' % time.asctime())
+    return None
 
 
 def warn(message, level=2):
@@ -148,6 +149,7 @@ def warn(message, level=2):
     else:
         output_string = 'WARNING!!!  in  %s.%s :\n%s' % (modul, caller, message)
     out(level, output_string)
+    return message
 
 
 def err(message, level=0):
@@ -168,6 +170,7 @@ def err(message, level=0):
     if _UseColors:
         message = '\033[6;37;41m%s\033[0m' % message
     out(level, message)
+    return message
 
 
 def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None):

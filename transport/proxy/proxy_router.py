@@ -326,6 +326,7 @@ class ProxyRouter(automat.Automat):
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
             return
         # send the packet directly to target
+        # we pass not callbacks because all response packets from this call will be also re-routed
         pout = packet_out.create(routed_packet, wide=wide, callbacks={}, target=receiver_idurl,)
         # gateway.outbox(routed_packet, wide=wide)
         if _Debug:
