@@ -552,6 +552,9 @@ def Retrieve(request):
         return
     glob_path = global_id.ParseGlobalID(request.PacketID)
     if not glob_path['path']:
+        # backward compatible check
+        glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + request.PacketID)
+    if not glob_path['path']:
         lg.warn("got incorrect PacketID")
         SendFail(request, 'incorrect PacketID')
         return
@@ -593,7 +596,7 @@ def Retrieve(request):
 
 def DeleteFile(request):
     """
-    Delete one ore multiple files or folders on my machine.
+    Delete one ore multiple files (that belongs to another user) or folders on my machine.
     """
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
@@ -605,6 +608,9 @@ def DeleteFile(request):
     dirscount = 0
     for pcktID in ids:
         glob_path = global_id.ParseGlobalID(pcktID)
+        if not glob_path['path']:
+            # backward compatible check
+            glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + request.PacketID)
         if not glob_path['path']:
             lg.warn("got incorrect PacketID")
             SendFail(request, 'incorrect PacketID')
