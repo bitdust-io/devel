@@ -1907,7 +1907,11 @@ def send_message(recipient, message_body):
         return ERROR('wrong recipient')
     if not glob_id['key_id']:
         glob_id['key_id'] = 'master'
-    result = message.SendMessage(message_body, glob_id['idurl'], glob_id['key_id'])
+    result = message.SendMessage(
+        message_body=message_body,
+        remote_idurl=glob_id['idurl'],
+        key_id=glob_id['key_id'],
+    )
     if isinstance(result, Deferred):
         ret = Deferred()
         result.addCallback(

@@ -186,7 +186,13 @@ class Ajax(object):
                         idurl=str(self.ThisRoom.idurl), key_id=key_id,
                     )
                     # recipient = '%s$%s' % (key_id, global_id.UrlToGlobalID(str(self.ThisRoom.idurl)))
-                    api.send_message(recipient, str(msg_text))
+                    from twisted.internet.defer import Deferred
+                    ret = api.send_message(recipient, str(msg_text))
+                    if isinstance(ret, Deferred):
+                        ret.addCallback(lambda resp: lg.out(2, 'CHAT: %s' % str(resp)))
+                        ret.addErrback(lambda resp: lg.err('CHAT: %s' % str(resp)))
+                    else:
+                        lg.out(2, 'CHAT: %s' % str(ret))
 #                     message.SendMessage(
 #                         str(msg_text),
 #                         str(self.ThisRoom.idurl),

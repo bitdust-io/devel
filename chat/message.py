@@ -115,7 +115,7 @@ class PrivateMessage:
     def encrypt_body(self, message_body):
         lg.out(8, "message.PrivateMessage ENCRYPT message of %d bytes with %s key" % (
             len(message_body), self.key_id))
-        if self.key_id not in my_keys.known_keys():
+        if self.key_id not in my_keys.known_keys() and self.key_id != 'master':
             raise Exception('key %s not exist, can not encrypt message' % self.key_id)
         sessionkey = key.NewSessionKey()
         self.encrypted_session = my_keys.encrypt(self.key_id, sessionkey)
@@ -125,7 +125,7 @@ class PrivateMessage:
     def decrypt_body(self):
         lg.out(8, "message.PrivateMessage DECRYPT message from %d encrypted bytes with %s key" % (
             len(self.encrypted_body), self.key_id))
-        if self.key_id not in my_keys.known_keys():
+        if self.key_id not in my_keys.known_keys() and self.key_id != 'master':
             raise Exception('key %s not exist, can not decrypt message' % self.key_id)
         sessionkey = my_keys.decrypt(self.key_id, self.encrypted_session)
         return key.DecryptWithSessionKey(sessionkey, self.encrypted_body)
@@ -160,7 +160,7 @@ def Message(request):
 #------------------------------------------------------------------------------
 
 
-def SendMessage(message_body, remote_idurl, ket_id, packet_id=None):
+def SendMessage(message_body, remote_idurl, key_id, packet_id=None):
     """
     Send command.Message() packet to remote peer.
     Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
@@ -172,10 +172,10 @@ def SendMessage(message_body, remote_idurl, ket_id, packet_id=None):
     if remote_identity is None:
         d = identitycache.immediatelyCaching(remote_idurl, timeout=10)
         d.addCallback(lambda src: SendMessage(
-            message_body, remote_idurl, ket_id, packet_id))
+            message_body, remote_idurl, key_id, packet_id))
         d.addErrback(lambda err: lg.warn('failed to retrieve %s : %s' (remote_idurl, err)))
         return d
-    Amessage = PrivateMessage(ket_id=ket_id)
+    Amessage = PrivateMessage(key_id=key_id)
     Amessage.encrypt_body(message_body)
     Payload = misc.ObjectToString(Amessage)
     lg.out(6, "message.SendMessage to %s with %d bytes" % (remote_idurl, len(Payload)))
