@@ -133,7 +133,8 @@ class ProxyTransportService(LocalService):
                 lg.warn(
                     'current-router is %s, but my-original-identity is empty' %
                     current_router_idurl)
-                self._reset_my_original_identity()
+#                 self._reset_my_original_identity()
+            self._reset_my_original_identity()
             return
         orig_ident = identity.identity(xmlsrc=orig_ident_xmlsrc)
         if not orig_ident.isCorrect() or not orig_ident.Valid():
