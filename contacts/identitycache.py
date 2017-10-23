@@ -222,7 +222,6 @@ def RemapContactAddress(address):
 
 def OverrideIdentity(idurl, xml_src):
     """
-    
     """
     global _OverriddenIdentities
     _OverriddenIdentities[idurl] = xml_src
@@ -233,7 +232,6 @@ def OverrideIdentity(idurl, xml_src):
 
 def StopOverridingIdentity(idurl):
     """
-    
     """
     global _OverriddenIdentities
     return _OverriddenIdentities.pop(idurl, None)
@@ -244,7 +242,6 @@ def StopOverridingIdentity(idurl):
 
 def IsOverridden(idurl):
     """
-    
     """
     global _OverriddenIdentities
     return idurl in _OverriddenIdentities
@@ -252,7 +249,6 @@ def IsOverridden(idurl):
 
 def ReadOverriddenIdentityXMLSource(idurl):
     """
-    
     """
     global _OverriddenIdentities
     return _OverriddenIdentities.get(idurl, None)

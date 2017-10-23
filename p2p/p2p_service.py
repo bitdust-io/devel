@@ -466,6 +466,9 @@ def Data(request):
         return
     glob_path = global_id.ParseGlobalID(request.PacketID)
     if not glob_path['path']:
+        # backward compatible check
+        glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + request.PacketID)
+    if not glob_path['path']:
         lg.warn("got incorrect PacketID")
         SendFail(request, 'incorrect PacketID')
         return
