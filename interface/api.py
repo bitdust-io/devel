@@ -480,7 +480,7 @@ def key_erase(key_id):
     return OK(message='private key "%s" was erased successfully' % key_alias)
 
 
-def key_share(key_id, idurl):
+def key_share(full_key_id, idurl):
     """
     Connect to remote node identified by `idurl` parameter and transfer private key `key_id` to that machine.
     This way remote user will be able to access those of your files which were encrypted with that private key.
@@ -489,18 +489,19 @@ def key_share(key_id, idurl):
 
     """
     from crypt import my_keys
-    key_id = str(key_id)
+    from userid import global_id
+    full_key_id = str(full_key_id)
     idurl = str(idurl)
     if not driver.is_started('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
-    if key_id == 'master':
+    glob_id = global_id.ParseGlobalID(full_key_id)
+    if glob_id['key_id'] == 'master':
         return ERROR('"master" key can not be shared')
-    key_alias, creator_idurl = my_keys.split_key_id(key_id)
-    if not key_alias or not creator_idurl:
+    if not glob_id['key_id'] or not glob_id['idurl']:
         return ERROR('icorrect key_id format')
     from access import key_ring
     result = Deferred()
-    d = key_ring.share_private_key(key_id, idurl)
+    d = key_ring.share_private_key(full_key_id, idurl)
     d.addCallback(
         lambda resp: result.callback(
             OK(str(resp))))
@@ -1912,8 +1913,8 @@ def send_message(recipient, message_body):
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
-#     if not my_keys.is_key_registered(glob_id['key_id']):
-#         return ERROR('unknown key_id: %s' % glob_id['key_id'])
+    if not my_keys.is_key_registered(target_glob_id):
+        return ERROR('unknown key_id: %s' % target_glob_id)
     result = message.SendMessage(
         message_body=message_body,
         recipient_global_id=target_glob_id,

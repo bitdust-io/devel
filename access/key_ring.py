@@ -168,6 +168,8 @@ def on_private_key_received(newpacket, info, status, error_message):
     except:
         lg.exc()
         return False
+    if my_keys.is_key_registered(key_id):
+        return False
     key_object = my_keys.register_key(key_id, private_key_string)
     if not key_object:
         return False

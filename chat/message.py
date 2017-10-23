@@ -189,13 +189,14 @@ def SendMessage(message_body, recipient_global_id, packet_id=None):
             message_body, recipient_global_id, packet_id))
         d.addErrback(lambda err: lg.warn('failed to retrieve %s : %s' (remote_idurl, err)))
         return d
+    lg.out(6, "message.SendMessage to %s with %d bytes message" % (recipient_global_id, len(message_body)))
     try:
         Amessage = PrivateMessage(recipient_global_id=recipient_global_id)
         Amessage.encrypt_body(message_body)
     except Exception as exc:
         return fail(exc)
     Payload = misc.ObjectToString(Amessage)
-    lg.out(6, "message.SendMessage to %s with %d bytes" % (remote_idurl, len(Payload)))
+    lg.out(6, "message.SendMessage payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
     outpacket = signed.Packet(
         commands.Message(),
         my_id.getLocalID(),

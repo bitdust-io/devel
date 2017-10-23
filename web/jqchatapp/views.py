@@ -181,7 +181,7 @@ class Ajax(object):
                         my_id.getLocalID(),
                         self.ThisRoom,
                         escape(msg_text))
-                    key_id = self.ThisRoom.name or 'master'
+                    key_id = 'master'  # self.ThisRoom.name or 'master'
                     recipient = global_id.MakeGlobalID(
                         idurl=str(self.ThisRoom.idurl), key_id=key_id,
                     )
