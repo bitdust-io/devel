@@ -139,7 +139,7 @@ def search(proto, host, filename, remote_idurl=None):
                 return p, i
     if _Debug:
         for p in queue():
-            if p.failname:
+            if p.filename:
                 lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(p.filename),
                                                  ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
             else:
