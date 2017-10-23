@@ -339,9 +339,17 @@ class IdRegistrator(automat.Automat):
         login = bpio.ReadTextFile(settings.UserNameFilename())
 
         def _cb(xmlsrc, idurl, host):
-            lg.out(4, '                EXIST: %s' % idurl)
-            self.registrations.remove(idurl)
-            self.automat('id-exist', idurl)
+            if not xmlsrc:
+                if self.preferred_server and self.preferred_server == host:
+                    self.free_idurls.insert(0, idurl)
+                else:
+                    self.free_idurls.append(idurl)
+                self.registrations.remove(idurl)
+                self.automat('id-not-exist', idurl)
+            else:
+                lg.out(4, '                EXIST: %s' % idurl)
+                self.registrations.remove(idurl)
+                self.automat('id-exist', idurl)
 
         def _eb(err, idurl, host):
             lg.out(4, '            NOT EXIST: %s' % idurl)
@@ -351,6 +359,7 @@ class IdRegistrator(automat.Automat):
                 self.free_idurls.append(idurl)
             self.registrations.remove(idurl)
             self.automat('id-not-exist', idurl)
+
         for host in self.good_servers:
             webport, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
