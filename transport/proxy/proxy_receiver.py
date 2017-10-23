@@ -59,9 +59,12 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
+import random
 import cStringIO
 
 # from twisted.internet import reactor
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -538,8 +541,12 @@ class ProxyReceiver(automat.Automat):
     def _find_random_node(self):
         # DEBUG
         # self.automat('found-one-node', 'http://p2p-id.ru/seed0_cb67.xml')
-        self.automat('found-one-node', 'http://bitdust.io:8084/seed2_b17a.xml')
-        return
+        # self.automat('found-one-node', 'http://bitdust.io:8084/seed2_b17a.xml')
+        # return
+        preferred_routers = config.conf().getData('services/proxy-transport/preferred-routers').strip().split('\n')
+        if len(preferred_routers) > 0:
+            self.automat('found-one-node', random.choice(preferred_routers))
+            return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         tsk = lookup.start()

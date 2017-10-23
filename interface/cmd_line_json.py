@@ -619,8 +619,14 @@ def cmd_api(opts, args, overDict, executablePath):
 #------------------------------------------------------------------------------
 
 
-def cmd_backup(opts, args, overDict, executablePath):
+def cmd_file(opts, args, overDict, executablePath):
     from lib import packetid
+
+    if args[0] in ['dir', 'folder', ]:
+        if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map', ]:
+            tpl = jsontemplate.Template(templ.TPL_RAW)
+            return call_jsonrpc_method_template_and_stop('file_create', tpl, remote_path=args[2], as_folder=True)
+        return 2
 
     if len(args) < 2 or args[1] in ['list', 'ls', ]:
         remote_path = args[2] if len(args) > 2 else None
@@ -659,12 +665,18 @@ def cmd_backup(opts, args, overDict, executablePath):
 #         print_text('path %s not exist\n' % args[2])
 #         return 1
 
-    if len(args) > 2 and args[1] in ['upload', 'up', 'store', 'start', 'send', 'write', ]:
+    if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map', ]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('file_create', tpl,
+                                                     remote_path=args[2], as_folder=False)
+
+    if len(args) > 3 and args[1] in ['upload', 'up', 'store', 'start', 'send', 'write', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if not os.path.exists(os.path.abspath(args[2])):
             print_text('path %s not exist\n' % args[2])
             return 1
-        return call_jsonrpc_method_template_and_stop('file_upload_start', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('file_upload_start', tpl,
+                                                     local_path=args[2], remote_path=args[3], wait_result=False)
 
     if len(args) > 2 and args[1] in ['download', 'down', 'load', 'request', 'read', 'restore', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -1346,19 +1358,12 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             return 0
         return cmd_friend(opts, args, overDict)
 
-    #---backup---
-    elif cmd in ['file', 'files', 'fi', 'fs', 'backup', 'backups', 'bk', 'up', 'upload', 'uploads', 'folder', 'dir', ]:
+    #---file---
+    elif cmd in ['file', 'files', 'fi', 'fs', 'f', 'folder', 'dir', ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
-        return cmd_backup(opts, args, overDict, executablePath)
-
-#     #---restore---
-#     elif cmd in ['restore', 'rest', 'download', 'down', ]:
-#         if not running:
-#             print_text('BitDust is not running at the moment\n')
-#             return 0
-#         return cmd_restore(opts, args, overDict, executablePath)
+        return cmd_file(opts, args, overDict, executablePath)
 
     #---version---
     elif cmd in ['version', 'v', 'ver']:

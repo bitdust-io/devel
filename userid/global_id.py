@@ -129,8 +129,12 @@ def ParseGlobalID(inp, detect_version=False):
     if inp.count(':'):
         user, _, path = inp.strip().rpartition(':')
     else:
-        user = inp
-        path = ''
+        if inp.count('@'):
+            user = inp
+            path = ''
+        else:
+            user = ''
+            path = inp
     if user:
         user_and_key, _, idhost = user.strip().rpartition('@')
         if not user_and_key or not idhost:

@@ -134,7 +134,8 @@ def search(proto, host, filename, remote_idurl=None):
                     return p, i
                 if p.remote_idurl and remote_idurl != p.remote_idurl:
                     if _Debug:
-                        lg.out(_DebugLevel, 'packet_out.search found a packet addressed for another idurl: %s' % p.remote_idurl)
+                        lg.out(_DebugLevel, 'packet_out.search found a packet addressed for another idurl: %s != %s' % (
+                            p.remote_idurl, remote_idurl))
                 return p, i
     if _Debug:
         for p in queue():

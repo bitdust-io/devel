@@ -883,7 +883,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     from userid import global_id
     if not bpio.pathExist(local_path):
         return ERROR('local file or folder "%s" not exist' % local_path)
-    parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
