@@ -330,7 +330,7 @@ def immediatelyCaching(idurl, timeout=0):
             lg.warn('caching task for %s was not found' % idurl)
         if _Debug:
             lg.out(14, '    [cache failed] %s' % idurl)
-        return x
+        return None
 
     _CachingTasks[idurl] = Deferred()
     d = net_misc.getPageTwisted(idurl, timeout)

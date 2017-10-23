@@ -134,7 +134,7 @@ def ConnectionFailed(param=None, proto=None, info=None):
     global _ConnectionFailedCallbackFunc
     if _ConnectionFailedCallbackFunc is not None:
         _ConnectionFailedCallbackFunc(proto, info, param)
-    return param
+    return None
 
 #------------------------------------------------------------------------------
 

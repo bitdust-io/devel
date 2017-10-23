@@ -490,7 +490,8 @@ class ProxyRouter(automat.Automat):
                     # addressed to some third node B in outside world - need to route
                     self.automat('routed-outbox-packet-received', (newpacket, info))
                     return True
-                lg.warn('packet %s was SKIPPED, because no routes with %s' % (newpacket, newpacket.CreatorID))
+                lg.warn('packet %s from %s SKIPPED, because no routes with %s' % (
+                    newpacket, newpacket.CreatorID, newpacket.CreatorID))
                 return False
             # and this is not a Relay packet
             if newpacket.Command == commands.Identity() and \
@@ -511,7 +512,8 @@ class ProxyRouter(automat.Automat):
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received SKIPPED %s' % newpacket)
+                lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s SKIPEED, addressed to me' % (
+                    newpacket, newpacket.CreatorID))
             return False
         # this packet was addressed to someone else
         receiver_idurl = None
@@ -562,7 +564,7 @@ class ProxyRouter(automat.Automat):
             return False
         if Command != commands.Ack():
             return False
-        if not RemoteID in self.routes.keys():
+        if RemoteID not in self.routes.keys():
             return False
         for ack in self.acks:
             if PacketID == ack.PacketID:
@@ -635,6 +637,7 @@ def main():
     from twisted.internet import reactor
     reactor.callWhenRunning(A, 'init')
     reactor.run()
+
 
 if __name__ == "__main__":
     main()
