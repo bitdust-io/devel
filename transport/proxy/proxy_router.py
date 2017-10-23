@@ -481,6 +481,9 @@ class ProxyRouter(automat.Automat):
         return None
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s for %s' % (
+                newpacket, newpacket.CreatorID, newpacket.RemoteID))
         if newpacket.RemoteID == my_id.getLocalID():
             # this packet was addressed directly to me ...
             if newpacket.Command == commands.Relay():
