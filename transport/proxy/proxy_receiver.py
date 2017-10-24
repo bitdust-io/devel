@@ -306,6 +306,8 @@ class ProxyReceiver(automat.Automat):
             self.router_idurl, _, _ = s.split(' ')
         except:
             lg.exc()
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver.doLoadRouterInfo : %s' % self.router_idurl)
 
     def doLookupRandomNode(self, arg):
         """
@@ -547,7 +549,10 @@ class ProxyReceiver(automat.Automat):
         # return
         preferred_routers = config.conf().getData('services/proxy-transport/preferred-routers').strip().split('\n')
         if len(preferred_routers) > 0:
-            self.automat('found-one-node', random.choice(preferred_routers))
+            known_router = random.choice(preferred_routers)
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
+            self.automat('found-one-node', known_router)
             return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
