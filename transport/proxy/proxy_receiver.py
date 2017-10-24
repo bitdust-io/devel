@@ -547,8 +547,11 @@ class ProxyReceiver(automat.Automat):
         # self.automat('found-one-node', 'http://p2p-id.ru/seed0_cb67.xml')
         # self.automat('found-one-node', 'http://bitdust.io:8084/seed2_b17a.xml')
         # return
-        preferred_routers = config.conf().getData('services/proxy-transport/preferred-routers').strip().split('\n')
-        if len(preferred_routers) > 0:
+        preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
+        preferred_routers = []
+        if preferred_routers_raw:
+            preferred_routers.extend(preferred_routers_raw.split('\n'))
+        if preferred_routers:
             known_router = random.choice(preferred_routers)
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
