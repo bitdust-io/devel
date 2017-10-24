@@ -354,6 +354,8 @@ class ProxyReceiver(automat.Automat):
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver.doRememberNode %s' % self.router_idurl)
 
     def doSendRequestService(self, arg):
         """
