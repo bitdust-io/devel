@@ -119,25 +119,38 @@ class PrivateMessage:
         if my_keys.is_key_registered(self.recipient):
             return self.recipient
         glob_id = global_id.ParseGlobalID(self.recipient)
+        if glob_id['key_id'] == 'master':
+            if glob_id['idurl'] == my_id.getLocalID():
+                return 'master'
+            remote_identity = identitycache.FromCache(glob_id['idurl'])
+            if not remote_identity:
+                raise Exception('remote identity is not cached yet, not able to encrypt the message')
+            # return a method instead of key_id
+            return remote_identity.encrypt
         own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_id=glob_id['key_id'])
         if my_keys.is_key_registered(own_key):
             return own_key
         raise Exception('can not find key for given recipient')
 
     def encrypt_body(self, message_body):
-        target_key_id = self._which_key()
-        lg.out(8, "message.PrivateMessage will ENCRYPT message of %d bytes for %s" % (
-            len(message_body), target_key_id))
         sessionkey = key.NewSessionKey()
-        self.encrypted_session = my_keys.encrypt(target_key_id, sessionkey)
+        target_key = self._which_key()
+        if callable(target_key):
+            lg.out(8, "message.PrivateMessage will ENCRYPT message of %d bytes with cached public key from %s" % (
+                len(message_body), self.recipient))
+            self.encrypted_session = target_key(sessionkey)
+        else:
+            lg.out(8, "message.PrivateMessage will ENCRYPT message of %d bytes with %s key" % (
+                len(message_body), target_key))
+            self.encrypted_session = my_keys.encrypt(target_key, sessionkey)
         self.encrypted_body = key.EncryptWithSessionKey(sessionkey, message_body)
         return self.encrypted_session, self.encrypted_body
 
     def decrypt_body(self):
-        target_key_id = self._which_key()
+        target_key = self._which_key()
         lg.out(8, "message.PrivateMessage will DECRYPT message from %d encrypted bytes with %s key" % (
-            len(self.encrypted_body), target_key_id))
-        sessionkey = my_keys.decrypt(target_key_id, self.encrypted_session)
+            len(self.encrypted_body), target_key))
+        sessionkey = my_keys.decrypt(target_key, self.encrypted_session)
         return key.DecryptWithSessionKey(sessionkey, self.encrypted_body)
 
 #------------------------------------------------------------------------------
@@ -183,6 +196,7 @@ def SendMessage(message_body, recipient_global_id, packet_id=None):
         packet_id = packetid.UniqueID()
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id)
     remote_identity = identitycache.FromCache(remote_idurl)
+    # make sure we have remote identity cached
     if remote_identity is None:
         d = identitycache.immediatelyCaching(remote_idurl, timeout=10)
         d.addCallback(lambda src: SendMessage(
