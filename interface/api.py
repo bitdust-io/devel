@@ -1913,8 +1913,8 @@ def send_message(recipient, message_body):
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
-    if not my_keys.is_key_registered(target_glob_id):
-        return ERROR('unknown key_id: %s' % target_glob_id)
+#     if not my_keys.is_key_registered(target_glob_id):
+#         return ERROR('unknown key_id: %s' % target_glob_id)
     result = message.SendMessage(
         message_body=message_body,
         recipient_global_id=target_glob_id,

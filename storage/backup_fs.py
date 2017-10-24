@@ -1398,6 +1398,7 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
         # item_status += version_status + ' '
         versions.append({
             'backup_id': backupID,
+            'backupid': backupID,  # temporary to not brake UI
             'label': version_label,
             'time': version_time,
             'size': version_size,

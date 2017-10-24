@@ -46,7 +46,19 @@ def filemanager_api_view(request):
             error_dict).encode('utf-8')
         return HttpResponseBadRequest(
             json_context, content_type='application/json')
-    result = api.filemanager(json_request)
+    mode = json_request['params']['mode']
+    params = json_request['params']
+    try:
+        if mode == 'list':
+            result = api.files_list(params['path'])
+        elif mode == 'upload':
+            localPath = unicode(params['path'])
+            result = api.file_upload_start(local_path, remote_path, wait_result)
+        else:
+            result = api.filemanager(json_request)
+    except:
+        return HttpResponseBadRequest(
+            json_context, content_type='application/json')
     return HttpResponse(json.dumps(result), content_type='application/json')
 
 

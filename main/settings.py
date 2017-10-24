@@ -2379,7 +2379,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'false')
 
-    config.conf().setDefaultValue('services/broadcasting/enabled', 'true')
+    config.conf().setDefaultValue('services/broadcasting/enabled', 'false')
     config.conf().setDefaultValue('services/broadcasting/routing-enabled', 'false')
     config.conf().setDefaultValue('services/broadcasting/max-broadcast-connections', '3')
 

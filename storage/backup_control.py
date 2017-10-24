@@ -613,7 +613,7 @@ class Task():
         )
         jobs()[self.backupID] = job
         itemInfo.add_version(dataID)
-        if itemInfo.type in [backup_fs.PARENT, backup_fs.DIR]:
+        if itemInfo.type == backup_fs.DIR:
             dirsize.ask(self.localPath, OnFoundFolderSize, (self.pathID, dataID))
         else:
             jobs()[self.backupID].totalSize = os.path.getsize(self.localPath)
