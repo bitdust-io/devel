@@ -290,9 +290,8 @@ class FileToSend:
         self.customerID = parts['customer']
         self.remotePath = parts['path']
         self.customerIDURL = parts['idurl']
-        customerGlobalID, remotePath, versionName, fileName = packetid.SplitVersionFilename(packetID)
+        customerGlobalID, remotePath, versionName, _ = packetid.SplitVersionFilename(packetID)
         self.backupID = packetid.MakeBackupID(customerGlobalID, remotePath, versionName)
-        self.fileName = fileName
         self.remoteID = remoteID
         self.ownerID = ownerID
         self.callOnAck = callOnAck
@@ -825,8 +824,8 @@ class IOThrottle:
         # make sure that we don't actually already have the file
         # if packetID != settings.BackupInfoFileName():
         if packetID not in [settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName(), ]:
-            customer, pth = packetid.SplitPacketID(packetID)
-            filename = os.path.join(settings.getLocalBackupsDir(), customer, pth)
+            customer, pathID = packetid.SplitPacketID(packetID)
+            filename = os.path.join(settings.getLocalBackupsDir(), customer, pathID)
             if os.path.exists(filename):
                 lg.warn("%s already exist " % filename)
                 if callOnReceived:

@@ -602,11 +602,14 @@ def files_list(remote_path=None):
             'glob_id': global_id.MakeGlobalID(**glob_path_child),
             'customer': norm_path['idurl'],
             'id': i['path_id'],
+            'name': i['name'],
             'path': i['path'],
             'type': backup_fs.TYPES.get(i['type'], '').lower(),
             'size': i['total_size'],
+            'local_size': i['item']['s'],
             'latest': i['latest'],
             'key_id': i['item']['k'],
+            'childs': i['childs'],
             'versions': i['versions'],
         })
     lg.out(4, 'api.files_list %d items returned' % len(result))
@@ -752,9 +755,9 @@ def file_create(remote_path, as_folder=False):
     )
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
-    lg.out(4, 'api.file_create %s with %s' % (global_id.MakeGlobalID(parts), newPathID))
+    lg.out(4, 'api.file_create %s with %s' % (global_id.MakeGlobalID(**parts), newPathID))
     return OK(
-        'new item was added: "%s", remote path is "%s"' % (newPathID, path),
+        'new item was added, id is "%s", remote path is "%s"' % (newPathID, path),
         extra_fields={
             'id': newPathID,
             'key_id': parts['key_id'],
@@ -892,12 +895,9 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     if not pathID:
         return ERROR('path "%s" not registered yet' % path)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
-    tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key_id'])
-    backup_fs.Calculate()
-    backup_control.Save()
-    control.request_update([('pathID', pathIDfull), ])
     if wait_result:
         d = Deferred()
+        tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key_id'])
         tsk.result_defer.addCallback(lambda backupID, result: d.callback(OK(
             'item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
             extra_fields={
@@ -908,8 +908,18 @@ def file_upload_start(local_path, remote_path, wait_result=True):
                 'path_id': pathID,
             }
         )))
+        tsk.result_defer.addErrback(lambda pathID, err: d.callback(ERROR(
+            'upload task %d for "%s" failed: %s' % (tsk.number, tsk.pathID, err)
+        )))
+        backup_fs.Calculate()
+        backup_control.Save()
+        control.request_update([('pathID', pathIDfull), ])
         lg.out(4, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
         return d
+    tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key_id'])
+    backup_fs.Calculate()
+    backup_control.Save()
+    control.request_update([('pathID', pathIDfull), ])
     lg.out(4, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
         'uploading "%s" started, local path is: "%s"' % (remote_path, local_path),

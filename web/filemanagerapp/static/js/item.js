@@ -15,16 +15,16 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
 
         var Item = function(model) {
             var rawModel = {
-                name: model && model.name || '',
-                path: model && model.dirpath && model.dirpath.replace(slashReplaceRegExp,"$1//$2").split('/') || [],
+            	name: model && model.name || '',
+                path: model && model.path && model.path.replace(slashReplaceRegExp,"$1//$2").split('/') || [],
                 id: model && model.id || '',
                 type: model && model.type || 'file',
                 size: model && model.size || 0,
-                date: model && model.date || '',
-                perms: new Chmod(model && model.rights),
-                content: model && model.content || '',
+                date: model && model.latest || '',
+                perms: new Chmod(""),
+                content: (model && model.local_size && model.local_size > 0) ? '1' : '',
                 status: model && model.status || '',
-                has_childs: model && model.has_childs || false,
+                has_childs: (model && model.childs && model.childs > 0) ? true : false,
                 versions: model && model.versions || [],
                 recursive: false,
                 fullPath: function() {
@@ -34,24 +34,22 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
 
             this.error = '';
             this.inprocess = false;
-
             this.model = angular.copy(rawModel);
             this.tempModel = angular.copy(rawModel);
-
-            //debug.log('Item', model && model.dirpath, this.model.id, this.model.name, this.model.path, this.model.fullPath());
         };
         
         Item.prototype.update_soft = function(model) {
-        	this.model.name = model.name || '';
-        	this.model.path = model.dirpath.replace(slashReplaceRegExp,"$1//$2").split('/') || [];
-        	this.model.id = model.id || '';
-        	this.model.type = model.type || 'file';
-        	this.model.size = model.size || 0;
-        	this.model.date = model.date || '';
-        	this.model.has_childs = model.has_childs || false;
+        	this.model.name = model && model.name || '';
+        	this.model.path = model && model.path.replace(slashReplaceRegExp,"$1//$2").split('/') || [];
+        	this.model.id = model && model.id || '';
+        	this.model.type = model && model.type || 'file';
+        	this.model.size = model && model.size || 0;
+        	this.model.date = model && model.latest || '';
+        	this.model.perms = new Chmod("");
+        	this.model.content = (model && model.local_size && model.local_size > 0) ? '1' : '';
+        	this.model.has_childs = (model && model.childs && model.childs > 0) ? true : false;
+        	this.model.status = model && model.status || '';
         	this.model.versions = model.versions || [];
-            //this.model = angular.copy(this.tempModel);
-        	//debug.log('update_model', this.model);
         };
 
         Item.prototype.update = function() {
@@ -66,8 +64,6 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
         };
 
         Item.prototype.defineCallback = function(data, success, error) {
-            /* Check if there was some error in a 200 response */
-        	//debug.log('defineCallback:', data, data.result.error);
             var self = this;
             if (data.result && data.result.error) {
                 self.error = data.result.error;
@@ -110,7 +106,6 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
             var data = { params: {
                 mode: "upload",
                 path: self.tempModel.fullPath()
-                // path: self.tempModel.path.join('/') + '/' + self.tempModel.name
             }};
             debug.log('item.upload', self.tempModel.name, self.tempModel.fullPath());
             if (self.tempModel.name.trim()) {
@@ -134,7 +129,6 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
             var data = {params: {
                 mode: "download",
                 dest_path: dest_path,
-                //id: self.model.id,
                 backupid: self.model.versions[0].backupid, 
                 name: self.model.name,
                 overwrite: true,

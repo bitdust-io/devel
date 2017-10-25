@@ -205,7 +205,6 @@ def call_jsonrpc_method_and_stop(method, *args, **kwargs):
 
 def call_jsonrpc_method_template_and_stop(method, template, *args, **kwargs):
     """
-    
     """
     from twisted.internet import reactor
     d = call_jsonrpc_method(method, *args, **kwargs)
@@ -217,7 +216,6 @@ def call_jsonrpc_method_template_and_stop(method, template, *args, **kwargs):
 
 def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args, **kwargs):
     """
-    
     """
     from twisted.internet import reactor
     d = call_jsonrpc_method(method, *args, **kwargs)
@@ -620,8 +618,6 @@ def cmd_api(opts, args, overDict, executablePath):
 
 
 def cmd_file(opts, args, overDict, executablePath):
-    from lib import packetid
-
     if args[0] in ['dir', 'folder', ]:
         if len(args) > 2 and args[1] in ['create', 'make', 'cr', 'mk', 'add', 'bind', 'map', ]:
             tpl = jsontemplate.Template(templ.TPL_RAW)

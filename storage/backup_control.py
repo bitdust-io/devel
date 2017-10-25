@@ -497,6 +497,8 @@ class Task():
     """
     A class to represent a ``Task`` - a path to be backed up as soon as other backups will be finished.
     All tasks are stored in the list, see ``tasks()`` method.
+    As soon as task get executed it fires the result call back and removed from the list.
+    When task executes a new backup job gets created.
     """
 
     def __init__(self, pathID, localPath=None, keyID=None):
@@ -532,17 +534,17 @@ class Task():
         """
         return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
 
-    def _on_job_done(self, backupID, result):
-        reactor.callLater(0, OnJobDone, backupID, result)
-        if self.result_defer is not None:
-            self.result_defer.callback((backupID, result))
-            self.result_defer = None
+#     def _on_job_done(self, backupID, result):
+#         reactor.callLater(0, OnJobDone, backupID, result)
+#         if self.result_defer is not None:
+#             self.result_defer.callback((backupID, result))
+#             self.result_defer = None
 
-    def _on_job_failed(self, backupID, err=None):
-        if self.result_defer is not None:
-            self.result_defer.errback((backupID, err))
-            self.result_defer = None
-        return err
+#     def _on_job_failed(self, backupID, err=None):
+#         if self.result_defer is not None:
+#             self.result_defer.errback((backupID, err))
+#             self.result_defer = None
+#         return err
 
     def run(self):
         """
@@ -552,16 +554,20 @@ class Task():
         if iter_and_path is None:
             lg.out(4, 'backup_control.Task.run ERROR %s not found in the index' % self.remotePath)
             # self.defer.callback('error', self.pathID)
-            self._on_job_failed(self.pathID)
-            return
+            # self._on_job_failed(self.pathID)
+            err = 'remote path "%s" not found in the catalog' % self.remotePath
+            OnTaskFailed(self.pathID, err)
+            return err
         itemInfo, sourcePath = iter_and_path
         if isinstance(itemInfo, dict):
             try:
                 itemInfo = itemInfo[backup_fs.INFO_KEY]
             except:
                 lg.exc()
-                self._on_job_failed(self.pathID)
-                return
+                # self._on_job_failed(self.pathID)
+                err = 'catalog item related to "%s" is broken' % self.remotePath
+                OnTaskFailed(self.pathID, err)
+                return err
         if not self.localPath:
             self.localPath = sourcePath
             lg.out('backup_control.Task.run local path was populated from catalog: %s' % self.localPath)
@@ -569,9 +575,10 @@ class Task():
             lg.warn('local path is differ from catalog copy: %s != %s' % (self.localPath, sourcePath))
         if not bpio.pathExist(self.localPath):
             lg.warn('path not exist: %s' % self.localPath)
-            reactor.callLater(0, OnTaskFailed, self.pathID, 'not exist')
-            self._on_job_failed(self.pathID)
-            return
+            # self._on_job_failed(self.pathID)
+            err = 'local path "%s" not exist' % self.localPath
+            OnTaskFailed(self.pathID, err)
+            return err
         dataID = misc.NewBackupID()
         if itemInfo.has_version(dataID):
             # ups - we already have same version
@@ -594,8 +601,9 @@ class Task():
             lg.exc()
             lg.out(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
-            self._on_job_failed(self.backupID)
-            return 'failed creating destination folder for %s' % self.pathID
+            # self._on_job_failed(self.backupID)
+            err = 'failed creating destination folder for "%s"' % self.backupID
+            return OnTaskFailed(self.backupID, err)
         compress_mode = 'bz2'  # 'none' # 'gz'
         if bpio.pathIsDir(self.localPath):
             backupPipe = backup_tar.backuptar(self.localPath, compress=compress_mode)
@@ -605,7 +613,7 @@ class Task():
         job = backup.backup(
             self.backupID,
             backupPipe,
-            finishCallback=self._on_job_done,
+            finishCallback=OnJobDone,
             blockResultCallback=OnBackupBlockReport,
             blockSize=settings.getBackupBlockSize(),
             sourcePath=self.localPath,
@@ -673,8 +681,10 @@ def RunTask():
     message = T.run()
     if message:
         events.send('backup-task-failed', data=dict(path_id=T.pathID, message=message, ))
+        T.result_defer.errback((T.pathID, message))
     else:
         events.send('backup-task-executed', data=dict(path_id=T.pathID, backup_id=T.backupID, ))
+        T.result_defer.callback((T.backupID, None))
     T.destroy()
     return True
 
@@ -786,8 +796,16 @@ def OnJobDone(backupID, result):
         # because user will probably leave BitDust working after starting a long running operations
         from storage import backup_monitor
         backup_monitor.A('restart')
-    RunTask()
+    reactor.callLater(0, RunTask)
     reactor.callLater(0, FireTaskFinishedCallbacks, remotePath, version, result)
+
+
+def OnJobFailed(backupID, err):
+    """
+    """
+    lg.out(4, '!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!')
+    lg.out(4, 'backup_control.OnJobFailed [%s] : %s' % (backupID, err))
+    jobs().pop(backupID)
 
 
 def OnTaskFailed(pathID, result):
@@ -795,7 +813,7 @@ def OnTaskFailed(pathID, result):
     Called when backup process get failed somehow.
     """
     lg.out(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
-    RunTask()
+    reactor.callLater(0, RunTask)
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)
 
 

@@ -207,7 +207,7 @@ class DataSender(automat.Automat):
                             filename = os.path.join(
                                 settings.getLocalBackupsDir(),
                                 global_id.UrlToGlobalID(customer_idurl),
-                                packetID,
+                                packetid.RemotePath(packetID),
                             )
                             if not os.path.isfile(filename):
                                 if _Debug:
