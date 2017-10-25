@@ -151,7 +151,8 @@ def inbox(newpacket, info, status, error_message):
         DeleteBackup(newpacket)
         commandhandled = True
     elif newpacket.Command == commands.Message():
-        commandhandled = True
+        # will be handled in message.py
+        commandhandled = False
     elif newpacket.Command == commands.Correspondent():
         # contact asking for our current identity
         Correspondent(newpacket)
