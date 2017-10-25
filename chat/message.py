@@ -166,6 +166,8 @@ class PrivateMessage:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['idurl'] == my_id.getLocalID():
                 if glob_id['key_id'] == 'master':
+                    if _Debug:
+                        lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "master" key')
                     decrypt_session_func = lambda inp: my_keys.decrypt('master', inp)
         if not decrypt_session_func:
             raise Exception('can not find key for given recipient')
@@ -187,7 +189,7 @@ def Message(request):
         Amessage = misc.StringToObject(request.Payload)
         if Amessage is None:
             raise Exception("wrong Payload, can not extract message from request")
-        clear_message = Amessage.decrypt_body()
+        clear_message = Amessage.decrypt()
     except:
         lg.exc()
         return False

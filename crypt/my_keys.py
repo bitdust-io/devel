@@ -326,6 +326,10 @@ def encrypt(key_id, inp):
     """
     if key_id == 'master':
         return key.EncryptLocalPublicKey(inp)
+    if key_id == 'master$%s' % my_id.getGlobalID():
+        return key.EncryptLocalPublicKey(inp)
+    if key_id == my_id.getGlobalID():
+        return key.EncryptLocalPublicKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
@@ -347,6 +351,10 @@ def decrypt(key_id, inp):
     Return decrypted string or raise exception.
     """
     if key_id == 'master':
+        return key.DecryptLocalPrivateKey(inp)
+    if key_id == 'master$%s' % my_id.getGlobalID():
+        return key.DecryptLocalPrivateKey(inp)
+    if key_id == my_id.getGlobalID():
         return key.DecryptLocalPrivateKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
