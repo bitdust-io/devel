@@ -735,13 +735,13 @@ def OnFoundFolderSize(pth, sz, arg):
     """
     try:
         pathID, version = arg
-        customerID, pathID = packetid.SplitPacketID(pathID)
-        customerIDURL = global_id.GlobalUserToIDURL(customerID)
+        customerGlobID, pathID = packetid.SplitPacketID(pathID)
+        customerIDURL = global_id.GlobalUserToIDURL(customerGlobID)
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customerIDURL))
         if item:
             item.set_size(sz)
         if version:
-            backupID = packetid.MakeBackupID(customerID, pathID, version)
+            backupID = packetid.MakeBackupID(customerGlobID, pathID, version)
             job = GetRunningBackupObject(backupID)
             if job:
                 job.totalSize = sz

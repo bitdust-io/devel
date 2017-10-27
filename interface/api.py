@@ -1063,7 +1063,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
             version = item.get_latest_version()
         if not version:
             return ERROR('not found any remote versions for "%s"' % remote_path)
-        backupID = packetid.MakeBackupID(glob_path['user'], knownPathID, version)
+        backupID = packetid.MakeBackupID(glob_path['customer'], knownPathID, version)
     if backup_control.IsBackupInProcess(backupID):
         return ERROR('download not possible, uploading "%s" is in process' % backupID)
     if restore_monitor.IsWorking(backupID):
@@ -1163,7 +1163,7 @@ def file_download_stop(remote_path):
         if not versions:
             versions.extend(item.get_versions())
         for version in versions:
-            backupIDs.append(packetid.MakeBackupID(glob_path['user'], knownPathID, version))
+            backupIDs.append(packetid.MakeBackupID(glob_path['customer'], knownPathID, version))
     if not backupIDs:
         return ERROR('not found any remote versions for "%s"' % remote_path)
     r = []
