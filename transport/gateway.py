@@ -445,7 +445,7 @@ def inbox(info):
             info.proto, info.host))
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
-    control.request_update([('packet', newpacket.PacketID)])
+    # control.request_update([('packet', newpacket.PacketID)])
     return newpacket
 
 

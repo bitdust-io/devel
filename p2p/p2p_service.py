@@ -448,7 +448,7 @@ def Data(request):
     the customer file on our local HDD.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.Data %d bytes in [%s] by %s/%s' % (
+        lg.out(_DebugLevel, 'p2p_service.Data %d bytes in [%s] by %s | %s' % (
             len(request.Payload), request.PacketID, request.OwnerID, request.CreatorID))
     # 1. this is our Data!
     if request.OwnerID == my_id.getLocalID():
@@ -540,7 +540,7 @@ def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
     )
     result = gateway.outbox(newpacket, callbacks=callbacks)
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendData %d bytes in [%s] to %s, by %s/%s' % (
+        lg.out(_DebugLevel, 'p2p_service.SendData %d bytes in [%s] to %s, by %s | %s' % (
             len(raw_data), packetID, remoteID, ownerID, creatorID))
     return result
 
@@ -552,9 +552,10 @@ def Retrieve(request):
     We send with ``outboxNoAck()`` method because he will ask again if
     he does not get it
     """
+    # TODO: move to storage folder
     # TODO: rename to RetrieveData()
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.Retrieve [%s] by %s/%s' % (request.PacketID, request.OwnerID, request.CreatorID))
+        lg.out(_DebugLevel, 'p2p_service.Retrieve [%s] by %s | %s' % (request.PacketID, request.OwnerID, request.CreatorID))
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):
@@ -569,8 +570,21 @@ def Retrieve(request):
         lg.warn("got incorrect PacketID")
         SendFail(request, 'incorrect PacketID')
         return
+    if glob_path['customer']:
+        if request.CreatorID == glob_path['customer']:
+            if _Debug:
+                lg.out(_DebugLevel, '        same customer CreatorID')
+        else:
+            lg.warn('one of customers requesting a Data from another customer!')
+    else:
+        lg.warn('no customer global id found in PacketID: %s' % request.PacketID)
     # TODO: process requests from another customer : glob_path['idurl']
     filename = makeFilename(request.OwnerID, glob_path['path'])
+    if filename == '':
+        if True:
+            # TODO: settings.getCustomersDataSharingEnabled() and
+            # driver.services()['service_supplier'].has_permissions(request.CreatorID, )
+            filename = makeFilename(glob_path['idurl'], glob_path['path'])
     if filename == '':
         lg.warn("had empty filename")
         SendFail(request, 'empty filename')
@@ -616,7 +630,7 @@ def SendRetreive(ownerID, creatorID, packetID, remoteID, payload='', callbacks={
     )
     result = gateway.outbox(newpacket, callbacks=callbacks)
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendRetreive [%s] to %s, by %s/%s' % (packetID, remoteID, ownerID, creatorID))
+        lg.out(_DebugLevel, 'p2p_service.SendRetreive [%s] to %s, by %s | %s' % (packetID, remoteID, ownerID, creatorID))
     return result
 
 #------------------------------------------------------------------------------
@@ -627,7 +641,7 @@ def DeleteFile(request):
     Delete one ore multiple files (that belongs to another user) or folders on my machine.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.DeleteFile [%s] by %s/%s' % (
+        lg.out(_DebugLevel, 'p2p_service.DeleteFile [%s] by %s | %s' % (
             request.PacketID, request.OwnerID, request.CreatorID))
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')

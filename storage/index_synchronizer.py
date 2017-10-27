@@ -90,7 +90,6 @@ from logs import lg
 from automats import automat
 
 from lib import nameurl
-from lib import packetid
 
 from p2p import commands
 from p2p import contact_status
@@ -99,6 +98,8 @@ from p2p import p2p_service
 from system import bpio
 
 from userid import my_id
+from userid import global_id
+
 from contacts import contactsdb
 
 from main import settings
@@ -280,7 +281,8 @@ class IndexSynchronizer(automat.Automat):
         self.latest_supplier_revision = -1
         self.requesting_suppliers.clear()
         self.requested_suppliers_number = 0
-        packetID = settings.BackupIndexFileName()
+        packetID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
+        # packetID = settings.BackupIndexFileName()
         localID = my_id.getLocalID()
         for supplierId in contactsdb.suppliers():
             if not supplierId:
@@ -290,7 +292,7 @@ class IndexSynchronizer(automat.Automat):
             pkt_out = p2p_service.SendRetreive(
                 localID,
                 localID,
-                packetid.RemotePath(packetID),
+                packetID,
                 supplierId,
                 callbacks={
                     commands.Data(): self._on_supplier_response,

@@ -636,7 +636,7 @@ class SupplierQueue:
                     p2p_service.SendRetreive(
                         fileRequest.ownerID,
                         fileRequest.creatorID,
-                        packetid.RemotePath(fileRequest.packetID),
+                        fileRequest.packetID,
                         fileRequest.remoteID,
                         callbacks={
                             commands.Data(): self.DataReceived,

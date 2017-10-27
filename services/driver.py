@@ -77,7 +77,6 @@ _StopingDeferred = None
 
 def services():
     """
-    
     """
     global _Services
     return _Services
@@ -127,7 +126,6 @@ def cancel(name, request, info):
 
 def init():
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel - 6, 'driver.init')
@@ -182,7 +180,6 @@ def init():
 
 def shutdown():
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel - 6, 'driver.shutdown')
@@ -200,7 +197,6 @@ def shutdown():
 
 def build_order():
     """
-    
     """
     global _BootUpOrder
     order = list(enabled_services())
@@ -241,7 +237,6 @@ def build_order():
 
 def start():
     """
-    
     """
     global _StartingDeferred
     if _StartingDeferred:
@@ -270,7 +265,6 @@ def start():
 
 def stop():
     """
-    
     """
     global _StopingDeferred
     if _StopingDeferred:
