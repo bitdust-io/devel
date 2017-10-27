@@ -466,7 +466,8 @@ class ProxyRouter(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
-        network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
+        if network_connector.A():
+            network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
         self.unregister()

@@ -570,8 +570,8 @@ def Retrieve(request):
         lg.warn("got incorrect PacketID")
         SendFail(request, 'incorrect PacketID')
         return
-    if glob_path['customer']:
-        if request.CreatorID == glob_path['customer']:
+    if glob_path['idurl']:
+        if request.CreatorID == glob_path['idurl']:
             if _Debug:
                 lg.out(_DebugLevel, '        same customer CreatorID')
         else:
