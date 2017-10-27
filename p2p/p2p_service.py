@@ -447,12 +447,16 @@ def Data(request):
     This is when we 1) save my requested data to restore the backup 2) or save
     the customer file on our local HDD.
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.Data %d bytes in [%s] by %s/%s' % (
+            len(request.Payload), request.PacketID, request.OwnerID, request.CreatorID))
     # 1. this is our Data!
     if request.OwnerID == my_id.getLocalID():
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Data %r for us from %s" % (
                 request, nameurl.GetName(request.RemoteID)))
         if driver.is_started('service_backups'):
+            # TODO: move this into callback
             if request.PacketID in [settings.BackupIndexFileName(), ]:
                 from storage import backup_control
                 backup_control.IncomingSupplierBackupIndex(request)
@@ -532,8 +536,12 @@ def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
         creatorID,
         packetID,
         raw_data,
-        remoteID)
+        remoteID,
+    )
     result = gateway.outbox(newpacket, callbacks=callbacks)
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.SendData %d bytes in [%s] to %s, by %s/%s' % (
+            len(raw_data), packetID, remoteID, ownerID, creatorID))
     return result
 
 
@@ -545,6 +553,8 @@ def Retrieve(request):
     he does not get it
     """
     # TODO: rename to RetrieveData()
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.Retrieve [%s] by %s/%s' % (request.PacketID, request.OwnerID, request.CreatorID))
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):
@@ -592,6 +602,23 @@ def Retrieve(request):
         lg.out(_DebugLevel, "p2p_service.Retrieve sending %r back to %s" % (outpacket, nameurl.GetName(outpacket.CreatorID)))
     gateway.outbox(outpacket, target=outpacket.CreatorID)
 
+
+def SendRetreive(ownerID, creatorID, packetID, remoteID, payload='', callbacks={}):
+    """
+    """
+    newpacket = signed.Packet(
+        commands.Retrieve(),
+        ownerID,
+        creatorID,
+        packetID,
+        payload,
+        remoteID,
+    )
+    result = gateway.outbox(newpacket, callbacks=callbacks)
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.SendRetreive [%s] to %s, by %s/%s' % (packetID, remoteID, ownerID, creatorID))
+    return result
+
 #------------------------------------------------------------------------------
 
 
@@ -599,6 +626,9 @@ def DeleteFile(request):
     """
     Delete one ore multiple files (that belongs to another user) or folders on my machine.
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.DeleteFile [%s] by %s/%s' % (
+            request.PacketID, request.OwnerID, request.CreatorID))
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if request.Payload == '':

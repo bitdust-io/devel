@@ -94,6 +94,7 @@ from lib import packetid
 
 from p2p import commands
 from p2p import contact_status
+from p2p import p2p_service
 
 from system import bpio
 
@@ -286,22 +287,32 @@ class IndexSynchronizer(automat.Automat):
                 continue
             if not contact_status.isOnline(supplierId):
                 continue
-            newpacket = signed.Packet(
-                commands.Retrieve(),
+            pkt_out = p2p_service.SendRetreive(
                 localID,
                 localID,
                 packetid.RemotePath(packetID),
-                '',
-                supplierId)
-            pkt_out = gateway.outbox(newpacket, callbacks={
-                commands.Data(): self._on_supplier_response,
-                commands.Fail(): self._on_supplier_response, })
+                supplierId,
+                callbacks={
+                    commands.Data(): self._on_supplier_response,
+                    commands.Fail(): self._on_supplier_response,
+                }
+            )
+#             newpacket = signed.Packet(
+#                 commands.Retrieve(),
+#                 localID,
+#                 localID,
+#                 packetid.RemotePath(packetID),
+#                 '',
+#                 supplierId)
+#             pkt_out = gateway.outbox(newpacket, callbacks={
+#                 commands.Data(): self._on_supplier_response,
+#                 commands.Fail(): self._on_supplier_response, })
             if pkt_out:
                 self.requesting_suppliers.add(supplierId)
                 self.requested_suppliers_number += 1
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
-                       (newpacket, nameurl.GetName(supplierId)))
+                       (pkt_out, nameurl.GetName(supplierId)))
 
     def doSuppliersSendIndexFile(self, arg):
         """

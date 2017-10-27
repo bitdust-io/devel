@@ -73,6 +73,7 @@ from userid import my_id
 from userid import global_id
 
 from p2p import commands
+from p2p import p2p_service
 from p2p import contact_status
 
 from crypt import signed
@@ -632,17 +633,26 @@ class SupplierQueue:
                     lg.out(10, "io_throttle.RunRequest for packetID " + fileRequest.packetID)
                     # transport_control.RegisterInterest(self.DataReceived,fileRequest.creatorID,fileRequest.packetID)
                     # callback.register_interest(self.DataReceived, fileRequest.creatorID, fileRequest.packetID)
-                    newpacket = signed.Packet(
-                        commands.Retrieve(),
+                    p2p_service.SendRetreive(
                         fileRequest.ownerID,
                         fileRequest.creatorID,
                         packetid.RemotePath(fileRequest.packetID),
-                        "",
-                        fileRequest.remoteID)
-                    # transport_control.outboxNoAck(newpacket)
-                    gateway.outbox(newpacket, callbacks={
-                        commands.Data(): self.DataReceived,
-                        commands.Fail(): self.DataReceived})
+                        fileRequest.remoteID,
+                        callbacks={
+                            commands.Data(): self.DataReceived,
+                            commands.Fail(): self.DataReceived,
+                        }
+                    )
+#                     newpacket = signed.Packet(
+#                         commands.Retrieve(),
+#                         fileRequest.ownerID,
+#                         fileRequest.creatorID,
+#                         packetid.RemotePath(fileRequest.packetID),
+#                         "",
+#                         fileRequest.remoteID)
+#                     gateway.outbox(newpacket, callbacks={
+#                         commands.Data(): self.DataReceived,
+#                         commands.Fail(): self.DataReceived})
                     fileRequest.requestTime = time.time()
                 else:
                     # we have the data file, no need to request it

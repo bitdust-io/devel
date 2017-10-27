@@ -210,6 +210,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_file_delete(self, remote_path):
         return api.file_delete(remote_path)
 
+    def jsonrpc_files_downloads(self):
+        return api.files_downloads()
+
     def jsonrpc_file_download_start(self, remote_path, destination_path=None):
         return api.file_download_start(remote_path, destination_path=destination_path)
 

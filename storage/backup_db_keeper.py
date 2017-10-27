@@ -80,6 +80,7 @@ from lib import nameurl
 from lib import packetid
 
 from p2p import commands
+from p2p import p2p_service
 
 from system import bpio
 
@@ -204,16 +205,27 @@ class BackupDBKeeper(automat.Automat):
         for supplierId in contactsdb.suppliers():
             if not supplierId:
                 continue
-            newpacket = signed.Packet(
-                commands.Retrieve(),
+            p2p_service.SendRetreive(
                 localID,
                 localID,
                 packetid.RemotePath(packetID),
+                supplierId,
                 Payload,
-                supplierId)
-            gateway.outbox(newpacket, callbacks={
-                commands.Data(): self._supplier_response,
-                commands.Fail(): self._supplier_response, })
+                callbacks={
+                    commands.Data(): self._supplier_response,
+                    commands.Fail(): self._supplier_response,
+                }
+            )
+#             newpacket = signed.Packet(
+#                 commands.Retrieve(),
+#                 localID,
+#                 localID,
+#                 packetid.RemotePath(packetID),
+#                 Payload,
+#                 supplierId)
+#             gateway.outbox(newpacket, callbacks={
+#                 commands.Data(): self._supplier_response,
+#                 commands.Fail(): self._supplier_response, })
             self.requestedSuppliers.add(supplierId)
 
     def doSuppliersSendDBInfo(self, arg):

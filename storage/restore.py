@@ -160,7 +160,7 @@ class restore(automat.Automat):
         _parts = packetid.SplitBackupID(self.BackupID)
         self.CustomerGlobalID = _parts[0]
         self.CustomerIDURL = global_id.GlobalUserToIDURL(self.CustomerGlobalID)
-        self.RemotePath = _parts[1]
+        self.PathID = _parts[1]
         self.Version = _parts[2]
         self.File = OutputFile
         self.KeyID = KeyID
@@ -364,7 +364,7 @@ class restore(automat.Automat):
             prefix=self.BackupID.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.BlockNumber) + '_',
         )
         os.close(fd)
-        inputpath = os.path.join(settings.getLocalBackupsDir(), self.CustomerGlobalID, self.RemotePath)
+        inputpath = os.path.join(settings.getLocalBackupsDir(), self.CustomerGlobalID, self.PathID)
         task_params = (outfilename, eccmap.CurrentName(), self.Version, self.BlockNumber, inputpath)
         raid_worker.add_task('read', task_params,
                              lambda cmd, params, result: self._blockRestoreResult(result, outfilename))

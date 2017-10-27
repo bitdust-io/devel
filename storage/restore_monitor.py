@@ -40,7 +40,6 @@ from twisted.internet import threads
 
 from logs import lg
 
-from system import bpio
 from system import tmpfile
 
 from storage import restore
