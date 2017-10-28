@@ -81,12 +81,12 @@ EVENTS:
     * :red:`timer-5sec`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 12
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -198,13 +198,13 @@ class restore(automat.Automat):
                 self.state = 'RUN'
         #---RUN---
         elif self.state == 'RUN':
-            if (event == 'timer-01sec' or event == 'instant') and self.isAborted(arg):
+            if ( event == 'timer-01sec' or event == 'instant' ) and self.isAborted(arg):
                 self.state = 'ABORTED'
                 self.doDeleteAllRequests(arg)
                 self.doCloseFile(arg)
                 self.doReportAborted(arg)
                 self.doDestroyMe(arg)
-            elif (event == 'timer-01sec' or event == 'instant') and not self.isAborted(arg):
+            elif ( event == 'timer-01sec' or event == 'instant' ) and not self.isAborted(arg):
                 self.state = 'REQUEST'
                 self.doStartNewBlock(arg)
                 self.doReadPacketsQueue(arg)
@@ -221,14 +221,14 @@ class restore(automat.Automat):
                 self.doCloseFile(arg)
                 self.doReportAborted(arg)
                 self.doDestroyMe(arg)
-            elif (event == 'timer-1sec' or event == 'request-done') and not self.isAborted(arg) and self.isBlockFixable(arg):
-                self.state = 'RAID'
-                self.doPausePacketsQueue(arg)
-                self.doReadRaid(arg)
             elif event == 'timer-5sec' and not self.isAborted(arg) and self.isTimePassed(arg):
                 self.doScanExistingPackets(arg)
                 self.doRequestPackets(arg)
-            elif event == 'request-failed' and not self.isStillCorrectable(arg):
+            elif ( event == 'timer-1sec' or event == 'request-done' ) and not self.isAborted(arg) and self.isBlockFixable(arg):
+                self.state = 'RAID'
+                self.doPausePacketsQueue(arg)
+                self.doReadRaid(arg)
+            elif ( event == 'timer-5sec' and not self.isAnyDataComming(arg) ) or ( event == 'request-failed' and not self.isStillCorrectable(arg) ):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(arg)
                 self.doRemoveTempFile(arg)
@@ -287,9 +287,21 @@ class restore(automat.Automat):
         return time.time() - self.LastAction > 60
 
     def isPacketValid(self, NewPacket):
+        glob_path = global_id.ParseGlobalID(NewPacket.PacketID, detect_version=True)
+        if not glob_path['customer']:
+            lg.warn('no customer found in global id: %s' % NewPacket.PacketID)
+            return False
+        if not glob_path['path']:
+            lg.warn('no path found in global id: %s' % NewPacket.PacketID)
+            return False
+        if not glob_path['version']:
+            lg.warn('no version found in global id: %s' % NewPacket.PacketID)
+            return False
         if not NewPacket.Valid():
+            lg.warn('invalid packet: %s' % str(NewPacket))
             return False
         if NewPacket.DataOrParity() not in ['Data', 'Parity']:
+            lg.warn('Data or Parity packet? : %s' % str(NewPacket.DataOrParity()))
             return False
         return True
 
@@ -311,6 +323,14 @@ class restore(automat.Automat):
     def isLastBlock(self, arg):
         NewBlock = arg[0]
         return NewBlock.LastBlock
+
+    def isAnyDataComming(self, arg):
+        """
+        Condition method.
+        """
+        from transport import packet_in
+        related_packets = packet_in.search(sender_idurl=contactsdb.suppliers())
+        return len(related_packets) > 0
 
     def doStartNewBlock(self, arg):
         self.LastAction = time.time()
@@ -349,7 +369,7 @@ class restore(automat.Automat):
                 packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')))
         for SupplierID, packetID in packetsToRequest:
             io_throttle.QueueRequestFile(
-                self._packet_came_in,
+                self._on_inbox_packet,
                 self.CreatorID,
                 packetID,
                 self.CreatorID,
@@ -367,10 +387,10 @@ class restore(automat.Automat):
         inputpath = os.path.join(settings.getLocalBackupsDir(), self.CustomerGlobalID, self.PathID)
         task_params = (outfilename, eccmap.CurrentName(), self.Version, self.BlockNumber, inputpath)
         raid_worker.add_task('read', task_params,
-                             lambda cmd, params, result: self._blockRestoreResult(result, outfilename))
+                             lambda cmd, params, result: self._on_block_restored(result, outfilename))
 
     def doReadPacketsQueue(self, arg):
-        reactor.callLater(0, self._process_inbox_queue)
+        reactor.callLater(0, self._do_process_inbox_queue)
 
     def doPausePacketsQueue(self, arg):
         if self.InboxQueueWorker is not None:
@@ -379,13 +399,14 @@ class restore(automat.Automat):
             self.InboxQueueWorker = None
 
     def doSavePacket(self, NewPacket):
+        glob_path = global_id.ParseGlobalID(NewPacket.PacketID, detect_version=True)
         packetID = global_id.CanonicalID(NewPacket.PacketID)
-        cusGlobID, remotePath, version, packetBlockNum, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
+        _, _, _, _, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
         if dataORparity == 'Data':
             self.OnHandData[SupplierNumber] = True
         elif NewPacket.DataOrParity() == 'Parity':
             self.OnHandParity[SupplierNumber] = True
-        filename = os.path.join(settings.getLocalBackupsDir(), cusGlobID, remotePath)
+        filename = os.path.join(settings.getLocalBackupsDir(), glob_path['customer'], glob_path['path'])
         dirpath = os.path.dirname(filename)
         if not os.path.exists(dirpath):
             try:
@@ -396,9 +417,9 @@ class restore(automat.Automat):
         if not bpio.WriteFile(filename, NewPacket.Payload):
             lg.warn("unable to write to %s" % filename)
             return
-        lg.out(6, "restore.doSavePacket %s saved" % packetID)
         if self.packetInCallback is not None:
             self.packetInCallback(self.BackupID, NewPacket)
+        lg.out(6, "restore.doSavePacket %s saved to %s" % (packetID, filename))
 
     def doRestoreBlock(self, arg):
         filename = arg
@@ -517,26 +538,28 @@ class restore(automat.Automat):
 
     #------------------------------------------------------------------------------
 
-    def _blockRestoreResult(self, restored_blocks, filename):
+    def _on_block_restored(self, restored_blocks, filename):
+        if _Debug:
+            lg.out(_DebugLevel, 'restore._on_block_restored at %s with result: %s' % (filename, restored_blocks))
         if restored_blocks is None:
             self.automat('raid-failed', (None, filename))
         else:
             self.automat('raid-done', filename)
 
-    def _packet_came_in(self, NewPacket, state):
+    def _on_inbox_packet(self, NewPacket, state):
         if _Debug:
-            lg.out(_DebugLevel, 'restore._packet_came_in %s : %s' % (state, NewPacket))
+            lg.out(_DebugLevel, 'restore._on_inbox_packet %s : %s' % (state, NewPacket))
         if state == 'received':
             self.InboxPacketsQueue.append(NewPacket)
         elif state == 'failed':
             self.RequestFails.append(NewPacket)
             self.automat('request-failed', NewPacket)
 
-    def _process_inbox_queue(self):
+    def _do_process_inbox_queue(self):
         if len(self.InboxPacketsQueue) > 0:
             NewPacket = self.InboxPacketsQueue.pop(0)
             self.automat('packet-came-in', NewPacket)
-        self.InboxQueueWorker = reactor.callLater(self.InboxQueueDelay, self._process_inbox_queue)
+        self.InboxQueueWorker = reactor.callLater(self.InboxQueueDelay, self._do_process_inbox_queue)
 
 #------------------------------------------------------------------------------
 
@@ -550,6 +573,7 @@ def main():
     r.MyDeferred.addBoth(lambda x: reactor.stop())
     reactor.callLater(1, r.automat, 'init')
     reactor.run()
+
 
 if __name__ == "__main__":
     main()

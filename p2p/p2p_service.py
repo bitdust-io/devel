@@ -522,8 +522,8 @@ def Data(request):
     reactor.callLater(0, local_tester.TestSpaceTime)
     del data
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Data saved from [%s/%s] to %s" % (
-            nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID), filename,))
+        lg.out(_DebugLevel, "p2p_service.Data saved from [%s | %s] to %s" % (
+            request.OwnerID, request.CreatorID, filename,))
 
 
 def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):

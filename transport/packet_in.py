@@ -119,6 +119,33 @@ def get(transfer_id):
     return items().get(transfer_id, None)
 
 
+def search(sender_idurl=None, proto=None, host=None):
+    """
+    Returns list of transfer ids of incoming packets which satisfies given criteria.
+    """
+    if sender_idurl and not isinstance(sender_idurl, list):
+        sender_idurl = [sender_idurl, ]
+    results = set()
+    for transfer_id, itm in items().items():
+        if sender_idurl:
+            if itm.sender_idurl and itm.sender_idurl == sender_idurl:
+                results.add(transfer_id)
+                continue
+        if proto and host:
+            if itm.proto and itm.proto == proto and itm.host and itm.host == host:
+                results.add(transfer_id)
+                continue
+        if host:
+            if itm.host and itm.host == host:
+                results.add(transfer_id)
+                continue
+        if proto:
+            if itm.proto and itm.proto == proto:
+                results.add(transfer_id)
+                continue
+    return list(results)
+
+
 def history():
     global _History
     return _History

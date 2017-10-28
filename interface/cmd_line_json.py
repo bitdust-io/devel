@@ -676,7 +676,11 @@ def cmd_file(opts, args, overDict, executablePath):
 
     if len(args) > 2 and args[1] in ['download', 'down', 'load', 'request', 'read', 'restore', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop('file_download_start', tpl, args[2])
+        if len(args) > 3:
+            local_path = args[3]
+        else:
+            local_path = os.path.join(os.getcwd(), os.path.basename(args[2]))
+        return call_jsonrpc_method_template_and_stop('file_download_start', tpl, args[2], local_path)
 
 #     if len(args) >= 2 and args[1] in ['add', 'append', 'insert', 'make', 'create', ]:
 #         tpl = jsontemplate.Template(templ.TPL_RAW)

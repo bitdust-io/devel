@@ -757,12 +757,13 @@ def file_create(remote_path, as_folder=False):
     control.request_update([('pathID', newPathID), ])
     lg.out(4, 'api.file_create %s with %s' % (global_id.MakeGlobalID(**parts), newPathID))
     return OK(
-        'new item was added, id is "%s", remote path is "%s"' % (newPathID, path),
+        'new item "%s" was added at remote path "%s"' % (newPathID, path),
         extra_fields={
             'id': newPathID,
             'key_id': parts['key_id'],
             'customer': parts['idurl'],
             'path': path,
+            'type': ('dir' if as_folder else 'file'),
         })
 
 

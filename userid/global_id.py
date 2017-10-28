@@ -180,14 +180,14 @@ def ParseGlobalID(inp, detect_version=False):
     return result
 
 
-def NormalizeGlobalID(inp):
+def NormalizeGlobalID(inp, detect_version=False):
     """
     """
     from userid import my_id
     if isinstance(inp, dict):
         g = inp
     else:
-        g = ParseGlobalID(inp)
+        g = ParseGlobalID(inp, detect_version=detect_version)
     if not g['idurl']:
         g['idurl'] = my_id.getLocalID()
     if not g['customer']:
