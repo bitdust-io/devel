@@ -80,6 +80,7 @@ from crypt import signed
 
 from transport import gateway
 from transport import callback
+from transport import packet_out
 
 #------------------------------------------------------------------------------
 
@@ -754,6 +755,12 @@ class SupplierQueue:
         for packetID in packetsToRemove:
             self.fileRequestQueue.remove(packetID)
             del self.fileRequestDict[packetID]
+        packetsToCancel = packet_out.search_by_backup_id(backupName)
+        for pkt_out in packetsToCancel:
+            if pkt_out.outpacket.Command == commands.Retrieve():
+                if pkt_out.outpacket.PacketID in packetsToRemove:
+                    lg.warn('sending "cancel" to %s' % pkt_out)
+                    pkt_out.automat('cancel')
         if len(self.fileRequestQueue) > 0:
             reactor.callLater(0, self.DoRequest)
 

@@ -572,13 +572,15 @@ class Task():
             self.localPath = sourcePath
             lg.out('backup_control.Task.run local path was populated from catalog: %s' % self.localPath)
         if self.localPath != sourcePath:
-            lg.warn('local path is differ from catalog copy: %s != %s' % (self.localPath, sourcePath))
+            lg.warn('local path is differ from catalog: %s != %s' % (self.localPath, sourcePath))
         if not bpio.pathExist(self.localPath):
             lg.warn('path not exist: %s' % self.localPath)
             # self._on_job_failed(self.pathID)
             err = 'local path "%s" not exist' % self.localPath
             OnTaskFailed(self.pathID, err)
             return err
+#         if os.path.isfile(self.localPath) and self.localPath != sourcePath:
+#             tmpfile.make(name, extension, prefix)
         dataID = misc.NewBackupID()
         if itemInfo.has_version(dataID):
             # ups - we already have same version

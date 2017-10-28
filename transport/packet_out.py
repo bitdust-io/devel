@@ -147,12 +147,24 @@ def search(proto, host, filename, remote_idurl=None):
     return None, None
 
 
+def search_by_backup_id(backup_id):
+    result = []
+    for p in queue():
+        if p.outpacket.PacketID.count(backup_id):
+            result.append(p)
+    if _Debug:
+        lg.out(_DebugLevel, 'packet_out.search_by_backup_id %s:' % backup_id)
+        lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, result))))
+    return result
+
+
 def search_many(proto=None,
                 host=None,
                 filename=None,
                 command=None,
                 remote_idurl=None,
-                packet_id=None):
+                packet_id=None,
+                ):
     result = []
     for p in queue():
         if remote_idurl and p.remote_idurl != remote_idurl:

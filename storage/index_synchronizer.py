@@ -105,6 +105,7 @@ from contacts import contactsdb
 from main import settings
 
 from transport import gateway
+from transport import packet_out
 
 from crypt import encrypted
 from crypt import signed
@@ -154,7 +155,7 @@ class IndexSynchronizer(automat.Automat):
     timers = {
         'timer-1min': (60, ['NO_INFO']),
         'timer-5min': (300, ['IN_SYNC!']),
-        'timer-15sec': (15.0, ['REQUEST?', 'SENDING']),
+        'timer-15sec': (15.0, ['REQUEST?','SENDING']),
     }
 
     def init(self):
@@ -206,21 +207,25 @@ class IndexSynchronizer(automat.Automat):
         elif self.state == 'REQUEST?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doCancelRequests(arg)
                 self.doDestroyMe(arg)
             elif event == 'timer-15sec' and not self.isSomeResponded(arg):
                 self.state = 'NO_INFO'
-            elif (event == 'all-responded' or (event == 'timer-15sec' and self.isSomeResponded(arg))) and self.isVersionChanged(arg):
+                self.doCancelRequests(arg)
+            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and self.isVersionChanged(arg):
                 self.state = 'SENDING'
+                self.doCancelRequests(arg)
                 self.doSuppliersSendIndexFile(arg)
             elif event == 'index-file-received':
                 self.doCheckVersion(arg)
-            elif (event == 'all-responded' or (event == 'timer-15sec' and self.isSomeResponded(arg))) and not self.isVersionChanged(arg):
+            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and not self.isVersionChanged(arg):
                 self.state = 'IN_SYNC!'
+                self.doCancelRequests(arg)
         #---SENDING---
         elif self.state == 'SENDING':
             if event == 'timer-15sec' and not self.isSomeAcked(arg):
                 self.state = 'NO_INFO'
-            elif event == 'all-acked' or (event == 'timer-15sec' and self.isSomeAcked(arg)):
+            elif event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(arg) ):
                 self.state = 'IN_SYNC!'
             elif event == 'shutdown':
                 self.state = 'CLOSED'
@@ -322,7 +327,7 @@ class IndexSynchronizer(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer.doSuppliersSendIndexFile')
-        packetID = settings.BackupIndexFileName()
+        packetID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
         self.sending_suppliers.clear()
         self.sent_suppliers_number = 0
         src = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
@@ -334,7 +339,8 @@ class IndexSynchronizer(automat.Automat):
             key.NewSessionKey(),
             key.SessionKeyType(),
             True,
-            src)
+            src,
+        )
         Payload = b.Serialize()
         for supplierId in contactsdb.suppliers():
             if not supplierId:
@@ -354,14 +360,16 @@ class IndexSynchronizer(automat.Automat):
                 lg.out(_DebugLevel, '    %s sending to %s' %
                        (newpacket, nameurl.GetName(supplierId)))
 
-    def doDestroyMe(self, arg):
+    def doCancelRequests(self, arg):
         """
-        Remove all references to the state machine object to destroy it.
+        Action method.
         """
-        self.unregister()
-        global _IndexSynchronizer
-        del _IndexSynchronizer
-        _IndexSynchronizer = None
+        packetID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
+        packetsToCancel = packet_out.search_by_backup_id(packetID)
+        for pkt_out in packetsToCancel:
+            if pkt_out.outpacket.Command == commands.Retrieve():
+                lg.warn('sending "cancel" to %s' % pkt_out)
+                pkt_out.automat('cancel')
 
     def doCheckVersion(self, arg):
         """
@@ -370,6 +378,15 @@ class IndexSynchronizer(automat.Automat):
         _, supplier_revision = arg
         if supplier_revision > self.latest_supplier_revision:
             self.latest_supplier_revision = supplier_revision
+
+    def doDestroyMe(self, arg):
+        """
+        Remove all references to the state machine object to destroy it.
+        """
+        self.unregister()
+        global _IndexSynchronizer
+        del _IndexSynchronizer
+        _IndexSynchronizer = None
 
     def _on_supplier_response(self, newpacket, pkt_out):
         if newpacket.Command == commands.Data():
