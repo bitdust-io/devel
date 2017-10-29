@@ -1071,7 +1071,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
     from main import settings
     from userid import my_id
     from userid import global_id
-    lg.out(4, 'api.download_start %s to %s, wait_result=%s' % (
+    lg.out(4, 'api.file_download_start %s to %s, wait_result=%s' % (
         remote_path, destination_path, wait_result))
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if packetid.Valid(glob_path['path']):
@@ -1144,7 +1144,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
             keyID=glob_path['key_id'],
             callback=_on_result)
         control.request_update([('pathID', knownPath), ])
-        lg.out(4, 'api.download_start %s to %s, wait_result=True' % (backupID, destination_path))
+        lg.out(4, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
         return d
     restore_monitor.Start(backupID, destination_path, keyID=glob_path['key_id'])
     control.request_update([('pathID', knownPath), ])
