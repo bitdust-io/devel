@@ -354,12 +354,13 @@ class DiscoveryTask(object):
         if self.stopped:
             lg.warn('node observed, but discovery process already stopped')
             return None
-        if idurl in known_idurls():
+        cached_time = known_idurls().get(idurl)
+        if cached_time and time.time() - cached_time < 30.0:
             if _Debug:
-                lg.out(_DebugLevel + 10, 'lookup._on_node_observed SKIP %r' % idurl)
+                lg.out(_DebugLevel + 4, 'lookup._on_node_observed SKIP node %r already observed recently' % idurl)
             return None
         if _Debug:
-            lg.out(_DebugLevel + 10, 'lookup._on_node_observed %r : %r' % (node, idurl))
+            lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (node, idurl))
         d = self.process_method(idurl, node)
         d.addErrback(self._on_node_failed, node)
         d.addCallback(self._on_identity_cached, node)

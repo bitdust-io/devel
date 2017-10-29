@@ -60,9 +60,9 @@ def filemanager_api_view(request):
             result = api.files_list(params['path'])
         if mode == 'listall':
             result = api.files_list('')
-#         elif mode == 'upload':
-#             localPath = unicode(params['path'])
-#             result = api.file_upload_start(local_path, remote_path, wait_result)
+        elif mode == 'upload':
+            localPath = unicode(params['path'])
+            result = api.file_upload_start(local_path, remote_path, wait_result)
         else:
             result = api.filemanager(json_request)
     except:

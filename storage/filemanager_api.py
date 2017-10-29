@@ -65,7 +65,7 @@ from web import control
 
 
 def process(json_request):
-    lg.out(20, 'filemanager_api.process %s' % json_request)
+    lg.out(12, 'filemanager_api.process %s' % json_request)
     if not driver.is_started('service_backups'):
         return {'result': {
             "success": False,
