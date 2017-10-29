@@ -191,8 +191,8 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
         arcname = unicode(filename)
     else:
         arcname = unicode(arcname)
-    # tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
-    tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
+    # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
+    tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
     # if we have python 2.6 then we can use an exclude function, filter parameter is not available
     if sys.version_info[:2] == (2, 6):
         tar.add(
@@ -297,7 +297,11 @@ def main():
     try:
         cmd = sys.argv[1].strip().lower()
         if cmd == 'extract':
-            readtar(sys.argv[2], sys.argv[3])
+            readtar(
+                archivepath=sys.argv[2],
+                outputdir=sys.argv[3],
+                encoding=locale.getpreferredencoding(),
+            )
         else:
             arcname = None
             if len(sys.argv) >= 5:

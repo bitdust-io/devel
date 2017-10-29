@@ -457,7 +457,9 @@ def Data(request):
                 request, nameurl.GetName(request.RemoteID)))
         if driver.is_started('service_backups'):
             # TODO: move this into callback
-            if request.PacketID in [settings.BackupIndexFileName(), ]:
+            settings.BackupIndexFileName()
+            indexPacketID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
+            if request.PacketID == indexPacketID:
                 from storage import backup_control
                 backup_control.IncomingSupplierBackupIndex(request)
                 return True
