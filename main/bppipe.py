@@ -52,10 +52,12 @@ import sys
 import platform
 import tarfile
 import traceback
+import locale
 
 #------------------------------------------------------------------------------
 
 AppData = ''
+_ExcludeFunction = None
 
 #------------------------------------------------------------------------------
 
@@ -109,8 +111,7 @@ def printexc():
 
 #------------------------------------------------------------------------------
 
-
-def _LinuxExcludeFunction(filename):
+def LinuxExcludeFunction(source_path, tar_path):
     """
     Return True if given file must not be included in the backup. Filename
     comes in with the path relative to the start path, so:
@@ -128,12 +129,15 @@ def _LinuxExcludeFunction(filename):
     # if filename.count(".bitdust"):
     # TODO: - must do more smart checking
     #     return True
-    if not os.access(filename, os.R_OK):
+#     basedir, filename = os.path.split(source_path)
+#     tar_basedir, tar_filename = os.path.split(tar_path)
+#     local_filepath = os.path.join(basedir, tar_filename)
+    if not os.access(source_path, os.R_OK):
         return True
     return False  # don't exclude the file
 
 
-def _WindowsExcludeFunction(filename):
+def WindowsExcludeFunction(source_path, tar_path):
     """
     Same method for Windows platforms. Filename comes in with the path relative
     to the start path, so: "Local Settings\Application
@@ -144,64 +148,106 @@ def _WindowsExcludeFunction(filename):
     os.access(filename, os.R_OK) == False to skip a file if I couldn't
     read it, but I did not get it to work every time. DWC.
     """
-    if (filename.lower().find("local settings\\temp") != -1): #  or (filename.lower().find(".bitdust") != -1):
+#     basedir, filename = os.path.split(source_path)
+#     tar_basedir, tar_filename = os.path.split(tar_path)
+#     local_filepath = os.path.join(basedir, tar_filename)
+    if (source_path.lower().find("local settings\\temp") != -1): #  or (filename.lower().find(".bitdust") != -1):
         return True
     if sys.version_info[:2] == (2, 7):
-        if not os.access(filename, os.R_OK):
+        if not os.access(source_path, os.R_OK):
             return True
     # printlog(filename+'\n')
     return False  # don't exclude the file
 
-
-_ExcludeFunction = _LinuxExcludeFunction
-if platform.uname()[0] == 'Windows':
-    _ExcludeFunction = _WindowsExcludeFunction
-
 #------------------------------------------------------------------------------
 
 
-def writetar(sourcepath, subdirs=True, compression='none', encoding=None):
+_ExcludeFunction = LinuxExcludeFunction
+if platform.uname()[0] == 'Windows':
+    _ExcludeFunction = WindowsExcludeFunction
+
+#------------------------------------------------------------------------------
+
+def writetar_filter(tarinfo, sourcepath):
+    global _ExcludeFunction
+    if _ExcludeFunction(sourcepath, tarinfo.name):
+        return None
+    return tarinfo
+
+#------------------------------------------------------------------------------
+
+def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None):
     """
     Create a tar archive from given ``sourcepath`` location.
     """
-    # printlog(os.path.abspath(sourcepath))
+    global _ExcludeFunction
+    printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (
+        sourcepath, arcname, subdirs, compression, encoding))
     mode = 'w|'
     if compression != 'none':
         mode += compression
     basedir, filename = os.path.split(sourcepath)
-    tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
+    if arcname is None:
+        arcname = unicode(filename)
+    else:
+        arcname = unicode(arcname)
+    # tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
+    tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
     # if we have python 2.6 then we can use an exclude function, filter parameter is not available
     if sys.version_info[:2] == (2, 6):
-        tar.add(sourcepath, unicode(filename), subdirs, _ExcludeFunction)
-        if not subdirs and os.path.isdir(sourcepath):  # the True is for recursive, if we wanted to just do the immediate directory set to False
+        tar.add(
+            name=sourcepath,
+            arcname=arcname,
+            recursive=subdirs,
+            exclude=lambda tar_path: _ExcludeFunction(sourcepath, tar_path),
+        )
+        if not subdirs and os.path.isdir(sourcepath):
+            # the True is for recursive, if we wanted to just do the immediate directory set to False
             for subfile in os.listdir(sourcepath):
                 subpath = os.path.join(sourcepath, subfile)
                 if not os.path.isdir(subpath):
-                    tar.add(subpath, unicode(os.path.join(filename, subfile)), subdirs, _ExcludeFunction)
+                    tar.add(
+                        name=subpath,
+                        arcname=unicode(os.path.join(arcname, subfile)),
+                        recursive=False,
+                        exclude=lambda tar_path: _ExcludeFunction(subpath, tar_path),
+                    )
     # for python 2.7 we should have a filter parameter, which should be used instead of exclude function
     elif sys.version_info[:2] == (2, 7):
-        def _filter(tarinfo, basedir):
-            global _ExcludeFunction
-            if _ExcludeFunction(os.path.join(basedir, tarinfo.name)):
-                return None
-            return tarinfo
-        # printlog(sourcepath+'\n')
-        tar.add(sourcepath, unicode(filename), subdirs, filter=lambda tarinfo: _filter(tarinfo, basedir))
+        tar.add(
+            name=sourcepath,
+            arcname=arcname,
+            recursive=subdirs,
+            filter=lambda tarinfo: writetar_filter(tarinfo, sourcepath),
+        )
         if not subdirs and os.path.isdir(sourcepath):
             # the True is for recursive, if we wanted to just do the immediate directory set to False
             for subfile in os.listdir(sourcepath):
                 subpath = os.path.join(sourcepath, subfile)
                 # printlog(subpath+'\n')
                 if not os.path.isdir(subpath):
-                    tar.add(subpath, unicode(os.path.join(filename, subfile)), subdirs, filter=_filter)
+                    tar.add(
+                        name=subpath,
+                        arcname=unicode(os.path.join(arcname, subfile)),
+                        recursive=False,
+                        filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
+                    )
     # otherwise no exclude function
     else:
-        tar.add(sourcepath, unicode(filename), subdirs)
+        tar.add(
+            name=sourcepath,
+            arcname=arcname,
+            recursive=subdirs,
+        )
         if not subdirs and os.path.isdir(sourcepath):
             for subfile in os.listdir(sourcepath):
                 subpath = os.path.join(sourcepath, subfile)
                 if not os.path.isdir(subpath):
-                    tar.add(subpath, unicode(os.path.join(filename, subfile)), subdirs)
+                    tar.add(
+                        name=subpath,
+                        arcname=unicode(os.path.join(arcname, subfile)),
+                        recursive=False,
+                    )
     tar.close()
 
 #------------------------------------------------------------------------------
@@ -212,6 +258,8 @@ def readtar(archivepath, outputdir, encoding=None):
     Extract tar file from ``archivepath`` location into local ``outputdir``
     folder.
     """
+    printlog('READ: %s to %s, encoding=%s\n' % (
+        archivepath, outputdir, encoding))
     mode = 'r:*'
     tar = tarfile.open(archivepath, mode, encoding=encoding)
     tar.extractall(outputdir)
@@ -233,20 +281,17 @@ def main():
         pass
 
     try:
-        import sys
         reload(sys)
         if hasattr(sys, "setdefaultencoding"):
-            import locale
             denc = locale.getpreferredencoding()
             if denc != '':
                 sys.setdefaultencoding(denc)
     except:
         pass
 
-    # printlog('sys.argv: %s\n' % str(sys.argv), 'w')
-
     if len(sys.argv) < 4:
-        printlog('bppipe ["subdirs"/"nosubdirs"/"extract"] ["none"/"bz2"/"gz"] [folder path]\n')
+        printlog('bppipe extract <archive path> <output dir>\n')
+        printlog('bppipe <subdirs / nosubdirs> <"none" / "bz2"/"gz"> <folder/file path> [archive filename]\n')
         return 2
 
     try:
@@ -254,7 +299,16 @@ def main():
         if cmd == 'extract':
             readtar(sys.argv[2], sys.argv[3])
         else:
-            writetar(sys.argv[3], cmd == 'subdirs', sys.argv[2], encoding=locale.getpreferredencoding())
+            arcname = None
+            if len(sys.argv) >= 5:
+                arcname = sys.argv[4]
+            writetar(
+                sourcepath=sys.argv[3],
+                arcname=arcname,
+                subdirs=True if cmd == 'subdirs' else False,
+                compression=sys.argv[2],
+                encoding=locale.getpreferredencoding(),
+            )
     except:
         printexc()
         return 1
@@ -262,6 +316,7 @@ def main():
     return 0
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     main()

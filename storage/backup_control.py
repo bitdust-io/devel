@@ -517,7 +517,7 @@ class Task():
         self.pathID = pathID                            # source path to backup
         self.customerGlobID = parts['customer']
         self.customerIDURL = parts['idurl']
-        self.remotePath = parts['path']
+        self.remotePath = parts['path']   # here it must be in 0/1/2 form
         return parts
 
     def set_key_id(self, key_id):
@@ -607,10 +607,11 @@ class Task():
             err = 'failed creating destination folder for "%s"' % self.backupID
             return OnTaskFailed(self.backupID, err)
         compress_mode = 'bz2'  # 'none' # 'gz'
+        arcname = os.path.basename(sourcePath)
         if bpio.pathIsDir(self.localPath):
-            backupPipe = backup_tar.backuptar(self.localPath, compress=compress_mode)
+            backupPipe = backup_tar.backuptardir(self.localPath, arcname=arcname, compress=compress_mode)
         else:
-            backupPipe = backup_tar.backuptarfile(self.localPath, compress=compress_mode)
+            backupPipe = backup_tar.backuptarfile(self.localPath, arcname=arcname, compress=compress_mode)
         backupPipe.make_nonblocking()
         job = backup.backup(
             self.backupID,

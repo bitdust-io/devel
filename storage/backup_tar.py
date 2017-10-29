@@ -59,7 +59,7 @@ from system import child_process
 #------------------------------------------------------------------------------
 
 
-def backuptar(directorypath, recursive_subfolders=True, compress=None):
+def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compress=None):
     """
     Returns file descriptor for process that makes tar archive.
 
@@ -74,17 +74,19 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
         subdirs = 'nosubdirs'
     if compress is None:
         compress = 'none'
+    if arcname is None:
+        arcname = unicode(os.path.basename(directorypath))
     # lg.out(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
     if bpio.Windows():
         if bpio.isFrozen():
             commandpath = "bppipe.exe"
-            cmdargs = [commandpath, subdirs, compress, directorypath]
+            cmdargs = [commandpath, subdirs, compress, directorypath, arcname]
         else:
             commandpath = "bppipe.py"
-            cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath]
+            cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath, arcname]
     else:
         commandpath = "bppipe.py"
-        cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath]
+        cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath, arcname]
     if not os.path.isfile(commandpath):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
         return None
@@ -94,7 +96,7 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
     return p
 
 
-def backuptarfile(filepath, compress=None):
+def backuptarfile(filepath, arcname=None, compress=None):
     """
     Almost same - returns file descriptor for process that makes tar archive.
     But tar archive is created from single file, not folder.
@@ -104,17 +106,19 @@ def backuptarfile(filepath, compress=None):
         return None
     if compress is None:
         compress = 'none'
+    if arcname is None:
+        arcname = unicode(os.path.basename(filepath))
     # lg.out(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
     if bpio.Windows():
         if bpio.isFrozen():
             commandpath = "bppipe.exe"
-            cmdargs = [commandpath, 'nosubdirs', compress, filepath]
+            cmdargs = [commandpath, 'nosubdirs', compress, filepath, arcname]
         else:
             commandpath = "bppipe.py"
-            cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath]
+            cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath, arcname]
     else:
         commandpath = "bppipe.py"
-        cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath]
+        cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath, arcname]
     if not os.path.isfile(commandpath):
         lg.out(1, 'backup_tar.backuptarfile ERROR %s not found' % commandpath)
         return None
@@ -175,12 +179,14 @@ def main():
         reactor.callLater(0, _read, p)
 
     def _go():
-        p = backuptar(sys.argv[1])
+        p = backuptardir(sys.argv[1], arcname='asd')
         p.make_nonblocking()
         _read(p)
+
     from twisted.internet import reactor
     reactor.callLater(0, _go)
     reactor.run()
+
 
 if __name__ == "__main__":
     main()

@@ -475,7 +475,7 @@ def main():
     raid_worker.A('init')
     backupPath = backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
     if bpio.pathIsDir(sourcePath):
-        backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
+        backupPipe = backup_tar.backuptardir(sourcePath, compress=compress_mode)
     else:
         backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
     backupPipe.make_nonblocking()
