@@ -627,7 +627,11 @@ class Task():
         if itemInfo.type == backup_fs.DIR:
             dirsize.ask(self.localPath, OnFoundFolderSize, (self.pathID, dataID))
         else:
-            jobs()[self.backupID].totalSize = os.path.getsize(self.localPath)
+            sz = os.path.getsize(self.localPath)
+            jobs()[self.backupID].totalSize = sz
+            itemInfo.set_size(sz)
+            backup_fs.Calculate()
+            Save()
         jobs()[self.backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
         lg.out(4, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (
@@ -743,6 +747,8 @@ def OnFoundFolderSize(pth, sz, arg):
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customerIDURL))
         if item:
             item.set_size(sz)
+            backup_fs.Calculate()
+            Save()
         if version:
             backupID = packetid.MakeBackupID(customerGlobID, pathID, version)
             job = GetRunningBackupObject(backupID)

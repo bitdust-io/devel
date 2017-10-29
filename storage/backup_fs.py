@@ -766,7 +766,7 @@ def WalkByPath(path, iter=None):
     if ppath in iter:
         if isinstance(iter[ppath], int):
             return iter, str(iter[path])
-        return iter, str(iter[ppath][0])
+        return iter[ppath], str(iter[ppath][0])
     if ppath == '' or ppath == '/':
         return iter, iter[0] if 0 in iter else ''
     path_id = ''
@@ -2044,6 +2044,23 @@ def _test():
     # pprint.pprint(fsID())
     # print
 
+#     print AddDir('dir1/dir2')
+    ii = GetIteratorsByPath('dir1')
+    print ii
+    print PutItem('fff', as_folder=False, iter=ii[0], iterID=ii[1])
+
+    print IsDir('dir1')
+    print IsFile('dir2/fff')
+
+    print '------------'
+    pprint.pprint(fs())
+    print
+    pprint.pprint(fsID())
+    print
+
+
+    # PutItem('dir4', as_folder=True)
+
 #     print ListByPathAdvanced('TestKey2')
 #     return
 
@@ -2053,7 +2070,6 @@ def _test():
 
 #     parent_path = os.path.dirname(bpio.portablePath(unicode('/some/remote/path')))
 #     print IsFile(sys.argv[1])
-#     iter_and_iterID = GetIteratorsByPath(parent_path)
 #     if iter_and_iterID is None:
 #         _, parent_iter, parent_iterID = AddDir(parent_path, read_stats=False)
 #     else:
@@ -2075,7 +2091,8 @@ def _test():
     # import pdb; pdb.set_trace()
     # item = FSItemInfo('new', '/Users/new', FILE)
     # SetFile(item)
-    # print ToID('/Users/new')
+    # print ToID('dir6/ilhan.jpg')
+    # print WalkByPath('dir6')
 
     # print Exists('/asd')
     # print IsDir('/asd')
@@ -2090,7 +2107,7 @@ def _test():
     # pdb.set_trace()
     # pprint.pprint(ListRootItems())
     # pprint.pprint(ListAllBackupIDs())
-    pprint.pprint(ListChildsByPath((sys.argv[1])))
+    # pprint.pprint(ListChildsByPath((sys.argv[1])))
 
     # print ListByPathAdvanced("")
     # pth = '~/Downloads/test/asd'

@@ -600,7 +600,8 @@ def files_list(remote_path=None):
                 continue
         result.append({
             'glob_id': global_id.MakeGlobalID(**glob_path_child),
-            'customer': norm_path['idurl'],
+            'customer': norm_path['customer'],
+            'idurl': norm_path['idurl'],
             'id': i['path_id'],
             'name': i['name'],
             'path': i['path'],
@@ -728,36 +729,70 @@ def file_create(remote_path, as_folder=False):
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
     if pathID:
         return ERROR('remote path "%s" already exist in catalog: "%s"' % (path, pathID))
-    parent_path = os.path.dirname(path)
-    if backup_fs.IsFile(parent_path, iter=backup_fs.fs(parts['idurl'])):
-        return ERROR('remote path can not be assigned, file already exist: "%s"' % parent_path)
-    iter_and_iterID = backup_fs.GetIteratorsByPath(
-        parent_path,
-        iter=backup_fs.fs(parts['idurl']),
-        iterID=backup_fs.fsID(parts['idurl']),
-    )
-    if iter_and_iterID is None:
-        _, parent_iter, parent_iterID = backup_fs.AddDir(
-            parent_path,
+    if as_folder:
+        newPathID, parent_iter, parent_iterID = backup_fs.AddDir(
+            path,
             read_stats=False,
             iter=backup_fs.fs(parts['idurl']),
             iterID=backup_fs.fsID(parts['idurl']),
             key_id=parts['key_id'],
         )
     else:
-        parent_iter, parent_iterID = iter_and_iterID
-    newPathID, _, _ = backup_fs.PutItem(
-        name=os.path.basename(path),
-        as_folder=as_folder,
-        iter=parent_iter,
-        iterID=parent_iterID,
-        key_id=parts['key_id'],
-    )
+        parent_path = os.path.dirname(path)
+        if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(parts['idurl'])):
+            if backup_fs.IsFile(parent_path, iter=backup_fs.fs(parts['idurl'])):
+                return ERROR('remote path can not be assigned, file already exist: "%s"' % parent_path)
+            backup_fs.AddDir(
+                parent_path,
+                read_stats=False,
+                iter=backup_fs.fs(parts['idurl']),
+                iterID=backup_fs.fsID(parts['idurl']),
+                key_id=parts['key_id'],
+            )
+        iter_and_iterID = backup_fs.GetIteratorsByPath(
+            parent_path,
+            iter=backup_fs.fs(parts['idurl']),
+            iterID=backup_fs.fsID(parts['idurl']),
+        )
+        if not iter_and_iterID:
+            return ERROR('remote path can not be assigned, parent folder not found: "%s"' % parent_path)
+        _, _, _ = backup_fs.PutItem(
+            name=os.path.basename(path),
+            as_folder=as_folder,
+            iter=iter_and_iterID[0],
+            iterID=iter_and_iterID[1],
+            key_id=parts['key_id'],
+        )
+        newPathID = backup_fs.ToID(path)
+        if not newPathID:
+            return ERROR('remote path can not be assigned, failed to create a new item: "%s"' % path)
+#         iter_and_iterID = backup_fs.GetIteratorsByPath(
+#             parent_path,
+#             iter=backup_fs.fs(parts['idurl']),
+#             iterID=backup_fs.fsID(parts['idurl']),
+#         )
+#         if iter_and_iterID is None:
+#             _, parent_iter, parent_iterID = backup_fs.AddDir(
+#                 parent_path,
+#                 read_stats=False,
+#                 iter=backup_fs.fs(parts['idurl']),
+#                 iterID=backup_fs.fsID(parts['idurl']),
+#                 key_id=parts['key_id'],
+#             )
+#         else:
+#             parent_iter, parent_iterID = iter_and_iterID
+#         newPathID, _, _ = backup_fs.PutItem(
+#             name=os.path.basename(path),
+#             as_folder=as_folder,
+#             iter=parent_iter,
+#             iterID=parent_iterID,
+#             key_id=parts['key_id'],
+#         )
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
     lg.out(4, 'api.file_create %s with %s' % (global_id.MakeGlobalID(**parts), newPathID))
     return OK(
-        'new item "%s" was added at remote path "%s"' % (newPathID, path),
+        'new %s "%s" was added at remote path "%s"' % (('folder' if as_folder else 'file'), newPathID, path),
         extra_fields={
             'id': newPathID,
             'key_id': parts['key_id'],
@@ -1081,13 +1116,15 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
         d = Deferred()
 
         def _on_result(backupID, result):
-            if result == 'done':
+            if result == 'restore done':
                 d.callback(OK(
                     result,
                     'version "%s" downloaded to "%s"' % (backupID, destination_path),
                     extra_fields={
                         'backup_id': backupID,
                         'local_path': destination_path,
+                        'path_id': pathID_target,
+                        'remote_path': knownPath,
                     },
                 ))
             else:
@@ -1096,6 +1133,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
                     extra_fields={
                         'backup_id': backupID,
                         'local_path': destination_path,
+                        'path_id': pathID_target,
+                        'remote_path': knownPath,
                     },
                 ))
             return True
@@ -1115,7 +1154,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
         'downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
         extra_fields={
             'backup_id': backupID,
-            'local_path': destination_path, }, )
+            'local_path': destination_path,
+            'path_id': pathID_target,
+            'remote_path': knownPath,
+        },)
 
 
 def file_download_stop(remote_path):

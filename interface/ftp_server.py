@@ -186,6 +186,7 @@ class BitDustFTP(FTP):
         return result
 
     def _cbFileSent(self, result):
+        lg.out(8, 'ftp_server._cbFileSent %s' % result)
         return (TXFR_COMPLETE_OK,)
 
     def _ebFileSent(self, err):
@@ -195,6 +196,7 @@ class BitDustFTP(FTP):
         return (CNX_CLOSED_TXFR_ABORTED,)
 
     def _cbReadOpened(self, file_obj, consumer):
+        lg.out(8, 'ftp_server._cbWriteOpened %s %s' % (file_obj, consumer))
         if self.dtpInstance.isConnected:
             self.reply(DATA_CNX_ALREADY_OPEN_START_XFR)
         else:
@@ -218,8 +220,21 @@ class BitDustFTP(FTP):
 #         os.fsync(consumer.fObj.fileno())
 #         consumer.fObj.close()
 #         consumer.close()
+        # import pdb; pdb.set_trace()
         remote_path = '/'.join(newsegs)
-        api.file_upload_start(local_path, remote_path, wait_result=False)
+        lg.out(8, 'ftp_server._cbFileRecevied %s %s' % (local_path, remote_path))
+        ret = api.file_info(remote_path)
+        if ret['status'] != 'OK':
+            ret = api.file_create(remote_path)
+            if ret['status'] != 'OK':
+                return defer.fail(FileNotFoundError(remote_path))
+        else:
+            if ret['result'][0]['type'] == 'dir':
+                return defer.fail(IsADirectoryError(remote_path))
+        ret = api.file_upload_start(local_path, remote_path, wait_result=False)
+        if ret['status'] != 'OK':
+            lg.warn('file_upload_start() returned: %s' % ret)
+            return defer.fail(FileNotFoundError(remote_path))
 
 #         shortPathID = backup_fs.ToID(full_path)
 #         if not shortPathID:
@@ -241,6 +256,8 @@ class BitDustFTP(FTP):
         return (CNX_CLOSED_TXFR_ABORTED,)
 
     def _cbWriteOpened(self, consumer, upload_filename, newsegs):
+        remote_path = '/'.join(newsegs)
+        lg.out(8, 'ftp_server._cbWriteOpened %s %s' % (upload_filename, remote_path))
         d = consumer.receive()
         d.addCallback(self._startConsumer)
         d.addCallback(self._stopConsumer, consumer)
@@ -274,11 +291,12 @@ class BitDustFTP(FTP):
 
     def _cbRestoreDone(self, ret, path_segments, result_defer):
         pth = '/'.join(path_segments)
+        lg.out(8, 'ftp_server._cbRestoreDone %s %s' % (ret, pth))
         if ret['status'] != 'OK':
             return result_defer.errback(FileNotFoundError(pth))
         if ret['result'][0] != 'restore done':
             return result_defer.errback(FileNotFoundError(pth))
-        fp = filepath.FilePath(ret['local_path'])
+        fp = filepath.FilePath(os.path.join(ret['local_path'], os.path.basename(ret['remote_path'])))
         try:
             fobj = fp.open('r')
         except:
@@ -313,10 +331,11 @@ class BitDustFTP(FTP):
             if itm['path'] == 'index':
                 continue
             # known_size = max(itm[7].size, 0)
-            if itm['versions']:
-                known_size = itm['size']
-            else:
-                known_size = 1
+#             if itm['versions']:
+#                 known_size = itm['size']
+#             else:
+#                 known_size = 1
+            known_size = max(itm['local_size'], 0)
             result.append((os.path.basename(itm['path']), [  # name
                 known_size,  # size
                 True if itm['type'] == 'dir' else False,  # folder or file ?

@@ -96,7 +96,7 @@ def packet_in_callback(backupID, newpacket):
 
 
 def extract_done(retcode, backupID, tarfilename, callback_method):
-    lg.out(4, 'restore_monitor.extract_done %s result: %s' % (backupID, str(retcode)))
+    lg.out(4, 'restore_monitor.extract_done %s tarfile: %s, result: %s' % (backupID, tarfilename, str(retcode)))
     global OnRestoreDoneFunc
 
     _WorkingBackupIDs.pop(backupID, None)
