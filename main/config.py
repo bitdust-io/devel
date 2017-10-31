@@ -309,6 +309,9 @@ class DefaultsConfig(BaseConfig):
             return result
         return self.getDefaultValue(entryPath)
 
+    def getOriginalData(self, entryPath):
+        return BaseConfig.getData(self, entryPath)
+
 #------------------------------------------------------------------------------
 
 
