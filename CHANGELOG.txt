@@ -2,6 +2,31 @@ Change Log
 ==========
 
 
+
+2017-10-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added known id server at veselin-p2p.ru
+* changes in bppipe.py : store files and folders in tar archive with modified names
+* error fallback flow added in restore() automat
+* MAJOR CHANGE !!! ALL Enrypted customers data stored on suppliers is PUBLICLY SHARED now!
+* added feature : encrypt private message with recipient master key or another known key
+* bug fix in id_registrator()
+* fixes in chat, more transport logs
+* removed id serverd on bitdust.io:8084
+* adjusted default settings : run proxy transport by default
+* fixes in service_nodes_lookup(), service_proxy_transport()
+% jqchat and UI fixes
+* updated interface.ftp_server according to new api interface methods
+* added api.file_*() commands
+* removed api.backup_*() commands
+* removed api.restore_*() commands
+* added userid/global_id.py
+* BOOM! backupID/pathID format change: 0/0/1/0/F20131120053803PM -> alice@idhost.org:0/0/1/0/F20131120053803PM
+* added service_supplier_relations()
+* cmd line fixes for "files" command
+
+
+
 2017-08-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added colors to terminal logs

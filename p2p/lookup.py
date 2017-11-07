@@ -223,6 +223,9 @@ def work():
     if _Debug:
         lg.out(_DebugLevel - 4, 'lookup.work starting next task in the queue')
     _CurrentLookupTask = _LookupTasks.pop(0)
+    if not _CurrentLookupTask.result_defer:
+        lg.warn('task %s is closed' % _CurrentLookupTask)
+        return
     _CurrentLookupTask.start()
     _CurrentLookupTask.result_defer.addCallback(on_lookup_task_success)
 

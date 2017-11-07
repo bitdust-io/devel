@@ -52,7 +52,7 @@ def filemanager_api_view(request):
             error_dict).encode('utf-8')
         return HttpResponseBadRequest(
             json_context, content_type='application/json')
-    lg.out(4, 'filemanagerapp.filemanager_api_view request: %s' % json_request)
+    # lg.out(4, 'filemanagerapp.filemanager_api_view request: %s' % json_request)
     mode = json_request['params']['mode']
     params = json_request['params']
     try:
@@ -61,8 +61,11 @@ def filemanager_api_view(request):
         if mode == 'listall':
             result = api.files_list('')
         elif mode == 'upload':
-            localPath = unicode(params['path'])
-            result = api.file_upload_start(local_path, remote_path, wait_result)
+            filename = unicode(params['path'])
+            import os
+            local_path = os.path.abspath(os.path.join(os.path.expanduser('~'), filename))
+            api.file_create(filename)
+            result = api.file_upload_start(local_path, filename)
         else:
             result = api.filemanager(json_request)
     except:
