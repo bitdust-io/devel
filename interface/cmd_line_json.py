@@ -338,19 +338,26 @@ def cmd_deploy(opts, args, overDict):
     if len(args) > 1 and not os.path.exists(args[1]) and os.path.isdir(os.path.dirname(args[1])):
         venv_path = args[1]
     script_path = os.path.join(settings.BaseDir(), 'bitdust')
-    status = os.system('rm -rf {}'.format(venv_path))
-    if status != 0:
-        print_text('\nClean up of existing virtual environment files failed!\n')
-        return status
+    if os.path.exists(venv_path):
+        print_text('Clean up of existing Python virtual environment in "%s"' % venv_path)
+        status = os.system('rm -rf {}'.format(venv_path))
+        if status != 0:
+            print_text('\nClean up of existing virtual environment files failed!\n')
+            return status
+    print_text('Create new Python virtual environment in "%s"' % venv_path)
     status = os.system('virtualenv -p python2.7 {}'.format(venv_path))
     if status != 0:
         print_text('\nFailed to create virtual environment, please check/install virtualenv package\n')
         return status
+    print_text('Install/Upgrade pip in "%s"' % venv_path)
     status = os.system('{}/bin/pip install -U pip'.format(venv_path))
     if status != 0:
         print_text('\nFailed to install latest pip version, please check/install latest pip version manually\n')
         return status
-    status = os.system('{}/bin/pip install -r "{}/requirements.txt"'.format(venv_path, source_dir))
+    requirements_txt = os.path.join(source_dir, 'requirements.txt')
+    venv_bin_pip = os.path.join(venv_path, 'bin', 'pip')
+    print_text('Install BitDust requirements from "%s" using "%s"' % (requirements_txt, venv_path))
+    status = os.system('{} install -r "{}"'.format(venv_bin_pip, source_dir))
     if status != 0:
         depends = [
             'git',
@@ -379,7 +386,7 @@ def cmd_deploy(opts, args, overDict):
     print_text('\nBitDust application files created successfully in {}'.format(settings.BaseDir()))
     print_text('To run the programm use this executable script:\n\n    {}\n'.format(script_path))
     print_text('To create system-wide shell command, add /Users/veselin/.bitdust/bitdust to your PATH, or create a symlink:\n')
-    print_text('    sudo ln -s {} /usr/local/bin/bitdust\n\n'.format(script_path))
+    print_text('    sudo ln -s -f {} /usr/local/bin/bitdust\n\n'.format(script_path))
     return 0
 
 #------------------------------------------------------------------------------
