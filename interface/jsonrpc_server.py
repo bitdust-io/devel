@@ -288,14 +288,32 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
 
-#     def jsonrpc_list_messages(self):
-#         return api.list_messages()
+    def jsonrpc_user_ping(self, idurl, timeout=10):
+        return api.user_ping(str(idurl), timeout)
+
+    def jsonrpc_user_search(self, nickname):
+        return api.user_search(nickname)
+
+    def jsonrpc_message_send(self, recipient, message_body):
+        return api.message_send(recipient, message_body)
+
+    def jsonrpc_message_consumer_open(self, consumer_id):
+        return api.message_consumer_open(consumer_id)
+
+    def jsonrpc_message_consumer_close(self, consumer_id):
+        return api.message_consumer_close(consumer_id)
+
+    def jsonrpc_message_consumer_request(self, consumer_id):
+        return api.message_consumer_request(consumer_id)
+
+    def jsonrpc_receive_one_message(self):
+        return api.receive_one_message()
 
     def jsonrpc_send_message(self, recipient, message_body):
         return api.send_message(recipient, message_body)
 
-    def jsonrpc_receive_one_message(self):
-        return api.receive_one_message()
+#     def jsonrpc_list_messages(self):
+#         return api.list_messages()
 
 #     def jsonrpc_list_correspondents(self):
 #         return api.list_correspondents()

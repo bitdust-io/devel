@@ -75,6 +75,7 @@ from raid import eccmap
 
 from crypt import encrypted
 from crypt import key
+from crypt import my_keys
 
 from userid import global_id
 from userid import my_id
@@ -507,7 +508,10 @@ class Task():
         self.backupID = None
         self.result_defer = Deferred()
         parts = self.set_path_id(pathID)
-        self.set_key_id(keyID or parts['key_id'])
+        self.set_key_id(keyID or my_keys.make_key_id(
+            alias=(parts['key_id'] or 'master'),
+            creator_glob_id=parts['customer'],
+        ))
         self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)

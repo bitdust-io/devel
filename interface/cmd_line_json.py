@@ -405,6 +405,13 @@ def cmd_identity(opts, args, overDict, running):
             print_text('local identity is not exist')
         return 0
 
+    if args[0] in ['globid', 'globalid', 'gid', 'glid', ] or (args[0] == 'id' and len(args) <= 1):
+        if my_id.isLocalIdentityReady():
+            print_text(my_id.getGlobalID())
+        else:
+            print_text('local identity is not exist')
+        return 0
+
     if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print']:
         if my_id.isLocalIdentityReady():
             print_text(my_id.getLocalIdentity().serialize())
@@ -929,6 +936,7 @@ def cmd_customers(opts, args, overDict):
 
 def cmd_storage(opts, args, overDict):
     if len(args) < 2:
+        from twisted.internet import reactor
 
         def _got_local(result3, result2, result1):
             result = {
@@ -1009,20 +1017,22 @@ def cmd_services(opts, args, overDict):
 
 def cmd_message(opts, args, overDict):
     from twisted.internet import reactor
+    from logs import lg
     #     if len(args) < 2 or args[1] == 'list':
     #         tpl = jsontemplate.Template(templ.TPL_RAW)
     #         return call_jsonrpc_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in ['send', 'to', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3])
+        return call_jsonrpc_method_template_and_stop('message_send', tpl, args[2], args[3])
+
     if len(args) < 2 or args[1] in ['listen', 'read', ]:
         from chat import terminal_chat
 
         def _send_message(to, msg):
-            return call_jsonrpc_method('send_message', to, msg)
+            return call_jsonrpc_method('message_send', to, msg)
 
         def _search_user(inp):
-            return call_jsonrpc_method('find_peer_by_nickname', inp)
+            return call_jsonrpc_method('user_search', inp)
 
         terminal_chat.init(
             do_send_message_func=_send_message,
@@ -1030,35 +1040,53 @@ def cmd_message(opts, args, overDict):
         )
         errors = []
 
+        def _stop(x=None):
+            reactor.callInThread(terminal_chat.stop)
+            reactor.stop()
+            return True
+
         def _error(x):
             if str(x).count('ResponseNeverReceived'):
                 return x
             errors.append(str(x))
-            reactor.callInThread(terminal_chat.stop)
+            _close()
             return x
 
-        def _next_message(x=None):
+        def _consume(x=None):
             if x:
                 if x['status'] != 'OK':
                     if 'errors' in x:
                         errors.extend(x['errors'])
-                    reactor.callInThread(terminal_chat.stop)
+                    _close()
                     return x
-                else:
-                    terminal_chat.on_incoming_message(x)
+                for msg in x['result']:
+                    terminal_chat.on_incoming_message(msg)
 
-            d = call_jsonrpc_method('receive_one_message')
-            d.addCallback(_next_message)
+            d = call_jsonrpc_method('message_consumer_request', 'terminal_chat')
+            d.addCallback(_consume)
             d.addErrback(_error)
             return x
 
-        _next_message()
+        def _open():
+            d = call_jsonrpc_method('message_consumer_open', 'terminal_chat')
+            d.addCallback(lambda _: _consume())
+            d.addErrback(_error)
+            return d
+
+        def _close():
+            d = call_jsonrpc_method('message_consumer_close', 'terminal_chat')
+            d.addCallback(_stop)
+            d.addErrback(lambda err: lg.err('message_consumer_close() failed: %s' % err))
+            return d
+
+        _open()
         reactor.callInThread(terminal_chat.run)
         reactor.run()
         terminal_chat.shutdown()
         if len(errors):
             print '\n'.join(errors)
         return 0
+
     return 2
 
 #------------------------------------------------------------------------------
@@ -1271,7 +1299,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     overDict = override_options(opts, args)
 
     #---identity---
-    if cmd in ['identity', 'id', 'idurl', ]:
+    if cmd in ['identity', 'id', 'idurl', 'globalid', 'globid', 'glid', 'gid', ]:
         return cmd_identity(opts, args, overDict, running)
 
     #---key---

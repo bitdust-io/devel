@@ -102,7 +102,7 @@ def stop():
 
         {'status': 'OK', 'result': 'stopped'}
     """
-    lg.out(2, 'api.stop sending event "stop" to the shutdowner() machine')
+    lg.out(4, 'api.stop sending event "stop" to the shutdowner() machine')
     from main import shutdowner
     shutdowner.A('stop', 'exit')
     return OK('stopped')
@@ -119,10 +119,10 @@ def restart(showgui=False):
     """
     from main import shutdowner
     if showgui:
-        lg.out(2, 'api.restart forced for GUI, added param "show", sending event "stop" to the shutdowner() machine')
+        lg.out(4, 'api.restart forced for GUI, added param "show", sending event "stop" to the shutdowner() machine')
         shutdowner.A('stop', 'restartnshow')
         return OK('restarted with GUI')
-    lg.out(2, 'api.restart did not found bpgui process nor forced for GUI, just do the restart, sending event "stop" to the shutdowner() machine')
+    lg.out(4, 'api.restart did not found bpgui process nor forced for GUI, just do the restart, sending event "stop" to the shutdowner() machine')
     shutdowner.A('stop', 'restart')
     return OK('restarted')
 
@@ -139,7 +139,7 @@ def reconnect():
     if not driver.is_started('service_network'):
         return ERROR('service_network() is not started')
     from p2p import network_connector
-    lg.out(2, 'api.reconnect')
+    lg.out(4, 'api.reconnect')
     network_connector.A('reconnect')
     return OK('reconnected')
 
@@ -315,8 +315,16 @@ def key_get(key_id, include_private=False):
         return ERROR('icorrect key_id format')
     key_object = my_keys.known_keys().get(key_id)
     if not key_object:
-        key_id_form_1 = my_keys.make_key_id(key_alias, creator_idurl, output_format=global_id._FORMAT_GLOBAL_ID_KEY_USER)
-        key_id_form_2 = my_keys.make_key_id(key_alias, creator_idurl, output_format=global_id._FORMAT_GLOBAL_ID_USER_KEY)
+        key_id_form_1 = my_keys.make_key_id(
+            alias=key_alias,
+            creator_idurl=creator_idurl,
+            output_format=global_id._FORMAT_GLOBAL_ID_KEY_USER,
+        )
+        key_id_form_2 = my_keys.make_key_id(
+            alias=key_alias,
+            creator_idurl=creator_idurl,
+            output_format=global_id._FORMAT_GLOBAL_ID_USER_KEY,
+        )
         key_object = my_keys.known_keys().get(key_id_form_1)
         if key_object:
             key_id = key_id_form_1
@@ -742,13 +750,14 @@ def file_create(remote_path, as_folder=False):
         if not backup_fs.IsDir(parent_path, iter=backup_fs.fs(parts['idurl'])):
             if backup_fs.IsFile(parent_path, iter=backup_fs.fs(parts['idurl'])):
                 return ERROR('remote path can not be assigned, file already exist: "%s"' % parent_path)
-            backup_fs.AddDir(
+            parentPathID, parent_iter, parent_iterID = backup_fs.AddDir(
                 parent_path,
                 read_stats=False,
                 iter=backup_fs.fs(parts['idurl']),
                 iterID=backup_fs.fsID(parts['idurl']),
                 key_id=parts['key_id'],
             )
+            lg.out(4, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
         iter_and_iterID = backup_fs.GetIteratorsByPath(
             parent_path,
             iter=backup_fs.fs(parts['idurl']),
@@ -766,28 +775,6 @@ def file_create(remote_path, as_folder=False):
         newPathID = backup_fs.ToID(path)
         if not newPathID:
             return ERROR('remote path can not be assigned, failed to create a new item: "%s"' % path)
-#         iter_and_iterID = backup_fs.GetIteratorsByPath(
-#             parent_path,
-#             iter=backup_fs.fs(parts['idurl']),
-#             iterID=backup_fs.fsID(parts['idurl']),
-#         )
-#         if iter_and_iterID is None:
-#             _, parent_iter, parent_iterID = backup_fs.AddDir(
-#                 parent_path,
-#                 read_stats=False,
-#                 iter=backup_fs.fs(parts['idurl']),
-#                 iterID=backup_fs.fsID(parts['idurl']),
-#                 key_id=parts['key_id'],
-#             )
-#         else:
-#             parent_iter, parent_iterID = iter_and_iterID
-#         newPathID, _, _ = backup_fs.PutItem(
-#             name=os.path.basename(path),
-#             as_folder=as_folder,
-#             iter=parent_iter,
-#             iterID=parent_iterID,
-#             key_id=parts['key_id'],
-#         )
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
     lg.out(4, 'api.file_create %s with %s' % (global_id.MakeGlobalID(**parts), newPathID))
@@ -825,8 +812,7 @@ def file_delete(remote_path):
     if not packetid.Valid(pathID):
         return ERROR('invalid item found: "%s"' % pathID)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
-    result = backup_control.DeletePathBackups(
-        pathIDfull, saveDB=False, calculate=False)
+    result = backup_control.DeletePathBackups(pathID=pathIDfull, saveDB=False, calculate=False)
     if not result:
         return ERROR('remote item "%s" was not found' % pathIDfull)
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathIDfull)
@@ -921,6 +907,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     from lib import packetid
     from web import control
     from userid import global_id
+    from crypt import my_keys
     if not bpio.pathExist(local_path):
         return ERROR('local file or folder "%s" not exist' % local_path)
     parts = global_id.NormalizeGlobalID(remote_path)
@@ -933,7 +920,11 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
     if wait_result:
         d = Deferred()
-        tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key_id'])
+        tsk = backup_control.StartSingle(
+            pathID=pathIDfull,
+            localPath=local_path,
+            keyID=my_keys.make_key_id(alias=parts['key_id'], creator_glob_id=parts['customer']),
+        )
         tsk.result_defer.addCallback(lambda backupID, result: d.callback(OK(
             'item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
             extra_fields={
@@ -952,7 +943,11 @@ def file_upload_start(local_path, remote_path, wait_result=True):
         control.request_update([('pathID', pathIDfull), ])
         lg.out(4, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
         return d
-    tsk = backup_control.StartSingle(pathIDfull, local_path, keyID=parts['key_id'])
+    tsk = backup_control.StartSingle(
+        pathID=pathIDfull,
+        localPath=local_path,
+        keyID=my_keys.make_key_id(alias=parts['key_id'], creator_glob_id=parts['customer']),
+    )
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathIDfull), ])
@@ -1886,6 +1881,59 @@ def ping(idurl, timeout=10):
             ERROR(err.getErrorMessage())))
     return result
 
+def user_ping(idurl, timeout=10):
+    """
+    Sends Identity packet to remote peer and wait for Ack packet to check connection status.
+    The "ping" command performs following actions:
+
+      1. Request remote identity source by idurl,
+      2. Sends my Identity to remote contact addresses, taken from identity,
+      3. Wait first Ack packet from remote peer,
+      4. Failed by timeout or identity fetching error.
+
+    You can use this method to check and be sure that remote node is alive at the moment.
+
+    Return:
+
+        {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
+    """
+    if not driver.is_started('service_identity_propagate'):
+        return succeed(ERROR('service_identity_propagate() is not started'))
+    from p2p import propagate
+    result = Deferred()
+    d = propagate.PingContact(idurl, int(timeout))
+    d.addCallback(
+        lambda resp: result.callback(
+            OK(str(resp))))
+    d.addErrback(
+        lambda err: result.callback(
+            ERROR(err.getErrorMessage())))
+    return result
+
+def user_search(nickname):
+    """
+    Starts nickname_observer() Automat to lookup existing nickname registered
+    in DHT network.
+    """
+    if not driver.is_started('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from chat import nickname_observer
+    nickname_observer.stop_all()
+    ret = Deferred()
+
+    def _result(result, nik, pos, idurl):
+        return ret.callback(RESULT([{
+            'result': result,
+            'nickname': nik,
+            'position': pos,
+            'idurl': idurl,
+        }]))
+    nickname_observer.find_one(nickname,
+                               results_callback=_result)
+    # nickname_observer.observe_many(nickname,
+    # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
+    return ret
+
 #------------------------------------------------------------------------------
 
 
@@ -2008,15 +2056,141 @@ def receive_one_message():
     from chat import message
     ret = Deferred()
 
-    def _message_received(packet, text):
+    def _message_received(request, private_message_object, decrypted_message_body):
         ret.callback(OK({
-            'message': text,
-            'from': packet.OwnerID,
+            'message': decrypted_message_body,
+            'recipient': private_message_object.recipient,
+            'decrypted': bool(private_message_object.encrypted_session),
+            'from': request.OwnerID,
         }))
         message.RemoveIncomingMessageCallback(_message_received)
         return True
 
     message.AddIncomingMessageCallback(_message_received)
+    return ret
+
+#------------------------------------------------------------------------------
+
+def message_send(recipient, message_body):
+    """
+    Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
+
+    Return:
+
+        {'status': 'OK', 'result': ['signed.Packet[Message(146681300413)]']}
+    """
+    if not driver.is_started('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from chat import message
+    from userid import global_id
+    from crypt import my_keys
+    if not recipient.count('@'):
+        from contacts import contactsdb
+        recipient_idurl = contactsdb.find_correspondent_by_nickname(recipient)
+        if not recipient_idurl:
+            return ERROR('recipient not found')
+        recipient = global_id.UrlToGlobalID(recipient_idurl)
+    glob_id = global_id.ParseGlobalID(recipient)
+    if not glob_id['idurl']:
+        return ERROR('wrong recipient')
+    if not glob_id['key_id']:
+        glob_id['key_id'] = 'master'
+    target_glob_id = global_id.MakeGlobalID(**glob_id)
+    if not my_keys.is_valid_key_id(target_glob_id):
+        return ERROR('invalid key_id: %s' % target_glob_id)
+#     if not my_keys.is_key_registered(target_glob_id):
+#         return ERROR('unknown key_id: %s' % target_glob_id)
+    lg.out(4, 'api.message_send to "%s" with %d bytes' % (target_glob_id, len(message_body)))
+    result = message.SendMessage(
+        message_body=message_body,
+        recipient_global_id=target_glob_id,
+    )
+    if isinstance(result, Deferred):
+        ret = Deferred()
+        result.addCallback(
+            lambda packet: ret.callback(
+                OK(str(packet.outpacket))))
+        result.addErrback(
+            lambda err: ret.callback(
+                ERROR(err.getErrorMessage())))
+        return ret
+    return OK(str(result.outpacket))
+
+
+def message_consumer_open(consumer_id):
+    """
+    """
+    if not driver.is_started('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from chat import message
+    if not message.start_consuming(consumer_id):
+        return ERROR('consumer "%s" already started' % consumer_id)
+    lg.out(4, 'api.message_consumer_open "%s"' % consumer_id)
+    return OK({'consumer_id': consumer_id})
+
+
+def message_consumer_close(consumer_id):
+    """
+    """
+    if not driver.is_started('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from chat import message
+    if not message.stop_consuming(consumer_id):
+        return ERROR('consumer "%s" not found' % consumer_id)
+    lg.out(4, 'api.message_consumer_close "%s"' % consumer_id)
+    return OK({'consumer_id': consumer_id})
+
+
+def message_consumer_request(consumer_id):
+    """
+    This method can be used to listen and process incoming chat messages by specific consumer.
+    If there are no messages received yet, this method will be waiting for any incomings.
+    If some messages was already received, but not "collected" method will return them imediately.
+    After you got response and processed the messages you can call this method again to listen
+    for incomings again. This is simillar to message queue polling interface.
+
+    Return:
+
+        {'status': 'OK',
+         'result': [{
+            'type': 'private_message',
+            'dir': 'incoming',
+            'id': '123456788',
+            'sender': 'abc$alice@first-host.com',
+            'recipient': 'abc$bob@second-host.net',
+            'message': 'Hello World!',
+            'time': 123456789
+        }]}
+    """
+    if not driver.is_started('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from chat import message
+    if consumer_id not in message.consumers_callbacks():
+        return ERROR('consumer "%s" was not opened' % consumer_id)
+
+    ret = Deferred()
+
+    def _on_pending_messages(pending_messages):
+        result = []
+        for msg in pending_messages:
+            if msg['type'] != 'private_message':
+                continue
+            result.append({
+                'message': msg['body'],
+                'recipient': msg['to'],
+                'sender': msg['from'],
+                'time': msg['time'],
+                'id': msg['id'],
+                'dir': msg['dir'],
+            })
+        lg.out(4, 'api.message_consumer_request._on_pending_messages returning : %s' % result)
+        ret.callback(OK(result))
+        return len(result) > 0
+
+    d = message.consume_message(consumer_id)
+    d.addCallback(_on_pending_messages)
+    d.addErrback(ret.errback)
+    lg.out(4, 'api.message_consumer_request "%s"' % consumer_id)
     return ret
 
 #------------------------------------------------------------------------------

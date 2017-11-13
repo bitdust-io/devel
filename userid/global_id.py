@@ -61,6 +61,11 @@ def MakeGlobalID(
     out = ''
     if customer:
         idurl = GlobalUserToIDURL(customer)
+        if customer.count('$'):
+            key_id, _, _ = customer.rpartition('$')
+        if customer.count('!'):
+            user_and_key, _, _ = customer.rpartition('@')
+            _, _, key_id = user_and_key.rpartition('!')
     if idurl:
         from lib import nameurl
         _, idhost, port, filename = nameurl.UrlParse(idurl)

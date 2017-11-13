@@ -7838,7 +7838,7 @@ class MonitorTransportsPage(Page):
 #                    src += '<td nowrap>%s:%d</td>' % session.remote_address
 #                    src += '<td nowrap>%s</td>' % session.state
 #                    src += '<td nowrap>%d/%d</td>' % (
-#                        len(session.incommingFiles), len(session.outgoingFiles))
+#                        len(session.incomingFiles), len(session.outgoingFiles))
 #                    src += '</tr>\n'
 #                src += '</table>\n'
 #        src += '</td>\n'

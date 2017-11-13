@@ -330,14 +330,20 @@ class backup(automat.Automat):
                 lg.out(_DebugLevel, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s EncryptKey=%s' % (
                     self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time() - dt), self.keyID))
             return block
-        maybeDeferred(_doBlock).addCallback(
-            lambda block: self.automat('block-encrypted', block),)
+        d = maybeDeferred(_doBlock)
+        d.addCallback(lambda block: self.automat('block-encrypted', block))
+        d.addErrback(lambda err: self.automat('block-encrypted', None))
 
     def doBlockPushAndRaid(self, arg):
         """
         Action method.
         """
         newblock = arg
+        if newblock is None:
+            self.automat('block-raid-done', (newblock.BlockNumber, None))
+            lg.out(_DebugLevel, 'backup.doBlockPushAndRaid ERROR, terminating=True')
+            lg.warn('failed to encrypt block %s, ABORTING' % newblock.BlockNumber)
+            return
         if self.terminating:
             self.automat('block-raid-done', (newblock.BlockNumber, None))
             lg.out(_DebugLevel, 'backup.doBlockPushAndRaid SKIP, terminating=True')

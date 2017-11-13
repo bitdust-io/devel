@@ -101,7 +101,7 @@ def is_key_registered(key_id, include_master=True):
     return key_id in known_keys()
 
 
-def make_key_id(alias, creator_idurl=None, output_format=None):
+def make_key_id(alias, creator_idurl=None, creator_glob_id=None, output_format=None):
     """
     Every key has a creator, and we include his IDURL in the final key_id string.
     Here is a global unique address to a remote copy of `cat.png` file:
@@ -119,6 +119,11 @@ def make_key_id(alias, creator_idurl=None, output_format=None):
     By knowing full key_id we can find and connect to the correct node(s)
     who is supporting that resource.
     """
+    if creator_glob_id is not None:
+        return global_id.MakeGlobalID(
+            customer=creator_glob_id,
+            key_id=alias,
+        )
     if creator_idurl is None:
         creator_idurl = my_id.getLocalID()
     return global_id.MakeGlobalID(

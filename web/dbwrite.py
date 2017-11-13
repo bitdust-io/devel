@@ -101,7 +101,7 @@ def update_friends(old_friends_list, friends_list):
 #------------------------------------------------------------------------------
 
 
-def incoming_message(request, message_text):
+def incoming_message(request, priv_message_object, message_text):
     lg.out(6, 'dbwrite.incoming_message of %d bytes, type=%s' %
            (len(message_text), type(message_text)))
     from django.shortcuts import get_object_or_404
