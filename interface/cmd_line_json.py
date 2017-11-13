@@ -357,7 +357,7 @@ def cmd_deploy(opts, args, overDict):
     requirements_txt = os.path.join(source_dir, 'requirements.txt')
     venv_bin_pip = os.path.join(venv_path, 'bin', 'pip')
     print_text('Install BitDust requirements from "%s" using "%s"' % (requirements_txt, venv_path))
-    status = os.system('{} install -r "{}"'.format(venv_bin_pip, source_dir))
+    status = os.system('{} install -r "{}"'.format(venv_bin_pip, requirements_txt))
     if status != 0:
         depends = [
             'git',
