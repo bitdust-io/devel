@@ -508,10 +508,7 @@ class Task():
         self.backupID = None
         self.result_defer = Deferred()
         parts = self.set_path_id(pathID)
-        self.set_key_id(keyID or my_keys.make_key_id(
-            alias=(parts['key_id'] or 'master'),
-            creator_glob_id=parts['customer'],
-        ))
+        self.set_key_id(keyID or my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer']))
         self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)

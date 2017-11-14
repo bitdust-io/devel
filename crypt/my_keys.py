@@ -96,7 +96,7 @@ def is_key_registered(key_id, include_master=True):
     """
     Returns True if this key is known.
     """
-    if include_master and key_id == global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_id='master'):
+    if include_master and key_id == global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias='master'):
         return True
     return key_id in known_keys()
 
@@ -119,16 +119,18 @@ def make_key_id(alias, creator_idurl=None, creator_glob_id=None, output_format=N
     By knowing full key_id we can find and connect to the correct node(s)
     who is supporting that resource.
     """
+    if not alias:
+        alias = 'master'
     if creator_glob_id is not None:
         return global_id.MakeGlobalID(
             customer=creator_glob_id,
-            key_id=alias,
+            key_alias=alias,
         )
     if creator_idurl is None:
         creator_idurl = my_id.getLocalID()
     return global_id.MakeGlobalID(
         idurl=creator_idurl,
-        key_id=alias,
+        key_alias=alias,
     )
 
 def split_key_id(key_id):
@@ -143,31 +145,31 @@ def split_key_id(key_id):
         "secret_key_xyz", "http://remote-server.net/bob.xml"
     """
     parts = global_id.ParseGlobalID(key_id)
-    if not parts['key_id'] or not parts['idurl']:
+    if not parts['key_alias'] or not parts['idurl']:
         return None, None
-    return parts['key_id'], parts['idurl']
+    return parts['key_alias'], parts['idurl']
 
 def is_valid_key_id(global_key_id):
     """
     """
     parts = global_id.ParseGlobalID(global_key_id)
-    if not parts['key_id']:
-        lg.warn('no key_id found in the input')
+    if not parts['key_alias']:
+        lg.warn('no key_alias found in the input')
         return False
     if not parts['idurl']:
         lg.warn('no idurl found in the input')
         return False
-    key_id = parts['key_id']
-    if len(key_id) > settings.MaximumUsernameLength():
-        lg.warn("key_id too long: %d" % len(key_id))
+    key_alias = parts['key_alias']
+    if len(key_alias) > settings.MaximumUsernameLength():
+        lg.warn("key_alias too long: %d" % len(key_alias))
         return False
-    if len(key_id) < settings.MinimumUsernameLength():
-        lg.warn("key_id too short: %d" % len(key_id))
+    if len(key_alias) < settings.MinimumUsernameLength():
+        lg.warn("key_alias too short: %d" % len(key_alias))
         return False
     pos = 0
-    for c in key_id:
+    for c in key_alias:
         if c not in settings.LegalUsernameChars():
-            lg.warn("key_id has illegal character at position: %d" % pos)
+            lg.warn("key_alias has illegal character at position: %d" % pos)
             return False
         pos += 1
     return True
@@ -221,9 +223,9 @@ def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh')
     """
     """
     if key_id in known_keys():
-        lg.warn('key %s already exists' % key_id)
+        lg.warn('key "%s" already exists' % key_id)
         return None
-    lg.out(4, 'my_keys.generate_key %s of %d bits' % (key_id, key_size))
+    lg.out(4, 'my_keys.generate_key "%s" of %d bits' % (key_id, key_size))
     rsa_key = RSA.generate(key_size, os.urandom)
     key_object = keys.Key(rsa_key)
     known_keys()[key_id] = key_object

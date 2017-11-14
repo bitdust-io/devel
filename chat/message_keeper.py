@@ -75,7 +75,7 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 def messages_key_id():
-    return global_id.MakeGlobalID(key_id='messages', customer=my_id.getGlobalID())
+    return global_id.MakeGlobalID(key_alias='messages', customer=my_id.getGlobalID())
 
 #------------------------------------------------------------------------------
 

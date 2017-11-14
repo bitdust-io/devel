@@ -445,6 +445,8 @@ def key_create(key_alias, key_size=4096, include_private=False):
     # TODO: add validation for key_alias
     key_alias = key_alias.strip().lower()
     key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getLocalID())
+    if my_keys.is_key_registered(key_id):
+        return ERROR('key "%s" already exist' % key_id)
     lg.out(4, 'api.key_create id=%s, size=%s' % (key_id, key_size))
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:
@@ -488,7 +490,7 @@ def key_erase(key_id):
     return OK(message='private key "%s" was erased successfully' % key_alias)
 
 
-def key_share(full_key_id, idurl):
+def key_share(key_id, idurl):
     """
     Connect to remote node identified by `idurl` parameter and transfer private key `key_id` to that machine.
     This way remote user will be able to access those of your files which were encrypted with that private key.
@@ -496,16 +498,15 @@ def key_share(full_key_id, idurl):
     Returns:
 
     """
-    from crypt import my_keys
     from userid import global_id
-    full_key_id = str(full_key_id)
+    full_key_id = str(key_id)
     idurl = str(idurl)
     if not driver.is_started('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
     glob_id = global_id.ParseGlobalID(full_key_id)
-    if glob_id['key_id'] == 'master':
+    if glob_id['key_alias'] == 'master':
         return ERROR('"master" key can not be shared')
-    if not glob_id['key_id'] or not glob_id['idurl']:
+    if not glob_id['key_alias'] or not glob_id['idurl']:
         return ERROR('icorrect key_id format')
     from access import key_ring
     result = Deferred()
@@ -587,6 +588,8 @@ def files_list(remote_path=None):
     from storage import backup_fs
     from system import bpio
     from userid import global_id
+    from userid import my_id
+    from crypt import my_keys
     glob_path = global_id.ParseGlobalID(remote_path)
     norm_path = global_id.NormalizeGlobalID(glob_path.copy())
     remotePath = bpio.remotePath(norm_path['path'])
@@ -602,9 +605,9 @@ def files_list(remote_path=None):
         glob_path_child = norm_path.copy()
         glob_path_child['path'] = i['path']
         if not i['item']['k']:
-            i['item']['k'] = 'master'
-        if glob_path['key_id'] and i['item']['k']:
-            if i['item']['k'] != glob_path['key_id']:
+            i['item']['k'] = my_id.getGlobalID(key_alias='master')
+        if glob_path['key_alias'] and i['item']['k']:
+            if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):
                 continue
         result.append({
             'glob_id': global_id.MakeGlobalID(**glob_path_child),
@@ -730,11 +733,13 @@ def file_create(remote_path, as_folder=False):
     from system import bpio
     from web import control
     from userid import global_id
+    from crypt import my_keys
     parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if not parts['path']:
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
+    keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     if pathID:
         return ERROR('remote path "%s" already exist in catalog: "%s"' % (path, pathID))
     if as_folder:
@@ -743,7 +748,7 @@ def file_create(remote_path, as_folder=False):
             read_stats=False,
             iter=backup_fs.fs(parts['idurl']),
             iterID=backup_fs.fsID(parts['idurl']),
-            key_id=parts['key_id'],
+            key_id=keyID,
         )
     else:
         parent_path = os.path.dirname(path)
@@ -755,7 +760,7 @@ def file_create(remote_path, as_folder=False):
                 read_stats=False,
                 iter=backup_fs.fs(parts['idurl']),
                 iterID=backup_fs.fsID(parts['idurl']),
-                key_id=parts['key_id'],
+                key_id=keyID,
             )
             lg.out(4, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
         iter_and_iterID = backup_fs.GetIteratorsByPath(
@@ -770,7 +775,7 @@ def file_create(remote_path, as_folder=False):
             as_folder=as_folder,
             iter=iter_and_iterID[0],
             iterID=iter_and_iterID[1],
-            key_id=parts['key_id'],
+            key_id=keyID,
         )
         newPathID = backup_fs.ToID(path)
         if not newPathID:
@@ -782,8 +787,7 @@ def file_create(remote_path, as_folder=False):
         'new %s "%s" was added at remote path "%s"' % (('folder' if as_folder else 'file'), newPathID, path),
         extra_fields={
             'id': newPathID,
-            'key_id': parts['key_id'],
-            'customer': parts['idurl'],
+            'key_id': keyID,
             'path': path,
             'type': ('dir' if as_folder else 'file'),
         })
@@ -823,7 +827,7 @@ def file_delete(remote_path):
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
     lg.out(4, 'api.file_delete %s' % parts)
-    return OK('item "%s" was deleted from remote peers' % pathIDfull)
+    return OK('item "%s" was deleted from remote suppliers' % pathIDfull)
 
 
 def files_uploads(include_running=True, include_pending=True):
@@ -915,6 +919,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
+    keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     if not pathID:
         return ERROR('path "%s" not registered yet' % path)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
@@ -923,7 +928,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
         tsk = backup_control.StartSingle(
             pathID=pathIDfull,
             localPath=local_path,
-            keyID=my_keys.make_key_id(alias=parts['key_id'], creator_glob_id=parts['customer']),
+            keyID=keyID,
         )
         tsk.result_defer.addCallback(lambda backupID, result: d.callback(OK(
             'item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
@@ -946,7 +951,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     tsk = backup_control.StartSingle(
         pathID=pathIDfull,
         localPath=local_path,
-        keyID=my_keys.make_key_id(alias=parts['key_id'], creator_glob_id=parts['customer']),
+        keyID=keyID,
     )
     backup_fs.Calculate()
     backup_control.Save()
@@ -1011,7 +1016,7 @@ def files_downloads():
             'bytes_processed': 0,
             'creator_id': 'http://veselin-p2p.ru/veselin.xml',
             'done': False,
-            'key_id': 'abc',
+            'key_id': 'abc$veselin@veselin-p2p.ru',
             'created': 'Wed Apr 27 15:11:13 2016',
             'eccmap': 'ecc/4x4',
             'path_id': '0/0/3/1',
@@ -1039,7 +1044,7 @@ def files_downloads():
 
 def file_download_start(remote_path, destination_path=None, wait_result=False):
     """
-    Download data from remote peers to your local machine. You can use
+    Download data from remote suppliers to your local machine. You can use
     different methods to select the target data with `remote_path` input:
 
       + "remote path" of the file
@@ -1066,6 +1071,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
     from main import settings
     from userid import my_id
     from userid import global_id
+    from crypt import my_keys
     lg.out(4, 'api.file_download_start %s to %s, wait_result=%s' % (
         remote_path, destination_path, wait_result))
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
@@ -1136,12 +1142,12 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
 
         restore_monitor.Start(
             backupID, destination_path,
-            keyID=glob_path['key_id'],
+            keyID=my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']),
             callback=_on_result)
         control.request_update([('pathID', knownPath), ])
         lg.out(4, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
         return d
-    restore_monitor.Start(backupID, destination_path, keyID=glob_path['key_id'])
+    restore_monitor.Start(backupID, destination_path, keyID=my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']))
     control.request_update([('pathID', knownPath), ])
     lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
     return OK(
@@ -2009,8 +2015,8 @@ def send_message(recipient, message_body):
     glob_id = global_id.ParseGlobalID(recipient)
     if not glob_id['idurl']:
         return ERROR('wrong recipient')
-    if not glob_id['key_id']:
-        glob_id['key_id'] = 'master'
+    if not glob_id['key_alias']:
+        glob_id['key_alias'] = 'master'
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
@@ -2093,8 +2099,8 @@ def message_send(recipient, message_body):
     glob_id = global_id.ParseGlobalID(recipient)
     if not glob_id['idurl']:
         return ERROR('wrong recipient')
-    if not glob_id['key_id']:
-        glob_id['key_id'] = 'master'
+    if not glob_id['key_alias']:
+        glob_id['key_alias'] = 'master'
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
@@ -2164,7 +2170,7 @@ def message_receive(consumer_id):
 
     d = message.consume_messages(consumer_id)
     d.addCallback(_on_pending_messages)
-    d.addErrback(ret.errback)
+    d.addErrback(lambda err: ret.callback(ERROR(str(err))))
     lg.out(4, 'api.message_consumer_request "%s"' % consumer_id)
     return ret
 

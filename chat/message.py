@@ -205,7 +205,7 @@ class PrivateMessage:
                 encrypt_session_func = lambda inp: my_keys.encrypt(self.recipient, inp)
         if not encrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
-            if glob_id['key_id'] == 'master':
+            if glob_id['key_alias'] == 'master':
                 if glob_id['idurl'] == my_id.getLocalID():
                     lg.warn('making private message addressed to me ???')
                     if _Debug:
@@ -219,7 +219,7 @@ class PrivateMessage:
                         lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with remote identity public key')
                     encrypt_session_func = remote_identity.encrypt
             else:
-                own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_id=glob_id['key_id'])
+                own_key = global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias=glob_id['key_alias'])
                 if my_keys.is_key_registered(own_key):
                     if _Debug:
                         lg.out(_DebugLevel, 'message.PrivateMessage.encrypt with "%s" key' % own_key)
@@ -239,7 +239,7 @@ class PrivateMessage:
         if not decrypt_session_func:
             glob_id = global_id.ParseGlobalID(self.recipient)
             if glob_id['idurl'] == my_id.getLocalID():
-                if glob_id['key_id'] == 'master':
+                if glob_id['key_alias'] == 'master':
                     if _Debug:
                         lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "master" key')
                     decrypt_session_func = lambda inp: my_keys.decrypt('master', inp)
@@ -286,8 +286,11 @@ def on_incoming_message(request, info, status, error_message):
     received_messages_ids().add(request.PacketID)
     from p2p import p2p_service
     p2p_service.SendAck(request)
-    for cb in _IncomingMessageCallbacks:
-        cb(request, private_message_object, decrypted_message)
+    try:
+        for cb in _IncomingMessageCallbacks:
+            cb(request, private_message_object, decrypted_message)
+    except:
+        lg.exc()
     return True
 
 #------------------------------------------------------------------------------
@@ -328,8 +331,11 @@ def send_message(message_body, recipient_global_id, packet_id=None):
         remote_idurl,
     )
     result = gateway.outbox(outpacket, wide=True)
-    for cp in _OutgoingMessageCallbacks:
-        cp(message_body, private_message_object, remote_identity, outpacket, result)
+    try:
+        for cp in _OutgoingMessageCallbacks:
+            cp(message_body, private_message_object, remote_identity, outpacket, result)
+    except:
+        lg.exc()
     return result
 
 #------------------------------------------------------------------------------

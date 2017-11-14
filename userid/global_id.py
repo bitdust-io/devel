@@ -35,10 +35,10 @@ import re
 
 #------------------------------------------------------------------------------
 
-_FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key_id}'
-_FORMAT_GLOBAL_ID_KEY_USER = '{key_id}${user}'
-_REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key_id>[a-z0-9-_]+)$'
-_REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_id>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
+_FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key_alias}'
+_FORMAT_GLOBAL_ID_KEY_USER = '{key_alias}${user}'
+_REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key_alias>[a-z0-9-_]+)$'
+_REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_alias>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
 
 #------------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ def MakeGlobalID(
     user=None,
     idhost=None,
     customer=None,
-    key_id=None,
+    key_alias=None,
     path=None,
     version=None,
 ):
@@ -62,18 +62,18 @@ def MakeGlobalID(
     if customer:
         idurl = GlobalUserToIDURL(customer)
         if customer.count('$'):
-            key_id, _, _ = customer.rpartition('$')
+            key_alias, _, _ = customer.rpartition('$')
         if customer.count('!'):
             user_and_key, _, _ = customer.rpartition('@')
-            _, _, key_id = user_and_key.rpartition('!')
+            _, _, key_alias = user_and_key.rpartition('!')
     if idurl:
         from lib import nameurl
         _, idhost, port, filename = nameurl.UrlParse(idurl)
         if port:
             idhost += '_' + str(port)
         user = filename.strip()[0:-4]
-    if key_id:
-        out = output_format.format(user=user, key_id=key_id)
+    if key_alias:
+        out = output_format.format(user=user, key_alias=key_alias)
     else:
         out = user
     out += '@{}'.format(idhost)
@@ -96,7 +96,7 @@ def ParseGlobalID(inp, detect_version=False):
 
         {
             "user": "alice",
-            "key_id": "group_abc",
+            "key_alias": "group_abc",
             "idhost": "first-machine.com",
             "customer": "alice@first-machine.com",
             "idurl": "http://first-machine.com/alice.xml",
@@ -112,7 +112,7 @@ def ParseGlobalID(inp, detect_version=False):
 
         {
             "user": "alice",
-            "key_id": "group_abc",
+            "key_alias": "group_abc",
             "idhost": "first-machine.com",
             "customer": "alice@first-machine.com",
             "idurl": "http://first-machine.com/alice.xml",
@@ -122,7 +122,7 @@ def ParseGlobalID(inp, detect_version=False):
     """
     result = {
         "user": "",
-        "key_id": "",
+        "key_alias": "",
         "idhost": "",
         "customer": "",
         "idurl": "",
@@ -150,7 +150,7 @@ def ParseGlobalID(inp, detect_version=False):
                 user_key = re.match(_REGEX_GLOBAL_ID_KEY_USER, user_and_key)
             if user_key:
                 result['user'] = user_key.group('user')
-                result['key_id'] = user_key.group('key_id')
+                result['key_alias'] = user_key.group('key_alias')
             else:
                 result['user'] = user_and_key
         except:
@@ -199,8 +199,8 @@ def NormalizeGlobalID(inp, detect_version=False):
         g['customer'] = UrlToGlobalID(g['idurl'])
     if not g['user']:
         g['user'] = g['customer'].split('@')[0]
-    if not g['key_id']:
-        g['key_id'] = 'master'
+    if not g['key_alias']:
+        g['key_alias'] = 'master'
     if not g['idhost']:
         from lib import nameurl
         g['idhost'] = nameurl.GetHost(g['idurl'])
@@ -212,7 +212,7 @@ def CanonicalID(inp, include_key=False):
     """
     parts = NormalizeGlobalID(ParseGlobalID(inp))
     if not include_key:
-        parts['key_id'] = ''
+        parts['key_alias'] = ''
     return MakeGlobalID(**parts)
 
 #------------------------------------------------------------------------------

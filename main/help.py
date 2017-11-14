@@ -57,10 +57,13 @@ Commands:
   set list
   file sync
   file list
+  file create <remote path>
+  file delete <remote path>
+  dir create <remote path>
+  dir delete <remote path>
   file upload <local path> <remote path>
   file download <remote path> <local path>
   file cancel <upload | download> <remote path>
-  file delete <remote path>
   file progress [upload | download]
   supplier list
   supplier replace <IDURL or position>
@@ -144,10 +147,24 @@ Commands:
 
   file list             show a list of known files and folders on remote peers
 
+  file create <remote path>
+                        creates "virtual" remote file in the catalog,
+                        "remote path" have such format in all commands:
+                        {key_alias}${user_name}@{id_host}:{remote_path}
+
+  file delete <remote path>
+                        remove give file from the catalog and remote suppliers
+
+  dir create <remote path>
+                        create "virtual" remote folder in the catalog
+
+  dir delete <remote path>
+                        erase folder and all sub-folders from the catalog
+                        and remote suppliers
+
   file upload <local path> <remote path>
-                        start uploading a file or folder to remote peers,
-                        "remote path" have such format:
-                        {key_id}${user_name}@{id_host}:{remote_path}
+                        start uploading a file or folder to remote suppliers,
+                        first you need to create "remote path" in the catalog
 
   file download <remote path> [local path]
                         download file or folder from remote peers to local drive
@@ -155,11 +172,6 @@ Commands:
 
   file cancel <upload | download> <remote path>
                         abort currently running file upload or download process
-
-  file delete <remote path>
-                        remove a file or folder (with all sub folders)
-                        from remote peers, "remote path" have such format:
-                        {key_id}${user_name}@{id_host}:{remote_path}
 
   file progress <upload | download>
                         show a list of currently running uploads or/and downloads

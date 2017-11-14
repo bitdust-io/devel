@@ -147,12 +147,15 @@ def getIDName():
     return _LocalName
 
 
-def getGlobalID():
+def getGlobalID(key_alias=None):
     """
     Return my global user id - according to my current IDURL.
     """
     from userid import global_id
-    return global_id.UrlToGlobalID(getLocalID())
+    glob_id = global_id.UrlToGlobalID(getLocalID())
+    if key_alias:
+        glob_id = '{}${}'.format(key_alias, glob_id)
+    return glob_id
 
 #------------------------------------------------------------------------------
 

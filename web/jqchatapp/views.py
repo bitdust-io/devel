@@ -183,7 +183,7 @@ class Ajax(object):
                         escape(msg_text))
                     key_id = 'master'  # self.ThisRoom.name or 'master'
                     recipient = global_id.MakeGlobalID(
-                        idurl=str(self.ThisRoom.idurl), key_id=key_id,
+                        idurl=str(self.ThisRoom.idurl), key_alias=key_id,
                     )
                     # recipient = '%s$%s' % (key_id, global_id.UrlToGlobalID(str(self.ThisRoom.idurl)))
                     from twisted.internet.defer import Deferred

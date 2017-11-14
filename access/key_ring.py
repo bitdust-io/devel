@@ -121,7 +121,7 @@ def transfer_private_key(key_id, idurl):
         result.errback(Exception(key_id))
         return result
     key_json = {
-        'id': key_id,
+        'key_id': key_id,
         'alias': key_alias,
         'creator': creator_idurl,
         'fingerprint': str(key_object.fingerprint()),
@@ -160,7 +160,7 @@ def on_private_key_received(newpacket, info, status, error_message):
     try:
         key_data = block.Data()
         key_json = json.loads(key_data)
-        key_id = str(key_json['id'])
+        key_id = str(key_json['key_id'])
         # key_alias = key_json['alias']
         # key_creator = key_json['creator']
         # key_owner = key_json['owner']
