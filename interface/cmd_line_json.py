@@ -339,7 +339,7 @@ def cmd_deploy(opts, args, overDict):
         venv_path = args[1]
     script_path = os.path.join(settings.BaseDir(), 'bitdust')
     if os.path.exists(venv_path):
-        print_text('Clean up of existing Python virtual environment in "%s"' % venv_path)
+        print_text('Clean up existing Python virtual environment in "%s"' % venv_path)
         status = os.system('rm -rf {}'.format(venv_path))
         if status != 0:
             print_text('\nClean up of existing virtual environment files failed!\n')
@@ -1056,7 +1056,7 @@ def cmd_message(opts, args, overDict):
             if str(x).count('ResponseNeverReceived'):
                 return x
             errors.append(str(x))
-            _close()
+            _stop()
             return x
 
         def _consume(x=None):
@@ -1064,29 +1064,17 @@ def cmd_message(opts, args, overDict):
                 if x['status'] != 'OK':
                     if 'errors' in x:
                         errors.extend(x['errors'])
-                    _close()
+                    _stop()
                     return x
                 for msg in x['result']:
                     terminal_chat.on_incoming_message(msg)
 
-            d = call_jsonrpc_method('message_consumer_request', 'terminal_chat')
+            d = call_jsonrpc_method('message_receive', 'terminal_chat')
             d.addCallback(_consume)
             d.addErrback(_error)
             return x
 
-        def _open():
-            d = call_jsonrpc_method('message_consumer_open', 'terminal_chat')
-            d.addCallback(lambda _: _consume())
-            d.addErrback(_error)
-            return d
-
-        def _close():
-            d = call_jsonrpc_method('message_consumer_close', 'terminal_chat')
-            d.addCallback(_stop)
-            d.addErrback(lambda err: lg.err('message_consumer_close() failed: %s' % err))
-            return d
-
-        _open()
+        _consume()
         reactor.callInThread(terminal_chat.run)
         reactor.run()
         terminal_chat.shutdown()

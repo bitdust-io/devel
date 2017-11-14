@@ -2016,7 +2016,7 @@ def send_message(recipient, message_body):
         return ERROR('invalid key_id: %s' % target_glob_id)
 #     if not my_keys.is_key_registered(target_glob_id):
 #         return ERROR('unknown key_id: %s' % target_glob_id)
-    result = message.SendMessage(
+    result = message.send_message(
         message_body=message_body,
         recipient_global_id=target_glob_id,
     )
@@ -2101,7 +2101,7 @@ def message_send(recipient, message_body):
 #     if not my_keys.is_key_registered(target_glob_id):
 #         return ERROR('unknown key_id: %s' % target_glob_id)
     lg.out(4, 'api.message_send to "%s" with %d bytes' % (target_glob_id, len(message_body)))
-    result = message.SendMessage(
+    result = message.send_message(
         message_body=message_body,
         recipient_global_id=target_glob_id,
     )
@@ -2117,37 +2117,15 @@ def message_send(recipient, message_body):
     return OK(str(result.outpacket))
 
 
-def message_consumer_open(consumer_id):
-    """
-    """
-    if not driver.is_started('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    from chat import message
-    if not message.start_consuming(consumer_id):
-        return ERROR('consumer "%s" already started' % consumer_id)
-    lg.out(4, 'api.message_consumer_open "%s"' % consumer_id)
-    return OK({'consumer_id': consumer_id})
-
-
-def message_consumer_close(consumer_id):
-    """
-    """
-    if not driver.is_started('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    from chat import message
-    if not message.stop_consuming(consumer_id):
-        return ERROR('consumer "%s" not found' % consumer_id)
-    lg.out(4, 'api.message_consumer_close "%s"' % consumer_id)
-    return OK({'consumer_id': consumer_id})
-
-
-def message_consumer_request(consumer_id):
+def message_receive(consumer_id):
     """
     This method can be used to listen and process incoming chat messages by specific consumer.
     If there are no messages received yet, this method will be waiting for any incomings.
-    If some messages was already received, but not "collected" method will return them imediately.
-    After you got response and processed the messages you can call this method again to listen
-    for incomings again. This is simillar to message queue polling interface.
+    If some messages was already received, but not "consumed" yet method will return them imediately.
+    After you got response and processed the messages you should call this method again to listen
+    for more incomings again. This is simillar to message queue polling interface.
+    If you do not "consume" messages, after 100 un-collected messages "consumer" will be dropped.
+    Both, incoming and outgoing, messages will be populated here.
 
     Return:
 
@@ -2165,9 +2143,6 @@ def message_consumer_request(consumer_id):
     if not driver.is_started('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import message
-    if consumer_id not in message.consumers_callbacks():
-        return ERROR('consumer "%s" was not opened' % consumer_id)
-
     ret = Deferred()
 
     def _on_pending_messages(pending_messages):
@@ -2187,7 +2162,7 @@ def message_consumer_request(consumer_id):
         ret.callback(OK(result))
         return len(result) > 0
 
-    d = message.consume_message(consumer_id)
+    d = message.consume_messages(consumer_id)
     d.addCallback(_on_pending_messages)
     d.addErrback(ret.errback)
     lg.out(4, 'api.message_consumer_request "%s"' % consumer_id)

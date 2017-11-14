@@ -71,6 +71,10 @@ from transport import gateway
 
 #------------------------------------------------------------------------------
 
+MAX_PENDING_MESSAGES_PER_CONSUMER = 100
+
+#------------------------------------------------------------------------------
+
 _ConsumersCallbacks = {}
 _ReceivedMessagesIDs = set()
 
@@ -261,8 +265,7 @@ class PrivateMessage:
 
 #------------------------------------------------------------------------------
 
-
-def Message(request):
+def on_incoming_message(request, info, status, error_message):
     """
     Message came in for us
     """
@@ -290,7 +293,7 @@ def Message(request):
 #------------------------------------------------------------------------------
 
 
-def SendMessage(message_body, recipient_global_id, packet_id=None):
+def send_message(message_body, recipient_global_id, packet_id=None):
     """
     Send command.Message() packet to remote peer.
     Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
@@ -303,11 +306,11 @@ def SendMessage(message_body, recipient_global_id, packet_id=None):
     # make sure we have remote identity cached
     if remote_identity is None:
         d = identitycache.immediatelyCaching(remote_idurl, timeout=10)
-        d.addCallback(lambda src: SendMessage(
+        d.addCallback(lambda src: send_message(
             message_body, recipient_global_id, packet_id))
         d.addErrback(lambda err: lg.warn('failed to retrieve %s : %s' (remote_idurl, err)))
         return d
-    lg.out(6, "message.SendMessage to %s with %d bytes message" % (recipient_global_id, len(message_body)))
+    lg.out(6, "message.send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))
     try:
         private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
         private_message_object.encrypt(message_body)
@@ -315,7 +318,7 @@ def SendMessage(message_body, recipient_global_id, packet_id=None):
         return fail(exc)
     # Payload = misc.ObjectToString(Amessage)
     Payload = private_message_object.serialize()
-    lg.out(6, "message.SendMessage payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
+    lg.out(6, "message.send_message payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
     outpacket = signed.Packet(
         commands.Message(),
         my_id.getLocalID(),
@@ -331,63 +334,19 @@ def SendMessage(message_body, recipient_global_id, packet_id=None):
 
 #------------------------------------------------------------------------------
 
-
-def SortMessagesList(mlist, sort_by_column):
-    order = {}
-    i = 0
-    for msg in mlist:
-        order[msg[sort_by_column]] = i
-        i += 1
-    keys = sorted(order.keys())
-    msorted = []
-    for key in keys:
-        msorted.append(order[key])
-    return msorted
-
-#------------------------------------------------------------------------------
-
-def start_consuming(consumer_id):
+def consume_messages(consumer_id):
     """
     """
-    if consumer_id in consumers_callbacks():
-        return False
     if consumer_id not in consumers_callbacks():
         consumers_callbacks()[consumer_id] = []
-    return True
-
-
-def stop_consuming(consumer_id):
-    """
-    """
-    if consumer_id not in consumers_callbacks():
-        return False
-    if len(consumers_callbacks()[consumer_id]) == 0:
-        return False
-    for consumers_callback in consumers_callbacks()[consumer_id]:
-        if consumers_callback:
-            if consumers_callbacks()[consumer_id].called:
-                lg.warn('callback already called for consumer "%s"' % consumer_id)
-                continue
-            consumers_callbacks()[consumer_id].callback([])
-    consumers_callbacks().pop(consumer_id, None)
-    message_queue().pop(consumer_id, None)
-    return True
-
-
-def consume_message(consumer_id):
-    """
-    """
-    if consumer_id not in consumers_callbacks():
-        return None
     d = Deferred()
     consumers_callbacks()[consumer_id].append(d)
     if _Debug:
-        lg.out(_DebugLevel, 'message.consume_message added callback for consumer "%s", %d total callbacks' % (
+        lg.out(_DebugLevel, 'message.consume_messages added callback for consumer "%s", %d total callbacks' % (
             consumer_id, len(consumers_callbacks()[consumer_id])))
     reactor.callLater(0, pop_messages)
     return d
 
-#------------------------------------------------------------------------------
 
 def push_incoming_message(request, private_message_object, decrypted_message_body):
     """
@@ -435,22 +394,76 @@ def pop_messages():
     """
     """
     for consumer_id in consumers_callbacks().keys():
-        if consumer_id in message_queue() and len(message_queue()[consumer_id]):
-            for consumer_callback in consumers_callbacks()[consumer_id]:
-                if not consumer_callback:
-                    if _Debug:
-                        lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", no callback yet' % (
-                            len(message_queue()[consumer_id]), consumer_id))
-                    continue
-                if consumer_callback.called:
-                    if _Debug:
-                        lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", callback state is "called"' % (
-                            len(message_queue()[consumer_id]), consumer_id))
-                    continue
-                pending_messages = message_queue()[consumer_id]
-                consumer_callback.callback(pending_messages)
-                message_queue()[consumer_id] = []
+        if consumer_id not in message_queue() or len(message_queue()[consumer_id]) == 0:
+            continue
+        registered_callbacks = consumers_callbacks()[consumer_id]
+        pending_messages = message_queue()[consumer_id]
+        if len(registered_callbacks) == 0 and len(pending_messages) > MAX_PENDING_MESSAGES_PER_CONSUMER:
+            consumers_callbacks().pop(consumer_id)
+            message_queue().pop(consumer_id)
+            if _Debug:
+                lg.out(_DebugLevel, 'message.pop_message STOPPED consumer "%s", too much pending messages but no callbacks' % consumer_id)
+            continue
+        for consumer_callback in registered_callbacks:
+            if not consumer_callback:
                 if _Debug:
-                    lg.out(_DebugLevel, 'message.pop_message %d messages consumed by "%s"' % (
-                        len(pending_messages), consumer_id))
-            consumers_callbacks()[consumer_id] = []
+                    lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", no callback yet' % (
+                        len(message_queue()[consumer_id]), consumer_id))
+                continue
+            if consumer_callback.called:
+                if _Debug:
+                    lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", callback state is "called"' % (
+                        len(message_queue()[consumer_id]), consumer_id))
+                continue
+            consumer_callback.callback(pending_messages)
+            message_queue()[consumer_id] = []
+            if _Debug:
+                lg.out(_DebugLevel, 'message.pop_message %d messages consumed by "%s"' % (len(pending_messages), consumer_id))
+        consumers_callbacks()[consumer_id] = []
+
+
+
+#------------------------------------------------------------------------------
+# 
+# def start_consuming(consumer_id):
+#     """
+#     """
+#     if consumer_id in consumers_callbacks():
+#         return False
+#     if consumer_id not in consumers_callbacks():
+#         consumers_callbacks()[consumer_id] = []
+#     return True
+# 
+# 
+# def stop_consuming(consumer_id):
+#     """
+#     """
+#     if consumer_id not in consumers_callbacks():
+#         return False
+#     if len(consumers_callbacks()[consumer_id]) == 0:
+#         return False
+#     for consumers_callback in consumers_callbacks()[consumer_id]:
+#         if consumers_callback:
+#             if consumers_callbacks()[consumer_id].called:
+#                 lg.warn('callback already called for consumer "%s"' % consumer_id)
+#                 continue
+#             consumers_callbacks()[consumer_id].callback([])
+#     consumers_callbacks().pop(consumer_id, None)
+#     message_queue().pop(consumer_id, None)
+#     return True
+# 
+# 
+# def consume_message(consumer_id):
+#     """
+#     """
+#     if consumer_id not in consumers_callbacks():
+#         return None
+#     d = Deferred()
+#     consumers_callbacks()[consumer_id].append(d)
+#     if _Debug:
+#         lg.out(_DebugLevel, 'message.consume_message added callback for consumer "%s", %d total callbacks' % (
+#             consumer_id, len(consumers_callbacks()[consumer_id])))
+#     reactor.callLater(0, pop_messages)
+#     return d
+
+#------------------------------------------------------------------------------

@@ -76,4 +76,4 @@ class PrivateMessagesService(LocalService):
             return False
         if newpacket.Command != commands.Message():
             return False
-        return message.Message(newpacket)
+        return message.on_incoming_message(newpacket, info, status, error_message)

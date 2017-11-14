@@ -297,14 +297,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_message_send(self, recipient, message_body):
         return api.message_send(recipient, message_body)
 
-    def jsonrpc_message_consumer_open(self, consumer_id):
-        return api.message_consumer_open(consumer_id)
-
-    def jsonrpc_message_consumer_close(self, consumer_id):
-        return api.message_consumer_close(consumer_id)
-
-    def jsonrpc_message_consumer_request(self, consumer_id):
-        return api.message_consumer_request(consumer_id)
+    def jsonrpc_message_receive(self, consumer_id):
+        return api.message_receive(consumer_id)
 
     def jsonrpc_receive_one_message(self):
         return api.receive_one_message()
