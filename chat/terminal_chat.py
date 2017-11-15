@@ -56,6 +56,8 @@ if __name__ == '__main__':
 
 from lib import nameurl
 
+from userid import global_id
+
 from chat import kbhit
 
 #------------------------------------------------------------------------------
@@ -163,6 +165,9 @@ class SimpleTerminalChat(object):
     def on_my_message(self, message):
         if message.startswith('!add '):
             idurl = message[5:]
+            if global_id.IsValidGlobalUser(idurl):
+                gid = global_id.ParseGlobalID(idurl)
+                idurl = gid['idurl']
             if idurl.strip() and idurl not in self.users:
                 self.users.append(idurl)
                 name = nameurl.GetName(idurl)

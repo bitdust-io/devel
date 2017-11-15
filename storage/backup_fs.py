@@ -565,6 +565,8 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, key_id=None):
         iter = iter[name]
         iterID = iterID[id]
         if i == len(parts) - 1:
+            if iterID[INFO_KEY].type != DIR:
+                lg.warn('not a dir: %s' % iterID[INFO_KEY])
             iterID[INFO_KEY].type = DIR
     return resultID.lstrip('/'), iter, iterID
 
@@ -642,7 +644,7 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
     return None, None, None, 0
 
 
-def PutItem(name, as_folder=False, iter=None, iterID=None, startID=-1, key_id=None):
+def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, startID=-1, key_id=None):
     """
     Acts like AddFile() but do not follow the directory structure. This just
     "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
@@ -654,7 +656,7 @@ def PutItem(name, as_folder=False, iter=None, iterID=None, startID=-1, key_id=No
     if not iterID:
         iterID = fsID()
     # make an ID for the filename
-    resultID = MakeID(iter, startID=startID)
+    resultID = parent_path_id.strip('/') + '/' + MakeID(iter, startID=startID)
     typ = DIR if as_folder else FILE
     ii = FSItemInfo(name=remote_path, path_id=resultID, typ=typ, key_id=key_id)
     iter[ii.name()] = resultID

@@ -772,6 +772,7 @@ def file_create(remote_path, as_folder=False):
             return ERROR('remote path can not be assigned, parent folder not found: "%s"' % parent_path)
         _, _, _ = backup_fs.PutItem(
             name=os.path.basename(path),
+            parent_path_id=parentPathID,
             as_folder=as_folder,
             iter=iter_and_iterID[0],
             iterID=iter_and_iterID[1],
