@@ -656,11 +656,12 @@ def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, start
     if not iterID:
         iterID = fsID()
     # make an ID for the filename
-    resultID = parent_path_id.strip('/') + '/' + str(MakeID(iter, startID=startID))
+    newItemID = MakeID(iter, startID=startID)
+    resultID = parent_path_id.strip('/') + '/' + str(newItemID)
     typ = DIR if as_folder else FILE
     ii = FSItemInfo(name=remote_path, path_id=resultID, typ=typ, key_id=key_id)
-    iter[ii.name()] = resultID
-    iterID[resultID] = ii
+    iter[ii.name()] = newItemID
+    iterID[newItemID] = ii
     return str(resultID), iter, iterID
 
 #------------------------------------------------------------------------------
@@ -1009,7 +1010,7 @@ def GetIteratorsByPath(path, iter=None, iterID=None):
     iter_and_path = WalkByID(iter_and_id[1], iterID=iterID)
     if iter_and_path is None:
         return None
-    return iter_and_id[0], iter_and_path[0]
+    return iter_and_id[1], iter_and_id[0], iter_and_path[0]
 
 #------------------------------------------------------------------------------
 

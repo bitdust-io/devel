@@ -763,22 +763,22 @@ def file_create(remote_path, as_folder=False):
                 key_id=keyID,
             )
             lg.out(4, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
-        iter_and_iterID = backup_fs.GetIteratorsByPath(
+        id_iter_iterID = backup_fs.GetIteratorsByPath(
             parent_path,
             iter=backup_fs.fs(parts['idurl']),
             iterID=backup_fs.fsID(parts['idurl']),
         )
-        if not iter_and_iterID:
+        if not id_iter_iterID:
             return ERROR('remote path can not be assigned, parent folder not found: "%s"' % parent_path)
-        _, _, _ = backup_fs.PutItem(
+        parentPathID = id_iter_iterID[0]
+        newPathID, _, _ = backup_fs.PutItem(
             name=os.path.basename(path),
             parent_path_id=parentPathID,
             as_folder=as_folder,
-            iter=iter_and_iterID[0],
-            iterID=iter_and_iterID[1],
+            iter=id_iter_iterID[1],
+            iterID=id_iter_iterID[2],
             key_id=keyID,
         )
-        newPathID = backup_fs.ToID(path)
         if not newPathID:
             return ERROR('remote path can not be assigned, failed to create a new item: "%s"' % path)
     backup_control.Save()

@@ -454,6 +454,50 @@ class StunClient(automat.Automat):
 
 #------------------------------------------------------------------------------
 
+def safe_stun(udp_port=None, dht_port=None, ):
+    from twisted.internet.defer import Deferred
+    result = Deferred()
+    try:
+        settings.init()
+        dht_port = dht_port or settings.getDHTPort()
+        udp_port = udp_port or settings.getUDPPort()
+        dht_service.init(dht_port)
+        dht_service.connect()
+        udp.listen(udp_port)
+
+        def _cb(cod, typ, ip, details):
+            # A('shutdown')
+            result.callback({
+                'result': cod,  # 'stun-success' or 'stun-failed'
+                'type': typ,
+                'ip': ip,
+                'details': details,
+            })
+
+        A('init', (udp_port))
+        A('start', _cb)
+    except Exception as exc:
+        lg.exc()
+        result.callback(dict(ip='127.0.0.1', errors=[str(exc), ]))
+        return result
+    return result
+
+
+def test_safe_stun():
+    from twisted.internet import reactor
+
+    def _cb(res):
+        print res
+        reactor.stop()
+
+    def _eb(err):
+        print err
+        reactor.stop()
+
+    safe_stun().addCallbacks(_cb, _eb)
+    reactor.run()
+
+#------------------------------------------------------------------------------
 
 def main():
     from twisted.internet import reactor
@@ -473,9 +517,13 @@ def main():
         print result, typ, ip, details
         A('shutdown')
         reactor.stop()
+
     A('init', (udp_port))
     A('start', _cb)
     reactor.run()
+
+#------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
     main()

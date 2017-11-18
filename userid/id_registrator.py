@@ -70,7 +70,8 @@ from lib import misc
 
 from main import settings
 
-from stun import stun_rfc_3489
+# from stun import stun_rfc_3489
+from stun import stun_client
 
 from crypt import key
 
@@ -388,14 +389,22 @@ class IdRegistrator(automat.Automat):
         """
         lg.out(4, 'id_registrator.doStunExternalIP')
 
-        def save(ip):
-            lg.out(4, '            external IP is %s' % ip)
+        def save(result):
+            lg.out(4, '            external IP : %s' % result)
+            if result['result'] != 'stun-success':
+                self.automat('stun-failed')
+                return
+            ip = result['ip']
             bpio.WriteFile(settings.ExternalIPFilename(), ip)
             self.automat('stun-success', ip)
-        stun_rfc_3489.stunExternalIP(
-            close_listener=True,  # False,
-            internal_port=settings.getUDPPort(),).addCallbacks(
-                save, lambda x: self.automat('stun-failed'))
+
+        d = stun_client.safe_stun()
+        d.addCallback(save)
+        d.addErrback(lambda _: self.automat('stun-failed'))
+#         stun_rfc_3489.stunExternalIP(
+#             close_listener=True,  # False,
+#             internal_port=settings.getUDPPort(),).addCallbacks(
+#                 save, lambda x: self.automat('stun-failed'))
 
     def doSaveMyName(self, arg):
         """

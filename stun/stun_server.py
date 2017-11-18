@@ -163,11 +163,11 @@ class StunServer(automat.Automat):
 
     def _datagramReceived(self, datagram, address):
         """
-        
         """
         self.automat('datagram-received', (datagram, address))
         return False
 
+#------------------------------------------------------------------------------
 
 def main():
     from twisted.internet import reactor
@@ -179,6 +179,9 @@ def main():
     udp.listen(settings.getUDPPort())
     A('start', settings.getUDPPort())
     reactor.run()
+
+#------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
     main()
