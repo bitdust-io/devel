@@ -70,7 +70,6 @@ from lib import misc
 
 from main import settings
 
-# from stun import stun_rfc_3489
 from stun import stun_client
 
 from crypt import key
@@ -401,10 +400,6 @@ class IdRegistrator(automat.Automat):
         d = stun_client.safe_stun()
         d.addCallback(save)
         d.addErrback(lambda _: self.automat('stun-failed'))
-#         stun_rfc_3489.stunExternalIP(
-#             close_listener=True,  # False,
-#             internal_port=settings.getUDPPort(),).addCallbacks(
-#                 save, lambda x: self.automat('stun-failed'))
 
     def doSaveMyName(self, arg):
         """
