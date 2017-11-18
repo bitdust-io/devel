@@ -330,6 +330,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_event_send(self, event_id, json_data=None):
         return api.event_send(event_id, json_data=json_data)
 
+    def jsonrpc_network_stun(self, udp_port=None, dht_port=None):
+        return api.network_stun(udp_port=udp_port, dht_port=dht_port)
+
 #------------------------------------------------------------------------------
 
 

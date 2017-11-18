@@ -2210,3 +2210,14 @@ def event_send(event_id, json_data=None):
     return OK('event "%s" sent' % event_id)
 
 #------------------------------------------------------------------------------
+
+def network_stun(udp_port=None, dht_port=None):
+    """
+    """
+    from stun import stun_client
+    ret = Deferred()
+    d = stun_client.safe_stun(udp_port=udp_port, dht_port=udp_port)
+    d.addBoth(lambda r: ret.callback(RESULT([r, ])))
+    return ret
+
+#------------------------------------------------------------------------------
