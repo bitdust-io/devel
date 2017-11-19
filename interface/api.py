@@ -23,7 +23,6 @@
 #
 #
 #
-from twisted.conch.test.test_recvline import down
 
 """
 .. module:: api.
@@ -103,8 +102,10 @@ def stop():
         {'status': 'OK', 'result': 'stopped'}
     """
     lg.out(4, 'api.stop sending event "stop" to the shutdowner() machine')
+    from twisted.internet import reactor
     from main import shutdowner
-    shutdowner.A('stop', 'exit')
+    reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')
+    # shutdowner.A('stop', 'exit')
     return OK('stopped')
 
 
@@ -117,31 +118,17 @@ def restart(showgui=False):
 
         {'status': 'OK', 'result': 'restarted'}
     """
+    from twisted.internet import reactor
     from main import shutdowner
     if showgui:
         lg.out(4, 'api.restart forced for GUI, added param "show", sending event "stop" to the shutdowner() machine')
-        shutdowner.A('stop', 'restartnshow')
+        reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')
+        # shutdowner.A('stop', 'restartnshow')
         return OK('restarted with GUI')
     lg.out(4, 'api.restart did not found bpgui process nor forced for GUI, just do the restart, sending event "stop" to the shutdowner() machine')
-    shutdowner.A('stop', 'restart')
+    # shutdowner.A('stop', 'restart')
+    reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')
     return OK('restarted')
-
-
-def reconnect():
-    """
-    Sends "reconnect" event to network_connector() Automat in order to refresh
-    network connection.
-
-    Return:
-
-        {'status': 'OK', 'result': 'reconnected'}
-    """
-    if not driver.is_started('service_network'):
-        return ERROR('service_network() is not started')
-    from p2p import network_connector
-    lg.out(4, 'api.reconnect')
-    network_connector.A('reconnect')
-    return OK('reconnected')
 
 
 def show():
@@ -165,7 +152,7 @@ def show():
 #------------------------------------------------------------------------------
 
 
-def config_get(key, default=None):
+def config_get(key):
     """
     Returns current value for specific option from program settings.
 
@@ -173,14 +160,14 @@ def config_get(key, default=None):
 
         {'status': 'OK',   'result': [{'type': 'positive integer', 'value': '8', 'key': 'logs/debug-level'}]}
     """
-    key = str(key)
+    key = str(key).strip('/')
     lg.out(4, 'api.config_get [%s]' % key)
     from main import config
     if not config.conf().exist(key):
         return ERROR('option "%s" not exist' % key)
     return RESULT([{
         'key': key,
-        'value': config.conf().getData(key, default),
+        'value': config.conf().getData(key),
         'type': config.conf().getTypeLabel(key),
         # 'code': config.conf().getType(key),
         # 'label': config.conf().getLabel(key),
@@ -2219,5 +2206,21 @@ def network_stun(udp_port=None, dht_port=None):
     d = stun_client.safe_stun(udp_port=udp_port, dht_port=udp_port)
     d.addBoth(lambda r: ret.callback(RESULT([r, ])))
     return ret
+
+def network_reconnect():
+    """
+    Sends "reconnect" event to network_connector() Automat in order to refresh
+    network connection.
+
+    Return:
+
+        {'status': 'OK', 'result': 'reconnected'}
+    """
+    if not driver.is_started('service_network'):
+        return ERROR('service_network() is not started')
+    from p2p import network_connector
+    lg.out(4, 'api.network_reconnect')
+    network_connector.A('reconnect')
+    return OK('reconnected')
 
 #------------------------------------------------------------------------------

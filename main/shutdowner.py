@@ -95,6 +95,7 @@ def shutdown(x=None):
     from lib import net_misc
     from updates import git_proc
     from interface import jsonrpc_server
+    from interface import rest_http_server
     from interface import ftp_server
     from userid import my_id
     from crypt import my_keys
@@ -103,6 +104,7 @@ def shutdown(x=None):
     my_id.shutdown()
     ftp_server.shutdown()
     jsonrpc_server.shutdown()
+    rest_http_server.shutdown()
     driver.shutdown()
     eccmap.shutdown()
     run_upnpc.shutdown()

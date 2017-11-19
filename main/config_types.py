@@ -66,6 +66,8 @@ def defaults():
     return {
         'interface/api/json-rpc-enabled': TYPE_BOOLEAN,
         'interface/api/json-rpc-port': TYPE_POSITIVE_INTEGER,
+        'interface/api/rest-http-enabled': TYPE_BOOLEAN,
+        'interface/api/rest-http-port': TYPE_POSITIVE_INTEGER,
         'interface/ftp/enabled': TYPE_BOOLEAN,
         'interface/ftp/port': TYPE_POSITIVE_INTEGER,
         'logs/debug-level': TYPE_POSITIVE_INTEGER,

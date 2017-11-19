@@ -1329,6 +1329,12 @@ def DefaultJsonRPCPort():
     return 8083
 
 
+def DefaultRESTHTTPPort():
+    """
+    """
+    return 8180
+
+
 def DefaultFTPPort():
     """
     """
@@ -1558,6 +1564,14 @@ def enableIdServer(enable=None):
     config.conf().setData('services/id-server/enabled', str(enable))
 
 
+def enableRESTHTTPServer(enable=None):
+    """
+    """
+    if enable is None:
+        return config.conf().getBool('interface/api/rest-http-enabled')
+    config.conf().setData('interface/api/rest-http-enabled', str(enable))
+
+
 def enableJsonRPCServer(enable=None):
     """
     """
@@ -1608,6 +1622,18 @@ def setIdServerTCPPort(tcp_port):
     """
     """
     return config.conf().setInt("services/id-server/tcp-port", tcp_port)
+
+
+def getRESTHTTPServerPort():
+    """
+    """
+    return config.conf().getInt('interface/api/rest-http-port', DefaultRESTHTTPPort())
+
+
+def setRESTHTTPServerPort(rest_http_port):
+    """
+    """
+    return config.conf().setInt("interface/api/rest-http-port", rest_http_port)
 
 
 def getJsonRPCServerPort():
@@ -2340,6 +2366,9 @@ def _setUpDefaultSettings():
     """
     config.conf().setDefaultValue('interface/api/json-rpc-enabled', 'true')
     config.conf().setDefaultValue('interface/api/json-rpc-port', DefaultJsonRPCPort())
+
+    config.conf().setDefaultValue('interface/api/rest-http-enabled', 'true')
+    config.conf().setDefaultValue('interface/api/rest-http-port', DefaultRESTHTTPPort())
 
     config.conf().setDefaultValue('interface/ftp/enabled', 'true')
     config.conf().setDefaultValue('interface/ftp/port', DefaultFTPPort())

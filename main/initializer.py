@@ -268,6 +268,9 @@ class Initializer(automat.Automat):
         if settings.enableJsonRPCServer():
             from interface import jsonrpc_server
             jsonrpc_server.init()
+        if settings.enableRESTHTTPServer():
+            from interface import rest_http_server
+            rest_http_server.init(port=settings.getRESTHTTPServerPort())
         reactor.callLater(0, self.automat, 'init-interfaces-done')
 
     def doInitModules(self, arg):

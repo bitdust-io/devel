@@ -50,7 +50,7 @@ from lib.fastjsonrpc.jsonrpc import JSONRPCError
 
 from logs import lg
 
-import api
+from interface import api
 
 #------------------------------------------------------------------------------
 
@@ -159,14 +159,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_stop(self):
         return api.stop()
 
-    def jsonrpc_show(self):
-        return api.show()
-
     def jsonrpc_restart(self, show=False):
         return api.restart(show)
 
-    def jsonrpc_reconnect(self):
-        return api.reconnect()
+    def jsonrpc_show(self):
+        return api.show()
 
     def jsonrpc_filemanager(self, json_request):
         return api.filemanager(json_request)
@@ -174,8 +171,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_config_list(self, sort=False):
         return api.config_list(sort)
 
-    def jsonrpc_config_get(self, key, default=None):
-        return api.config_get(key, default)
+    def jsonrpc_config_get(self, key):
+        return api.config_get(key)
 
     def jsonrpc_config_set(self, key, value):
         return api.config_set(key, value)
@@ -332,6 +329,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_network_stun(self, udp_port=None, dht_port=None):
         return api.network_stun(udp_port=udp_port, dht_port=dht_port)
+
+    def jsonrpc_network_reconnect(self):
+        return api.network_reconnect()
+
+    def jsonrpc_reconnect(self):  # alias
+        return api.network_reconnect()
 
 #------------------------------------------------------------------------------
 
