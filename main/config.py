@@ -72,6 +72,8 @@ def shutdown():
 
 
 def conf():
+    """
+    """
     global _Config
     return _Config
 
@@ -456,11 +458,32 @@ class DetailedConfig(CachedConfig):
 
 def main():
     """
-    Read settings from 'userconfig' file and print in HTML form.
+    Read settings from 'config' file and prints values from your queries to stdout.
     """
+    from logs import lg
+    lg.set_debug_level(24)
     from main import settings
     settings.init()
     init(settings.ConfigDir())
+    print conf().listEntries('')
+    try:
+        inp = sys.argv[1].rstrip('/')
+    except:
+        print 'wrong input'
+        return
+    if not conf().exist(inp):
+        print 'not exist'
+        return
+    if not conf().hasChilds(inp):
+        print inp, conf().getData(inp)
+        return
+    for child in conf().listEntries(inp):
+        if conf().hasChilds(child):
+            print child, conf().listEntries(child)
+        else:
+            print child, conf().getData(child)
+    return
+
 #    last = ''
 #    for entry in sorted(conf()._types.keys()):
 #        parent, key = entry.rsplit('/', 1)
@@ -474,8 +497,8 @@ def main():
 #            last = parent
 #        print ' ' * (last.count(' ') + 1) * 2, key, '\t\t\t\t', conf().get_type_label(entry).upper()
     # print '\n'.join(map(lambda x: "    '%s':\t\t\tNode," % x, sorted(conf().listAllEntries())))
-    s = conf().getData('details')
-    conf().loadDetails(s)
+    # s = conf().getData('details')
+    # conf()._load_details(s)
 
 
 if __name__ == "__main__":

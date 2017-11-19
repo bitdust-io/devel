@@ -220,7 +220,6 @@ class BitDustFTP(FTP):
 #         os.fsync(consumer.fObj.fileno())
 #         consumer.fObj.close()
 #         consumer.close()
-        # import pdb; pdb.set_trace()
         remote_path = '/'.join(newsegs)
         lg.out(8, 'ftp_server._cbFileRecevied %s %s' % (local_path, remote_path))
         ret = api.file_info(remote_path)

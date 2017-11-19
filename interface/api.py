@@ -160,19 +160,34 @@ def config_get(key):
 
         {'status': 'OK',   'result': [{'type': 'positive integer', 'value': '8', 'key': 'logs/debug-level'}]}
     """
-    key = str(key).strip('/')
+    try:
+        key = str(key).strip('/')
+    except:
+        return ERROR('wrong key')
     lg.out(4, 'api.config_get [%s]' % key)
     from main import config
-    if not config.conf().exist(key):
+    if key and not config.conf().exist(key):
         return ERROR('option "%s" not exist' % key)
-    return RESULT([{
-        'key': key,
-        'value': config.conf().getData(key),
-        'type': config.conf().getTypeLabel(key),
-        # 'code': config.conf().getType(key),
-        # 'label': config.conf().getLabel(key),
-        # 'info': config.conf().getInfo(key)
-    }])
+    if key and not config.conf().hasChilds(key):
+        return RESULT([{
+            'key': key,
+            'value': config.conf().getData(key),
+            'type': config.conf().getTypeLabel(key),
+        }])
+    childs = []
+    for child in config.conf().listEntries(key):
+        if config.conf().hasChilds(child):
+            childs.append({
+                'key': child,
+                'childs': len(config.conf().listEntries(child)),
+            })
+        else:
+            childs.append({
+                'key': child,
+                'value': config.conf().getData(child),
+                'type': config.conf().getTypeLabel(child),
+            })
+    return RESULT(childs)
 
 
 def config_set(key, value):

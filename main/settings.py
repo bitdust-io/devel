@@ -97,13 +97,11 @@ def _init(base_dir=None):
     _initBaseDir(base_dir)
     lg.out(2, 'settings.init data location: ' + BaseDir())
     _checkMetaDataDirectory()
+    _checkConfigDirectory()
     # if not os.path.isdir(ConfigDir()):
     #     uconfig()
     #     bpio._dir_make(ConfigDir())
     #     convert_configs()
-    if not os.path.isdir(ConfigDir()):
-        bpio._dir_make(ConfigDir())
-    config.init(ConfigDir())
     _setUpDefaultSettings()
     _createNotExisingSettings()
     _checkStaticDirectories()
@@ -2351,18 +2349,36 @@ def _initBaseDir(base_dir=None):
 
 def _checkMetaDataDirectory():
     """
-    Check that the metadata directory exists.
+    Check that the __metadata__ directory exists.
     """
+    if os.path.isfile(MetaDataDir()):
+        raise Exception('file already exist:' + MetaDataDir())
     if not os.path.exists(MetaDataDir()):
-        lg.out(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
+        lg.out(2, 'settings._checkMetaDataDirectory want to create "metadata" folder in : ' + MetaDataDir())
         bpio._dirs_make(MetaDataDir())
+        return
+    lg.out(4, 'settings._checkMetaDataDirectory OK , folder already exist: ' + MetaDataDir())
+
+
+def _checkConfigDirectory():
+    """
+    Check that the __config__ directory exists.
+    """
+    if os.path.isfile(ConfigDir()):
+        raise Exception('file already exist:' + ConfigDir())
+    if not os.path.exists(ConfigDir()):
+        lg.out(2, 'settings._checkConfigDirectory want to create "config" folder in : ' + ConfigDir())
+        bpio._dir_make(ConfigDir())
+    else:
+        lg.out(4, 'settings._checkConfigDirectory OK , folder already exist: ' + ConfigDir())
+    config.init(ConfigDir())
 
 
 def _setUpDefaultSettings():
     """
     Configure default values for all settings.
 
-    Every option must have a default value!
+    Every option must have a default value, howerver there are exceptions possible :-)
     """
     config.conf().setDefaultValue('interface/api/json-rpc-enabled', 'true')
     config.conf().setDefaultValue('interface/api/json-rpc-port', DefaultJsonRPCPort())
@@ -2580,8 +2596,28 @@ def _checkCustomDirectories():
 
 #-------------------------------------------------------------------------------
 
+def main():
+    lg.set_debug_level(24)
+    init()
+    try:
+        inp = sys.argv[1].rstrip('/')
+    except:
+        print 'wrong input'
+        return
+    if not config.conf().exist(inp):
+        print 'not exist'
+        return
+    if not config.conf().hasChilds(inp):
+        print inp, config.conf().getData(inp)
+        return
+    for child in config.conf().listEntries(inp):
+        if config.conf().hasChilds(child):
+            print child, config.conf().listEntries(child)
+        else:
+            print child, config.conf().getData(child)
+
+#------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
-    init()
-    # patch_settings_py()
-    # make_default_values()
+    main()

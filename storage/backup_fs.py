@@ -2091,7 +2091,6 @@ def _test():
 
     # print AppendFile('new', '/Users/veselin/Pictures')
 
-    # import pdb; pdb.set_trace()
     # item = FSItemInfo('new', '/Users/new', FILE)
     # SetFile(item)
     # print ToID('dir6/ilhan.jpg')
