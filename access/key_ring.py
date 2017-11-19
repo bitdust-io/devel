@@ -30,6 +30,11 @@
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 4
+
+#------------------------------------------------------------------------------
+
 import sys
 import json
 
@@ -70,12 +75,12 @@ def shutdown():
 
 #-------------------------------------------------------------------------------
 
-def share_private_key(key_id, idurl, timeout=10):
+def share_private_key(key_id, trusted_idurl, timeout=10):
     result = Deferred()
-    d = propagate.PingContact(idurl, timeout=timeout)
+    d = propagate.PingContact(trusted_idurl, timeout=timeout)
     d.addCallback(
         lambda resp: request_service_keys_registry(
-            key_id, idurl,
+            key_id, trusted_idurl,
         ).addCallbacks(
             callback=result.callback,
             errback=result.errback
@@ -107,18 +112,23 @@ def on_service_keys_registry_response(response, info, key_id, idurl, result):
 
 
 def transfer_private_key(key_id, idurl):
+    if _Debug:
+        lg.out(_DebugLevel, 'key_ring.transfer_private_key  %s -> %s' % (key_id, idurl))
     result = Deferred()
     recipient_id_obj = identitycache.FromCache(idurl)
     if not recipient_id_obj:
-        result.errback(Exception(idurl))
+        lg.warn('not found "%s" in identity cache' % idurl)
+        result.errback(Exception('not found "%s" in identity cache' % idurl))
         return result
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
-        result.errback(Exception(key_id))
+        lg.warn('wrong key_id')
+        result.errback(Exception('wrong key_id'))
         return result
     key_object = my_keys.known_keys().get(key_id)
     if key_object is None:
-        result.errback(Exception(key_id))
+        lg.warn('unknown key: "%s"' % key_id)
+        result.errback(Exception('unknown key: "%s"' % key_id))
         return result
     key_json = {
         'key_id': key_id,
@@ -169,7 +179,8 @@ def on_private_key_received(newpacket, info, status, error_message):
         lg.exc()
         return False
     if my_keys.is_key_registered(key_id):
-        return False
+        lg.warn('key "%s" already registered' % key_id)
+        return True
     key_object = my_keys.register_key(key_id, private_key_string)
     if not key_object:
         return False

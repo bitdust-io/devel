@@ -462,7 +462,7 @@ def PingContact(idurl, timeout=30):
     Previously it request his identity from ID server.
     """
     if _Debug:
-        lg.out(_DebugLevel, "propagate.PingContact")
+        lg.out(_DebugLevel, "propagate.PingContact [%s]" % idurl)
     ping_result = Deferred()
 
     def _cancel_ack_timeout(x, tmcall):
@@ -485,7 +485,7 @@ def PingContact(idurl, timeout=30):
         ping_result.errback(TimeoutError('response was not received within %d seconds' % tm))
 
     def _identity_cached(x, idsrc, timeout_call, result):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes" % len(idsrc))
+        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for [%s]" % (len(idsrc), idurl))
         # TODO Verify()
         SendToIDs(
             idlist=[idurl, ],

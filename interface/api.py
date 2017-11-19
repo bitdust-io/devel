@@ -492,7 +492,7 @@ def key_erase(key_id):
     return OK(message='private key "%s" was erased successfully' % key_alias)
 
 
-def key_share(key_id, idurl):
+def key_share(key_id, trusted_global_id_or_idurl, timeout=10):
     """
     Connect to remote node identified by `idurl` parameter and transfer private key `key_id` to that machine.
     This way remote user will be able to access those of your files which were encrypted with that private key.
@@ -501,18 +501,25 @@ def key_share(key_id, idurl):
 
     """
     from userid import global_id
-    full_key_id = str(key_id)
-    idurl = str(idurl)
+    try:
+        trusted_global_id_or_idurl = str(trusted_global_id_or_idurl)
+        full_key_id = str(key_id)
+    except:
+        return succeed(ERROR('error input parameters'))
     if not driver.is_started('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
     glob_id = global_id.ParseGlobalID(full_key_id)
     if glob_id['key_alias'] == 'master':
-        return ERROR('"master" key can not be shared')
+        return succeed(ERROR('"master" key can not be shared'))
     if not glob_id['key_alias'] or not glob_id['idurl']:
-        return ERROR('icorrect key_id format')
+        return succeed(ERROR('icorrect key_id format'))
+    if global_id.IsValidGlobalUser(trusted_global_id_or_idurl):
+        idurl = global_id.GlobalUserToIDURL(trusted_global_id_or_idurl)
+    else:
+        idurl = trusted_global_id_or_idurl
     from access import key_ring
     result = Deferred()
-    d = key_ring.share_private_key(full_key_id, idurl)
+    d = key_ring.share_private_key(key_id=full_key_id, trusted_idurl=idurl, timeout=timeout)
     d.addCallback(
         lambda resp: result.callback(
             OK(str(resp))))
