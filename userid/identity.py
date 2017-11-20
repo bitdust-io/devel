@@ -565,6 +565,12 @@ class identity:
 
     #------------------------------------------------------------------------------
 
+    def getSources(self):
+        """
+        Return identity sources.
+        """
+        return self.sources
+
     def getIDURL(self, index=0):
         """
         Return a source IDURL - this is a user ID.
@@ -590,6 +596,8 @@ class identity:
         if port:
             host += ':' + str(port)
         return host
+
+    #------------------------------------------------------------------------------
 
     def getContacts(self):
         """
@@ -791,15 +799,6 @@ class identity:
         url = nameurl.UrlMake(protocol, host, newport, filename)
         self.contacts[index] = url.encode("ascii").strip()
 
-    def setCertificate(self, certificate):
-        """
-        Not used yet.
-
-        TODO. Need to ask Vince for more details about id certificates.
-        """
-        self.certificates.append(certificate)
-        self.sign()
-
     #------------------------------------------------------------------------------
 
     def clearContacts(self):
@@ -845,6 +844,16 @@ class identity:
         del self.contacts[i]
         self.contacts.insert(0, contact)
 
+    #------------------------------------------------------------------------------
+
+    def setCertificate(self, certificate):
+        """
+        Not used yet.
+
+        TODO. Need to ask Vince for more details about id certificates.
+        """
+        self.certificates.append(certificate)
+        self.sign()
 
 #-------------------------------------------------------------------------------
 

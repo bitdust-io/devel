@@ -507,6 +507,8 @@ class Task():
         self.created = time.time()
         self.backupID = None
         self.result_defer = Deferred()
+        self.result_defer.addCallback(OnTaskExecutedCallback)
+        self.result_defer.addErrback(OnTaskFailedCallback)
         parts = self.set_path_id(pathID)
         self.set_key_id(keyID or my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer']))
         self.set_local_path(localPath)
@@ -835,6 +837,19 @@ def OnBackupBlockReport(backupID, blockNum, result):
     :param num_suppliers: number of suppliers which is used for that backup
     """
     backup_matrix.LocalBlockReport(backupID, blockNum, result)
+
+
+def OnTaskExecutedCallback(result):
+    """
+    """
+    lg.out(_DebugLevel, 'backup_control.OnTaskExecuted %s : %s' % (result[0], result[1]))
+    return result
+
+def OnTaskFailedCallback(result):
+    """
+    """
+    lg.err('pathID: %s, error: %s' % (result[0], result[1]))
+    return result
 
 #------------------------------------------------------------------------------
 

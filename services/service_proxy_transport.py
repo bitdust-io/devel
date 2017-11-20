@@ -124,30 +124,32 @@ class ProxyTransportService(LocalService):
         from lib import misc
         from main.config import conf
         from userid import identity
+        from userid import my_id
         orig_ident_xmlsrc = conf().getData(
             'services/proxy-transport/my-original-identity', '').strip()
         current_router_idurl = conf().getString(
             'services/proxy-transport/current-router', '').strip()
         if not orig_ident_xmlsrc:
             if current_router_idurl:
-                lg.warn(
-                    'current-router is %s, but my-original-identity is empty' %
-                    current_router_idurl)
-#                 self._reset_my_original_identity()
+                lg.warn('current-router is %s, but "my-original-identity" config is empty' % current_router_idurl)
             self._reset_my_original_identity()
             return
         orig_ident = identity.identity(xmlsrc=orig_ident_xmlsrc)
         if not orig_ident.isCorrect() or not orig_ident.Valid():
-            lg.warn('my original identity is not valid')
+            lg.warn('"my-original-identity" config has not valid value')
+            self._reset_my_original_identity()
+            return
+        if orig_ident.getIDURL() != my_id.getLocalID():
+            lg.warn('"my-original-identity" source is not equal to local identity source')
             self._reset_my_original_identity()
             return
         externalIP = misc.readExternalIP()
         if externalIP and orig_ident.getIP() != externalIP:
-            lg.warn('external IP was changed : restore my original identity')
+            lg.warn('external IP was changed : reset "my-original-identity" config')
             self._reset_my_original_identity()
             return
         if not current_router_idurl:
-            lg.warn('original identity is correct, but current router is empty')
+            lg.warn('"my-original-identity" config is correct, but current router is empty')
             self._reset_my_original_identity()
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
@@ -157,8 +159,7 @@ class ProxyTransportService(LocalService):
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')
-            if newstate == 'OFFLINE' and oldstate in [
-                    'STARTING', 'STOPPING', ]:
+            if newstate == 'OFFLINE' and oldstate in ['STARTING', 'STOPPING', ]:
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')

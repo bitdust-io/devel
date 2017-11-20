@@ -657,12 +657,12 @@ def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, start
         iterID = fsID()
     # make an ID for the filename
     newItemID = MakeID(iter, startID=startID)
-    resultID = parent_path_id.strip('/') + '/' + str(newItemID)
+    resultID = (parent_path_id.strip('/') + '/' + str(newItemID)).strip('/')
     typ = DIR if as_folder else FILE
     ii = FSItemInfo(name=remote_path, path_id=resultID, typ=typ, key_id=key_id)
     iter[ii.name()] = newItemID
     iterID[newItemID] = ii
-    return str(resultID), iter, iterID
+    return resultID, iter, iterID
 
 #------------------------------------------------------------------------------
 

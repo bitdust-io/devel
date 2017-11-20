@@ -296,8 +296,9 @@ class BackupMonitor(automat.Automat):
         allBackupIDs = misc.sorted_backup_ids(list(allBackupIDs), True)
         # add backups to the queue
         backup_rebuilder.AddBackupsToWork(allBackupIDs)
-        lg.out(6, 'backup_monitor.doPrepareListBackups %d items' % len(allBackupIDs))
-        self.automat('list-backups-done')
+        lg.out(6, 'backup_monitor.doPrepareListBackups %d items:' % len(allBackupIDs))
+        lg.out(6, '    %s' % allBackupIDs)
+        self.automat('list-backups-done', allBackupIDs)
 
     def doCleanUpBackups(self, arg):
         # here we check all backups we have and remove the old one

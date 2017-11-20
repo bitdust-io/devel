@@ -300,7 +300,7 @@ def key_get(key_id, include_private=False):
     key_id = str(key_id)
     if key_id == 'master':
         r = {
-            'id': key_id,
+            'key_id': key_id,
             'alias': 'master',
             'creator': my_id.getLocalID(),
             'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
@@ -337,7 +337,7 @@ def key_get(key_id, include_private=False):
     if not key_object:
         return ERROR('key not found')
     r = {
-        'id': key_id,
+        'key_id': key_id,
         'alias': key_alias,
         'creator': creator_idurl,
         'fingerprint': str(key_object.fingerprint()),
@@ -391,7 +391,7 @@ def keys_list(sort=False, include_private=False):
             lg.warn('incorrect key_id: %s' % key_id)
             continue
         i = {
-            'id': key_id,
+            'key_id': key_id,
             'alias': key_alias,
             'creator': creator_idurl,
             'fingerprint': str(key_object.fingerprint()),
@@ -406,7 +406,7 @@ def keys_list(sort=False, include_private=False):
     if sort:
         r = sorted(r, key=lambda i: i['alias'])
     i = {
-        'id': my_keys.make_key_id('master', creator_idurl=my_id.getLocalID()),
+        'key_id': my_keys.make_key_id('master', creator_idurl=my_id.getLocalID()),
         'alias': 'master',
         'creator': my_id.getLocalID(),
         'fingerprint': key.MyPrivateKeyObject().fingerprint(),
@@ -454,7 +454,7 @@ def key_create(key_alias, key_size=4096, include_private=False):
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
     r = {
-        'id': key_id,
+        'key_id': key_id,
         'alias': key_alias,
         'creator': my_id.getLocalID(),
         'fingerprint': str(key_object.fingerprint()),
@@ -612,7 +612,7 @@ def files_list(remote_path=None):
         return ERROR(lookup)
     for i in lookup:
         glob_path_child = norm_path.copy()
-        glob_path_child['path'] = i['path']
+        glob_path_child['path'] = i['path_id']
         if not i['item']['k']:
             i['item']['k'] = my_id.getGlobalID(key_alias='master')
         if glob_path['key_alias'] and i['item']['k']:
@@ -622,7 +622,7 @@ def files_list(remote_path=None):
             'glob_id': global_id.MakeGlobalID(**glob_path_child),
             'customer': norm_path['customer'],
             'idurl': norm_path['idurl'],
-            'id': i['path_id'],
+            'path_id': i['path_id'],
             'name': i['name'],
             'path': i['path'],
             'type': backup_fs.TYPES.get(i['type'], '').lower(),
@@ -657,10 +657,13 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         return ERROR('item "%s" is not found in catalog' % pathID)
     (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, customer_id=norm_path['customer'])
     item_key = item.key_id
+    glob_path_item = norm_path.copy()
+    glob_path_item['path'] = pathID
+    full_global_id = global_id.MakeGlobalID(**glob_path_item)
     r = {
-        'glob_id': global_id.MakeGlobalID(**norm_path),
+        'glob_id': full_global_id,
         'customer': norm_path['idurl'],
-        'id': pathID,
+        'path_id': pathID,
         'path': remotePath,
         'type': backup_fs.TYPES.get(item.type, '').lower(),
         'size': item_size,
@@ -702,7 +705,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         t = backup_control.GetPendingTask(pathID)
         if t:
             pending.append({
-                'id': t.number,
+                'task_id': t.number,
                 'path_id': t.pathID,
                 'source_path': t.localPath,
                 'created': time.asctime(time.localtime(t.created)),
@@ -728,7 +731,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
                     'eccmap': '' if not r.EccMap else r.EccMap.name,
                 })
         r['downloads'] = downloads
-    lg.out(4, 'api.file_info %s' % r['glob_id'])
+    lg.out(4, 'api.file_info : "%s"' % full_global_id)
     return RESULT([r, ])
 
 
@@ -792,13 +795,16 @@ def file_create(remote_path, as_folder=False):
             return ERROR('remote path can not be assigned, failed to create a new item: "%s"' % path)
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
-    lg.out(4, 'api.file_create %s with %s' % (global_id.MakeGlobalID(**parts), newPathID))
+    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID)
+    lg.out(4, 'api.file_create : "%s"' % full_glob_id)
     return OK(
-        'new %s "%s" was added at remote path "%s"' % (('folder' if as_folder else 'file'), newPathID, path),
+        'new %s was created in "%s"' % (('folder' if as_folder else 'file'), full_glob_id),
         extra_fields={
-            'id': newPathID,
+            'path_id': newPathID,
             'key_id': keyID,
             'path': path,
+            'glob_id': full_glob_id,
+            'customer': parts['idurl'],
             'type': ('dir' if as_folder else 'file'),
         })
 
@@ -826,6 +832,7 @@ def file_delete(remote_path):
     if not packetid.Valid(pathID):
         return ERROR('invalid item found: "%s"' % pathID)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
+    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID)
     result = backup_control.DeletePathBackups(pathID=pathIDfull, saveDB=False, calculate=False)
     if not result:
         return ERROR('remote item "%s" was not found' % pathIDfull)
@@ -837,7 +844,12 @@ def file_delete(remote_path):
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
     lg.out(4, 'api.file_delete %s' % parts)
-    return OK('item "%s" was deleted from remote suppliers' % pathIDfull)
+    return OK('item "%s" was deleted from remote suppliers' % pathIDfull, extra_fields={
+        'path_id': pathIDfull,
+        'path': path,
+        'glob_id': full_glob_id,
+        'customer': parts['idurl'],
+    })
 
 
 def files_uploads(include_running=True, include_pending=True):
@@ -902,7 +914,7 @@ def files_uploads(include_running=True, include_pending=True):
         } for j in backup_control.jobs().values()])
     if include_pending:
         r['pending'].extend([{
-            'id': t.number,
+            'task_id': t.number,
             'path_id': t.pathID,
             'source_path': t.localPath,
             'created': time.asctime(time.localtime(t.created)),
@@ -940,18 +952,18 @@ def file_upload_start(local_path, remote_path, wait_result=True):
             localPath=local_path,
             keyID=keyID,
         )
-        tsk.result_defer.addCallback(lambda backupID, result: d.callback(OK(
+        tsk.result_defer.addCallback(lambda result: d.callback(OK(
             'item "%s" uploaded, local path is: "%s"' % (remote_path, local_path),
             extra_fields={
-                'id': remote_path,
-                'version': backupID,
+                'remote_path': remote_path,
+                'version': result[0],
                 'key_id': tsk.keyID,
                 'source_path': local_path,
                 'path_id': pathID,
             }
         )))
-        tsk.result_defer.addErrback(lambda pathID, err: d.callback(ERROR(
-            'upload task %d for "%s" failed: %s' % (tsk.number, tsk.pathID, err)
+        tsk.result_defer.addErrback(lambda result: d.callback(ERROR(
+            'upload task %d for "%s" failed: %s' % (tsk.number, tsk.pathID, result[1], )
         )))
         backup_fs.Calculate()
         backup_control.Save()
@@ -963,6 +975,10 @@ def file_upload_start(local_path, remote_path, wait_result=True):
         localPath=local_path,
         keyID=keyID,
     )
+    tsk.result_defer.addCallback(lambda result: lg.warn(
+        'callback from api.file_upload_start.task(%s) done with %s' % (result[0], result[1], )))
+    tsk.result_defer.addErrback(lambda result: lg.err(
+        'errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1], )))
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathIDfull), ])
@@ -970,7 +986,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     return OK(
         'uploading "%s" started, local path is: "%s"' % (remote_path, local_path),
         extra_fields={
-            'id': remote_path,
+            'remote_path': remote_path,
             'key_id': tsk.keyID,
             'source_path': local_path,
             'path_id': pathID,
@@ -1822,7 +1838,7 @@ def streams_list(wanted_protos=None):
         for stream in gateway.list_active_streams(proto):
             item = {
                 'proto': proto,
-                'id': '',
+                'stream_id': '',
                 'type': '',
                 'bytes_current': -1,
                 'bytes_total': -1,
@@ -1831,7 +1847,7 @@ def streams_list(wanted_protos=None):
             if proto == 'tcp':
                 if hasattr(stream, 'bytes_received'):
                     item.update({
-                        'id': stream.file_id,
+                        'stream_id': stream.file_id,
                         'type': 'in',
                         'bytes_current': stream.bytes_received,
                         'bytes_total': stream.size,
@@ -1839,7 +1855,7 @@ def streams_list(wanted_protos=None):
                     })
                 elif hasattr(stream, 'bytes_sent'):
                     item.update({
-                        'id': stream.file_id,
+                        'stream_id': stream.file_id,
                         'type': 'out',
                         'bytes_current': stream.bytes_sent,
                         'bytes_total': stream.size,
@@ -1848,7 +1864,7 @@ def streams_list(wanted_protos=None):
             elif proto == 'udp':
                 if hasattr(stream.consumer, 'bytes_received'):
                     item.update({
-                        'id': stream.stream_id,
+                        'stream_id': stream.stream_id,
                         'type': 'in',
                         'bytes_current': stream.consumer.bytes_received,
                         'bytes_total': stream.consumer.size,
@@ -1856,7 +1872,7 @@ def streams_list(wanted_protos=None):
                     })
                 elif hasattr(stream.consumer, 'bytes_sent'):
                     item.update({
-                        'id': stream.stream_id,
+                        'stream_id': stream.stream_id,
                         'type': 'out',
                         'bytes_current': stream.consumer.bytes_sent,
                         'bytes_total': stream.consumer.size,
@@ -2171,7 +2187,7 @@ def message_receive(consumer_id):
                 'recipient': msg['to'],
                 'sender': msg['from'],
                 'time': msg['time'],
-                'id': msg['id'],
+                'message_id': msg['id'],
                 'dir': msg['dir'],
             })
         lg.out(4, 'api.message_consumer_request._on_pending_messages returning : %s' % result)

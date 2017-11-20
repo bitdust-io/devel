@@ -58,6 +58,12 @@ EVENTS:
     * :red:`start`
     * :red:`timer-1sec`
 """
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 4
+
 #------------------------------------------------------------------------------
 
 import os
@@ -75,7 +81,6 @@ except:
 from logs import lg
 
 from lib import packetid
-from lib import nameurl
 
 from automats import automat
 
@@ -312,16 +317,24 @@ class BackupRebuilder(automat.Automat):
         # check it, may be we already fixed all things
         if len(_BackupIDsQueue) == 0:
             self.automat('backup-ready')
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_rebuilder.doOpenNextBackup SKIP, queue is empty')
             return
         # take a first backup from queue to work on it
         self.currentBackupID = _BackupIDsQueue.pop(0)
         self.currentCustomerIDURL = packetid.CustomerIDURL(self.currentBackupID)
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder.doOpenNextBackup %s started, queue length: %d' % (
+                self.currentBackupID, len(_BackupIDsQueue)))
 
     def doCloseThisBackup(self, arg):
         """
         Action method.
         """
         self.workingBlocksQueue = []
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder.doCloseThisBackup %s about to finish, queue length: %d' % (
+                self.currentBackupID, len(_BackupIDsQueue)))
         if self.currentBackupID:
             # clear requesting queue from previous task
             from customer import io_throttle
@@ -658,6 +671,8 @@ def AddBackupsToWork(backupIDs):
     """
     global _BackupIDsQueue
     _BackupIDsQueue.extend(backupIDs)
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_rebuilder.AddBackupsToWork %s added, queue length: %d' % (backupIDs, len(_BackupIDsQueue)))
 
 
 def RemoveBackupToWork(backupID):
@@ -667,6 +682,12 @@ def RemoveBackupToWork(backupID):
     global _BackupIDsQueue
     if backupID in _BackupIDsQueue:
         _BackupIDsQueue.remove(backupID)
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder.RemoveBackupToWork %s removed, queue length: %d' % (
+                backupID, len(_BackupIDsQueue)))
+    else:
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_rebuilder.RemoveBackupToWork %s not in the queue' % backupID)
 
 
 def IsBackupNeedsWork(backupID):
@@ -682,6 +703,9 @@ def RemoveAllBackupsToWork():
     """
     global _BackupIDsQueue
     _BackupIDsQueue = []
+    if _Debug:
+        lg.out(_DebugLevel, '')
+        
 
 
 def SetStoppedFlag():
