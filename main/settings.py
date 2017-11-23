@@ -189,19 +189,48 @@ def convert_key(key):
     key = '/'.join(p)
     return key
 
-#------------------------------------------------------------------------------
-#--- CONSTANTS ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-
 
 """
 Below is a set of global constants.
 """
 
+#------------------------------------------------------------------------------
+#--- CONSTANTS (BOOLEANS) -----------------------------------------------------
+#------------------------------------------------------------------------------
 
 def NewWebGUI():
     # return False # this is web/webcontrol.py
     return True  # this is web/control.py - a django based GUI
+
+
+#------------------------------------------------------------------------------
+#--- CONSTANTS (NUMBERS) ------------------------------------------------------
+#------------------------------------------------------------------------------
+
+
+def MinimumIdentitySources():
+    """
+    You need to host your identity (piblic key, signature and contacts) at least in one place.
+    By default you will use identiy servers hard-coded in BitDust source code.
+    But you can start your own identity server and host your identiy there, set those settings:
+
+        services/identity-propagate/known-servers
+        services/identity-propagate/preferred-servers
+        services/identity-propagate/min-servers
+        services/identity-propagate/max-servers
+
+    before you run identiy register process.
+    """
+    return 1
+
+
+def MaximumIdentitySources():
+    """
+    You can host your identity in many places, up to 10 identity servers allowed.
+    You do not need to mirror your identity too much, this is just to keep users
+    consuming sufficient amount of network resousrces.
+    """
+    return 10
 
 
 def DefaultPrivateKeySize():
@@ -236,15 +265,6 @@ def defaultDebugLevel():
     Default debug level, lower values produce less messages.
     """
     return 10
-
-
-def IntSize():
-    """
-    This constant is used in the RAID code.
-
-    The idea is to be able to optionally switch to 64 bit one day.
-    """
-    return 4
 
 
 def MinimumSendingDelay():
@@ -2455,6 +2475,10 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/id-server/web-port', IdentityWebPort())
 
     config.conf().setDefaultValue('services/identity-propagate/enabled', 'true')
+    config.conf().setDefaultValue('services/identity-propagate/known-servers', '')
+    config.conf().setDefaultValue('services/identity-propagate/preferred-servers', '')
+    config.conf().setDefaultValue('services/identity-propagate/min-servers', MinimumIdentitySources() + 1)
+    config.conf().setDefaultValue('services/identity-propagate/max-servers', int(MaximumIdentitySources() / 2))
 
     config.conf().setDefaultValue('services/ip-port-responder/enabled', 'true')
 

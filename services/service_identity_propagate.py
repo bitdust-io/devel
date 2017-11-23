@@ -52,7 +52,7 @@ class IdentityPropagateService(LocalService):
         my_id.loadLocalIdentity()
         if my_id._LocalIdentity is None:
             from logs import lg
-            lg.warn('Loading local identity failed - need to register first')
+            lg.warn('Loading local identity failed - need to create an identity first')
             return False
         from contacts import identitycache
         identitycache.init()

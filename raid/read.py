@@ -59,6 +59,8 @@ import struct
 
 import raid.eccmap
 
+#------------------------------------------------------------------------------
+
 INTSIZE = 4
 
 #------------------------------------------------------------------------------
@@ -137,7 +139,6 @@ def RebuildOne(inlist, listlen, outfilename):
 
 
 def RebuildOne_new(inlist, listlen, outfilename):
-    # INTSIZE = settings.IntSize()
     fds = range(0, listlen)   # just need a list of this size
     wholefile = ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file
@@ -158,7 +159,6 @@ def RebuildOne_new(inlist, listlen, outfilename):
 
 
 def RebuildOne_orig(inlist, listlen, outfilename):
-        # INTSIZE = settings.IntSize()
     fds = range(0, listlen)   # just need a list of this size
     wholefile = ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file
@@ -191,9 +191,6 @@ def raidread(
         version,
         blockNumber,
         data_parity_dir):
-    # try:
-    # INTSIZE = settings.IntSize()
-    # myeccmap = eccmap.eccmap(eccmapname)
     myeccmap = raid.eccmap.eccmap(eccmapname)
     GoodFiles = range(0, 200)
     MakingProgress = 1

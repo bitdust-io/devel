@@ -146,7 +146,9 @@ class IdRegistrator(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
-        self.preferred_server = None
+        self.min_servers = 1
+        self.max_servers = 10
+        self.preferred_servers = []
         self.discovered_servers = []
         self.good_servers = []
         self.registrations = []
@@ -289,14 +291,43 @@ class IdRegistrator(automat.Automat):
         """
         return len(self.free_idurls) > 0
 
-    def doSelectRandomServers(self, arg):
+    def doSaveMyName(self, arg):
         """
         Action method.
         """
-        if self.preferred_server is not None:
-            self.discovered_servers.append(self.preferred_server)
-        # In future we can do search such peers in DHT.
-        for i in range(3):
+        try:
+            login = arg['username']
+        except:
+            login = arg[0]
+            if len(arg) > 1:
+                self.preferred_servers = map(lambda s: s.strip(), arg[1].split(','))
+        if not self.preferred_servers:
+            try:
+                from main import config
+                self.preferred_servers = map(
+                    lambda s: s.strip(),
+                    str(config.conf().getData('services/identity-propagate/preferred-servers')).split(','))
+            except:
+                pass
+        self.min_servers = max(
+            settings.MinimumIdentitySources(),
+            config.conf().getInt('services/identity-propagate/min-servers') or settings.MinimumIdentitySources())
+        self.max_servers = min(
+            settings.MaximumIdentitySources(),
+            config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources())
+        lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
+        bpio.WriteFile(settings.UserNameFilename(), login)
+
+    def doSelectRandomServers(self, arg):
+        """
+        Action method.
+        TODO: we also can search avaliable id servers in DHT network as well
+        if you started your own ID server you can
+        """
+        if self.preferred_servers:
+            self.discovered_servers.extend(self.preferred_servers)
+        num_servers = random.randint(self.min_servers, self.max_servers)
+        for _ in range(num_servers):
             s = set(known_servers.by_host().keys())
             s.difference_update(self.discovered_servers)
             if len(s) > 0:
@@ -311,7 +342,7 @@ class IdRegistrator(automat.Automat):
 
         def _cb(htmlsrc, id_server_host):
             lg.out(4, '            RESPONDED: %s' % id_server_host)
-            if self.preferred_server and id_server_host == self.preferred_server:
+            if self.preferred_servers and id_server_host in self.preferred_servers:
                 self.good_servers.insert(0, id_server_host)
             else:
                 self.good_servers.append(id_server_host)
@@ -340,7 +371,7 @@ class IdRegistrator(automat.Automat):
 
         def _cb(xmlsrc, idurl, host):
             if not xmlsrc:
-                if self.preferred_server and self.preferred_server == host:
+                if self.preferred_servers and host in self.preferred_servers:
                     self.free_idurls.insert(0, idurl)
                 else:
                     self.free_idurls.append(idurl)
@@ -353,7 +384,7 @@ class IdRegistrator(automat.Automat):
 
         def _eb(err, idurl, host):
             lg.out(4, '            NOT EXIST: %s' % idurl)
-            if self.preferred_server and self.preferred_server == host:
+            if self.preferred_servers and host in self.preferred_servers:
                 self.free_idurls.insert(0, idurl)
             else:
                 self.free_idurls.append(idurl)
@@ -401,19 +432,6 @@ class IdRegistrator(automat.Automat):
         d.addCallback(save)
         d.addErrback(lambda _: self.automat('stun-failed'))
 
-    def doSaveMyName(self, arg):
-        """
-        Action method.
-        """
-        try:
-            login = arg['username']
-        except:
-            login = arg[0]
-            if len(arg) > 1:
-                self.preferred_server = arg[1]
-        lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
-        bpio.WriteFile(settings.UserNameFilename(), login)
-
     def doCreateMyIdentity(self, arg):
         """
         Action method.
@@ -440,6 +458,7 @@ class IdRegistrator(automat.Automat):
         def _eb(x):
             my_id.setLocalIdentity(mycurrentidentity)
             self.automat('my-id-failed')
+
         dl = self._send_new_identity()
         dl.addCallback(_cb)
         dl.addErrback(_eb)
@@ -455,6 +474,7 @@ class IdRegistrator(automat.Automat):
 
         def _eb(err):
             self.automat('my-id-not-exist', err)
+
         for idurl in self.new_identity.sources:
             lg.out(8, '        %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=20)
@@ -551,6 +571,9 @@ def main():
         args = (sys.argv[1])
     reactor.callWhenRunning(A, 'start', args)
     reactor.run()
+
+#------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     main()

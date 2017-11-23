@@ -270,6 +270,12 @@ class identity:
             return False
         if self.revision == '':
             return False
+        if len(self.sources) > settings.MaximumIdentitySources():
+            lg.warn('too much sources')
+            return False
+        if len(self.sources) < settings.MinimumIdentitySources():
+            lg.warn('too few sources')
+            return False
         try:
             int(self.revision)
         except:
@@ -278,6 +284,9 @@ class identity:
         names = set()
         for source in self.sources:
             proto, host, port, filename = nameurl.UrlParse(source)
+            if filename.count('/'):
+                lg.warn("identity name: %s" % filename)
+                return False
             name, justxml = filename.split('.')
             names.add(name)
             # SECURITY check that name is simple
@@ -295,7 +304,7 @@ class identity:
                     lg.warn("identity name: %s" % filename)
                     return False
         if len(names) > 1:
-            lg.warn('different names: %s' % str(names))
+            lg.warn('names are not consistant: %s' % str(names))
             return False
         return True
 

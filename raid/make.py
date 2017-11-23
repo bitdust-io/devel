@@ -60,6 +60,10 @@ import raid.eccmap
 
 #------------------------------------------------------------------------------
 
+INTSIZE = 4
+
+#------------------------------------------------------------------------------
+
 _ECCMAP = {}
 
 
@@ -136,9 +140,7 @@ def WriteFile(filename, data):
 
 
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
-    # try:
     myeccmap = raid.eccmap.eccmap(eccmapname)
-    INTSIZE = 4  # settings.IntSize()
     # any padding at end and block.Length fixes
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)
     wholefile = ReadBinaryFile(filename)
@@ -234,7 +236,6 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
 
 def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
-    INTSIZE = 4  # settings.IntSize()
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)      # any padding at end and block.Length fixes
     wholefile = ReadBinaryFile(filename)
     length = len(wholefile)

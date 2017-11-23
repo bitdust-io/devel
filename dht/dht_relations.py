@@ -60,14 +60,15 @@ from dht import dht_service
 
 #------------------------------------------------------------------------------
 
-def make_dht_key(key, index):
-    return '{}:{}'.format(key, index)
+def make_dht_key(key, index, prefix):
+    return '{}:{}:{}'.format(prefix, key, index)
 
 #------------------------------------------------------------------------------
 
 class RelationsLookup(object):
 
-    def __init__(self, customer_idurl, new_data=None, publish=False, limit_lookups=100, max_misses_in_row=3):
+    def __init__(self, customer_idurl, new_data=None, publish=False,
+                 limit_lookups=100, max_misses_in_row=3, prefix='customer_supplier'):
         self.customer_idurl = customer_idurl
         self._result_defer = Deferred()
         self._new_data = new_data
@@ -77,6 +78,7 @@ class RelationsLookup(object):
         self._last_success_index = -1
         self._last_missed_index = -1
         self._max_misses_in_row = max_misses_in_row
+        self._prefix = prefix
         self._misses_in_row = 0
         self._missed = 0
         self._result = {}
@@ -105,7 +107,7 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel + 6, 'dht_relations.do_read %s index:%d missed:%d' % (
                 self.customer_idurl, self._index, self._missed))
-        d = dht_service.get_value(make_dht_key(self.customer_idurl, self._index))
+        d = dht_service.get_value(make_dht_key(self.customer_idurl, self._index, self._prefix))
         d.addCallback(self.do_verify)
         d.addErrback(self.do_report_failed)
         return d
@@ -113,7 +115,7 @@ class RelationsLookup(object):
     def do_erase(self):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_erase %s' % self._index)
-        d = dht_service.delete_key(make_dht_key(self.customer_idurl, self._index))
+        d = dht_service.delete_key(make_dht_key(self.customer_idurl, self._index, self._prefix))
         d.addCallback(self.do_report_success)
         d.addErrback(self.do_report_failed)
         return 3
@@ -122,7 +124,7 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_write %s' % self._index)
         new_payload = json.dumps(self._new_data)
-        d = dht_service.set_value(make_dht_key(self.customer_idurl, self._index), new_payload, age=int(time.time()))
+        d = dht_service.set_value(make_dht_key(self.customer_idurl, self._index, self._prefix), new_payload, age=int(time.time()))
         d.addCallback(self.do_report_success)
         d.addErrback(self.do_report_failed)
         return 2
@@ -139,7 +141,7 @@ class RelationsLookup(object):
 
     def do_verify(self, dht_value):
         try:
-            json_value = dht_value[dht_service.key_to_hash(make_dht_key(self.customer_idurl, self._index))]
+            json_value = dht_value[dht_service.key_to_hash(make_dht_key(self.customer_idurl, self._index, self._prefix))]
             record = json.loads(json_value)
             record['customer_idurl'] = str(record['customer_idurl'])
             record['supplier_idurl'] = str(record['supplier_idurl'])
@@ -255,7 +257,7 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
         'customer_idurl': customer_idurl,
         'supplier_idurl': supplier_idurl,
         'time': utime.utcnow_to_sec1970(),
-        'signature': '',  # TODO: add signature and verification
+        'signature': '',  # TODO: add signature and verification methods
     }
     return RelationsLookup(customer_idurl, new_data=new_data, publish=True).start()
 

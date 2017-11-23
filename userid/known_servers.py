@@ -34,15 +34,45 @@ def by_host():
     If you willing to support the project and started your own BitDust node on reliable machine,
     contact us and we will include your address here.
     So other nodes will be able to use your machine to host their identities.
+
+    You can override those "genesis" nodes by configuring list of your preferred identity servers
+    in the program settings:
+
+        api.config_set(
+            "services/identity-propagate/known-servers",
+            "myfirstserver.net:80:6661, secondmachine.net:8080:6662, thirdnode.gov.eu:80:16661",
+        )
+
+    This way you can create your own BitDust network, under your full control.
     """
-    return {
-        # 'bitdust.io': (8084, 6661),
+    known_identity_servers = {
         'p2p-id.ru': (80, 6661),
         'veselin-p2p.ru': (80, 6661),
-        # 'bitdust.ai': (80, 6661),
         'datahaven.net': (80, 6661),
         'identity.datahaven.net': (80, 6661),
+        # 'bitdust.io': (8084, 6661),
+        # 'bitdust.ai': (80, 6661),
         # 'work.offshore.ai': (8084, 6661),
         # 'whmcs.whois.ai': (8084, 6661),
         # 'p2p-machines.net': (80, 6661),
     }
+    try:
+        from main import config
+        overridden_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
+    except:
+        overridden_identity_servers_str = ''
+    if not overridden_identity_servers_str:
+        return known_identity_servers
+    overridden_identity_servers = {}
+    for id_server_str in overridden_identity_servers_str.split(','):
+        try:
+            id_server = id_server_str.strip().split(':')
+            id_server_host = id_server[0].strip()
+            id_server_web_port = int(id_server[1].strip())
+            id_server_tcp_port = int(id_server[2].strip())
+        except:
+            continue
+        overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
+    if not overridden_identity_servers:
+        return known_identity_servers
+    return overridden_identity_servers
