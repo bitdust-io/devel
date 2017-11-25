@@ -31,8 +31,8 @@ BitDust executes periodically several slaves:
     - bppipe
     - bptester
     - bpgui
-They are started as a separated processes and managed from the main process:
-    bpmain.
+
+They are started as a separated processes and managed from the main process: bpmain
 """
 
 import os

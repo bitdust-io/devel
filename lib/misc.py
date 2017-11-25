@@ -958,14 +958,14 @@ def setClipboardText(txt):
             lg.exc()
 
     elif bpio.Mac():
-        #         import tempfile
-        #         fd, fname = tempfile.mkstemp()
-        #         fd.write(txt)
-        #         fd.close()
-        #         subprocess.Popen('')
-        #         os.system('cat %s | pbcopy')
-        # TODO
-        pass
+        try:
+            fd, fname = tempfile.mkstemp()
+            os.write(fd, txt)
+            os.close(fd)
+            os.system('cat %s | pbcopy' % fname)
+            os.remove(fname)
+        except:
+            lg.exc()
 
 #------------------------------------------------------------------------------
 

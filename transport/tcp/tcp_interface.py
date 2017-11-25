@@ -77,13 +77,14 @@ class GateInterface():
     def init(self, xml_rpc_url_or_object):
         """
         """
-        global _GateProxy
         if _Debug:
             lg.out(4, 'tcp_interface.init')
-        if isinstance(xml_rpc_url_or_object, str):
-            _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
-        else:
-            _GateProxy = xml_rpc_url_or_object
+        if not proxy():
+            global _GateProxy
+            if isinstance(xml_rpc_url_or_object, str):
+                _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
+            else:
+                _GateProxy = xml_rpc_url_or_object
         proxy().callRemote('transport_initialized', 'tcp')
         return True
 
@@ -92,12 +93,11 @@ class GateInterface():
         """
         if _Debug:
             lg.out(4, 'tcp_interface.shutdown')
-        ret = self.disconnect()
-        global _GateProxy
-        if _GateProxy:
-            # del _GateProxy
+        if proxy():
+            global _GateProxy
+            del _GateProxy
             _GateProxy = None
-        return ret
+        return True
 
     def connect(self, options):
         """

@@ -64,11 +64,8 @@ class ProxyTransportService(LocalService):
             lg.warn('no transports available')
             return False
         self._check_update_original_identity()
-        # self._reset_my_original_identity(skip_transports=['proxy', ])
         self.starting_deferred = Deferred()
-        self.interface = proxy_interface.GateInterface()
-        self.transport = network_transport.NetworkTransport(
-            'proxy', self.interface)
+        self.transport = network_transport.NetworkTransport('proxy', proxy_interface.GateInterface())
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
@@ -88,7 +85,6 @@ class ProxyTransportService(LocalService):
         conf().removeCallback('services/proxy-transport/receiving-enabled')
         t = self.transport
         self.transport = None
-        self.interface = None
         t.automat('shutdown')
         return succeed(True)
 

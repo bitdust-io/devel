@@ -283,7 +283,7 @@ def key_get(key_id, include_private=False):
          'result': [{
             'alias': 'cool',
             'creator': 'http://p2p-id.ru/testveselin.xml',
-            'id': 'cool$testveselin@p2p-id.ru',
+            'key_id': 'cool$testveselin@p2p-id.ru',
             'fingerprint': '50:f9:f1:6d:e3:e4:25:61:0c:81:6f:79:24:4e:78:17',
             'size': '4096',
             'ssh_type': 'ssh-rsa',
@@ -300,7 +300,7 @@ def key_get(key_id, include_private=False):
     key_id = str(key_id)
     if key_id == 'master':
         r = {
-            'key_id': key_id,
+            'key_id': my_id.getGlobalID(key_id),
             'alias': 'master',
             'creator': my_id.getLocalID(),
             'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),

@@ -57,9 +57,7 @@ class UDPTransportService(LocalService):
         from transport import gateway
         from main.config import conf
         self.starting_deferred = Deferred()
-        self.interface = udp_interface.GateInterface()
-        self.transport = network_transport.NetworkTransport(
-            'udp', self.interface)
+        self.transport = network_transport.NetworkTransport('udp', udp_interface.GateInterface())
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
@@ -81,7 +79,6 @@ class UDPTransportService(LocalService):
         conf().removeCallback('services/network/send-limit')
         t = self.transport
         self.transport = None
-        self.interface = None
         t.automat('shutdown')
         return True
 

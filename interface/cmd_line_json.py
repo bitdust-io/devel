@@ -399,7 +399,7 @@ def cmd_reconnect(opts, args, overDict):
 #------------------------------------------------------------------------------
 
 
-def cmd_identity(opts, args, overDict, running):
+def cmd_identity(opts, args, overDict, running, executablePath):
     from userid import my_id
     from main import settings
     settings.init()
@@ -427,6 +427,17 @@ def cmd_identity(opts, args, overDict, running):
         return 0
 
     from twisted.internet import reactor
+
+    if args[1] in ['server', 'srv', ]:
+        from logs import lg
+        from userid import id_server
+        lg.set_debug_level(settings.getDebugLevel())
+        reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')
+        reactor.callWhenRunning(
+            id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
+        reactor.callLater(0, id_server.A, 'start')
+        reactor.run()
+        return 0
 
     def _register():
         if len(args) <= 2:
@@ -505,6 +516,38 @@ def cmd_identity(opts, args, overDict, running):
             return 0
         return _register()
 
+    if len(args) >= 2 and args[1].lower() in ['copy', 'cp', 'bk', 'backup', 'save', ]:
+        from interface import api
+        key_id = 'master'
+        key_json = api.key_get(key_id=key_id, include_private=True)
+        if key_json['status'] != 'OK':
+            print_text('\n'.join(key_json['errors']))
+            return 1
+        TextToSave = key_json['result'][0]['creator'] + "\n" + key_json['result'][0]['private']
+        if args[1] in ['bk', 'backup', 'save', ]:
+            from system import bpio
+            curpath = os.getcwd()
+            os.chdir(executablePath)
+            if len(args) >= 3:
+                filenameto = bpio.portablePath(args[2])
+            else:
+                filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result'][0]['key_id'] + '.key'))
+            os.chdir(curpath)
+            if not bpio.AtomicWriteFile(filenameto, TextToSave):
+                del TextToSave
+                print_text('error writing to %s\n' % filenameto)
+                return 1
+            print_text('current identity "%s" and "master" key was stored in "%s"' % (
+                key_json['result'][0]['creator'], filenameto))
+            return 0
+        from lib import misc
+        misc.setClipboardText(TextToSave)
+        print_text('key "%s" was sent to clipboard, you can use Ctrl+V to paste your private key where you want' % key_json['result'][0]['key_id'])
+        del TextToSave
+        if key_json['result'][0]['alias'] == 'master':
+            print_text('ATTENTION! keep your "master" key in safe place, do not publish it!\n')
+        return 0
+
     if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
         if running:
             print_text('BitDust is running at the moment, need to stop the software first\n')
@@ -554,17 +597,16 @@ def cmd_key(opts, args, overDict, running, executablePath):
                 os.chdir(executablePath)
                 filenameto = bpio.portablePath(args[3])
                 os.chdir(curpath)
-                # filenameto = bpio.portablePath(args[3])
                 if not bpio.AtomicWriteFile(filenameto, TextToSave):
                     del TextToSave
                     print_text('error writing to %s\n' % filenameto)
                     reactor.stop()
                     return 1
-                print_text('private key "%s" was stored in "%s"' % (key_json['result'][0]['id'], filenameto))
+                print_text('private key "%s" was stored in "%s"' % (key_json['result'][0]['key_id'], filenameto))
             else:
                 from lib import misc
                 misc.setClipboardText(TextToSave)
-                print_text('key "%s" was sent to clipboard, you can use Ctrl+V to paste your private key where you want' % key_json['result'][0]['id'])
+                print_text('key "%s" was sent to clipboard, you can use Ctrl+V to paste your private key where you want' % key_json['result'][0]['key_id'])
             del TextToSave
             if key_json['result'][0]['alias'] == 'master':
                 print_text('WARNING! keep your "master" key in safe place, do not publish it!\n')
@@ -816,9 +858,9 @@ def option_name_to_path(name, default=''):
 def cmd_set(opts, args, overDict):
     from main import settings
     from interface import api
+    settings.init()
     name = args[1].lower()
     if name in ['list', 'ls', 'all', 'show', 'print', ]:
-        settings.init()
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
         result = api.config_list(sort=sort)
@@ -830,7 +872,6 @@ def cmd_set(opts, args, overDict):
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if path != '':
-        settings.init()
         if len(args) > 2:
             value = ' '.join(args[2:])
             result = api.config_set(path, unicode(value))
@@ -1256,12 +1297,23 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         'bitdust.py',
         'regexp:^/usr/bin/python.*bitdust.*$',
     ])
-    running = len(appList) > 0
+    running = False
+    if len(appList) > 0:
+        from main import settings
+        try:
+            processid = int(bpio._read_data(os.path.join(settings.MetaDataDir(), 'processid')))
+        except:
+            processid = None
+        if not processid:
+            running = True
+        else:
+            running = (processid in appList)
+
     overDict = override_options(opts, args)
 
     #---identity---
     if cmd in ['identity', 'id', 'idurl', 'globalid', 'globid', 'glid', 'gid', ]:
-        return cmd_identity(opts, args, overDict, running)
+        return cmd_identity(opts, args, overDict, running, executablePath)
 
     #---key---
     elif cmd in ['key', 'keys', 'pk', 'private_key', 'priv', ]:
