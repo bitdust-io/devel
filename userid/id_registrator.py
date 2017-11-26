@@ -146,9 +146,10 @@ class IdRegistrator(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
+        self.known_servers = {}  # host : (web port, tcp port)
+        self.preferred_servers = []
         self.min_servers = 1
         self.max_servers = 10
-        self.preferred_servers = []
         self.discovered_servers = []
         self.good_servers = []
         self.registrations = []
@@ -301,12 +302,14 @@ class IdRegistrator(automat.Automat):
             login = arg[0]
             if len(arg) > 1:
                 self.preferred_servers = map(lambda s: s.strip(), arg[1].split(','))
+        if not self.known_servers:
+            self.known_servers = known_servers.by_host()
         if not self.preferred_servers:
             try:
                 from main import config
-                self.preferred_servers = map(
-                    lambda s: s.strip(),
-                    str(config.conf().getData('services/identity-propagate/preferred-servers')).split(','))
+                for srv in str(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
+                    if srv.strip():
+                        self.preferred_servers.append(srv.strip())
             except:
                 pass
         self.min_servers = max(
@@ -316,6 +319,10 @@ class IdRegistrator(automat.Automat):
             settings.MaximumIdentitySources(),
             config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources())
         lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
+        lg.out(4, '    known_servers=%s' % self.known_servers)
+        lg.out(4, '    preferred_servers=%s' % self.preferred_servers)
+        lg.out(4, '    min_servers=%s' % self.min_servers)
+        lg.out(4, '    max_servers=%s' % self.max_servers)
         bpio.WriteFile(settings.UserNameFilename(), login)
 
     def doSelectRandomServers(self, arg):
@@ -327,10 +334,14 @@ class IdRegistrator(automat.Automat):
         if self.preferred_servers:
             self.discovered_servers.extend(self.preferred_servers)
         num_servers = random.randint(self.min_servers, self.max_servers)
-        for _ in range(num_servers):
-            s = set(known_servers.by_host().keys())
+        needed_servers = num_servers - len(self.discovered_servers)
+        for _ in range(needed_servers):
+            # take a list of all known servers (only host names)
+            s = set(self.known_servers.keys())
+            # exclude already discovered servers
             s.difference_update(self.discovered_servers)
             if len(s) > 0:
+                # if found some known servers - just pick a randome one
                 self.discovered_servers.append(random.choice(list(s)))
         lg.out(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))
 

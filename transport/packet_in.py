@@ -374,6 +374,8 @@ class PacketIn(automat.Automat):
             self.automat('unserialize-failed', None)
             return
         self.label += '_%s[%s]' % (newpacket.Command, newpacket.PacketID)
+        if _Debug:
+            lg.out(_DebugLevel + 2, 'packet_in.doReadAndUnserialize: %s' % newpacket)
         self.automat('valid-inbox-packet', newpacket)
 
     def doReportReceived(self, arg):

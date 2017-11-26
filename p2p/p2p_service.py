@@ -303,10 +303,9 @@ def SendFailNoRequest(remoteID, packetID, response):
 
 def Identity(newpacket):
     """
-    Contact or identity server is sending us a new copy of an identity for a
-    contact of ours.
-
+    Normal node or Identity server is sending us a new copy of an identity for a contact of ours.
     Checks that identity is signed correctly.
+    Sending requests to cache all sources (other identity servers) holding that identity.
     """
     newxml = newpacket.Payload
     newidentity = identity.identity(xmlsrc=newxml)
@@ -332,6 +331,15 @@ def Identity(newpacket):
     else:
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity from [%s]" % nameurl.GetName(idurl))
+    # TODO: after receiving the full identity sources we can call ALL OF them if some are not cached yet.
+    # this way we can be sure that even if first source (server holding your public key) is not availabble
+    # other sources still can give you required user info: public key, contacts, etc..
+    # something like:
+    # for source in identitycache.FromCache(idurl).getSources():
+    #     if source not in identitycache.FromCache(idurl):
+    #         d = identitycache.immediatelyCaching(source)
+    #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))
+    #         d.addErrback(lambda err: lg.warn('caching filed: %s' % err))
     return True
 
 

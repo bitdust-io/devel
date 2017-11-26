@@ -511,19 +511,16 @@ def get_contact_identity(idurl):
         return None
     if idurl == my_id.getLocalID():
         return my_id.getLocalIdentity()
-    if True:
+    if is_supplier(idurl):
         return identitycache.FromCache(idurl)
-    else:
-        if is_supplier(idurl):
-            return identitycache.FromCache(idurl)
-        if is_customer(idurl):
-            return identitycache.FromCache(idurl)
-        if is_correspondent(idurl):
-            return identitycache.FromCache(idurl)
-        if identitycache.HasKey(idurl):
-            # lg.warn("who is %s ?" % nameurl.GetName(idurl))
-            return identitycache.FromCache(idurl)
-    lg.out(6, "contactsdb.getContact %s is not found" % nameurl.GetName(idurl))
+    if is_customer(idurl):
+        return identitycache.FromCache(idurl)
+    if is_correspondent(idurl):
+        return identitycache.FromCache(idurl)
+    if identitycache.HasKey(idurl):
+        # lg.warn("who is %s ?" % nameurl.GetName(idurl))
+        return identitycache.FromCache(idurl)
+    lg.warn("%s is NOT FOUND IN CACHE" % idurl)
     # TODO:
     # this is not correct:
     # need to check if other contacts is fine - if internet is turned off we can get lots fails ...

@@ -65,7 +65,9 @@ def init():
     """
     if _Debug:
         lg.out(4, 'identitycache.init')
-    # identitydb.clear()
+    if True:
+        # TODO: added settings here
+        identitydb.clear()
     identitydb.init()
 
 
@@ -226,20 +228,31 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
+    if idurl in _OverriddenIdentities:
+        lg.warn('replacing overriden identity "%s" with new one')
+        if _Debug:
+            lg.out(4, 'OVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
+            lg.out(4, '\nOVERRIDDEN NEW:\n' + xml_src)
+    else:
+        lg.warn('replacing original identity')
+        if _Debug:
+            lg.out(4, 'ORIGINAL:\n' + (identitydb.get(idurl).toxml() if identitydb.has_idurl(idurl) else 'EMPTY!'))
+            lg.out(4, '\nNEW:\n' + xml_src)
     _OverriddenIdentities[idurl] = xml_src
     if _Debug:
-        lg.out(4, 'identitycache.OverrideIdentity a new identity source saved for %s' % idurl)
-        lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
+#         lg.out(4, 'identitycache.OverrideIdentity a new identity source saved for %s' % idurl)
+        lg.out(4, '            total number of overrides: %d' % len(_OverriddenIdentities))
 
 
 def StopOverridingIdentity(idurl):
     """
     """
     global _OverriddenIdentities
-    return _OverriddenIdentities.pop(idurl, None)
+    result = _OverriddenIdentities.pop(idurl, None)
     if _Debug:
         lg.out(4, 'identitycache.OverrideIdentity   removed overridden source for %s' % idurl)
         lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
+    return result
 
 
 def IsOverridden(idurl):

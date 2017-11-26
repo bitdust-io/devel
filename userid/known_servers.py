@@ -47,13 +47,13 @@ def by_host():
     """
     known_identity_servers = {
         'p2p-id.ru': (80, 6661),
-        'veselin-p2p.ru': (80, 6661),
+        # 'veselin-p2p.ru': (80, 6661),
         'datahaven.net': (80, 6661),
         'identity.datahaven.net': (80, 6661),
         # 'bitdust.io': (8084, 6661),
         # 'bitdust.ai': (80, 6661),
-        # 'work.offshore.ai': (8084, 6661),
-        # 'whmcs.whois.ai': (8084, 6661),
+        'work.offshore.ai': (8084, 6661),
+        'whmcs.whois.ai': (8084, 6661),
         # 'p2p-machines.net': (80, 6661),
     }
     try:
@@ -65,14 +65,15 @@ def by_host():
         return known_identity_servers
     overridden_identity_servers = {}
     for id_server_str in overridden_identity_servers_str.split(','):
-        try:
-            id_server = id_server_str.strip().split(':')
-            id_server_host = id_server[0].strip()
-            id_server_web_port = int(id_server[1].strip())
-            id_server_tcp_port = int(id_server[2].strip())
-        except:
-            continue
-        overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
+        if id_server_str.strip():
+            try:
+                id_server = id_server_str.strip().split(':')
+                id_server_host = id_server[0].strip()
+                id_server_web_port = int(id_server[1].strip())
+                id_server_tcp_port = int(id_server[2].strip())
+            except:
+                continue
+            overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
     if not overridden_identity_servers:
         return known_identity_servers
     return overridden_identity_servers
