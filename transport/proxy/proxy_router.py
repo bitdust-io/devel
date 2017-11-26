@@ -215,7 +215,7 @@ class ProxyRouter(automat.Automat):
         """
         global _MaxRoutesNumber
         request, _ = arg
-        target = request.CreatorID
+        user_id = request.CreatorID
         if request.Command == commands.RequestService():
             if len(self.routes) >= _MaxRoutesNumber:
                 if _Debug:
@@ -235,26 +235,26 @@ class ProxyRouter(automat.Automat):
                     lg.warn('incoming identity is not valid')
                     return
                 oldnew = ''
-                if target not in self.routes.keys():
+                if user_id not in self.routes.keys():
                     # accept new route
                     oldnew = 'NEW'
-                    self.routes[target] = {}
+                    self.routes[user_id] = {}
                 else:
                     # accept existing router
                     oldnew = 'OLD'
                 if not self._is_my_contacts_present_in_identity(cached_id):
                     if _Debug:
-                        lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % target)
-                    identitycache.OverrideIdentity(target, idsrc)
+                        lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % user_id)
+                    identitycache.OverrideIdentity(user_id, idsrc)
                 else:
                     if _Debug:
-                        lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % target)
-                self.routes[target]['time'] = time.time()
-                self.routes[target]['identity'] = idsrc
-                self.routes[target]['publickey'] = cached_id.publickey
-                self.routes[target]['contacts'] = cached_id.getContactsAsTuples()
-                self.routes[target]['address'] = []
-                self._write_route(target)
+                        lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % user_id)
+                self.routes[user_id]['time'] = time.time()
+                self.routes[user_id]['identity'] = idsrc
+                self.routes[user_id]['publickey'] = cached_id.publickey
+                self.routes[user_id]['contacts'] = cached_id.getContactsAsTuples()
+                self.routes[user_id]['address'] = []
+                self._write_route(user_id)
                 self.acks.append(
                     p2p_service.SendAck(
                         request,
@@ -262,20 +262,20 @@ class ProxyRouter(automat.Automat):
                         wide=True,
                         packetid=request.PacketID))
                 if _Debug:
-                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, target))
+                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, user_id))
         elif request.Command == commands.CancelService():
-            if target in self.routes:
+            if user_id in self.routes:
                 # cancel existing route
-                self._remove_route(target)
-                self.routes.pop(target)
-                identitycache.StopOverridingIdentity(target)
+                self._remove_route(user_id)
+                self.routes.pop(user_id)
+                identitycache.StopOverridingIdentity(user_id)
                 p2p_service.SendAck(request, 'accepted', wide=True)
                 if _Debug:
-                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % target)
+                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % user_id)
             else:
                 p2p_service.SendAck(request, 'rejected', wide=True)
                 if _Debug:
-                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
+                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % user_id)
                     lg.out(_DebugLevel, '    %s' % pprint.pformat(self.routes))
         else:
             p2p_service.SendFail(request, 'wrong command or payload')  # , wide=True)
@@ -327,7 +327,7 @@ class ProxyRouter(automat.Automat):
         if not routed_packet:
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
             return
-        # send the packet directly to target
+        # send the packet directly to target user_id
         # we pass not callbacks because all response packets from this call will be also re-routed
         pout = packet_out.create(routed_packet, wide=wide, callbacks={}, target=receiver_idurl,)
         # gateway.outbox(routed_packet, wide=wide)
@@ -429,7 +429,7 @@ class ProxyRouter(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doCheckOverride identity for %s' % arg.CreatorID)
-        target = arg.CreatorID
+        user_id = arg.CreatorID
         idsrc = arg.Payload
         try:
             new_ident = identity.identity(xmlsrc=idsrc)
@@ -440,33 +440,30 @@ class ProxyRouter(automat.Automat):
         if not new_ident.isCorrect() or not new_ident.Valid():
             lg.warn('incoming identity is not valid')
             return
-        override_required = False
-        cur_contacts = []
+        current_overridden_identity = identitycache.ReadOverriddenIdentityXMLSource(user_id)
+        try:
+            current_contacts = identity.identity(xmlsrc=current_overridden_identity).getContacts()
+        except:
+            current_contacts = []
+        if _Debug:
+            lg.out(_DebugLevel, '    current override contacts is : %s' % current_contacts)
+        identitycache.StopOverridingIdentity(user_id)
         if not self._is_my_contacts_present_in_identity(new_ident):
-            try:
-                cur_contacts = identity.identity(
-                    xmlsrc=identitycache.ReadOverriddenIdentityXMLSource(target)
-                ).getContacts()
-            except:
-                lg.exc()
-                return
-            override_required = True
-            for new_contact in new_ident.getContacts():
-                if new_contact in cur_contacts:
-                    override_required = False
-                    if _Debug:
-                        lg.out(_DebugLevel, '   new contact %s found in current override contacts' % (new_contact))
-                    break
-        if override_required:
             if _Debug:
                 lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % arg.CreatorID)
-                lg.out(_DebugLevel, '    current override contacts is : %s' % cur_contacts)
                 lg.out(_DebugLevel, '    new contacts is : %s' % new_ident.getContacts())
             identitycache.OverrideIdentity(arg.CreatorID, idsrc)
         else:
             if _Debug:
                 lg.out(_DebugLevel, '    SKIP OVERRIDE identity from %s' % arg.CreatorID)
-                lg.out(_DebugLevel, '    new contacts is : %s' % new_ident.getContacts())
+                lg.out(_DebugLevel, '    new contacts was : %s' % new_ident.getContacts())
+
+#             for new_contact in new_ident.getContacts():
+#                 if new_contact in current_contacts:
+#                     override_required = False
+#                     if _Debug:
+#                         lg.out(_DebugLevel, '   new contact %s found in current override contacts' % (new_contact))
+#                     break
 
     def doSendAck(self, arg):
         """
@@ -517,13 +514,13 @@ class ProxyRouter(automat.Automat):
                     # this is a "propagate" packet from node A addressed to this proxy
                     # mark that packet as handled and send Ack
                     # otherwise it will be wrongly handled in p2p_service
-                    # self.automat('known-identity-received', newpacket)
+                    self.automat('known-identity-received', newpacket)
                     return True
                 else:
                     # this node is not yet in routers list,
                     # but seems like it tries to contact me
                     # mark this packet as handled and try to process it
-                    # self.automat('unknown-identity-received', newpacket)
+                    self.automat('unknown-identity-received', newpacket)
                     return True
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
@@ -624,26 +621,26 @@ class ProxyRouter(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._clear_routes')
 
-    def _write_route(self, target):
+    def _write_route(self, user_id):
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
             dct = json.loads(src)
         except:
             dct = {}
-        dct[target] = self.routes[target]
+        dct[user_id] = self.routes[user_id]
         newsrc = pprint.pformat(json.dumps(dct, indent=0))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc))
 
-    def _remove_route(self, target):
+    def _remove_route(self, user_id):
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
             dct = json.loads(src)
         except:
             dct = {}
-        if target in dct:
-            dct.pop(target)
+        if user_id in dct:
+            dct.pop(user_id)
         newsrc = json.dumps(dct)
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:

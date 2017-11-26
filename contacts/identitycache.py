@@ -34,7 +34,7 @@ IDURL. So this is a local cache of user ID's.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -214,8 +214,10 @@ def RemapContactAddress(address):
     idurl = GetIDURLByIPPort(address[0], address[1])
     if idurl is not None and HasLocalIP(idurl):
         newaddress = (GetLocalIP(idurl), address[1])
-#        if _Debug: lg.out(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
-#            nameurl.GetName(idurl), str(address), str(newaddress)))
+        if _Debug:
+            from lib import nameurl
+            lg.out(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
+                nameurl.GetName(idurl), str(address), str(newaddress)))
         return newaddress
     return address
 
