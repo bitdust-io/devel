@@ -425,6 +425,8 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router.doCheckOverride identity for %s' % arg.CreatorID)
         target = arg.CreatorID
         idsrc = arg.Payload
         try:
@@ -446,13 +448,13 @@ class ProxyRouter(automat.Automat):
                 lg.exc()
                 return
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_router.doCheckOverride override identity for %s' % arg.CreatorID)
+                lg.out(_DebugLevel, '    OVERRIDE identity for %s' % arg.CreatorID)
                 lg.out(_DebugLevel, '    current override contacts is : %s' % cur_contacts)
                 lg.out(_DebugLevel, '    new contacts is : %s' % new_ident.getContacts())
             identitycache.OverrideIdentity(arg.CreatorID, idsrc)
         else:
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_router.doCheckOverride skip override, found my contacts in identity from %s' % arg.CreatorID)
+                lg.out(_DebugLevel, '    SKIP, found my contacts in identity from %s' % arg.CreatorID)
                 lg.out(_DebugLevel, '    known contacts is : %s' % new_ident.getContacts())
 
     def doSendAck(self, arg):
@@ -499,8 +501,7 @@ class ProxyRouter(automat.Automat):
                     newpacket, newpacket.CreatorID, newpacket.CreatorID))
                 return False
             # and this is not a Relay packet
-            if newpacket.Command == commands.Identity() and \
-                    newpacket.CreatorID == newpacket.OwnerID:
+            if newpacket.Command == commands.Identity() and newpacket.CreatorID == newpacket.OwnerID:
                 if newpacket.CreatorID in self.routes.keys():
                     # this is a "propagate" packet from node A addressed to this proxy
                     # mark that packet as handled and send Ack
