@@ -223,12 +223,12 @@ class NetworkTransport(automat.Automat):
         options = {'idurl': my_id.getLocalID(), }
         id_contact = ''
         default_host = ''
-        ident = my_id.getLocalIdentity()
-        if ident:
-            id_contact = ident.getContactsByProto().get(self.proto, '')
-        if id_contact:
-            assert id_contact.startswith(self.proto + '://')
-            id_contact = id_contact.lstrip(self.proto + '://')
+#         ident = my_id.getLocalIdentity()
+#         if ident:
+#             id_contact = ident.getContactsByProto().get(self.proto, '')
+#         if id_contact:
+#             assert id_contact.startswith(self.proto + '://')
+#             id_contact = id_contact.lstrip(self.proto + '://')
         if self.proto == 'tcp':
             if not id_contact:
                 default_host = misc.readExternalIP() + ':' + str(settings.getTCPPort())

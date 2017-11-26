@@ -256,7 +256,7 @@ def Save(filepath=None):
         return False
     commit()
     WriteIndex(filepath)
-    if driver.is_started('service_backup_db'):
+    if driver.is_on('service_backup_db'):
         from storage import index_synchronizer
         index_synchronizer.A('push')
 
@@ -334,7 +334,7 @@ def IncomingSupplierBackupIndex(newpacket):
         except:
             pass
         return
-    if driver.is_started('service_backup_db'):
+    if driver.is_on('service_backup_db'):
         from storage import index_synchronizer
         index_synchronizer.A('index-file-received', (newpacket, supplier_revision))
     if revision() >= supplier_revision:

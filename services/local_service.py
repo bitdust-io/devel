@@ -249,7 +249,7 @@ class LocalService(automat.Automat):
         """
         for svc in services().values():
             if self.service_name in svc.dependent_on():
-                if  svc.state != 'OFF' and \
+                if svc.state != 'OFF' and \
                         svc.state != 'DEPENDS_OFF' and \
                         svc.state != 'NOT_INSTALLED':
                     return False

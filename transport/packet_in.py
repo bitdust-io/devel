@@ -154,7 +154,7 @@ def history():
 
 
 def process(newpacket, info):
-    if not driver.is_started('service_p2p_hookups'):
+    if not driver.is_on('service_p2p_hookups'):
         if _Debug:
             lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
         return

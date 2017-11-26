@@ -95,7 +95,7 @@ def on_outgoing_message(message_body, private_message_object, remote_identity, o
 def save_incoming_message(private_message_object, message_id):
     """
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         lg.warn('service_backups is not started')
         return False
     serialized_message = private_message_object.serialize()
@@ -122,7 +122,7 @@ def save_incoming_message(private_message_object, message_id):
 def save_outgoing_message(private_message_object, message_id):
     """
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         lg.warn('service_backups is not started')
         return False
     serialized_message = private_message_object.serialize()

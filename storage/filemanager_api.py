@@ -66,7 +66,7 @@ from web import control
 
 def process(json_request):
     lg.out(12, 'filemanager_api.process %s' % json_request)
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return {'result': {
             "success": False,
             "error": "network [service_backups] is not started: %s" % (
@@ -393,7 +393,7 @@ def _list_in_out_packets(params):
 
 def _list_active_streams(params):
     result = []
-    if not driver.is_started('service_gateway'):
+    if not driver.is_on('service_gateway'):
         return {'result': result, }
     from transport import gateway
     result = []
@@ -450,7 +450,7 @@ def _list_active_streams(params):
 
 def _list_active_connections(params):
     result = []
-    if not driver.is_started('service_gateway'):
+    if not driver.is_on('service_gateway'):
         return {'result': result, }
     from transport import gateway
     result = []

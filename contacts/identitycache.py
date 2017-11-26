@@ -229,19 +229,25 @@ def OverrideIdentity(idurl, xml_src):
     """
     global _OverriddenIdentities
     if idurl in _OverriddenIdentities:
-        lg.warn('replacing overriden identity "%s" with new one')
+        if _OverriddenIdentities[idurl] == xml_src:
+            lg.warn('replacing overriden identity "%s" SKIPPED, no changes' % idurl)
+            return
+        lg.warn('replacing overriden identity "%s" with new one' % idurl)
         if _Debug:
-            lg.out(4, 'OVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
+            lg.out(4, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
             lg.out(4, '\nOVERRIDDEN NEW:\n' + xml_src)
     else:
-        lg.warn('replacing original identity')
+        orig = identitydb.get(idurl).serialize() if identitydb.has_idurl(idurl) else ''
+        if orig and orig == xml_src:
+            lg.warn('replacing original identity "%s" SKIPPED, overriden copy is the same as original' % idurl)
+            return
+        lg.warn('replacing original identity for "%s"' % idurl)
         if _Debug:
-            lg.out(4, 'ORIGINAL:\n' + (identitydb.get(idurl).serialize() if identitydb.has_idurl(idurl) else 'EMPTY!'))
+            lg.out(4, '\nORIGINAL:\n' + orig)
             lg.out(4, '\nNEW:\n' + xml_src)
     _OverriddenIdentities[idurl] = xml_src
     if _Debug:
-#         lg.out(4, 'identitycache.OverrideIdentity a new identity source saved for %s' % idurl)
-        lg.out(4, '            total number of overrides: %d' % len(_OverriddenIdentities))
+        lg.out(4, '    total number of overrides: %d' % len(_OverriddenIdentities))
 
 
 def StopOverridingIdentity(idurl):
@@ -250,7 +256,7 @@ def StopOverridingIdentity(idurl):
     global _OverriddenIdentities
     result = _OverriddenIdentities.pop(idurl, None)
     if _Debug:
-        lg.out(4, 'identitycache.OverrideIdentity   removed overridden source for %s' % idurl)
+        lg.out(4, 'identitycache.StopOverridingIdentity   removed overridden source for %s' % idurl)
         lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
     return result
 

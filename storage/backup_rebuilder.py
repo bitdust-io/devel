@@ -164,7 +164,7 @@ class BackupRebuilder(automat.Automat):
         if newstate in ['NEXT_BACKUP', 'REQUEST', 'REBUILDING', ]:
             self.automat('instant')
         elif newstate == 'DONE' or newstate == 'STOPPED':
-            if driver.is_started('service_backups'):
+            if driver.is_on('service_backups'):
                 from storage import backup_monitor
                 backup_monitor.A('backup_rebuilder.state', newstate)
 

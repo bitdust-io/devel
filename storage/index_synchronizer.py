@@ -278,7 +278,7 @@ class IndexSynchronizer(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer.doSuppliersRequestIndexFile')
-        if driver.is_started('service_backups'):
+        if driver.is_on('service_backups'):
             from storage import backup_control
             self.current_local_revision = backup_control.revision()
         else:

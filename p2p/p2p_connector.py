@@ -64,7 +64,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -328,7 +328,7 @@ class P2PConnector(automat.Automat):
         """
         Action method.
         """
-        if driver.is_started('service_backup_monitor'):
+        if driver.is_on('service_backup_monitor'):
             from storage import backup_monitor
             backup_monitor.A('restart')
 
@@ -336,7 +336,7 @@ class P2PConnector(automat.Automat):
         """
         Action method.
         """
-        if driver.is_started('service_customer_patrol'):
+        if driver.is_on('service_customer_patrol'):
             from supplier import customers_rejector
             customers_rejector.A('restart')
 
@@ -344,7 +344,7 @@ class P2PConnector(automat.Automat):
         """
         Action method.
         """
-        if driver.is_started('service_employer'):
+        if driver.is_on('service_employer'):
             from customer import fire_hire
             fire_hire.A('restart')
 
@@ -360,7 +360,7 @@ class P2PConnector(automat.Automat):
             return True
         # when transport proxy is working we do not need to check our contacts at all
         if settings.transportIsEnabled('proxy'):
-            if driver.is_started('service_proxy_transport'):
+            if driver.is_on('service_proxy_transport'):
                 if settings.transportReceivingIsEnabled('proxy'):
                     try:
                         # TODO: change here to receive the value directly from service_proxy_transport object

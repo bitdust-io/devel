@@ -612,7 +612,7 @@ if __name__ == "__main__":
 #         d = Deferred()
 #         d.addCallback(cbList, glob)
 #         d.addErrback(listErr)
-# #         if not driver.is_started('service_restores'):
+# #         if not driver.is_on('service_restores'):
 # #             d.errback(None)
 #         result = [(itm['id'], []) for itm in api.backups_list()['result']]
 #         d.callback(result)

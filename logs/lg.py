@@ -145,7 +145,7 @@ def warn(message, level=2):
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
-        output_string = '\033[0;35mWARNING!!!  in  %s.%s() :\n%s%s\033[0m' % (modul, caller, ' ' * (level + 11), message)
+        output_string = 'WARNING!!!  in  %s.%s() :\n\033[0;35m%s%s\033[0m' % (modul, caller, ' ' * (level + 11), message)
     else:
         output_string = 'WARNING!!!  in  %s.%s :\n%s' % (modul, caller, message)
     out(level, output_string)
@@ -164,7 +164,7 @@ def err(message, level=0):
         message = ' in %s() : "%s"' % (funcname, message)
     if not message.count('ERROR'):
         message = 'ERROR!!!  ' + message
-    message = '\n%s%s   ' % ((' ' * (level + 11)), message)
+    message = '%s%s   ' % ((' ' * (level + 11)), message)
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:

@@ -239,7 +239,7 @@ class ProxySender(automat.Automat):
     def _on_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None):
         """
         """
-        if not driver.is_started('service_proxy_transport'):
+        if not driver.is_on('service_proxy_transport'):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP because service_proxy_transport is not started')
             return None

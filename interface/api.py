@@ -506,7 +506,7 @@ def key_share(key_id, trusted_global_id_or_idurl, timeout=10):
         full_key_id = str(key_id)
     except:
         return succeed(ERROR('error input parameters'))
-    if not driver.is_started('service_keys_registry'):
+    if not driver.is_on('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
     glob_id = global_id.ParseGlobalID(full_key_id)
     if glob_id['key_alias'] == 'master':
@@ -562,7 +562,7 @@ def filemanager(json_request):
 
     WARNING: Those methods here will be deprecated and removed, use regular API methods instead.
     """
-    if not driver.is_started('service_restores'):
+    if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import filemanager_api
     return filemanager_api.process(json_request)
@@ -581,7 +581,7 @@ def files_sync():
 
         {'status': 'OK', 'result': 'the main files sync loop has been restarted'}
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_monitor
     backup_monitor.A('restart')
@@ -626,7 +626,7 @@ def files_list(remote_path=None):
                       ],
           u'status': u'OK'}
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_fs
     from system import bpio
@@ -674,7 +674,7 @@ def files_list(remote_path=None):
 def file_info(remote_path, include_uploads=True, include_downloads=True):
     """
     """
-    if not driver.is_started('service_restores'):
+    if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import backup_fs
     from lib import misc
@@ -772,7 +772,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
 def file_create(remote_path, as_folder=False):
     """
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
@@ -846,7 +846,7 @@ def file_create(remote_path, as_folder=False):
 def file_delete(remote_path):
     """
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
@@ -920,7 +920,7 @@ def files_uploads(include_running=True, include_pending=True):
             }]
         }
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from lib import misc
     from storage import backup_control
@@ -959,7 +959,7 @@ def files_uploads(include_running=True, include_pending=True):
 def file_upload_start(local_path, remote_path, wait_result=True):
     """
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from system import bpio
     from storage import backup_fs
@@ -1030,7 +1030,7 @@ def file_upload_start(local_path, remote_path, wait_result=True):
 def file_upload_stop(remote_path):
     """
     """
-    if not driver.is_started('service_backups'):
+    if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_control
     from storage import backup_fs
@@ -1083,7 +1083,7 @@ def files_downloads():
             'version': 'F20160427011209PM'
         }]}
     """
-    if not driver.is_started('service_restores'):
+    if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import restore_monitor
     lg.out(4, 'api.files_downloads %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
@@ -1120,7 +1120,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
 
         {'status': 'OK', 'result': 'downloading of version 0/0/1/1/0/F20160313043419PM has been started to /Users/veselin/'}
     """
-    if not driver.is_started('service_restores'):
+    if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import backup_fs
     from storage import backup_control
@@ -1229,7 +1229,7 @@ def file_download_stop(remote_path):
 
         {'status': 'OK', 'result': 'restoring of "alice@p2p-host.com:0/1/2" aborted'}
     """
-    if not driver.is_started('service_restores'):
+    if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import backup_fs
     from storage import restore_monitor
@@ -1301,7 +1301,7 @@ def suppliers_list():
             'status': 'offline'
         }]}
     """
-    if not driver.is_started('service_customer'):
+    if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
     from p2p import contact_status
@@ -1327,7 +1327,7 @@ def supplier_replace(index_or_idurl):
 
         {'status': 'OK', 'result': 'supplier http://p2p-id.ru/alice.xml will be replaced by new peer'}
     """
-    if not driver.is_started('service_customer'):
+    if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
     idurl = index_or_idurl
@@ -1349,7 +1349,7 @@ def supplier_change(index_or_idurl, new_idurl):
 
         {'status': 'OK', 'result': 'supplier http://p2p-id.ru/alice.xml will be replaced by http://p2p-id.ru/bob.xml'}
     """
-    if not driver.is_started('service_customer'):
+    if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
     idurl = index_or_idurl
@@ -1375,7 +1375,7 @@ def suppliers_ping():
 
         {'status': 'OK',  'result': 'requests to all suppliers was sent'}
     """
-    if not driver.is_started('service_customer'):
+    if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from p2p import propagate
     propagate.SlowSendSuppliers(0.1)
@@ -1396,7 +1396,7 @@ def customers_list():
                         'status': 'offline'
         }]}
     """
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
     from contacts import contactsdb
     from p2p import contact_status
@@ -1416,7 +1416,7 @@ def customer_reject(idurl):
 
         {'status': 'OK', 'result': 'customer http://p2p-id.ru/bob.xml rejected, 536870912 bytes were freed'}
     """
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
     from contacts import contactsdb
     from storage import accounting
@@ -1456,7 +1456,7 @@ def customers_ping():
 
         {'status': 'OK',  'result': 'requests to all customers was sent'}
     """
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
     from p2p import propagate
     propagate.SlowSendCustomers(0.1)
@@ -1756,7 +1756,7 @@ def packets_stats():
                 'unknown_packets': 0
         }}]}
     """
-    if not driver.is_started('service_gateway'):
+    if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from transport import stats
     return RESULT([{
@@ -1769,7 +1769,7 @@ def packets_list():
     """
     Return list of incoming and outgoing packets.
     """
-    if not driver.is_started('service_gateway'):
+    if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from transport import packet_in
     from transport import packet_out
@@ -1798,7 +1798,7 @@ def connections_list(wanted_protos=None):
 
         connections_list(wanted_protos=['tcp', 'udp'])
     """
-    if not driver.is_started('service_gateway'):
+    if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from transport import gateway
     result = []
@@ -1859,7 +1859,7 @@ def streams_list(wanted_protos=None):
     """
     Return list of active sending/receiveing files.
     """
-    if not driver.is_started('service_gateway'):
+    if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from transport import gateway
     from lib import misc
@@ -1932,7 +1932,7 @@ def ping(idurl, timeout=10):
 
         {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
     """
-    if not driver.is_started('service_identity_propagate'):
+    if not driver.is_on('service_identity_propagate'):
         return succeed(ERROR('service_identity_propagate() is not started'))
     from p2p import propagate
     result = Deferred()
@@ -1961,7 +1961,7 @@ def user_ping(idurl, timeout=10):
 
         {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
     """
-    if not driver.is_started('service_identity_propagate'):
+    if not driver.is_on('service_identity_propagate'):
         return succeed(ERROR('service_identity_propagate() is not started'))
     from p2p import propagate
     result = Deferred()
@@ -1979,7 +1979,7 @@ def user_search(nickname):
     Starts nickname_observer() Automat to lookup existing nickname registered
     in DHT network.
     """
-    if not driver.is_started('service_private_messages'):
+    if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import nickname_observer
     nickname_observer.stop_all()
@@ -2006,7 +2006,7 @@ def set_my_nickname(nickname):
     Starts nickname_holder() machine to register and keep your nickname in DHT
     network.
     """
-    if not driver.is_started('service_private_messages'):
+    if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import nickname_holder
     from main import settings
@@ -2029,7 +2029,7 @@ def find_peer_by_nickname(nickname):
     Starts nickname_observer() Automat to lookup existing nickname registered
     in DHT network.
     """
-    if not driver.is_started('service_private_messages'):
+    if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import nickname_observer
     nickname_observer.stop_all()
@@ -2059,7 +2059,7 @@ def send_message(recipient, message_body):
 
         {'status': 'OK', 'result': ['signed.Packet[Message(146681300413)]']}
     """
-    if not driver.is_started('service_private_messages'):
+    if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import message
     from userid import global_id
@@ -2115,7 +2115,7 @@ def receive_one_message():
             'message': 'Hello my dear Friend!'
         }]}
     """
-    if not driver.is_started('service_private_messages'):
+    if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import message
     ret = Deferred()
@@ -2143,7 +2143,7 @@ def message_send(recipient, message_body):
 
         {'status': 'OK', 'result': ['signed.Packet[Message(146681300413)]']}
     """
-    if not driver.is_started('service_private_messages'):
+    if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import message
     from userid import global_id
@@ -2204,7 +2204,7 @@ def message_receive(consumer_id):
             'time': 123456789
         }]}
     """
-    if not driver.is_started('service_private_messages'):
+    if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import message
     ret = Deferred()
@@ -2244,7 +2244,7 @@ def broadcast_send_message(payload):
     WARNING! Please, do not send too often and do not send more then
     several kilobytes per message.
     """
-    if not driver.is_started('service_broadcasting'):
+    if not driver.is_on('service_broadcasting'):
         return ERROR('service_broadcasting() is not started')
     from broadcast import broadcast_service
     from broadcast import broadcast_listener
@@ -2286,7 +2286,7 @@ def network_reconnect():
 
         {'status': 'OK', 'result': 'reconnected'}
     """
-    if not driver.is_started('service_network'):
+    if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
     from p2p import network_connector
     lg.out(4, 'api.network_reconnect')

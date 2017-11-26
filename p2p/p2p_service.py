@@ -374,7 +374,7 @@ def RequestService(request, info):
     if not driver.is_exist(service_name):
         lg.warn("got wrong payload in %s" % service_name)
         return SendFail(request, 'service %s not exist' % service_name)
-    if not driver.is_started(service_name):
+    if not driver.is_on(service_name):
         return SendFail(request, 'service %s is off' % service_name)
     return driver.request(service_name, request, info)
 
@@ -407,7 +407,7 @@ def CancelService(request, info):
     if not driver.is_exist(service_name):
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'service %s not exist' % service_name)
-    if not driver.is_started(service_name):
+    if not driver.is_on(service_name):
         return SendFail(request, 'service %s is off' % service_name)
     return driver.cancel(service_name, request, info)
 
@@ -429,7 +429,7 @@ def ListFiles(request):
 
     This is to build the ``Files()`` we are holding for a customer.
     """
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return SendFail(request, 'supplier service is off')
     # TODO: use callback module here instead of direct call
     from supplier import list_files
@@ -463,7 +463,7 @@ def Data(request):
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Data %r for us from %s" % (
                 request, nameurl.GetName(request.RemoteID)))
-        if driver.is_started('service_backups'):
+        if driver.is_on('service_backups'):
             # TODO: move this into callback
             settings.BackupIndexFileName()
             indexPacketID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
@@ -473,7 +473,7 @@ def Data(request):
                 return True
         return False
     # 2. this Data is not belong to us
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):  # SECURITY
         lg.warn("%s not a customer, packetID=%s" % (request.OwnerID, request.PacketID))
@@ -566,7 +566,7 @@ def Retrieve(request):
     # TODO: rename to RetrieveData()
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Retrieve [%s] by %s | %s' % (request.PacketID, request.OwnerID, request.CreatorID))
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):
         lg.warn("had unknown customer " + request.OwnerID)
@@ -653,7 +653,7 @@ def DeleteFile(request):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.DeleteFile [%s] by %s | %s' % (
             request.PacketID, request.OwnerID, request.CreatorID))
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if request.Payload == '':
         ids = [request.PacketID]
@@ -729,7 +729,7 @@ def DeleteBackup(request):
     """
     Delete one or multiple backups on my machine.
     """
-    if not driver.is_started('service_supplier'):
+    if not driver.is_on('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if request.Payload == '':
         ids = [request.PacketID]

@@ -134,16 +134,18 @@ class GateInterface():
         """
         """
         from transport.proxy import proxy_receiver
+        # from userid import my_id
+        # current_identity_contacts = my_id.getLocalIdentity().getContacts()
         if not proxy_receiver.GetRouterIdentity():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:
                 lg.out(4, 'proxy_interface.build_contacts SKIP, router not yet found')
-            return []
+            return []  # current_identity_contacts
         if not proxy_receiver.ReadMyOriginalIdentitySource():
             # if we did not save our original identity we will have troubles contacting remote node
             if _Debug:
                 lg.out(4, 'proxy_interface.build_contacts SKIP, original identity was not saved')
-            return []
+            return []  # current_identity_contacts
         # switch contacts - use router contacts instead of my
         # he will receive all packets addressed to me and redirect to me
         result = proxy_receiver.GetRouterIdentity().getContacts()

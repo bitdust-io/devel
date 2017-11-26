@@ -614,12 +614,12 @@ class FireHire(automat.Automat):
                 (time.time() - self.restart_task.getTime()))
 
     def doNotifySuppliersChanged(self, arg):
-        if driver.is_started('service_backups'):
+        if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('suppliers-changed')
 
     def doNotifyFinished(self, arg):
-        if driver.is_started('service_backups'):
+        if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('fire-hire-finished')
 

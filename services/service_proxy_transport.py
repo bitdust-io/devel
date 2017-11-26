@@ -63,7 +63,7 @@ class ProxyTransportService(LocalService):
         if len(self._available_transports()) == 0:
             lg.warn('no transports available')
             return False
-        self._check_update_original_identity()
+        self._check_reset_original_identity()
         self.starting_deferred = Deferred()
         self.transport = network_transport.NetworkTransport('proxy', proxy_interface.GateInterface())
         self.transport.automat(
@@ -76,6 +76,7 @@ class ProxyTransportService(LocalService):
         conf().addCallback('services/proxy-transport/receiving-enabled',
                            self._on_receiving_enabled_disabled)
         return self.starting_deferred
+        # return True
 
     def stop(self):
         from twisted.internet.defer import succeed
@@ -100,22 +101,22 @@ class ProxyTransportService(LocalService):
     def _available_transports(self):
         from main import settings
         atransports = []
-        if settings.enableTCP() and settings.enableTCPreceiving(
-        ) and settings.enableTCPsending():
+        if settings.enableTCP() and settings.enableTCPreceiving() and settings.enableTCPsending():
             atransports.append('service_tcp_transport')
-        if settings.enableUDP() and settings.enableUDPreceiving(
-        ) and settings.enableUDPsending():
+        if settings.enableUDP() and settings.enableUDPreceiving() and settings.enableUDPsending():
             atransports.append('service_udp_transport')
         return atransports
 
     def _reset_my_original_identity(self, skip_transports=[]):
-        from userid import my_id
+        # from userid import my_id
         from main.config import conf
+        from logs import lg
+        lg.warn('RESET my-original-identity')
         conf().setData('services/proxy-transport/my-original-identity', '')
         conf().setString('services/proxy-transport/current-router', '')
-        my_id.rebuildLocalIdentity(skip_transports=skip_transports)
+        # my_id.rebuildLocalIdentity(skip_transports=skip_transports)
 
-    def _check_update_original_identity(self):
+    def _check_reset_original_identity(self):
         from logs import lg
         from lib import misc
         from main.config import conf
@@ -127,7 +128,9 @@ class ProxyTransportService(LocalService):
             'services/proxy-transport/current-router', '').strip()
         if not orig_ident_xmlsrc:
             if current_router_idurl:
-                lg.warn('current-router is %s, but "my-original-identity" config is empty' % current_router_idurl)
+                lg.warn('"current-router" is %s, but "my-original-identity" is empty' % current_router_idurl)
+            else:
+                lg.warn('"current-router" and "my-original-identity" is empty')
             self._reset_my_original_identity()
             return
         orig_ident = identity.identity(xmlsrc=orig_ident_xmlsrc)
@@ -146,6 +149,13 @@ class ProxyTransportService(LocalService):
             return
         if not current_router_idurl:
             lg.warn('"my-original-identity" config is correct, but current router is empty')
+            self._reset_my_original_identity()
+        all_orig_contacts_present_in_local_identity = True
+        for orig_contact in orig_ident.getContacts():
+            if orig_contact not in my_id.getLocalIdentity().getContacts():
+                all_orig_contacts_present_in_local_identity = False
+        if all_orig_contacts_present_in_local_identity:
+            lg.warn('all of "my-original-identity" contacts is found in local identity: need to RESET!')
             self._reset_my_original_identity()
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):

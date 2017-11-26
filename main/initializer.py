@@ -455,7 +455,7 @@ class Initializer(automat.Automat):
 
             elif cmd == 'reconnect':
                 from p2p import network_connector
-                if driver.is_started('service_network'):
+                if driver.is_on('service_network'):
                     network_connector.A('reconnect')
 
             elif cmd == 'show':

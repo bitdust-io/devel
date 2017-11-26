@@ -309,7 +309,7 @@ def on_tray_icon_command(cmd):
             shutdowner.A('stop', 'restart')  # ('restart', ''))
 
     elif cmd == 'reconnect':
-        if driver.is_started('service_network'):
+        if driver.is_on('service_network'):
             network_connector.A('reconnect')
 
     elif cmd == 'show':

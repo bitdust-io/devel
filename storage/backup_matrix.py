@@ -264,7 +264,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     from storage import backup_control
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    if driver.is_started('service_backup_db'):
+    if driver.is_on('service_backup_db'):
         from storage import index_synchronizer
         is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
     else:

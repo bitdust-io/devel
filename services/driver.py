@@ -97,11 +97,32 @@ def boot_up_order():
     return _BootUpOrder
 
 
-def is_started(name):
+def is_on(name):
     svc = services().get(name, None)
     if svc is None:
         return False
     return svc.state == 'ON'
+
+
+def is_off(name):
+    svc = services().get(name, None)
+    if svc is None:
+        return False
+    return svc.state == 'OFF' or svc.state == 'NOT_INSTALLED' or svc.state == 'DEPENDS_OFF'
+
+
+def is_started(name):
+    svc = services().get(name, None)
+    if svc is None:
+        return False
+    return svc.state != 'ON' and svc.state != 'OFF' and svc.state != 'NOT_INSTALLED' and svc.state != 'DEPENDS_OFF'
+
+
+def is_enabled(name):
+    svc = services().get(name, None)
+    if svc is None:
+        return False
+    return svc.enabled()
 
 
 def is_exist(name):

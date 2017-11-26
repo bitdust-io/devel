@@ -125,7 +125,7 @@ class UDPNode(automat.Automat):
         self.my_id = None
         self.my_address = None
         self.options = {}
-        if driver.is_started('service_my_ip_port'):
+        if driver.is_on('service_my_ip_port'):
             self.my_address = stun_client.A().getMyExternalAddress()
         self.notified = False
         self.IncomingPosition = -1

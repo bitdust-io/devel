@@ -127,6 +127,10 @@ def ReadMyOriginalIdentitySource():
     return config.conf().getData('services/proxy-transport/my-original-identity').strip()
 
 
+def WriteMyOriginalIdentitySource(new_identity_xml_src):
+    return config.conf().setData('services/proxy-transport/my-original-identity', new_identity_xml_src)
+
+
 def ReadCurrentRouter():
     return config.conf().getString('services/proxy-transport/current-router').strip()
 
@@ -185,6 +189,11 @@ class ProxyReceiver(automat.Automat):
         Method to initialize additional variables and flags at creation phase
         of proxy_receiver() machine.
         """
+        self.router_idurl = None
+        self.router_identity = None
+        self.router_proto_host = None
+        self.request_service_packet_id = []
+        self.latest_packet_received = 0
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -305,11 +314,6 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self.router_idurl = None
-        self.router_identity = None
-        self.router_proto_host = None
-        self.request_service_packet_id = []
-        self.latest_packet_received = 0
 
     def doLoadRouterInfo(self, arg):
         """
@@ -452,11 +456,14 @@ class ProxyReceiver(automat.Automat):
         self.router_identity = identitycache.FromCache(self.router_idurl)
         config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
             self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
-        if ReadMyOriginalIdentitySource():
-            lg.warn('my original identity is not empty')
+        current_identity = my_id.getLocalIdentity().serialize()
+        previous_identity = ReadMyOriginalIdentitySource()
+        if previous_identity:
+            lg.warn('my original identity is not empty, SKIP overwriting')
+            lg.out(2, '\nPREVIOUS ORIGINAL IDENTITY:\n%s\n' % current_identity)
         else:
-            config.conf().setData('services/proxy-transport/my-original-identity',
-                                  my_id.getLocalIdentity().serialize())
+            WriteMyOriginalIdentitySource(current_identity)
+            lg.warn('current identity was stored as my-original-identity')
         self.request_service_packet_id = []
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         if _Debug:
@@ -467,10 +474,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        if not ReadMyOriginalIdentitySource():
-            lg.warn('my original identity is not empty')
-        else:
-            config.conf().setData('services/proxy-transport/my-original-identity', '')
+        WriteMyOriginalIdentitySource('')
         config.conf().setString('services/proxy-transport/current-router', '')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.router_identity = None
