@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo "running 'stop_loop'"
+
+./pskill loop_bitdust
+./pskill bitdust.py
+./pskill sleep_bitdust
+
+exit 0

@@ -1,0 +1,39 @@
+<div class="row active-tasks-transfers">
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <button class="btn btn-default active-task" data-ng-repeat="item in activeTasks.tasksList" 
+                data-ng-click="navigateTo(item.path)"
+                title="{{item.name}}">
+            <i style="color: gray;" class="glyphicon glyphicon-hourglass"></i>
+            {{item.name}} : {{item.progress}}
+        </button>
+    </div>
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <button class="btn btn-default active-connection" data-ng-repeat="item in activeTasks.connectionsList"
+                data-ng-click=""
+                title="{{item.idurl}} at {{item.proto}}://{{item.host}} is {{item.state}}">
+            <i style="color: gray;" class="glyphicon glyphicon-globe"></i>
+            {{item.proto}}://{{item.host}}
+        </button>
+    </div>
+    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <button class="btn btn-default active-packet" data-ng-repeat="item in activeTasks.packetsList"
+                data-ng-click=""
+                data-ng-style="{'color':(item.from_to=='from') ? 'green': 'blue'}"
+                title="{{item.label}} {{item.from_to}} {{item.target}}">
+            <i style="color: gray;" data-ng-show="item.from_to=='from'" class="glyphicon glyphicon-download"></i>
+            <i style="color: gray;" data-ng-show="item.from_to=='to'" class="glyphicon glyphicon-upload"></i>
+            {{item.name}}
+        </button>
+    </div>
+    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <button class="btn btn-default active-stream" data-ng-repeat="item in activeTasks.streamsList"
+                data-ng-click=""
+                data-ng-style="{'background-image':(item.type=='in') ? '{{item.progress|greenPercentGradient}}': '{{item.progress|bluePercentGradient}}'}"
+                title="{{item.proto}}:{{item.id}} {{item.type}} with {{item.bytes_total}}">
+            <i style="color: gray;" data-ng-show="item.type=='in'" class="glyphicon glyphicon-log-in"></i>
+            <i style="color: gray;" data-ng-show="item.type=='out'" class="glyphicon glyphicon-log-out"></i>
+            {{item.proto}}:{{item.progress}}
+        </button>
+    </div>
+</div>
+

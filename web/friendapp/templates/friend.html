@@ -1,0 +1,11 @@
+{% extends "page.html" %}
+{% block page %}
+ <h1><a href="{{ friend.idurl }}" target=_blank>@</a> {{ friend.name }}</h1>
+ <p>User <b>{{ friend.name }}</b> is listed in your friends.</p>
+ {% if identity_id %}
+  <p>This identity is <a href="/identity/{{ identity_id }}">cached</a>.</p>
+  <p>Start a <a href="/chat/open?idurl={{ friend.idurl|urlencode:'' }}">live chat</a> now.</p>
+ {% else %}
+  <p>This identity is not cached yet, try to <a href="/identity/ping?idurl={{ friend.idurl|urlencode:'' }}">ping</a> this node now.</p> 
+ {% endif %}
+{% endblock page %}

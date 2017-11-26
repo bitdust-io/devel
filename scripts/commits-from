@@ -1,0 +1,8 @@
+#!/bin/bash
+
+curpath=`pwd`
+cd "$1"
+git log --pretty=format:"%h [%ad] %s" --all -999999 >COMMITS.txt
+cd "$curpath"
+git log --pretty=format:"%h [%ad] %s" --all -999999 >COMMITS.txt
+python $1/scripts/mergecommits.py "$1/COMMITS.txt" "COMMITS.txt" >HISTORY.txt

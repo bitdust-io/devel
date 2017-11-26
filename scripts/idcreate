@@ -1,0 +1,7 @@
+#!/bin/bash
+
+~/.bitdust/bitdust id create "test_node_$1"
+
+
+
+

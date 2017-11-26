@@ -1,0 +1,27 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_modify %}
+{% block extrastyle %}
+	{{ block.super }}
+	<style type="text/css">
+		#chat-room-messages div {
+			margin-left: 10em;
+		}
+	</style>
+{% endblock %}
+
+{% block after_field_sets %}
+<fieldset class="module aligned">
+	<div class="form-row">
+		<label>Last activity:</label> {{ original.last_activity_datetime }}
+	</div>
+	<div class="form-row" id="chat-room-messages">
+		<label>Messages:</label> 
+		<div>
+			{% for m in original.message_set.all %}
+				{{ m.created|time:"H:i:s" }} {{ m.text|safe }}
+			{% endfor %}
+		</div>
+	</div>
+</fieldset>
+{% endblock %}
+

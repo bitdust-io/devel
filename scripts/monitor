@@ -1,0 +1,31 @@
+#!/bin/bash
+
+echo "running 'monitor'"
+
+# ls -la .bitdust/customers/
+# cd ~/bitdust
+# git remote -vv
+
+# echo "suppliers:"
+# cat .bitdust/metadata/supplierids
+# echo
+
+# echo "customers:"
+# cat .bitdust/metadata/customerids
+# echo
+
+# echo "space:"
+# cat .bitdust/metadata/space
+# echo
+
+# echo "used:"
+# cat .bitdust/metadata/spaceused
+# echo
+
+# tail -10 log
+
+./bd storage
+
+df -h
+
+exit 0

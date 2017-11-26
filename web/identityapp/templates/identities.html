@@ -1,0 +1,12 @@
+{% extends "page.html" %}
+{% block page %}
+<h1>cached identities</h1>
+  {% if identities_list %}
+      {% for identity in identities_list %}
+          <a href='{{ identity.id }}'>{{ identity.idurl }}</a>
+          <br>
+      {% endfor %}
+  {% else %}
+      <p>No identities cached.</p>
+  {% endif %}
+{% endblock page %}

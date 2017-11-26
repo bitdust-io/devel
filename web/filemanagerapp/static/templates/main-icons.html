@@ -1,0 +1,43 @@
+<div id="mainiconset" class="iconset">
+    <div class="col-120" 
+        data-ng-repeat="item in fileNavigator.fileList | filter: query | orderBy: orderProp" 
+        data-ng-show="!fileNavigator.requesting && !fileNavigator.error">
+        <div class="thumbnail text-center alert alert-info" 
+                data-ng-click="smartClick(item, $event)" 
+                ng-right-click="smartRightClick(item, $event)" 
+                title="{{item.model.name}} {{item.sizeLabel()}}" >
+            <i class="glyphicon glyphicon-folder-open" data-ng-show="item.model.type === 'dir'"></i>
+            <i class="glyphicon glyphicon-file" data-ng-show="item.model.type === 'file'"></i>
+            {{item.model.name | strLimit : 18 }}
+            <div class="item-icon-size" data-ng-show="item.model.size > 0">
+                {{item.sizeLabel()}}
+            </div>
+            <div class="item-icon-versions">
+                <button class="version btn btn-sm"
+                        ng-class="item.versionClassSelector(version)"
+                        data-ng-repeat="version in item.model.versions"
+                        data-ng-click="smartClickVersion(item, version, $event)" 
+                        ng-right-click="smartRightClickVersion(item, version, $event)" 
+                        title="{{version.status}}">
+                    <i class="fa fa-spinner fa-pulse"
+                       data-ng-show="{{version.state!='ready'}}"></i>
+                    <i class="fa fa-cube"
+                       data-ng-show="{{version.state=='ready'}}"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- 
+    <div class="alert alert-warning" data-ng-show="fileNavigator.requesting">
+        {{"loading" | translate}}...
+    </div>
+    -->
+    <!--
+    <div class="alert alert-warning" data-ng-show="!fileNavigator.requesting && fileNavigator.fileList.length < 1 && !fileNavigator.error">
+        {{"no_files_in_folder" | translate}}...
+    </div>
+    -->
+    <div class="alert alert-danger" data-ng-show="!fileNavigator.requesting && fileNavigator.error">
+        {{ fileNavigator.error }}
+    </div>
+</div>

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rm -rf bitdust.devel
+git clone git@gitlab.bitdust.io:devel/bitdust.devel.git
+# git clone http://gitlab.bitpie.net/devel/bitpie.devel.git
+cd bitdust.devel
+git config --global user.email "veselin@vps"
+git config --global user.name "Veselin VPS"
+git status
+cd ..
+

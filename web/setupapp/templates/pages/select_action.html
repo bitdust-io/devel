@@ -1,0 +1,27 @@
+{% extends "setup.html" %}
+{% block page %}
+
+<h1>Greetings!</h1>
+<h3>Welcome to the BitDust community.</h3>
+<p>Let's start, need to set up your <a target="_blank" href="http://bitdust.io/identities.html">Identity</a> file now:</p>
+<br/>
+
+<form action="{{ request.path }}" method="post">
+<input type="submit" class="btn btn-lg btn-success" 
+        name="submit" value="create a new identity" 
+        style="width:240px;" />
+<input type="hidden" name="action" value="next" />
+<input type="hidden" name="mode" value="register-selected" />
+</form>
+
+<br/>
+
+<form action="{{ request.path }}" method="post">
+<input type="submit" class="btn btn-lg btn-danger" 
+        name="submit" value="restore existing identity" 
+        style="width:240px;" />
+<input type="hidden" name="action" value="next" />
+<input type="hidden" name="mode" value="recover-selected" />
+</form>
+
+{% endblock page %}

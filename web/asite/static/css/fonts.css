@@ -1,0 +1,23 @@
+/*
+@font-face { 
+    font-family: 'myfont Gothic Local'; 
+    src:  url('/asite/fonts/century_gothic.eot'); 
+    src:  url('/asite/fonts/century_gothic.eot?#iefix') format('embedded-opentype'), 
+          url('/asite/fonts/century_gothic.svg#Century Gothic') format('svg'), 
+          url('/asite/fonts/century_gothic.woff') format('woff'), 
+          url('/asite/fonts/century_gothic.ttf') format('truetype'); 
+    font-weight: normal; 
+    font-style: normal;
+}
+*/
+
+.page_content {
+    /* font-family: "Century Gothic", "myfont Gothic", Helvetica, Arial, sans-serif; */
+    /* font-size: 1.2em; */
+    /* font-weight: 500; */
+}
+
+.page_content h4, h5, h6 {
+    /* font-size: 1.2em; */
+}
+

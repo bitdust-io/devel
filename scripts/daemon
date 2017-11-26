@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "running 'daemon'"
+
+~/.bitdust/bitdust daemon

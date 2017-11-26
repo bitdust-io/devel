@@ -1,0 +1,21 @@
+
+.scroll_outer {
+    position: absolute;
+    margin: 0 auto;
+    left: 0px; 
+    right: 0px;
+    /* width: 100%; */
+    height: auto;
+    margin:0;
+    padding:0;
+}
+
+.scroll_inner {
+	position: absolute;
+    height:100%;
+    left: 0px; 
+    right: 0px;
+    margin:0;
+    padding:0;
+    overflow: auto;
+}

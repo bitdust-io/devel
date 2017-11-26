@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "running 'run'"
+
+~/.bitdust/bitdust

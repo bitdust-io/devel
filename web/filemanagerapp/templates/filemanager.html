@@ -1,0 +1,50 @@
+{% extends "page.html" %}
+
+{% block extra_html_args %} ng-app="FileManagerApp" data-ng-app="FileManagerApp" {{ block.super }}{% endblock extra_html_args %}
+
+{% block extra_head_before %}
+<script src="/asite/js/angular.min.js" type="text/javascript"></script>
+<script src="/asite/js/angular-translate.min.js" type="text/javascript"></script>
+<script src="/asite/js/angular-cookies.min.js" type="text/javascript"></script>
+{{ block.super }}
+{% endblock extra_head_before %}
+
+{% block extra_head %}
+{{ block.super }}
+<script src="/asite/js/autoupdater.js" type="text/javascript"></script>
+
+<script src="/filemanagerapp/js/app.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/config.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/item.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/chmod.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/filenavigator.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/fileuploader.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/contextmenu.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/translations.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/tasks.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/controller.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/selector-controller.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/footer.js" type="text/javascript"></script>
+<script src="/filemanagerapp/js/debug.js" type="text/javascript"></script>
+
+<link href="/filemanagerapp/css/filemanager.css" rel="stylesheet" type="text/css">
+{% endblock extra_head %}
+
+{% block page %}
+<div id="filemanager">
+    <angular-file-manager></angular-file-manager>
+</div>    
+<div id="filemanager-footer">
+    <angular-file-manager-footer></angular-file-manager-footer>
+</div>
+{% endblock page %}
+
+{% block extra_footer %}
+{{ block.super }}
+{% endblock extra_footer %}
+
+{% block debug_info %}
+{{ block.super }}
+    <angular-file-manager-debug></angular-file-manager-debug>
+{% endblock debug_info %}
+

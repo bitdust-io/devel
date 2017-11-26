@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "running 'loop_bitdust'"
+
+while true; do 
+    echo "loop iteration"
+    ./pskill bitdust.py
+    ./up
+    nohup ./run 1>log 2>err.log &
+    ps -C "bitdust.py" -o "%p" --no-heading >/tmp/bitdust.pid
+    ./sleep_bitdust
+done
+
+exit 0

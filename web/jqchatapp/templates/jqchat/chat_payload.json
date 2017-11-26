@@ -1,0 +1,18 @@
+{% load tz %}
+{% load l10n %}
+{
+	"status": {{ StatusCode }},
+	"time": {{ current_unix_timestamp|unlocalize }},
+{% if NewDescription %}	"description": {{ NewDescription }}, {% endif %}
+	"messages": [
+{% for row in NewMessages %} {# The timezone filter is part of Django timezone and adjusts a datetime to the given timezone #}
+	{ "text": "<div class=chatline><span class=chattime>{{ row.created|date:TimeDisplayFormat }}</span>{{ row.text|safe }}</div>"}{% if not forloop.last %},{% endif %}
+{% endfor %}
+	],
+
+	"members": [
+{% for row in NewMembersNames %}
+	{ "name": "{{ row }}"}{% if not forloop.last %},{% endif %}
+{% endfor %}
+	]
+}

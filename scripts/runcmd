@@ -1,0 +1,23 @@
+#!/bin/bash
+
+IFS=$'\n' read -d '' -r -a nodes < nodes.txt
+# nodes[0]='p2p-id.ru'
+
+echo "target nodes:"
+echo "${nodes[@]}"
+
+scripts="./bd ./cmd ./go ./daemon ./run ./loop_bitdust ./sleep_bitdust ./stop_loop ./stop ./up ./see ./pskill"
+
+for node in ${nodes[@]}
+do
+  echo ""
+  echo "----------------------------------------------------"
+  echo "[$node]"
+  echo "scp scripts to $node ..."
+  scp -q ${scripts[@]} "$node:"
+  echo "chmod +x on scripts"
+  ssh $node "chmod +x $scripts"
+  ssh $node "chmod +x ./cmd; ./cmd $node"
+  echo "clean up all scripts"
+  ssh $node "rm $scripts"
+done

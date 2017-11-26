@@ -1,0 +1,14 @@
+{% extends "topmenu.html" %}
+
+
+{% block extra_head %}
+  {{ block.super }}
+{% endblock extra_head %}
+
+
+{% block bottombody %}
+  <div class="container page_content">
+    {% block page %}
+    {% endblock page %}
+  </div>
+{% endblock bottombody %}
