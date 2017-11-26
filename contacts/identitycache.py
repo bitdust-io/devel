@@ -236,7 +236,7 @@ def OverrideIdentity(idurl, xml_src):
     else:
         lg.warn('replacing original identity')
         if _Debug:
-            lg.out(4, 'ORIGINAL:\n' + (identitydb.get(idurl).toxml() if identitydb.has_idurl(idurl) else 'EMPTY!'))
+            lg.out(4, 'ORIGINAL:\n' + (identitydb.get(idurl).serialize() if identitydb.has_idurl(idurl) else 'EMPTY!'))
             lg.out(4, '\nNEW:\n' + xml_src)
     _OverriddenIdentities[idurl] = xml_src
     if _Debug:
