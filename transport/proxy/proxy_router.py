@@ -517,13 +517,13 @@ class ProxyRouter(automat.Automat):
                     # this is a "propagate" packet from node A addressed to this proxy
                     # mark that packet as handled and send Ack
                     # otherwise it will be wrongly handled in p2p_service
-                    self.automat('known-identity-received', newpacket)
+                    # self.automat('known-identity-received', newpacket)
                     return True
                 else:
                     # this node is not yet in routers list,
                     # but seems like it tries to contact me
                     # mark this packet as handled and try to process it
-                    self.automat('unknown-identity-received', newpacket)
+                    # self.automat('unknown-identity-received', newpacket)
                     return True
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
