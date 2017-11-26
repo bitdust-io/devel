@@ -243,10 +243,12 @@ class ProxyRouter(automat.Automat):
                     # accept existing router
                     oldnew = 'OLD'
                 if not self._is_my_contacts_present_in_identity(cached_id):
+                    if _Debug:
+                        lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % target)
                     identitycache.OverrideIdentity(target, idsrc)
                 else:
                     if _Debug:
-                        lg.out(_DebugLevel, '        skip overriding %s' % target)
+                        lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % target)
                 self.routes[target]['time'] = time.time()
                 self.routes[target]['identity'] = idsrc
                 self.routes[target]['publickey'] = cached_id.publickey
@@ -438,8 +440,9 @@ class ProxyRouter(automat.Automat):
         if not new_ident.isCorrect() or not new_ident.Valid():
             lg.warn('incoming identity is not valid')
             return
+        override_required = False
+        cur_contacts = []
         if not self._is_my_contacts_present_in_identity(new_ident):
-            cur_contacts = []
             try:
                 cur_contacts = identity.identity(
                     xmlsrc=identitycache.ReadOverriddenIdentityXMLSource(target)
@@ -447,15 +450,23 @@ class ProxyRouter(automat.Automat):
             except:
                 lg.exc()
                 return
+            override_required = True
+            for new_contact in new_ident.getContacts():
+                if new_contact in cur_contacts:
+                    override_required = False
+                    if _Debug:
+                        lg.out(_DebugLevel, '   new contact %s found in current override contacts' % (new_contact))
+                    break
+        if override_required:
             if _Debug:
-                lg.out(_DebugLevel, '    OVERRIDE identity for %s' % arg.CreatorID)
+                lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % arg.CreatorID)
                 lg.out(_DebugLevel, '    current override contacts is : %s' % cur_contacts)
                 lg.out(_DebugLevel, '    new contacts is : %s' % new_ident.getContacts())
             identitycache.OverrideIdentity(arg.CreatorID, idsrc)
         else:
             if _Debug:
-                lg.out(_DebugLevel, '    SKIP, found my contacts in identity from %s' % arg.CreatorID)
-                lg.out(_DebugLevel, '    known contacts is : %s' % new_ident.getContacts())
+                lg.out(_DebugLevel, '    SKIP OVERRIDE identity from %s' % arg.CreatorID)
+                lg.out(_DebugLevel, '    new contacts is : %s' % new_ident.getContacts())
 
     def doSendAck(self, arg):
         """
@@ -599,6 +610,8 @@ class ProxyRouter(automat.Automat):
             self.routes[k] = v
             ident = identity.identity(xmlsrc=v['identity'])
             if not self._is_my_contacts_present_in_identity(ident):
+                if _Debug:
+                    lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % k)
                 identitycache.OverrideIdentity(k, v['identity'])
             else:
                 if _Debug:
