@@ -108,18 +108,18 @@ def raw():
 {services/supplier/donated} donated space
     How many megabytes you ready to donate to other users?
 
-{services/id-server} own identity server
+{services/identity-server} own identity server
     You can start own Identity server and store identity files of other users on your machine to support the BitDustwork.
-{services/id-server/enabled} ebable identity server
-    Enable this to start "id-server" service.
-{services/id-server/host} identity server hostname
+{services/identity-server/enabled} ebable identity server
+    Enable this to start "identity-server" service.
+{services/identity-server/host} identity server hostname
     Set a domain name of your machine if you have it.
     Otherwise your external IP will be used as a host name.
     The host name is used to form a unique IDURL of any hosted identity.
     User ID looking more pretty and safe without IP address.
-{services/id-server/tcp-port} TCP port number
+{services/identity-server/tcp-port} TCP port number
     A TCP port number to receive user's identity files.
-{services/id-server/web-port} WEB port number
+{services/identity-server/web-port} WEB port number
     If port 80 is already taken you can start identity server on a different port.
 
 {services/customer} customer service

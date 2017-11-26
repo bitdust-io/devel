@@ -155,7 +155,9 @@ def convert_key(key):
         elif p[1] == 'local-backups-enabled':
             p[1] = 'keep-local-copies-enabled'
     elif p[0] == 'id-server':
-        p[0] = 'services/id-server'
+        p[0] = 'services/identity-server'
+    elif p[0] == 'identity-server':
+        p[0] = 'services/identity-server'
     elif p[0] == 'network':
         p[0] = 'services/network'
         if p[1] == 'dht-port':
@@ -1578,8 +1580,8 @@ def enableIdServer(enable=None):
     """
     """
     if enable is None:
-        return config.conf().getBool('services/id-server/enabled')
-    config.conf().setData('services/id-server/enabled', str(enable))
+        return config.conf().getBool('services/identity-server/enabled')
+    config.conf().setData('services/identity-server/enabled', str(enable))
 
 
 def enableRESTHTTPServer(enable=None):
@@ -1609,37 +1611,37 @@ def enableFTPServer(enable=None):
 def getIdServerHost():
     """
     """
-    return config.conf().getData("services/id-server/host").strip()
+    return config.conf().getData("services/identity-server/host").strip()
 
 
 def setIdServerHost(hostname_or_ip):
     """
     """
-    return config.conf().setData("services/id-server/host", hostname_or_ip)
+    return config.conf().setData("services/identity-server/host", hostname_or_ip)
 
 
 def getIdServerWebPort():
     """
     """
-    return config.conf().getInt("services/id-server/web-port", IdentityWebPort())
+    return config.conf().getInt("services/identity-server/web-port", IdentityWebPort())
 
 
 def setIdServerWebPort(web_port):
     """
     """
-    return config.conf().setInt("services/id-server/web-port", web_port)
+    return config.conf().setInt("services/identity-server/web-port", web_port)
 
 
 def getIdServerTCPPort():
     """
     """
-    return config.conf().getInt("services/id-server/tcp-port", IdentityServerPort())
+    return config.conf().getInt("services/identity-server/tcp-port", IdentityServerPort())
 
 
 def setIdServerTCPPort(tcp_port):
     """
     """
-    return config.conf().setInt("services/id-server/tcp-port", tcp_port)
+    return config.conf().setInt("services/identity-server/tcp-port", tcp_port)
 
 
 def getRESTHTTPServerPort():
@@ -2469,10 +2471,10 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/gateway/enabled', 'true')
 
-    config.conf().setDefaultValue('services/id-server/enabled', 'false')
-    config.conf().setDefaultValue('services/id-server/host', '')
-    config.conf().setDefaultValue('services/id-server/tcp-port', IdentityServerPort())
-    config.conf().setDefaultValue('services/id-server/web-port', IdentityWebPort())
+    config.conf().setDefaultValue('services/identity-server/enabled', 'false')
+    config.conf().setDefaultValue('services/identity-server/host', '')
+    config.conf().setDefaultValue('services/identity-server/tcp-port', IdentityServerPort())
+    config.conf().setDefaultValue('services/identity-server/web-port', IdentityWebPort())
 
     config.conf().setDefaultValue('services/identity-propagate/enabled', 'true')
     config.conf().setDefaultValue('services/identity-propagate/known-servers', '')

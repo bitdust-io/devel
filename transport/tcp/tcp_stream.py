@@ -152,7 +152,6 @@ class TCPFileStream():
 
     def close(self):
         """
-        
         """
         self.connection = None
 
@@ -171,7 +170,6 @@ class TCPFileStream():
 
     def data_received(self, payload):
         """
-        
         """
         from transport.tcp import tcp_connection
         inp = cStringIO.StringIO(payload)
@@ -403,7 +401,8 @@ class InboxFile():
 
     def close(self):
         if _Debug:
-            lg.out(_DebugLevel, '<<<TCP-IN %s CLOSED' % (self.file_id))
+            lg.out(_DebugLevel, '<<<TCP-IN %s CLOSED with %s | %s' % (
+                self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
         try:
             os.close(self.fin)
         except:
@@ -463,7 +462,8 @@ class OutboxFile():
 
     def close(self):
         if _Debug:
-            lg.out(_DebugLevel, '>>>TCP-OUT %s CLOSED' % (self.file_id))
+            lg.out(_DebugLevel, '>>>TCP-OUT %s CLOSED with %s | %s' % (
+                self.file_id, self.stream.connection.peer_address, self.stream.connection.peer_external_address))
         self.stop()
         try:
             self.fout.close()

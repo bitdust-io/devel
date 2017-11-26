@@ -66,8 +66,8 @@ from system import bpio
 
 from main import settings
 
-import net_misc
-import packetid
+from lib import net_misc
+from lib import packetid
 
 #------------------------------------------------------------------------------
 
@@ -1730,15 +1730,14 @@ def MakeBatFileToUninstall(wait_appname='bpmain.exe', local_dir=bpio.getExecutab
     for dirpath in dirs2delete:
         batsrc += 'rmdir /S /Q "%s"\n' % os.path.abspath(dirpath)
     batsrc += 'del /F /S /Q "%s"\n' % os.path.abspath(batfilename)
-    print batsrc
+    # print batsrc
     os.write(batfileno, batsrc)
     os.close(batfileno)
     return os.path.abspath(batfilename)
 
 #------------------------------------------------------------------------------
 
-
-def LoopAttenuation(current_delay, faster, min, max):
+def LoopAttenuation(current_delay, go_faster, min_delay, max_delay):
     """
     Pretty common method. Twisted reactor is very nice, you can call
     ``reactor.callLater(3, method_a, 'param1')`` and method_a('param1') will be
@@ -1749,21 +1748,22 @@ def LoopAttenuation(current_delay, faster, min, max):
     For example - need to read some queue as fast as possible when you have some items inside.
     This method is used to calculate the delay to the next call of some 'idle' method.
         :param current_delay: current period of time in seconds between calls
-        :param faster:  if this is True - method should return ``min`` period - call next time as soon as possible
+        :param go_faster:  if this is True - method should return ``min`` period - call next time as soon as possible
                         if this is False - method will multiply ``current_delay`` by ``_AttenuationFactor`` and so decrease the speed
-        :param min: the minimum delay between calls
-        :param max: the maximum delay between calls
+        :param min_delay: the minimum delay between calls
+        :param max_delay: the maximum delay between calls
     """
     global _AttenuationFactor
-    if faster:
-        return min
-    if current_delay < max:
+    if go_faster:
+        return min_delay
+    if current_delay < max_delay:
         current_delay *= _AttenuationFactor
-        if current_delay > max:
-            current_delay = max
+        if current_delay > max_delay:
+            current_delay = max_delay
     return current_delay
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
     lg.set_debug_level(10)

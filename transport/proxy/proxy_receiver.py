@@ -328,8 +328,6 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         self._find_random_node()
-        # TODO: this is still under construction - so I am using this node for tests
-        # self.automat('found-one-node', 'http://veselin-p2p.ru/bitdust_j2_vps1001.xml')
 
     def doSendMyIdentity(self, arg):
         """
@@ -574,7 +572,8 @@ class ProxyReceiver(automat.Automat):
         # DEBUG
         # self.automat('found-one-node', 'http://p2p-id.ru/seed0_cb67.xml')
         # self.automat('found-one-node', 'http://bitdust.io:8084/seed2_b17a.xml')
-        # return
+        self.automat('found-one-node', 'http://datahaven.net/seed2_916e.xml')
+        return
         preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         preferred_routers = []
         if preferred_routers_raw:

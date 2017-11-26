@@ -591,6 +591,40 @@ def files_sync():
 
 def files_list(remote_path=None):
     """
+    Returns list of known files registered in the catalog under given `remote_path` folder.
+    By default returns items from root of the catalog.
+
+    Return:
+        { u'execution': u'0.001040',
+          u'result': [
+                       { u'childs': False,
+                         u'customer': u'veselin@veselin-p2p.ru',
+                         u'glob_id': u'master$veselin@veselin-p2p.ru:1',
+                         u'idurl': u'http://veselin-p2p.ru/veselin.xml',
+                         u'key_id': u'master$veselin@veselin-p2p.ru',
+                         u'latest': u'',
+                         u'local_size': -1,
+                         u'name': u'cats.png',
+                         u'path': u'cats.png',
+                         u'path_id': u'1',
+                         u'size': 0,
+                         u'type': u'file',
+                         u'versions': []},
+                       { u'childs': False,
+                         u'customer': u'veselin@veselin-p2p.ru',
+                         u'glob_id': u'master$veselin@veselin-p2p.ru:2',
+                         u'idurl': u'http://veselin-p2p.ru/veselin.xml',
+                         u'key_id': u'master$veselin@veselin-p2p.ru',
+                         u'latest': u'',
+                         u'local_size': 345418,
+                         u'name': u'dogs.jpg',
+                         u'path': u'dogs.jpg',
+                         u'path_id': u'2',
+                         u'size': 0,
+                         u'type': u'file',
+                         u'versions': []},
+                      ],
+          u'status': u'OK'}
     """
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')
@@ -1660,7 +1694,6 @@ def service_start(service_name):
         lg.out(4, 'api.service_start %s already enabled' % service_name)
         return ERROR('service "%s" already enabled' % service_name)
     config.conf().setBool(svc.config_path, True)
-    lg.out(4, 'api.service_start (%s)' % service_name)
     return OK('"%s" was switched on' % service_name)
 
 
@@ -1693,7 +1726,6 @@ def service_stop(service_name):
         lg.out(4, 'api.service_stop %s already disabled' % service_name)
         return ERROR('service "%s" already disabled' % service_name)
     config.conf().setBool(svc.config_path, False)
-    lg.out(4, 'api.service_stop (%s)' % service_name)
     return OK('"%s" was switched off' % service_name)
 
 #------------------------------------------------------------------------------

@@ -43,9 +43,14 @@ Commands:
   stop
   show
   alias
+  id
+  idurl
   identity create <username> [private key size]
-  identity restore <private key source file> [IDURL]
+  identity backup [private key file path]
+  identity restore <private key file path> [IDURL]
   identity erase
+  identity show
+  identity server [start | stop]
   key list
   key create <key id>
   key delete <key id>
@@ -108,16 +113,33 @@ Commands:
   alias                 helper to create a binary command-alias in OS,
                         you can put it in /usr/local/bin/bitdust for ex.
 
+  id                    print your global ID in BitDust network
+
+  idurl                 print your global IDURL: global address of
+                        your identity file in the Internet
+
   identity create <nickname> [private key size]
                         generate a new private key and
                         new identity file for you
                         key size can be 1024, 2048 or 4096
 
-  identity restore <private key source file> [IDURL]
+  identity backup [private key file path]
+                        backup your IDURL and private key to the file,
+                        to be able to restore your data in case of lost
+                        ATTENTION! always keep a backup copy of your
+                        master key in safe place, this is the only
+                        possible way to recover access to your lost data
+
+  identity restore <private key file path> [IDURL]
                         recover existing identity file
                         with your private key file
 
   identity erase        delete local identity from this machine
+
+  identity show         displays your current identity file content
+
+  identity server start|stop
+                        start/stop stand alone identity server on that machine
 
   key list              list details for known private keys
 

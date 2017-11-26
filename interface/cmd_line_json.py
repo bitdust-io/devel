@@ -419,7 +419,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             print_text('local identity is not exist')
         return 0
 
-    if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print']:
+    if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print', ]:
         if my_id.isLocalIdentityReady():
             print_text(my_id.getLocalIdentity().serialize())
         else:
@@ -429,15 +429,35 @@ def cmd_identity(opts, args, overDict, running, executablePath):
     from twisted.internet import reactor
 
     if args[1] in ['server', 'srv', ]:
-        from logs import lg
-        from userid import id_server
-        lg.set_debug_level(settings.getDebugLevel())
-        reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')
-        reactor.callWhenRunning(
-            id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
-        reactor.callLater(0, id_server.A, 'start')
-        reactor.run()
-        return 0
+        def _run_stand_alone_id_server():
+            from logs import lg
+            from userid import id_server
+            lg.set_debug_level(settings.getDebugLevel())
+            reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')
+            reactor.callWhenRunning(
+                id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
+            reactor.callLater(0, id_server.A, 'start')
+            reactor.run()
+
+        if len(args) <= 2:
+            if not running:
+                _run_stand_alone_id_server()
+                return 0
+            tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
+            return call_jsonrpc_method_template_and_stop('service_info', tpl, 'service_identity_server')
+        if args[2] == 'stop':
+            if not running:
+                print_text('BitDust is not running at the moment\n')
+                return 0
+            tpl = jsontemplate.Template(templ.TPL_RAW)
+            return call_jsonrpc_method_template_and_stop('service_stop', tpl, 'service_identity_server')
+        if args[2] == 'start':
+            if not running:
+                _run_stand_alone_id_server()
+                return 0
+            tpl = jsontemplate.Template(templ.TPL_RAW)
+            return call_jsonrpc_method_template_and_stop('service_start', tpl, 'service_identity_server')
+        return 2
 
     def _register():
         if len(args) <= 2:
@@ -516,7 +536,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             return 0
         return _register()
 
-    if len(args) >= 2 and args[1].lower() in ['copy', 'cp', 'bk', 'backup', 'save', ]:
+    if len(args) >= 2 and args[1].lower() in ['bk', 'backup', 'save', ]:
         from interface import api
         key_id = 'master'
         key_json = api.key_get(key_id=key_id, include_private=True)
@@ -537,16 +557,10 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 del TextToSave
                 print_text('error writing to %s\n' % filenameto)
                 return 1
-            print_text('current identity "%s" and "master" key was stored in "%s"' % (
+            print_text('IDURL "%s" and "master" key was stored in "%s"' % (
                 key_json['result'][0]['creator'], filenameto))
             return 0
-        from lib import misc
-        misc.setClipboardText(TextToSave)
-        print_text('key "%s" was sent to clipboard, you can use Ctrl+V to paste your private key where you want' % key_json['result'][0]['key_id'])
-        del TextToSave
-        if key_json['result'][0]['alias'] == 'master':
-            print_text('ATTENTION! keep your "master" key in safe place, do not publish it!\n')
-        return 0
+        return 2
 
     if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
         if running:
@@ -1146,12 +1160,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'run':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python.*bitdust.*$',
-        ])
+        appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('BitDust already started, found another process: %s' % str(appList))
             return 0
@@ -1159,12 +1168,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     #---detach---
     elif cmd == 'detach':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python.*bitdust.*$',
-        ])
+        appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('main BitDust process already started: %s' % str(appList))
             return 0
@@ -1180,12 +1184,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     #---restart---
     elif cmd == 'restart' or cmd == 'reboot':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python.*bitdust.*$',
-        ])
+        appList = bpio.find_main_process()
         if len(appList) == 0:
             return run_now(opts, args)
         ui = False
@@ -1225,12 +1224,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             'bpgui.exe',
             'bpgui.py',
         ])
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python.*bitdust.*$',
-        ])
+        appList = bpio.find_main_process()
         if len(appList_bpgui) > 0:
             if len(appList) == 0:
                 for pid in appList_bpgui:
@@ -1254,12 +1248,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python.*bitdust.*$',
-        ])
+        appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
@@ -1291,23 +1280,8 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text(pars.format_option_help())
         return 0
 
-    appList = bpio.find_process([
-        'bitdust.exe',
-        'bpmain.py',
-        'bitdust.py',
-        'regexp:^/usr/bin/python.*bitdust.*$',
-    ])
-    running = False
-    if len(appList) > 0:
-        from main import settings
-        try:
-            processid = int(bpio._read_data(os.path.join(settings.MetaDataDir(), 'processid')))
-        except:
-            processid = None
-        if not processid:
-            running = True
-        else:
-            running = (processid in appList)
+    appList = bpio.find_main_process()
+    running = (len(appList) > 0)
 
     overDict = override_options(opts, args)
 

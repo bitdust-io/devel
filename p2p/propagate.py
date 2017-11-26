@@ -262,9 +262,9 @@ def SendServers():
         protocol, host, port, filename = nameurl.UrlParse(idurl)
         # if host == settings.IdentityServerName():
         #     host = '67.207.147.183'
-        webport, tcpport = known_servers.by_host().get(host,
-                                                       (settings.IdentityWebPort(), settings.IdentityServerPort()))
-        srvhost = '%s:%d' % (host, int(tcpport))
+        webport, tcpport = known_servers.by_host().get(host, (
+            settings.IdentityWebPort(), settings.IdentityServerPort()))
+        # srvhost = '%s:%d' % (host, int(tcpport))
         dlist.append(tcp_node.send(sendfilename, (host, int(tcpport)), 'Identity', True))
         # dlist.append(gateway.send_file_single('tcp', srvhost, sendfilename, 'Identity'))
     dl = DeferredList(dlist, consumeErrors=True)

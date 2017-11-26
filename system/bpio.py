@@ -1390,6 +1390,31 @@ def kill_process_win32(pid):
         return False
     return True
 
+
+def find_main_process(pid_file_path=None):
+    """
+    """
+    appList = find_process([
+        'bitdust.exe',
+        'bpmain.py',
+        'bitdust.py',
+        'regexp:^/usr/bin/python.*bitdust.*$',
+    ])
+    if not appList:
+        return []
+    try:
+        if not pid_file_path:
+            from main import settings
+            pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
+        processid = int(_read_data(pid_file_path))
+    except:
+        processid = None
+    if not processid:
+        return appList
+    if processid not in appList:
+        return []
+    return [processid, ]
+
 #------------------------------------------------------------------------------
 
 

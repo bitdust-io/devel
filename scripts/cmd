@@ -26,8 +26,8 @@ cd ~
 # ./bd set services/broadcasting/enabled true
 # ./bd set services/broadcasting/routing-enabled true
 # ./bd set services/customer/enabled false
-# ./bd set services/id-server/enabled true
-# ./bd set services/id-server/host $1
+# ./bd set services/identity-server/enabled true
+# ./bd set services/identity-server/host $1
 
 # echo "true" > ~/.bitdust/config/services/accountant/enabled
 # echo "true" > ~/.bitdust/config/services/broadcasting/enabled

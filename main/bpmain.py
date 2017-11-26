@@ -665,34 +665,12 @@ def main(executable_path=None):
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
-        ])
-
-        # this is extra protection for Debian release
-        # I am not sure how process name can looks on different systems
-        # check the process ID from previous start
-        # it file exists and we found this PID in the currently running apps - BitDust is working
-        # if file not exists we don't want to start if found some other jobs with same name
-#        pid = -1
-#        try:
-#            if bpio.Windows():
-#                _data_path = os.path.join(os.environ.get('APPDATA', os.path.join(os.path.expanduser('~'), 'Application Data')), 'BitDust')
-#                pid_path = os.path.join(_data_path, 'metadata', 'processid')
-#            else:
-#                pid_path = os.path.join(appdata, 'metadata', 'processid')
-#            if os.path.isfile(pid_path):
-#                pid = int(bpio.ReadBinaryFile(pid_path).strip())
-#        except:
-#            lg.exc()
-
-        if len(appList) > 0:
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+        if appList:
             lg.out(0, 'BitDust already started, found another process: %s\n' % str(appList))
             bpio.shutdown()
             return 0
+
         UI = ''
         # if cmd == 'show' or cmd == 'open':
         # UI = 'show'
@@ -706,12 +684,7 @@ def main(executable_path=None):
 
     #---daemon---
     elif cmd == 'detach' or cmd == 'daemon' or cmd == 'background':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
-        ])
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if len(appList) > 0:
             lg.out(0, 'main BitDust process already started: %s\n' % str(appList))
             bpio.shutdown()
@@ -732,12 +705,7 @@ def main(executable_path=None):
 
     #---restart---
     elif cmd == 'restart' or cmd == 'reboot':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
-        ])
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         ui = False
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
@@ -803,25 +771,7 @@ def main(executable_path=None):
             lg.out(0, 'this operating system not supported X11 interface\n')
             bpio.shutdown()
             return 0
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
-        ])
-        if not settings.NewWebGUI():
-            appList_bpgui = bpio.find_process([
-                'bpgui.exe',
-                'bpgui.py',
-            ])
-            if len(appList_bpgui) > 0:
-                if len(appList) == 0:
-                    for pid in appList_bpgui:
-                        bpio.kill_process(pid)
-                else:
-                    lg.out(0, 'BitDust GUI already opened, found another process: %s\n' % str(appList))
-                    bpio.shutdown()
-                    return 0
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if len(appList) == 0:
             try:
                 ret = run('show', opts, args, overDict, executable_path)
@@ -837,12 +787,7 @@ def main(executable_path=None):
 
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
-        appList = bpio.find_process([
-            'bitdust.exe',
-            'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
-        ])
+        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:

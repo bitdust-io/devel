@@ -451,11 +451,6 @@ class Initializer(automat.Automat):
                 shutdowner.A('stop', 'exit')
 
             elif cmd == 'restart':
-                # appList = bpio.find_process(['bpgui.',])
-                # if len(appList) > 0:
-                #     shutdowner.A('stop', 'restartnshow') # ('restart', 'show'))
-                # else:
-                #     shutdowner.A('stop', 'restart') # ('restart', ''))
                 shutdowner.A('stop', 'restart')
 
             elif cmd == 'reconnect':
