@@ -1,5 +1,5 @@
 BitDust
-=============
+=======
 
 BitDust is a peer to peer online backup utility.
 
@@ -11,12 +11,25 @@ All your data is encrypted before it leaves your computer with a private key you
 
 BitDust is written in Python using pure Twisted framework and published under GNU AGPLv3.
 
-http://bitdust.io
+https://bitdust.io
 
 
 
-Install BitDust
-===============
+Current status
+==============
+
+Current project stage is about to only research opportunities of
+building a holistic eco-system that protects your privacy in the network
+by establishing p2p communications of users and maximize distribution of
+information flows in the network.
+
+At the moment exists a very limited alpha version of the BitDust software.
+We decided to publish those earlier works to verify/test/share our ideas and experiments with other people.
+
+
+
+Get the software
+================
 
 Seems like in Ubuntu (probably most other distros) you can install all dependencies in that way:
 
@@ -25,14 +38,14 @@ Seems like in Ubuntu (probably most other distros) you can install all dependenc
         sudo apt-get install python-twisted python-django python-crypto python-pyasn1 python-psutil libffi-dev
 
 
-Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incoming connections from other nodes.:
+Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
 
         sudo apt-get install miniupnpc
 
 
 Second step is to get the BitDust sources:
 
-        git clone http://gitlab.bitdust.io/stable/bitdust.latest.git bitdust
+        git clone https://github.com/bitdust-io/public.git bitdust
 
 
 Then you need to build virtual environment with all required Python dependencies, BitDust software will run fully isolated.
@@ -42,13 +55,13 @@ Single command should make it for you, all required files will be generated in `
         python bitdust.py install
 
 
-Last step to make BitDist software ready is to make a short alias in your OS, then you can just type `bitdust` in command line to fast access the program:
+Last step to make BitDust software ready is to make a short alias in your OS, then you can just type `bitdust` in command line to fast access the program:
         
         sudo ln -s /home/<user>/.bitdust/bitdust /usr/local/bin/bitdust
+        
 
 
-
-Run BitDist
+Run BitDust
 ===========
 
 Start using the software by creating an identity for your device in BitDust network:
@@ -83,7 +96,8 @@ you can visit [BitDust Commands](https://bitdust.io/commands.html) page.
 
 
 
-## Dependencies
+Binary Dependencies
+===================
 
 If you are installing BitDust on Windows platforms, you may require some binary packages already compiled and packaged for Microsoft Windows platforms, you can check following locations and download needed binaries and libraries:
 
@@ -96,4 +110,3 @@ If you are installing BitDust on Windows platforms, you may require some binary 
 * pycrypto: [dlitz.net/software/pycrypto](https://www.dlitz.net/software/pycrypto/)
 * wxgtk2.8: [wxpython.org](http://wiki.wxpython.org/InstallingOnUbuntuOrDebian)
 * miniupnpc: [miniupnp.tuxfamily.org](http://miniupnp.tuxfamily.org/)
-

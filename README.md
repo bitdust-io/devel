@@ -1,18 +1,6 @@
 # BitDust
-[bitdust.io](http://bitdust.io)
 
-
-## English
-* [Main web site](http://bitdust.io/toc.html)
-* [Public Git repository](http://gitlab.bitdust.io/devel/bitdust.docs.english/blob/master/README.md)
-* [Mirror in GitHub repository](http://gitlab.bitdust.io/devel/bitdust.docs.english/blob/master/README.md)
-
-
-## Russian
-
-* [Main web site](http://ru.bitdust.io/toc.html)
-* [Mirror in Public Git repository](http://gitlab.bitdust.io/devel/bitdust.docs/blob/master/README.md)
-
+[bitdust.io](https://bitdust.io)
 
 
 ## About
@@ -26,6 +14,17 @@ The redundancy in backup makes it so if someone loses your data, you can rebuild
 All your data is encrypted before it leaves your computer with a private key your computer generates. No one else can read your data, even BitDust Team! Recover data is only one way - download the necessary pieces from computers of other peers and decrypt them with your private key.
 
 BitDust is written in Python using pure Twisted framework and published under GNU AGPLv3.
+
+
+#### Current status
+
+Current project stage is about to only research opportunities of
+building a holistic eco-system that protects your privacy in the network
+by establishing p2p communications of users and maximize distribution of
+information flows in the network.
+
+At the moment exists a very limited alpha version of the BitDust software.
+We decided to publish those earlier works to verify/test/share our ideas and experiments with other people.
 
 
 
@@ -46,7 +45,7 @@ Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) too
 
 Second step is to get the BitDust sources:
 
-        git clone http://gitlab.bitdust.io/stable/bitdust.latest.git bitdust
+        git clone https://github.com/bitdust-io/public.git bitdust
 
 
 Then you need to build virtual environment with all required Python dependencies, BitDust software will run fully isolated.
@@ -95,7 +94,7 @@ To get some more insights or just to know how to start playing with software
 you can visit [BitDust Commands](https://bitdust.io/commands.html) page. 
 
 
-## Dependencies
+## Binary Dependencies
 
 If you are installing BitDust on Windows platforms, you may require some binary packages already compiled and packaged for Microsoft Windows platforms, you can check following locations and download needed binaries and libraries:
 
