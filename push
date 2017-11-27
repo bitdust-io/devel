@@ -7,3 +7,5 @@ git push dev master
 git push github master
 git push bitbucket master
 git push gitlab master
+git push fork master
+git status
