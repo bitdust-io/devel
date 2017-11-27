@@ -2,6 +2,38 @@ Change Log
 ==========
 
 
+2017-11-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added few options in services/identity-propagate/ branch
+* updated id_registrator() to be able to contol your identity sources via settings
+* now identitycache will erase all local files on startup
+* added "identity server" in command line interface to run id server locally
+* added "identity backup" in command line interface
+* added setup.py
+* added git mirror on: dev.bitdust.io/code/devel (dev)
+* added git mirror on: bitbucket.org/bitdust_io/devel (bitbucket)
+* added git mirror on: gitlab.com/bitdust/devel (gitlab)
+* added api /key/*/v1 REST methods, tested again key_ring sharing
+* added api /config/*/v1 REST methods
+* added txrestapi, added REST HTTP server for serving api.* methods in interface/rest_http_server.py, updated settings
+* get rid of stun_client_RFC3489 dependency! only STUN from BitDust nodes now
+* removed shtoom and stun_rfc_3489 files from repo
+* added list of known id servers in idserver WEB front-end
+* added api.network_stun() method to detect and report your current external IP
+* added new api.message_*() methods for further development of the GUI
+* added chat/message_keeper.py to store message history
+* fixes in service_identity_server()
+* fixes/imporvements in identitycache.py
+* fixes/improvements related to global id
+* fixes in lookup.py
+* fixes in api.file_create()
+* fixes in cmd_deploy()
+* fixes in backup_fs.py
+* fixes in transport/proxy/
+* fixes in transport/tcp/
+* updated help.py
+
+
 
 2017-10-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
