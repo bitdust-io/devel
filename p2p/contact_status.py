@@ -142,9 +142,12 @@ def isKnown(idurl):
     Return `True` if state machine contact_status() already exists for this
     user.
     """
+    global _ContactsStatusDict
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return False
     if idurl in [None, 'None', '']:
         return False
-    global _ContactsStatusDict
     return idurl in _ContactsStatusDict.keys()
 
 
@@ -152,12 +155,12 @@ def isOnline(idurl):
     """
     Return True if given contact's state is ONLINE.
     """
+    global _ContactsStatusDict
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
     if idurl in [None, 'None', '']:
         return False
-    global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
         A(idurl)
         if _Debug:
@@ -169,12 +172,12 @@ def isOffline(idurl):
     """
     Return True if given contact's state is OFFLINE.
     """
+    global _ContactsStatusDict
     global _ShutdownFlag
     if _ShutdownFlag:
         return True
     if idurl in [None, 'None', '']:
         return True
-    global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
         A(idurl)
         if _Debug:
@@ -186,12 +189,12 @@ def isCheckingNow(idurl):
     """
     Return True if given contact's state is PING or ACK?.
     """
+    global _ContactsStatusDict
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
     if idurl in [None, 'None', '']:
         return False
-    global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
         A(idurl)
         if _Debug:
@@ -204,17 +207,17 @@ def getStatusLabel(idurl):
     """
     Return some text description about the current state of that user.
     """
+    global _ContactsStatusDict
+    global _StatusLabels
     global _ShutdownFlag
     if _ShutdownFlag:
         return '?'
     if idurl in [None, 'None', '']:
         return '?'
-    global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
         A(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.getStatusLabel contact %s is not found, made a new instance' % idurl)
-    global _StatusLabels
     return _StatusLabels.get(A(idurl).state, '?')
 
 
@@ -222,17 +225,17 @@ def getStatusIcon(idurl):
     """
     Return an icon name depending on current state of that user.
     """
+    global _ContactsStatusDict
+    global _StatusIcons
     global _ShutdownFlag
     if _ShutdownFlag:
         return '?'
     if idurl in [None, 'None', '']:
         return '?'
-    global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
         A(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.getStatusIcon contact %s is not found, made a new instance' % idurl)
-    global _StatusIcons
     return _StatusIcons.get(A(idurl).state, '?')
 
 
@@ -390,7 +393,7 @@ class ContactStatus(automat.Automat):
         Condition method.
         """
         pkt_out, status, error = arg
-        return pkt_out.outpacket.Command not in [commands.Identity(), commands.Ack()]
+        return pkt_out.outpacket.Command not in [ commands.Ack(), ]  # commands.Identity(),
 
     def doRememberTime(self, arg):
         """
