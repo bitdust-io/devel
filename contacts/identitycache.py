@@ -228,21 +228,24 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
+    xml_src = str(xml_src.strip())
     if idurl in _OverriddenIdentities:
         if _OverriddenIdentities[idurl] == xml_src:
-            lg.warn('replacing overriden identity "%s" SKIPPED, no changes' % idurl)
+            if _Debug:
+                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s" , no changes' % idurl)
             return
-        lg.warn('replacing overriden identity "%s" with new one' % idurl)
         if _Debug:
+            lg.out(4, 'identitycache.OverrideIdentity replacing overriden identity "%s" with new one' % idurl)
             lg.out(4, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
             lg.out(4, '\nOVERRIDDEN NEW:\n' + xml_src)
     else:
         orig = identitydb.get(idurl).serialize() if identitydb.has_idurl(idurl) else ''
         if orig and orig == xml_src:
-            lg.warn('replacing original identity "%s" SKIPPED, overriden copy is the same as original' % idurl)
+            if _Debug:
+                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s" , overriden copy is the same as original' % idurl)
             return
-        lg.warn('replacing original identity for "%s"' % idurl)
         if _Debug:
+            lg.out(4, 'identitycache.OverrideIdentity replacing original identity for "%s"' % idurl)
             lg.out(4, '\nORIGINAL:\n' + orig)
             lg.out(4, '\nNEW:\n' + xml_src)
     _OverriddenIdentities[idurl] = xml_src

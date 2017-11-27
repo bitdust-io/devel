@@ -432,7 +432,7 @@ class identity:
 
         Used to save identity on disk or transfer over network.
         """
-        return self.toxml()[0]
+        return self.toxml()[0].strip()
 
     def serialize_object(self):
         """
@@ -501,7 +501,8 @@ class identity:
         signature.appendChild(doc.createTextNode(self.signature))
         root.appendChild(signature)
 
-        return doc.toprettyxml("  ", "\n", "ISO-8859-1"), root, doc
+        # return doc.toprettyxml(indent="  ", newl="\n", encoding="ISO-8859-1"), root, doc
+        return doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8"), root, doc
 
     def from_xmlobj(self, root_node):
         """

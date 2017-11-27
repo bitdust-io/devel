@@ -503,15 +503,21 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        if time.time() - self.latest_packet_received < 10:
+        live_time = time.time() - self.latest_packet_received
+        if live_time < 10.0:
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_receiver.doCheckPingRouter OK, latest packet received %f sec ago' % live_time)
             return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver.doCheckPingRouter to %s' % self.router_idurl)
         identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if identity_source:
             if _Debug:
-                lg.out(_DebugLevel, '    identity loaded from "my-original-identity" config')
+                lg.out(_DebugLevel, '    "my-original-identity" prepared for sending')
+        else:
             identity_source = my_id.getLocalIdentity().serialize()
+            if _Debug:
+                lg.out(_DebugLevel, '    local identity prepared for sending')
         self._do_send_identity_to_router(identity_source, failed_event='router-disconnected')
 
     def doNotifyConnected(self, arg):
