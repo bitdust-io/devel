@@ -61,7 +61,7 @@ import identity
 _LocalIdentity = None
 _LocalIDURL = None
 _LocalName = None
-_ValidTransports = ['tcp', 'udp', 'proxy', ]
+_ValidTransports = ['tcp', 'udp', 'http', 'proxy', ]
 
 #------------------------------------------------------------------------------
 
@@ -460,6 +460,9 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
             x, servername, x, x = nameurl.UrlParse(ident.sources[0])
             new_contacts['udp'] = 'udp://%s@%s' % (name.lower(), servername)
             new_order.append('udp')
+        if settings.enableHTTP() and settings.enableHTTPreceiving():
+            new_contacts['http'] = 'http://' + ip + ':' + str(settings.getHTTPPort())
+            new_order.append('http')
     # erase current contacts from my identity
     ident.clearContacts()
     # add contacts data to the local identity

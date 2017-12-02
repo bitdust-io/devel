@@ -335,8 +335,7 @@ class UDPNode(automat.Automat):
         if incoming_str is None:
             return
         try:
-            incoming_user_id, incoming_user_address, time_placed = incoming_str.split(
-                ' ')
+            incoming_user_id, incoming_user_address, time_placed = incoming_str.split(' ')
             incoming_user_address = incoming_user_address.split(':')
             incoming_user_address[1] = int(incoming_user_address[1])
             incoming_user_address = tuple(incoming_user_address)
@@ -477,7 +476,6 @@ class UDPNode(automat.Automat):
 
     def _datagram_received(self, datagram, address):
         """
-        
         """
         # command, payload = datagram
         # lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))

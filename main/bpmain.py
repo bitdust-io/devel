@@ -578,6 +578,8 @@ def main(executable_path=None):
         try:
             from twisted.internet.defer import setDebugging
             setDebugging(True)
+            # from twisted.python import log as twisted_log
+            # twisted_log.startLogging(sys.stdout)
         except:
             lg.warn('python-twisted is not installed')
 

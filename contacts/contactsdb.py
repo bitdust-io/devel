@@ -40,7 +40,7 @@ from main import settings
 from userid import my_id
 from userid import global_id
 
-import identitycache
+from contacts import identitycache
 
 #-------------------------------------------------------------------------------
 
@@ -51,8 +51,8 @@ _CorrespondentsDict = {}
 
 _SuppliersChangedCallback = None
 _CustomersChangedCallback = None
-_ContactsChangedCallback = None
 _CorrespondentsChangedCallback = None
+_ContactsChangedCallbacks = []
 
 #-------------------------------------------------------------------------------
 
@@ -119,11 +119,14 @@ def customers():
     return _CustomersList
 
 
-def contacts():
+def contacts(include_all=False):
     """
     Return a union of suppliers and customers ID's.
     """
-    return list(set(suppliers() + customers()))
+    result = set(suppliers() + customers())
+    if include_all:
+        result.intersection_update(correspondents())
+    return list(result)
 
 
 def contacts_list():
@@ -220,14 +223,14 @@ def update_suppliers(idslist, customer_idurl=None):
     Set suppliers ID's list, called from fire_hire() machine basically.
     """
     global _SuppliersChangedCallback
-    global _ContactsChangedCallback
+    global _ContactsChangedCallbacks
     oldsuppliers = suppliers(customer_idurl=customer_idurl)
     oldcontacts = contacts()
     set_suppliers(idslist, customer_idurl=customer_idurl)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
-    if _ContactsChangedCallback is not None:
-        _ContactsChangedCallback(oldcontacts, contacts())
+    for cb in _ContactsChangedCallbacks:
+        cb(oldcontacts, contacts())
 
 
 def update_customers(idslist):
@@ -235,14 +238,14 @@ def update_customers(idslist):
     Set customers ID's list.
     """
     global _CustomersChangedCallback
-    global _ContactsChangedCallback
+    global _ContactsChangedCallbacks
     oldcustomers = customers()
     oldcontacts = contacts()
     set_customers(idslist)
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback(oldcustomers, customers())
-    if _ContactsChangedCallback is not None:
-        _ContactsChangedCallback(oldcontacts, contacts())
+    for cb in _ContactsChangedCallbacks:
+        cb(oldcontacts, contacts())
 
 #------------------------------------------------------------------------------
 
@@ -589,17 +592,25 @@ def SetCustomersChangedCallback(cb):
     _CustomersChangedCallback = cb
 
 
-def SetContactsChangedCallback(cb):
-    """
-    Set callback to fire when any contact were changed.
-    """
-    global _ContactsChangedCallback
-    _ContactsChangedCallback = cb
-
-
 def SetCorrespondentsChangedCallback(cb):
     """
     Set callback to fire when correspondents is changed.
     """
     global _CorrespondentsChangedCallback
     _CorrespondentsChangedCallback = cb
+
+
+def AddContactsChangedCallback(cb):
+    """
+    Set callback to fire when any contact were changed.
+    """
+    global _ContactsChangedCallbacks
+    _ContactsChangedCallbacks.append(cb)
+
+
+def RemoveContactsChangedCallback(cb):
+    """
+    Set callback to fire when any contact were changed.
+    """
+    global _ContactsChangedCallbacks
+    _ContactsChangedCallbacks.remove(cb)

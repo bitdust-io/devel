@@ -38,7 +38,15 @@ _Debug = True
 
 #------------------------------------------------------------------------------
 
+import sys
+
 from twisted.internet.defer import Deferred
+
+#------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -47,7 +55,8 @@ from logs import lg
 from lib import net_misc
 
 from userid import identity
-import identitydb
+
+from contacts import identitydb
 
 #------------------------------------------------------------------------------
 
@@ -391,3 +400,33 @@ def SearchLocalIP(ip):
     return identitydb.search_local_ip(ip)
 
 #------------------------------------------------------------------------------
+
+def _test():
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    from twisted.internet import reactor
+    from twisted.internet.defer import setDebugging
+    setDebugging(True)
+    # from twisted.python import log as twisted_log
+    # twisted_log.startLogging(sys.stdout)
+    lg.set_debug_level(20)
+
+    from main import settings
+    settings.init()
+    settings.update_proxy_settings()
+
+    init()
+
+    def _resp(src):
+        print src
+        reactor.stop()
+
+    immediatelyCaching('http://p2p-id.ru/veselin.xml').addBoth(_resp)
+    reactor.run()
+    shutdown()
+
+#------------------------------------------------------------------------------
+
+
+if __name__ == '__main__':
+    _test()

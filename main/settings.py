@@ -1408,6 +1408,13 @@ def DefaultDHTPort():
     return 14441
 
 
+def DefaultHTTPPort():
+    """
+    A default port number for transport_http.
+    """
+    return 9993
+
+
 def DefaultWebLogPort():
     """
     A port number for HTTP server to print program logs.
@@ -1688,6 +1695,8 @@ def getTransportPort(proto):
         return getTCPPort()
     if proto == 'udp':
         return getUDPPort()
+    if proto == 'http':
+        return getHTTPPort()
     raise
 
 
@@ -1811,6 +1820,49 @@ def enablePROXYreceiving(enable=None):
     if enable is None:
         return config.conf().getBool('services/proxy-transport/receiving-enabled')
     config.conf().setData('services/proxy-transport/receiving-enabled', str(enable))
+
+
+def enableHTTP(enable=None):
+    """
+    Switch on/off transport_http in the settings or get current state.
+    """
+    if enable is None:
+        return config.conf().getBool('services/http-transport/enabled')
+    config.conf().setData('services/http-transport/enabled', str(enable))
+
+
+def enableHTTPsending(enable=None):
+    """
+    Switch on/off sending over transport_http in the settings or get current
+    state.
+    """
+    if enable is None:
+        return config.conf().getBool('services/http-transport/sending-enabled')
+    config.conf().setData('services/http-transport/sending-enabled', str(enable))
+
+
+def enableHTTPreceiving(enable=None):
+    """
+    Switch on/off receiving over transport_http in the settings or get current
+    state.
+    """
+    if enable is None:
+        return config.conf().getBool('services/http-transport/receiving-enabled')
+    config.conf().setData('services/http-transport/receiving-enabled', str(enable))
+
+
+def getHTTPPort():
+    """
+    Get a port number for tranport_http from user config.
+    """
+    return config.conf().getInt("services/http-connections/http-port", DefaultTCPPort())
+
+
+def setHTTPPort(port):
+    """
+    Set a port number for tranport_http in the user config.
+    """
+    config.conf().setData("services/http-connections/http-port", str(port))
 
 
 def getTransportPriority(proto):
@@ -2471,6 +2523,14 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/gateway/enabled', 'true')
 
+    config.conf().setDefaultValue('services/http-connections/enabled', 'true')
+    config.conf().setDefaultValue('services/http-connections/http-port', DefaultHTTPPort())
+
+    config.conf().setDefaultValue('services/http-transport/enabled', 'false')  # not done yet
+    config.conf().setDefaultValue('services/http-transport/receiving-enabled', 'true')
+    config.conf().setDefaultValue('services/http-transport/sending-enabled', 'true')
+    config.conf().setDefaultValue('services/http-transport/priority', 50)
+
     config.conf().setDefaultValue('services/identity-server/enabled', 'false')
     config.conf().setDefaultValue('services/identity-server/host', '')
     config.conf().setDefaultValue('services/identity-server/tcp-port', IdentityServerPort())
@@ -2515,7 +2575,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/proxy-transport/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/sending-enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'true')
-    config.conf().setDefaultValue('services/proxy-transport/priority', 30)
+    config.conf().setDefaultValue('services/proxy-transport/priority', 100)
     config.conf().setDefaultValue('services/proxy-transport/my-original-identity', '')
     config.conf().setDefaultValue('services/proxy-transport/current-router', '')
     config.conf().setDefaultValue('services/proxy-transport/preferred-routers', '')
