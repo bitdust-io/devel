@@ -2523,7 +2523,7 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/gateway/enabled', 'true')
 
-    config.conf().setDefaultValue('services/http-connections/enabled', 'true')
+    config.conf().setDefaultValue('services/http-connections/enabled', 'false')
     config.conf().setDefaultValue('services/http-connections/http-port', DefaultHTTPPort())
 
     config.conf().setDefaultValue('services/http-transport/enabled', 'false')  # not done yet
