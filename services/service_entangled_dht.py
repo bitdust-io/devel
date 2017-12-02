@@ -60,6 +60,7 @@ class EntangledDHTService(LocalService):
         from dht import dht_service
         from main.config import conf
         conf().removeCallback('services/entangled-dht/udp-port')
+        dht_service.disconnect()
         dht_service.shutdown()
         return True
 

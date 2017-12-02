@@ -2518,6 +2518,8 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/data-motion/enabled', 'true')
 
     config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')
+    config.conf().setDefaultValue('services/entangled-dht/udp-port', DefaultDHTPort())
+    config.conf().setDefaultValue('services/entangled-dht/known-nodes', '')
 
     config.conf().setDefaultValue('services/employer/enabled', 'true')
 

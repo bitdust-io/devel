@@ -111,6 +111,7 @@ def defaults():
         'services/data-motion/enabled': TYPE_BOOLEAN,
         'services/entangled-dht/enabled': TYPE_BOOLEAN,
         'services/entangled-dht/udp-port': TYPE_POSITIVE_INTEGER,
+        'services/entangled-dht/known-nodes': TYPE_STRING,
         'services/employer/enabled': TYPE_BOOLEAN,
         'services/gateway/enabled': TYPE_BOOLEAN,
         'services/http-connections/enabled': TYPE_BOOLEAN,

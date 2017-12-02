@@ -24,6 +24,21 @@
 #
 
 
+def default_nodes():
+    """
+    A set of identity servers currently maintained.
+    """
+    return {
+        # by Veselin Penev:
+        'p2p-id.ru': (80, 6661),
+        'datahaven.net': (80, 6661),
+        'identity.datahaven.net': (80, 6661),
+        'bitdust.io': (8084, 6661),
+        'work.offshore.ai': (8084, 6661),
+        'whmcs.whois.ai': (8084, 6661),
+    }
+
+
 def by_host():
     """
     Here is a well known identity servers to support the network.
@@ -45,24 +60,15 @@ def by_host():
 
     This way you can create your own BitDust network, under your full control.
     """
-    known_identity_servers = {
-        'p2p-id.ru': (80, 6661),
-        # 'veselin-p2p.ru': (80, 6661),
-        'datahaven.net': (80, 6661),
-        'identity.datahaven.net': (80, 6661),
-        'bitdust.io': (8084, 6661),
-        # 'bitdust.ai': (80, 6661),
-        'work.offshore.ai': (8084, 6661),
-        'whmcs.whois.ai': (8084, 6661),
-        # 'p2p-machines.net': (80, 6661),
-    }
+
     try:
         from main import config
         overridden_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
     except:
         overridden_identity_servers_str = ''
     if not overridden_identity_servers_str:
-        return known_identity_servers
+        return default_nodes()
+
     overridden_identity_servers = {}
     for id_server_str in overridden_identity_servers_str.split(','):
         if id_server_str.strip():
@@ -74,6 +80,8 @@ def by_host():
             except:
                 continue
             overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
-    if not overridden_identity_servers:
-        return known_identity_servers
-    return overridden_identity_servers
+
+    if overridden_identity_servers:
+        return overridden_identity_servers
+
+    return default_nodes()
