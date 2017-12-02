@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# tcp_connection.py
+# tcp_node.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -27,7 +27,7 @@
 
 
 """
-.. module:: tcp_process.
+.. module:: tcp_node.
 
 This is a This is a sub process to send/receive files between users over
 TCP protocol. 1) listen for incoming connections on a port 7771 (by
@@ -35,17 +35,26 @@ default) 2) establish connections to remote peers 3) keeps TCP session
 opened to be able to send asap
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 8
+
+#------------------------------------------------------------------------------
+
 import sys
 import optparse
 
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor in tcp_connection.py')
+    sys.exit('Error initializing twisted.internet.reactor in tcp_node.py')
 
 from twisted.internet import protocol
 from twisted.internet.defer import Deferred
 from twisted.internet.error import CannotListenError
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -123,35 +132,50 @@ def receive(options):
     try:
         _MyIDURL = options['idurl']
         _InternalPort = int(options['tcp_port'])
+    except:
+        _MyIDURL = None
+        _InternalPort = None
+        lg.exc()
+        return None
+    try:
         _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))
         _MyHost = options['host'].split(':')[0] + ':' + str(_InternalPort)
         tcp_interface.interface_receiving_started(_MyHost, options)
+
     except CannotListenError as ex:
+        lg.warn('port "%d" is busy' % _InternalPort)
         tcp_interface.interface_receiving_failed('port is busy')
+        return None
+
     except Exception as ex:
-        # print err, dir(err)
         try:
             e = ex.getErrorMessage()
         except:
             e = str(ex)
         tcp_interface.interface_receiving_failed(e)
-        # lg.exc()
+        lg.exc()
+        return None
+
     return _Listener
 
 
 def connect_to(host, keep_alive=True):
     """
-    
     """
     if host in started_connections():
+        lg.warn('already connecting to "%s"' % host)
         return False
     for peeraddr, connections in opened_connections().items():
         if peeraddr == host:
+            lg.warn('already connected to "%s" with %d connections' % (host, len(connections)))
             return True
         for connection in connections:
             if connection.getConnectionAddress():
                 if connection.getConnectionAddress() == host:
+                    lg.warn('already connected to "%s" with peer address: "%s"' % (host, peeraddr))
                     return True
+    if _Debug:
+        lg.out(_DebugLevel, 'tcp_node.connect_to "%s", keep_alive=%s' % (host, keep_alive))
     connection = TCPFactory(host, keep_alive=keep_alive)
     connection.connector = reactor.connectTCP(host[0], host[1], connection)
     started_connections()[host] = connection
@@ -160,7 +184,6 @@ def connect_to(host, keep_alive=True):
 
 def disconnect_from(host):
     """
-    
     """
     ok = False
     for peeraddr, connections in opened_connections().items():
@@ -181,7 +204,6 @@ def disconnect_from(host):
 
 def disconnect():
     """
-    
     """
     global _Listener
     from transport.tcp import tcp_interface
@@ -195,7 +217,6 @@ def disconnect():
 
 def close_connections():
     """
-    
     """
     for sc in started_connections().values():
         sc.connector.disconnect()
@@ -207,7 +228,6 @@ def close_connections():
 
 def send(filename, remoteaddress, description=None, single=False):
     """
-    
     """
     result_defer = Deferred()
     if remoteaddress in started_connections():
@@ -231,7 +251,9 @@ def send(filename, remoteaddress, description=None, single=False):
                         lg.out(6, 'tcp_node.send single, use opened(2) connection to %s, %d already started and %d opened' % (
                             str(remoteaddress), len(started_connections()), len(opened_connections())))
                     return result_defer
-    connection = TCPFactory(remoteaddress, keep_alive=not single)
+    if _Debug:
+        lg.out(_DebugLevel, 'tcp_node.send start connecting to "%s"' % str(remoteaddress))
+    connection = TCPFactory(remoteaddress, keep_alive=(not single))
     connection.add_outbox_file(filename, description, result_defer, single)
     connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection)
     started_connections()[remoteaddress] = connection
@@ -275,7 +297,7 @@ def cancel_file_receiving(transferID):
     """
     # at the moment for TCP transport we can not stop particular file transfer
     # we can only close connection itself, which is not we really want
-    return False
+    # need to find a way to notify remote side about to stop
 #     for connections in opened_connections().values():
 #         for connection in connections:
 #             for in_file in connection.stream.inboxFiles.values():
@@ -284,11 +306,11 @@ def cancel_file_receiving(transferID):
 #                     return True
 #     lg.warn('%r not found' % transferID)
 #     return False
+    return False
 
 
 def cancel_file_sending(transferID):
     """
-    
     """
     for connections in opened_connections().values():
         for connection in connections:
@@ -303,7 +325,6 @@ def cancel_file_sending(transferID):
 
 def cancel_outbox_file(host, filename):
     """
-    
     """
     from transport.tcp import tcp_interface
     for connections in opened_connections().values():
@@ -392,6 +413,9 @@ def parseCommandLine():
 
 def main():
     pass
+
+#------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     main()

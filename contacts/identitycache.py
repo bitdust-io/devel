@@ -38,7 +38,15 @@ _Debug = True
 
 #------------------------------------------------------------------------------
 
+import sys
+
 from twisted.internet.defer import Deferred
+
+#------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -47,7 +55,8 @@ from logs import lg
 from lib import net_misc
 
 from userid import identity
-import identitydb
+
+from contacts import identitydb
 
 #------------------------------------------------------------------------------
 
@@ -228,21 +237,24 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
+    xml_src = str(xml_src.strip())
     if idurl in _OverriddenIdentities:
         if _OverriddenIdentities[idurl] == xml_src:
-            lg.warn('replacing overriden identity "%s" SKIPPED, no changes' % idurl)
+            if _Debug:
+                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s" , no changes' % idurl)
             return
-        lg.warn('replacing overriden identity "%s" with new one' % idurl)
         if _Debug:
+            lg.out(4, 'identitycache.OverrideIdentity replacing overriden identity "%s" with new one' % idurl)
             lg.out(4, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
             lg.out(4, '\nOVERRIDDEN NEW:\n' + xml_src)
     else:
         orig = identitydb.get(idurl).serialize() if identitydb.has_idurl(idurl) else ''
         if orig and orig == xml_src:
-            lg.warn('replacing original identity "%s" SKIPPED, overriden copy is the same as original' % idurl)
+            if _Debug:
+                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s" , overriden copy is the same as original' % idurl)
             return
-        lg.warn('replacing original identity for "%s"' % idurl)
         if _Debug:
+            lg.out(4, 'identitycache.OverrideIdentity replacing original identity for "%s"' % idurl)
             lg.out(4, '\nORIGINAL:\n' + orig)
             lg.out(4, '\nNEW:\n' + xml_src)
     _OverriddenIdentities[idurl] = xml_src
@@ -388,3 +400,33 @@ def SearchLocalIP(ip):
     return identitydb.search_local_ip(ip)
 
 #------------------------------------------------------------------------------
+
+def _test():
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    from twisted.internet import reactor
+    from twisted.internet.defer import setDebugging
+    setDebugging(True)
+    # from twisted.python import log as twisted_log
+    # twisted_log.startLogging(sys.stdout)
+    lg.set_debug_level(20)
+
+    from main import settings
+    settings.init()
+    settings.update_proxy_settings()
+
+    init()
+
+    def _resp(src):
+        print src
+        reactor.stop()
+
+    immediatelyCaching('http://p2p-id.ru/veselin.xml').addBoth(_resp)
+    reactor.run()
+    shutdown()
+
+#------------------------------------------------------------------------------
+
+
+if __name__ == '__main__':
+    _test()

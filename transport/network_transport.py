@@ -242,6 +242,11 @@ class NetworkTransport(automat.Automat):
             options['udp_port'] = settings.getUDPPort()
         elif self.proto == 'proxy':
             pass
+        elif self.proto == 'http':
+            if not id_contact:
+                default_host = misc.readExternalIP() + ':' + str(settings.getHTTPPort())
+            options['host'] = id_contact or default_host
+            options['http_port'] = settings.getHTTPPort()
         if _Debug:
             lg.out(8, 'network_transport.doStart connecting %s transport : %s' % (self.proto.upper(), options))
         self.interface.connect(options)

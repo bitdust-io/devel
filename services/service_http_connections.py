@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_entangled_dht.py
+# service_http_connections.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (service_entangled_dht.py) is part of BitDust Software.
+# This file (service_http_connections.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,47 +27,37 @@
 """
 ..
 
-module:: service_entangled_dht
+module:: service_http_connections
 """
 
 from services.local_service import LocalService
 
 
 def create_service():
-    return EntangledDHTService()
+    return HTTPConnectionsService()
 
 
-class EntangledDHTService(LocalService):
+class HTTPConnectionsService(LocalService):
 
-    service_name = 'service_entangled_dht'
-    config_path = 'services/entangled-dht/enabled'
+    service_name = 'service_http_connections'
+    config_path = 'services/http-connections/enabled'
 
     def dependent_on(self):
-        return ['service_udp_datagrams',
+        return ['service_network',
                 ]
 
     def start(self):
-        from dht import dht_service
-        from main import settings
         from main.config import conf
-        dht_service.init(settings.getDHTPort(), settings.DHTDBFile())
-        dht_service.connect()
-        conf().addCallback('services/entangled-dht/udp-port',
-                           self._on_udp_port_modified)
+        conf().addCallback('services/http-connections/http-port', self._on_tcp_port_modified)
         return True
 
     def stop(self):
-        from dht import dht_service
         from main.config import conf
-        conf().removeCallback('services/entangled-dht/udp-port')
-        dht_service.disconnect()
-        dht_service.shutdown()
+        conf().removeCallback('services/http-connections/http-port')
         return True
 
-    def _on_udp_port_modified(self, path, value, oldvalue, result):
+    def _on_tcp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-        lg.out(2, 'service_entangled_dht._on_udp_port_modified %s->%s : %s' % (
-            oldvalue, value, path))
-        if network_connector.A():
-            network_connector.A('reconnect')
+        lg.out(2, 'service_http_connections._on_http_port_modified : %s->%s : %s' % (oldvalue, value, path))
+        network_connector.A('reconnect')

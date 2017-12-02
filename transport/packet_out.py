@@ -756,6 +756,9 @@ class PacketOut(automat.Automat):
         udp_contact = None
         if settings.enableUDP() and settings.enableUDPsending():
             udp_contact = byproto.get('udp', None)
+        http_contact = None
+        if settings.enableHTTP() and settings.enableHTTPsending():
+            http_contact = byproto.get('http', None)
         proxy_contact = None
         if settings.enablePROXY() and settings.enablePROXYsending():
             proxy_contact = byproto.get('proxy', None)
@@ -787,6 +790,16 @@ class PacketOut(automat.Automat):
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                self.items.append(WorkItem(proto, host, self.filesize))
+                self.automat('items-sent')
+                return
+        # http contact
+        if http_contact and 'http' in working_protos:
+            proto, host, port, fn = nameurl.UrlParse(http_contact)
+            if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
+                if port:
+                    host = host + ':' + str(port)
                 gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')

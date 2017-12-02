@@ -43,9 +43,7 @@ class BackupsService(LocalService):
     config_path = 'services/backups/enabled'
 
     def dependent_on(self):
-        return ['service_list_files',
-                'service_employer',
-                'service_rebuilding',
+        return ['service_keys_registry',
                 ]
 
     def start(self):

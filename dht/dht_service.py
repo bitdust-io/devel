@@ -32,8 +32,8 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 10
+_Debug = True
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -65,12 +65,11 @@ from system import bpio
 
 from main import settings
 
-import known_nodes
+from dht import known_nodes
 
 #------------------------------------------------------------------------------
 
 _MyNode = None
-_UDPListener = None
 _ActiveLookup = None
 
 #------------------------------------------------------------------------------
@@ -98,7 +97,6 @@ def init(udp_port, db_file_path=None):
 def shutdown():
     global _MyNode
     if _MyNode is not None:
-        _MyNode.listener.stopListening()
         _MyNode._dataStore._db.close()
         _MyNode._protocol.node = None
         del _MyNode
@@ -119,28 +117,33 @@ def node():
 def connect():
     if not node().listener:
         node().listenUDP()
+
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect did RESET refresher task')
-    else:
-        node().joinNetwork(known_nodes.nodes())
+        return True
+
+    def _on_hosts_resolved(live_nodes):
+        node().joinNetwork(live_nodes)
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
+            lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(live_nodes)))
+
+    _known_nodes = known_nodes.nodes()
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes' % (len(_known_nodes)))
+    resolve_hosts(_known_nodes).addBoth(_on_hosts_resolved)
     return True
 
 
 def disconnect():
-    #    global _UDPListener
-    #    if _UDPListener is not None:
-    #        lg.out(6, 'dht_service.disconnect')
-    #        d = _UDPListener.stopListening()
-    #        del _UDPListener
-    #        _UDPListener = None
-    #        return d
-    #    else:
-    #        lg.warn('- UDPListener is None')
-    return None
+    global _MyNode
+    if not node():
+        return False
+    if node().refresher and node().refresher.active():
+        node().refresher.cancel()
+    node().listener.stopListening()
+    return True
 
 
 def reconnect():
@@ -150,8 +153,31 @@ def reconnect():
 
 #------------------------------------------------------------------------------
 
+def on_host_resoled(ip, port, host, result_list, total_hosts, result_defer):
+    if not isinstance(ip, str) or port is None:
+        result_list.append(None)
+        lg.warn('"%s" failed to resolve' % host)
+    else:
+        result_list.append((ip, port, ))
+    if len(result_list) != total_hosts:
+        return None
+    return result_defer.callback(filter(None, result_list))
+
+
+def resolve_hosts(nodes_list):
+    result_defer = Deferred()
+    result_list = []
+    for node_tuple in nodes_list:
+        d = reactor.resolve(node_tuple[0])
+        d.addCallback(on_host_resoled, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
+        d.addErrback(on_host_resoled, None, node_tuple[0], result_list, len(nodes_list), result_defer)
+    return result_defer
+
+#------------------------------------------------------------------------------
+
 def random_key():
     return key_to_hash(str(random.getrandbits(255)))
+
 
 def key_to_hash(key):
     h = hashlib.sha1()
@@ -220,16 +246,12 @@ def set_node_data(key, value):
 #------------------------------------------------------------------------------
 
 def on_nodes_found(result, node_id64):
-    global _ActiveLookup
-    # _ActiveLookup = None
     okay(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_nodes_found   node_id=[%s], %d nodes found' % (node_id64, len(result)))
     return result
 
 def on_lookup_failed(result, node_id64):
-    global _ActiveLookup
-    # _ActiveLookup = None
     error(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_lookup_failed   node_id=[%s], result=%s' % (node_id64, result))

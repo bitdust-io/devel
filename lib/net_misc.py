@@ -439,6 +439,7 @@ def getPageTwisted(url, timeout=0):
 #             _t.cancel()
 #         return x
     global _UserAgentString
+
     if proxy_is_on():
         factory = ProxyClientFactory(url, agent=_UserAgentString, timeout=timeout)
         tcp_call = reactor.connectTCP(get_proxy_host(), get_proxy_port(), factory)

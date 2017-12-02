@@ -31,7 +31,7 @@
 
 A code for all platforms to perform source code updates from official Git repo at:
 
-   http://gitlab.bitdust.io/devel/bitdust.git
+   http://dev.bitdust.io/code/public.git
 """
 
 #------------------------------------------------------------------------------
