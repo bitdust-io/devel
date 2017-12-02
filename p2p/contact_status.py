@@ -2,7 +2,7 @@
 # contact_status.py
 #
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (contact_status.py) is part of BitDust Software.
 #
@@ -30,8 +30,8 @@
 
 .. raw:: html
 
-    <a href="http://bitdust.io/automats/contact_status/contact_status.png" target="_blank">
-    <img src="http://bitdust.io/automats/contact_status/contact_status.png" style="max-width:100%;">
+    <a href="https://bitdust.io/automats/contact_status/contact_status.png" target="_blank">
+    <img src="https://bitdust.io/automats/contact_status/contact_status.png" style="max-width:100%;">
     </a>
 
 A state machine and several extra methods to keep track of current users's online state.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # net_misc.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (net_misc.py) is part of BitDust Software.
 #

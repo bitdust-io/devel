@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # broadcast_listener.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (broadcast_listener.py) is part of BitDust Software.
 #
@@ -101,7 +101,7 @@ class BroadcastListener(automat.Automat):
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python
-        <http://bitdust.io/visio2python/>`_ tool.
+        <https://bitdust.io/visio2python/>`_ tool.
         """
         #--- AT_STARTUP
         if self.state == 'AT_STARTUP':

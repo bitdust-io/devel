@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # index_synchronizer.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (index_synchronizer.py) is part of BitDust Software.
 #
@@ -31,8 +31,8 @@
 
 .. raw:: html
 
-    <a href="http://bitdust.io/automats/index_synchronizer/index_synchronizer.png" target="_blank">
-    <img src="http://bitdust.io/automats/index_synchronizer/index_synchronizer.png" style="max-width:100%;">
+    <a href="https://bitdust.io/automats/index_synchronizer/index_synchronizer.png" target="_blank">
+    <img src="https://bitdust.io/automats/index_synchronizer/index_synchronizer.png" style="max-width:100%;">
     </a>
 
 
@@ -185,7 +185,7 @@ class IndexSynchronizer(automat.Automat):
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python
-        <http://bitdust.io/visio2python/>`_ tool.
+        <https://bitdust.io/visio2python/>`_ tool.
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':

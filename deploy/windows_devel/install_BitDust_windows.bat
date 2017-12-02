@@ -20,7 +20,7 @@ if errorlevel 1 goto StartInstall
 
 echo Python already installed on your machine.
 echo Please install BitDust software manually by following this howto: 
-echo     http://bitdust.io/install.html
+echo     https://bitdust.io/install.html
 pause
 exit /b %errorlevel% 
 

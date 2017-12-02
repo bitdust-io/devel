@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # settings.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (settings.py) is part of BitDust Software.
 #
@@ -580,11 +580,11 @@ def DefaultRepoURL(repo='stable'):
     Return a given repository location for Windows.
     """
     if repo == 'stable':
-        return 'http://bitdust.io/repo/stable/'
+        return 'https://bitdust.io/repo/stable/'
     elif repo == 'devel':
-        return 'http://bitdust.io/repo/devel/'
+        return 'https://bitdust.io/repo/devel/'
     else:
-        return 'http://bitdust.io/repo/test/'
+        return 'https://bitdust.io/repo/test/'
 
 
 def FilesDigestsFilename():
@@ -592,7 +592,7 @@ def FilesDigestsFilename():
     This file keeps MD5 checksum of all binary files for Windows release. Every
     Windows repository have such file, this is link for "stable" repo::
 
-        http://bitdust.io/repo/stable/files
+        https://bitdust.io/repo/stable/files
 
     Local copy of this file is also stored in the file::
 
@@ -610,7 +610,7 @@ def CurrentVersionDigestsFilename():
     This file keeps a MD5 checksum of the file "files", see
     ``FilesDigestsFilename()``. It is also placed in the Windows repository::
 
-        http://bitdust.io/repo/stable/checksum
+        https://bitdust.io/repo/stable/checksum
 
     If some binary files have been changed - the file "files" also changed and
     its checksum also.

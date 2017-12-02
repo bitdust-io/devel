@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # installer.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (installer.py) is part of BitDust Software.
 #
@@ -32,8 +32,8 @@
 
 .. raw:: html
 
-    <a href="http://bitdust.io/automats/installer/installer.png" target="_blank">
-    <img src="http://bitdust.io/automats/installer/installer.png" style="max-width:100%;">
+    <a href="https://bitdust.io/automats/installer/installer.png" target="_blank">
+    <img src="https://bitdust.io/automats/installer/installer.png" style="max-width:100%;">
     </a>
 
 The ``installer()`` machine is a sort of installation wizard

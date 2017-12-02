@@ -4,7 +4,7 @@
 
 DEFAULTS_FILE="/etc/default/bitdust-dev-update"
 
-REPOCONFIG="deb http://bitdust.io/deb/devel devel main"
+REPOCONFIG="deb https://bitdust.io/deb/devel devel main"
 
 APT_GET="`which apt-get 2> /dev/null`"
 APT_CONFIG="`which apt-config 2> /dev/null`"

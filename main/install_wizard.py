@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # install_wizard.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (install_wizard.py) is part of BitDust Software.
 #
@@ -30,8 +30,8 @@
 
 .. raw:: html
 
-    <a href="http://bitdust.io/automats/install_wizard/install_wizard.png" target="_blank">
-    <img src="http://bitdust.io/automats/install_wizard/install_wizard.png" style="max-width:100%;">
+    <a href="https://bitdust.io/automats/install_wizard/install_wizard.png" target="_blank">
+    <img src="https://bitdust.io/automats/install_wizard/install_wizard.png" style="max-width:100%;">
     </a>
 
 A state machine to show installation wizard for BitDust software.

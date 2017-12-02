@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # setup.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (setup.py) is part of BitDust Software.
 #
@@ -27,10 +27,10 @@ setup(name='bitdust',
       author_email='bitdust.io@gmail.com',
       maintainer='Veselin Penev, BitDust Inc.',
       maintainer_email='veselin@bitdust.io',
-      url='http://bitdust.io',
+      url='https://bitdust.io',
       description='p2p communication tool',
       long_description='p2p communication tool',
-      download_url='http://bitdust.io',
+      download_url='https://bitdust.io',
       license='Copyright BitDust Inc., 2014',
 
       keywords='''p2p, peer to peer, peer, to,

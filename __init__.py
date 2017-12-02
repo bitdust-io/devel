@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (__init__.py) is part of BitDust Software.
 #
@@ -24,7 +24,7 @@
 #
 
 """
-`BitDust <http://bitdust.io>`_ is a peer to peer online backup utility.
+`BitDust <https://bitdust.io>`_ is a peer to peer online backup utility.
 
 This is a distributed network for backup data storage.
 Each participant of the network provides a portion of his hard drive for other users.
@@ -39,6 +39,6 @@ No one else can read your data, even BitDust !
 Recover data is only one way - download the necessary pieces from computers of other peers
 and decrypt them with your private key.
 
-`BitDust <http://bitdust.io>`_ is written in `Python <http://python.org/>`_
+`BitDust <https://bitdust.io>`_ is written in `Python <http://python.org/>`_
 using pure `Twisted framework <http://twistedmatrix.com/>`_.
 """

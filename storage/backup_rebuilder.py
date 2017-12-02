@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # backup_rebuilder.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (backup_rebuilder.py) is part of BitDust Software.
 #
@@ -29,8 +29,8 @@
 
 .. raw:: html
 
-    <a href="http://bitdust.io/automats/backup_rebuilder/backup_rebuilder.png" target="_blank">
-    <img src="http://bitdust.io/automats/backup_rebuilder/backup_rebuilder.png" style="max-width:100%;">
+    <a href="https://bitdust.io/automats/backup_rebuilder/backup_rebuilder.png" target="_blank">
+    <img src="https://bitdust.io/automats/backup_rebuilder/backup_rebuilder.png" style="max-width:100%;">
     </a>
 
 This is a state machine to run the rebuilding process.
