@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # identitycache.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (identitycache.py) is part of BitDust Software.
 #
@@ -74,7 +74,7 @@ def init():
     """
     if _Debug:
         lg.out(4, 'identitycache.init')
-    if True:
+    if False:
         # TODO: added settings here
         identitydb.clear()
     identitydb.init()

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # message_keeper.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (message_keeper.py) is part of BitDust Software.
 #
@@ -56,6 +56,7 @@ from userid import my_id
 from userid import global_id
 
 from chat import message
+from chat import message_db
 
 #------------------------------------------------------------------------------
 
@@ -82,24 +83,36 @@ def messages_key_id():
 def on_incoming_message(packet_in_object, private_message_object, decrypted_message_body):
     """
     """
-    save_incoming_message(private_message_object, packet_in_object.PacketID)
+    cache_message(
+        message_body=decrypted_message_body,
+        message_id=packet_in_object.PacketID,
+        sender=private_message_object.sender,
+        recipient=private_message_object.recipient,
+    )
+    backup_incoming_message(private_message_object, packet_in_object.PacketID)
 
 
 def on_outgoing_message(message_body, private_message_object, remote_identity, outpacket, packet_out_object):
     """
     """
-    save_outgoing_message(private_message_object, outpacket.PacketID)
+    cache_message(
+        message_body=message_body,
+        message_id=outpacket.PacketID,
+        sender=private_message_object.sender,
+        recipient=private_message_object.recipient,
+    )
+    backup_outgoing_message(private_message_object, outpacket.PacketID)
 
 #------------------------------------------------------------------------------
 
-def save_incoming_message(private_message_object, message_id):
+def backup_incoming_message(private_message_object, message_id):
     """
     """
     if not driver.is_on('service_backups'):
         lg.warn('service_backups is not started')
         return False
     serialized_message = private_message_object.serialize()
-    local_msg_folder = os.path.join(settings.getMessagesDir(), private_message_object.recipient, 'in')
+    local_msg_folder = os.path.join(settings.ChatChannelsDir(), private_message_object.recipient, 'in')
     if not bpio._dir_exist(local_msg_folder):
         bpio._dirs_make(local_msg_folder)
     local_msg_filename = os.path.join(local_msg_folder, message_id)
@@ -119,14 +132,15 @@ def save_incoming_message(private_message_object, message_id):
         return False
     return True
 
-def save_outgoing_message(private_message_object, message_id):
+
+def backup_outgoing_message(private_message_object, message_id):
     """
     """
     if not driver.is_on('service_backups'):
         lg.warn('service_backups is not started')
         return False
     serialized_message = private_message_object.serialize()
-    local_msg_folder = os.path.join(settings.getMessagesDir(), private_message_object.recipient, 'out')
+    local_msg_folder = os.path.join(settings.ChatChannelsDir(), private_message_object.recipient, 'out')
     if not bpio._dir_exist(local_msg_folder):
         bpio._dirs_make(local_msg_folder)
     local_msg_filename = os.path.join(local_msg_folder, message_id)
@@ -145,3 +159,18 @@ def save_outgoing_message(private_message_object, message_id):
         lg.warn('failed to upload message "%s": %s' % (global_message_path, res['errors']))
         return False
     return True
+
+#------------------------------------------------------------------------------
+
+def cache_message(message_body, message_id, sender, recipient):
+    """
+    """
+    message_json = message_db.build_json_message(
+        body=message_body,
+        message_id=message_id,
+        sender=sender,
+        recipient=recipient,
+    )
+    message_db.insert(message_json)
+    if _Debug:
+        lg.out(_DebugLevel, 'message_keeper.cache_message "%s"' % str(message_json))

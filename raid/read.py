@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # raidread.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (read.py) is part of BitDust Software.
 #
@@ -52,21 +52,21 @@
 # we get too many errors at the same time.  We reduce this danger if
 # we fix the one we can fix fastest first.
 
+#------------------------------------------------------------------------------
 
 import os
 import sys
 import struct
 
-import raid.eccmap
-
 #------------------------------------------------------------------------------
 
-INTSIZE = 4
+import raid.eccmap
 
 #------------------------------------------------------------------------------
 
 _ECCMAP = {}
 
+#------------------------------------------------------------------------------
 
 def geteccmap(name):
     global _ECCMAP
@@ -75,7 +75,6 @@ def geteccmap(name):
     return _ECCMAP[name]
 
 #------------------------------------------------------------------------------
-
 
 def shutdown():
     global _ECCMAP
@@ -86,7 +85,6 @@ def shutdown():
 
 def ReadBinaryFile(filename):
     """
-    
     """
     if not os.path.isfile(filename):
         return ''
@@ -159,6 +157,7 @@ def RebuildOne_new(inlist, listlen, outfilename):
 
 
 def RebuildOne_orig(inlist, listlen, outfilename):
+    INTSIZE = 4
     fds = range(0, listlen)   # just need a list of this size
     wholefile = ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # fire_hire.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (fire_hire.py) is part of BitDust Software.
 #
@@ -31,8 +31,8 @@
 
 .. raw:: html
 
-    <a href="http://bitdust.io/automats/fire_hire/fire_hire.png" target="_blank">
-    <img src="http://bitdust.io/automats/fire_hire/fire_hire.png" style="max-width:100%;">
+    <a href="https://bitdust.io/automats/fire_hire/fire_hire.png" target="_blank">
+    <img src="https://bitdust.io/automats/fire_hire/fire_hire.png" style="max-width:100%;">
     </a>
 
 If at some point we are not getting good answers from a node

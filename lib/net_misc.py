@@ -2,7 +2,7 @@
 # net_misc.py
 #
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (net_misc.py) is part of BitDust Software.
 #
@@ -644,7 +644,7 @@ def TestInternetConnection(remote_hosts=None, timeout=10):
     """
     if remote_hosts is None:
         remote_hosts = []
-        remote_hosts.append('http://bitdust.io')
+        remote_hosts.append('https://bitdust.io')
         # remote_hosts.append('http://www.google.com')
         # remote_hosts.append('http://www.facebook.com')
         # remote_hosts.append('http://www.youtube.com')

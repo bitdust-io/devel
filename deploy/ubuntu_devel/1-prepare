@@ -79,7 +79,7 @@ cp -T debian/bitdust-dev.default workspace/default/bitdust-dev-update
 
 # echo "create repo.txt file"
 # echo "devel" > workspace/src/repo.txt
-# echo "http://bitdust.io/deb/devel" >> workspace/src/repo.txt
+# echo "https://bitdust.io/deb/devel" >> workspace/src/repo.txt
 
 echo "setting permissions"
 find workspace/debian -type d | xargs chmod 0755

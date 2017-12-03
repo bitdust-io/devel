@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # accountant_node.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (accountant_node.py) is part of BitDust Software.
 #
@@ -137,7 +137,7 @@ class AccountantNode(automat.Automat):
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python
-        <http://bitdust.io/visio2python/>`_ tool.
+        <https://bitdust.io/visio2python/>`_ tool.
         """
         #---READY---
         if self.state == 'READY':

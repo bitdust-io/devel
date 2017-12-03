@@ -158,7 +158,7 @@ Change Log
 
 2016-05-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
-* built a new Web Site for BitDust project: http://bitdust.io
+* built a new Web Site for BitDust project: https://bitdust.io
 * new project Logo!
 * lots methods added to API
 * updated/improved command line interface
@@ -202,7 +202,7 @@ Change Log
 2014-10-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * a bug fix in the backups, error when trying to add a network location under Windows
-* make developer reports working again, set up a script http://bitdust.io/cgi-bin/feedback.py
+* make developer reports working again, set up a script https://bitdust.io/cgi-bin/feedback.py
 * changed UDP PING timeout from 10sec to 1 minute
 * small fixes in the command line interface
 

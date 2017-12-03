@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Veselin Penev <veselin@bitdust.io>
 Build-Depends: debconf, debhelper (>= 7), python-support, python (>=2.6)
 Standards-Version: 3.8.4
-Homepage: http://bitdust.io
+Homepage: https://bitdust.io
 
 Package: bitdust-dev
 Architecture: all

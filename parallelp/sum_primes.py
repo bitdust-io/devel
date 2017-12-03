@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # File: sum_primes.py
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (sum_primes.py) is part of BitDust Software.
 #

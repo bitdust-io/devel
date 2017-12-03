@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coins_db.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (coins_db.py) is part of BitDust Software.
 #

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # automat.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (automat.py) is part of BitDust Software.
 #
@@ -44,10 +44,10 @@ The transition graphs of state machines are used in all stages of software devel
 - documentation.
 
 You can see Transition graph for all BitDust state machines in the file
-`automats.pdf <http://bitdust.io/automats.pdf>`_,
+`automats.pdf <https://bitdust.io/automats.pdf>`_,
 MS Visio, 'editable' version:
-`automats.vsd <http://bitdust.io/automats.vsd>`_,
-stencils is here: `automats.vss <http://bitdust.io/automats.vss>`_
+`automats.vsd <https://bitdust.io/automats.vsd>`_,
+stencils is here: `automats.vss <https://bitdust.io/automats.vss>`_
 
 A small tool called `visio2python <http://code.google.com/p/visio2python/>`_
 was written to simplify working with the BitDust project.

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # service_private_messages.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (service_private_messages.py) is part of BitDust Software.
 #
@@ -48,24 +48,28 @@ class PrivateMessagesService(LocalService):
                 ]
 
     def start(self):
+        from transport import callback
         from chat import message
         from chat import message_keeper
-        from transport import callback
+        from chat import message_db
         from chat import nickname_holder
         message.init()
+        message_db.init()
         nickname_holder.A('set', None)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         message_keeper.init()
         return True
 
     def stop(self):
+        from transport import callback
         from chat import message
         from chat import message_keeper
+        from chat import message_db
         from chat import nickname_holder
-        from transport import callback
         message_keeper.shutdown()
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
+        message_db.shutdown()
         message.shutdown()
         return True
 

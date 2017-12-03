@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # misc.py
 #
-# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
 # This file (misc.py) is part of BitDust Software.
 #
@@ -1073,7 +1073,7 @@ def ReadRepoLocation():
                     return src.split('\n')[0].strip(), src.split('\n')[1].strip()
                 except:
                     lg.exc()
-        return 'sources', 'http://bitdust.io/download/'
+        return 'sources', 'https://bitdust.io/download/'
     src = bpio.ReadTextFile(settings.RepoFile()).strip()
     if src == '':
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
@@ -1546,7 +1546,7 @@ def SendDevReportOld(subject, body, includelogs):
 
 def SendDevReport(subject, body, includelogs, progress=None):
     """
-    Send a developer report to our public cgi script at: http://bitdust.io/cgi-
+    Send a developer report to our public cgi script at: https://bitdust.io/cgi-
     bin/feedback.py It should record it and so I can get your message and (
     optional ) your logs.
 
@@ -1590,7 +1590,7 @@ def SendDevReport(subject, body, includelogs, progress=None):
         if zipfilename:
             files['upload'] = zipfilename
         data = {'subject': subject, 'body': body}
-        return net_misc.uploadHTTP('http://bitdust.io/cgi-bin/feedback.py', files, data, progress)
+        return net_misc.uploadHTTP('https://bitdust.io/cgi-bin/feedback.py', files, data, progress)
         # r.addErrback(lambda err: lg.out(2, 'misc.SendDevReport ERROR : %s' % str(err)))
         # r.addCallback(lambda src: lg.out(2, 'misc.SendDevReport : %s' % str(src)))
         # return r
@@ -1656,7 +1656,7 @@ def UpdateRegistryUninstall(uninstall=False):
         'NoModify': 1,
         'NoRepair': 1,
         'UninstallString': '%s uninstall' % bpio.getExecutableFilename(),
-        'URLInfoAbout': 'http://bitdust.io', }
+        'URLInfoAbout': 'https://bitdust.io', }
     # open
     try:
         reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, regpath, 0, _winreg.KEY_ALL_ACCESS)
