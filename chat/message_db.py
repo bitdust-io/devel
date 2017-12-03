@@ -42,11 +42,6 @@ import json
 
 #------------------------------------------------------------------------------
 
-from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
-from CodernityDB.index import IndexNotFoundException
-
-#------------------------------------------------------------------------------
-
 if __name__ == '__main__':
     import sys
     import os.path as _p
@@ -58,9 +53,16 @@ from logs import lg
 
 from system import bpio
 
+from lib import utime
+from lib import codernitydb
+
+from crypt import key
+
 from main import settings
 
 from chat import message_index
+
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -74,7 +76,7 @@ def init():
         lg.warn('local storage already initialized')
         return
     chat_history_dir = os.path.join(settings.ChatHistoryDir(), 'current')
-    _LocalStorage = Database(chat_history_dir)
+    _LocalStorage = codernitydb.Database(chat_history_dir)
     _LocalStorage.custom_header = message_index.make_custom_header()
     if _Debug:
         lg.out(_DebugLevel, 'message_db.init in %s' % chat_history_dir)
@@ -188,7 +190,7 @@ def refresh_indexes(db_instance):
 def regenerate_indexes(temp_dir):
     """
     """
-    tmpdb = Database(temp_dir)
+    tmpdb = codernitydb.Database(temp_dir)
     tmpdb.custom_header = message_index.make_custom_header()
     tmpdb.create()
     refresh_indexes(tmpdb)
@@ -213,15 +215,15 @@ def _clean_doc(doc):
     doc.pop('_rev')
     return doc
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 def get(index_name, key, with_doc=True, with_storage=True):
     # TODO: here and bellow need to add input validation
     try:
         res = db().get(index_name, key, with_doc, with_storage)
-    except (RecordNotFound, RecordDeleted, ):
+    except (codernitydb.RecordNotFound, codernitydb.RecordDeleted, ):
         return iter(())
-    except (IndexNotFoundException, DatabaseIsNotOpened, ):
+    except (codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened, ):
         return iter(())
     return (r for r in [res, ])
 
@@ -234,7 +236,7 @@ def get_many(index_name, key=None, limit=-1, offset=0,
                                with_doc, with_storage,
                                start, end, **kwargs):
             yield r
-    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened, ):
+    except (codernitydb.PreconditionsException, codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened, ):
         pass
 
 
@@ -242,7 +244,7 @@ def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
     try:
         for r in db().all(index_name, limit, offset, with_doc, with_storage):
             yield r
-    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened):
+    except (codernitydb.PreconditionsException, codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened):
         pass
 
 #------------------------------------------------------------------------------
@@ -268,6 +270,15 @@ def exist(message_json):
 #             return False
 #     return True
     return False
+
+def search(query_json):
+    try:
+        for r in db().all('id', with_doc=True, with_storage=True):
+            if 'body' in query_json:
+                if r['payload']['body'].count(query_json['body']):
+                    yield r
+    except (codernitydb.PreconditionsException, codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened):
+        pass
 
 #------------------------------------------------------------------------------
 
@@ -313,6 +324,39 @@ def query_json(jdata):
 
 #------------------------------------------------------------------------------
 
+def message_to_string(coin_json):
+    return json.dumps(coin_json, sort_keys=True)
+
+
+def get_message_hash(message_json):
+    coin_hashbase = message_to_string(message_json)
+    return key.Hash(coin_hashbase, hexdigest=True)
+
+
+def build_json_message(body, message_id, sender=None, recipient=None):
+    """
+    """
+    if not sender:
+        sender = my_id.getGlobalID(key_alias='master')
+    if not recipient:
+        recipient = my_id.getGlobalID(key_alias='master')
+    new_json = {
+        "payload": {
+            "type": "message",
+            "message_id": message_id,
+            "time": utime.utcnow_to_sec1970(),
+            "body": body,
+        },
+        'sender': {
+            'glob_id': sender,
+        },
+        'recipient': {
+            'glob_id': recipient,
+        }
+    }
+    return new_json
+
+#------------------------------------------------------------------------------
 
 def _test_query(inp):
     print 'Query:'
@@ -331,7 +375,8 @@ def _test():
         get_all <index>
         get_many <index> <key>
         get <index> <key>
-        insert "json message"
+        insert "message body"
+        search "json query"
         indexes
         tmpdb <destination folder>
         """
@@ -374,7 +419,12 @@ def _test():
 
     if sys.argv[1] == 'insert':
         init()
-        print insert(json.loads(sys.argv[2]))
+        print insert(build_json_message(sys.argv[2]))
+        shutdown()
+
+    if sys.argv[1] == 'search':
+        init()
+        print '\n'.join(map(str, [m for m in search(json.loads(sys.argv[2]))]))
         shutdown()
 
 

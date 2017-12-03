@@ -74,7 +74,7 @@ def init():
     """
     if _Debug:
         lg.out(4, 'identitycache.init')
-    if True:
+    if False:
         # TODO: added settings here
         identitydb.clear()
     identitydb.init()

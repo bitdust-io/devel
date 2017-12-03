@@ -36,12 +36,7 @@ _Debug = True
 
 #------------------------------------------------------------------------------
 
-import os
-
 from hashlib import md5
-
-from CodernityDB.hash_index import HashIndex
-from CodernityDB.tree_index import TreeBasedIndex
 
 #------------------------------------------------------------------------------
 
@@ -54,19 +49,18 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from lib import codernitydb
+
 #------------------------------------------------------------------------------
 
 def definitions():
     return [
-        ('creator', Creator, ),
-        ('signer', Signer, ),
-        ('miner', Miner, ),
-        ('hash', HashID, ),
-        ('prev', PrevHashID, ),
-        ('time_created', TimeCreated, ),
-        ('time_signed', TimeSigned, ),
-        ('time_mined', TimeMined, ),
-        ('body_hash', MessageBodyHash, ),
+        ('sender_glob_id', SenderGlobID, ),
+        ('recipient_glob_id', RecipientGlobID, ),
+        ('payload_type', PayloadType, ),
+        ('payload_time', PayloadTime, ),
+        ('payload_message_id', PayloadMessageID, ),
+        ('payload_body_hash', PayloadBodyHash, ),
     ]
 
 #------------------------------------------------------------------------------
@@ -80,7 +74,7 @@ def make_custom_header():
 
 #------------------------------------------------------------------------------
 
-class BaseHashIndex(HashIndex):
+class BaseHashIndex(codernitydb.HashIndex):
     role = None
     field = None
     key_format = '16s'
@@ -112,7 +106,7 @@ class BaseMD5Index(BaseHashIndex):
 
 #------------------------------------------------------------------------------
 
-class BaseTimeIndex(TreeBasedIndex):
+class BaseTimeIndex(codernitydb.TreeBasedIndex):
     role = None
 
     def __init__(self, *args, **kwargs):
@@ -133,53 +127,37 @@ class BaseTimeIndex(TreeBasedIndex):
 
 #------------------------------------------------------------------------------
 
-class Creator(BaseMD5Index):
-    role = 'creator'
-    field = 'idurl'
+class SenderGlobID(BaseMD5Index):
+    role = 'sender'
+    field = 'glob_id'
 
 #------------------------------------------------------------------------------
 
-class Signer(BaseMD5Index):
-    role = 'signer'
-    field = 'idurl'
+class RecipientGlobID(BaseMD5Index):
+    role = 'recipient'
+    field = 'glob_id'
 
 #------------------------------------------------------------------------------
 
-class Miner(BaseMD5Index):
-    role = 'miner'
-    field = 'idurl'
+class PayloadType(BaseMD5Index):
+    role = 'payload'
+    field = 'type'
 
 #------------------------------------------------------------------------------
 
-class MessageBodyHash(BaseMD5Index):
+class PayloadMessageID(BaseMD5Index):
+    role = 'payload'
+    field = 'message_id'
+
+#------------------------------------------------------------------------------
+
+class PayloadBodyHash(BaseMD5Index):
     role = 'payload'
     field = 'body'
 
 #------------------------------------------------------------------------------
 
-class HashID(BaseHashIndex):
-    role = 'miner'
-    field = 'hash'
-    key_format = '40s'
+class PayloadTime(BaseTimeIndex):
+    role = 'payload'
 
 #------------------------------------------------------------------------------
-
-class PrevHashID(BaseHashIndex):
-    role = 'miner'
-    field = 'prev'
-    key_format = '40s'
-
-#------------------------------------------------------------------------------
-
-class TimeCreated(BaseTimeIndex):
-    role = 'creator'
-
-#------------------------------------------------------------------------------
-
-class TimeSigned(BaseTimeIndex):
-    role = 'signer'
-
-#------------------------------------------------------------------------------
-
-class TimeMined(BaseTimeIndex):
-    role = 'miner'
