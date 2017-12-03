@@ -796,6 +796,13 @@ def DefaultMessagesDir():
     return os.path.join(BaseDir(), 'messages')
 
 
+def DefaultMessagesHistoryDir():
+    """
+    A default folder to store sent/received messages.
+    """
+    return os.path.join(BaseDir(), 'messages', 'history')
+
+
 def DefaultReceiptsDir():
     """
     A default folder to store receipts.
@@ -849,6 +856,18 @@ def ContractChainDir():
     """
     """
     return os.path.join(BaseDir(), 'contracts')
+
+
+def ChatChannelsDir():
+    """
+    """
+    return os.path.join(BaseDir(), 'messages', 'channels')
+
+
+def ChatHistoryDir():
+    """
+    """
+    return os.path.join(BaseDir(), 'messages', 'history')
 
 
 def PrivateKeysDir():
@@ -1462,13 +1481,6 @@ def getRestoreDir():
     Alias for restore location, see ``DefaultRestoreDir()``.
     """
     return config.conf().getData('paths/restore').strip()
-
-
-def getMessagesDir():
-    """
-    Alias to get from user config a folder location where messages is stored.
-    """
-    return config.conf().getData('paths/messages').strip()
 
 
 def getReceiptsDir():
@@ -2653,6 +2665,12 @@ def _checkStaticDirectories():
     if not os.path.exists(PrivateKeysDir()):
         lg.out(6, 'settings.init want to create folder: ' + PrivateKeysDir())
         os.makedirs(PrivateKeysDir())
+    if not os.path.exists(ChatChannelsDir()):
+        lg.out(6, 'settings.init want to create folder: ' + ChatChannelsDir())
+        os.makedirs(ChatChannelsDir())
+    if not os.path.exists(ChatHistoryDir()):
+        lg.out(6, 'settings.init want to create folder: ' + ChatHistoryDir())
+        os.makedirs(ChatHistoryDir())
 
 
 def _checkCustomDirectories():
@@ -2669,11 +2687,6 @@ def _checkCustomDirectories():
     if not os.path.exists(getLocalBackupsDir()):
         lg.out(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
-    if getMessagesDir() == '':
-        config.conf().setData('paths/messages', DefaultMessagesDir())
-    if not os.path.exists(getMessagesDir()):
-        lg.out(6, 'settings.init want to create folder: ' + getMessagesDir())
-        os.makedirs(getMessagesDir())
     if getReceiptsDir() == '':
         config.conf().setData('paths/receipts', DefaultReceiptsDir())
     if not os.path.exists(getReceiptsDir()):

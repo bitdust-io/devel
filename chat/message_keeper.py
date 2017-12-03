@@ -99,7 +99,7 @@ def save_incoming_message(private_message_object, message_id):
         lg.warn('service_backups is not started')
         return False
     serialized_message = private_message_object.serialize()
-    local_msg_folder = os.path.join(settings.getMessagesDir(), private_message_object.recipient, 'in')
+    local_msg_folder = os.path.join(settings.ChatChannelsDir(), private_message_object.recipient, 'in')
     if not bpio._dir_exist(local_msg_folder):
         bpio._dirs_make(local_msg_folder)
     local_msg_filename = os.path.join(local_msg_folder, message_id)
@@ -126,7 +126,7 @@ def save_outgoing_message(private_message_object, message_id):
         lg.warn('service_backups is not started')
         return False
     serialized_message = private_message_object.serialize()
-    local_msg_folder = os.path.join(settings.getMessagesDir(), private_message_object.recipient, 'out')
+    local_msg_folder = os.path.join(settings.ChatChannelsDir(), private_message_object.recipient, 'out')
     if not bpio._dir_exist(local_msg_folder):
         bpio._dirs_make(local_msg_folder)
     local_msg_filename = os.path.join(local_msg_folder, message_id)
