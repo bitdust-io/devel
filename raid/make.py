@@ -45,6 +45,9 @@
 # those signatures.
 #
 #
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import struct
@@ -52,20 +55,21 @@ import time
 import cStringIO
 import platform
 
+#------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+
+#------------------------------------------------------------------------------
 
 import raid.eccmap
 
 #------------------------------------------------------------------------------
 
-INTSIZE = 4
-
-#------------------------------------------------------------------------------
-
 _ECCMAP = {}
 
+#------------------------------------------------------------------------------
 
 def geteccmap(name):
     global _ECCMAP
@@ -74,7 +78,6 @@ def geteccmap(name):
     return _ECCMAP[name]
 
 #------------------------------------------------------------------------------
-
 
 def shutdown():
     global _ECCMAP
@@ -105,7 +108,6 @@ def RoundupFile(filename, stepsize):
 
 def ReadBinaryFile(filename):
     """
-    
     """
     if not os.path.isfile(filename):
         return ''
@@ -140,6 +142,7 @@ def WriteFile(filename, data):
 
 
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
+    INTSIZE = 4
     myeccmap = raid.eccmap.eccmap(eccmapname)
     # any padding at end and block.Length fixes
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)
@@ -235,6 +238,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
 
 
 def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
+    INTSIZE = 4
     myeccmap = raid.eccmap.eccmap(eccmapname)
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)      # any padding at end and block.Length fixes
     wholefile = ReadBinaryFile(filename)
