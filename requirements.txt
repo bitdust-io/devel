@@ -13,4 +13,4 @@ enum34
 ipaddress
 cffi
 pkgversion
-django>=1.7  # if only you want to have a gui
+django<1.11  # if only you want to have a gui
