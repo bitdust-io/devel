@@ -350,14 +350,14 @@ def cmd_deploy(opts, args, overDict):
         print_text('\nFailed to create virtual environment, please check/install virtualenv package\n')
         return status
     print_text('Install/Upgrade pip in "%s"' % venv_path)
-    status = os.system('{}/bin/pip install -U pip'.format(venv_path))
+    status = os.system('{}/bin/pip install --index-url=https://pypi.python.org/simple/ -U pip'.format(venv_path))
     if status != 0:
         print_text('\nFailed to install latest pip version, please check/install latest pip version manually\n')
         return status
     requirements_txt = os.path.join(source_dir, 'requirements.txt')
     venv_bin_pip = os.path.join(venv_path, 'bin', 'pip')
     print_text('Install BitDust requirements from "%s" using "%s"' % (requirements_txt, venv_path))
-    status = os.system('{} install -r "{}"'.format(venv_bin_pip, requirements_txt))
+    status = os.system('{} install --index-url=https://pypi.python.org/simple/ -r "{}"'.format(venv_bin_pip, requirements_txt))
     if status != 0:
         depends = [
             'git',

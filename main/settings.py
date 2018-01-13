@@ -2361,11 +2361,12 @@ def _initBaseDir(base_dir=None):
 
     # if we have a file "appdata" in current folder - take the place from there
     if os.path.isfile(BaseDirPathFileName()):
-        path = os.path.abspath(bpio.ReadBinaryFile(BaseDirPathFileName()).strip())
-        if os.path.isdir(path):
+        path = bpio.ReadBinaryFile(BaseDirPathFileName()).strip()
+        if path:
+            path = os.path.abspath(path)
+            if not os.path.isdir(path):
+                bpio._dirs_make(path)
             _BaseDirPath = path
-            if not os.path.exists(_BaseDirPath):
-                bpio._dirs_make(_BaseDirPath)
             return
 
     # get the default place for thet machine
