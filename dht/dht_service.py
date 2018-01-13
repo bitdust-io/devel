@@ -33,7 +33,7 @@ module:: dht_service
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -281,16 +281,15 @@ class DHTNode(DistributedTupleSpacePeer):
         DistributedTupleSpacePeer.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
 
-    if _Debug:
-        @rpcmethod
-        def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-            if _Debug:
-                lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-                    base64.b32encode(key), str(value)[:20]))
-            # TODO: add verification methods for different type of data we store in DHT
-            # TODO: add signature validation to be sure this is the owner of that key:value pair
-            return DistributedTupleSpacePeer.store(self, key, value,
-                                                   originalPublisherID=originalPublisherID, age=age, **kwargs)
+    @rpcmethod
+    def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
+        if _Debug:
+            lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+                base64.b32encode(key), str(value)[:20]))
+        # TODO: add verification methods for different type of data we store in DHT
+        # TODO: add signature validation to be sure this is the owner of that key:value pair
+        return DistributedTupleSpacePeer.store(self, key, value,
+                                               originalPublisherID=originalPublisherID, age=age, **kwargs)
 
     @rpcmethod
     def request(self, key):
