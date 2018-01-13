@@ -33,7 +33,7 @@ module:: dht_service
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -125,15 +125,23 @@ def connect():
         return True
 
     def _on_hosts_resolved(live_nodes):
-        node().joinNetwork(live_nodes)
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(live_nodes)))
+            for onenode in live_nodes:
+                lg.out(_DebugLevel, '    %s:%s' % onenode)
+        node().joinNetwork(live_nodes)
+        return live_nodes
+
+    def _on_hosts_resolve_failed(x):
+        print x
 
     _known_nodes = known_nodes.nodes()
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes' % (len(_known_nodes)))
-    resolve_hosts(_known_nodes).addBoth(_on_hosts_resolved)
-    return True
+    d = resolve_hosts(_known_nodes)
+    d.addCallback(_on_hosts_resolved)
+    d.addErrback(_on_hosts_resolve_failed)
+    return d
 
 
 def disconnect():
@@ -361,25 +369,28 @@ def main():
     lg.set_debug_level(18)
     (options, args) = parseCommandLine()
     init(options.udpport, options.dhtdb)
-    connect()
-    if len(args) == 0:
-        pass
-    elif len(args) > 0:
-        def _r(x):
-            print x
-            reactor.stop()
-        cmd = args[0]
-        if cmd == 'get':
-            get_value(args[1]).addBoth(_r)
-        elif cmd == 'set':
-            set_value(args[1], args[2]).addBoth(_r)
-        elif cmd == 'find':
-            find_node(key_to_hash(args[1])).addBoth(_r)
-        elif cmd == 'discover':
-            def _l(x):
+
+    def _go(nodes):
+        if len(args) == 0:
+            pass
+        elif len(args) > 0:
+            def _r(x):
                 print x
-                find_node(random_key()).addBoth(_l)
-            _l('')
+                reactor.stop()
+            cmd = args[0]
+            if cmd == 'get':
+                get_value(args[1]).addBoth(_r)
+            elif cmd == 'set':
+                set_value(args[1], args[2]).addBoth(_r)
+            elif cmd == 'find':
+                find_node(key_to_hash(args[1])).addBoth(_r)
+            elif cmd == 'discover':
+                def _l(x):
+                    print x
+                    find_node(random_key()).addBoth(_l)
+                _l('')
+
+    connect().addBoth(_go)
     reactor.run()
 
 #------------------------------------------------------------------------------

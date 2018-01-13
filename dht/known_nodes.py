@@ -45,6 +45,7 @@ def default_nodes():
         ('bitdust.io', 14441),
         ('work.offshore.ai', 14441),
         ('whmcs.whois.ai', 14441),
+        ('blog.bitdust.io', 14441, ),
     ]
 
 
