@@ -35,7 +35,7 @@ def default_nodes():
         'identity.datahaven.net': (80, 6661),
         'bitdust.io': (8084, 6661),
         'work.offshore.ai': (8084, 6661),
-        'whmcs.whois.ai': (8084, 6661),
+        'blog.bitdust.io': (8084, 6661),
     }
 
 
