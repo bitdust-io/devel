@@ -43,6 +43,10 @@ class HTTPTransportService(LocalService):
     config_path = 'services/http-transport/enabled'
     proto = 'http'
 
+    def enabled(self):
+        # development started
+        return False
+
     def dependent_on(self):
         return ['service_http_connections',
                 'service_gateway',
