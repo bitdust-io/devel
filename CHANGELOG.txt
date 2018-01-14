@@ -2,6 +2,15 @@ Change Log
 ==========
 
 
+2018-01-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added id server blog.bitdust.io, removed id server whmcs.whois.ai
+* fixed DHT init/connect scripts, 
+* limit twisted and django versions in requirements, set --index-url=https://pypi.python.org/simple/ in deployment script
+* proper handling customer location of ".bitdust" folder
+
+
+
 2017-11-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added few options in services/identity-propagate/ branch
