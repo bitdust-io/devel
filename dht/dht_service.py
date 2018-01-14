@@ -115,14 +115,27 @@ def node():
 
 
 def connect():
+    result = Deferred()
+
     if not node().listener:
         node().listenUDP()
 
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect did RESET refresher task')
-        return True
+            lg.out(_DebugLevel, 'dht_service.connect DHT already active : SKIP but RESET refresher task')
+        result.callback(True)
+        return result
+
+    def _on_join_success(ok):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
+        result.callback(True)
+
+    def _on_join_failed(x):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.connect DHT JOIN FAILED : %s' % x)
+        result.callback(False)
 
     def _on_hosts_resolved(live_nodes):
         if _Debug:
@@ -130,18 +143,27 @@ def connect():
             for onenode in live_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
         node().joinNetwork(live_nodes)
+        node()._joinDeferred.addCallback(_on_join_success)
+        node()._joinDeferred.addErrback(_on_join_failed)
         return live_nodes
 
     def _on_hosts_resolve_failed(x):
-        print x
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.connect ERROR : hosts not resolved: %s' % x)
+        result.callback(False)
+        return x
 
     _known_nodes = known_nodes.nodes()
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes' % (len(_known_nodes)))
+        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(_known_nodes)))
+        for onenode in _known_nodes:
+            lg.out(_DebugLevel, '    %s:%s' % onenode)
+
     d = resolve_hosts(_known_nodes)
     d.addCallback(_on_hosts_resolved)
     d.addErrback(_on_hosts_resolve_failed)
-    return d
+
+    return result
 
 
 def disconnect():
