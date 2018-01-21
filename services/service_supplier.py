@@ -58,6 +58,12 @@ class SupplierService(LocalService):
         return ['service_p2p_hookups',
                 ]
 
+    def installed(self):
+        from userid import my_id
+        if not my_id.isLocalIdentityReady():
+            return False
+        return True
+
     def start(self):
         return True
 

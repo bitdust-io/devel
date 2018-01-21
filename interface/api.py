@@ -272,6 +272,129 @@ def config_list(sort=False):
 
 #------------------------------------------------------------------------------
 
+def identity_get(include_xml_source=False):
+    """
+    """
+    from userid import my_id
+    if not my_id.isLocalIdentityReady():
+        return ERROR('local identity is not exist')
+    r = {
+        'name': my_id.getIDName(),
+        'idurl': my_id.getLocalID(),
+        'glob_id': my_id.getGlobalID(),
+        'sources': my_id.getLocalIdentity().getSources(),
+        'contacts': my_id.getLocalIdentity().getContacts(),
+        'date': my_id.getLocalIdentity().date,
+        'version': my_id.getLocalIdentity().version,
+        'revision': my_id.getLocalIdentity().revision,
+        'publickey': my_id.getLocalIdentity().publickey,
+        'signature': my_id.getLocalIdentity().signature,
+    }
+    if include_xml_source:
+        r['xml'] = my_id.getLocalIdentity().serialize(),
+    return RESULT([r, ])
+
+def identity_create(username):
+    from lib import misc
+    from userid import my_id
+    from userid import id_registrator
+
+    try:
+        username = str(username)
+    except:
+        return ERROR('invalid user name')
+    if not misc.ValidUserName(username):
+        return ERROR('invalid user name')
+
+    ret = Deferred()
+    my_id_registrator = id_registrator.A()
+
+    def _id_registrator_state_changed(oldstate, newstate, event_string, args):
+        if newstate == 'FAILED':
+            ret.callback(ERROR(my_id_registrator.last_message))
+            return
+        if newstate == 'DONE':
+            my_id.loadLocalIdentity()
+            if not my_id.isLocalIdentityReady():
+                return ERROR('identity creation FAILED')
+            ret.callback(RESULT([{
+                'name': my_id.getIDName(),
+                'idurl': my_id.getLocalID(),
+                'glob_id': my_id.getGlobalID(),
+                'sources': my_id.getLocalIdentity().getSources(),
+                'contacts': my_id.getLocalIdentity().getContacts(),
+                'date': my_id.getLocalIdentity().date,
+                'version': my_id.getLocalIdentity().version,
+                'revision': my_id.getLocalIdentity().revision,
+                'publickey': my_id.getLocalIdentity().publickey,
+                'signature': my_id.getLocalIdentity().signature,
+                'xml': my_id.getLocalIdentity().serialize(),
+            }, ]))
+            return
+
+    my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
+    my_id_registrator.A('start', (username, ))
+    return ret
+
+def identity_recover(private_key_source, known_idurl=None):
+    from lib import nameurl
+    from userid import my_id
+    from userid import id_restorer
+
+    if not private_key_source:
+        return ERROR('must provide private key in order to recover your identity')
+    if len(private_key_source) > 1024 * 10:
+        return ERROR('private key is too large')
+
+    idurl = ''
+    pk_source = ''
+    try:
+        lines = private_key_source.split('\n')
+        idurl = lines[0]
+        pk_source = '\n'.join(lines[1:])
+        if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
+            idurl = ''
+            pk_source = private_key_source
+    except:
+        idurl = ''
+        pk_source = private_key_source
+    if not idurl and known_idurl:
+        idurl = known_idurl
+    if not idurl:
+        return ERROR('you must specify the global  IDURL address where your identity file was last located')
+
+    ret = Deferred()
+    my_id_restorer = id_restorer.A()
+
+    def _id_restorer_state_changed(oldstate, newstate, event_string, args):
+        if newstate == 'FAILED':
+            ret.callback(ERROR(my_id_restorer.last_message))
+            return
+        if newstate == 'RESTORED!':
+            my_id.loadLocalIdentity()
+            if not my_id.isLocalIdentityReady():
+                return ERROR('identity recovery FAILED')
+            ret.callback(RESULT([{
+                'name': my_id.getIDName(),
+                'idurl': my_id.getLocalID(),
+                'glob_id': my_id.getGlobalID(),
+                'sources': my_id.getLocalIdentity().getSources(),
+                'contacts': my_id.getLocalIdentity().getContacts(),
+                'date': my_id.getLocalIdentity().date,
+                'version': my_id.getLocalIdentity().version,
+                'revision': my_id.getLocalIdentity().revision,
+                'publickey': my_id.getLocalIdentity().publickey,
+                'signature': my_id.getLocalIdentity().signature,
+                'xml': my_id.getLocalIdentity().serialize(),
+            }, ]))
+            return
+
+    my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
+    my_id_restorer.A('start', {'idurl': idurl, 'keysrc': pk_source, })
+    return ret
+
+#------------------------------------------------------------------------------
+
 def key_get(key_id, include_private=False):
     """
     Returns details of known private key.
@@ -2042,8 +2165,9 @@ def find_peer_by_nickname(nickname):
             'position': pos,
             'idurl': idurl,
         }]))
-    nickname_observer.find_one(nickname,
-                               results_callback=_result)
+    nickname_observer.find_one(
+        nickname,
+        results_callback=_result)
     # nickname_observer.observe_many(nickname,
     # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
     return ret

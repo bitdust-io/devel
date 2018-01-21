@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_identity_server.py
+# service_p2p_notifications.py
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
-# This file (service_identity_server.py) is part of BitDust Software.
+# This file (service_p2p_notifications.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,49 +27,28 @@
 """
 ..
 
-module:: service_identity_server
+module:: service_p2p_notifications
 """
 
 from services.local_service import LocalService
 
 
 def create_service():
-    return IdentityServerService()
+    return P2PNotificationsService()
 
 
-class IdentityServerService(LocalService):
+class P2PNotificationsService(LocalService):
 
-    service_name = 'service_identity_server'
-    config_path = 'services/identity-server/enabled'
-
-    def init(self):
-        # self.debug_level = 2
-        self.log_events = True
+    service_name = 'service_p2p_notifications'
+    config_path = 'services/p2p-notifications/enabled'
 
     def dependent_on(self):
-        return ['service_tcp_connections',
-                ]
-
-    def installed(self):
-        from userid import my_id
-        if not my_id.isLocalIdentityReady():
-            return False
-        return True
-
-    def enabled(self):
-        from main import settings
-        return settings.enableIdServer()
+        return [
+            'service_gateway',
+        ]
 
     def start(self):
-        from userid import id_server
-        from main import settings
-        id_server.A('init', (settings.getIdServerWebPort(),
-                             settings.getIdServerTCPPort()))
-        id_server.A('start')
         return True
 
     def stop(self):
-        from userid import id_server
-        id_server.A('stop')
-        id_server.A('shutdown')
         return True

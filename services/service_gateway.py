@@ -46,6 +46,12 @@ class GatewayService(LocalService):
         return ['service_network',
                 ]
 
+    def installed(self):
+        from userid import my_id
+        if not my_id.isLocalIdentityReady():
+            return False
+        return True
+
     def start(self):
         from transport import gateway
         from transport import callback

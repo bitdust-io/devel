@@ -125,8 +125,8 @@ class IdRegistrator(automat.Automat):
         'MSG_9': ['network connection error', 'red'],
         'MSG_10': ['connection error while sending my identity', 'red'],
         'MSG_11': ['identity verification failed', 'red'],
-        'MSG_12': ['time out requesting from identity server', 'red'],
-        'MSG_13': ['time out sending to identity server', 'red'],
+        'MSG_12': ['time out requesting from identity servers', 'red'],
+        'MSG_13': ['time out sending to identity servers', 'red'],
         'MSG_14': ['generating your Private Key'],
     }
 
@@ -155,6 +155,7 @@ class IdRegistrator(automat.Automat):
         self.registrations = []
         self.free_idurls = []
         self.new_identity = None
+        self.last_message = ''
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -504,6 +505,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
+        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=arg)
         self.destroy(dead_state=self.state)
         global _IdRegistrator
         _IdRegistrator = None
@@ -514,6 +516,8 @@ class IdRegistrator(automat.Automat):
         """
         from main import installer
         installer.A().event('print', arg)
+        self.last_message = arg[0]
+        lg.out(6, 'id_registrator.doPrint: %s' % str(arg))
 
     def _create_new_identity(self):
         """

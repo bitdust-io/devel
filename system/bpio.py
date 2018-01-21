@@ -449,9 +449,9 @@ def ReadBinaryFile(filename):
     if not os.access(filename, os.R_OK):
         return ''
     try:
-        file = open(filename, "rb")
-        data = file.read()
-        file.close()
+        infile = open(filename, "rb")
+        data = infile.read()
+        infile.close()
         return data
     except:
         lg.exc()
@@ -469,9 +469,9 @@ def ReadTextFile(filename):
     if not os.access(filename, os.R_OK):
         return ''
     try:
-        file = open(filename, "r")
-        data = file.read()
-        file.close()
+        infile = open(filename, "r")
+        data = infile.read()
+        infile.close()
         # Windows/Linux trouble with text files
         return data.replace('\r\n', '\n')
     except:
@@ -1011,15 +1011,16 @@ def main_is_frozen():
 
 def isGUIpossible():
     """
-    
     """
-    # return False # TODO
-    if Windows():
-        return True
-    if Mac():
-        return True
-    if Linux():
-        return X11_is_running()
+    # if Windows():
+    #     return True
+    # if Mac():
+    #     return True
+    # if Linux():
+    #     return X11_is_running()
+    # All the UI now will be created using Electron framework.
+    # To make it possible we need to run local API rest_http/json_rpc server.
+    # So here we always return False from now.
     return False
 
 

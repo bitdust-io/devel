@@ -177,6 +177,15 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_config_set(self, key, value):
         return api.config_set(key, value)
 
+    def jsonrpc_identity_get(self, include_xml_source=False):
+        return api.identity_get(include_xml_source=include_xml_source)
+
+    def jsonrpc_identity_create(self, username):
+        return api.identity_create(username)
+
+    def jsonrpc_identity_recover(self, private_key_source, known_idurl=None):
+        return api.identity_recover(private_key_source=private_key_source, known_idurl=known_idurl)
+
     def jsonrpc_key_get(self, key_id, include_private=False):
         return api.key_get(key_id, include_private=include_private)
 

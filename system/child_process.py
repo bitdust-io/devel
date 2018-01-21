@@ -130,7 +130,7 @@ def kill_process(process):
     """
     try:
         process.signalProcess('KILL')
-        lg.out(6, 'child_process.kill_process sent signal "KILL" to %s the process %d' % process.pid)
+        lg.out(6, 'child_process.kill_process sent signal "KILL" to the process %d' % process.pid)
     except:
         return False
     return True
@@ -187,7 +187,6 @@ def pipe(cmdargs):
 
 def detach(cmdargs):
     """
-    
     """
     lg.out(2, "child_process.detach %s" % str(cmdargs))
     try:

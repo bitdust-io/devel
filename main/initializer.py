@@ -139,7 +139,6 @@ class Initializer(automat.Automat):
         global_state.set_global_state('INIT ' + newstate)
 
     def A(self, event, arg):
-        #--- AT_STARTUP
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'run':
@@ -168,13 +167,12 @@ class Initializer(automat.Automat):
                 self.doInitInterfaces(arg)
                 self.doShowGUI(arg)
                 self.doUpdate(arg)
-            elif event == 'init-local-done' and not self.isInstalled(arg) and not self.isGUIPossible(arg):
+            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
                 self.state = 'STOPPING'
-                self.doPrintMessage(arg)
-                shutdowner.A('ready')
-                shutdowner.A('stop', "exit")
-            elif event == 'init-local-done' and self.isInstalled(arg):
+                self.doDestroyMe(arg)
+            elif event == 'init-local-done' and ( ( not self.isInstalled(arg) and not self.isGUIPossible(arg) ) or self.isInstalled(arg) ):
                 self.state = 'INTERFACES'
+                shutdowner.A('ready')
                 self.doInitInterfaces(arg)
         #---MODULES---
         elif self.state == 'MODULES':
@@ -310,15 +308,6 @@ class Initializer(automat.Automat):
                 # reactor.callLater(0.1, control.show)
             else:
                 d.addCallback(webcontrol.show)
-
-    def doPrintMessage(self, arg):
-        """
-        Action method.
-        """
-        lg.out(0, '')
-        lg.out(0, 'You must create an identity first, run command:')
-        lg.out(0, '   bitdust identity create <nickname>')
-        lg.out(0, '')
 
     def doDestroyMe(self, arg):
         global _Initializer
@@ -499,11 +488,14 @@ class Initializer(automat.Automat):
 class MyTwistedOutputLog:
     softspace = 0
 
-    def read(self): pass
+    def read(self):
+        pass
 
     def write(self, s):
-        lg.out(0, s.strip())
+        lg.out(0, 'TWISTED: ' + s.strip())
 
-    def flush(self): pass
+    def flush(self):
+        pass
 
-    def close(self): pass
+    def close(self):
+        pass

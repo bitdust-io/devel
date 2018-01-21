@@ -412,7 +412,8 @@ class Automat(object):
 
         into the state machine and return that defer to outside - to catch result.
         In the action method you must call ``callback`` or ``errback`` to pass result.
-        See ``addStateChangedCallback()`` for more advanced interaction.
+
+        See ``addStateChangedCallback()`` for more advanced interactions/callbacks.
         """
         d = Deferred()
         args = arg
@@ -547,9 +548,6 @@ class Automat(object):
         try:
             from logs import lg
             lg.exc(msg)
-#             if msg:
-#                 lg.out(0, msg)
-#             lg.out(0, e)
         except:
             pass
 
