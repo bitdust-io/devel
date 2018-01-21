@@ -75,6 +75,7 @@ from web import dbwrite
 
 #------------------------------------------------------------------------------
 
+_DjangoEnabled = False
 _WSGIListener = None
 _WSGIPort = None
 _ShortPoolPort = None
@@ -83,10 +84,21 @@ _UpdateItems = {}
 
 #------------------------------------------------------------------------------
 
+def django_enabled():
+    global _DjangoEnabled
+    return _DjangoEnabled
+
 
 def init():
     global _WSGIListener
     global _WSGIPort
+    global _DjangoEnabled
+    result = Deferred()
+    if not django_enabled():
+        if _Debug:
+            lg.out(_DebugLevel, '    SKIP, Django interface is DISABLED')
+        result.callback(0)
+        return result
     result = Deferred()
     if _Debug:
         lg.out(_DebugLevel, 'control.init')
@@ -206,6 +218,12 @@ def post_init(portnum):
 def shutdown():
     global _WSGIListener
     global _WSGIPort
+    if not django_enabled():
+        if _Debug:
+            lg.out(_DebugLevel, 'control.shutdown')
+        result = Deferred()
+        result.callback(1)
+        return result
     if _Debug:
         lg.out(_DebugLevel, 'control.shutdown')
     from chat import message
@@ -270,6 +288,11 @@ def start_listener(site):
 
 def show():
     global _WSGIPort
+    if not django_enabled():
+        if _Debug:
+            lg.out(_DebugLevel, 'control.show SKIP, Django is DISABLED')
+        return
+
     if _WSGIPort is not None:
         if _Debug:
             lg.out(_DebugLevel, 'control.show on port %d' % _WSGIPort)
@@ -323,6 +346,11 @@ def get_update_items():
 def request_update(items=None):
     global _UpdateFlag
     global _UpdateItems
+    if not django_enabled():
+        if _Debug:
+            lg.out(_DebugLevel, 'control.request_update SKIP, Django is DISABLED')
+        return
+
     if _Debug:
         lg.out(_DebugLevel, 'control.request_update  _UpdateFlag=True, new items=%s' % str(items))
     _UpdateFlag = True
@@ -391,6 +419,7 @@ class DebugMixin(object):
         return kwargs
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     bpio.init()
