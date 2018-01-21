@@ -34,10 +34,10 @@ from services.local_service import LocalService
 
 
 def create_service():
-    return SupplierContractsService()
+    return ContractChainService()
 
 
-class SupplierContractsService(LocalService):
+class ContractChainService(LocalService):
 
     service_name = 'service_contract_chain'
     config_path = 'services/contract-chain/enabled'
