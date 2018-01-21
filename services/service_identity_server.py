@@ -50,6 +50,12 @@ class IdentityServerService(LocalService):
         return ['service_tcp_connections',
                 ]
 
+    def installed(self):
+        from userid import my_id
+        if not my_id.isLocalIdentityReady():
+            return False
+        return True
+
     def enabled(self):
         from main import settings
         return settings.enableIdServer()

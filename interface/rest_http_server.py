@@ -187,6 +187,35 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/identity/get/v1$')
+    def identity_get_v1(self, request):
+        return api.identity_get(
+            include_xml_source=bool(_request_arg(request, 'include_xml_source', '0') != '0'), )
+
+    @POST('^/identity/create/v1$')
+    def identity_create_v1(self, request):
+        data = _request_data(request, mandatory_keys=['username', ])
+        return api.identity_create(username=data['username'], )
+
+    @POST('^/identity/recover/v1$')
+    def identity_recover_v1(self, request):
+        data = _request_data(request)
+        private_key_source = data.get('private_key_source')
+        if not private_key_source:
+            private_key_local_file = data.get('private_key_local_file')
+            if private_key_local_file:
+                from system import bpio
+                private_key_source = bpio.ReadBinaryFile(bpio.portablePath(private_key_local_file))
+        return api.identity_recover(
+            private_key_source=private_key_source,
+            known_idurl=data.get('known_idurl'))
+
+    @DELETE('^/identity/delete/v1$')
+    def identity_delete_v1(self, request):
+        return api
+
+    #------------------------------------------------------------------------------
+
     @GET('^/network/reconnect/v1$')
     def network_reconnect_v1(self, request):
         return api.network_reconnect()

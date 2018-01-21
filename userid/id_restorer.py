@@ -48,20 +48,16 @@ A state machine to restore the user account.
 
 Needed for restoration of the user account information using its Private key and ID url.
     * at first request user's identity file from Identity server
-    * do verification and restoration of the his account locally and start the software
+    * do verification and restoration of his locally identity to be able to start the software
 """
 
 import os
 import sys
-import time
 
 try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in identity_restorer.py')
-
-from twisted.internet.defer import Deferred, DeferredList, maybeDeferred
-from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
 
@@ -72,12 +68,10 @@ from automats import global_state
 
 from system import bpio
 
-from lib import misc
 from lib import net_misc
 
 from crypt import key
 
-from contacts import identitycache
 from userid import identity
 from userid import my_id
 
@@ -119,6 +113,9 @@ class IdRestorer(automat.Automat):
         'MSG_04': ['incorrect IDURL or user identity not exist', 'red'],
         'MSG_05': ['verifying user identity and private key'],
         'MSG_06': ['your identity restored successfully!', 'green'], }
+
+    def init(self):
+        self.last_message = ''
 
     def msg(self, msgid, arg=None):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
@@ -295,12 +292,14 @@ class IdRestorer(automat.Automat):
     def doPrint(self, arg):
         from main import installer
         installer.A().event('print', arg)
+        self.last_message = arg[0]
         lg.out(6, 'id_restorer.doPrint: %s' % str(arg))
 
     def doDestroyMe(self, arg):
         """
         Action method.
         """
+        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=arg)
         self.destroy(dead_state=self.state)
         global _IdRestorer
         _IdRestorer = None
