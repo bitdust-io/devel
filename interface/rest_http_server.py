@@ -323,6 +323,35 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/service/v1$')
+    @GET('^/service/list/v1$')
+    def service_list(self, request):
+        return api.services_list()
+
+    @GET('^/service/info/(?P<service_name>[^/]+)/v1$')
+    def service_info(self, request, service_name):
+        return api.service_info(service_name)
+
+    @POST('^/service/start/(?P<service_name>[^/]+)/v1$')
+    def service_start(self, request, service_name):
+        return api.service_start(service_name)
+
+    @POST('^/service/stop/(?P<service_name>[^/]+)/v1$')
+    def service_stop(self, request, service_name):
+        return api.service_stop(service_name)
+
+    @POST('^/service/restart/(?P<service_name>[^/]+)/v1$')
+    def service_restart(self, request, service_name):
+        return api.service_restart(service_name)
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
+    def event_listen(self, request, consumer_id):
+        return api.events_listen(consumer_id)
+
+    #------------------------------------------------------------------------------
+
     @ALL('^/*')
     def not_found(self, request):
         return api.ERROR('method %s:%s not found' % (request.method, request.path))

@@ -641,15 +641,15 @@ def key_share(key_id, trusted_global_id_or_idurl, timeout=10):
     else:
         idurl = trusted_global_id_or_idurl
     from access import key_ring
-    result = Deferred()
+    ret = Deferred()
     d = key_ring.share_private_key(key_id=full_key_id, trusted_idurl=idurl, timeout=timeout)
     d.addCallback(
-        lambda resp: result.callback(
+        lambda resp: ret.callback(
             OK(str(resp))))
     d.addErrback(
-        lambda err: result.callback(
+        lambda err: ret.callback(
             ERROR(err.getErrorMessage())))
-    return result
+    return ret
 
 #------------------------------------------------------------------------------
 
@@ -1851,6 +1851,25 @@ def service_stop(service_name):
     config.conf().setBool(svc.config_path, False)
     return OK('"%s" was switched off' % service_name)
 
+
+def service_restart(service_name):
+    """
+    Stop given service and start it again, but only if it is already enabled.
+    Do not change corresponding `.bitdust/config/services/[service name]/enabled` option.
+    Dependent services will be "restarted" as well.
+    Return:
+
+        {'status': 'OK', 'result': 'service_tcp_connections was restarted'}
+    """
+    svc = driver.services().get(service_name, None)
+    if svc is None:
+        service_name = 'service_' + service_name.replace('-', '_')
+        svc = driver.services().get(service_name, None)
+    if svc is None:
+        lg.out(4, 'api.service_restart %s not found' % service_name)
+        return ERROR('service "%s" not found' % service_name)
+    return driver.restart(services_list=[service_name, ], wait_timeout=5)
+
 #------------------------------------------------------------------------------
 
 
@@ -2058,15 +2077,15 @@ def ping(idurl, timeout=10):
     if not driver.is_on('service_identity_propagate'):
         return succeed(ERROR('service_identity_propagate() is not started'))
     from p2p import propagate
-    result = Deferred()
+    ret = Deferred()
     d = propagate.PingContact(idurl, int(timeout))
     d.addCallback(
-        lambda resp: result.callback(
+        lambda resp: ret.callback(
             OK(str(resp))))
     d.addErrback(
-        lambda err: result.callback(
+        lambda err: ret.callback(
             ERROR(err.getErrorMessage())))
-    return result
+    return ret
 
 def user_ping(idurl, timeout=10):
     """
@@ -2087,15 +2106,15 @@ def user_ping(idurl, timeout=10):
     if not driver.is_on('service_identity_propagate'):
         return succeed(ERROR('service_identity_propagate() is not started'))
     from p2p import propagate
-    result = Deferred()
+    ret = Deferred()
     d = propagate.PingContact(idurl, int(timeout))
     d.addCallback(
-        lambda resp: result.callback(
+        lambda resp: ret.callback(
             OK(str(resp))))
     d.addErrback(
-        lambda err: result.callback(
+        lambda err: ret.callback(
             ERROR(err.getErrorMessage())))
-    return result
+    return ret
 
 def user_search(nickname):
     """
@@ -2346,14 +2365,14 @@ def message_receive(consumer_id):
                 'message_id': msg['id'],
                 'dir': msg['dir'],
             })
-        lg.out(4, 'api.message_consumer_request._on_pending_messages returning : %s' % result)
+        lg.out(4, 'api.message_receive._on_pending_messages returning : %s' % result)
         ret.callback(OK(result))
         return len(result) > 0
 
     d = message.consume_messages(consumer_id)
     d.addCallback(_on_pending_messages)
     d.addErrback(lambda err: ret.callback(ERROR(str(err))))
-    lg.out(4, 'api.message_consumer_request "%s"' % consumer_id)
+    lg.out(4, 'api.message_receive "%s"' % consumer_id)
     return ret
 
 #------------------------------------------------------------------------------
@@ -2389,6 +2408,30 @@ def event_send(event_id, json_data=None):
     from main import events
     events.send(event_id, json.loads(json_data or '{}'))
     return OK('event "%s" sent' % event_id)
+
+def events_listen(consumer_id):
+    from main import events
+    ret = Deferred()
+
+    def _on_pending_events(pending_events):
+        result = []
+        for evt in pending_events:
+            if evt['type'] != 'event':
+                continue
+            result.append({
+                'id': evt['id'],
+                'data': evt['data'],
+                'time': evt['time'],
+            })
+        lg.out(4, 'api.events_listen._on_pending_events returning : %s' % result)
+        ret.callback(OK(result))
+        return len(result) > 0
+
+    d = events.consume_events(consumer_id)
+    d.addCallback(_on_pending_events)
+    d.addErrback(lambda err: ret.callback(ERROR(str(err))))
+    lg.out(4, 'api.events_listen "%s"' % consumer_id)
+    return ret
 
 #------------------------------------------------------------------------------
 

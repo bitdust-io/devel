@@ -33,7 +33,7 @@ module:: driver
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -43,6 +43,7 @@ import sys
 import importlib
 
 from twisted.internet.defer import Deferred, DeferredList, succeed
+from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
 
@@ -256,17 +257,24 @@ def build_order():
     return order
 
 
-def start():
+def start(services_list=[]):
     """
     """
     global _StartingDeferred
+    global _StopingDeferred
     if _StartingDeferred:
         lg.warn('driver.start already called')
         return _StartingDeferred
+    if _StopingDeferred:
+        d = Deferred()
+        d.errback('currently another service is stopping')
+        return d
+    if not services_list:
+        services_list.extend(boot_up_order())
     if _Debug:
-        lg.out(_DebugLevel - 6, 'driver.start')
+        lg.out(_DebugLevel - 6, 'driver.start with %d services' % len(services_list))
     dl = []
-    for name in boot_up_order():
+    for name in services_list:
         svc = services().get(name, None)
         if not svc:
             raise ServiceNotFound(name)
@@ -284,17 +292,24 @@ def start():
     return _StartingDeferred
 
 
-def stop():
+def stop(services_list=[]):
     """
     """
     global _StopingDeferred
+    global _StartingDeferred
     if _StopingDeferred:
         lg.warn('driver.stop already called')
         return _StopingDeferred
+    if _StartingDeferred:
+        d = Deferred()
+        d.errback('currently another service is starting')
+        return d
+    if not services_list:
+        services_list.extend(reversed(boot_up_order()))
     if _Debug:
-        lg.out(_DebugLevel - 6, 'driver.stop')
+        lg.out(_DebugLevel - 6, 'driver.stop with %d services' % len(services_list))
     dl = []
-    for name in reversed(boot_up_order()):
+    for name in services_list:
         svc = services().get(name, None)
         if not svc:
             raise ServiceNotFound(name)
@@ -305,12 +320,72 @@ def stop():
     _StopingDeferred.addCallback(on_stopped_all_services)
     return _StopingDeferred
 
+
+def restart(services_list=[], wait_timeout=None):
+    global _StopingDeferred
+    global _StartingDeferred
+    ret = Deferred()
+    all_states = [_svc.state for _svc in services().values()]
+    if not wait_timeout:
+        if _StopingDeferred:
+            lg.warn('driver.stop already called')
+            ret.errback('currently another service is stopping')
+            return ret
+        if _StartingDeferred:
+            lg.warn('driver.stop already called')
+            ret.errback('currently another service is starting')
+            return ret
+        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+            lg.warn('some services are in transition state')
+            ret.errback('operation can not be performed, some services are in transition state')
+            return ret
+
+#     def _on_started(resp, _ret):
+#         lg.out(4, 'api.service_restart._on_started : %s with %s' % (service_name, resp))
+#         _ret.callback(OK(resp[0], message=resp[1]))
+#         return resp
+# 
+#     def _do_start(_ret):
+#         lg.out(4, 'api.service_restart._do_start : %s' % service_name)
+#         start_defer = driver.start(services_list=[service_name, ])
+#         start_defer.addCallback(_on_started, _ret)
+#         start_defer.addErrback(lambda err: _ret.callback(ERROR(err.getErrorMessage())))
+# 
+#     def _on_stopped(resp, _ret):
+#         lg.out(4, 'api.service_restart._on_stopped : %s with %s' % (service_name, resp))
+#         _do_start(_ret)
+#         return resp
+# 
+#     def _do_stop(_ret):
+#         lg.out(4, 'api.service_restart._do_stop : %s' % service_name)
+#         stop_defer = driver.stop(services_list=[service_name, ])
+#         stop_defer.addCallback(_on_stopped, _ret)
+#         stop_defer.addErrback(lambda err: _ret.callback(ERROR(err.getErrorMessage())))
+#         return _ret
+
+    _do_stop(ret)
+    dl = []
+    if _StopingDeferred:
+        dl.append(_StartingDeferred)
+    if _StartingDeferred:
+        dl.append(_StartingDeferred)
+#     if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+#         def _test_transition_state():
+#             _all_states = [_svc.state for _svc in services().values()]
+#             if 'INFLUENCE' in _all_states or 'STARTING' in _all_states or 'STOPPING' in _all_states:
+#                 
+#             
+#         wait_loop = LoopingCall()
+#     
+#     wait_DeferredList(dl)
+    return ret
+    
+
 #------------------------------------------------------------------------------
 
 
 def on_service_callback(result, service_name):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel +

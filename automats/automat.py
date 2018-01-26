@@ -307,12 +307,13 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
 
-    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False):
+    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, publish_events=True):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
         self.debug_level = debug_level
         self.log_events = log_events
+        self.publish_events = publish_events
         self.log_transitions = log_events
         self._timers = {}
         self._state_callbacks = {}
@@ -324,16 +325,28 @@ class Automat(object):
                      'CREATED AUTOMAT %s with index %d, %d running' % (
                 str(self), self.index, len(objects())))
 
+    def _on_state_change(self, oldstate, newstate, event_string, args):
+        from main import events
+        if oldstate != newstate:
+            events.send('%s_state' % self.name, dict(
+                newstate=newstate,
+                oldstate=oldstate,
+                event=event_string,
+            ))
+
     def register(self):
         """
         Put reference to this automat instance into a global dictionary.
         """
         set_object(self.index, self)
+        if self.publish_events:
+            self.addStateChangedCallback(self._on_state_change)
 
     def unregister(self):
         """
         Removes reference to this instance from global dictionary tracking all state machines.
         """
+        self.removeStateChangedCallback(self._on_state_change)
         clear_object(self.index)
 
     def __del__(self):

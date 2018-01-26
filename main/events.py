@@ -48,6 +48,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in events.py')
 
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -55,7 +56,14 @@ from logs import lg
 
 #------------------------------------------------------------------------------
 
+MAX_PENDING_EVENTS_PER_CONSUMER = 20
+
+#------------------------------------------------------------------------------
+
 _Subscribers = {}
+_ReceivedEventsIDs = set()
+_ConsumersCallbacks = {}
+_EventQueuePerConsumer = {}
 
 #------------------------------------------------------------------------------
 
@@ -70,6 +78,7 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'events.init')
+    add_subscriber(push_event)
 
 def shutdown():
     """
@@ -156,3 +165,84 @@ def send(event_id, data=None):
     evt = Event(event_id, data=data)
     reactor.callWhenRunning(dispatch, evt)
     return True
+
+#------------------------------------------------------------------------------
+
+
+def received_events_ids():
+    global _ReceivedEventsIDs
+    return _ReceivedEventsIDs
+
+
+def event_queue():
+    global _EventQueuePerConsumer
+    return _EventQueuePerConsumer
+
+
+def consumers_callbacks():
+    global _ConsumersCallbacks
+    return _ConsumersCallbacks
+
+
+def consume_events(consumer_id):
+    """
+    """
+    if consumer_id not in consumers_callbacks():
+        consumers_callbacks()[consumer_id] = []
+    d = Deferred()
+    consumers_callbacks()[consumer_id].append(d)
+    if _Debug:
+        lg.out(_DebugLevel, 'events.consume_events added callback for consumer "%s", %d total callbacks' % (
+            consumer_id, len(consumers_callbacks()[consumer_id])))
+    reactor.callLater(0, pop_event)
+    return d
+
+
+def push_event(event_object):
+    """
+    """
+    for consumer_id in consumers_callbacks().keys():
+        if consumer_id not in event_queue():
+            event_queue()[consumer_id] = []
+        event_queue()[consumer_id].append({
+            'type': 'event',
+            'id': event_object.event_id,
+            'data': event_object.data,
+            'time': event_object.created,
+        })
+        if _Debug:
+            lg.out(_DebugLevel, 'events.push_event "%s" for consumer "%s", %d pending events' % (
+                event_object.event_id, consumer_id, len(event_queue()[consumer_id])))
+    reactor.callLater(0, pop_event)
+
+
+def pop_event():
+    """
+    """
+    for consumer_id in consumers_callbacks().keys():
+        if consumer_id not in event_queue() or len(event_queue()[consumer_id]) == 0:
+            continue
+        registered_callbacks = consumers_callbacks()[consumer_id]
+        pending_messages = event_queue()[consumer_id]
+        if len(registered_callbacks) == 0 and len(pending_messages) > MAX_PENDING_EVENTS_PER_CONSUMER:
+            consumers_callbacks().pop(consumer_id)
+            event_queue().pop(consumer_id)
+            if _Debug:
+                lg.out(_DebugLevel, 'events.pop_event STOPPED consumer "%s", too much pending messages but no callbacks' % consumer_id)
+            continue
+        for consumer_callback in registered_callbacks:
+            if not consumer_callback:
+                if _Debug:
+                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", no callback yet' % (
+                        len(event_queue()[consumer_id]), consumer_id))
+                continue
+            if consumer_callback.called:
+                if _Debug:
+                    lg.out(_DebugLevel, 'events.pop_event %d events waiting consuming by "%s", callback state is "called"' % (
+                        len(event_queue()[consumer_id]), consumer_id))
+                continue
+            consumer_callback.callback(pending_messages)
+            event_queue()[consumer_id] = []
+            if _Debug:
+                lg.out(_DebugLevel, 'events.pop_event %d events consumed by "%s"' % (len(pending_messages), consumer_id))
+        consumers_callbacks()[consumer_id] = []
