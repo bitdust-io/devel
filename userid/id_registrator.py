@@ -93,7 +93,7 @@ def A(event=None, arg=None):
     global _IdRegistrator
     if _IdRegistrator is None:
         # set automat name and starting state here
-        _IdRegistrator = IdRegistrator('id_registrator', 'AT_STARTUP', 2, True)
+        _IdRegistrator = IdRegistrator('id_registrator', 'AT_STARTUP', 2, log_events=True, publish_events=True)
     if event is not None:
         _IdRegistrator.automat(event, arg)
     return _IdRegistrator

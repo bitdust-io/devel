@@ -307,7 +307,7 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
 
-    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, publish_events=True):
+    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, publish_events=False):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
