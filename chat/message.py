@@ -82,7 +82,6 @@ _IncomingMessageCallbacks = []
 _OutgoingMessageCallbacks = []
 
 _MessageQueuePerConsumer = {}
-_ConsumersCallbacks = {}
 
 #------------------------------------------------------------------------------
 

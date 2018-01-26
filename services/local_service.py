@@ -121,9 +121,6 @@ class LocalService(automat.Automat):
         """
         Method to catch the moment when automat's state were changed.
         """
-        if not settings.NewWebGUI():
-            from web import webcontrol
-            webcontrol.OnServiceStateChanged(self.service_name)
 
     def state_not_changed(self, curstate, event, arg):
         """

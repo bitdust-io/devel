@@ -279,6 +279,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_service_stop(self, service_name):
         return api.service_stop(service_name)
 
+    def jsonrpc_service_restart(self, service_name):
+        return api.service_restart(service_name)
+
     def jsonrpc_packets_stats(self):
         return api.packets_stats()
 
@@ -335,6 +338,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_event_send(self, event_id, json_data=None):
         return api.event_send(event_id, json_data=json_data)
+
+    def jsonrpc_events_listen(self, consumer_id):
+        return api.events_listen(consumer_id)
 
     def jsonrpc_network_stun(self, udp_port=None, dht_port=None):
         return api.network_stun(udp_port=udp_port, dht_port=dht_port)
