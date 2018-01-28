@@ -119,42 +119,42 @@ def inbox(newpacket, info, status, error_message):
     elif newpacket.Command == commands.Retrieve():
         # retrieve some packet customer stored with us
         Retrieve(newpacket)
-        commandhandled = True
+        commandhandled = False
     elif newpacket.Command == commands.RequestService():
         # other node send us a request to get some service
         RequestService(newpacket, info)
-        commandhandled = True
+        commandhandled = True  # TODO: move to service p2p_hookups
     elif newpacket.Command == commands.CancelService():
         # other node wants to stop the service we gave him
         CancelService(newpacket, info)
-        commandhandled = True
+        commandhandled = True  # TODO: move to service p2p_hookups
     elif newpacket.Command == commands.Data():
         # new packet to store for customer
         Data(newpacket)
-        commandhandled = True
+        commandhandled = False
     elif newpacket.Command == commands.ListFiles():
         # customer wants list of their files
         ListFiles(newpacket, info)
-        commandhandled = True
+        commandhandled = False
     elif newpacket.Command == commands.Files():
         # supplier sent us list of files
         Files(newpacket, info)
-        commandhandled = True
+        commandhandled = False
     elif newpacket.Command == commands.DeleteFile():
         # will Delete a customer file for them
         DeleteFile(newpacket)
-        commandhandled = True
+        commandhandled = False
     elif newpacket.Command == commands.DeleteBackup():
         # will Delete all files starting in a backup
         DeleteBackup(newpacket)
-        commandhandled = True
+        commandhandled = False
     elif newpacket.Command == commands.Message():
         # will be handled in message.py
         commandhandled = False
     elif newpacket.Command == commands.Correspondent():
         # contact asking for our current identity
         Correspondent(newpacket)
-        commandhandled = True
+        commandhandled = False
     elif newpacket.Command == commands.Broadcast():
         # handled by service_broadcasting()
         Broadcast(newpacket, info)
