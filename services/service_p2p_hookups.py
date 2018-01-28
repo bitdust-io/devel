@@ -96,35 +96,48 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_service
         from services import driver
         from logs import lg
-        if len(newpacket.Payload) > 1024 * 10:
-            return p2p_service.SendFail(newpacket, 'too long payload')
         if newpacket.Command == commands.RequestService():
+            if len(newpacket.Payload) > 1024 * 10:
+                p2p_service.SendFail(newpacket, 'too long payload')
+                return False
             words = newpacket.Payload.split(' ')
             if len(words) < 1:
                 lg.warn("got wrong payload in %s" % newpacket)
-                return p2p_service.SendFail(newpacket, 'wrong payload')
+                p2p_service.SendFail(newpacket, 'wrong payload')
+                return False
             service_name = words[0]
             self.log(self.debug_level, "service_p2p_hookups.RequestService %s : %s" % (newpacket.OwnerID, service_name))
             if not driver.is_exist(service_name):
                 lg.warn("got wrong payload in %s" % service_name)
-                return p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
+                p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
+                return False
             if not driver.is_on(service_name):
-                return p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
-            return driver.request(service_name, newpacket, info)
+                p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
+                return False
+            driver.request(service_name, newpacket, info)
+            return True
         elif newpacket.Command == commands.CancelService():
+            if len(newpacket.Payload) > 1024 * 10:
+                p2p_service.SendFail(newpacket, 'too long payload')
+                return False
             words = newpacket.Payload.split(' ')
             if len(words) < 1:
                 lg.warn("got wrong payload in %s" % newpacket)
-                return p2p_service.SendFail(newpacket, 'wrong payload')
+                p2p_service.SendFail(newpacket, 'wrong payload')
+                return False
             service_name = words[0]
             self.log(self.debug_level, "service_p2p_hookups.CancelService %s : %s" % (newpacket.OwnerID, service_name))
             # TODO: add validation
             if not driver.is_exist(service_name):
                 lg.warn("got wrong payload in %s" % newpacket)
-                return p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
+                p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
+                return False
             if not driver.is_on(service_name):
-                return p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
-            return driver.cancel(service_name, newpacket, info)
+                p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
+                return False
+            driver.cancel(service_name, newpacket, info)
+            return True
+        return False
 
     def _on_p2p_connector_switched(self, oldstate, newstate, evt, args):
         if newstate == 'INCOMMING?':
