@@ -249,8 +249,8 @@ def report_donated_storage():
         real = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
         r['old_customers'].append({
             'idurl': idurl,
-            'used': used_space_dict['idurl'],
-            'used_str': diskspace.MakeStringFromBytes(used_space_dict['idurl']),
+            'used': used_space_dict[idurl],
+            'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
             'real': real,
             'real_str': diskspace.MakeStringFromBytes(real),
         })
