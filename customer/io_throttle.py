@@ -300,7 +300,7 @@ class FileToSend:
         self.callOnFail = callOnFail
         self.sendTime = None
         self.ackTime = None
-        self.sendTimeout = 2 * (max(int(self.fileSize / settings.SendingSpeedLimit()), 5) + 5)  # maximum 5 seconds to get an Ack
+        self.sendTimeout = 10 * 2 * (max(int(self.fileSize / settings.SendingSpeedLimit()), 5) + 5)  # maximum 5 seconds to get an Ack
         self.result = ''
         PacketReport('send', self.remoteID, self.packetID, 'init')
 

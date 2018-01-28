@@ -55,8 +55,9 @@ class P2PHookupsService(LocalService):
         return depends
 
     def start(self):
-        from p2p import p2p_service
+        from transport import callback
         from p2p import contact_status
+        from p2p import p2p_service
         from p2p import p2p_connector
         from p2p import network_connector
         from twisted.internet.defer import Deferred
@@ -68,13 +69,16 @@ class P2PHookupsService(LocalService):
             self._on_p2p_connector_switched)
         network_connector.A().addStateChangedCallback(
             self._on_network_connector_switched)
+        callback.append_inbox_callback(p2p_service.inbox)
         return True
 
     def stop(self):
-        from p2p import p2p_service
+        from transport import callback
         from p2p import contact_status
+        from p2p import p2p_service
         from p2p import p2p_connector
         from p2p import network_connector
+        callback.remove_inbox_callback(p2p_service.inbox)
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(
                 self._on_network_connector_switched)

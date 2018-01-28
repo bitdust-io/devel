@@ -92,13 +92,11 @@ from services import driver
 def init():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.init')
-    callback.append_inbox_callback(inbox)
 
 
 def shutdown():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.shutdown')
-    callback.remove_inbox_callback(inbox)
 
 #------------------------------------------------------------------------------
 
