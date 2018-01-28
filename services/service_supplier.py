@@ -208,7 +208,7 @@ class SupplierService(LocalService):
             if not glob_path['path']:
                 lg.err("got incorrect PacketID")
                 p2p_service.SendFail(newpacket, 'incorrect PacketID')
-                return
+                return False
             # TODO: add validation of customerGlobID
             # TODO: process requests from another customer
             filename = p2p_service.makeFilename(newpacket.OwnerID, glob_path['path'])
@@ -217,7 +217,8 @@ class SupplierService(LocalService):
                 if not os.path.exists(filename):
                     lg.err("had unknown customer: %s or pathID is not correct or not exist: %s" % (
                         newpacket.OwnerID, glob_path['path']))
-                    return p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+                    p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+                    return False
             if os.path.isfile(filename):
                 try:
                     os.remove(filename)
@@ -259,7 +260,8 @@ class SupplierService(LocalService):
                 filename = p2p_service.constructFilename(newpacket.OwnerID, glob_path['path'])
                 if not os.path.exists(filename):
                     lg.err("had unknown customer: %s or backupID: %s" (bkpID, newpacket.OwnerID))
-                    return p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+                    p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+                    return False
             if os.path.isdir(filename):
                 try:
                     bpio._dir_remove(filename)
@@ -274,9 +276,10 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
-        p2p_service.SendAck(newpacket)
         self.log(self.debug_level, "supplier_service._on_delete_backup from [%s] with %d IDs, %d were removed" % (
             newpacket.OwnerID, len(ids), count))
+        p2p_service.SendAck(newpacket)
+        return True
 
     def _on_retreive(self, newpacket):
         from system import bpio
@@ -404,13 +407,13 @@ class SupplierService(LocalService):
             lg.err("can not write to %s" % str(filename))
             p2p_service.SendFail(newpacket, 'write error')
             return False
-        p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
-        from supplier import local_tester
-        reactor.callLater(0, local_tester.TestSpaceTime)
         sz = len(data)
         del data
         self.log(self.debug_level, "service_supplier._on_data %r saved from [%s | %s] to %s with %d bytes" % (
             newpacket, newpacket.OwnerID, newpacket.CreatorID, filename, sz, ))
+        p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
+        from supplier import local_tester
+        reactor.callLater(0, local_tester.TestSpaceTime)
         return True
 
     def _on_list_files(self, newpacket):
