@@ -83,7 +83,8 @@ def GetLinuxDriveSpace(path):
         s = os.statvfs(str(path))
         # free, total = s.f_bsize*(s.f_blocks-s.f_bavail), s.f_bsize * s.f_bavail
         # free, total = float(s.f_bsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
-        free, total = float(s.f_frsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
+        # free, total = float(s.f_frsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
+        free, total = float(s.f_frsize * s.f_bavail), float(s.f_frsize * s.f_blocks)
         return free, total
     except:
         return None, None

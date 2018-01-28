@@ -162,6 +162,10 @@ def process(newpacket, info):
     if _Debug:
         lg.out(_DebugLevel, 'packet_in.process %s from %s://%s : %s' % (
             str(newpacket), info.proto, info.host, info.status))
+    if info.status != 'finished':
+        if _Debug:
+            lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
+        return
     from p2p import commands
     from p2p import p2p_service
     if newpacket.Command == commands.Identity() and newpacket.RemoteID == my_id.getLocalID():

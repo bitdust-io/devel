@@ -180,7 +180,7 @@ def report_consumed_storage():
     result['used_per_supplier_str'] = diskspace.MakeStringFromBytes(result['used_per_supplier'])
     result['available_per_supplier_str'] = diskspace.MakeStringFromBytes(result['available_per_supplier'])
     try:
-        result['used_percent'] = misc.percent2string(float(result['used']) / float(result['needed']))
+        result['used_percent'] = misc.value2percent(float(result['used']), float(result['needed']))
     except:
         result['used_percent'] = '0%'
     return result
@@ -249,17 +249,17 @@ def report_donated_storage():
         real = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
         r['old_customers'].append({
             'idurl': idurl,
-            'used': used_space_dict['idurl'],
-            'used_str': diskspace.MakeStringFromBytes(used_space_dict['idurl']),
+            'used': used_space_dict[idurl],
+            'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
             'real': real,
             'real_str': diskspace.MakeStringFromBytes(real),
         })
     try:
-        r['used_percent'] = misc.percent2string(float(r['used']) / float(r['donated']), 5)
+        r['used_percent'] = misc.value2percent(float(r['used']), float(r['donated']), 5)
     except:
         r['used_percent'] = ''
     try:
-        r['consumed_percent'] = misc.percent2string(float(r['consumed']) / float(r['donated']), 5)
+        r['consumed_percent'] = misc.value2percent(float(r['consumed']), float(r['donated']), 5)
     except:
         r['consumed_percent'] = ''
     return r
@@ -286,11 +286,11 @@ def report_local_storage():
     r['diskfree'] = int(dataDriveFreeSpace)
     r['diskfree_str'] = diskspace.MakeStringFromBytes(r['diskfree'])
     try:
-        r['total_percent'] = misc.percent2string(float(r['total']) / float(r['disktotal']), 5)
+        r['total_percent'] = misc.value2percent(float(r['total']), float(r['disktotal']), 5)
     except:
         r['total_percent'] = ''
     try:
-        r['diskfree_percent'] = misc.percent2string(float(r['diskfree']) / float(r['disktotal']), 5)
+        r['diskfree_percent'] = misc.value2percent(float(r['diskfree']), float(r['disktotal']), 5)
     except:
         r['diskfree_percent'] = ''
     return r

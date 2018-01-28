@@ -53,11 +53,10 @@ class CustomerService(LocalService):
         return True
 
     def start(self):
-        from customer import supplier_connector
         from contacts import contactsdb
+        from customer import supplier_connector
         for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl and not supplier_connector.by_idurl(
-                    supplier_idurl):
+            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl):
                 supplier_connector.create(supplier_idurl)
         return True
 

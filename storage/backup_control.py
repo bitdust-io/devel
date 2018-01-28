@@ -281,7 +281,7 @@ def IncomingSupplierListFiles(newpacket):
     num = contactsdb.supplier_position(supplier_idurl, customer_idurl=customer_idurl)
     if num < -1:
         lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
-        return
+        return False
     from supplier import list_files
     from customer import list_files_orator
     src = list_files.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
@@ -293,15 +293,22 @@ def IncomingSupplierListFiles(newpacket):
             nameurl.GetName(supplier_idurl), len(paths2remove), len(backups2remove), len(missed_backups)))
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
+        if _Debug:
+            lg.out(_DebugLevel, '    also sent requests to remove %d backups' % len(backups2remove))
     if len(paths2remove) > 0:
         p2p_service.RequestDeleteListPaths(paths2remove)
+        if _Debug:
+            lg.out(_DebugLevel, '    also sent requests to remove %d paths' % len(paths2remove))
     if len(missed_backups) > 0:
         from storage import backup_rebuilder
         backup_rebuilder.AddBackupsToWork(missed_backups)
         backup_rebuilder.A('start')
+        if _Debug:
+            lg.out(_DebugLevel, '    also triggered service_rebuilding with %d missed backups' % len(missed_backups))
     del backups2remove
     del paths2remove
     del missed_backups
+    return True
 
 
 def IncomingSupplierBackupIndex(newpacket):

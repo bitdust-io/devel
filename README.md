@@ -27,28 +27,51 @@ At the moment exists a very limited alpha version of the BitDust software.
 We decided to publish those earlier works to verify/test/share our ideas and experiments with other people.
 
 
+## Install BitDust software
 
-## Install BitDust
-
-
-### Get the software
+#### Install software dependencies
 
 Seems like in Ubuntu (probably most other distros) you can install all dependencies in that way:
 
-        sudo apt-get install git python-dev python-setuptools python-pip python-virtualenv python-twisted python-django python-crypto python-pyasn1 python-psutil libffi-dev libssl-dev
+        sudo apt-get install git python-dev python-virtualenv
 
 
-Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incoming connections from other nodes.:
+Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
 
         sudo apt-get install miniupnpc
 
 
-Second step is to get the BitDust sources:
+On MacOSX platform you can install requirements in that way:
+
+        brew install git python2
+
+And use pip to get all required packages:
+
+        pip install --upgrade --user
+        pip install --upgrade pip --user
+        pip install virtualenv --user
+
+
+
+#### Get BitDust to your local machine
+
+Second step is to get the BitDust sources. To have a full control over BitDust process running on your local machine you better make a fork of the Public BitDist repository on GitHub at https://github.com/bitdust-io/public and clone it on your local machine:
+
+        git clone https://github.com/<your GitHub username>/<name of BitDust fork>.git bitdust
+
+
+The software will periodically run `git fetch` and `git rebase` to check for recent commits in the repo. This way we make sure that everyone is running the latest version of the program. Once you made a fork, you will have to update your Fork manually and pull commits from Public BitDust repository if you trust them.
+
+However if you just trust BitDust contributors you can simply clone the Public repository directly and software will be up to date with the "official" public code base:
 
         git clone https://github.com/bitdust-io/public.git bitdust
 
 
+
+#### Building virtual environment
+
 Then you need to build virtual environment with all required Python dependencies, BitDust software will run fully isolated.
+
 Single command should make it for you, all required files will be generated in `~/.bitdust/venv/` sub-folder:
 
         cd bitdust
@@ -57,11 +80,11 @@ Single command should make it for you, all required files will be generated in `
 
 Last step to make BitDust software ready is to make a short alias in your OS, then you can just type `bitdust` in command line to fast access the program:
         
-        sudo ln -s /home/<user>/.bitdust/bitdust /usr/local/bin/bitdust
+        sudo ln -s -f /home/<user>/.bitdust/bitdust /usr/local/bin/bitdust
         
 
 
-### Run BitDust
+#### Run BitDust
 
 Start using the software by creating an identity for your device in BitDust network:
        
@@ -93,8 +116,11 @@ Start as background process:
 To get some more insights or just to know how to start playing with software
 you can visit [BitDust Commands](https://bitdust.io/commands.html) page. 
 
+To get more info about API methods available go to [BitDust API](https://bitdust.io/api.html) page.
 
-## Binary Dependencies
+
+
+#### Binary Dependencies
 
 If you are installing BitDust on Windows platforms, you may require some binary packages already compiled and packaged for Microsoft Windows platforms, you can check following locations and download needed binaries and libraries:
 
@@ -105,6 +131,11 @@ If you are installing BitDust on Windows platforms, you may require some binary 
 * pyasn1: [pyasn1.sourceforge.net](http://pyasn1.sourceforge.net)
 * pyOpenSSL: [launchpad.net/pyopenssl](https://launchpad.net/pyopenssl)
 * pycrypto: [dlitz.net/software/pycrypto](https://www.dlitz.net/software/pycrypto/)
-* wxgtk2.8: [wxpython.org](http://wiki.wxpython.org/InstallingOnUbuntuOrDebian)
 * miniupnpc: [miniupnp.tuxfamily.org](http://miniupnp.tuxfamily.org/)
+
+
+## Feedback
+
+You can contact [BitDust contributors](https://github.com/bitdust-io) on GitHub if you have any questions or ideas.
+Welcome to the future!
 

@@ -364,8 +364,6 @@ class CoinsMiner(automat.Automat):
     #------------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
-        if status != 'finished':
-            return False
         if newpacket.Command == commands.Coin():
             coins_list = coins_io.read_coins_from_packet(newpacket)
             if not coins_list:
@@ -383,12 +381,7 @@ class CoinsMiner(automat.Automat):
                 lg.warn('creator signature is not valid: %s' % coin_json)
                 p2p_service.SendFail(newpacket, 'creator signature is not valid')
                 return True
-            new_coins.append(coin_json)
-            if not new_coins:
-                # p2p_service.SendFail(newpacket, 'did not received any coins to mine')
-                return False
-            for coin in new_coins:
-                self.automat('new-data-received', coin)
+            self.automat('new-data-received', coin_json)
             return True
         return False
 

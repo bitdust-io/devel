@@ -117,7 +117,7 @@ def A(event=None, arg=None):
         return _NetworkConnector
     if _NetworkConnector is None:
         _NetworkConnector = NetworkConnector(
-            'network_connector', 'AT_STARTUP', _DebugLevel)
+            'network_connector', 'AT_STARTUP', _DebugLevel, publish_events=True)
     if event is not None:
         _NetworkConnector.automat(event, arg)
     return _NetworkConnector
