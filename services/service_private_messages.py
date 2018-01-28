@@ -76,8 +76,6 @@ class PrivateMessagesService(LocalService):
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         from chat import message
-        if status != 'finished':
-            return False
         if newpacket.Command != commands.Message():
             return False
         return message.on_incoming_message(newpacket, info, status, error_message)

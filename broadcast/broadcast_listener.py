@@ -205,8 +205,6 @@ class BroadcastListener(automat.Automat):
     #-----------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
-        if status != 'finished':
-            return False
         if newpacket.Command == commands.Broadcast():
             from broadcast import broadcast_service
             msg = broadcast_service.read_message_from_packet(newpacket)

@@ -54,19 +54,20 @@ class CustomerSupportService(LocalService):
             if customer_idurl and not customer_assistant.by_idurl(customer_idurl):
                 ca = customer_assistant.create(customer_idurl)
                 ca.automat('init')
-        callback.add_outbox_callback(self._outbox_packet_sent)
-        callback.append_inbox_callback(self._inbox_packet_received)
+        callback.add_outbox_callback(self._on_outbox_packet_sent)
+        callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
         from supplier import customer_assistant
         from transport import callback
-        callback.remove_outbox_callback(self._outbox_packet_sent)
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
+        callback.remove_outbox_callback(self._on_outbox_packet_sent)
         for sc in customer_assistant.assistants().values():
             sc.automat('shutdown')
         return True
 
-    def _outbox_packet_sent(self, pkt_out):
+    def _on_outbox_packet_sent(self, pkt_out):
         from p2p import commands
         from contacts import contactsdb
         from supplier import customer_assistant
@@ -76,9 +77,7 @@ class CustomerSupportService(LocalService):
                 if ca:
                     ca.automat('propagate', pkt_out)
 
-    def _inbox_packet_received(self, newpacket, info, status, error_message):
-        if status != 'finished':
-            return False
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         from contacts import contactsdb
         from supplier import customer_assistant
@@ -88,3 +87,4 @@ class CustomerSupportService(LocalService):
                 if ca:
                     ca.automat(newpacket.Command.lower(), newpacket)
                     return True
+        return False

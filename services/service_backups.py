@@ -53,6 +53,7 @@ class BackupsService(LocalService):
         from storage import backup_monitor
         from main import settings
         from main.config import conf
+        from transport import callback
         from p2p import p2p_connector
         backup_fs.init()
         backup_control.init()
@@ -75,14 +76,17 @@ class BackupsService(LocalService):
             self._on_p2p_connector_state_changed, 'INCOMMING?', 'CONNECTED')
         p2p_connector.A().addStateChangedCallback(
             self._on_p2p_connector_state_changed, 'MY_IDENTITY', 'CONNECTED')
+        callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
         from storage import backup_fs
         from storage import backup_monitor
         from storage import backup_control
+        from transport import callback
         from p2p import p2p_connector
         from main.config import conf
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
         p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_state_changed)
         backup_monitor.Destroy()
         backup_fs.shutdown()
@@ -101,3 +105,24 @@ class BackupsService(LocalService):
     def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, args):
         from storage import backup_monitor
         backup_monitor.A('restart')
+
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        from main import settings
+        from userid import my_id
+        from userid import global_id
+        from storage import backup_control
+        from p2p import commands
+        if newpacket.OwnerID != my_id.getLocalID():
+            return False
+        self.log(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
+            newpacket, newpacket.RemoteID, ))
+        if newpacket.Command == commands.Data():
+            if newpacket.PacketID == global_id.MakeGlobalID(
+                idurl=my_id.getLocalID(),
+                path=settings.BackupIndexFileName(),
+            ):
+                backup_control.IncomingSupplierBackupIndex(newpacket)
+                return True
+        if newpacket.Command == commands.Files():
+            return backup_control.IncomingSupplierListFiles(newpacket)
+        return False

@@ -76,8 +76,6 @@ class KeysRegistryService(LocalService):
             pass
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
-        if status != 'finished':
-            return False
         from p2p import commands
         from access import key_ring
         if newpacket.Command != commands.Key():

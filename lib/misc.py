@@ -755,7 +755,6 @@ def percent2string(percent, precis=3):
 
 def value2percent(value, total, precis=3):
     """
-    
     """
     if not total:
         return '0%'

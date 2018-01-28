@@ -615,7 +615,9 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        callback.run_outbox_callbacks(self)
+        handled = callback.run_outbox_callbacks(self)
+        if not handled:
+            pass
 
     def doReportItem(self, arg):
         """
