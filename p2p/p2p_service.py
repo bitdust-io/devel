@@ -123,11 +123,11 @@ def inbox(newpacket, info, status, error_message):
     elif newpacket.Command == commands.RequestService():
         # other node send us a request to get some service
         RequestService(newpacket, info)
-        commandhandled = True  # TODO: move to service p2p_hookups
+        commandhandled = False
     elif newpacket.Command == commands.CancelService():
         # other node wants to stop the service we gave him
         CancelService(newpacket, info)
-        commandhandled = True  # TODO: move to service p2p_hookups
+        commandhandled = False
     elif newpacket.Command == commands.Data():
         # new packet to store for customer
         Data(newpacket)
@@ -360,23 +360,23 @@ def SendIdentity(remote_idurl, wide=False, callbacks={}):
 def RequestService(request, info):
     """
     """
-    # TODO: move to services.driver
-    if len(request.Payload) > 1024 * 10:
-        return SendFail(request, 'too long payload')
-    # TODO: move code into driver module, use callback module here instead of direct call
-    words = request.Payload.split(' ')
-    if len(words) < 1:
-        lg.warn("got wrong payload in %s" % request)
-        return SendFail(request, 'wrong payload')
-    service_name = words[0]
+#     # TODO: move to services.driver
+#     if len(request.Payload) > 1024 * 10:
+#         return SendFail(request, 'too long payload')
+#     # TODO: move code into driver module, use callback module here instead of direct call
+#     words = request.Payload.split(' ')
+#     if len(words) < 1:
+#         lg.warn("got wrong payload in %s" % request)
+#         return SendFail(request, 'wrong payload')
+#     service_name = words[0]
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.RequestService %s : %s" % (request.OwnerID, service_name))
-    if not driver.is_exist(service_name):
-        lg.warn("got wrong payload in %s" % service_name)
-        return SendFail(request, 'service %s not exist' % service_name)
-    if not driver.is_on(service_name):
-        return SendFail(request, 'service %s is off' % service_name)
-    return driver.request(service_name, request, info)
+        lg.out(_DebugLevel, "p2p_service.RequestService %s : %s" % (request.OwnerID, request.Payload[:10]))
+#     if not driver.is_exist(service_name):
+#         lg.warn("got wrong payload in %s" % service_name)
+#         return SendFail(request, 'service %s not exist' % service_name)
+#     if not driver.is_on(service_name):
+#         return SendFail(request, 'service %s is off' % service_name)
+#     return driver.request(service_name, request, info)
 
 
 def SendRequestService(remote_idurl, service_info, wide=False, callbacks={}):
@@ -399,18 +399,18 @@ def CancelService(request, info):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.CancelService")
     # TODO: move code into driver module, use callback module here instead of direct call
-    words = request.Payload.split(' ')
-    if len(words) < 1:
-        lg.warn("got wrong payload in %s" % request)
-        return SendFail(request, 'wrong payload')
-    service_name = words[0]
-    # TODO: add validation
-    if not driver.is_exist(service_name):
-        lg.warn("got wrong payload in %s" % request)
-        return SendFail(request, 'service %s not exist' % service_name)
-    if not driver.is_on(service_name):
-        return SendFail(request, 'service %s is off' % service_name)
-    return driver.cancel(service_name, request, info)
+#     words = request.Payload.split(' ')
+#     if len(words) < 1:
+#         lg.warn("got wrong payload in %s" % request)
+#         return SendFail(request, 'wrong payload')
+#     service_name = words[0]
+#     # TODO: add validation
+#     if not driver.is_exist(service_name):
+#         lg.warn("got wrong payload in %s" % request)
+#         return SendFail(request, 'service %s not exist' % service_name)
+#     if not driver.is_on(service_name):
+#         return SendFail(request, 'service %s is off' % service_name)
+#     return driver.cancel(service_name, request, info)
 
 
 def SendCancelService(remote_idurl, service_info, callbacks={}):
