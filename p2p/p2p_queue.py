@@ -81,10 +81,12 @@ MAX_QUEUE_LENGTH = 100
 #------------------------------------------------------------------------------
 
 _ActiveQueues = {}
+_PendingNotifications = {}
+
 _LastMessageID = 0
+
 _Producers = {}
 _Consumers = {}
-_PendingNotifications = []
 
 #------------------------------------------------------------------------------
 
@@ -121,6 +123,15 @@ def queue(queue_id=None):
     return _ActiveQueues[queue_id]
 
 
+def notifications(queue_id=None):
+    global _PendingNotifications
+    if queue_id is None:
+        return _PendingNotifications
+    if queue_id not in _PendingNotifications:
+        _PendingNotifications[queue_id] = OrderedDict()
+    return _PendingNotifications[queue_id]
+
+
 def consumers():
     global _Consumers
     return _Consumers
@@ -130,10 +141,6 @@ def producers():
     global _Producers
     return _Producers
 
-
-def notifications():
-    global _PendingNotifications
-    return _PendingNotifications
 
 #------------------------------------------------------------------------------
 
@@ -187,6 +194,9 @@ def push_to_queue(queue_id, json_data):
     if not valid_queue_id(queue_id):
         lg.warn('invalid queue id')
         return False
+    if len(queue(queue_id)) >= MAX_QUEUE_LENGTH:
+        lg.warn('queue is overloaded')
+        return False
     message_id = make_message_id()
     message_json = dict(
         message_id=message_id,
@@ -215,33 +225,120 @@ def pop_from_queue(queue_id, message_id):
 
 #------------------------------------------------------------------------------
 
+def do_send_remote_notification(remote_idurl, consumer_global_id, queue_id, message_id, message_json):
+    from p2p import commands
+    from p2p import p2p_service
+#     remote_idurl = global_id.GlobalUserToIDURL(consumer_global_id)
+#     if not remote_idurl:
+#         lg.warn('invalid consumer global id')
+#         return False
+    result = Deferred()
+    p2p_service.SendEvent(remote_idurl, message_json, packet_id=message_id, callbacks={
+        commands.Ack(): lambda response, info: result.callback(response),
+        commands.Fail(): lambda response, info: result.errback(response),
+    })
+    return result
+
+
+def do_run_callback_method(callback_method, consumer_global_id, queue_id, message_id, message_json):
+    try:
+        result = callback_method(queue_id, message_id, message_json)
+    except:
+        lg.exc()
+        result = False
+    return result
+
+#------------------------------------------------------------------------------
+
 def notify_consumers(queue_id, message_id, message_json):
     message_json = queue(queue_id).get(message_id, None)
     if message_json is None:
         lg.warn('message %s was not found in the queue %s' % (message_id, queue_id))
         return False
+    _interested_consumers = {}
     for consumer_global_id, consumer_queues in consumers().items():
         if queue_id not in consumer_queues:
             # skip other queues for that consumer
             continue
-        notifications = []
+        if message_id in notifications(queue_id):
+            lg.warn('message %s notification in queue %s already executed' % (message_id, queue_id, ))
+            continue
         for callback_method in consumer_queues[queue_id]:
             if isinstance(callback_method, str):
-                result = do_send_remote_notification(consumer_global_id, queue_id, message_id, message_json)
+                result = do_send_remote_notification(
+                    callback_method, consumer_global_id, queue_id, message_id, message_json)
             else:
-                result = do_run_callback_method(callback_method, consumer_global_id, queue_id, message_id, message_json)
-            notifications.append(result)
-        notifications().append(dict(
-            consumer_global_id=consumer_global_id,
+                result = do_run_callback_method(
+                    callback_method, consumer_global_id, queue_id, message_id, message_json)
+            if consumer_global_id in _interested_consumers:
+                lg.warn('that consumer already marked to be notified')
+            _interested_consumers[consumer_global_id] = (callback_method, result, )
+    if len(_interested_consumers):
+        notifications(queue_id)[message_id] = dict(
             queue_id=queue_id,
             message_id=message_id,
-            result=result,
-        ))
+            message_json=message_json,
+            consumers=_interested_consumers,
+        )
+        reactor.callLater(0, check_pending_notifications)
+    else:
+        lg.warn('no new interested consumers found')
 
-def do_send_remote_notification():
-    pass
+#------------------------------------------------------------------------------
 
-def do_run_callback_method():
-    from p2p import p2p_service
-    p2p_service.SendEvent(remote_idurl, message_json, packet_id, wide, callbacks)
+def close_notification_consumer(notification_info, consumer_global_id, why=None):
+    try:
+        queue_id = notification_info['queue_id']
+        message_id = notification_info['message_id']
+    except:
+        lg.exc()
+        return False
+    if queue_id not in notifications():
+        lg.warn('queue id not found in pending notifications')
+        return False
+    if message_id not in notifications(queue_id):
+        lg.warn('message id not found in pending notifications for that queue')
+        return False
+    if consumer_global_id not in notifications(queue_id)[message_id]['consumers']:
+        lg.warn('consumer id not found in pending notifications for given queue and message')
+        return False
+    notifications(queue_id)[message_id]['consumers'].pop(consumer_global_id)
+    if len(notifications(queue_id)[message_id]['consumers']) == 0:
+        close_notification(queue_id, message_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_queue.close_notification_consumer queue_id=%s, message_id=%s, consumer_id=%s' % (
+            queue_id, message_id, consumer_global_id, ))
+    return True
 
+
+def close_notification(queue_id, message_id):
+    if queue_id not in notifications():
+        lg.warn('queue id not found in pending notifications')
+        return False
+    if message_id not in notifications(queue_id):
+        lg.warn('message id not found in pending notifications for that queue')
+        return False
+    notifications(queue_id).pop(message_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_queue.close_notification queue_id=%s, message_id=%s' % (
+            queue_id, message_id, ))
+    return True
+
+
+def check_pending_notifications():
+    has_changed = False
+    for notification_info in notifications().values():
+        for interested_consumer_id, notification_result in notification_info['consumers'].items():
+            callback_method, result = notification_result
+            if result is True or result is False:
+                close_notification_consumer(
+                    notification_info, interested_consumer_id)
+                has_changed = True
+            elif isinstance(result, Deferred):
+                result.addCallback(lambda ok: close_notification_consumer(
+                    notification_info, interested_consumer_id))
+                result.addErrback(lambda err: close_notification_consumer(
+                    notification_info, interested_consumer_id))
+                has_changed = True
+            else:
+                lg.err('wrong notification result type')
