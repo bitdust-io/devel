@@ -93,7 +93,7 @@ class P2PHookupsService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
-        if newpacket.Event == commands.Event():
+        if newpacket.Command == commands.Event():
             return self._on_event(newpacket)
         elif newpacket.Command == commands.RequestService():
             return self._on_request_service(newpacket, info)
