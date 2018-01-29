@@ -175,6 +175,7 @@ def process(newpacket, info):
         # so we check that his Identity is valid and save it into cache
         # than we check the packet to be valid too.
         if not p2p_service.Identity(newpacket):
+            lg.warn('non-valid identity received')
             return
     # check that signed by a contact of ours
     if not newpacket.Valid():

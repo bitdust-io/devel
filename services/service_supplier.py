@@ -289,6 +289,7 @@ class SupplierService(LocalService):
         from contacts import contactsdb
         from transport import gateway
         from p2p import p2p_service
+        from p2p import commands
         if not contactsdb.is_customer(newpacket.OwnerID):
             lg.err("had unknown customer %s" % newpacket.OwnerID)
             p2p_service.SendFail(newpacket, 'not a customer')
@@ -341,6 +342,8 @@ class SupplierService(LocalService):
             lg.warn("unserialized packet is not Valid %s" % filename)
             p2p_service.SendFail(newpacket, 'unserialized packet is not Valid')
             return False
+        if outpacket.Command != commands.Data():
+            lg.warn('sending back packet which is not a Data')
         self.log(self.debug_level, "service_supplier._on_retreive %r : sending %r back to %s" % (
             newpacket, outpacket, outpacket.CreatorID))
         gateway.outbox(outpacket, target=outpacket.CreatorID)

@@ -492,6 +492,7 @@ def make_transfer_ID():
     _LastTransferID += 1
     return _LastTransferID
 
+#------------------------------------------------------------------------------
 
 def send_work_item(proto, host, filename, description):
     """

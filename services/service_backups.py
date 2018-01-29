@@ -113,16 +113,20 @@ class BackupsService(LocalService):
         from storage import backup_control
         from p2p import commands
         if newpacket.OwnerID != my_id.getLocalID():
+            # only catch data belongs to me
             return False
-        self.log(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
-            newpacket, newpacket.RemoteID, ))
         if newpacket.Command == commands.Data():
+            self.log(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
+                newpacket, newpacket.RemoteID, ))
             if newpacket.PacketID == global_id.MakeGlobalID(
                 idurl=my_id.getLocalID(),
                 path=settings.BackupIndexFileName(),
             ):
+                # TODO: move to service_backup_db
                 backup_control.IncomingSupplierBackupIndex(newpacket)
                 return True
         if newpacket.Command == commands.Files():
+            self.log(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
+                newpacket, newpacket.RemoteID, ))
             return backup_control.IncomingSupplierListFiles(newpacket)
         return False

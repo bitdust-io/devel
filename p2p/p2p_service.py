@@ -118,41 +118,47 @@ def inbox(newpacket, info, status, error_message):
         commandhandled = False
     elif newpacket.Command == commands.Retrieve():
         # retrieve some packet customer stored with us
+        # handled by service_supplier()
         Retrieve(newpacket)
         commandhandled = False
     elif newpacket.Command == commands.RequestService():
         # other node send us a request to get some service
+        # handled by service_p2p_hookups()
         RequestService(newpacket, info)
         commandhandled = False
     elif newpacket.Command == commands.CancelService():
         # other node wants to stop the service we gave him
+        # handled by service_p2p_hookups()
         CancelService(newpacket, info)
         commandhandled = False
     elif newpacket.Command == commands.Data():
-        # new packet to store for customer
+        # new packet to store for customer, or data coming back from supplier
+        # handled by service_backups() and service_supplier()
         Data(newpacket)
         commandhandled = False
     elif newpacket.Command == commands.ListFiles():
         # customer wants list of their files
+        # handled by service_supplier()
         ListFiles(newpacket, info)
         commandhandled = False
     elif newpacket.Command == commands.Files():
         # supplier sent us list of files
+        # handled by service_backups()
         Files(newpacket, info)
         commandhandled = False
     elif newpacket.Command == commands.DeleteFile():
-        # will Delete a customer file for them
+        # handled by service_supplier()
         DeleteFile(newpacket)
         commandhandled = False
     elif newpacket.Command == commands.DeleteBackup():
-        # will Delete all files starting in a backup
+        # handled by service_supplier()
         DeleteBackup(newpacket)
         commandhandled = False
     elif newpacket.Command == commands.Message():
-        # will be handled in message.py
+        # handled by service_private_messages()
         commandhandled = False
     elif newpacket.Command == commands.Correspondent():
-        # contact asking for our current identity
+        # TODO: contact asking for our current identity, not implemented yet
         Correspondent(newpacket)
         commandhandled = False
     elif newpacket.Command == commands.Broadcast():
@@ -166,6 +172,14 @@ def inbox(newpacket, info, status, error_message):
     elif newpacket.Command == commands.RetrieveCoin():
         # handled by service_accountant()
         RetrieveCoin(newpacket, info)
+        commandhandled = False
+    elif newpacket.Command == commands.Key():
+        # handled by service_keys_registry()
+        Key(newpacket, info)
+        commandhandled = False
+    elif newpacket.Command == commands.Event():
+        # handled by service_p2p_hookups()
+        Event(newpacket, info)
         commandhandled = False
 
     return commandhandled
@@ -948,8 +962,15 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
 
 #------------------------------------------------------------------------------
 
+def Key(request, info):
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.Key from %s with %d bytes in json" % (
+            info.sender_idurl, len(request.Payload), ))
+
+
 def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}):
-    # full_key_data = json.dumps(key_data) if isinstance(key_data, dict) else key_data
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendKey to %s with %d bytes encrypted key data" % (
             remote_idurl, len(encrypted_key_data)))
@@ -965,3 +986,40 @@ def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callba
     )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
+
+#------------------------------------------------------------------------------
+
+def Event(request, info):
+    """
+    """
+    if _Debug:
+        try:
+            message_json = json.loads(request.Payload)
+            message_json['event_id']
+        except:
+            lg.exc()
+            return
+        lg.out(_DebugLevel, "p2p_service.Event %s from %s with %d bytes in json" % (
+            message_json['event_id'], info.sender_idurl, len(request.Payload), ))
+
+
+def SendEvent(remote_idurl, message_json, packet_id=None, wide=False, callbacks={}):
+    # full_key_data = json.dumps(key_data) if isinstance(key_data, dict) else key_data
+    message_json_src = json.dumps(message_json)
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendEvent to %s with %d bytes message json data" % (
+            remote_idurl, len(message_json_src)))
+    if packet_id is None:
+        packet_id = packetid.UniqueID()
+    outpacket = signed.Packet(
+        Command=commands.Event(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packet_id,
+        Payload=message_json_src,
+        RemoteID=remote_idurl,
+    )
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
+    return outpacket
+
+#------------------------------------------------------------------------------
