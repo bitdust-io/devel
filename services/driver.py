@@ -363,7 +363,7 @@ def restart(services_list=[], wait_timeout=None):
 #         stop_defer.addErrback(lambda err: _ret.callback(ERROR(err.getErrorMessage())))
 #         return _ret
 
-    _do_stop(ret)
+    # _do_stop(ret)
     dl = []
     if _StopingDeferred:
         dl.append(_StartingDeferred)

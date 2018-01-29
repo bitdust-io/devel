@@ -76,6 +76,7 @@ def init():
     P2PCommandAcks[Coin()] = None
     P2PCommandAcks[RetrieveCoin()] = Coin()
     P2PCommandAcks[Key()] = Ack()
+    P2PCommandAcks[Event()] = Ack()
 
 
 def IsCommand(s):
@@ -242,3 +243,9 @@ def Key():
     """
     """
     return "Key"
+
+
+def Event():
+    """
+    """
+    return "Event"

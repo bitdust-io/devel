@@ -692,12 +692,6 @@ class ProxyReceiver(automat.Automat):
             self.latest_packet_received = time.time()
         if newpacket.Command != commands.Relay():
             return False
-        # if not newpacket.PacketID.startswith('routed_in_'):
-            # return False
-#         if newpacket.RemoteID != my_id.getLocalID():
-#             return False
-#         if newpacket.CreatorID != self.router_idurl:
-#             return False
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         return True
 
