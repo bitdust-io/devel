@@ -112,10 +112,10 @@ class BackupsService(LocalService):
         from userid import global_id
         from storage import backup_control
         from p2p import commands
-        if newpacket.OwnerID != my_id.getLocalID():
-            # only catch data belongs to me
-            return False
         if newpacket.Command == commands.Data():
+            if newpacket.OwnerID != my_id.getLocalID():
+                # only catch data belongs to me
+                return False
             self.log(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
                 newpacket, newpacket.RemoteID, ))
             if newpacket.PacketID == global_id.MakeGlobalID(
