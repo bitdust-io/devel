@@ -41,6 +41,8 @@ http://code.activestate.com/recipes/576980-authenticated-encryption-with-pycrypt
     * use something more advanced than os.urandom
 """
 
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import random
@@ -53,6 +55,8 @@ from Crypto.Cipher import Blowfish
 
 import warnings
 warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+#------------------------------------------------------------------------------
 
 from twisted.conch.ssh import keys
 
