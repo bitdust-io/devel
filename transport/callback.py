@@ -281,7 +281,6 @@ def add_finish_file_sending_callback(cb):
 
 def remove_finish_file_sending_callback(cb):
     """
-    
     """
     global _FinishFileSendingCallbacksList
     if cb in _FinishFileSendingCallbacksList:
@@ -290,7 +289,6 @@ def remove_finish_file_sending_callback(cb):
 
 def add_begin_file_receiving_callback(cb):
     """
-    
     """
     global _BeginFileReceivingCallbacksList
     if cb not in _BeginFileReceivingCallbacksList:

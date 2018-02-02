@@ -2173,6 +2173,9 @@ def find_peer_by_nickname(nickname):
     """
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
+    if not nickname:
+        return ERROR('requires nickname of the user')
+
     from chat import nickname_observer
     nickname_observer.stop_all()
     ret = Deferred()

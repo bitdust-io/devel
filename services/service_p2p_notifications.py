@@ -48,7 +48,19 @@ class P2PNotificationsService(LocalService):
         ]
 
     def start(self):
+        from p2p import p2p_queue
+        p2p_queue.init()
         return True
 
     def stop(self):
+        from p2p import p2p_queue
+        p2p_queue.shutdown()
+        return True
+
+    def request(self, request, info):
+        LocalService.request(self, request, info)
+        return None
+
+    def cancel(self, request, info):
+        LocalService.cancel(self, request, info)
         return True

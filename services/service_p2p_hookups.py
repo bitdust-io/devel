@@ -96,15 +96,17 @@ class P2PHookupsService(LocalService):
         if newpacket.Command == commands.Event():
             return self._on_event(newpacket)
         elif newpacket.Command == commands.RequestService():
-            return self._on_request_service(newpacket, info)
+            return self._send_request_service(newpacket, info)
         elif newpacket.Command == commands.CancelService():
             return self._on_cancel_service(newpacket, info)
         return False
 
-    def _on_request_service(self, newpacket, info):
+    def _send_request_service(self, newpacket, info):
+        from twisted.internet.defer import Deferred
         from logs import lg
         from services import driver
         from p2p import p2p_service
+        from transport import packet_out
         if len(newpacket.Payload) > 1024 * 10:
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
@@ -122,7 +124,14 @@ class P2PHookupsService(LocalService):
         if not driver.is_on(service_name):
             p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
             return False
-        driver.request(service_name, newpacket, info)
+        result = driver.request(service_name, newpacket, info)
+        if not result:
+            self.log(self.debug_level, "service_p2p_hookups._send_request_service SKIP request %s" % service_name)
+            return False
+        if isinstance(result, Deferred):
+            self.log(self.debug_level, "service_p2p_hookups._send_request_service fired delayed execution")
+        elif isinstance(result, packet_out.PacketOut):
+            self.log(self.debug_level, "service_p2p_hookups._send_request_service outbox packet sent")
         return True
 
     def _on_cancel_service(self, newpacket, info):

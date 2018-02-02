@@ -163,11 +163,15 @@ _ProcessQueuesTask = None
 
 
 def start():
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_queue.start')
     reactor.callLater(0, process_queues)
     return True
 
 
 def stop():
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_queue.stop')
     global _ProcessQueuesTask
     if _ProcessQueuesTask:
         if _ProcessQueuesTask.active():
