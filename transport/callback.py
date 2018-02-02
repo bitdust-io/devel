@@ -281,7 +281,6 @@ def add_finish_file_sending_callback(cb):
 
 def remove_finish_file_sending_callback(cb):
     """
-    
     """
     global _FinishFileSendingCallbacksList
     if cb in _FinishFileSendingCallbacksList:
@@ -290,7 +289,6 @@ def remove_finish_file_sending_callback(cb):
 
 def add_begin_file_receiving_callback(cb):
     """
-    
     """
     global _BeginFileReceivingCallbacksList
     if cb not in _BeginFileReceivingCallbacksList:
@@ -349,13 +347,13 @@ def run_outbox_callbacks(pkt_out):
     return handled
 
 
-def run_outbox_filter_callbacks(outpacket, wide, callbacks, target=None, route=None):
+def run_outbox_filter_callbacks(outpacket, wide, callbacks, **kwargs):
     """
     """
     global _OutboxPacketFilterCallbacksList
     for cb in _OutboxPacketFilterCallbacksList:
         try:
-            result = cb(outpacket, wide, callbacks, target, route)
+            result = cb(outpacket, wide, callbacks, **kwargs)
         except:
             result = None
             lg.exc()

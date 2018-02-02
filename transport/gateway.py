@@ -447,7 +447,7 @@ def inbox(info):
     return newpacket
 
 
-def outbox(outpacket, wide=False, callbacks={}, target=None, route=None):
+def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, response_timeout=None):
     """
     Sends `packet` to the network.
 
@@ -464,6 +464,7 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None):
                 'host': <receiver host>,
                 'remoteid': <receiver idurl>,
                 'description': <description on the packet>,
+        :param response_timeout   None, or integer to indicate how long to wait for an ack
 
     Returns:
         `None` if data was not sent, no filter was applied
@@ -477,7 +478,14 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None):
             nameurl.GetName(outpacket.CreatorID),
             nameurl.GetName(outpacket.RemoteID),
             wide,))
-    return callback.run_outbox_filter_callbacks(outpacket, wide, callbacks)
+    return callback.run_outbox_filter_callbacks(
+        outpacket,
+        wide=wide,
+        callbacks=callbacks,
+        target=target,
+        route=route,
+        response_timeout=response_timeout,
+    )
 
 #------------------------------------------------------------------------------
 
@@ -686,7 +694,7 @@ def monitoring():
 #------------------------------------------------------------------------------
 
 
-def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
+def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, response_timeout=None):
     """
     """
     started_packets = packet_out.search_similar_packets(outpacket)
@@ -696,7 +704,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
                 for command, cb in callbacks.items():
                     active_packet.set_callback(command, cb)
             return active_packet
-    pkt_out = packet_out.create(outpacket, wide, callbacks, target, route)
+    pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout)
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
     control.request_update([('packet', outpacket.PacketID)])

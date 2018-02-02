@@ -391,7 +391,8 @@ class ProxyRouter(automat.Automat):
                 'remoteid': receiver_idurl,
                 'description': ('Relay_%s[%s]_%s' % (
                     newpacket.Command, newpacket.PacketID,
-                    nameurl.GetName(receiver_idurl)))})
+                    nameurl.GetName(receiver_idurl))),
+            }, )
         if _Debug:
             lg.out(_DebugLevel, '<<<Relay-IN %s %s:%s' % (
                 str(newpacket), info.proto, info.host,))

@@ -384,7 +384,8 @@ class ProxyReceiver(automat.Automat):
             self.router_idurl,)
         packet_out.create(newpacket, wide=False, callbacks={
             commands.Ack(): self._on_request_service_ack,
-            commands.Fail(): self._on_request_service_fail},)
+            commands.Fail(): self._on_request_service_fail,
+        },)
         self.request_service_packet_id.append(newpacket.PacketID)
 
     def doSendCancelService(self, arg):
@@ -400,7 +401,8 @@ class ProxyReceiver(automat.Automat):
             self.router_idurl,)
         packet_out.create(newpacket, wide=True, callbacks={
             commands.Ack(): self._on_request_service_ack,
-            commands.Fail(): self._on_request_service_fail},)
+            commands.Fail(): self._on_request_service_fail,
+        },)
 
     def doProcessInboxPacket(self, arg):
         """

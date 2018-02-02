@@ -105,7 +105,6 @@ def init():
 
 def shutdown():
     """
-    
     """
     lg.out(4, "propagate.shutdown")
 

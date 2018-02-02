@@ -43,8 +43,9 @@ EVENTS:
     * :red:`nothing-to-send`
     * :red:`register-item`
     * :red:`remote-identity-on-hand`
+    * :red:`response-timeout`
     * :red:`run`
-    * :red:`timer-10sec`
+    * :red:`timer-30sec`
     * :red:`unregister-item`
     * :red:`write-error`
 """
@@ -104,19 +105,17 @@ def increment_packets_counter():
 
 def queue():
     """
-    
     """
     global _OutboxQueue
     return _OutboxQueue
 
 
-def create(outpacket, wide, callbacks, target=None, route=None):
+def create(outpacket, wide, callbacks, target=None, route=None, response_timeout=None):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
-    p = PacketOut(outpacket, wide, callbacks, target, route)
+    p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout)
     queue().append(p)
     p.automat('run')
     return p
@@ -286,7 +285,7 @@ class PacketOut(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['RESPONSE?']),
+        'timer-30sec': (30.0, ['RESPONSE?']),
     }
 
     MESSAGES = {
@@ -297,7 +296,7 @@ class PacketOut(automat.Automat):
         'MSG_5': 'pushing outgoing packet was cancelled',
     }
 
-    def __init__(self, outpacket, wide, callbacks={}, target=None, route=None):
+    def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = {}
@@ -305,6 +304,7 @@ class PacketOut(automat.Automat):
         self.description = self.outpacket.Command + '[' + self.outpacket.PacketID + ']'
         self.remote_idurl = target
         self.route = route
+        self.response_timeout = response_timeout
         if self.route:
             self.description = self.route['description']
             self.remote_idurl = self.route['remoteid']
@@ -336,6 +336,8 @@ class PacketOut(automat.Automat):
         self.response_packet = None
         self.response_info = None
         self.timeout = None  # 300  # settings.SendTimeOut() * 3
+        if self.response_timeout:
+            self.timers['response-timeout'] = (self.response_timeout, ['RESPONSE?']),
 
     def msg(self, msgid, arg=None):
         return self.MESSAGES.get(msgid, '')
@@ -363,7 +365,7 @@ class PacketOut(automat.Automat):
             elif event == 'cancel':
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
-                self.doErrMsg(event, self.msg('MSG_2', arg))
+                self.doErrMsg(event,self.msg('MSG_2', arg))
                 self.doReportCancelItems(arg)
                 self.doPopItems(arg)
                 self.doReportCancelled(arg)
@@ -392,7 +394,7 @@ class PacketOut(automat.Automat):
             if event == 'run' and self.isRemoteIdentityKnown(arg):
                 self.state = 'ITEMS?'
                 self.doInit(arg)
-                self.Cancelled = False
+                self.Cancelled=False
                 self.doReportStarted(arg)
                 self.doSerializeAndWrite(arg)
                 self.doPushItems(arg)
@@ -404,7 +406,7 @@ class PacketOut(automat.Automat):
         elif self.state == 'CACHING':
             if event == 'remote-identity-on-hand':
                 self.state = 'ITEMS?'
-                self.Cancelled = False
+                self.Cancelled=False
                 self.doReportStarted(arg)
                 self.doSerializeAndWrite(arg)
                 self.doPushItems(arg)
@@ -414,7 +416,7 @@ class PacketOut(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'cancel':
                 self.state = 'CANCEL'
-                self.doErrMsg(event, self.msg('MSG_4', arg))
+                self.doErrMsg(event,self.msg('MSG_4', arg))
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
         #---FAILED---
@@ -429,11 +431,11 @@ class PacketOut(automat.Automat):
             elif event == 'items-sent' and not self.Cancelled:
                 self.state = 'IN_QUEUE'
             elif event == 'cancel':
-                self.Cancelled = True
+                self.Cancelled=True
             elif event == 'items-sent' and self.Cancelled:
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
-                self.doErrMsg(event, self.msg('MSG_5', arg))
+                self.doErrMsg(event,self.msg('MSG_5', arg))
                 self.doReportCancelItems(arg)
                 self.doPopItems(arg)
                 self.doReportCancelled(arg)
@@ -448,7 +450,7 @@ class PacketOut(automat.Automat):
             elif event == 'cancel':
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
-                self.doErrMsg(event, self.msg('MSG_1', arg))
+                self.doErrMsg(event,self.msg('MSG_1', arg))
                 self.doReportCancelItems(arg)
                 self.doPopItems(arg)
                 self.doReportCancelled(arg)
@@ -469,7 +471,7 @@ class PacketOut(automat.Automat):
         elif self.state == 'RESPONSE?':
             if event == 'cancel':
                 self.state = 'CANCEL'
-                self.doErrMsg(event, self.msg('MSG_3', arg))
+                self.doErrMsg(event,self.msg('MSG_3', arg))
                 self.doReportCancelItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
@@ -482,8 +484,9 @@ class PacketOut(automat.Automat):
             elif event == 'unregister-item' or event == 'item-cancelled':
                 self.doPopItem(arg)
                 self.doReportItem(arg)
-            elif event == 'timer-10sec' and not self.isDataExpected(arg):
+            elif ( event == 'response-timeout' or event == 'timer-30sec' ) and not self.isDataExpected(arg):
                 self.state = 'SENT'
+                self.doReportTimeOut(arg)
                 self.doReportDoneNoAck(arg)
                 self.doDestroyMe(arg)
         return None
@@ -649,6 +652,14 @@ class PacketOut(automat.Automat):
             for cb in self.callbacks[self.response_packet.Command]:
                 cb(self.response_packet, self.response_info)
 
+    def doReportTimeOut(self, arg):
+        """
+        Action method.
+        """
+        if commands.Fail() in self.callbacks:
+            for cb in self.callbacks[commands.Fail()]:
+                cb(None, None)  # no response packet, no info : that means timeout responding
+
     def doReportDoneWithAck(self, arg):
         """
         Action method.
@@ -732,7 +743,7 @@ class PacketOut(automat.Automat):
             # send to all his contacts
             for contactmethod in self.remote_identity.getContacts():
                 proto, host = nameurl.IdContactSplit(contactmethod)
-                if  host.strip() and \
+                if host.strip() and \
                         settings.transportIsEnabled(proto) and \
                         settings.transportSendingIsEnabled(proto) and \
                         gateway.can_send(proto) and \

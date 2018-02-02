@@ -54,7 +54,7 @@ from lib import nameurl
 
 from crypt import key
 
-import identity
+from userid import identity
 
 #------------------------------------------------------------------------------
 

@@ -1003,7 +1003,7 @@ def Event(request, info):
             message_json['event_id'], info.sender_idurl, len(request.Payload), ))
 
 
-def SendEvent(remote_idurl, message_json, packet_id=None, wide=False, callbacks={}):
+def SendEvent(remote_idurl, message_json, packet_id=None, wide=False, callbacks={}, response_timeout=5):
     # full_key_data = json.dumps(key_data) if isinstance(key_data, dict) else key_data
     message_json_src = json.dumps(message_json)
     if _Debug:
@@ -1019,7 +1019,7 @@ def SendEvent(remote_idurl, message_json, packet_id=None, wide=False, callbacks=
         Payload=message_json_src,
         RemoteID=remote_idurl,
     )
-    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks, response_timeout=response_timeout)
     return outpacket
 
 #------------------------------------------------------------------------------

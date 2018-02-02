@@ -214,6 +214,11 @@ class BitDustRESTHTTPServer(APIResource):
     def identity_delete_v1(self, request):
         return api
 
+    @GET('^/identity/find/v1$')
+    def identity_find_v1(self, request):
+        nickname = _request_arg(request, 'nickname', None)
+        return api.find_peer_by_nickname(nickname=nickname)
+
     #------------------------------------------------------------------------------
 
     @GET('^/network/reconnect/v1$')
