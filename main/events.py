@@ -61,7 +61,6 @@ MAX_PENDING_EVENTS_PER_CONSUMER = 20
 #------------------------------------------------------------------------------
 
 _Subscribers = {}
-_ReceivedEventsIDs = set()
 _ConsumersCallbacks = {}
 _EventQueuePerConsumer = {}
 
@@ -167,11 +166,6 @@ def send(event_id, data=None):
     return True
 
 #------------------------------------------------------------------------------
-
-
-def received_events_ids():
-    global _ReceivedEventsIDs
-    return _ReceivedEventsIDs
 
 
 def event_queue():

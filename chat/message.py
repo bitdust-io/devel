@@ -426,8 +426,6 @@ def pop_messages():
                 lg.out(_DebugLevel, 'message.pop_message %d messages consumed by "%s"' % (len(pending_messages), consumer_id))
         consumers_callbacks()[consumer_id] = []
 
-
-
 #------------------------------------------------------------------------------
 # 
 # def start_consuming(consumer_id):
