@@ -58,8 +58,37 @@ class P2PNotificationsService(LocalService):
         return True
 
     def request(self, request, info):
-        LocalService.request(self, request, info)
-        return None
+        import json
+        from logs import lg
+        from p2p import p2p_service
+        from p2p import p2p_queue
+        try:
+            request_json = json.loads(request.Payload)
+        except:
+            lg.warn("invlid json payload")
+            return p2p_service.SendFail(request, 'invlid json payload')
+        request_scope = request_json.get('scope', '')
+        request_action = request_json.get('action', '')
+        if request_scope == 'queue':
+            if request_action == 'open':
+                try:
+                    p2p_queue.open_queue(
+                        queue_id=request_json.get('queue_id'),
+                        key_id=request_json.get('key_id'),
+                    )
+                except Exception as exc:
+                    return p2p_service.SendFail(request, str(exc))
+                return p2p_service.SendAck(request)
+            elif request_action == 'close':
+                try:
+                    p2p_queue.close_queue(queue_id=request_json.get('queue_id'))
+                except Exception as exc:
+                    return p2p_service.SendFail(request, str(exc))
+                return p2p_service.SendAck(request)
+        elif request_scope == 'consumer':
+            if request_action == 'add':
+                pass
+        return p2p_service.SendFail(request, 'unrecognized request payload')
 
     def cancel(self, request, info):
         LocalService.cancel(self, request, info)

@@ -201,4 +201,7 @@ class CustomerAssistant(automat.Automat):
     def _customer_failed(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'customer_assistant._customer_failed %r %r' % (response, info))
-        self.automat(response.Command.lower(), response)
+        event_id = 'fail'
+        if response:
+            event_id = response.Command.lower()
+        self.automat(event_id, response)
