@@ -97,10 +97,15 @@ def _request_arg(request, key, default='', mandatory=False):
     return default
 
 
-def _request_data(request, mandatory_keys=[]):
+def _request_data(request, mandatory_keys=[], default_value=None):
     """
     Simplify extracting input parameters from request body.
     """
+    input_request_data = request.content.getvalue()
+    if not input_request_data:
+        if mandatory_keys:
+            raise Exception('mandatory json input missed: %s' % mandatory_keys)
+        return default_value
     try:
         data = json.loads(request.content.getvalue())
     except:
@@ -127,6 +132,15 @@ class BitDustRESTHTTPServer(APIResource):
     """
     A set of API method to interract and control locally running BitDust process.
     """
+
+    #------------------------------------------------------------------------------
+
+    def render(self, request):
+        request.setHeader('Access-Control-Allow-Origin', '*')
+        request.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE')
+        request.setHeader('Access-Control-Allow-Headers', 'x-prototype-version,x-requested-with')
+        request.setHeader('Access-Control-Max-Age', 2520)  # 42 hours
+        return BitDustRESTHTTPServer.render(self, request)
 
     #------------------------------------------------------------------------------
 
@@ -354,6 +368,10 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
     def event_listen(self, request, consumer_id):
         return api.events_listen(consumer_id)
+
+    @POST('^/event/send/(?P<event_id>[^/]+)/v1$')
+    def event_send(self, request, event_id):
+        return api.event_send(event_id, json_data=_request_data(request,))
 
     #------------------------------------------------------------------------------
 

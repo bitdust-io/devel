@@ -2409,8 +2409,16 @@ def broadcast_send_message(payload):
 def event_send(event_id, json_data=None):
     import json
     from main import events
-    events.send(event_id, json.loads(json_data or '{}'))
-    return OK('event "%s" sent' % event_id)
+    json_payload = None
+    if json_data:
+        try:
+            json_payload = json.loads(json_data or '{}')
+        except:
+            return ERROR('json data payload is not correct')
+    else:
+        json_data = ''
+    events.send(event_id, data=json_payload)
+    return OK('event "%s" was sent with %d bytes payload' % (event_id, len(json_data), ))
 
 def events_listen(consumer_id):
     from main import events

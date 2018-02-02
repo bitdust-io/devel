@@ -98,7 +98,7 @@ class P2PHookupsService(LocalService):
         elif newpacket.Command == commands.RequestService():
             return self._send_request_service(newpacket, info)
         elif newpacket.Command == commands.CancelService():
-            return self._on_cancel_service(newpacket, info)
+            return self._send_cancel_service(newpacket, info)
         return False
 
     def _send_request_service(self, newpacket, info):
@@ -134,7 +134,7 @@ class P2PHookupsService(LocalService):
             self.log(self.debug_level, "service_p2p_hookups._send_request_service outbox packet sent")
         return True
 
-    def _on_cancel_service(self, newpacket, info):
+    def _send_cancel_service(self, newpacket, info):
         from logs import lg
         from services import driver
         from p2p import p2p_service
