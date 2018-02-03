@@ -47,9 +47,7 @@ _DebugLevel = 4
 
 #------------------------------------------------------------------------------
 
-import os
 import sys
-import json
 import time
 
 from collections import OrderedDict
@@ -88,7 +86,7 @@ MAX_PROCESS_QUEUES_DELAY = 2.0
 
 #------------------------------------------------------------------------------
 
-_ProcessQueuesDelay = 0.01
+_ProcessQueuesDelay = 0.1
 _ProcessQueuesTask = None
 _ProcessQueuesLastTime = 0
 
@@ -386,8 +384,7 @@ def push_message(producer_id, queue_id, json_data):
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.push_message  %s added to queue %s' % (new_message.message_id, queue_id, ))
-    # reactor.callLater(0, do_consume)
-    touch_queues()
+    reactor.callLater(0, touch_queues)
     return True
 
 
@@ -513,7 +510,6 @@ def do_consume(interested_consumers=None):
             to_be_consumed.append((consumer_id, queue_id, ))
     if not to_be_consumed:
         # nothing to consume
-        # reactor.callLater(5, do_consume)
         return False
     notifications_count = 0
     consumers_affected = []
@@ -535,9 +531,7 @@ def do_consume(interested_consumers=None):
     del consumers_affected
     if notifications_count == 0:
         # nothing was sent
-        # reactor.callLater(5, do_consume)
         return False
-    # reactor.callLater(0.01, do_consume)
     return True
 
 

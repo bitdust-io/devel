@@ -135,15 +135,6 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    def render(self, request):
-        request.setHeader('Access-Control-Allow-Origin', '*')
-        request.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE')
-        request.setHeader('Access-Control-Allow-Headers', 'x-prototype-version,x-requested-with')
-        request.setHeader('Access-Control-Max-Age', 2520)  # 42 hours
-        return BitDustRESTHTTPServer.render(self, request)
-
-    #------------------------------------------------------------------------------
-
     @GET('^/process/stop/v1$')
     def process_stop(self, request):
         return api.stop()
