@@ -40,7 +40,6 @@ _DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
-import time
 import sys
 
 try:
@@ -53,6 +52,8 @@ from twisted.internet.defer import Deferred
 #------------------------------------------------------------------------------
 
 from logs import lg
+
+from lib import utime
 
 #------------------------------------------------------------------------------
 
@@ -92,10 +93,10 @@ class Event(object):
     """
     """
 
-    def __init__(self, event_id, data=None):
+    def __init__(self, event_id, data=None, created=None):
         self.event_id = event_id
         self.data = data
-        self.created = time.time()
+        self.created = created or utime.get_sec1970()
 
     def __repr__(self):
         return '<{}>'.format(self.event_id)
@@ -158,10 +159,10 @@ def dispatch(evt):
     return handled
 
 
-def send(event_id, data=None):
+def send(event_id, data=None, created=None):
     """
     """
-    evt = Event(event_id, data=data)
+    evt = Event(event_id, data=data, created=created)
     reactor.callWhenRunning(dispatch, evt)
     return True
 

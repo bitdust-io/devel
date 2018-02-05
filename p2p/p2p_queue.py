@@ -241,17 +241,20 @@ def remove_consumer(consumer_id):
 #------------------------------------------------------------------------------
 
 def add_producer(producer_id):
+    global _Producers
     if producer_id in producer():
         raise Exception('producer already exist')
+    _Producers[producer_id] = ProducerInfo(producer_id)
     new_producer = producer(producer_id)
     lg.info('new producer added: %s with %s' % (producer_id, str(new_producer), ))
     return True
 
 
 def remove_producer(producer_id):
+    global _Producers
     if producer_id not in producer():
         raise Exception('producer not exist')
-    producer().pop(producer_id)
+    _Producers.pop(producer_id)
     lg.info('existing producer removed: %s' % str(producer_id))
     return True
 
@@ -459,25 +462,30 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
         # notification already sent to given consumer
         return False
 
-    message_json = dict(
-        payload=existing_message.payload,
-        message_id=existing_message.message_id,
-        queue_id=existing_message.queue_id,
-        created=existing_message.created,
-        producer_id=existing_message.producer_id,
-        consumer_id=consumer_id,
-    )
-
     ret = Deferred()
 
     if isinstance(callback_method, str):
-        p2p_service.SendEvent(callback_method, message_json, packet_id=message_id, callbacks={
-            commands.Ack(): lambda response, info: ret.callback(True),
-            commands.Fail(): lambda response, info: ret.callback(False),
-        })
+        p2p_service.SendEvent(
+            remote_idurl=callback_method,
+            event_id=queue_id,
+            payload=existing_message.payload,
+            producer_id=existing_message.producer_id,
+            message_id=existing_message.message_id,
+            created=existing_message.created,
+            callbacks={
+                commands.Ack(): lambda response, info: ret.callback(True),
+                commands.Fail(): lambda response, info: ret.callback(False),
+            },
+        )
     else:
         try:
-            result = callback_method(message_json)
+            result = callback_method(dict(
+                event_id=existing_message.queue_id,
+                payload=existing_message.payload,
+                producer_id=existing_message.producer_id,
+                message_id=existing_message.message_id,
+                created=existing_message.created,
+            ))
         except:
             lg.exc()
             result = False
