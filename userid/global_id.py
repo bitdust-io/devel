@@ -42,6 +42,21 @@ _REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_alias>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$
 
 #------------------------------------------------------------------------------
 
+def idurl2glob(idurl):
+    """
+    Alias.
+    """
+    return UrlToGlobalID(idurl)
+
+
+def glob2idurl(glob_id):
+    """
+    Alias.
+    """
+    return GlobalUserToIDURL(glob_id)
+
+#------------------------------------------------------------------------------
+
 def MakeGlobalID(
     idurl=None,
     user=None,

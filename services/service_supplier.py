@@ -69,11 +69,21 @@ class SupplierService(LocalService):
 
     def start(self):
         from transport import callback
+        from main import events
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
+        events.add_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
+        events.add_subscriber(self._on_customer_terminated, 'existing-customer-denied')
+        events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
         return True
 
     def stop(self):
         from transport import callback
+        from main import events
+        events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
+        events.remove_subscriber(self._on_customer_accepted, 'new-customer-accepted')
+        events.remove_subscriber(self._on_customer_terminated, 'existing-customer-denied')
+        events.remove_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 
@@ -231,7 +241,8 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
-            events.send('supplier-file-delete', data=dict(
+            events.send('supplier-file-modified', data=dict(
+                action='delete',
                 glob_path=glob_path['path'],
                 owner_id=newpacket.OwnerID,
             ))
@@ -279,7 +290,8 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
-            events.send('supplier-file-delete', data=dict(
+            events.send('supplier-file-modified', data=dict(
+                action='delete',
                 glob_path=glob_path['path'],
                 owner_id=newpacket.OwnerID,
             ))
@@ -354,11 +366,6 @@ class SupplierService(LocalService):
         self.log(self.debug_level, "service_supplier._on_retreive %r : sending %r back to %s" % (
             newpacket, outpacket, outpacket.CreatorID))
         gateway.outbox(outpacket, target=outpacket.CreatorID)
-        from main import events
-        events.send('supplier-file-retrieve', data=dict(
-            glob_path=glob_path['path'],
-            owner_id=newpacket.OwnerID,
-        ))
         return True
 
     def _on_data(self, newpacket):
@@ -430,7 +437,8 @@ class SupplierService(LocalService):
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)
         from main import events
-        events.send('supplier-file-write', data=dict(
+        events.send('supplier-file-modified', data=dict(
+            action='write',
             glob_path=glob_path['path'],
             owner_id=newpacket.OwnerID,
         ))
@@ -440,3 +448,37 @@ class SupplierService(LocalService):
         from supplier import list_files
         list_files.send(newpacket.OwnerID, newpacket.PacketID, newpacket.Payload)
         return True
+
+    def _on_customer_accepted(self, e):
+        from userid import my_id
+        from userid import global_id
+        from p2p import p2p_queue
+        customer_idurl = e.data.get('idurl')
+        if not customer_idurl:
+            lg.warn('unknown customer idurl in event data payload')
+            return
+        customer_glob_id = global_id.idurl2glob(customer_idurl)
+        queue_id = customer_glob_id + '-file-modified'
+        if not p2p_queue.is_queue_exist(queue_id):
+            p2p_queue.open_queue(queue_id, key_id=None)  # TODO: implement key_id parameter
+        if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
+            p2p_queue.add_producer(my_id.getGlobalID())
+        if not p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
+            p2p_queue.start_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+
+    def _on_customer_terminated(self, e):
+        from userid import my_id
+        from userid import global_id
+        from p2p import p2p_queue
+        customer_idurl = e.data.get('idurl')
+        if not customer_idurl:
+            lg.warn('unknown customer idurl in event data payload')
+            return
+        customer_glob_id = global_id.idurl2glob(customer_idurl)
+        queue_id = customer_glob_id + '-file-modified'
+        if p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
+            p2p_queue.stop_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+        if p2p_queue.is_producer_exist(my_id.getGlobalID()):
+            p2p_queue.remove_producer(my_id.getGlobalID())
+        if p2p_queue.is_queue_exist(queue_id):
+            p2p_queue.close_queue('supplier-file-modified')

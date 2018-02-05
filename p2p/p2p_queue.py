@@ -259,6 +259,10 @@ def remove_callback_method(consumer_id, callback_method):
 
 #------------------------------------------------------------------------------
 
+def is_producer_exist(producer_id):
+    return producer_id in producer()
+
+
 def add_producer(producer_id):
     global _Producers
     if producer_id in producer():
@@ -279,10 +283,17 @@ def remove_producer(producer_id):
 
 #------------------------------------------------------------------------------
 
+def is_event_publishing(producer_id, event_id):
+    if producer_id not in producer():
+        return False
+    return producer(producer_id).is_event_publishing(event_id)
+
+
 def start_event_publisher(producer_id, event_id):
     if producer_id not in producer():
         raise Exception('producer not exist')
     return producer(producer_id).start_publisher(event_id)
+
 
 def stop_event_publisher(producer_id, event_id):
     if producer_id not in producer():
@@ -291,7 +302,12 @@ def stop_event_publisher(producer_id, event_id):
 
 #------------------------------------------------------------------------------
 
+def is_queue_exist(queue_id):
+    return queue_id in queue()
+
+
 def open_queue(queue_id, key_id=None):
+    # TODO: implement key_id paramenter
     global _ActiveQueues
     if queue_id in queue():
         raise Exception('queue already exist')
@@ -303,9 +319,9 @@ def close_queue(queue_id):
     global _ActiveQueues
     if queue_id not in queue():
         raise Exception('queue not exist')
-    _ActiveQueues.pop(queue_id)
     for consumer_id in consumer().keys():
         unsubscribe_consumer(consumer_id, queue_id)
+    _ActiveQueues.pop(queue_id)
     return True
 
 #------------------------------------------------------------------------------
@@ -627,6 +643,9 @@ class ProducerInfo(object):
         self.producer_id = producer_id
         self.produced_messages = 0
         self.publishers = {}
+
+    def is_event_publishing(self, event_id):
+        return event_id in self.publishers
 
     def start_publisher(self, event_id):
         if event_id in self.publishers:
