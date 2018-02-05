@@ -109,10 +109,10 @@ class LocalService(automat.Automat):
     def stop(self):
         raise RequireSubclass()
 
-    def request(self, request, info):
+    def request(self, newpacket, info):
         raise RequireSubclass()
 
-    def cancel(self, request, info):
+    def cancel(self, newpacket, info):
         raise RequireSubclass()
 
     #------------------------------------------------------------------------------

@@ -93,11 +93,11 @@ class BroadcastingService(LocalService):
         conf().removeCallback('services/broadcasting/routing-enabled')
         return True
 
-    def request(self, request, info):
+    def request(self, newpacket, info):
         from logs import lg
         from p2p import p2p_service
         from main import settings
-        words = request.Payload.split(' ')
+        words = newpacket.Payload.split(' ')
         try:
             mode = words[1][:10]
         except:
@@ -108,23 +108,23 @@ class BroadcastingService(LocalService):
             return None
         if not settings.enableBroadcastRouting():
             lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
-            return p2p_service.SendFail(request, 'broadcast routing disabled')
+            return p2p_service.SendFail(newpacket, 'broadcast routing disabled')
         from broadcast import broadcaster_node
         if not broadcaster_node.A():
             lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
-            return p2p_service.SendFail(request, 'broadcast routing disabled')
+            return p2p_service.SendFail(newpacket, 'broadcast routing disabled')
         if broadcaster_node.A().state not in ['BROADCASTING', 'OFFLINE', 'BROADCASTERS?', ]:
             lg.out(8, "service_broadcasting.request DENIED, current state is : %s" % broadcaster_node.A().state)
-            return p2p_service.SendFail(request, 'currently not broadcasting')
+            return p2p_service.SendFail(newpacket, 'currently not broadcasting')
         if mode == 'route':
-            broadcaster_node.A('new-broadcaster-connected', request.OwnerID)
+            broadcaster_node.A('new-broadcaster-connected', newpacket.OwnerID)
             lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words)
-            return p2p_service.SendAck(request, 'accepted')
+            return p2p_service.SendAck(newpacket, 'accepted')
         if mode == 'listen':
-            broadcaster_node.A().add_listener(request.OwnerID, ' '.join(words[2:]))
+            broadcaster_node.A().add_listener(newpacket.OwnerID, ' '.join(words[2:]))
             lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words[1])
-            return p2p_service.SendAck(request, 'accepted')
-        return None
+            return p2p_service.SendAck(newpacket, 'accepted')
+        return p2p_service.SendAck(newpacket, 'bad request')
 
     def _on_broadcast_routing_enabled_disabled(self, path, value, oldvalue, result):
         from logs import lg
