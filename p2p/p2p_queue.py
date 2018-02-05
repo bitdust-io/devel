@@ -75,6 +75,7 @@ from lib import misc
 from p2p import commands
 from p2p import p2p_service
 
+from main import events
 
 #------------------------------------------------------------------------------
 
@@ -148,11 +149,8 @@ def producer(producer_id=None):
     if producer_id is None:
         return _Producers
     if producer_id not in _Producers:
-        _Producers[producer_id] = dict(
-            queues=[],
-        )
-    return _Producers
-
+        raise Exception('producer not found')
+    return _Producers[producer_id]
 
 #------------------------------------------------------------------------------
 
@@ -240,6 +238,27 @@ def remove_consumer(consumer_id):
 
 #------------------------------------------------------------------------------
 
+def add_callback_method(consumer_id, callback_method):
+    if consumer_id not in consumer():
+        raise Exception('consumer not found')
+    if callback_method in consumer(consumer_id).commands:
+        raise Exception('callback method already exist')
+    consumer(consumer_id).commands.append(callback_method)
+    lg.info('callback_method %s added for consumer %s' % (callback_method, consumer_id))
+    return True
+
+
+def remove_callback_method(consumer_id, callback_method):
+    if consumer_id not in consumer():
+        raise Exception('consumer not found')
+    if callback_method not in consumer(consumer_id).commands:
+        raise Exception('callback method not found')
+    consumer(consumer_id).commands.remove(callback_method)
+    lg.info('callback_method %s removed from consumer %s' % (callback_method, consumer_id))
+    return True
+
+#------------------------------------------------------------------------------
+
 def add_producer(producer_id):
     global _Producers
     if producer_id in producer():
@@ -260,24 +279,15 @@ def remove_producer(producer_id):
 
 #------------------------------------------------------------------------------
 
-def add_callback_method(consumer_id, callback_method):
-    if consumer_id not in consumer():
-        raise Exception('consumer not found')
-    if callback_method in consumer(consumer_id).commands:
-        raise Exception('callback method already exist')
-    consumer(consumer_id).commands.append(callback_method)
-    lg.info('callback_method %s added for consumer %s' % (callback_method, consumer_id))
-    return True
+def start_event_publisher(producer_id, event_id):
+    if producer_id not in producer():
+        raise Exception('producer not exist')
+    return producer(producer_id).start_publisher(event_id)
 
-
-def remove_callback_method(consumer_id, callback_method):
-    if consumer_id not in consumer():
-        raise Exception('consumer not found')
-    if callback_method not in consumer(consumer_id).commands:
-        raise Exception('callback method not found')
-    consumer(consumer_id).commands.remove(callback_method)
-    lg.info('callback_method %s removed from consumer %s' % (callback_method, consumer_id))
-    return True
+def stop_event_publisher(producer_id, event_id):
+    if producer_id not in producer():
+        raise Exception('producer not exist')
+    return producer(producer_id).stop_publisher(event_id)
 
 #------------------------------------------------------------------------------
 
@@ -375,14 +385,14 @@ def finish_notification(consumer_id, queue_id, message_id, success):
 
 #------------------------------------------------------------------------------
 
-def push_message(producer_id, queue_id, json_data):
+def push_message(producer_id, queue_id, data, created=None):
     if producer_id not in producer():
         raise Exception('unknown producer')
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if len(queue(queue_id)) >= MAX_QUEUE_LENGTH:
         raise Exception('queue is overloaded')
-    new_message = QueueMessage(producer_id, queue_id, json_data)
+    new_message = QueueMessage(producer_id, queue_id, data, created=created)
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
@@ -452,6 +462,9 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
     finish_notification(consumer_id, queue_id, message_id, success=False)
     reactor.callLater(0, do_cleanup)
     return err
+
+def on_event_raised():
+    pass
 
 #------------------------------------------------------------------------------
 
@@ -575,11 +588,11 @@ def do_cleanup():
 
 class QueueMessage(object):
 
-    def __init__(self, producer_id, queue_id, json_data):
+    def __init__(self, producer_id, queue_id, json_data, created=None):
         self.message_id = make_message_id()
         self.producer_id = producer_id
         self.queue_id = queue_id
-        self.created = utime.get_sec1970()
+        self.created = created or utime.get_sec1970()
         self.payload = json_data
         self.state = 'CREATED'
         self.notifications = {}
@@ -613,6 +626,28 @@ class ProducerInfo(object):
         self.state = 'READY'
         self.producer_id = producer_id
         self.produced_messages = 0
+        self.publishers = {}
+
+    def start_publisher(self, event_id):
+        if event_id in self.publishers:
+            raise Exception('event publisher already exist')
+        self.publishers[event_id] = lambda evt: push_message(
+            producer_id=self.producer_id,
+            queue_id=evt.event_id,
+            data=evt.data,
+            created=evt.created,
+        )
+        return events.add_subscriber(self.publishers[event_id], event_id)
+
+    def stop_publisher(self, event_id):
+        if event_id not in self.publishers:
+            raise Exception('event publisher not found')
+        result = events.remove_subscriber(self.publishers[event_id], event_id)
+        if not self.publishers.pop(event_id, None):
+            lg.warn('publisher event %s for producer %s was not cleaned correctly' % (event_id, self.producer_id))
+        if not result:
+            lg.warn('event subscriber for %s was not removed' % event_id)
+        return result
 
 #------------------------------------------------------------------------------
 
@@ -626,18 +661,29 @@ def test():
     lg.set_debug_level(24)
     init()
     add_producer('alice@host-one.com')
+    start_event_publisher('alice@host-one.com', 'test123')
     add_consumer('bob@server-second.com')
     add_callback_method('bob@server-second.com', _test_callback)
     open_queue('test123')
     subscribe_consumer('bob@server-second.com', 'test123')
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc=123))
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc=456))
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc=789))
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc='abc'))
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc='def'))
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc='ghi'))
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc='jkl'))
-    push_message('alice@host-one.com', 'test123', json_data=dict(abc='nop'))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc=123))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc=456))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc=789))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc='abc'))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc='def'))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc='ghi'))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc='jkl'))
+#     push_message('alice@host-one.com', 'test123', data=dict(abc='nop'))
+    events.send('test123', data=dict(abc='abc', counter=0))
+    events.send('test123', data=dict(abc='abc', counter=2))
+    events.send('test123', data=dict(abc='abc', counter=4))
+    events.send('test123', data=dict(abc='abc', counter=1))
+    events.send('test123', data=dict(abc='abc', counter=6))
+    events.send('test123', data=dict(abc='abc', counter=23))
+    events.send('test123', data=dict(abc='abc', counter=620))
+    events.send('test123', data=dict(abc='abc', counter=20))
+    events.send('test123', data=dict(abc='abc', counter=30))
+    events.send('test123', data=dict(abc='abc', counter=40))
     reactor.run()
 
 

@@ -190,6 +190,7 @@ class SupplierService(LocalService):
         from userid import my_id
         from userid import global_id
         from p2p import p2p_service
+        from main import events
         if newpacket.Payload == '':
             ids = [newpacket.PacketID, ]
         else:
@@ -203,7 +204,7 @@ class SupplierService(LocalService):
                 glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
             if not glob_path['path']:
                 lg.err("got incorrect PacketID")
-                p2p_service.SendFail(newpacket, 'incorrect PacketID')
+                p2p_service.SendFail(newpacket, 'incorrect path')
                 return False
             # TODO: add validation of customerGlobID
             # TODO: process requests from another customer
@@ -229,6 +230,10 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
+            events.send('supplier-file-delete', data=dict(
+                glob_path=glob_path['path'],
+                owner_id=newpacket.OwnerID,
+            ))
         self.log(self.debug_level, "service_supplier._on_delete_file from [%s] with %d IDs, %d files and %d folders were removed" % (
             newpacket.OwnerID, len(ids), filescount, dirscount))
         p2p_service.SendAck(newpacket)
@@ -238,6 +243,7 @@ class SupplierService(LocalService):
         from system import bpio
         from userid import global_id
         from p2p import p2p_service
+        from main import events
         if newpacket.Payload == '':
             ids = [newpacket.PacketID]
         else:
@@ -272,6 +278,10 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
+            events.send('supplier-file-delete', data=dict(
+                glob_path=glob_path['path'],
+                owner_id=newpacket.OwnerID,
+            ))
         self.log(self.debug_level, "supplier_service._on_delete_backup from [%s] with %d IDs, %d were removed" % (
             newpacket.OwnerID, len(ids), count))
         p2p_service.SendAck(newpacket)
@@ -296,7 +306,7 @@ class SupplierService(LocalService):
             glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
         if not glob_path['path']:
             lg.err("got incorrect PacketID")
-            p2p_service.SendFail(newpacket, 'incorrect PacketID')
+            p2p_service.SendFail(newpacket, 'incorrect path')
             return False
         if glob_path['idurl']:
             if newpacket.CreatorID == glob_path['idurl']:
@@ -343,6 +353,11 @@ class SupplierService(LocalService):
         self.log(self.debug_level, "service_supplier._on_retreive %r : sending %r back to %s" % (
             newpacket, outpacket, outpacket.CreatorID))
         gateway.outbox(outpacket, target=outpacket.CreatorID)
+        from main import events
+        events.send('supplier-file-retrieve', data=dict(
+            glob_path=glob_path['path'],
+            owner_id=newpacket.OwnerID,
+        ))
         return True
 
     def _on_data(self, newpacket):
@@ -365,7 +380,7 @@ class SupplierService(LocalService):
             glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
         if not glob_path['path']:
             lg.err("got incorrect PacketID")
-            p2p_service.SendFail(newpacket, 'incorrect PacketID')
+            p2p_service.SendFail(newpacket, 'incorrect path')
             return False
         # TODO: process files from another customer : glob_path['idurl']
         filename = p2p_service.makeFilename(newpacket.OwnerID, glob_path['path'])
@@ -413,6 +428,11 @@ class SupplierService(LocalService):
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)
+        from main import events
+        events.send('supplier-file-write', data=dict(
+            glob_path=glob_path['path'],
+            owner_id=newpacket.OwnerID,
+        ))
         return True
 
     def _on_list_files(self, newpacket):

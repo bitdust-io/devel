@@ -52,8 +52,8 @@ class KeysRegistryService(LocalService):
         from access import key_ring
         from transport import callback
         key_ring.init()
-        callback.add_outbox_callback(self._outbox_packet_sent)
-        callback.append_inbox_callback(self._inbox_packet_received)
+        callback.add_outbox_callback(self._on_outbox_packet_sent)
+        callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):

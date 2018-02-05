@@ -105,19 +105,26 @@ class Event(object):
 
 def add_subscriber(subscriber_callback, event_id='*'):
     """
+    subscriber_callback(evt)
     """
     if event_id not in subscribers():
         subscribers()[event_id] = []
     subscribers()[event_id].append(subscriber_callback)
 
-def remove_subscriber(subscriber_callback):
+def remove_subscriber(subscriber_callback, event_id='*'):
     """
     """
     removed = False
-    for event_id, subscriber_callbacks in subscribers().items():
-        if subscriber_callback in subscriber_callbacks:
-            subscribers()[event_id].remove(subscriber_callback)
-            removed = True
+    if event_id == '*':
+        for event_id, subscriber_callbacks in subscribers().items():
+            if subscriber_callback in subscriber_callbacks:
+                subscribers()[event_id].remove(subscriber_callback)
+                removed = True
+    else:
+        if event_id in subscribers():
+            if subscriber_callback in subscribers()[event_id]:
+                subscribers()[event_id].remove(subscriber_callback)
+                removed = True
     return removed
 
 def clear_subscribers(event_id='*'):

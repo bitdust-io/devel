@@ -49,7 +49,7 @@ class ListFilesService(LocalService):
     def start(self):
         from customer import list_files_orator
         list_files_orator.A('init')
-        # p2p_service.SendRequestListFiles
+        # p2p_service.SendListFiles
         return True
 
     def stop(self):
