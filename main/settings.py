@@ -2581,7 +2581,7 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/p2p-hookups/enabled', 'true')
 
-    config.conf().setDefaultValue('services/p2p-notifications/enabled', 'false')
+    config.conf().setDefaultValue('services/p2p-notifications/enabled', 'true')
 
     config.conf().setDefaultValue('services/private-messages/enabled', 'true')
 
