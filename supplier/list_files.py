@@ -43,14 +43,11 @@ from lib import packetid
 from main import settings
 
 from p2p import commands
+from p2p import p2p_service
 
 from contacts import contactsdb
 
 from userid import my_id
-
-from crypt import signed
-
-from transport import gateway
 
 #------------------------------------------------------------------------------
 
@@ -66,17 +63,30 @@ def send(customer_idurl, packet_id, format_type):
     if not os.path.isdir(ownerdir):
         if _Debug:
             lg.out(_DebugLevel, "list_files.send did not found customer dir: " + ownerdir)
-        src = PackListFiles('', format_type)
-        result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-        gateway.outbox(result)
-        return result
+        return p2p_service.SendFiles(
+            raw_list_files_info=PackListFiles('', format_type),
+            ownerID=MyID,
+            creatorID=MyID,
+            packetID=PacketID,
+            remoteID=RemoteID,
+        )
+        # result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
+        # gateway.outbox(result)
+        # return result
     plaintext = TreeSummary(ownerdir)
     if _Debug:
         lg.out(_DebugLevel + 8, '\n%s' % (plaintext))
-    src = PackListFiles(plaintext, format_type)
-    result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-    gateway.outbox(result)
-    return result
+    return p2p_service.SendFiles(
+        raw_list_files_info=PackListFiles(plaintext, format_type),
+        ownerID=MyID,
+        creatorID=MyID,
+        packetID=PacketID,
+        remoteID=RemoteID,
+    )
+    # src = PackListFiles(plaintext, format_type)
+    # result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
+    # gateway.outbox(result)
+    # return result
 
 #------------------------------------------------------------------------------
 

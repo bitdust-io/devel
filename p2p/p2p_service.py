@@ -45,18 +45,12 @@ TODO: need to move logic from this monolitic file into a services
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 4
+_DebugLevel = 2
 
 #------------------------------------------------------------------------------
 
 import os
-import sys
 import json
-
-try:
-    from twisted.internet import reactor
-except:
-    sys.exit('Error initializing twisted.internet.reactor in p2p_service.py')
 
 #------------------------------------------------------------------------------
 
@@ -82,9 +76,6 @@ from crypt import signed
 from main import settings
 
 from transport import gateway
-from transport import callback
-
-from services import driver
 
 #------------------------------------------------------------------------------
 
@@ -441,8 +432,9 @@ def ListFiles(newpacket, info):
     """
     We will want to use this to see what needs to be resent, and expect normal
     case is very few missing.
-
     This is to build the ``Files()`` we are holding for a customer.
+    You run service_list_files locally and send ListFiles() to your suppliers
+    They repply fith Files() if service_supplier is started on their side
     """
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.ListFiles from [%s] at %s://%s" % (
@@ -454,6 +446,26 @@ def ListFiles(newpacket, info):
 #     from supplier import list_files
 #     return list_files.send(request.OwnerID, request.PacketID, request.Payload)
 
+def SendListFiles(supplierNumORidurl, customer_idurl=None):
+    MyID = my_id.getLocalID()
+    if not customer_idurl:
+        customer_idurl = MyID
+    if not str(supplierNumORidurl).isdigit():
+        RemoteID = supplierNumORidurl
+    else:
+        RemoteID = contactsdb.supplier(supplierNumORidurl, customer_idurl=customer_idurl)
+    if not RemoteID:
+        lg.warn("RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
+        return None
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendListFiles [%s]" % nameurl.GetName(RemoteID))
+    PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
+    Payload = settings.ListFilesFormat()
+    result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
+    gateway.outbox(result)
+    return result
+
+#------------------------------------------------------------------------------
 
 def Files(newpacket, info):
     """
@@ -466,6 +478,25 @@ def Files(newpacket, info):
     # TODO: move to service_customer
 #     from storage import backup_control
 #     backup_control.IncomingSupplierListFiles(newpacket)
+
+
+def SendFiles(raw_list_files_info, ownerID, creatorID, packetID, remoteID, callbacks={}):
+    """
+    Sending information about known files stored locally for given customer (if you are supplier).
+    """
+    newpacket = signed.Packet(
+        commands.Files(),
+        ownerID,
+        creatorID,
+        packetID,
+        raw_list_files_info,
+        remoteID,
+    )
+    result = gateway.outbox(newpacket, callbacks=callbacks)
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in [%s] to %s, by %s | %s' % (
+            len(raw_list_files_info), packetID, remoteID, ownerID, creatorID))
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -821,34 +852,6 @@ def Correspondent(request):
 
 #------------------------------------------------------------------------------
 
-def RequestListFilesAll(customer_idurl=None):
-    r = []
-    for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
-        r.append(SendRequestListFiles(supplier_idurl, customer_idurl=customer_idurl))
-    return r
-
-
-def SendRequestListFiles(supplierNumORidurl, customer_idurl=None):
-    MyID = my_id.getLocalID()
-    if not customer_idurl:
-        customer_idurl = MyID
-    if not str(supplierNumORidurl).isdigit():
-        RemoteID = supplierNumORidurl
-    else:
-        RemoteID = contactsdb.supplier(supplierNumORidurl, customer_idurl=customer_idurl)
-    if not RemoteID:
-        lg.warn("RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
-        return None
-    if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendRequestListFiles [%s]" % nameurl.GetName(RemoteID))
-    PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
-    Payload = settings.ListFilesFormat()
-    result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
-    gateway.outbox(result)
-    return result
-
-#------------------------------------------------------------------------------
-
 def RequestDeleteBackup(BackupID):
     """
     Need to send a "DeleteBackup" command to all suppliers.
@@ -994,29 +997,41 @@ def Event(request, info):
     """
     if _Debug:
         try:
-            message_json = json.loads(request.Payload)
-            message_json['event_id']
+            e_json = json.loads(request.Payload)
+            e_json['event_id']
+            e_json['payload']
         except:
             lg.exc()
             return
         lg.out(_DebugLevel, "p2p_service.Event %s from %s with %d bytes in json" % (
-            message_json['event_id'], info.sender_idurl, len(request.Payload), ))
+            e_json['event_id'], info.sender_idurl, len(request.Payload), ))
 
 
-def SendEvent(remote_idurl, message_json, packet_id=None, wide=False, callbacks={}, response_timeout=5):
+def SendEvent(remote_idurl, event_id, payload,
+              producer_id=None, message_id=None, created=None,
+              packet_id=None, wide=False, callbacks={}, response_timeout=5):
     # full_key_data = json.dumps(key_data) if isinstance(key_data, dict) else key_data
-    message_json_src = json.dumps(message_json)
-    if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendEvent to %s with %d bytes message json data" % (
-            remote_idurl, len(message_json_src)))
     if packet_id is None:
         packet_id = packetid.UniqueID()
+    e_json = {
+        'event_id': event_id,
+        'payload': payload,
+    }
+    if producer_id and message_id:
+        e_json['producer_id'] = producer_id
+        e_json['message_id'] = message_id
+    if created:
+        e_json['created'] = created
+    e_json_src = json.dumps(e_json)
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendEvent to %s with %d bytes message json data" % (
+            remote_idurl, len(e_json_src)))
     outpacket = signed.Packet(
         Command=commands.Event(),
         OwnerID=my_id.getLocalID(),
         CreatorID=my_id.getLocalID(),
         PacketID=packet_id,
-        Payload=message_json_src,
+        Payload=e_json_src,
         RemoteID=remote_idurl,
     )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks, response_timeout=response_timeout)
