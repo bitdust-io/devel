@@ -58,6 +58,7 @@ class SupplierService(LocalService):
 
     def dependent_on(self):
         return ['service_p2p_hookups',
+                'service_p2p_notifications',
                 ]
 
     def installed(self):
@@ -76,20 +77,20 @@ class SupplierService(LocalService):
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 
-    def request(self, request, info):
+    def request(self, newpacket, info):
         from main import events
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        words = request.Payload.split(' ')
+        words = newpacket.Payload.split(' ')
         try:
             bytes_for_customer = int(words[1])
         except:
             lg.exc()
             bytes_for_customer = None
         if not bytes_for_customer or bytes_for_customer < 0:
-            lg.warn("wrong storage value : %s" % request.Payload)
-            return p2p_service.SendFail(request, 'wrong storage value')
+            lg.warn("wrong storage value : %s" % newpacket.Payload)
+            return p2p_service.SendFail(newpacket, 'wrong storage value')
         current_customers = contactsdb.customers()
         if accounting.check_create_customers_quotas():
             lg.out(6, 'service_supplier.request created a new space file')
@@ -98,18 +99,18 @@ class SupplierService(LocalService):
             free_bytes = int(space_dict['free'])
         except:
             lg.exc()
-            return p2p_service.SendFail(request, 'broken space file')
-        if (request.OwnerID not in current_customers and request.OwnerID in space_dict.keys()):
+            return p2p_service.SendFail(newpacket, 'broken space file')
+        if (newpacket.OwnerID not in current_customers and newpacket.OwnerID in space_dict.keys()):
             lg.warn("broken space file")
-            return p2p_service.SendFail(request, 'broken space file')
-        if (request.OwnerID in current_customers and request.OwnerID not in space_dict.keys()):
+            return p2p_service.SendFail(newpacket, 'broken space file')
+        if (newpacket.OwnerID in current_customers and newpacket.OwnerID not in space_dict.keys()):
             lg.warn("broken customers file")
-            return p2p_service.SendFail(request, 'broken customers file')
-        if request.OwnerID in current_customers:
-            free_bytes += int(space_dict[request.OwnerID])
+            return p2p_service.SendFail(newpacket, 'broken customers file')
+        if newpacket.OwnerID in current_customers:
+            free_bytes += int(space_dict[newpacket.OwnerID])
             space_dict['free'] = free_bytes
-            current_customers.remove(request.OwnerID)
-            space_dict.pop(request.OwnerID)
+            current_customers.remove(newpacket.OwnerID)
+            space_dict.pop(newpacket.OwnerID)
             new_customer = False
         else:
             new_customer = True
@@ -121,61 +122,57 @@ class SupplierService(LocalService):
             reactor.callLater(0, local_tester.TestUpdateCustomers)
             if new_customer:
                 lg.out(8, "    NEW CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
-                events.send('new-customer-denied', dict(idurl=request.OwnerID))
+                events.send('new-customer-denied', dict(idurl=newpacket.OwnerID))
             else:
                 lg.out(8, "    OLD CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
-                events.send('existing-customer-denied', dict(idurl=request.OwnerID))
-            return p2p_service.SendAck(request, 'deny')
+                events.send('existing-customer-denied', dict(idurl=newpacket.OwnerID))
+            return p2p_service.SendAck(newpacket, 'deny')
         space_dict['free'] = free_bytes - bytes_for_customer
-        current_customers.append(request.OwnerID)
-        space_dict[request.OwnerID] = bytes_for_customer
+        current_customers.append(newpacket.OwnerID)
+        space_dict[newpacket.OwnerID] = bytes_for_customer
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
-            events.send('new-customer-accepted', dict(idurl=request.OwnerID))
+            events.send('new-customer-accepted', dict(idurl=newpacket.OwnerID))
         else:
             lg.out(8, "    OLD CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
-            events.send('existing-customer-accepted', dict(idurl=request.OwnerID))
-        return p2p_service.SendAck(request, 'accepted')
+            events.send('existing-customer-accepted', dict(idurl=newpacket.OwnerID))
+        return p2p_service.SendAck(newpacket, 'accepted')
 
-    def cancel(self, request, info):
+    def cancel(self, newpacket, info):
         from main import events
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        if not contactsdb.is_customer(request.OwnerID):
-            lg.warn(
-                "got packet from %s, but he is not a customer" %
-                request.OwnerID)
-            return p2p_service.SendFail(request, 'not a customer')
+        if not contactsdb.is_customer(newpacket.OwnerID):
+            lg.warn("got packet from %s, but he is not a customer" % newpacket.OwnerID)
+            return p2p_service.SendFail(newpacket, 'not a customer')
         if accounting.check_create_customers_quotas():
             lg.out(6, 'service_supplier.cancel created a new space file')
         space_dict = accounting.read_customers_quotas()
-        if request.OwnerID not in space_dict.keys():
-            lg.warn(
-                "got packet from %s, but not found him in space dictionary" %
-                request.OwnerID)
-            return p2p_service.SendFail(request, 'not a customer')
+        if newpacket.OwnerID not in space_dict.keys():
+            lg.warn("got packet from %s, but not found him in space dictionary" % newpacket.OwnerID)
+            return p2p_service.SendFail(newpacket, 'not a customer')
         try:
             free_bytes = int(space_dict['free'])
-            space_dict['free'] = free_bytes + int(space_dict[request.OwnerID])
+            space_dict['free'] = free_bytes + int(space_dict[newpacket.OwnerID])
         except:
             lg.exc()
-            return p2p_service.SendFail(request, 'broken space file')
+            return p2p_service.SendFail(newpacket, 'broken space file')
         new_customers = list(contactsdb.customers())
-        new_customers.remove(request.OwnerID)
+        new_customers.remove(newpacket.OwnerID)
         contactsdb.update_customers(new_customers)
         contactsdb.save_customers()
-        space_dict.pop(request.OwnerID)
+        space_dict.pop(newpacket.OwnerID)
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
-        events.send('existing-customer-terminated', dict(idurl=request.OwnerID))
-        return p2p_service.SendAck(request, 'accepted')
+        events.send('existing-customer-terminated', dict(idurl=newpacket.OwnerID))
+        return p2p_service.SendAck(newpacket, 'accepted')
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
@@ -194,6 +191,7 @@ class SupplierService(LocalService):
         from userid import my_id
         from userid import global_id
         from p2p import p2p_service
+        from main import events
         if newpacket.Payload == '':
             ids = [newpacket.PacketID, ]
         else:
@@ -207,7 +205,7 @@ class SupplierService(LocalService):
                 glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
             if not glob_path['path']:
                 lg.err("got incorrect PacketID")
-                p2p_service.SendFail(newpacket, 'incorrect PacketID')
+                p2p_service.SendFail(newpacket, 'incorrect path')
                 return False
             # TODO: add validation of customerGlobID
             # TODO: process requests from another customer
@@ -233,6 +231,10 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
+            events.send('supplier-file-delete', data=dict(
+                glob_path=glob_path['path'],
+                owner_id=newpacket.OwnerID,
+            ))
         self.log(self.debug_level, "service_supplier._on_delete_file from [%s] with %d IDs, %d files and %d folders were removed" % (
             newpacket.OwnerID, len(ids), filescount, dirscount))
         p2p_service.SendAck(newpacket)
@@ -242,6 +244,7 @@ class SupplierService(LocalService):
         from system import bpio
         from userid import global_id
         from p2p import p2p_service
+        from main import events
         if newpacket.Payload == '':
             ids = [newpacket.PacketID]
         else:
@@ -276,6 +279,10 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
+            events.send('supplier-file-delete', data=dict(
+                glob_path=glob_path['path'],
+                owner_id=newpacket.OwnerID,
+            ))
         self.log(self.debug_level, "supplier_service._on_delete_backup from [%s] with %d IDs, %d were removed" % (
             newpacket.OwnerID, len(ids), count))
         p2p_service.SendAck(newpacket)
@@ -300,7 +307,7 @@ class SupplierService(LocalService):
             glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
         if not glob_path['path']:
             lg.err("got incorrect PacketID")
-            p2p_service.SendFail(newpacket, 'incorrect PacketID')
+            p2p_service.SendFail(newpacket, 'incorrect path')
             return False
         if glob_path['idurl']:
             if newpacket.CreatorID == glob_path['idurl']:
@@ -347,6 +354,11 @@ class SupplierService(LocalService):
         self.log(self.debug_level, "service_supplier._on_retreive %r : sending %r back to %s" % (
             newpacket, outpacket, outpacket.CreatorID))
         gateway.outbox(outpacket, target=outpacket.CreatorID)
+        from main import events
+        events.send('supplier-file-retrieve', data=dict(
+            glob_path=glob_path['path'],
+            owner_id=newpacket.OwnerID,
+        ))
         return True
 
     def _on_data(self, newpacket):
@@ -369,7 +381,7 @@ class SupplierService(LocalService):
             glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
         if not glob_path['path']:
             lg.err("got incorrect PacketID")
-            p2p_service.SendFail(newpacket, 'incorrect PacketID')
+            p2p_service.SendFail(newpacket, 'incorrect path')
             return False
         # TODO: process files from another customer : glob_path['idurl']
         filename = p2p_service.makeFilename(newpacket.OwnerID, glob_path['path'])
@@ -417,6 +429,11 @@ class SupplierService(LocalService):
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)
+        from main import events
+        events.send('supplier-file-write', data=dict(
+            glob_path=glob_path['path'],
+            owner_id=newpacket.OwnerID,
+        ))
         return True
 
     def _on_list_files(self, newpacket):

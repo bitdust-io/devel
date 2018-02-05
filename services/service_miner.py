@@ -58,11 +58,13 @@ class MinerService(LocalService):
         coins_miner.A('shutdown')
         return True
 
-    def request(self, request, info):
+    def request(self, newpacket, info):
+        # TODO: work in progress
         # TODO: we can add some limit for number of connections here
         from p2p import p2p_service
-        return p2p_service.SendAck(request, 'accepted')
+        return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, request, info):
+        # TODO: work in progress
         from p2p import p2p_service
         return p2p_service.SendAck(request, 'accepted')

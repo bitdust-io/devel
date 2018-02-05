@@ -42,9 +42,9 @@ class ProxyServerService(LocalService):
     service_name = 'service_proxy_server'
     config_path = 'services/proxy-server/enabled'
 
-    def init(self):
+    # def init(self):
         # self.debug_level = 2
-        self.log_events = True
+        # self.log_events = True
 
     def dependent_on(self):
         return ['service_p2p_hookups',
@@ -66,12 +66,14 @@ class ProxyServerService(LocalService):
         proxy_router.A('shutdown')
         return True
 
-    def request(self, request, info):
+    def request(self, newpacket, info):
+        from p2p import p2p_service
         from transport.proxy import proxy_router
-        proxy_router.A('request-route', (request, info))
-        return None
+        proxy_router.A('request-route', (newpacket, info))
+        return p2p_service.SendAck(newpacket)
 
-    def cancel(self, request, info):
+    def cancel(self, newpacket, info):
+        from p2p import p2p_service
         from transport.proxy import proxy_router
-        proxy_router.A('cancel-route', (request, info))
-        return None
+        proxy_router.A('cancel-route', (newpacket, info))
+        return p2p_service.SendAck(newpacket)

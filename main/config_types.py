@@ -146,6 +146,7 @@ def defaults():
         'services/network/send-limit': TYPE_POSITIVE_INTEGER,
         'services/nodes-lookup/enabled': TYPE_BOOLEAN,
         'services/p2p-hookups/enabled': TYPE_BOOLEAN,
+        'services/p2p-notifications/enabled': TYPE_BOOLEAN,
         'services/private-messages/enabled': TYPE_BOOLEAN,
         'services/proxy-server/enabled': TYPE_BOOLEAN,
         'services/proxy-server/routes-limit': TYPE_POSITIVE_INTEGER,

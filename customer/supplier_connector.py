@@ -344,4 +344,7 @@ class SupplierConnector(automat.Automat):
     def _supplier_failed(self, response, info):
         if _Debug:
             lg.out(16, 'supplier_connector._supplier_failed %r %r' % (response, info))
-        self.automat(response.Command.lower(), response)
+        if response:
+            self.automat(response.Command.lower(), response)
+        else:
+            self.automat('fail', None)
