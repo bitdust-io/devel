@@ -58,6 +58,7 @@ class SupplierService(LocalService):
 
     def dependent_on(self):
         return ['service_p2p_hookups',
+                'service_p2p_notifications',
                 ]
 
     def installed(self):
