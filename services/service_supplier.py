@@ -458,9 +458,13 @@ class SupplierService(LocalService):
             lg.warn('unknown customer idurl in event data payload')
             return
         customer_glob_id = global_id.idurl2glob(customer_idurl)
-        queue_id = customer_glob_id + '-file-modified'
+        queue_id = global_id.MakeGlobalQueueID(
+            queue_alias='event-supplier-file-modified',
+            owner_id=customer_glob_id,
+            supplier_id=my_id.getGlobalID(),
+        )
         if not p2p_queue.is_queue_exist(queue_id):
-            p2p_queue.open_queue(queue_id, key_id=None)  # TODO: implement key_id parameter
+            p2p_queue.open_queue(queue_id)
         if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
             p2p_queue.add_producer(my_id.getGlobalID())
         if not p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
@@ -475,7 +479,11 @@ class SupplierService(LocalService):
             lg.warn('unknown customer idurl in event data payload')
             return
         customer_glob_id = global_id.idurl2glob(customer_idurl)
-        queue_id = customer_glob_id + '-file-modified'
+        queue_id = global_id.MakeGlobalQueueID(
+            queue_alias='event-supplier-file-modified',
+            owner_id=customer_glob_id,
+            supplier_id=my_id.getGlobalID(),
+        )
         if p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
             p2p_queue.stop_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
         if p2p_queue.is_producer_exist(my_id.getGlobalID()):
