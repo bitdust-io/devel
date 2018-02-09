@@ -130,17 +130,7 @@ def transfer_private_key(key_id, idurl):
         lg.warn('unknown key: "%s"' % key_id)
         result.errback(Exception('unknown key: "%s"' % key_id))
         return result
-    key_json = {
-        'key_id': key_id,
-        'alias': key_alias,
-        'creator': creator_idurl,
-        'fingerprint': str(key_object.fingerprint()),
-        'type': str(key_object.type()),
-        'ssh_type': str(key_object.sshType()),
-        'size': str(key_object.size()),
-        'public': str(key_object.public().toString('openssh')),
-        'private': str(key_object.toString('openssh')),
-    }
+    key_json = my_keys.make_key_info(key_object, key_id=key_id, include_private=True)
     key_data = json.dumps(key_json)
     block = encrypted.Block(
         BackupID=key_id,
@@ -170,19 +160,15 @@ def on_private_key_received(newpacket, info, status, error_message):
     try:
         key_data = block.Data()
         key_json = json.loads(key_data)
-        key_id = str(key_json['key_id'])
-        # key_alias = key_json['alias']
-        # key_creator = key_json['creator']
-        # key_owner = key_json['owner']
-        private_key_string = str(key_json['private'])
-    except:
+        key_id = key_json['key_id']
+        if my_keys.is_key_registered(key_id):
+            raise Exception('key "%s" already registered' % key_id)
+        key_id, key_object = my_keys.read_key_info(key_json)
+        if not my_keys.register_key(key_id, key_object):
+            raise Exception('failed to register key %s' % key_id)
+    except Exception as exc:
         lg.exc()
-        return False
-    if my_keys.is_key_registered(key_id):
-        lg.warn('key "%s" already registered' % key_id)
-        return True
-    key_object = my_keys.register_key(key_id, private_key_string)
-    if not key_object:
+        p2p_service.SendFail(newpacket, str(exc))
         return False
     p2p_service.SendAck(newpacket)
     return True

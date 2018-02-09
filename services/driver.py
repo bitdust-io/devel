@@ -42,6 +42,7 @@ import os
 import sys
 import importlib
 
+from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList, succeed
 from twisted.internet.task import LoopingCall
 
@@ -154,8 +155,7 @@ def init():
     available_services_dir = os.path.join(bpio.getExecutableDir(), 'services')
     loaded = set()
     for filename in os.listdir(available_services_dir):
-        if not filename.endswith('.py') and not filename.endswith(
-                '.pyo') and not filename.endswith('.pyc'):
+        if not filename.endswith('.py') and not filename.endswith('.pyo') and not filename.endswith('.pyc'):
             continue
         if not filename.startswith('service_'):
             continue
@@ -170,22 +170,14 @@ def init():
             py_mod = importlib.import_module('services.' + name)
         except:
             if _Debug:
-                lg.out(
-                    _DebugLevel -
-                    4,
-                    '%s exception during module import' %
-                    name)
+                lg.out(_DebugLevel - 4, '%s exception during module import' % name)
             lg.exc()
             continue
         try:
             services()[name] = py_mod.create_service()
         except:
             if _Debug:
-                lg.out(
-                    _DebugLevel -
-                    4,
-                    '%s exception while creating service instance' %
-                    name)
+                lg.out(_DebugLevel - 4, '%s exception while creating service instance' % name)
             lg.exc()
             continue
         loaded.add(name)
@@ -321,65 +313,53 @@ def stop(services_list=[]):
     return _StopingDeferred
 
 
-def restart(services_list=[], wait_timeout=None):
+def restart(service_name, wait_timeout=None):
     global _StopingDeferred
     global _StartingDeferred
-    ret = Deferred()
-    all_states = [_svc.state for _svc in services().values()]
-    if not wait_timeout:
-        if _StopingDeferred:
-            lg.warn('driver.stop already called')
-            ret.errback('currently another service is stopping')
-            return ret
-        if _StartingDeferred:
-            lg.warn('driver.stop already called')
-            ret.errback('currently another service is starting')
-            return ret
-        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
-            lg.warn('some services are in transition state')
-            ret.errback('operation can not be performed, some services are in transition state')
-            return ret
+    restart_result = Deferred()
 
-#     def _on_started(resp, _ret):
-#         lg.out(4, 'api.service_restart._on_started : %s with %s' % (service_name, resp))
-#         _ret.callback(OK(resp[0], message=resp[1]))
-#         return resp
-# 
-#     def _do_start(_ret):
-#         lg.out(4, 'api.service_restart._do_start : %s' % service_name)
-#         start_defer = driver.start(services_list=[service_name, ])
-#         start_defer.addCallback(_on_started, _ret)
-#         start_defer.addErrback(lambda err: _ret.callback(ERROR(err.getErrorMessage())))
-# 
-#     def _on_stopped(resp, _ret):
-#         lg.out(4, 'api.service_restart._on_stopped : %s with %s' % (service_name, resp))
-#         _do_start(_ret)
-#         return resp
-# 
-#     def _do_stop(_ret):
-#         lg.out(4, 'api.service_restart._do_stop : %s' % service_name)
-#         stop_defer = driver.stop(services_list=[service_name, ])
-#         stop_defer.addCallback(_on_stopped, _ret)
-#         stop_defer.addErrback(lambda err: _ret.callback(ERROR(err.getErrorMessage())))
-#         return _ret
+    def _on_started(start_result, stop_result, dependencies_results):
+        lg.out(4, 'api.service_restart._on_started : %s with %s' % (service_name, start_result))
+        restart_result.callback(start_result, stop_result, dependencies_results)
+        return start_result
 
-    # _do_stop(ret)
+    def _do_start(stop_result=None, dependencies_results=None):
+        lg.out(4, 'api.service_restart._do_start : %s' % service_name)
+        start_defer = start(services_list=[service_name, ])
+        start_defer.addCallback(_on_started, stop_result, dependencies_results)
+        start_defer.addErrback(restart_result.errback)
+        return start_defer
+
+    def _on_stopped(stop_result, dependencies_results):
+        lg.out(4, 'api.service_restart._on_stopped : %s with %s' % (service_name, stop_result))
+        _do_start(stop_result, dependencies_results)
+        return stop_result
+
+    def _do_stop(dependencies_results=None):
+        lg.out(4, 'api.service_restart._do_stop : %s' % service_name)
+        stop_defer = stop(services_list=[service_name, ])
+        stop_defer.addCallback(_on_stopped, dependencies_results)
+        stop_defer.addErrback(restart_result.errback)
+        return stop_defer
+
     dl = []
     if _StopingDeferred:
         dl.append(_StartingDeferred)
     if _StartingDeferred:
         dl.append(_StartingDeferred)
-#     if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
-#         def _test_transition_state():
-#             _all_states = [_svc.state for _svc in services().values()]
-#             if 'INFLUENCE' in _all_states or 'STARTING' in _all_states or 'STOPPING' in _all_states:
-#                 
-#             
-#         wait_loop = LoopingCall()
-#     
-#     wait_DeferredList(dl)
-    return ret
-    
+    if wait_timeout:
+        all_states = [_svc.state for _svc in services().values()]
+        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+            wait_timeout_defer = Deferred()
+            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+            dl.append(wait_timeout_defer)
+    if not dl:
+        dl.append(succeed(True))
+
+    dependencies = DeferredList(dl, fireOnOneErrback=True)
+    dependencies.addCallback(_do_stop)
+    dependencies.addErrback(restart_result.errback)
+    return restart_result
 
 #------------------------------------------------------------------------------
 

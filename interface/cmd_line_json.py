@@ -551,7 +551,9 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             if len(args) >= 3:
                 filenameto = bpio.portablePath(args[2])
             else:
-                filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result'][0]['key_id'] + '.key'))
+                key_file_name = key_json['result'][0]['key_id'] + '.key'
+                filenameto = bpio.portablePath(os.path.join(os.path.expanduser('~'), key_file_name))
+                # filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result'][0]['key_id'] + '.key'))
             os.chdir(curpath)
             if not bpio.AtomicWriteFile(filenameto, TextToSave):
                 del TextToSave

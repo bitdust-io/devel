@@ -301,8 +301,9 @@ class SupplierConnector(automat.Automat):
         service_info = 'service_supplier '
         service_info += json.dumps({
             'needed_bytes': bytes_per_supplier,
-            'customer_public_key': my_keys.get_public_key_raw(
+            'customer_public_key': my_keys.get_key_info(
                 key_id=customer_state.customer_key_id(),
+                include_private=False,
             )
         })
         request = p2p_service.SendRequestService(self.idurl, service_info, callbacks={

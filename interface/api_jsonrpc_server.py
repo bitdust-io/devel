@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# jsonrpc_server.py
+# api_jsonrpc_server.py
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
-# This file (jsonrpc_server.py) is part of BitDust Software.
+# This file (api_jsonrpc_server.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,7 +27,7 @@
 """
 ..
 
-module:: jsonrpc_server
+module:: api_jsonrpc_server
 """
 
 import time
@@ -60,7 +60,7 @@ _JsonRPCServer = None
 
 def init(json_rpc_port=None):
     global _JsonRPCServer
-    lg.out(4, 'jsonrpc_server.init')
+    lg.out(4, 'api_jsonrpc_server.init')
     if _JsonRPCServer:
         lg.warn('already started')
         return
@@ -76,7 +76,7 @@ def init(json_rpc_port=None):
 
 def shutdown():
     global _JsonRPCServer
-    lg.out(4, 'jsonrpc_server.shutdown')
+    lg.out(4, 'api_jsonrpc_server.shutdown')
     if not _JsonRPCServer:
         return succeed(None)
     result = Deferred()
@@ -94,7 +94,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
         if result is None:
             result = dict()
         result['execution'] = '%3.6f' % (time.time() - request_dict['_executed'])
-        lg.out(4, "jsonrpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
+        lg.out(4, "api_jsonrpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
         return result
 
     def _convert_filemanager_response(self, result):
@@ -135,7 +135,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return fm_result
 
     def _callMethod(self, request_dict):
-        lg.out(12, 'jsonrpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
+        lg.out(12, 'api_jsonrpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
         request_dict['_executed'] = time.time()
         try:
             fm_result = self._catch_filemanager_methods(request_dict)

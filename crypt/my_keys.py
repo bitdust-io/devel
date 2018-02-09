@@ -84,7 +84,7 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def key(key_id=None):
+def key_obj(key_id=None):
     """
     Alias.
     """
@@ -110,6 +110,12 @@ def is_key_registered(key_id, include_master=True):
     if include_master and key_id == global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias='master'):
         return True
     return key_id in known_keys()
+
+
+def is_key_private(key_id):
+    if not is_key_registered(key_id):
+        return False
+    return not key_obj(key_id).isPublic()
 
 
 def make_key_id(alias, creator_idurl=None, creator_glob_id=None, output_format=None):
@@ -196,16 +202,17 @@ def load_local_keys(keys_folder=None):
         lg.out(_DebugLevel, 'my_keys.load_local_keys will read files from %s' % keys_folder)
     known_keys().clear()
     count = 0
-    for key_id in os.listdir(keys_folder):
-        key_filepath = os.path.join(keys_folder, key_id)
+    for key_filename in os.listdir(keys_folder):
+        key_filepath = os.path.join(keys_folder, key_filename)
         try:
             key_object = keys.Key.fromFile(key_filepath)
         except:
             lg.exc()
             continue
         if not validate_key(key_object):
-            lg.warn('validation failed for %s key' % key_id)
+            lg.warn('validation failed for %s' % key_filepath)
             continue
+        key_id = key_filename.replace('.private', '').replace('.public', '')
         known_keys()[key_id] = key_object
         count += 1
     if _Debug:
@@ -221,8 +228,11 @@ def save_keys_local(keys_folder=None, output_type='openssh'):
         lg.out(_DebugLevel, 'my_keys.save_keys_local will store all known keys in %s' % keys_folder)
     count = 0
     for key_id, key_object in known_keys().items():
+        if key_object.isPublic():
+            key_filepath = os.path.join(keys_folder, key_id, '.public')
+        else:
+            key_filepath = os.path.join(keys_folder, key_id, '.private')
         key_string = key_object.toString(output_type)
-        key_filepath = os.path.join(keys_folder, key_id)
         bpio.WriteFile(key_filepath, key_string)
         count += 1
     if _Debug:
@@ -243,33 +253,42 @@ def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh')
     if not keys_folder:
         keys_folder = settings.PrivateKeysDir()
     key_string = key_object.toString(output_type)
-    key_filepath = os.path.join(keys_folder, key_id)
+    if key_object.isPublic():
+        key_filepath = os.path.join(keys_folder, key_id, '.public')
+    else:
+        key_filepath = os.path.join(keys_folder, key_id, '.private')
     bpio.WriteFile(key_filepath, key_string)
     if _Debug:
-        lg.out(_DebugLevel, '    key %s saved to %s' % (key_id, key_filepath))
+        lg.out(_DebugLevel, '    key %s generated, saved to %s' % (key_id, key_filepath))
     return key_object
 
 
-def register_key(key_id, openssh_input_string, keys_folder=None, output_type='openssh'):
+def register_key(key_id, key_object_or_openssh, keys_folder=None, output_type='openssh'):
     """
     """
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
         return None
-    key_object = unserialize_key_to_object(openssh_input_string)
+    if isinstance(key_object_or_openssh, str):
+        lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (key_id, len(key_object_or_openssh)))
+        key_object = unserialize_key_to_object(key_object_or_openssh)
+    else:
+        lg.out(4, 'my_keys.register_key %s from object' % key_id)
     if not key_object:
         lg.warn('invalid openssh string, unserialize_key_to_object() failed')
         return None
-    lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (key_id, len(openssh_input_string)))
     known_keys()[key_id] = key_object
     if not keys_folder:
         keys_folder = settings.PrivateKeysDir()
     key_string = key_object.toString(output_type)
-    key_filepath = os.path.join(keys_folder, key_id)
+    if key_object.isPublic():
+        key_filepath = os.path.join(keys_folder, key_id, '.public')
+    else:
+        key_filepath = os.path.join(keys_folder, key_id, '.private')
     bpio.WriteFile(key_filepath, key_string)
     if _Debug:
-        lg.out(_DebugLevel, '    key %s saved to %s' % (key_id, key_filepath))
-    return key_object
+        lg.out(_DebugLevel, '    key %s added, saved to %s' % (key_id, key_filepath))
+    return key_filepath
 
 
 def erase_key(key_id, keys_folder=None):
@@ -280,13 +299,18 @@ def erase_key(key_id, keys_folder=None):
         return False
     if not keys_folder:
         keys_folder = settings.PrivateKeysDir()
-    key_filepath = os.path.join(keys_folder, key_id)
+    if key_obj(key_id).isPublic():
+        key_filepath = os.path.join(keys_folder, key_id, '.public')
+    else:
+        key_filepath = os.path.join(keys_folder, key_id, '.private')
     try:
         os.remove(key_filepath)
     except:
         lg.exc()
         return False
     known_keys().pop(key_id)
+    if _Debug:
+        lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
     return True
 
 
@@ -413,5 +437,100 @@ def get_public_key_raw(key_id, type_format='openssh'):
 
 def get_private_key_raw(key_id, type_format='openssh'):
     return key(key_id).toString(type_format)
+
+#------------------------------------------------------------------------------
+
+def make_master_key_info(include_private=False):
+    r = {
+        'key_id': my_id.getGlobalID(key_alias='master'),
+        'alias': 'master',
+        'creator': my_id.getLocalID(),
+        'is_public': key.MyPrivateKeyObject().isPublic(),
+        'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
+        'type': str(key.MyPrivateKeyObject().type()),
+        'ssh_type': str(key.MyPrivateKeyObject().sshType()),
+        'size': str(key.MyPrivateKeyObject().size()),
+        'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
+    }
+    r['private'] = None
+    if include_private:
+        r['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
+    return r
+
+
+def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False):
+    if key_id:
+        key_alias, creator_idurl = split_key_id(key_id)
+    else:
+        key_id = make_key_id(alias=key_alias, creator_idurl=creator_idurl)
+    r = {
+        'key_id': key_id,
+        'alias': key_alias,
+        'creator': creator_idurl,
+        'is_public': key_object.isPublic(),
+        'fingerprint': str(key_object.fingerprint()),
+        'type': str(key_object.type()),
+        'ssh_type': str(key_object.sshType()),
+        'size': str(key_object.size()),
+    }
+    r['private'] = None
+    if key_object.isPublic():
+        r['public'] = str(key_object.toString('openssh'))
+    else:
+        r['public'] = str(key_object.public().toString('openssh'))
+        if include_private:
+            r['private'] = str(key_object.toString('openssh'))
+    return r
+
+
+def get_key_info(key_id, include_private=False):
+    """
+    Returns dictionary with full key info or raise an Exception.
+    """
+    key_id = str(key_id)
+    if key_id == 'master':
+        return make_master_key_info(include_private=include_private)
+    key_alias, creator_idurl = split_key_id(key_id)
+    if not key_alias or not creator_idurl:
+        raise Exception('icorrect key_id format')
+    key_object = known_keys().get(key_id)
+    if not key_object:
+        key_id_form_1 = make_key_id(
+            alias=key_alias,
+            creator_idurl=creator_idurl,
+            output_format=global_id._FORMAT_GLOBAL_ID_KEY_USER,
+        )
+        key_id_form_2 = make_key_id(
+            alias=key_alias,
+            creator_idurl=creator_idurl,
+            output_format=global_id._FORMAT_GLOBAL_ID_USER_KEY,
+        )
+        key_object = known_keys().get(key_id_form_1)
+        if key_object:
+            key_id = key_id_form_1
+        else:
+            key_object = known_keys().get(key_id_form_2)
+            if key_object:
+                key_id = key_id_form_2
+    if not key_object:
+        raise Exception('key not found')
+    return make_key_info(key_object, key_id=key_id, )
+
+
+def read_key_info(key_json):
+    try:
+        key_id = str(key_json['key_id'])
+        is_public = bool(key_json['is_public'])
+        if is_public:
+            raw_openssh_string = str(key_json['public'])
+        else:
+            raw_openssh_string = str(key_json['private'])
+        key_object = unserialize_key_to_object(raw_openssh_string)
+        if not key_object:
+            raise Exception('unserialize failed')
+    except:
+        lg.exc()
+        raise Exception('failed reading key info')
+    return key_id, key_object
 
 #------------------------------------------------------------------------------
