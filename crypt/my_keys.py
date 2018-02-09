@@ -84,6 +84,17 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
+def key(key_id=None):
+    """
+    Alias.
+    """
+    if not key_id:
+        return known_keys()
+    if key_id not in known_keys():
+        raise Exception('key not found')
+    return known_keys().get(key_id)
+
+
 def known_keys():
     """
     """
@@ -393,3 +404,14 @@ def unserialize_key_to_object(openssh_string):
         lg.exc()
         return None
     return key_object
+
+#------------------------------------------------------------------------------
+
+def get_public_key_raw(key_id, type_format='openssh'):
+    return key(key_id).public().toString(type_format)
+
+
+def get_private_key_raw(key_id, type_format='openssh'):
+    return key(key_id).toString(type_format)
+
+#------------------------------------------------------------------------------
