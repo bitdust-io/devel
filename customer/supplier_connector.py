@@ -71,11 +71,14 @@ from lib import diskspace
 
 from userid import global_id
 
-from p2p import commands
+from crypt import my_keys
 
+from p2p import commands
 from p2p import p2p_service
 
 from userid import my_id
+
+from customer import customer_state
 
 #------------------------------------------------------------------------------
 
@@ -173,8 +176,8 @@ class SupplierConnector(automat.Automat):
         if self.state == 'NO_SERVICE':
             if event == 'connect':
                 self.state = 'REQUEST'
-                self.doRequestService(arg)
                 self.GoDisconnect=False
+                self.doRequestService(arg)
             elif event == 'ack' and self.isServiceAccepted(arg):
                 self.state = 'CONNECTED'
                 self.doReportConnect(arg)
@@ -193,8 +196,8 @@ class SupplierConnector(automat.Automat):
                 self.doCancelService(arg)
             elif event == 'fail' or event == 'connect':
                 self.state = 'REQUEST'
-                self.doRequestService(arg)
                 self.GoDisconnect=False
+                self.doRequestService(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -211,8 +214,8 @@ class SupplierConnector(automat.Automat):
                 self.doCancelService(arg)
             elif event == 'connect':
                 self.state = 'REQUEST'
-                self.doRequestService(arg)
                 self.GoDisconnect=False
+                self.doRequestService(arg)
             elif event == 'fail':
                 self.state = 'NO_SERVICE'
                 self.doReportNoService(arg)
@@ -295,7 +298,13 @@ class SupplierConnector(automat.Automat):
             bytes_per_supplier = int(math.ceil(2.0 * bytes_needed / float(num_suppliers)))
         else:
             bytes_per_supplier = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
-        service_info = 'service_supplier %d' % bytes_per_supplier
+        service_info = 'service_supplier '
+        service_info += json.dumps({
+            'needed_bytes': bytes_per_supplier,
+            'customer_public_key': my_keys.get_public_key_raw(
+                key_id=customer_state.customer_key_id(),
+            )
+        })
         request = p2p_service.SendRequestService(self.idurl, service_info, callbacks={
             commands.Ack(): self._supplier_acked,
             commands.Fail(): self._supplier_failed,

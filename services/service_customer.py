@@ -54,7 +54,11 @@ class CustomerService(LocalService):
 
     def start(self):
         from contacts import contactsdb
+        from crypt import my_keys
         from customer import supplier_connector
+        from customer import customer_state
+        if my_keys.is_key_registered(customer_state.customer_key_id()):
+            my_keys.generate_key(customer_state.customer_key_id())
         for supplier_idurl in contactsdb.suppliers():
             if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl):
                 supplier_connector.create(supplier_idurl)
