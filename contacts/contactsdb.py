@@ -78,6 +78,7 @@ def init():
     load_correspondents(settings.CorrespondentIDsFilename())
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback([], correspondents())
+    AddContactsChangedCallback(on_contacts_changed)
 
 
 def shutdown():
@@ -86,6 +87,7 @@ def shutdown():
     global _SuppliersChangedCallback
     global _CustomersChangedCallback
     lg.out(4, "contactsdb.shutdown")
+    RemoveContactsChangedCallback(on_contacts_changed)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback = None
     if _CustomersChangedCallback is not None:
@@ -559,7 +561,6 @@ def get_correspondent_identity(idurl):
 
 def get_correspondent_nickname(correspondent_idurl):
     """
-    
     """
     for idurl, nickname in correspondents():
         if idurl == correspondent_idurl:
@@ -575,6 +576,11 @@ def find_correspondent_by_nickname(nickname):
 
 #------------------------------------------------------------------------------
 
+def on_contacts_changed(old_contacts_list, new_contacts_list):
+    from main import events
+    events.send('contacts-changed', data=dict(old_contacts=old_contacts_list, new_contacts=new_contacts_list))
+
+#------------------------------------------------------------------------------
 
 def SetSuppliersChangedCallback(cb):
     """
@@ -603,6 +609,8 @@ def SetCorrespondentsChangedCallback(cb):
 def AddContactsChangedCallback(cb):
     """
     Set callback to fire when any contact were changed.
+
+    on_contacts_changed(old_contacts_list, new_contacts_list)
     """
     global _ContactsChangedCallbacks
     _ContactsChangedCallbacks.append(cb)

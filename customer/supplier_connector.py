@@ -54,6 +54,7 @@ _DebugLevel = 8
 
 import os
 import math
+import json
 
 #------------------------------------------------------------------------------
 
@@ -68,18 +69,22 @@ from main import settings
 from lib import nameurl
 from lib import diskspace
 
-from p2p import commands
+from userid import global_id
 
+from crypt import my_keys
+
+from p2p import commands
 from p2p import p2p_service
 
 from userid import my_id
+
+from customer import customer_state
 
 #------------------------------------------------------------------------------
 
 _SuppliersConnectors = {}
 
 #------------------------------------------------------------------------------
-
 
 def connectors():
     """
@@ -111,7 +116,7 @@ class SupplierConnector(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['REFUSE']),
+        'timer-10sec': (10.0, ['REFUSE','QUEUE?']),
         'timer-20sec': (20.0, ['REQUEST']),
     }
 
@@ -171,8 +176,8 @@ class SupplierConnector(automat.Automat):
         if self.state == 'NO_SERVICE':
             if event == 'connect':
                 self.state = 'REQUEST'
+                self.GoDisconnect=False
                 self.doRequestService(arg)
-                self.GoDisconnect = False
             elif event == 'ack' and self.isServiceAccepted(arg):
                 self.state = 'CONNECTED'
                 self.doReportConnect(arg)
@@ -191,8 +196,8 @@ class SupplierConnector(automat.Automat):
                 self.doCancelService(arg)
             elif event == 'fail' or event == 'connect':
                 self.state = 'REQUEST'
+                self.GoDisconnect=False
                 self.doRequestService(arg)
-                self.GoDisconnect = False
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -209,15 +214,15 @@ class SupplierConnector(automat.Automat):
                 self.doCancelService(arg)
             elif event == 'connect':
                 self.state = 'REQUEST'
+                self.GoDisconnect=False
                 self.doRequestService(arg)
-                self.GoDisconnect = False
             elif event == 'fail':
                 self.state = 'NO_SERVICE'
                 self.doReportNoService(arg)
         #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'disconnect':
-                self.GoDisconnect = True
+                self.GoDisconnect=True
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
@@ -228,22 +233,37 @@ class SupplierConnector(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.doCleanRequest(arg)
                 self.doReportDisconnect(arg)
-            elif event == 'fail' or (event == 'ack' and not self.isServiceAccepted(arg) and not self.GoDisconnect):
+            elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(arg) and not self.GoDisconnect ):
                 self.state = 'NO_SERVICE'
                 self.doReportNoService(arg)
             elif event == 'ack' and not self.GoDisconnect and self.isServiceAccepted(arg):
-                self.state = 'CONNECTED'
-                self.doReportConnect(arg)
+                self.state = 'QUEUE?'
+                self.doRequestQueueService(arg)
         #---REFUSE---
         elif self.state == 'REFUSE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doCleanRequest(arg)
                 self.doDestroyMe(arg)
-            elif event == 'timer-10sec' or event == 'fail' or (event == 'ack' and self.isServiceCancelled(arg)):
+            elif event == 'timer-10sec' or event == 'fail' or ( event == 'ack' and self.isServiceCancelled(arg) ):
                 self.state = 'NO_SERVICE'
                 self.doCleanRequest(arg)
                 self.doReportNoService(arg)
+        #---QUEUE?---
+        elif self.state == 'QUEUE?':
+            if event == 'disconnect':
+                self.GoDisconnect=True
+            elif self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
+                self.state = 'REFUSE'
+                self.doCancelServiceQueue(arg)
+                self.doCancelService(arg)
+            elif event == 'close':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif not self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
+                self.state = 'CONNECTED'
+                self.doReportConnect(arg)
+        return None
 
     def isServiceAccepted(self, arg):
         """
@@ -278,7 +298,13 @@ class SupplierConnector(automat.Automat):
             bytes_per_supplier = int(math.ceil(2.0 * bytes_needed / float(num_suppliers)))
         else:
             bytes_per_supplier = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
-        service_info = 'service_supplier %d' % bytes_per_supplier
+        service_info = 'service_supplier '
+        service_info += json.dumps({
+            'needed_bytes': bytes_per_supplier,
+            'customer_public_key': my_keys.get_public_key_raw(
+                key_id=customer_state.customer_key_id(),
+            )
+        })
         request = p2p_service.SendRequestService(self.idurl, service_info, callbacks={
             commands.Ack(): self._supplier_acked,
             commands.Fail(): self._supplier_failed,
@@ -296,6 +322,62 @@ class SupplierConnector(automat.Automat):
                 commands.Fail(): self._supplier_failed})
         self.request_packet_id = request.PacketID
 
+    def doRequestQueueService(self, arg):
+        """
+        Action method.
+        """
+        service_info = json.dumps({'items': [{
+            'scope': 'consumer',
+            'action': 'start',
+            'consumer_id': my_id.getGlobalID(),
+        }, {
+            'scope': 'consumer',
+            'action': 'add_callback',
+            'consumer_id': my_id.getGlobalID(),
+            'method': my_id.getLocalID(),
+        }, {
+            'scope': 'consumer',
+            'action': 'subscribe',
+            'consumer_id': my_id.getGlobalID(),
+            'queue_id': global_id.MakeGlobalQueueID(
+                queue_alias='event-supplier-file-modified',
+                owner_id=my_id.getGlobalID(),
+                supplier_id=global_id.MakeGlobalID(idurl=self.idurl),
+            ),
+        }, ], })
+        p2p_service.SendRequestService(self.idurl, service_info, callbacks={
+            commands.Ack(): self._supplier_acked,
+            commands.Fail(): self._supplier_failed,
+        })
+
+    def doCancelServiceQueue(self, arg):
+        """
+        Action method.
+        """
+        service_info = json.dumps({'items': [{
+            'scope': 'consumer',
+            'action': 'unsubscribe',
+            'consumer_id': my_id.getGlobalID(),
+            'queue_id': global_id.MakeGlobalQueueID(
+                queue_alias='event-supplier-file-modified',
+                owner_id=my_id.getGlobalID(),
+                supplier_id=global_id.MakeGlobalID(idurl=self.idurl),
+            ),
+        }, {
+            'scope': 'consumer',
+            'action': 'remove_callback',
+            'consumer_id': my_id.getGlobalID(),
+            'method': my_id.getLocalID(),
+        }, {
+            'scope': 'consumer',
+            'action': 'stop',
+            'consumer_id': my_id.getGlobalID(),
+        }, ], })
+        p2p_service.SendCancelService(self.idurl, service_info, callbacks={
+            commands.Ack(): self._supplier_acked,
+            commands.Fail(): self._supplier_failed,
+        })
+
     def doDestroyMe(self, arg):
         """
         Action method.
@@ -307,7 +389,6 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        # callback.remove_interest(misc.getLocalID(), self.request_packet_id)
 
     def doReportConnect(self, arg):
         """

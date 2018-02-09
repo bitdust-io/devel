@@ -67,51 +67,70 @@ class P2PNotificationsService(LocalService):
         from p2p import p2p_service
         from p2p import p2p_queue
         try:
-            r_json = json.loads(newpacket.Payload)
+            service_info_json = json.loads(newpacket.Payload)
+            service_requests_list = service_info_json['items']
         except:
             lg.warn("invlid json payload")
             return p2p_service.SendFail(newpacket, 'invlid json payload')
-        r_scope = r_json.get('scope', '')
-        r_action = r_json.get('action', '')
-        try:
-            if r_scope == 'queue':
-                if r_action == 'open':
-                    p2p_queue.open_queue(queue_id=r_json.get('queue_id'), key_id=r_json.get('key_id'), )
-                    return p2p_service.SendAck(newpacket)
-                elif r_action == 'close':
-                    p2p_queue.close_queue(queue_id=r_json.get('queue_id'))
-                    return p2p_service.SendAck(newpacket)
-            elif r_scope == 'consumer':
-                if r_action == 'add':
-                    p2p_queue.add_consumer(consumer_id=r_json.get('consumer_id'))
-                    return p2p_service.SendAck(newpacket)
-                elif r_action == 'remove':
-                    p2p_queue.remove_consumer(consumer_id=r_json.get('consumer_id'))
-                    return p2p_service.SendAck(newpacket)
-            elif r_scope == 'callback':
-                if r_action == 'add':
-                    p2p_queue.add_callback_method(
-                        consumer_id=r_json.get('consumer_id'),
-                        callback_method=r_json.get('method'),
-                    )
-                    return p2p_service.SendAck(newpacket)
-                elif r_action == 'remove':
-                    p2p_queue.remove_callback_method(
-                        consumer_id=r_json.get('consumer_id'),
-                        callback_method=r_json.get('method'),
-                    )
-                    return p2p_service.SendAck(newpacket)
-            elif r_scope == 'producer':
-                if r_action == 'add':
-                    p2p_queue.add_producer(producer_id=r_json.get('producer_id'))
-                    return p2p_service.SendAck(newpacket)
-                elif r_action == 'remove':
-                    p2p_queue.remove_producer(producer_id=r_json.get('producer_id'))
-                    return p2p_service.SendAck(newpacket)
-        except:
-            lg.exc()
-            return p2p_service.SendFail(newpacket, 'request denied')
-        return p2p_service.SendFail(newpacket, 'bad request')
+        service_responses_list = []
+        for r_json in service_requests_list:
+            resp = r_json.copy()
+            r_scope = r_json.get('scope', '')
+            r_action = r_json.get('action', '')
+            try:
+                if r_scope == 'queue':
+                    if r_action == 'open':
+                        resp['result'] = 'denied' if not p2p_queue.open_queue(
+                            queue_id=r_json.get('queue_id'),
+                        ) else 'OK'
+                    elif r_action == 'close':
+                        resp['result'] = 'denied' if not p2p_queue.close_queue(
+                            queue_id=r_json.get('queue_id'),
+                        ) else 'OK'
+                elif r_scope == 'consumer':
+                    if r_action == 'start':
+                        resp['result'] = 'denied' if not p2p_queue.add_consumer(
+                            consumer_id=r_json.get('consumer_id'),
+                        ) else 'OK'
+                    elif r_action == 'stop':
+                        resp['result'] = 'denied' if not p2p_queue.remove_consumer(
+                            consumer_id=r_json.get('consumer_id'),
+                        ) else 'OK'
+                    elif r_action == 'add_callback':
+                        resp['result'] = 'denied' if not p2p_queue.add_callback_method(
+                            consumer_id=r_json.get('consumer_id'),
+                            callback_method=r_json.get('method'),
+                        ) else 'OK'
+                    elif r_action == 'remove_callback':
+                        resp['result'] = 'denied' if not p2p_queue.remove_callback_method(
+                            consumer_id=r_json.get('consumer_id'),
+                            callback_method=r_json.get('method'),
+                        ) else 'OK'
+                    elif r_action == 'subscribe':
+                        resp['result'] = 'denied' if not p2p_queue.subscribe_consumer(
+                            consumer_id=r_json.get('consumer_id'),
+                            queue_id=r_json.get('queue_id'),
+                        ) else 'OK'
+                    elif r_action == 'unsubscribe':
+                        resp['result'] = 'denied' if not p2p_queue.unsubscribe_consumer(
+                            consumer_id=r_json.get('consumer_id'),
+                            queue_id=r_json.get('queue_id'),
+                        ) else 'OK'
+                elif r_scope == 'producer':
+                    if r_action == 'add':
+                        resp['result'] = 'denied' if not p2p_queue.add_producer(
+                            producer_id=r_json.get('producer_id'),
+                        ) else 'OK'
+                    elif r_action == 'remove':
+                        resp['result'] = 'denied' if not p2p_queue.remove_producer(
+                            producer_id=r_json.get('producer_id'),
+                        ) else 'OK'
+            except Exception as exc:
+                lg.exc()
+                resp['result'] = 'denied'
+                resp['reason'] = str(exc)
+            service_responses_list.append(resp)
+        return p2p_service.SendAck(newpacket, json.dumps({'items': service_responses_list}))
 
     def cancel(self, newpacket, info):
         # TODO: work in progress

@@ -49,6 +49,7 @@ _DebugLevel = 4
 
 import sys
 import time
+import json
 
 from collections import OrderedDict
 
@@ -71,6 +72,10 @@ from logs import lg
 
 from lib import utime
 from lib import misc
+from lib import packetid
+
+from crypt import my_keys
+from crypt import signed
 
 from p2p import commands
 from p2p import p2p_service
@@ -112,7 +117,6 @@ def shutdown():
     stop()
 
 #------------------------------------------------------------------------------
-
 
 def make_message_id():
     """
@@ -259,6 +263,10 @@ def remove_callback_method(consumer_id, callback_method):
 
 #------------------------------------------------------------------------------
 
+def is_producer_exist(producer_id):
+    return producer_id in producer()
+
+
 def add_producer(producer_id):
     global _Producers
     if producer_id in producer():
@@ -279,10 +287,17 @@ def remove_producer(producer_id):
 
 #------------------------------------------------------------------------------
 
+def is_event_publishing(producer_id, event_id):
+    if producer_id not in producer():
+        return False
+    return producer(producer_id).is_event_publishing(event_id)
+
+
 def start_event_publisher(producer_id, event_id):
     if producer_id not in producer():
         raise Exception('producer not exist')
     return producer(producer_id).start_publisher(event_id)
+
 
 def stop_event_publisher(producer_id, event_id):
     if producer_id not in producer():
@@ -291,10 +306,16 @@ def stop_event_publisher(producer_id, event_id):
 
 #------------------------------------------------------------------------------
 
-def open_queue(queue_id, key_id=None):
+def is_queue_exist(queue_id):
+    return queue_id in queue()
+
+
+def open_queue(queue_id):
     global _ActiveQueues
     if queue_id in queue():
         raise Exception('queue already exist')
+    if not my_keys.is_key_registered(queue_id):
+        raise Exception('public key for given queue not registered')
     _ActiveQueues[queue_id] = OrderedDict()
     return True
 
@@ -303,9 +324,11 @@ def close_queue(queue_id):
     global _ActiveQueues
     if queue_id not in queue():
         raise Exception('queue not exist')
-    _ActiveQueues.pop(queue_id)
+    if not my_keys.is_key_registered(queue_id):
+        lg.warn('closing queue, but public key for given queue not registered')
     for consumer_id in consumer().keys():
         unsubscribe_consumer(consumer_id, queue_id)
+    _ActiveQueues.pop(queue_id)
     return True
 
 #------------------------------------------------------------------------------
@@ -385,14 +408,14 @@ def finish_notification(consumer_id, queue_id, message_id, success):
 
 #------------------------------------------------------------------------------
 
-def push_message(producer_id, queue_id, data, created=None):
+def push_message(producer_id, queue_id, data, creation_time=None):
     if producer_id not in producer():
         raise Exception('unknown producer')
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if len(queue(queue_id)) >= MAX_QUEUE_LENGTH:
         raise Exception('queue is overloaded')
-    new_message = QueueMessage(producer_id, queue_id, data, created=created)
+    new_message = QueueMessage(producer_id, queue_id, data, created=creation_time)
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
@@ -443,6 +466,43 @@ def lookup_pending_message(consumer_id, queue_id):
     if queue_pos >= len(queue(queue_id)):
         return None
     return queue(queue_id).values()[queue_pos].message_id
+
+#------------------------------------------------------------------------------
+
+def push_signed_message(producer_id, queue_id, data, creation_time=None):
+    try:
+        signed_data = signed.Packet(
+            Command=commands.Event(),
+            OwnerID=producer_id,
+            CreatorID=producer_id,
+            PacketID=packetid.UniqueID(),
+            Payload=json.dumps(data),
+            RemoteID=queue_id,
+            KeyID=producer_id,
+        )
+    except:
+        lg.exc()
+        raise Exception('sign message failed')
+    return push_message(producer_id, queue_id, data=signed_data.Serialize(), creation_time=creation_time)
+
+
+def pop_signed_message(queue_id, message_id):
+    existing_message = pop_message(queue_id, message_id)
+    if not existing_message:
+        return existing_message
+    try:
+        signed_data = signed.Unserialize(existing_message.payload)
+    except:
+        raise Exception('unserialize message fails')
+    if not signed_data:
+        raise Exception('unserialized message is empty')
+    if not signed_data.Valid():
+        raise Exception('unserialized message is not valid')
+    try:
+        existing_message.payload = json.loads(signed_data.Payload)
+    except:
+        raise Exception('failed reading message json data')
+    return existing_message
 
 #------------------------------------------------------------------------------
 
@@ -627,6 +687,9 @@ class ProducerInfo(object):
         self.producer_id = producer_id
         self.produced_messages = 0
         self.publishers = {}
+
+    def is_event_publishing(self, event_id):
+        return event_id in self.publishers
 
     def start_publisher(self, event_id):
         if event_id in self.publishers:
