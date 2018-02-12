@@ -492,11 +492,20 @@ class SupplierService(LocalService):
             supplier_id=my_id.getGlobalID(),
         )
         if not p2p_queue.is_queue_exist(queue_id):
-            p2p_queue.open_queue(queue_id)
+            try:
+                p2p_queue.open_queue(queue_id)
+            except Exception as exc:
+                lg.warn('failed to open queue %s : %s' % (queue_id, str(exc)))
         if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
-            p2p_queue.add_producer(my_id.getGlobalID())
+            try:
+                p2p_queue.add_producer(my_id.getGlobalID())
+            except Exception as exc:
+                lg.warn('failed to add producer: %s' % str(exc))
         if not p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
-            p2p_queue.start_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+            try:
+                p2p_queue.start_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+            except Exception as exc:
+                lg.warn('failed to start event publisher: %s' % str(exc))
 
     def _on_customer_terminated(self, e):
         from userid import my_id
@@ -513,8 +522,17 @@ class SupplierService(LocalService):
             supplier_id=my_id.getGlobalID(),
         )
         if p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
-            p2p_queue.stop_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+            try:
+                p2p_queue.stop_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+            except Exception as exc:
+                lg.warn('failed to stop event publisher: %s' % str(exc))
         if p2p_queue.is_producer_exist(my_id.getGlobalID()):
-            p2p_queue.remove_producer(my_id.getGlobalID())
+            try:
+                p2p_queue.remove_producer(my_id.getGlobalID())
+            except Exception as exc:
+                lg.warn('failed to remove producer: %s' % str(exc))
         if p2p_queue.is_queue_exist(queue_id):
-            p2p_queue.close_queue(queue_id)
+            try:
+                p2p_queue.close_queue(queue_id)
+            except Exception as exc:
+                lg.warn('failed to stop queue %s : %s' % (queue_id, str(exc)))
