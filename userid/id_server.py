@@ -306,9 +306,12 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def disconnect(self):
         try:
-            self.transport.abortConnection()
+            self.transport.stopListening()
         except:
-            self.transport.loseConnection()
+            try:
+                self.transport.loseConnection()
+            except:
+                lg.exc()
 
     def connectionMade(self):
         """

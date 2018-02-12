@@ -208,6 +208,8 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.out(8, 'network_transport.doInit : %s' % str(arg))
         gateway.attach(self)
         try:
             listener, state_changed_callback = arg
@@ -279,6 +281,7 @@ class NetworkTransport(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         # gateway.transports().pop(self.proto)
+        self.log(self.debug_level, 'doDestroyMe(%s)' % str(arg))
         self.interface.shutdown()
         self.destroy()
         self.interface = None

@@ -65,7 +65,7 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -117,7 +117,6 @@ from web import control
 
 _AvailableTransports = {}
 _TransportsDict = {}
-_DoingShutdown = False
 _LocalListener = None
 _XMLRPCListener = None
 _XMLRPCPort = None
@@ -134,7 +133,6 @@ _TransportLogFilename = None
 
 def transport(proto):
     """
-    
     """
     global _TransportsDict
     return _TransportsDict[proto]
@@ -142,7 +140,6 @@ def transport(proto):
 
 def transports():
     """
-    
     """
     global _TransportsDict
     return _TransportsDict
@@ -150,7 +147,6 @@ def transports():
 
 def listener():
     """
-    
     """
     global _LocalListener
     return _LocalListener
@@ -165,14 +161,12 @@ def is_installed(proto):
 
 def can_send(proto):
     """
-    
     """
     return transport(proto).state == 'LISTENING'
 
 
 def last_inbox_time():
     """
-    
     """
     global _LastInboxPacketTime
     return _LastInboxPacketTime
@@ -182,16 +176,15 @@ def last_inbox_time():
 
 def init():
     """
-    
     """
     global _LocalListener
-    global _DoingShutdown
     if _Debug:
         lg.out(4, 'gateway.init')
-    if _DoingShutdown:
-        return
     open_transport_log(settings.TransportLog())
-    _LocalListener = TransportGateLocalProxy()
+    if _LocalListener:
+        lg.warn('local listener already exist')
+    else:
+        _LocalListener = TransportGateLocalProxy()
 
 
 def shutdown():
@@ -202,14 +195,12 @@ def shutdown():
     global _XMLRPCListener
     global _XMLRPCPort
     global _XMLRPCURL
-    global _DoingShutdown
     if _Debug:
         lg.out(4, 'gateway.shutdown')
-    if _DoingShutdown:
-        return
-    _DoingShutdown = True
     if _LocalListener:
         _LocalListener = None
+    else:
+        lg.warn('local listener not exist')
     close_transport_log()
 
 
@@ -343,7 +334,6 @@ def verify():
 
 def attach(transport_instance):
     """
-    
     """
     global _TransportsDict
     global _AvailableTransports
@@ -355,7 +345,6 @@ def attach(transport_instance):
 
 def detach(transport_instance):
     """
-    
     """
     global _TransportsDict
     global _AvailableTransports
@@ -389,12 +378,11 @@ def inbox(info):
     every 24 hours    which we send to BitDust sometime in the 24 hours
     after that.
     """
-    global _DoingShutdown
     global _LastInboxPacketTime
-    if _DoingShutdown:
-        if _Debug:
-            lg.out(_DebugLevel - 4, "gateway.inbox ignoring input since _DoingShutdown ")
-        return None
+#     if _DoingShutdown:
+#         if _Debug:
+#             lg.out(_DebugLevel - 4, "gateway.inbox ignoring input since _DoingShutdown ")
+#         return None
     if info.filename == "" or not os.path.exists(info.filename):
         lg.err("bad filename=" + info.filename)
         return None

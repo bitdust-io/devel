@@ -57,7 +57,9 @@ class CustomerService(LocalService):
         from crypt import my_keys
         from customer import supplier_connector
         from customer import customer_state
-        if my_keys.is_key_registered(customer_state.customer_key_id()):
+        from logs import lg
+        if not my_keys.is_key_registered(customer_state.customer_key_id()):
+            lg.warn('customer key was not found, generate new key: %s' % customer_state.customer_key_id())
             my_keys.generate_key(customer_state.customer_key_id())
         for supplier_idurl in contactsdb.suppliers():
             if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl):

@@ -417,60 +417,10 @@ def key_get(key_id, include_private=False):
     """
     lg.out(4, 'api.key_get')
     from crypt import my_keys
-    from crypt import key
-    from userid import my_id
-    from userid import global_id
-    key_id = str(key_id)
-    if key_id == 'master':
-        r = {
-            'key_id': my_id.getGlobalID(key_id),
-            'alias': 'master',
-            'creator': my_id.getLocalID(),
-            'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
-            'type': str(key.MyPrivateKeyObject().type()),
-            'ssh_type': str(key.MyPrivateKeyObject().sshType()),
-            'size': str(key.MyPrivateKeyObject().size()),
-            'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
-        }
-        if include_private:
-            r['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
-        return RESULT([r, ])
-    key_alias, creator_idurl = my_keys.split_key_id(key_id)
-    if not key_alias or not creator_idurl:
-        return ERROR('icorrect key_id format')
-    key_object = my_keys.known_keys().get(key_id)
-    if not key_object:
-        key_id_form_1 = my_keys.make_key_id(
-            alias=key_alias,
-            creator_idurl=creator_idurl,
-            output_format=global_id._FORMAT_GLOBAL_ID_KEY_USER,
-        )
-        key_id_form_2 = my_keys.make_key_id(
-            alias=key_alias,
-            creator_idurl=creator_idurl,
-            output_format=global_id._FORMAT_GLOBAL_ID_USER_KEY,
-        )
-        key_object = my_keys.known_keys().get(key_id_form_1)
-        if key_object:
-            key_id = key_id_form_1
-        else:
-            key_object = my_keys.known_keys().get(key_id_form_2)
-            if key_object:
-                key_id = key_id_form_2
-    if not key_object:
-        return ERROR('key not found')
-    r = {
-        'key_id': key_id,
-        'alias': key_alias,
-        'creator': creator_idurl,
-        'fingerprint': str(key_object.fingerprint()),
-        'type': str(key_object.type()),
-        'ssh_type': str(key_object.sshType()),
-        'size': str(key_object.size()),
-        'public': str(key_object.public().toString('openssh')),
-    }
-    if include_private:
-        r['private'] = str(key_object.toString('openssh'))
+    try:
+        r = my_keys.get_key_info(key_id=key_id, include_private=include_private)
+    except Exception as exc:
+        return ERROR(str(exc))
     return RESULT([r, ])
 
 
@@ -505,42 +455,16 @@ def keys_list(sort=False, include_private=False):
     """
     lg.out(4, 'api.keys_list')
     from crypt import my_keys
-    from crypt import key
-    from userid import my_id
     r = []
     for key_id, key_object in my_keys.known_keys().items():
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
         if not key_alias or not creator_idurl:
             lg.warn('incorrect key_id: %s' % key_id)
             continue
-        i = {
-            'key_id': key_id,
-            'alias': key_alias,
-            'creator': creator_idurl,
-            'fingerprint': str(key_object.fingerprint()),
-            'type': str(key_object.type()),
-            'ssh_type': str(key_object.sshType()),
-            'size': str(key_object.size()),
-            'public': str(key_object.public().toString('openssh')),
-        }
-        if include_private:
-            i['private'] = str(key_object.toString('openssh'))
-        r.append(i)
+        r.append(my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private))
     if sort:
         r = sorted(r, key=lambda i: i['alias'])
-    i = {
-        'key_id': my_keys.make_key_id('master', creator_idurl=my_id.getLocalID()),
-        'alias': 'master',
-        'creator': my_id.getLocalID(),
-        'fingerprint': key.MyPrivateKeyObject().fingerprint(),
-        'type': str(key.MyPrivateKeyObject().type()),
-        'ssh_type': str(key.MyPrivateKeyObject().sshType()),
-        'size': str(key.MyPrivateKeyObject().size()),
-        'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
-    }
-    if include_private:
-        i['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
-    r.insert(0, i)
+    r.insert(0, my_keys.make_master_key_info(include_private=include_private))
     return RESULT(r)
 
 
@@ -576,20 +500,11 @@ def key_create(key_alias, key_size=4096, include_private=False):
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
-    r = {
-        'key_id': key_id,
-        'alias': key_alias,
-        'creator': my_id.getLocalID(),
-        'fingerprint': str(key_object.fingerprint()),
-        'type': str(key_object.type()),
-        'ssh_type': str(key_object.sshType()),
-        'size': str(key_object.size()),
-        'public': str(key_object.public().toString('openssh')),
-        'private': '',
-    }
-    if include_private:
-        r['private'] = str(key_object.toString('openssh'))
-    return OK(r, message='new private key "%s" was generated successfully' % key_alias, )
+    return OK(my_keys.make_key_info(
+        key_object,
+        key_id=key_id,
+        include_private=include_private
+    ), message='new private key "%s" was generated successfully' % key_alias, )
 
 
 def key_erase(key_id):
@@ -1852,7 +1767,7 @@ def service_stop(service_name):
     return OK('"%s" was switched off' % service_name)
 
 
-def service_restart(service_name):
+def service_restart(service_name, wait_timeout=10):
     """
     Stop given service and start it again, but only if it is already enabled.
     Do not change corresponding `.bitdust/config/services/[service name]/enabled` option.
@@ -1868,7 +1783,15 @@ def service_restart(service_name):
     if svc is None:
         lg.out(4, 'api.service_restart %s not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
-    return driver.restart(services_list=[service_name, ], wait_timeout=5)
+    ret = Deferred()
+    d = driver.restart(service_name, wait_timeout=wait_timeout)
+    d.addCallback(
+        lambda resp: ret.callback(
+            OK(resp)))
+    d.addErrback(
+        lambda err: ret.callback(
+            ERROR(err.getErrorMessage())))
+    return ret
 
 #------------------------------------------------------------------------------
 
@@ -2453,6 +2376,7 @@ def network_stun(udp_port=None, dht_port=None):
     d.addBoth(lambda r: ret.callback(RESULT([r, ])))
     return ret
 
+
 def network_reconnect():
     """
     Sends "reconnect" event to network_connector() Automat in order to refresh
@@ -2468,5 +2392,21 @@ def network_reconnect():
     lg.out(4, 'api.network_reconnect')
     network_connector.A('reconnect')
     return OK('reconnected')
+
+
+def network_connected():
+    """
+    Be sure BitDust software running locally is connected to other nodes in the network.
+    """
+    if not driver.is_enabled('service_network'):
+        return ERROR('service_network() is not started', extra_fields={'reason': 'service_network_disabled'})
+    from userid import my_id
+    if not my_id.isLocalIdentityReady():
+        return ERROR('local identity is not exist', extra_fields={'reason': 'identity_not_exist'})
+    if not driver.is_enabled('service_gateway'):
+        return ERROR('service_gateway() is disabled', extra_fields={'reason': 'service_gateway_disabled'})
+    if not driver.is_on('service_gateway'):
+        return ERROR('service_gateway() is not started')
+    return OK('connected')
 
 #------------------------------------------------------------------------------

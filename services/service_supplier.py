@@ -88,18 +88,28 @@ class SupplierService(LocalService):
         return True
 
     def request(self, newpacket, info):
+        import json
         from main import events
+        from crypt import my_keys
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
         words = newpacket.Payload.split(' ')
+        customer_public_key = None
+        bytes_for_customer = None
         try:
-            bytes_for_customer = int(words[1])
+            json_info = json.loads(newpacket.Payload[newpacket.Payload.find(' '):])
+            bytes_for_customer = json_info['needed_bytes']
+            customer_public_key = json_info['customer_public_key']
+            customer_public_key_id = customer_public_key['key_id']
         except:
-            lg.exc()
-            bytes_for_customer = None
+            try:
+                bytes_for_customer = int(words[1])
+            except:
+                lg.exc()
+                bytes_for_customer = None
         if not bytes_for_customer or bytes_for_customer < 0:
-            lg.warn("wrong storage value : %s" % newpacket.Payload)
+            lg.warn("wrong payload : %s" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong storage value')
         current_customers = contactsdb.customers()
         if accounting.check_create_customers_quotas():
@@ -129,6 +139,8 @@ class SupplierService(LocalService):
             contactsdb.update_customers(current_customers)
             contactsdb.save_customers()
             accounting.write_customers_quotas(space_dict)
+            if customer_public_key:
+                my_keys.erase_key(customer_public_key_id)
             reactor.callLater(0, local_tester.TestUpdateCustomers)
             if new_customer:
                 lg.out(8, "    NEW CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
@@ -143,6 +155,15 @@ class SupplierService(LocalService):
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
+        if customer_public_key:
+            my_keys.erase_key(customer_public_key_id)
+            try:
+                if not my_keys.is_key_registered(customer_public_key_id):
+                    key_id, key_object = my_keys.read_key_info(customer_public_key)
+                    if not my_keys.register_key(key_id, key_object):
+                        lg.warn('failed to register customer public key')
+            except:
+                lg.exc()
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")

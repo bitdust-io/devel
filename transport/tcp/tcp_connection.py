@@ -323,9 +323,12 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         if _Debug:
             lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
         try:
-            self.transport.abortConnection()
+            self.transport.stopListening()
         except:
-            self.transport.loseConnection()
+            try:
+                self.transport.loseConnection()
+            except:
+                lg.exc()
 
     def doDestroyMe(self, arg):
         """
@@ -388,8 +391,14 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             command = data[1]
             payload = data[2:]
         except:
-            lg.exc()
-            self.transport.loseConnection()
+            lg.warn('invalid string received in tcp connection')
+            try:
+                self.transport.stopListening()
+            except:
+                try:
+                    self.transport.loseConnection()
+                except:
+                    lg.exc()
             return
         # print '>>>>>> [%s] %d bytes' % (command, len(payload))
         self.automat('data-received', (command, payload))

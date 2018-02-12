@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# rest_http_server.py
+# api_rest_http_server.py
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
-# This file (rest_http_server.py) is part of BitDust Software.
+# This file (api_rest_http_server.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,7 +27,7 @@
 """
 ..
 
-module:: rest_http_server
+module:: api_rest_http_server
 """
 
 #------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ def init(port=None):
         _APIListener = reactor.listenTCP(port, site)
     except:
         lg.exc()
-    lg.out(4, 'rest_http_server.init')
+    lg.out(4, 'api_rest_http_server.init')
 
 
 def shutdown():
@@ -76,7 +76,7 @@ def shutdown():
     if _APIListener is None:
         lg.warn('_APIListener is None')
         return
-    lg.out(4, 'rest_http_server.shutdown calling _APIListener.stopListening()')
+    lg.out(4, 'api_rest_http_server.shutdown calling _APIListener.stopListening()')
     _APIListener.stopListening()
     del _APIListener
     _APIListener = None
@@ -352,7 +352,8 @@ class BitDustRESTHTTPServer(APIResource):
 
     @POST('^/service/restart/(?P<service_name>[^/]+)/v1$')
     def service_restart(self, request, service_name):
-        return api.service_restart(service_name)
+        return api.service_restart(
+            service_name, wait_timeout=_request_data(request, default_value={}).get('wait_timeout', 10))
 
     #------------------------------------------------------------------------------
 
