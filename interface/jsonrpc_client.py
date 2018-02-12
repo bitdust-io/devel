@@ -54,6 +54,12 @@ def output(value):
 
 def loop_test():
     proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
+
+    def _loop(x=None):
+        print x
+        proxy.callRemote('network_connected', 1).addBoth(_loop)
+
+    reactor.callLater(1, _loop)
     reactor.run()
 
 #------------------------------------------------------------------------------
