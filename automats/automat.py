@@ -127,10 +127,6 @@ def erase_index(automatid):
     if _Index is None:
         return None
     return _Index.pop(automatid, None)
-#     index = _Index.get(automatid, None)
-#     if index is None:
-#         return None
-#     del _Index[automatid]
 
 
 def set_object(index, obj):
@@ -149,8 +145,6 @@ def clear_object(index):
     if _Objects is None:
         return
     return _Objects.pop(index, None)
-#     if index in _Objects:
-#         del _Objects[index]
 
 
 def objects():
@@ -167,6 +161,19 @@ def index():
     """
     global _Index
     return _Index
+
+
+def find(name):
+    """
+    Find state machine by name, this method will iterate all registered state machines
+    and match "name" field to find the result.
+    Return a list of indexes, then you can access those automats via `objects()` dict.
+    """
+    results = []
+    for sm in objects().values():
+        if sm.name == name:
+            results.append(sm.index)
+    return results
 
 
 def communicate(index, event, arg=None):

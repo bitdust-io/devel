@@ -227,7 +227,10 @@ def work():
         lg.warn('task %s is closed' % _CurrentLookupTask)
         return
     _CurrentLookupTask.start()
-    _CurrentLookupTask.result_defer.addCallback(on_lookup_task_success)
+    if _CurrentLookupTask.result_defer:
+        _CurrentLookupTask.result_defer.addCallback(on_lookup_task_success)
+    else:
+        lg.warn('task %s was closed imediately')
 
 #------------------------------------------------------------------------------
 

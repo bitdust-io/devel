@@ -234,6 +234,10 @@ class BitDustRESTHTTPServer(APIResource):
     def network_stun_v1(self, request):
         return api.network_stun()
 
+    @GET('^/network/connected/v1$')
+    def network_connected_v1(self, request):
+        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '5')))
+
     #------------------------------------------------------------------------------
 
     @GET('^/key/v1$')

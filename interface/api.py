@@ -2394,19 +2394,47 @@ def network_reconnect():
     return OK('reconnected')
 
 
-def network_connected():
+def network_connected(wait_timeout=10):
     """
     Be sure BitDust software running locally is connected to other nodes in the network.
     """
-    if not driver.is_enabled('service_network'):
-        return ERROR('service_network() is not started', extra_fields={'reason': 'service_network_disabled'})
     from userid import my_id
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not exist', extra_fields={'reason': 'identity_not_exist'})
+    if not driver.is_enabled('service_network'):
+        return ERROR('service_network() is not started', extra_fields={'reason': 'service_network_disabled'})
     if not driver.is_enabled('service_gateway'):
         return ERROR('service_gateway() is disabled', extra_fields={'reason': 'service_gateway_disabled'})
-    if not driver.is_on('service_gateway'):
-        return ERROR('service_gateway() is not started')
-    return OK('connected')
+    if not driver.is_enabled('service_p2p_hookups'):
+        return ERROR('service_p2p_hookups() is disabled', extra_fields={'reason': 'service_p2p_hookups_disabled'})
+    from automats import automat
+    p2p_connector_lookup = automat.find('p2p_connector')
+    if p2p_connector_lookup:
+        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+        if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
+            return OK('connected')
+
+    ret = Deferred()
+
+    def _on_restarted(resp):
+        p2p_connector_lookup = automat.find('p2p_connector')
+        if not p2p_connector_lookup:
+            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}))
+            return resp
+        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+        if not p2p_connector_machine:
+            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
+            return resp
+        if p2p_connector_machine.state != 'CONNECTED':
+            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
+            return resp
+        ret.callback(OK('connected'))
+        return resp
+
+    d = service_restart('service_network', wait_timeout=wait_timeout)
+    d.addBoth(_on_restarted)
+    d.addErrback(lambda err: ret.callback(dict(
+        ERROR(err.getErrorMessage()).items() + {'reason': 'error'}.items())))
+    return ret
 
 #------------------------------------------------------------------------------

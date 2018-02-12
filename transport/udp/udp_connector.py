@@ -193,10 +193,13 @@ class DHTUDPConnector(automat.Automat):
         """
         key = self.peer_id + ':incoming' + str(self.KeyPosition)
         self.working_deferred = dht_service.get_value(key)
-        self.working_deferred.addCallback(
-            self._got_peer_incoming, key, self.KeyPosition)
-        self.working_deferred.addErrback(
-            lambda x: self.automat('dht-read-failed'))
+        if not self.working_deferred:
+            self.automat('dht-read-failed')
+        else:
+            self.working_deferred.addCallback(
+                self._got_peer_incoming, key, self.KeyPosition)
+            self.working_deferred.addErrback(
+                lambda x: self.automat('dht-read-failed'))
 
     def doDHTWriteIncoming(self, arg):
         """
@@ -208,9 +211,12 @@ class DHTUDPConnector(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'doDHTWriteIncoming  key=%s' % key)
         self.working_deferred = dht_service.set_value(key, value, age=int(time.time()))
-        self.working_deferred.addCallback(self._wrote_peer_incoming)
-        self.working_deferred.addErrback(
-            lambda x: self.automat('dht-write-failed'))
+        if not self.working_deferred:
+            self.automat('dht-write-failed')
+        else:
+            self.working_deferred.addCallback(self._wrote_peer_incoming)
+            self.working_deferred.addErrback(
+                lambda x: self.automat('dht-write-failed'))
 
     def doStartNewSession(self, arg):
         """
@@ -252,9 +258,12 @@ class DHTUDPConnector(automat.Automat):
         """
         key = self.peer_id + ':address'
         self.working_deferred = dht_service.get_value(key)
-        self.working_deferred.addCallback(self._got_peer_address, key)
-        self.working_deferred.addErrback(
-            lambda x: self.automat('dht-read-failed'))
+        if not self.working_deferred:
+            self.automat('dht-read-failed')
+        else:
+            self.working_deferred.addCallback(self._got_peer_address, key)
+            self.working_deferred.addErrback(
+                lambda x: self.automat('dht-read-failed'))
 
     def doReportFailed(self, arg):
         """
