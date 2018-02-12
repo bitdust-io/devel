@@ -212,7 +212,7 @@ def valid_queue_id(queue_id):
     except:
         return False
     queue_info = global_id.ParseGlobalQueueID(queue_id)
-    if not misc.ValidUserName(queue_info['queue_alias']):
+    if not misc.ValidName(queue_info['queue_alias']):
         return False
     owner_id = global_id.ParseGlobalID(queue_info['owner_id'])
     if not owner_id['idurl']:
