@@ -451,6 +451,7 @@ def make_master_key_info(include_private=False):
         'ssh_type': str(key.MyPrivateKeyObject().sshType()),
         'size': str(key.MyPrivateKeyObject().size()),
         'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
+        'include_private': include_private,
     }
     r['private'] = None
     if include_private:
@@ -472,6 +473,7 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         'type': str(key_object.type()),
         'ssh_type': str(key_object.sshType()),
         'size': str(key_object.size()),
+        'include_private': include_private,
     }
     r['private'] = None
     if key_object.isPublic():
@@ -514,17 +516,17 @@ def get_key_info(key_id, include_private=False):
                 key_id = key_id_form_2
     if not key_object:
         raise Exception('key not found')
-    return make_key_info(key_object, key_id=key_id, )
+    return make_key_info(key_object, key_id=key_id, include_private=include_private, )
 
 
 def read_key_info(key_json):
     try:
         key_id = str(key_json['key_id'])
-        is_public = bool(key_json['is_public'])
-        if is_public:
-            raw_openssh_string = str(key_json['public'])
-        else:
+        include_private = bool(key_json['include_private'])
+        if include_private:
             raw_openssh_string = str(key_json['private'])
+        else:
+            raw_openssh_string = str(key_json['public'])
         key_object = unserialize_key_to_object(raw_openssh_string)
         if not key_object:
             raise Exception('unserialize failed')

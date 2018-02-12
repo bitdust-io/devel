@@ -96,6 +96,7 @@ class SupplierService(LocalService):
         from storage import accounting
         words = newpacket.Payload.split(' ')
         customer_public_key = None
+        customer_public_key_id = None
         bytes_for_customer = None
         try:
             json_info = json.loads(newpacket.Payload[newpacket.Payload.find(' '):])
@@ -139,7 +140,7 @@ class SupplierService(LocalService):
             contactsdb.update_customers(current_customers)
             contactsdb.save_customers()
             accounting.write_customers_quotas(space_dict)
-            if customer_public_key:
+            if customer_public_key_id:
                 my_keys.erase_key(customer_public_key_id)
             reactor.callLater(0, local_tester.TestUpdateCustomers)
             if new_customer:
@@ -155,7 +156,7 @@ class SupplierService(LocalService):
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
-        if customer_public_key:
+        if customer_public_key_id:
             my_keys.erase_key(customer_public_key_id)
             try:
                 if not my_keys.is_key_registered(customer_public_key_id):
