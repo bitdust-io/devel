@@ -74,6 +74,8 @@ from lib import utime
 from lib import misc
 from lib import packetid
 
+from userid import global_id
+
 from crypt import my_keys
 from crypt import signed
 
@@ -209,15 +211,15 @@ def valid_queue_id(queue_id):
         str(queue_id)
     except:
         return False
-    if not misc.ValidUserName(queue_id):
+    queue_info = global_id.ParseGlobalQueueID(queue_id)
+    if not misc.ValidUserName(queue_info['queue_alias']):
         return False
-#     qid = global_id.ParseGlobalID(queue_id)
-#     if not qid['user']:
-#         return False
-#     if not qid['key_alias']:
-#         return False
-#     if not qid['path'] or not qid['path'].startswith('.queue'):
-#         return False
+    owner_id = global_id.ParseGlobalID(queue_info['owner_id'])
+    if not owner_id['idurl']:
+        return False
+    supplier_id = global_id.ParseGlobalID(queue_info['supplier_id'])
+    if not supplier_id['idurl']:
+        return False
     return True
 
 #------------------------------------------------------------------------------
@@ -312,10 +314,14 @@ def is_queue_exist(queue_id):
 
 def open_queue(queue_id):
     global _ActiveQueues
+    if not valid_queue_id(queue_id):
+        raise Exception('invalid queue id')
     if queue_id in queue():
         raise Exception('queue already exist')
-    if not my_keys.is_key_registered(queue_id):
-        raise Exception('public key for given queue not registered')
+    queue_info = global_id.ParseGlobalQueueID(queue_id)
+    customer_key_id = global_id.MakeGlobalID(customer=queue_info['owner_id'], key_alias='customer')
+    if not my_keys.is_key_registered(customer_key_id):
+        raise Exception('customer key for given queue not found')
     _ActiveQueues[queue_id] = OrderedDict()
     return True
 
@@ -324,8 +330,8 @@ def close_queue(queue_id):
     global _ActiveQueues
     if queue_id not in queue():
         raise Exception('queue not exist')
-    if not my_keys.is_key_registered(queue_id):
-        lg.warn('closing queue, but public key for given queue not registered')
+#     if not my_keys.is_key_registered(queue_id):
+#         lg.warn('closing queue, but public key for given queue not registered')
     for consumer_id in consumer().keys():
         unsubscribe_consumer(consumer_id, queue_id)
     _ActiveQueues.pop(queue_id)
