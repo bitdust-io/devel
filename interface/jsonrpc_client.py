@@ -52,6 +52,12 @@ def output(value):
 
 #------------------------------------------------------------------------------
 
+def loop_test():
+    proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
+    reactor.run()
+
+#------------------------------------------------------------------------------
+
 def main():
     proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
     # proxy.callRemote('ping', 'http://p2p-id.ru/bitdust_j_vps1014.xml').addBoth(output)
