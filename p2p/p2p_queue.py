@@ -323,6 +323,7 @@ def open_queue(queue_id):
     if not my_keys.is_key_registered(customer_key_id):
         raise Exception('customer key for given queue not found')
     _ActiveQueues[queue_id] = OrderedDict()
+    lg.info('new queue opened %s based on key %s' % (queue_id, customer_key_id))
     return True
 
 

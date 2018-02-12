@@ -44,7 +44,7 @@ class P2PNotificationsService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_gateway',
+            'service_p2p_hookups',
         ]
 
     def start(self):
