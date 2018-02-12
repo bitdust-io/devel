@@ -279,8 +279,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_service_stop(self, service_name):
         return api.service_stop(service_name)
 
-    def jsonrpc_service_restart(self, service_name):
-        return api.service_restart(service_name)
+    def jsonrpc_service_restart(self, service_name, wait_timeout=10):
+        return api.service_restart(service_name, wait_timeout=wait_timeout)
 
     def jsonrpc_packets_stats(self):
         return api.packets_stats()

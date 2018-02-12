@@ -1767,7 +1767,7 @@ def service_stop(service_name):
     return OK('"%s" was switched off' % service_name)
 
 
-def service_restart(service_name):
+def service_restart(service_name, wait_timeout=10):
     """
     Stop given service and start it again, but only if it is already enabled.
     Do not change corresponding `.bitdust/config/services/[service name]/enabled` option.
@@ -1784,7 +1784,7 @@ def service_restart(service_name):
         lg.out(4, 'api.service_restart %s not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     ret = Deferred()
-    d = driver.restart(service_name, wait_timeout=5)
+    d = driver.restart(service_name, wait_timeout=wait_timeout)
     d.addCallback(
         lambda resp: ret.callback(
             OK(resp)))
@@ -2398,12 +2398,15 @@ def network_connected():
     """
     Be sure BitDust software running locally is connected to other nodes in the network.
     """
-    if not driver.is_on('service_network'):
-        return ERROR('service_network() is not started')
+    if not driver.is_enabled('service_network'):
+        return ERROR('service_network() is not started', extra_fields={'reason': 'service_network_disabled'})
     from userid import my_id
     if not my_id.isLocalIdentityReady():
-        return ERROR('local identity is not exist')
-    
+        return ERROR('local identity is not exist', extra_fields={'reason': 'identity_not_exist'})
+    if not driver.is_enabled('service_gateway'):
+        return ERROR('service_gateway() is disabled', extra_fields={'reason': 'service_gateway_disabled'})
+    if not driver.is_on('service_gateway'):
+        return ERROR('service_gateway() is not started')
     return OK('connected')
 
 #------------------------------------------------------------------------------

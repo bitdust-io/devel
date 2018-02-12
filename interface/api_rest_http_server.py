@@ -352,7 +352,8 @@ class BitDustRESTHTTPServer(APIResource):
 
     @POST('^/service/restart/(?P<service_name>[^/]+)/v1$')
     def service_restart(self, request, service_name):
-        return api.service_restart(service_name)
+        return api.service_restart(
+            service_name, wait_timeout=_request_data(request, default_value={}).get('wait_timeout', 10))
 
     #------------------------------------------------------------------------------
 

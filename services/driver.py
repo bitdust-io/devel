@@ -352,8 +352,12 @@ def restart(service_name, wait_timeout=None):
         return stop_defer
 
     def _on_timeout(err):
-        restart_result.errback(failure.Failure(Exception('timeout')))
-        return err
+        all_states = [_svc.state for _svc in services().values()]
+        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+            restart_result.errback(failure.Failure(Exception('timeout')))
+            return err
+        _do_stop()
+        return None
 
     dl = []
     if _StopingDeferred:
