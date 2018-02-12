@@ -2333,13 +2333,15 @@ def event_send(event_id, json_data=None):
     import json
     from main import events
     json_payload = None
+    json_length = 0
     if json_data and (isinstance(json_data, str) or isinstance(json_data, unicode)):
+        json_length = len(json_data)
         try:
             json_payload = json.loads(json_data or '{}')
         except:
             return ERROR('json data payload is not correct')
     events.send(event_id, data=json_payload)
-    return OK('event "%s" was sent with %d bytes payload' % (event_id, len(json_data), ))
+    return OK('event "%s" was sent with %d bytes payload' % (event_id, len(json_length), ))
 
 def events_listen(consumer_id):
     from main import events

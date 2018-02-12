@@ -704,7 +704,7 @@ class ProducerInfo(object):
             producer_id=self.producer_id,
             queue_id=evt.event_id,
             data=evt.data,
-            created=evt.created,
+            creation_time=evt.created,
         )
         return events.add_subscriber(self.publishers[event_id], event_id)
 

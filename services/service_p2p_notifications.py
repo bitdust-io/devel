@@ -173,7 +173,8 @@ class P2PNotificationsService(LocalService):
             p2p_queue.push_message(
                 producer_id=producer_id,
                 queue_id=event_id,
-                json_data=payload,
+                data=payload,
+                creation_time=created,
             )
         except Exception as exc:
             lg.warn(exc)

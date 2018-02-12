@@ -70,16 +70,22 @@ class SupplierService(LocalService):
     def start(self):
         from transport import callback
         from main import events
+        from contacts import contactsdb
         callback.append_inbox_callback(self._on_inbox_packet_received)
-        events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
+        events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-denied')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
+        for customer_idurl in contactsdb.customers():
+            events.send('existing-customer-accepted', data=dict(idurl=customer_idurl))
         return True
 
     def stop(self):
         from transport import callback
         from main import events
+        from contacts import contactsdb
+        for customer_idurl in contactsdb.customers():
+            events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
         events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.remove_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.remove_subscriber(self._on_customer_terminated, 'existing-customer-denied')
@@ -511,4 +517,4 @@ class SupplierService(LocalService):
         if p2p_queue.is_producer_exist(my_id.getGlobalID()):
             p2p_queue.remove_producer(my_id.getGlobalID())
         if p2p_queue.is_queue_exist(queue_id):
-            p2p_queue.close_queue('supplier-file-modified')
+            p2p_queue.close_queue(queue_id)
