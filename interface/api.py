@@ -2418,7 +2418,7 @@ def network_connected(wait_timeout=10):
         return ERROR('service_p2p_hookups() is disabled', extra_fields={'reason': 'service_p2p_hookups_disabled'})
 
     ret = Deferred()
-    
+
     def _on_restarted(resp):
         p2p_connector_lookup = automat.find('p2p_connector')
         if not p2p_connector_lookup:
@@ -2459,5 +2459,16 @@ def network_connected(wait_timeout=10):
     wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
     wait_timeout_defer.addBoth(_do_restart)
     return ret
+
+#------------------------------------------------------------------------------
+
+def queue_list():
+    """
+    """
+    from p2p import p2p_queue
+    return RESULT([{
+        'queue_id': queue_id,
+        'messages': len(p2p_queue.queue(queue_id)),
+    } for queue_id in p2p_queue.queue().keys()])
 
 #------------------------------------------------------------------------------
