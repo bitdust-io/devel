@@ -574,6 +574,8 @@ class Automat(object):
         global _LogFilename
         global _LogsCount
         global _LifeBeginsTime
+        if not text.startswith(self.name):
+            text = '%s(): %s' % (self.name, text, )
         if _LogFile is not None:
             if _LogsCount > 100000 and _LogFilename:
                 _LogFile.close()

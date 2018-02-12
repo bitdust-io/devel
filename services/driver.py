@@ -43,8 +43,7 @@ import sys
 import importlib
 
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, DeferredList, succeed
-from twisted.internet.task import LoopingCall
+from twisted.internet.defer import Deferred, DeferredList, succeed, failure
 
 #------------------------------------------------------------------------------
 
@@ -314,13 +313,23 @@ def stop(services_list=[]):
 
 
 def restart(service_name, wait_timeout=None):
+    """
+    """
     global _StopingDeferred
     global _StartingDeferred
     restart_result = Deferred()
 
     def _on_started(start_result, stop_result, dependencies_results):
         lg.out(4, 'api.service_restart._on_started : %s with %s' % (service_name, start_result))
-        restart_result.callback(start_result, stop_result, dependencies_results)
+        try:
+            stop_resp = {stop_result[0][1]: stop_result[0][0], }
+        except:
+            stop_resp = {'stopped': str(stop_result), }
+        try:
+            start_resp = {start_result[0][1]: start_result[0][0], }
+        except:
+            start_resp = {'started': str(start_result), }
+        restart_result.callback([stop_resp, start_resp, ])
         return start_result
 
     def _do_start(stop_result=None, dependencies_results=None):
@@ -342,6 +351,10 @@ def restart(service_name, wait_timeout=None):
         stop_defer.addErrback(restart_result.errback)
         return stop_defer
 
+    def _on_timeout(err):
+        restart_result.errback(failure.Failure(Exception('timeout')))
+        return err
+
     dl = []
     if _StopingDeferred:
         dl.append(_StartingDeferred)
@@ -356,9 +369,9 @@ def restart(service_name, wait_timeout=None):
     if not dl:
         dl.append(succeed(True))
 
-    dependencies = DeferredList(dl, fireOnOneErrback=True)
+    dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
     dependencies.addCallback(_do_stop)
-    dependencies.addErrback(restart_result.errback)
+    dependencies.addErrback(_on_timeout)
     return restart_result
 
 #------------------------------------------------------------------------------

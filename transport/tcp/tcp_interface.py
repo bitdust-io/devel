@@ -47,7 +47,7 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in tcp_interface.py')
 
 from twisted.web import xmlrpc
-from twisted.internet.defer import fail
+from twisted.internet.defer import fail, succeed
 from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
@@ -66,9 +66,17 @@ _GateProxy = None
 
 #------------------------------------------------------------------------------
 
-
-def proxy():
+def proxy(instance=None):
     global _GateProxy
+    if instance is False:
+        if _Debug:
+            lg.out(4, 'tcp_interface.proxy killing existing gate instance: %d' % id(_GateProxy))
+        _GateProxy = None
+        return None
+    if instance is not None:
+        _GateProxy = instance
+        if _Debug:
+            lg.out(4, 'tcp_interface.proxy created new gate instance: %d' % id(_GateProxy))
     return _GateProxy
 
 #------------------------------------------------------------------------------
@@ -80,13 +88,12 @@ class GateInterface():
         """
         """
         if _Debug:
-            lg.out(4, 'tcp_interface.init')
+            lg.out(4, 'tcp_interface.init %d' % id(proxy()))
         if not proxy():
-            global _GateProxy
             if isinstance(xml_rpc_url_or_object, str):
-                _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
+                proxy(xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True))
             else:
-                _GateProxy = xml_rpc_url_or_object
+                proxy(xml_rpc_url_or_object)
         proxy().callRemote('transport_initialized', 'tcp')
         return True
 
@@ -94,11 +101,8 @@ class GateInterface():
         """
         """
         if _Debug:
-            lg.out(4, 'tcp_interface.shutdown')
-        if proxy():
-            global _GateProxy
-            del _GateProxy
-            _GateProxy = None
+            lg.out(4, 'tcp_interface.shutdown %d' % id(proxy()))
+        proxy(False)
         return True
 
     def connect(self, options):
@@ -244,8 +248,9 @@ def interface_disconnected(result=None):
     """
     if proxy():
         return proxy().callRemote('disconnected', 'tcp', result)
-    lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return succeed(result)
+    # lg.warn('transport_tcp is not ready')
+    # return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):

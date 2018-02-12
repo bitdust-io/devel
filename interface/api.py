@@ -1786,8 +1786,8 @@ def service_restart(service_name):
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=5)
     d.addCallback(
-        lambda *resp_args: ret.callback(
-            OK(str(resp_args))))
+        lambda resp: ret.callback(
+            OK(resp)))
     d.addErrback(
         lambda err: ret.callback(
             ERROR(err.getErrorMessage())))
@@ -2376,6 +2376,7 @@ def network_stun(udp_port=None, dht_port=None):
     d.addBoth(lambda r: ret.callback(RESULT([r, ])))
     return ret
 
+
 def network_reconnect():
     """
     Sends "reconnect" event to network_connector() Automat in order to refresh
@@ -2391,5 +2392,18 @@ def network_reconnect():
     lg.out(4, 'api.network_reconnect')
     network_connector.A('reconnect')
     return OK('reconnected')
+
+
+def network_connected():
+    """
+    Be sure BitDust software running locally is connected to other nodes in the network.
+    """
+    if not driver.is_on('service_network'):
+        return ERROR('service_network() is not started')
+    from userid import my_id
+    if not my_id.isLocalIdentityReady():
+        return ERROR('local identity is not exist')
+    
+    return OK('connected')
 
 #------------------------------------------------------------------------------

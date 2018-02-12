@@ -56,9 +56,10 @@ class TCPTransportService(LocalService):
         from transport import gateway
         from main.config import conf
         self.starting_deferred = Deferred()
-        self.transport = network_transport.NetworkTransport('tcp', tcp_interface.GateInterface())
-        self.transport.automat('init',
-                               (gateway.listener(), self._on_transport_state_changed))
+        self.interface = tcp_interface.GateInterface()
+        self.transport = network_transport.NetworkTransport('tcp', self.interface)
+        self.transport.automat(
+            'init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
         conf().addCallback('services/tcp-transport/enabled',
                            self._on_enabled_disabled)
