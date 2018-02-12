@@ -348,6 +348,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_network_reconnect(self):
         return api.network_reconnect()
 
+    def jsonrpc_network_connected(self, wait_timeout=5):
+        return api.network_connected(wait_timeout=wait_timeout)
+
     def jsonrpc_reconnect(self):  # alias
         return api.network_reconnect()
 
