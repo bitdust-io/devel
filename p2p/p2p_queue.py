@@ -230,7 +230,7 @@ def add_consumer(consumer_id):
         raise Exception('consumer already exist')
     _Consumers[consumer_id] = ConsumerInfo(consumer_id)
     new_consumer = consumer(consumer_id)
-    lg.info('new consumer added: %s with %s' % (consumer_id, str(new_consumer), ))
+    lg.info('new consumer added: %s' % consumer_id)
     return True
 
 
@@ -250,7 +250,6 @@ def add_callback_method(consumer_id, callback_method):
     if callback_method in consumer(consumer_id).commands:
         raise Exception('callback method already exist')
     consumer(consumer_id).commands.append(callback_method)
-    lg.info('callback_method %s added for consumer %s' % (callback_method, consumer_id))
     return True
 
 
@@ -260,7 +259,6 @@ def remove_callback_method(consumer_id, callback_method):
     if callback_method not in consumer(consumer_id).commands:
         raise Exception('callback method not found')
     consumer(consumer_id).commands.remove(callback_method)
-    lg.info('callback_method %s removed from consumer %s' % (callback_method, consumer_id))
     return True
 
 #------------------------------------------------------------------------------
@@ -271,17 +269,16 @@ def is_producer_exist(producer_id):
 
 def add_producer(producer_id):
     global _Producers
-    if producer_id in producer():
+    if is_producer_exist(producer_id):
         raise Exception('producer already exist')
     _Producers[producer_id] = ProducerInfo(producer_id)
-    new_producer = producer(producer_id)
-    lg.info('new producer added: %s with %s' % (producer_id, str(new_producer), ))
+    lg.info('new producer added: %s' % producer_id)
     return True
 
 
 def remove_producer(producer_id):
     global _Producers
-    if producer_id not in producer():
+    if not is_producer_exist(producer_id):
         raise Exception('producer not exist')
     _Producers.pop(producer_id)
     lg.info('existing producer removed: %s' % str(producer_id))
@@ -289,20 +286,53 @@ def remove_producer(producer_id):
 
 #------------------------------------------------------------------------------
 
+def is_producer_connected(producer_id, queue_id):
+    if not is_producer_exist(producer_id):
+        return False
+    return queue_id in producer(producer_id).queues
+
+
+def connect_producer(producer_id, queue_id):
+    if not is_producer_exist(producer_id):
+        raise Exception('producer not exist')
+    if not is_queue_exist(queue_id):
+        raise Exception('queue not exist')
+    producer(producer_id).queues.append(queue_id)
+    lg.info('producer %s connected to queue %s' % (producer_id, queue_id, ))
+    return True
+
+
+def disconnect_producer(producer_id, queue_id=None):
+    if not is_producer_exist(producer_id):
+        raise Exception('producer not exist')
+    if not is_queue_exist(queue_id):
+        raise Exception('queue not exist')
+    if queue_id is None:
+        producer(producer_id).queues = []
+        lg.info('producer %s disconnected from all queues' % (producer_id, ))
+        return True
+    if queue_id not in producer(producer_id).queues:
+        raise Exception('producer is not connected to that queue')
+    producer(producer_id).queues.remove(queue_id)
+    lg.info('producer %s disconnected from queue %s' % (producer_id, queue_id, ))
+    return True
+
+#------------------------------------------------------------------------------
+
 def is_event_publishing(producer_id, event_id):
-    if producer_id not in producer():
+    if not is_producer_exist(producer_id):
         return False
     return producer(producer_id).is_event_publishing(event_id)
 
 
 def start_event_publisher(producer_id, event_id):
-    if producer_id not in producer():
+    if not is_producer_exist(producer_id):
         raise Exception('producer not exist')
     return producer(producer_id).start_publisher(event_id)
 
 
 def stop_event_publisher(producer_id, event_id):
-    if producer_id not in producer():
+    if not is_producer_exist(producer_id):
         raise Exception('producer not exist')
     return producer(producer_id).stop_publisher(event_id)
 
@@ -416,7 +446,7 @@ def finish_notification(consumer_id, queue_id, message_id, success):
 #------------------------------------------------------------------------------
 
 def push_message(producer_id, queue_id, data, creation_time=None):
-    if producer_id not in producer():
+    if not is_producer_exist(producer_id):
         raise Exception('unknown producer')
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
@@ -529,9 +559,6 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
     finish_notification(consumer_id, queue_id, message_id, success=False)
     reactor.callLater(0, do_cleanup)
     return err
-
-def on_event_raised():
-    pass
 
 #------------------------------------------------------------------------------
 
@@ -693,20 +720,29 @@ class ProducerInfo(object):
         self.state = 'READY'
         self.producer_id = producer_id
         self.produced_messages = 0
+        self.queues = []
         self.publishers = {}
 
     def is_event_publishing(self, event_id):
         return event_id in self.publishers
 
+    def do_push_message(self, evt):
+        if not self.queues:
+            lg.warn('producer is not connected to any queue')
+            return False
+        for queue_id in self.queues:
+            push_message(
+                producer_id=self.producer_id,
+                queue_id=queue_id,
+                data=evt.data,
+                creation_time=evt.created,
+            )
+        return True
+
     def start_publisher(self, event_id):
         if event_id in self.publishers:
             raise Exception('event publisher already exist')
-        self.publishers[event_id] = lambda evt: push_message(
-            producer_id=self.producer_id,
-            queue_id=evt.event_id,
-            data=evt.data,
-            creation_time=evt.created,
-        )
+        self.publishers[event_id] = lambda evt: self.do_push_message(evt)
         return events.add_subscriber(self.publishers[event_id], event_id)
 
     def stop_publisher(self, event_id):
@@ -721,29 +757,32 @@ class ProducerInfo(object):
 
 #------------------------------------------------------------------------------
 
-def _test_callback(message_json):
-    time.sleep(1)
-    print '               !!!!!!!!!!!!! _test_callback:', message_json
+def _test_callback_bob(message_json):
+    # time.sleep(1)
+    print '               !!!!!!!!!!!!! _test_callback_bob:', message_json
+    return True
+
+def _test_callback_dave(message_json):
+    # time.sleep(1)
+    print '               !!!!!!!!!!!!! _test_callback_dave:', message_json
     return True
 
 
 def test():
     lg.set_debug_level(24)
     init()
+    my_keys.generate_key('customer$bob@server-second.com')
+    # copy bob@server-second.com's key to dave@server-4.com in ~/.bitdust/keys/
+    open_queue('event-test123&bob@server-second.com&carl@thirdnode.net')
     add_producer('alice@host-one.com')
+    connect_producer('alice@host-one.com', 'event-test123&bob@server-second.com&carl@thirdnode.net')
     start_event_publisher('alice@host-one.com', 'test123')
     add_consumer('bob@server-second.com')
-    add_callback_method('bob@server-second.com', _test_callback)
-    open_queue('test123')
-    subscribe_consumer('bob@server-second.com', 'test123')
-#     push_message('alice@host-one.com', 'test123', data=dict(abc=123))
-#     push_message('alice@host-one.com', 'test123', data=dict(abc=456))
-#     push_message('alice@host-one.com', 'test123', data=dict(abc=789))
-#     push_message('alice@host-one.com', 'test123', data=dict(abc='abc'))
-#     push_message('alice@host-one.com', 'test123', data=dict(abc='def'))
-#     push_message('alice@host-one.com', 'test123', data=dict(abc='ghi'))
-#     push_message('alice@host-one.com', 'test123', data=dict(abc='jkl'))
-#     push_message('alice@host-one.com', 'test123', data=dict(abc='nop'))
+    add_callback_method('bob@server-second.com', _test_callback_bob)
+    subscribe_consumer('bob@server-second.com', 'event-test123&bob@server-second.com&carl@thirdnode.net')
+    add_consumer('dave@server-4.com')
+    add_callback_method('dave@server-4.com', _test_callback_dave)
+    subscribe_consumer('dave@server-4.com', 'event-test123&bob@server-second.com&carl@thirdnode.net')
     events.send('test123', data=dict(abc='abc', counter=0))
     events.send('test123', data=dict(abc='abc', counter=2))
     events.send('test123', data=dict(abc='abc', counter=4))

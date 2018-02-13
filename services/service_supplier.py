@@ -496,16 +496,24 @@ class SupplierService(LocalService):
                 p2p_queue.open_queue(queue_id)
             except Exception as exc:
                 lg.warn('failed to open queue %s : %s' % (queue_id, str(exc)))
-        if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
-            try:
-                p2p_queue.add_producer(my_id.getGlobalID())
-            except Exception as exc:
-                lg.warn('failed to add producer: %s' % str(exc))
-        if not p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
-            try:
-                p2p_queue.start_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
-            except Exception as exc:
-                lg.warn('failed to start event publisher: %s' % str(exc))
+        if p2p_queue.is_queue_exist(queue_id):
+            if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
+                try:
+                    p2p_queue.add_producer(my_id.getGlobalID())
+                except Exception as exc:
+                    lg.warn('failed to add producer: %s' % str(exc))
+            if p2p_queue.is_producer_exist(my_id.getGlobalID()):
+                if not p2p_queue.is_producer_connected(my_id.getGlobalID(), queue_id):
+                    try:
+                        p2p_queue.connect_producer(my_id.getGlobalID(), queue_id)
+                    except Exception as exc:
+                        lg.warn('failed to connect producer: %s' % str(exc))
+                if p2p_queue.is_producer_connected(my_id.getGlobalID(), queue_id):
+                    if not p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
+                        try:
+                            p2p_queue.start_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+                        except Exception as exc:
+                            lg.warn('failed to start event publisher: %s' % str(exc))
 
     def _on_customer_terminated(self, e):
         from userid import my_id
@@ -521,11 +529,18 @@ class SupplierService(LocalService):
             owner_id=customer_glob_id,
             supplier_id=my_id.getGlobalID(),
         )
+        # TODO: need to decide when to stop producing
+        # might be that other customers needs that info still
         if p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
             try:
                 p2p_queue.stop_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
             except Exception as exc:
                 lg.warn('failed to stop event publisher: %s' % str(exc))
+        if p2p_queue.is_producer_connected(my_id.getGlobalID(), queue_id):
+            try:
+                p2p_queue.disconnect_producer(my_id.getGlobalID(), queue_id)
+            except Exception as exc:
+                lg.warn('failed to disconnect producer: %s' % str(exc))
         if p2p_queue.is_producer_exist(my_id.getGlobalID()):
             try:
                 p2p_queue.remove_producer(my_id.getGlobalID())

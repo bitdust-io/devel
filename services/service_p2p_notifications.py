@@ -117,14 +117,28 @@ class P2PNotificationsService(LocalService):
                             queue_id=r_json.get('queue_id'),
                         ) else 'OK'
                 elif r_scope == 'producer':
-                    if r_action == 'add':
-                        resp['result'] = 'denied' if not p2p_queue.add_producer(
-                            producer_id=r_json.get('producer_id'),
-                        ) else 'OK'
-                    elif r_action == 'remove':
-                        resp['result'] = 'denied' if not p2p_queue.remove_producer(
-                            producer_id=r_json.get('producer_id'),
-                        ) else 'OK'
+                    resp['result'] = 'denied'
+                    resp['reason'] = 'remote requests for producing messages is not allowed'
+                    if False:
+                        # TODO: do we need that ?
+                        if r_action == 'start':
+                            resp['result'] = 'denied' if not p2p_queue.add_producer(
+                                producer_id=r_json.get('producer_id'),
+                            ) else 'OK'
+                        elif r_action == 'stop':
+                            resp['result'] = 'denied' if not p2p_queue.remove_producer(
+                                producer_id=r_json.get('producer_id'),
+                            ) else 'OK'
+                        elif r_action == 'connect':
+                            resp['result'] = 'denied' if not p2p_queue.connect_producer(
+                                producer_id=r_json.get('producer_id'),
+                                queue_id=r_json.get('queue_id'),
+                            ) else 'OK'
+                        elif r_action == 'disconnect':
+                            resp['result'] = 'denied' if not p2p_queue.disconnect_producer(
+                                producer_id=r_json.get('producer_id'),
+                                queue_id=r_json.get('queue_id'),
+                            ) else 'OK'
             except Exception as exc:
                 lg.exc()
                 resp['result'] = 'denied'
