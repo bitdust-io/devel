@@ -536,7 +536,7 @@ class Automat(object):
                 self._timers[name].start(interval, self.instant_timers)
                 # self.log(self.debug_level * 4, '%s.startTimers timer %s started' % (self, name))
         except:
-            import pdb; pdb.set_trace()
+            traceback.print_exc()
 
     def restartTimers(self):
         """
