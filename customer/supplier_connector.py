@@ -326,7 +326,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        service_info = json.dumps({'items': [{
+        service_info = {'items': [{
             'scope': 'consumer',
             'action': 'start',
             'consumer_id': my_id.getGlobalID(),
@@ -344,7 +344,7 @@ class SupplierConnector(automat.Automat):
                 owner_id=my_id.getGlobalID(),
                 supplier_id=global_id.MakeGlobalID(idurl=self.idurl),
             ),
-        }, ], })
+        }, ], }
         p2p_service.SendRequestService(self.idurl, 'service_p2p_notifications', json_payload=service_info, callbacks={
             commands.Ack(): self._supplier_acked,
             commands.Fail(): self._supplier_failed,
