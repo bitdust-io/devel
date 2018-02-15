@@ -2341,7 +2341,7 @@ def event_send(event_id, json_data=None):
         except:
             return ERROR('json data payload is not correct')
     events.send(event_id, data=json_payload)
-    return OK('event "%s" was sent with %d bytes payload' % (event_id, len(json_length), ))
+    return OK('event "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
 
 def events_listen(consumer_id):
     from main import events
