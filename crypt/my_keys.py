@@ -451,13 +451,16 @@ def make_master_key_info(include_private=False):
         'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
         'type': str(key.MyPrivateKeyObject().type()),
         'ssh_type': str(key.MyPrivateKeyObject().sshType()),
-        'size': str(key.MyPrivateKeyObject().size()),
         'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
         'include_private': include_private,
     }
     r['private'] = None
     if include_private:
         r['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
+    if hasattr(key.MyPrivateKeyObject(), 'size'):
+        r['size'] = str(key.MyPrivateKeyObject().size())
+    else:
+        r['size'] = '0'
     return r
 
 
@@ -474,7 +477,6 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         'fingerprint': str(key_object.fingerprint()),
         'type': str(key_object.type()),
         'ssh_type': str(key_object.sshType()),
-        'size': str(key_object.size()),
         'include_private': include_private,
     }
     r['private'] = None
@@ -484,6 +486,10 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         r['public'] = str(key_object.public().toString('openssh'))
         if include_private:
             r['private'] = str(key_object.toString('openssh'))
+    if hasattr(key_object, 'size'):
+        r['size'] = str(key_object.size())
+    else:
+        r['size'] = '0'
     return r
 
 
