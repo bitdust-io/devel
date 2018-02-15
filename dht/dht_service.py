@@ -331,7 +331,7 @@ class DHTNode(DistributedTupleSpacePeer):
         if _Debug:
             lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
                 base64.b32encode(key), str(value)[:20]))
-        return {str(key): value}
+        return {str(key): value, }
 
     def reconnect(self, knownNodeAddresses=None):
         """

@@ -212,9 +212,8 @@ class AccountantsFinder(automat.Automat):
         """
         Action method.
         """
-        service_info = 'service_accountant ' + self.request_service_params
         out_packet = p2p_service.SendRequestService(
-            self.target_idurl, service_info, callbacks={
+            self.target_idurl, 'service_accountant', json_payload=self.request_service_params, callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
             }

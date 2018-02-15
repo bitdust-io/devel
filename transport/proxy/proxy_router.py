@@ -214,7 +214,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         global _MaxRoutesNumber
-        request, _ = arg
+        json_payload, request, _ = arg
         user_id = request.CreatorID
         if request.Command == commands.RequestService():
             if len(self.routes) >= _MaxRoutesNumber:
@@ -224,15 +224,19 @@ class ProxyRouter(automat.Automat):
                 p2p_service.SendAck(request, 'rejected', wide=True)
             else:
                 try:
-                    service_info = request.Payload
-                    idsrc = service_info.lstrip('service_proxy_server').strip()
+                    # service_info = request.Payload
+                    # idsrc = service_info.lstrip('service_proxy_server').strip()
+                    idsrc = json_payload['identity']
                     cached_id = identity.identity(xmlsrc=idsrc)
                 except:
                     lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
                     lg.exc()
                     return
-                if not cached_id.isCorrect() or not cached_id.Valid():
+                if not cached_id.Valid():
                     lg.warn('incoming identity is not valid')
+                    return
+                if not cached_id.isCorrect():
+                    lg.warn('incoming identity is not correct')
                     return
                 oldnew = ''
                 if user_id not in self.routes.keys():

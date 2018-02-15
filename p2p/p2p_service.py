@@ -384,17 +384,22 @@ def RequestService(request, info):
 #     return driver.request(service_name, request, info)
 
 
-def SendRequestService(remote_idurl, service_info, wide=False, callbacks={}):
+def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}):
+    service_info = {
+        'name': service_name,
+        'payload': json_payload,
+    }
+    service_info_raw = json.dumps(service_info)
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendRequestService to %s [%s]" % (
-            nameurl.GetName(remote_idurl), service_info.replace('\n', ' ')[:40]))
+        lg.out(_DebugLevel, "p2p_service.SendRequestService {%s} to %s with %d bytes payload" % (
+            service_name, remote_idurl, len(service_info_raw)))
     result = signed.Packet(
         commands.RequestService(),
         my_id.getLocalID(),
         my_id.getLocalID(),
         packetid.UniqueID(),
-        service_info,
-        remote_idurl)
+        service_info_raw,
+        remote_idurl, )
     gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
 
@@ -418,12 +423,23 @@ def CancelService(request, info):
 #     return driver.cancel(service_name, request, info)
 
 
-def SendCancelService(remote_idurl, service_info, callbacks={}):
+def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}):
+    service_info = {
+        'name': service_name,
+        'payload': json_payload,
+    }
+    service_info_raw = json.dumps(service_info)
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendCancelService [%s]" % service_info.replace('\n', ' ')[:40])
-    result = signed.Packet(commands.CancelService(), my_id.getLocalID(), my_id.getLocalID(),
-                           packetid.UniqueID(), service_info, remote_idurl)
-    gateway.outbox(result, callbacks=callbacks)
+        lg.out(_DebugLevel, "p2p_service.SendCancelService {%s} to %s with %d bytes payload" % (
+            service_name, remote_idurl, len(service_info_raw)))
+    result = signed.Packet(
+        commands.CancelService(),
+        my_id.getLocalID(),
+        my_id.getLocalID(),
+        packetid.UniqueID(),
+        service_info_raw,
+        remote_idurl, )
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
 
 #------------------------------------------------------------------------------

@@ -93,28 +93,25 @@ class SupplierService(LocalService):
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 
-    def request(self, newpacket, info):
-        import json
+    def request(self, json_payload, newpacket, info):
+        # import json
         from main import events
         from crypt import my_keys
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        words = newpacket.Payload.split(' ')
+        # words = newpacket.Payload.split(' ')
         customer_public_key = None
         customer_public_key_id = None
         bytes_for_customer = None
         try:
-            json_info = json.loads(newpacket.Payload[newpacket.Payload.find(' '):])
-            bytes_for_customer = json_info['needed_bytes']
-            customer_public_key = json_info['customer_public_key']
+            # json_info = json.loads(newpacket.Payload[newpacket.Payload.find(' '):])
+            bytes_for_customer = json_payload['needed_bytes']
+            customer_public_key = json_payload['customer_public_key']
             customer_public_key_id = customer_public_key['key_id']
         except:
-            try:
-                bytes_for_customer = int(words[1])
-            except:
-                lg.exc()
-                bytes_for_customer = None
+            lg.warn("wrong payload" % newpacket.Payload)
+            return p2p_service.SendFail(newpacket, 'wrong payload')
         if not bytes_for_customer or bytes_for_customer < 0:
             lg.warn("wrong payload : %s" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong storage value')
@@ -180,7 +177,7 @@ class SupplierService(LocalService):
             events.send('existing-customer-accepted', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
 
-    def cancel(self, newpacket, info):
+    def cancel(self, json_payload, newpacket, info):
         from main import events
         from p2p import p2p_service
         from contacts import contactsdb

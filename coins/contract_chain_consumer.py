@@ -234,7 +234,7 @@ class ContractChainConsumer(automat.Automat):
         self.accountant_lookups += 1
         p2p_service_seeker.connect_random_node(
             'service_accountant',
-            service_params='read',
+            service_params={'action': 'read', },
             exclude_nodes=self.connected_accountants,
         ).addBoth(self._on_accountant_lookup_finished)
 

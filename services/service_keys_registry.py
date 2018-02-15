@@ -64,7 +64,7 @@ class KeysRegistryService(LocalService):
         key_ring.shutdown()
         return True
 
-    def request(self, newpacket, info):
+    def request(self, json_payload, newpacket, info):
         # TODO: work in progress
         from main import events
         from p2p import p2p_service

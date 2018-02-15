@@ -130,18 +130,18 @@ def is_exist(name):
     return name in services()
 
 
-def request(name, request, info):
-    svc = services().get(name, None)
+def request(service_name, service_request_payload, request, info):
+    svc = services().get(service_name, None)
     if svc is None:
-        raise Exception('service %s not found' % name)
-    return svc.request(request, info)
+        raise Exception('service %s not found' % service_name)
+    return svc.request(service_request_payload, request, info)
 
 
-def cancel(name, request, info):
-    svc = services().get(name, None)
+def cancel(service_name, service_cancel_payload, request, info):
+    svc = services().get(service_name, None)
     if svc is None:
-        raise Exception('service %s not found' % name)
-    return svc.cancel(request, info)
+        raise Exception('service %s not found' % service_name)
+    return svc.cancel(service_cancel_payload, request, info)
 
 #------------------------------------------------------------------------------
 

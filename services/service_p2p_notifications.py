@@ -61,14 +61,14 @@ class P2PNotificationsService(LocalService):
         p2p_queue.shutdown()
         return True
 
-    def request(self, newpacket, info):
+    def request(self, json_payload, newpacket, info):
         import json
         from logs import lg
         from p2p import p2p_service
         from p2p import p2p_queue
         try:
-            service_info_json = json.loads(newpacket.Payload)
-            service_requests_list = service_info_json['items']
+            # service_info_json = json.loads(newpacket.Payload)
+            service_requests_list = json_payload['items']
         except:
             lg.warn("invlid json payload")
             return p2p_service.SendFail(newpacket, 'invlid json payload')
@@ -146,7 +146,7 @@ class P2PNotificationsService(LocalService):
             service_responses_list.append(resp)
         return p2p_service.SendAck(newpacket, json.dumps({'items': service_responses_list}))
 
-    def cancel(self, newpacket, info):
+    def cancel(self, json_payload, newpacket, info):
         # TODO: work in progress
         return False
 

@@ -62,6 +62,7 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
+import json
 import time
 import random
 import cStringIO
@@ -367,20 +368,22 @@ class ProxyReceiver(automat.Automat):
                 lg.warn('too many service requests to %s' % self.router_idurl)
             self.automat('service-refused', arg)
             return
-        service_info = 'service_proxy_server \n'
         orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if not orig_identity:
             orig_identity = my_id.getLocalIdentity().serialize()
-        service_info += orig_identity
-        # for t in gateway.transports().values():
-        #     service_info += '%s://%s' % (t.proto, t.host)
-        # service_info += ' '
+        service_info = {
+            'name': 'service_proxy_server',
+            'payload': {
+                'identity': orig_identity,
+            },
+        }
+        service_info_raw = json.dumps(service_info)
         newpacket = signed.Packet(
             commands.RequestService(),
             my_id.getLocalID(),
             my_id.getLocalID(),
             packetid.UniqueID(),
-            service_info,
+            service_info_raw,
             self.router_idurl,)
         packet_out.create(newpacket, wide=False, callbacks={
             commands.Ack(): self._on_request_service_ack,
@@ -392,13 +395,17 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        service_info = {
+            'name': 'service_proxy_server',
+        }
+        service_info_raw = json.dumps(service_info)
         newpacket = signed.Packet(
             commands.CancelService(),
             my_id.getLocalID(),
             my_id.getLocalID(),
             packetid.UniqueID(),
-            'service_proxy_server',
-            self.router_idurl,)
+            service_info_raw,
+            self.router_idurl, )
         packet_out.create(newpacket, wide=True, callbacks={
             commands.Ack(): self._on_request_service_ack,
             commands.Fail(): self._on_request_service_fail,
