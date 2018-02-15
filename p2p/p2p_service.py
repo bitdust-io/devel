@@ -1023,7 +1023,7 @@ def Event(request, info):
             e_json['event_id'], info.sender_idurl, len(request.Payload), ))
 
 
-def SendEvent(remote_idurl, event_id, payload,
+def SendEvent(remote_idurl, event_id, payload=None,
               producer_id=None, message_id=None, created=None,
               packet_id=None, wide=False, callbacks={}, response_timeout=5):
     # full_key_data = json.dumps(key_data) if isinstance(key_data, dict) else key_data

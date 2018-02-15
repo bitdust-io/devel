@@ -573,7 +573,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
     if isinstance(callback_method, str) or isinstance(callback_method, unicode):
         p2p_service.SendEvent(
-            remote_idurl=callback_method,
+            remote_idurl=str(callback_method),
             event_id=queue_id,
             payload=existing_message.payload,
             producer_id=existing_message.producer_id,
