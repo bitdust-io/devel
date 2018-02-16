@@ -2340,8 +2340,9 @@ def event_send(event_id, json_data=None):
             json_payload = json.loads(json_data or '{}')
         except:
             return ERROR('json data payload is not correct')
-    events.send(event_id, data=json_payload)
-    return OK('event "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
+    evt = events.send(event_id, data=json_payload)
+    lg.out(4, 'api.event_send "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
+    return OK({'event_id': event_id, 'created': evt.created, })
 
 def events_listen(consumer_id):
     from main import events
@@ -2357,14 +2358,14 @@ def events_listen(consumer_id):
                 'data': evt['data'],
                 'time': evt['time'],
             })
-        lg.out(4, 'api.events_listen._on_pending_events returning : %s' % result)
+        # lg.out(4, 'api.events_listen._on_pending_events returning : %s' % result)
         ret.callback(OK(result))
         return len(result) > 0
 
     d = events.consume_events(consumer_id)
     d.addCallback(_on_pending_events)
     d.addErrback(lambda err: ret.callback(ERROR(str(err))))
-    lg.out(4, 'api.events_listen "%s"' % consumer_id)
+    # lg.out(4, 'api.events_listen "%s"' % consumer_id)
     return ret
 
 #------------------------------------------------------------------------------
@@ -2398,17 +2399,23 @@ def network_reconnect():
 
 def network_connected(wait_timeout=5):
     """
-    Be sure BitDust software running locally is connected to other nodes in the network.
+    Be sure BitDust software is connected to other nodes in the network.
+    If all is good this method will block for `wait_timeout` seconds.
+    In case of some network issues method will return result asap.
     """
     from userid import my_id
     from twisted.internet import reactor
     from automats import automat
+    ret = Deferred()
 
     p2p_connector_lookup = automat.find('p2p_connector')
     if p2p_connector_lookup:
         p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
         if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
-            return OK('connected')
+            wait_timeout_defer = Deferred()
+            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+            wait_timeout_defer.addBoth(lambda _: ret.callback(OK('connected')))
+            return ret
 
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not exist', extra_fields={'reason': 'identity_not_exist'})
@@ -2418,8 +2425,6 @@ def network_connected(wait_timeout=5):
         return ERROR('service_gateway() is disabled', extra_fields={'reason': 'service_gateway_disabled'})
     if not driver.is_enabled('service_p2p_hookups'):
         return ERROR('service_p2p_hookups() is disabled', extra_fields={'reason': 'service_p2p_hookups_disabled'})
-
-    ret = Deferred()
 
     def _do_p2p_connector_test():
         try:
@@ -2475,9 +2480,7 @@ def network_connected(wait_timeout=5):
             reactor.callLater(0, _do_p2p_connector_test)
         return None
 
-    wait_timeout_defer = Deferred()
-    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-    wait_timeout_defer.addBoth(lambda _: _do_service_test('service_network'))
+    _do_service_test('service_network')
     return ret
 
 #------------------------------------------------------------------------------
