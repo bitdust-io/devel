@@ -2396,7 +2396,7 @@ def network_reconnect():
     return OK('reconnected')
 
 
-def network_connected(wait_timeout=10):
+def network_connected(wait_timeout=5):
     """
     Be sure BitDust software running locally is connected to other nodes in the network.
     """
@@ -2421,45 +2421,63 @@ def network_connected(wait_timeout=10):
 
     ret = Deferred()
 
-    def _on_restarted(resp):
-        p2p_connector_lookup = automat.find('p2p_connector')
-        if not p2p_connector_lookup:
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}))
-            return resp
-        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
-        if not p2p_connector_machine:
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
-            return resp
-        if p2p_connector_machine.state != 'CONNECTED':
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
-            return resp
-        ret.callback(OK('connected'))
+    def _do_p2p_connector_test():
+        try:
+            p2p_connector_lookup = automat.find('p2p_connector')
+            if not p2p_connector_lookup:
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}))
+                return None
+            p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+            if not p2p_connector_machine:
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
+                return None
+            if p2p_connector_machine.state != 'CONNECTED':
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
+                return None
+            ret.callback(OK('connected'))
+        except:
+            lg.exc()
+            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_error'}))
+        return None
+
+    def _on_service_restarted(resp, service_name):
+        if service_name == 'service_network':
+            _do_service_test('service_gateway')
+        elif service_name == 'service_gateway':
+            _do_service_test('service_p2p_hookups')
+        else:
+            _do_p2p_connector_test()
         return resp
 
-    def _do_restart(x=None):
-        p2p_connector_lookup = automat.find('p2p_connector')
-        if not p2p_connector_lookup:
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}))
+    def _do_service_restart(service_name):
+        d = service_restart(service_name, wait_timeout=wait_timeout)
+        d.addCallback(_on_service_restarted, service_name)
+        d.addErrback(lambda err: ret.callback(dict(
+            ERROR(err.getErrorMessage()).items() + {'reason': '{}_restart_error'.format(service_name)}.items())))
+        return None
+
+    def _do_service_test(service_name):
+        try:
+            svc_info = service_info(service_name)
+            svc_state = svc_info['result'][0]['state']
+        except:
+            lg.exc()
+            ret.callback(ERROR('disconnected', extra_fields={'reason': '{}_info_error'.format(service_name)}))
             return None
-        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
-        if not p2p_connector_machine:
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
+        if svc_state != 'ON':
+            _do_service_restart(service_name)
             return None
-        if p2p_connector_machine.state == 'CONNECTED':
-            ret.callback(OK('connected'))
-            return None
-        if p2p_connector_machine.state == 'DISCONNECTED':
-            d = service_restart('service_network', wait_timeout=wait_timeout)
-            d.addBoth(_on_restarted)
-            d.addErrback(lambda err: ret.callback(dict(
-                ERROR(err.getErrorMessage()).items() + {'reason': 'error'}.items())))
-            return None
-        ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
+        if service_name == 'service_network':
+            reactor.callLater(0, _do_service_test, 'service_gateway')
+        elif service_name == 'service_gateway':
+            reactor.callLater(0, _do_service_test, 'service_p2p_hookups')
+        else:
+            reactor.callLater(0, _do_p2p_connector_test)
         return None
 
     wait_timeout_defer = Deferred()
     wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-    wait_timeout_defer.addBoth(_do_restart)
+    wait_timeout_defer.addBoth(lambda _: _do_service_test('service_network'))
     return ret
 
 #------------------------------------------------------------------------------

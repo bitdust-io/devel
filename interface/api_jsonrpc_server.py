@@ -30,6 +30,13 @@
 module:: api_jsonrpc_server
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 24
+
+#------------------------------------------------------------------------------
+
 import time
 import pprint
 import traceback
@@ -37,6 +44,8 @@ import traceback
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, succeed
 from twisted.web import server
+
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
@@ -60,7 +69,8 @@ _JsonRPCServer = None
 
 def init(json_rpc_port=None):
     global _JsonRPCServer
-    lg.out(4, 'api_jsonrpc_server.init')
+    if _Debug:
+        lg.out(4, 'api_jsonrpc_server.init')
     if _JsonRPCServer:
         lg.warn('already started')
         return
@@ -71,16 +81,19 @@ def init(json_rpc_port=None):
     bpio.AtomicWriteFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
     # TODO: add protection: accept connections only from local host: 127.0.0.1
     _JsonRPCServer = reactor.listenTCP(json_rpc_port, server.Site(BitDustJsonRPCServer()))
-    lg.out(4, '    started on port %d' % json_rpc_port)
+    if _Debug:
+        lg.out(4, '    started on port %d' % json_rpc_port)
 
 
 def shutdown():
     global _JsonRPCServer
-    lg.out(4, 'api_jsonrpc_server.shutdown')
+    if _Debug:
+        lg.out(4, 'api_jsonrpc_server.shutdown')
     if not _JsonRPCServer:
         return succeed(None)
     result = Deferred()
-    lg.out(4, '    calling stopListening()')
+    if _Debug:
+        lg.out(4, '    calling stopListening()')
     _JsonRPCServer.stopListening().addBoth(lambda *args: result.callback(*args))
     _JsonRPCServer = None
     return result
@@ -94,7 +107,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
         if result is None:
             result = dict()
         result['execution'] = '%3.6f' % (time.time() - request_dict['_executed'])
-        lg.out(4, "api_jsonrpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
+        if _Debug:
+            lg.out(_DebugLevel, "api_jsonrpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
         return result
 
     def _convert_filemanager_response(self, result):
@@ -135,7 +149,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return fm_result
 
     def _callMethod(self, request_dict):
-        lg.out(12, 'api_jsonrpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
+        if _Debug:
+            lg.out(_DebugLevel, 'api_jsonrpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
         request_dict['_executed'] = time.time()
         try:
             fm_result = self._catch_filemanager_methods(request_dict)

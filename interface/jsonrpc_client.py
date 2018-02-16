@@ -30,6 +30,7 @@
 module:: jsonrpc_client
 """
 
+import time
 
 if __name__ == '__main__':
     import sys
@@ -52,19 +53,42 @@ def output(value):
 
 #------------------------------------------------------------------------------
 
-def loop_test():
+def loop_network_connected():
     proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
 
-    def _loop(x=None):
-        print x
-        proxy.callRemote('network_connected', 1).addBoth(_loop)
+    def _call():
+        print '_call', time.asctime()
+        proxy.callRemote('network_connected', 3).addBoth(_loop)
 
-    reactor.callLater(1, _loop)
+    def _loop(x=None):
+        print '_loop', time.asctime(), x
+        try:
+            status = x['status']
+        except:
+            status = 'FAILED'
+        if status != 'OK':
+            reactor.callLater(1, _call)
+        else:
+            reactor.callLater(5, _call)
+
+    reactor.callLater(0, _call)
     reactor.run()
 
 #------------------------------------------------------------------------------
 
-def main():
+def loop_event_listen():
+    proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
+
+    def _loop(x=None):
+        print x
+        proxy.callRemote('events_listen', 'test_event_consumer').addBoth(_loop)
+
+    reactor.callLater(0, _loop)
+    reactor.run()
+
+#------------------------------------------------------------------------------
+
+def test():
     proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
     # proxy.callRemote('ping', 'http://p2p-id.ru/bitdust_j_vps1014.xml').addBoth(output)
     # proxy.callRemote('config_set', 'logs/debug-level', '20').addBoth(output)
@@ -75,7 +99,10 @@ def main():
     proxy.callRemote('event_send', 'existing-customer-accepted', '{"idurl": "abc123@def.net"}').addBoth(output)
     reactor.run()
 
+#------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
-    # main()
-    loop_test()
+    # test()
+    loop_network_connected()
+    # loop_event_listen()
