@@ -157,6 +157,8 @@ class P2PNotificationsService(LocalService):
         from p2p import commands
         from p2p import p2p_service
         from p2p import p2p_queue
+        from userid import global_id
+        from userid import my_id
         if newpacket.Command != commands.Event():
             return False
         try:
@@ -174,14 +176,20 @@ class P2PNotificationsService(LocalService):
             events.send(event_id, data=payload, created=created)
             p2p_service.SendAck(newpacket)
             return True
-        if event_id not in p2p_queue.queue():
-            # this message does not have an ID or producer so needs to be published in the queue
-            # but only if given queue is already existing on that node
-            # otherwise it is probably addressed to that node and needs to be consumed directly
+        # this message does not have nor ID nor producer so it came from another user directly
+        # lets' try to find a queue for that event and see if we need to publish it or not
+        queue_id = global_id.MakeGlobalQueueID(
+            queue_alias='event-{}'.format(event_id),
+            owner_id=global_id.MakeGlobalID(idurl=newpacket.OwnerID),
+            supplier_id=global_id.MakeGlobalID(idurl=my_id.getGlobalID()),
+        )
+        if queue_id not in p2p_queue.queue():
+            # such queue is not found locally, that means message is
+            # probably addressed to that node and needs to be consumed directly
             lg.warn('received event was not delivered to any queue, consume now and send an Ack')
             events.send(event_id, data=payload, created=created)
+            p2p_service.SendAck(newpacket)
             return True
-
         # TODO: add verification of producer's identity and signature
         try:
             p2p_queue.push_message(
