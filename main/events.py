@@ -174,7 +174,7 @@ def send(event_id, data=None, created=None):
     """
     evt = Event(event_id, data=data, created=created)
     reactor.callWhenRunning(dispatch, evt)
-    return True
+    return evt
 
 #------------------------------------------------------------------------------
 

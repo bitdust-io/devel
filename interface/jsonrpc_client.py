@@ -61,17 +61,19 @@ def loop_network_connected():
         proxy.callRemote('network_connected', 3).addBoth(_loop)
 
     def _loop(x=None):
-        print '_loop', time.asctime(), x
+        reason = 'unknown'
         try:
             status = x['status']
+            reason = x.get('reason')
         except:
             status = 'FAILED'
-        if status != 'OK':
-            reactor.callLater(1, _call)
+        print '_loop', 'status:', status, '   reason:', reason, ' ...'
+        if status == 'OK':
+            reactor.callLater(3, _call)
         else:
-            reactor.callLater(5, _call)
+            reactor.callLater(1, _call)
 
-    reactor.callLater(0, _call)
+    reactor.callLater(0, _loop)
     reactor.run()
 
 #------------------------------------------------------------------------------
