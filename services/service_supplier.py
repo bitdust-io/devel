@@ -57,9 +57,9 @@ class SupplierService(LocalService):
     config_path = 'services/supplier/enabled'
 
     def dependent_on(self):
-        return ['service_p2p_hookups',
-                'service_p2p_notifications',
-                ]
+        return [
+            'service_p2p_notifications',
+        ]
 
     def installed(self):
         from userid import my_id
@@ -70,16 +70,22 @@ class SupplierService(LocalService):
     def start(self):
         from transport import callback
         from main import events
+        from contacts import contactsdb
         callback.append_inbox_callback(self._on_inbox_packet_received)
-        events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
+        events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-denied')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
+        for customer_idurl in contactsdb.customers():
+            events.send('existing-customer-accepted', data=dict(idurl=customer_idurl))
         return True
 
     def stop(self):
         from transport import callback
         from main import events
+        from contacts import contactsdb
+        for customer_idurl in contactsdb.customers():
+            events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
         events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.remove_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.remove_subscriber(self._on_customer_terminated, 'existing-customer-denied')
@@ -87,27 +93,25 @@ class SupplierService(LocalService):
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 
-    def request(self, newpacket, info):
-        import json
+    def request(self, json_payload, newpacket, info):
+        # import json
         from main import events
         from crypt import my_keys
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        words = newpacket.Payload.split(' ')
+        # words = newpacket.Payload.split(' ')
         customer_public_key = None
+        customer_public_key_id = None
         bytes_for_customer = None
         try:
-            json_info = json.loads(newpacket.Payload[newpacket.Payload.find(' '):])
-            bytes_for_customer = json_info['needed_bytes']
-            customer_public_key = json_info['customer_public_key']
+            # json_info = json.loads(newpacket.Payload[newpacket.Payload.find(' '):])
+            bytes_for_customer = json_payload['needed_bytes']
+            customer_public_key = json_payload['customer_public_key']
             customer_public_key_id = customer_public_key['key_id']
         except:
-            try:
-                bytes_for_customer = int(words[1])
-            except:
-                lg.exc()
-                bytes_for_customer = None
+            lg.warn("wrong payload" % newpacket.Payload)
+            return p2p_service.SendFail(newpacket, 'wrong payload')
         if not bytes_for_customer or bytes_for_customer < 0:
             lg.warn("wrong payload : %s" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong storage value')
@@ -139,7 +143,7 @@ class SupplierService(LocalService):
             contactsdb.update_customers(current_customers)
             contactsdb.save_customers()
             accounting.write_customers_quotas(space_dict)
-            if customer_public_key:
+            if customer_public_key_id:
                 my_keys.erase_key(customer_public_key_id)
             reactor.callLater(0, local_tester.TestUpdateCustomers)
             if new_customer:
@@ -155,7 +159,7 @@ class SupplierService(LocalService):
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
-        if customer_public_key:
+        if customer_public_key_id:
             my_keys.erase_key(customer_public_key_id)
             try:
                 if not my_keys.is_key_registered(customer_public_key_id):
@@ -173,7 +177,7 @@ class SupplierService(LocalService):
             events.send('existing-customer-accepted', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
 
-    def cancel(self, newpacket, info):
+    def cancel(self, json_payload, newpacket, info):
         from main import events
         from p2p import p2p_service
         from contacts import contactsdb
@@ -485,11 +489,28 @@ class SupplierService(LocalService):
             supplier_id=my_id.getGlobalID(),
         )
         if not p2p_queue.is_queue_exist(queue_id):
-            p2p_queue.open_queue(queue_id)
-        if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
-            p2p_queue.add_producer(my_id.getGlobalID())
-        if not p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
-            p2p_queue.start_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+            try:
+                p2p_queue.open_queue(queue_id)
+            except Exception as exc:
+                lg.warn('failed to open queue %s : %s' % (queue_id, str(exc)))
+        if p2p_queue.is_queue_exist(queue_id):
+            if not p2p_queue.is_producer_exist(my_id.getGlobalID()):
+                try:
+                    p2p_queue.add_producer(my_id.getGlobalID())
+                except Exception as exc:
+                    lg.warn('failed to add producer: %s' % str(exc))
+            if p2p_queue.is_producer_exist(my_id.getGlobalID()):
+                if not p2p_queue.is_producer_connected(my_id.getGlobalID(), queue_id):
+                    try:
+                        p2p_queue.connect_producer(my_id.getGlobalID(), queue_id)
+                    except Exception as exc:
+                        lg.warn('failed to connect producer: %s' % str(exc))
+                if p2p_queue.is_producer_connected(my_id.getGlobalID(), queue_id):
+                    if not p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
+                        try:
+                            p2p_queue.start_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+                        except Exception as exc:
+                            lg.warn('failed to start event publisher: %s' % str(exc))
 
     def _on_customer_terminated(self, e):
         from userid import my_id
@@ -505,9 +526,25 @@ class SupplierService(LocalService):
             owner_id=customer_glob_id,
             supplier_id=my_id.getGlobalID(),
         )
+        # TODO: need to decide when to stop producing
+        # might be that other customers needs that info still
         if p2p_queue.is_event_publishing(my_id.getGlobalID(), 'supplier-file-modified'):
-            p2p_queue.stop_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+            try:
+                p2p_queue.stop_event_publisher(my_id.getGlobalID(), 'supplier-file-modified')
+            except Exception as exc:
+                lg.warn('failed to stop event publisher: %s' % str(exc))
+        if p2p_queue.is_producer_connected(my_id.getGlobalID(), queue_id):
+            try:
+                p2p_queue.disconnect_producer(my_id.getGlobalID(), queue_id)
+            except Exception as exc:
+                lg.warn('failed to disconnect producer: %s' % str(exc))
         if p2p_queue.is_producer_exist(my_id.getGlobalID()):
-            p2p_queue.remove_producer(my_id.getGlobalID())
+            try:
+                p2p_queue.remove_producer(my_id.getGlobalID())
+            except Exception as exc:
+                lg.warn('failed to remove producer: %s' % str(exc))
         if p2p_queue.is_queue_exist(queue_id):
-            p2p_queue.close_queue('supplier-file-modified')
+            try:
+                p2p_queue.close_queue(queue_id)
+            except Exception as exc:
+                lg.warn('failed to stop queue %s : %s' % (queue_id, str(exc)))

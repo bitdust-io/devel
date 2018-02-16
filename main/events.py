@@ -143,7 +143,7 @@ def clear_subscribers(event_id='*'):
 def dispatch(evt):
     """
     """
-    handled = False
+    handled = 0
     if evt.event_id in subscribers():
         for subscriber_callback in subscribers()[evt.event_id]:
             try:
@@ -151,7 +151,7 @@ def dispatch(evt):
             except:
                 lg.exc()
                 continue
-            handled = True
+            handled += 1
     if '*' in subscribers():
         for subscriber_callback in subscribers()['*']:
             try:
@@ -159,10 +159,13 @@ def dispatch(evt):
             except:
                 lg.exc()
                 continue
-            handled = True
+            handled += 1
     if _Debug:
         if not handled:
             lg.warn('event {} was not handled'.format(evt.event_id))
+        else:
+            lg.out(_DebugLevel, 'events.dispatch {} was handled by {} subscribers'.format(
+                evt.event_id, handled))
     return handled
 
 

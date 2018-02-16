@@ -66,14 +66,14 @@ class ProxyServerService(LocalService):
         proxy_router.A('shutdown')
         return True
 
-    def request(self, newpacket, info):
+    def request(self, json_payload, newpacket, info):
         from p2p import p2p_service
         from transport.proxy import proxy_router
-        proxy_router.A('request-route', (newpacket, info))
+        proxy_router.A('request-route', (json_payload, newpacket, info, ))
         return p2p_service.SendAck(newpacket)
 
-    def cancel(self, newpacket, info):
+    def cancel(self, json_payload, newpacket, info):
         from p2p import p2p_service
         from transport.proxy import proxy_router
-        proxy_router.A('cancel-route', (newpacket, info))
+        proxy_router.A('cancel-route', (json_payload, newpacket, info, ))
         return p2p_service.SendAck(newpacket)

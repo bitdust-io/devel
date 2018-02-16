@@ -706,6 +706,9 @@ class SupplierQueue:
         if self.shutdown:
             lg.out(10, "io_throttle.OnFileSendAckReceived finishing to %s, shutdown is True" % self.remoteName)
             return
+        if not newpacket and not info:
+            lg.warn('packet timed out during responding')
+            return
         self.ackedCount += 1
         packetID = global_id.CanonicalID(newpacket.PacketID)
         if packetID not in self.fileSendQueue:

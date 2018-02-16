@@ -298,15 +298,14 @@ class SupplierConnector(automat.Automat):
             bytes_per_supplier = int(math.ceil(2.0 * bytes_needed / float(num_suppliers)))
         else:
             bytes_per_supplier = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
-        service_info = 'service_supplier '
-        service_info += json.dumps({
+        service_info = {
             'needed_bytes': bytes_per_supplier,
             'customer_public_key': my_keys.get_key_info(
                 key_id=customer_state.customer_key_id(),
                 include_private=False,
             )
-        })
-        request = p2p_service.SendRequestService(self.idurl, service_info, callbacks={
+        }
+        request = p2p_service.SendRequestService(self.idurl, 'service_supplier', json_payload=service_info, callbacks={
             commands.Ack(): self._supplier_acked,
             commands.Fail(): self._supplier_failed,
         })
@@ -327,7 +326,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        service_info = json.dumps({'items': [{
+        service_info = {'items': [{
             'scope': 'consumer',
             'action': 'start',
             'consumer_id': my_id.getGlobalID(),
@@ -345,8 +344,8 @@ class SupplierConnector(automat.Automat):
                 owner_id=my_id.getGlobalID(),
                 supplier_id=global_id.MakeGlobalID(idurl=self.idurl),
             ),
-        }, ], })
-        p2p_service.SendRequestService(self.idurl, service_info, callbacks={
+        }, ], }
+        p2p_service.SendRequestService(self.idurl, 'service_p2p_notifications', json_payload=service_info, callbacks={
             commands.Ack(): self._supplier_acked,
             commands.Fail(): self._supplier_failed,
         })
@@ -374,7 +373,7 @@ class SupplierConnector(automat.Automat):
             'action': 'stop',
             'consumer_id': my_id.getGlobalID(),
         }, ], })
-        p2p_service.SendCancelService(self.idurl, service_info, callbacks={
+        p2p_service.SendCancelService(self.idurl, 'service_p2p_notifications', json_payload=service_info, callbacks={
             commands.Ack(): self._supplier_acked,
             commands.Fail(): self._supplier_failed,
         })

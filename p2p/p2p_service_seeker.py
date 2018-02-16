@@ -224,11 +224,11 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
-        service_info = self.target_service
-        if self.request_service_params is not None:
-            service_info += ' {}'.format(self.request_service_params)
+        # service_info = self.target_service
+        # if self.request_service_params is not None:
+        #     service_info += ' {}'.format(self.request_service_params)
         out_packet = p2p_service.SendRequestService(
-            self.target_idurl, service_info, callbacks={
+            self.target_idurl, self.target_service, json_payload=self.request_service_params, callbacks={
                 commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
             }

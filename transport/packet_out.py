@@ -69,7 +69,6 @@ from automats import automat
 from p2p import commands
 
 from lib import nameurl
-from lib import misc
 
 from system import tmpfile
 
@@ -245,7 +244,6 @@ def search_similar_packets(outpacket):
 
 def correct_packet_destination(outpacket):
     """
-    
     """
     if outpacket.CreatorID == my_id.getLocalID():
         # our data will go where it should go
@@ -656,9 +654,9 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        if commands.Fail() in self.callbacks:
-            for cb in self.callbacks[commands.Fail()]:
-                cb(None, None)  # no response packet, no info : that means timeout responding
+#         if commands.Fail() in self.callbacks:
+#             for cb in self.callbacks[commands.Fail()]:
+#                 cb(None, None)  # no response packet, no info : that means timeout responding
 
     def doReportDoneWithAck(self, arg):
         """

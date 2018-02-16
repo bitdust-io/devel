@@ -44,7 +44,7 @@ class P2PNotificationsService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_gateway',
+            'service_p2p_hookups',
         ]
 
     def start(self):
@@ -61,14 +61,14 @@ class P2PNotificationsService(LocalService):
         p2p_queue.shutdown()
         return True
 
-    def request(self, newpacket, info):
+    def request(self, json_payload, newpacket, info):
         import json
         from logs import lg
         from p2p import p2p_service
         from p2p import p2p_queue
         try:
-            service_info_json = json.loads(newpacket.Payload)
-            service_requests_list = service_info_json['items']
+            # service_info_json = json.loads(newpacket.Payload)
+            service_requests_list = json_payload['items']
         except:
             lg.warn("invlid json payload")
             return p2p_service.SendFail(newpacket, 'invlid json payload')
@@ -117,14 +117,28 @@ class P2PNotificationsService(LocalService):
                             queue_id=r_json.get('queue_id'),
                         ) else 'OK'
                 elif r_scope == 'producer':
-                    if r_action == 'add':
-                        resp['result'] = 'denied' if not p2p_queue.add_producer(
-                            producer_id=r_json.get('producer_id'),
-                        ) else 'OK'
-                    elif r_action == 'remove':
-                        resp['result'] = 'denied' if not p2p_queue.remove_producer(
-                            producer_id=r_json.get('producer_id'),
-                        ) else 'OK'
+                    resp['result'] = 'denied'
+                    resp['reason'] = 'remote requests for producing messages is not allowed'
+                    if False:
+                        # TODO: do we need that ?
+                        if r_action == 'start':
+                            resp['result'] = 'denied' if not p2p_queue.add_producer(
+                                producer_id=r_json.get('producer_id'),
+                            ) else 'OK'
+                        elif r_action == 'stop':
+                            resp['result'] = 'denied' if not p2p_queue.remove_producer(
+                                producer_id=r_json.get('producer_id'),
+                            ) else 'OK'
+                        elif r_action == 'connect':
+                            resp['result'] = 'denied' if not p2p_queue.connect_producer(
+                                producer_id=r_json.get('producer_id'),
+                                queue_id=r_json.get('queue_id'),
+                            ) else 'OK'
+                        elif r_action == 'disconnect':
+                            resp['result'] = 'denied' if not p2p_queue.disconnect_producer(
+                                producer_id=r_json.get('producer_id'),
+                                queue_id=r_json.get('queue_id'),
+                            ) else 'OK'
             except Exception as exc:
                 lg.exc()
                 resp['result'] = 'denied'
@@ -132,7 +146,7 @@ class P2PNotificationsService(LocalService):
             service_responses_list.append(resp)
         return p2p_service.SendAck(newpacket, json.dumps({'items': service_responses_list}))
 
-    def cancel(self, newpacket, info):
+    def cancel(self, json_payload, newpacket, info):
         # TODO: work in progress
         return False
 
@@ -143,6 +157,8 @@ class P2PNotificationsService(LocalService):
         from p2p import commands
         from p2p import p2p_service
         from p2p import p2p_queue
+        from userid import global_id
+        from userid import my_id
         if newpacket.Command != commands.Event():
             return False
         try:
@@ -160,20 +176,27 @@ class P2PNotificationsService(LocalService):
             events.send(event_id, data=payload, created=created)
             p2p_service.SendAck(newpacket)
             return True
-        if event_id not in p2p_queue.queue():
-            # this message does not have an ID or producer so needs to be published in the queue
-            # but only if given queue is already existing on that node
-            # otherwise it is probably addressed to that node and needs to be consumed directly
+        # this message does not have nor ID nor producer so it came from another user directly
+        # lets' try to find a queue for that event and see if we need to publish it or not
+        queue_id = global_id.MakeGlobalQueueID(
+            queue_alias='event-{}'.format(event_id),
+            owner_id=global_id.MakeGlobalID(idurl=newpacket.OwnerID),
+            supplier_id=global_id.MakeGlobalID(idurl=my_id.getGlobalID()),
+        )
+        if queue_id not in p2p_queue.queue():
+            # such queue is not found locally, that means message is
+            # probably addressed to that node and needs to be consumed directly
             lg.warn('received event was not delivered to any queue, consume now and send an Ack')
             events.send(event_id, data=payload, created=created)
+            p2p_service.SendAck(newpacket)
             return True
-
         # TODO: add verification of producer's identity and signature
         try:
             p2p_queue.push_message(
                 producer_id=producer_id,
                 queue_id=event_id,
-                json_data=payload,
+                data=payload,
+                creation_time=created,
             )
         except Exception as exc:
             lg.warn(exc)

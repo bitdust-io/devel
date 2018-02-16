@@ -93,15 +93,16 @@ class P2PHookupsService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
-        if newpacket.Command == commands.Event():
-            return self._on_event(newpacket)
-        elif newpacket.Command == commands.RequestService():
-            return self._send_request_service(newpacket, info)
+#         if newpacket.Command == commands.Event():
+#             return self._on_event(newpacket)
+        if newpacket.Command == commands.RequestService():
+            return self._on_request_service_received(newpacket, info)
         elif newpacket.Command == commands.CancelService():
-            return self._send_cancel_service(newpacket, info)
+            return self._on_cancel_service_received(newpacket, info)
         return False
 
-    def _send_request_service(self, newpacket, info):
+    def _on_request_service_received(self, newpacket, info):
+        import json
         from twisted.internet.defer import Deferred
         from logs import lg
         from services import driver
@@ -110,13 +111,15 @@ class P2PHookupsService(LocalService):
         if len(newpacket.Payload) > 1024 * 10:
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
-        words = newpacket.Payload.split(' ')
-        if len(words) < 1:
-            lg.warn("got wrong payload in %s" % newpacket)
-            p2p_service.SendFail(newpacket, 'wrong payload')
+        try:
+            json_payload = json.loads(newpacket.Payload)
+            json_payload['name']
+            json_payload['payload']
+        except:
+            p2p_service.SendFail(newpacket, 'json payload invalid')
             return False
-        service_name = words[0]
-        self.log(self.debug_level, "service_p2p_hookups.RequestService %s : %s" % (newpacket.OwnerID, service_name))
+        service_name = json_payload['name']
+        self.log(self.debug_level, "service_p2p_hookups.RequestService {%s} from %s" % (service_name, newpacket.OwnerID, ))
         if not driver.is_exist(service_name):
             lg.warn("got wrong payload in %s" % service_name)
             p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
@@ -125,7 +128,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
             return False
         try:
-            result = driver.request(service_name, newpacket, info)
+            result = driver.request(service_name, json_payload['payload'], newpacket, info)
         except:
             lg.exc()
             p2p_service.SendFail(newpacket, 'request processing failed with exception')
@@ -139,7 +142,8 @@ class P2PHookupsService(LocalService):
             self.log(self.debug_level, "service_p2p_hookups._send_request_service outbox packet sent")
         return True
 
-    def _send_cancel_service(self, newpacket, info):
+    def _on_cancel_service_received(self, newpacket, info):
+        import json
         from twisted.internet.defer import Deferred
         from logs import lg
         from services import driver
@@ -148,14 +152,15 @@ class P2PHookupsService(LocalService):
         if len(newpacket.Payload) > 1024 * 10:
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
-        words = newpacket.Payload.split(' ')
-        if len(words) < 1:
-            lg.warn("got wrong payload in %s" % newpacket)
-            p2p_service.SendFail(newpacket, 'wrong payload')
+        try:
+            json_payload = json.loads(newpacket.Payload)
+            json_payload['name']
+            json_payload['payload']
+        except:
+            p2p_service.SendFail(newpacket, 'json payload invalid')
             return False
-        service_name = words[0]
-        self.log(self.debug_level, "service_p2p_hookups.CancelService %s : %s" % (newpacket.OwnerID, service_name))
-        # TODO: add validation
+        service_name = json_payload['name']
+        self.log(self.debug_level, "service_p2p_hookups.CancelService {%s} from %s" % (service_name, newpacket.OwnerID, ))
         if not driver.is_exist(service_name):
             lg.warn("got wrong payload in %s" % newpacket)
             p2p_service.SendFail(newpacket, 'service %s not exist' % service_name)
@@ -164,7 +169,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'service %s is off' % service_name)
             return False
         try:
-            result = driver.cancel(service_name, newpacket, info)
+            result = driver.cancel(service_name, json_payload['payload'], newpacket, info)
         except:
             lg.exc()
             p2p_service.SendFail(newpacket, 'request processing failed with exception')
@@ -178,25 +183,25 @@ class P2PHookupsService(LocalService):
             self.log(self.debug_level, "service_p2p_hookups._send_cancel_service outbox packet sent")
         return True
 
-    def _on_event(self, newpacket):
-        from logs import lg
-        from p2p import p2p_service
-        from main import events
-        if len(newpacket.Payload) > 1024 * 10:
-            p2p_service.SendFail(newpacket, 'too long payload')
-            return False
-        try:
-            import json
-            message_json = json.loads(newpacket.Payload)
-            message_json['event_id']
-            message_json['event_data']
-        except:
-            lg.exc()
-            p2p_service.SendFail(newpacket, 'invalid payload')
-            return False
-        events.send(message_json['event_id'], message_json['event_data'])
-        p2p_service.SendAck(newpacket, response=message_json['event_id'])
-        return True
+#     def _on_event(self, newpacket):
+#         import json
+#         from logs import lg
+#         from p2p import p2p_service
+#         from main import events
+#         if len(newpacket.Payload) > 1024 * 10:
+#             p2p_service.SendFail(newpacket, 'too long payload')
+#             return False
+#         try:
+#             message_json = json.loads(newpacket.Payload)
+#             message_json['event_id']
+#             message_json['payload']
+#         except:
+#             lg.exc()
+#             p2p_service.SendFail(newpacket, 'invalid payload')
+#             return False
+#         events.send(message_json['event_id'], message_json['payload'])
+#         p2p_service.SendAck(newpacket, response=message_json['event_id'])
+#         return True
 
     def _on_p2p_connector_switched(self, oldstate, newstate, evt, args):
         if newstate == 'INCOMMING?':

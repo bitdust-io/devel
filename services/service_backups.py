@@ -87,7 +87,8 @@ class BackupsService(LocalService):
         from p2p import p2p_connector
         from main.config import conf
         callback.remove_inbox_callback(self._on_inbox_packet_received)
-        p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_state_changed)
+        if p2p_connector.A():
+            p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_state_changed)
         backup_monitor.Destroy()
         backup_fs.shutdown()
         backup_control.shutdown()

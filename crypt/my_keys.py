@@ -209,9 +209,10 @@ def load_local_keys(keys_folder=None):
         except:
             lg.exc()
             continue
-        if not validate_key(key_object):
-            lg.warn('validation failed for %s' % key_filepath)
-            continue
+        if not key_object.isPublic():
+            if not validate_key(key_object):
+                lg.warn('validation failed for %s' % key_filepath)
+                continue
         key_id = key_filename.replace('.private', '').replace('.public', '')
         known_keys()[key_id] = key_object
         count += 1
@@ -229,9 +230,9 @@ def save_keys_local(keys_folder=None, output_type='openssh'):
     count = 0
     for key_id, key_object in known_keys().items():
         if key_object.isPublic():
-            key_filepath = os.path.join(keys_folder, key_id, '.public')
+            key_filepath = os.path.join(keys_folder, key_id + '.public')
         else:
-            key_filepath = os.path.join(keys_folder, key_id, '.private')
+            key_filepath = os.path.join(keys_folder, key_id + '.private')
         key_string = key_object.toString(output_type)
         bpio.WriteFile(key_filepath, key_string)
         count += 1
@@ -254,9 +255,9 @@ def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh')
         keys_folder = settings.PrivateKeysDir()
     key_string = key_object.toString(output_type)
     if key_object.isPublic():
-        key_filepath = os.path.join(keys_folder, key_id, '.public')
+        key_filepath = os.path.join(keys_folder, key_id + '.public')
     else:
-        key_filepath = os.path.join(keys_folder, key_id, '.private')
+        key_filepath = os.path.join(keys_folder, key_id + '.private')
     bpio.WriteFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s generated, saved to %s' % (key_id, key_filepath))
@@ -272,19 +273,20 @@ def register_key(key_id, key_object_or_openssh, keys_folder=None, output_type='o
     if isinstance(key_object_or_openssh, str):
         lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (key_id, len(key_object_or_openssh)))
         key_object = unserialize_key_to_object(key_object_or_openssh)
+        if not key_object:
+            lg.warn('invalid openssh string, unserialize_key_to_object() failed')
+            return None
     else:
         lg.out(4, 'my_keys.register_key %s from object' % key_id)
-    if not key_object:
-        lg.warn('invalid openssh string, unserialize_key_to_object() failed')
-        return None
+        key_object = key_object_or_openssh
     known_keys()[key_id] = key_object
     if not keys_folder:
         keys_folder = settings.PrivateKeysDir()
     key_string = key_object.toString(output_type)
     if key_object.isPublic():
-        key_filepath = os.path.join(keys_folder, key_id, '.public')
+        key_filepath = os.path.join(keys_folder, key_id + '.public')
     else:
-        key_filepath = os.path.join(keys_folder, key_id, '.private')
+        key_filepath = os.path.join(keys_folder, key_id + '.private')
     bpio.WriteFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s added, saved to %s' % (key_id, key_filepath))
@@ -300,9 +302,9 @@ def erase_key(key_id, keys_folder=None):
     if not keys_folder:
         keys_folder = settings.PrivateKeysDir()
     if key_obj(key_id).isPublic():
-        key_filepath = os.path.join(keys_folder, key_id, '.public')
+        key_filepath = os.path.join(keys_folder, key_id + '.public')
     else:
-        key_filepath = os.path.join(keys_folder, key_id, '.private')
+        key_filepath = os.path.join(keys_folder, key_id + '.private')
     try:
         os.remove(key_filepath)
     except:
@@ -449,12 +451,16 @@ def make_master_key_info(include_private=False):
         'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
         'type': str(key.MyPrivateKeyObject().type()),
         'ssh_type': str(key.MyPrivateKeyObject().sshType()),
-        'size': str(key.MyPrivateKeyObject().size()),
         'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
+        'include_private': include_private,
     }
     r['private'] = None
     if include_private:
         r['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
+    if hasattr(key.MyPrivateKeyObject(), 'size'):
+        r['size'] = str(key.MyPrivateKeyObject().size())
+    else:
+        r['size'] = '0'
     return r
 
 
@@ -471,7 +477,7 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         'fingerprint': str(key_object.fingerprint()),
         'type': str(key_object.type()),
         'ssh_type': str(key_object.sshType()),
-        'size': str(key_object.size()),
+        'include_private': include_private,
     }
     r['private'] = None
     if key_object.isPublic():
@@ -480,6 +486,10 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         r['public'] = str(key_object.public().toString('openssh'))
         if include_private:
             r['private'] = str(key_object.toString('openssh'))
+    if hasattr(key_object, 'size'):
+        r['size'] = str(key_object.size())
+    else:
+        r['size'] = '0'
     return r
 
 
@@ -514,17 +524,17 @@ def get_key_info(key_id, include_private=False):
                 key_id = key_id_form_2
     if not key_object:
         raise Exception('key not found')
-    return make_key_info(key_object, key_id=key_id, )
+    return make_key_info(key_object, key_id=key_id, include_private=include_private, )
 
 
 def read_key_info(key_json):
     try:
         key_id = str(key_json['key_id'])
-        is_public = bool(key_json['is_public'])
-        if is_public:
-            raw_openssh_string = str(key_json['public'])
-        else:
+        include_private = bool(key_json['include_private'])
+        if include_private:
             raw_openssh_string = str(key_json['private'])
+        else:
+            raw_openssh_string = str(key_json['public'])
         key_object = unserialize_key_to_object(raw_openssh_string)
         if not key_object:
             raise Exception('unserialize failed')

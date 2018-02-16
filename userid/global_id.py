@@ -36,16 +36,14 @@ import re
 #------------------------------------------------------------------------------
 
 _FORMAT_GLOBAL_ID = '{key_alias}${username}@{host}'
-
 _FORMAT_GLOBAL_ID_USER = '{username}@{host}'
-
 _FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key_alias}'
 _FORMAT_GLOBAL_ID_KEY_USER = '{key_alias}${user}'
+_FORMAT_GLOBAL_ID_QUEUE_ID = '{queue_alias}&{owner_id}&{supplier_id}'
 
 _REGEX_GLOBAL_ID_USER_KEY = '^(?P<user>[a-z0-9-_]+)\!(?P<key_alias>[a-z0-9-_]+)$'
 _REGEX_GLOBAL_ID_KEY_USER = '^(?P<key_alias>[a-z0-9-_]+)\$(?P<user>[a-z0-9-_]+)$'
-
-_FORMAT_GLOBAL_ID_QUEUE_ID = '{queue_alias}&{owner_id}&{supplier_id}'
+_REGEX_GLOBAL_ID_QUEUE_ID = '^(?P<queue_alias>[a-z0-9-_]+)\&(?P<owner_id>[a-z0-9-_\@\.]+)\&(?P<supplier_id>[a-z0-9-_\@\.]+)$'
 
 #------------------------------------------------------------------------------
 
@@ -308,6 +306,25 @@ def MakeGlobalQueueID(queue_alias, owner_id=None, supplier_id=None):
     """
     """
     global _FORMAT_GLOBAL_ID_QUEUE_ID
-    return _FORMAT_GLOBAL_ID_QUEUE_ID.format(queue_alias=queue_alias, owner_id=owner_id, supplier_id=supplier_id)
+    return _FORMAT_GLOBAL_ID_QUEUE_ID.format(
+        queue_alias=queue_alias,
+        owner_id=owner_id,
+        supplier_id=supplier_id,
+    )
+
+def ParseGlobalQueueID(inp):
+    global _REGEX_GLOBAL_ID_QUEUE_ID
+    ret = {
+        'queue_alias': '',
+        'owner_id': '',
+        'supplier_id': '',
+    }
+    result = re.match(_REGEX_GLOBAL_ID_QUEUE_ID, inp)
+    if not result:
+        return ret
+    ret['queue_alias'] = result.group('queue_alias')
+    ret['owner_id'] = result.group('owner_id')
+    ret['supplier_id'] = result.group('supplier_id')
+    return ret
 
 #------------------------------------------------------------------------------

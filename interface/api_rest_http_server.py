@@ -371,8 +371,15 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/queue/v1$')
+    @GET('^/queue/list/v1$')
+    def queue_list(self, request):
+        return api.queue_list()
+
+    #------------------------------------------------------------------------------
+
     @ALL('^/*')
     def not_found(self, request):
         return api.ERROR('method %s:%s not found' % (request.method, request.path))
 
-#------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------

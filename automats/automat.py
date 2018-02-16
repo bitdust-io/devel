@@ -528,12 +528,15 @@ class Automat(object):
         """
         Start all state machine timers.
         """
-        for name, (interval, states) in self.timers.items():
-            if len(states) > 0 and self.state not in states:
-                continue
-            self._timers[name] = LoopingCall(self.timerEvent, name, interval)
-            self._timers[name].start(interval, self.instant_timers)
-            # self.log(self.debug_level * 4, '%s.startTimers timer %s started' % (self, name))
+        try:
+            for name, (interval, states) in self.timers.items():
+                if len(states) > 0 and self.state not in states:
+                    continue
+                self._timers[name] = LoopingCall(self.timerEvent, name, interval)
+                self._timers[name].start(interval, self.instant_timers)
+                # self.log(self.debug_level * 4, '%s.startTimers timer %s started' % (self, name))
+        except:
+            traceback.print_exc()
 
     def restartTimers(self):
         """

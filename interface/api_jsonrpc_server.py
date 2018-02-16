@@ -354,6 +354,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_reconnect(self):  # alias
         return api.network_reconnect()
 
+    def jsonrpc_queue_list(self):
+        return api.queue_list()
+
 #------------------------------------------------------------------------------
 
 

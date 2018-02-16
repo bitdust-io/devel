@@ -93,19 +93,19 @@ class BroadcastingService(LocalService):
         conf().removeCallback('services/broadcasting/routing-enabled')
         return True
 
-    def request(self, newpacket, info):
+    def request(self, json_payload, newpacket, info):
         from logs import lg
         from p2p import p2p_service
         from main import settings
-        words = newpacket.Payload.split(' ')
+        # words = newpacket.Payload.split(' ')
         try:
-            mode = words[1][:10]
+            mode = json_payload['action']
         except:
             lg.exc()
-            return None
+            return p2p_service.SendFail(newpacket, 'invalid json payload')
         if mode != 'route' and mode != 'listen':
             lg.out(8, "service_broadcasting.request DENIED, wrong mode provided : %s" % mode)
-            return None
+            return p2p_service.SendFail(newpacket, 'invalid request')
         if not settings.enableBroadcastRouting():
             lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
             return p2p_service.SendFail(newpacket, 'broadcast routing disabled')
@@ -176,7 +176,7 @@ class BroadcastingService(LocalService):
             lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
 
 
-#     def cancel(self, request, info):
+#     def cancel(self, json_payload, request, info):
 #         from logs import lg
 #         from p2p import p2p_service
 #         words = request.Payload.split(' ')

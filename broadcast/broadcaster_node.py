@@ -207,8 +207,7 @@ class BroadcasterNode(automat.Automat):
         Action method.
         """
         from broadcast import broadcasters_finder
-        broadcasters_finder.A('start',
-                              (self.automat, 'route', list(self.connected_broadcasters)))
+        broadcasters_finder.A('start', (self.automat, {'action': 'route', }, list(self.connected_broadcasters)))
 
     def doAddBroadcaster(self, arg):
         """

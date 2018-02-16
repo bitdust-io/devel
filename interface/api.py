@@ -2333,13 +2333,15 @@ def event_send(event_id, json_data=None):
     import json
     from main import events
     json_payload = None
+    json_length = 0
     if json_data and (isinstance(json_data, str) or isinstance(json_data, unicode)):
+        json_length = len(json_data)
         try:
             json_payload = json.loads(json_data or '{}')
         except:
             return ERROR('json data payload is not correct')
     events.send(event_id, data=json_payload)
-    return OK('event "%s" was sent with %d bytes payload' % (event_id, len(json_data), ))
+    return OK('event "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
 
 def events_listen(consumer_id):
     from main import events
@@ -2418,7 +2420,7 @@ def network_connected(wait_timeout=10):
         return ERROR('service_p2p_hookups() is disabled', extra_fields={'reason': 'service_p2p_hookups_disabled'})
 
     ret = Deferred()
-    
+
     def _on_restarted(resp):
         p2p_connector_lookup = automat.find('p2p_connector')
         if not p2p_connector_lookup:
@@ -2459,5 +2461,16 @@ def network_connected(wait_timeout=10):
     wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
     wait_timeout_defer.addBoth(_do_restart)
     return ret
+
+#------------------------------------------------------------------------------
+
+def queue_list():
+    """
+    """
+    from p2p import p2p_queue
+    return RESULT([{
+        'queue_id': queue_id,
+        'messages': len(p2p_queue.queue(queue_id)),
+    } for queue_id in p2p_queue.queue().keys()])
 
 #------------------------------------------------------------------------------

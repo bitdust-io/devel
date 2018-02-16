@@ -68,18 +68,19 @@ class CoinsAccountantService(LocalService):
         coins_db.shutdown()
         return True
 
-    def request(self, newpacket, info):
+    def request(self, json_payload, newpacket, info):
         from logs import lg
         from p2p import p2p_service
-        words = newpacket.Payload.split(' ')
+        # words = newpacket.Payload.split(' ')
         try:
-            mode = words[1][:10]
+            # mode = words[1][:10]
+            mode = json_payload['action']
         except:
             lg.exc()
-            return None
+            return p2p_service.SendFail(newpacket, "invalid json payload")
         if mode != 'join' and mode != 'write' and mode != 'read':
             lg.out(8, "service_accountant.request DENIED, wrong mode provided : %s" % mode)
-            return None
+            return p2p_service.SendFail(newpacket, "invalid request")
         from coins import accountant_node
         if not accountant_node.A():
             lg.out(8, "service_accountant.request DENIED, accountant_node() state machine not exist")
