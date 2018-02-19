@@ -200,14 +200,16 @@ class DataSender(automat.Automat):
                                 if _Debug:
                                     log.write('ok to send %s ? - NO!\n' % supplier_idurl)
                                 continue
+                            customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                             # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
                             # if len(tranByID) > 3:
                             #     log.write('transfers by %s: %d\n' % (supplier_idurl, len(tranByID)))
                             #     continue
+                            customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                             filename = os.path.join(
                                 settings.getLocalBackupsDir(),
-                                global_id.UrlToGlobalID(customer_idurl),
-                                packetid.RemotePath(packetID),
+                                customerGlobalID,  # global_id.UrlToGlobalID(customer_idurl),
+                                pathID,
                             )
                             if not os.path.isfile(filename):
                                 if _Debug:

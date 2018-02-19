@@ -513,6 +513,13 @@ class Task():
         self.number = NewTaskNumber()                   # index number for the task
         self.created = time.time()
         self.backupID = None
+        self.pathID = None
+        self.fullGlobPath = None
+        self.customerGlobID = None
+        self.customerIDURL = None
+        self.remotePath = None
+        self.keyID = None
+        self.keyAlias = None
         self.result_defer = Deferred()
         self.result_defer.addCallback(OnTaskExecutedCallback)
         self.result_defer.addErrback(OnTaskFailedCallback)
@@ -521,17 +528,50 @@ class Task():
         self.set_local_path(localPath)
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)
+        events.send('backup-task-created', data=dict(
+            number=self.number,
+            created=self.created,
+            backup_id=self.backupID,
+            key_id=self.keyID,
+            path_id=self.pathID,
+            customer_id=self.customerGlobID,
+            path=self.remotePath,
+            local_path=self.localPath,
+            remote_path=self.fullGlobPath,
+        ))
+
+    def destroy(self, message=None):
+        lg.out(4, 'backup_control.Task-%d.destroy %s -> %s' % (
+            self.number, self.localPath, self.backupID))
+        if self.result_defer and not self.result_defer.called:
+            self.result_defer.cancel()
+            self.result_defer = None
+        events.send('backup-task-finished', data=dict(
+            number=self.number,
+            created=self.created,
+            backup_id=self.backupID,
+            key_id=self.keyID,
+            path_id=self.pathID,
+            customer_id=self.customerGlobID,
+            path=self.remotePath,
+            local_path=self.localPath,
+            remote_path=self.fullGlobPath,
+            message=message,
+        ))
 
     def set_path_id(self, pathID):
         parts = global_id.ParseGlobalID(pathID)
-        self.pathID = pathID                            # source path to backup
+        self.pathID = pathID  # source path to backup
         self.customerGlobID = parts['customer']
         self.customerIDURL = parts['idurl']
-        self.remotePath = parts['path']   # here it must be in 0/1/2 form
+        self.remotePath = parts['path']  # here it must be in 0/1/2 form
+        self.fullGlobPath = global_id.MakeGlobalID(
+            customer=self.customerGlobID, key_alias=self.keyAlias, path=self.remotePath)
         return parts
 
     def set_key_id(self, key_id):
         self.keyID = key_id
+        self.keyAlias = packetid.KeyAlias(self.keyID)
 
     def set_local_path(self, localPath):
         self.localPath = localPath
@@ -600,7 +640,7 @@ class Task():
                 i += 1
             dataID += str(i)
         self.backupID = packetid.MakeBackupID(
-            self.customerGlobID,
+            self.fullGlobPath,
             self.remotePath,
             dataID,
         )
@@ -648,13 +688,6 @@ class Task():
             self.number, self.pathID, dataID, itemInfo.size, self.localPath))
         return None
 
-    def destroy(self):
-        lg.out(4, 'backup_control.Task-%d.destroy %s -> %s' % (
-            self.number, self.localPath, self.backupID))
-        if self.result_defer and not self.result_defer.called:
-            self.result_defer.cancel()
-            self.result_defer = None
-
 #------------------------------------------------------------------------------
 
 
@@ -700,9 +733,9 @@ def RunTask():
         events.send('backup-task-failed', data=dict(path_id=T.pathID, message=message, ))
         T.result_defer.errback((T.pathID, message))
     else:
-        events.send('backup-task-executed', data=dict(path_id=T.pathID, backup_id=T.backupID, ))
+    #     events.send('backup-task-executed', data=dict(path_id=T.pathID, backup_id=T.backupID, ))
         T.result_defer.callback((T.backupID, None))
-    T.destroy()
+    T.destroy(message)
     return True
 
 

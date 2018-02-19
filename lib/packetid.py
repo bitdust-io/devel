@@ -109,6 +109,9 @@ def MakeBackupID(customer=None, path_id=None, version=None, normalize_key_alias=
 
         "master$alice@idhost.org:0/0/1/0/F20131120053803PM"
     """
+    if normalize_key_alias and not customer:
+        from userid import my_id
+        customer = my_id.getGlobalID(key_alias='master')
     if customer:
         if '$' not in customer and normalize_key_alias:
             customer = 'master$' + customer
@@ -333,6 +336,21 @@ def UsrBidBnSnDp(packetID):
     Another wrapper for ``Split()`` method.
     """
     return Split(packetID)
+
+
+def KeyAlias(inp, normalize_key_alias=True):
+    """
+    """
+    customerGlobalID = inp
+    if ':' in inp:
+        try:
+            customerGlobalID, _, _ = inp.rpartition(':')
+        except:
+            return None
+    if '$' not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = 'master$' + customerGlobalID
+    keyAlias, _, _ = customerGlobalID.rpartition('$')
+    return str(keyAlias)
 
 
 def CustomerIDURL(backupID):

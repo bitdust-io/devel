@@ -610,7 +610,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     if blockNum not in local_files()[backupID]:
         local_files()[backupID][blockNum] = {
             'D': [0] * contactsdb.num_suppliers(),
-            'P': [0] * contactsdb.num_suppliers()}
+            'P': [0] * contactsdb.num_suppliers(), }
     if not os.path.isfile(localDest):
         local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
         return

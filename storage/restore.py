@@ -400,13 +400,13 @@ class restore(automat.Automat):
 
     def doSavePacket(self, NewPacket):
         glob_path = global_id.ParseGlobalID(NewPacket.PacketID, detect_version=True)
-        packetID = global_id.CanonicalID(NewPacket.PacketID)
-        _, _, _, _, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
+        packetID = global_id.CanonicalID(NewPacket.PacketID, include_key=True)
+        customer_id, _, _, _, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
         if dataORparity == 'Data':
             self.OnHandData[SupplierNumber] = True
         elif NewPacket.DataOrParity() == 'Parity':
             self.OnHandParity[SupplierNumber] = True
-        filename = os.path.join(settings.getLocalBackupsDir(), glob_path['customer'], glob_path['path'])
+        filename = os.path.join(settings.getLocalBackupsDir(), customer_id, glob_path['path'])
         dirpath = os.path.dirname(filename)
         if not os.path.exists(dirpath):
             try:

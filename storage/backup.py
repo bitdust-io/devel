@@ -356,11 +356,11 @@ class backup(automat.Automat):
         self.workBlocks[newblock.BlockNumber] = filename
         key_alias = 'master'
         if self.keyID:
-            from crypt import my_keys
-            key_alias, _ = my_keys.split_key_id(self.keyID)
+            key_alias = packetid.KeyAlias(self.keyID)
         dt = time.time()
+        customer_dir = global_id.MakeGlobalID(customer=self.customerGlobalID, key_alias=key_alias)
         outputpath = os.path.join(
-            settings.getLocalBackupsDir(), self.customerGlobalID, self.pathID, self.version)
+            settings.getLocalBackupsDir(), customer_dir, self.pathID, self.version)
         task_params = (filename, self.eccmap.name, self.version, newblock.BlockNumber, outputpath)
         raid_worker.add_task('make', task_params,
                              lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
@@ -374,7 +374,7 @@ class backup(automat.Automat):
         """
         Action method.
         """
-        blockNumber, result = arg
+        blockNumber, _ = arg
         filename = self.workBlocks.pop(blockNumber)
         tmpfile.throw_out(filename, 'block raid done')
 
@@ -400,16 +400,22 @@ class backup(automat.Automat):
         self.currentBlockData = cStringIO.StringIO()
 
     def doBlockReport(self, arg):
+        """
+        """
         BlockNumber, result = arg
         if self.blockResultCallback:
             self.blockResultCallback(self.backupID, BlockNumber, result)
 
     def doClose(self, arg):
+        """
+        """
         self.closed = True
         for filename in self.workBlocks.values():
             tmpfile.throw_out(filename, 'backup aborted')
 
     def doReport(self, arg):
+        """
+        """
         if self.ask4abort:
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'abort')
@@ -420,6 +426,8 @@ class backup(automat.Automat):
             events.send('backup-done', dict(backup_id=self.backupID))
 
     def doDestroyMe(self, arg):
+        """
+        """
         self.currentBlockData.close()
         del self.currentBlockData
         self.destroy()

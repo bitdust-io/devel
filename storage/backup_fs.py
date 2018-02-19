@@ -1821,7 +1821,8 @@ def Scan(basedir=None, customer_idurl=None):
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
-        basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
+        basedir = settings.getLocalBackupsDir()
+        # os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
     iterID = fsID(customer_idurl)
     summ = [0, 0, ]
 
@@ -1829,7 +1830,9 @@ def Scan(basedir=None, customer_idurl=None):
         info.read_stats(path)
         if info.exist():
             summ[0] += info.size
-        versions_path = bpio.portablePath(os.path.join(basedir, path_id))
+        key_alias = packetid.KeyAlias(info.key_id)
+        customer_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias=key_alias)
+        versions_path = bpio.portablePath(os.path.join(basedir, customer_id, path_id))
         summ[1] += info.read_versions(versions_path)
 
     TraverseByID(visitor, iterID=iterID)
@@ -1843,17 +1846,22 @@ def ScanID(pathID, basedir=None, customer_idurl=None):
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     if basedir is None:
-        basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
+        basedir = settings.getLocalBackupsDir()
+        # basedir = os.path.join(settings.getLocalBackupsDir(), global_id.UrlToGlobalID(customer_idurl))
     iter_and_path = WalkByID(pathID, iterID=fs(customer_idurl))
     if not iter_and_path:
         return
-    iter, path = iter_and_path
+    itr, path = iter_and_path
     if isinstance(iter, dict):
         if INFO_KEY not in iter:
             return
-        iter = iter[INFO_KEY]
-    iter.read_stats(path)
-    iter.read_versions(bpio.portablePath(os.path.join(basedir, pathID)))
+        itr = iter[INFO_KEY]
+    key_alias = 'master'
+    if itr and itr.key_id:
+        key_alias = packetid.KeyAlias(itr.key_id)
+    customer_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias=key_alias)
+    itr.read_stats(path)
+    itr.read_versions(bpio.portablePath(os.path.join(basedir, customer_id)))
 
 
 def Calculate(iterID=None):

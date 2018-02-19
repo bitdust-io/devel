@@ -669,6 +669,7 @@ def files_list(remote_path=None):
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_fs
+    from lib import packetid
     from system import bpio
     from userid import global_id
     from userid import my_id
@@ -685,18 +686,19 @@ def files_list(remote_path=None):
     if not isinstance(lookup, list):
         return ERROR(lookup)
     for i in lookup:
-        glob_path_child = norm_path.copy()
-        glob_path_child['path'] = i['path_id']
-        glob_path_child_remote_pth = norm_path.copy()
-        glob_path_child_remote_pth['path'] = i['path']
-        if not i['item']['k']:
-            i['item']['k'] = my_id.getGlobalID(key_alias='master')
+        # if not i['item']['k']:
+        #     i['item']['k'] = my_id.getGlobalID(key_alias='master')
         if glob_path['key_alias'] and i['item']['k']:
             if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):
                 continue
+        key_alias = 'master'
+        if i['item']['k']:
+            key_alias = packetid.KeyAlias(i['item']['k'])
+        full_glob_id = global_id.MakeGlobalID(path=i['path_id'], customer=norm_path['customer'], key_alias=key_alias, )
+        full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=norm_path['customer'], key_alias=key_alias, )
         result.append({
-            'remote_path': global_id.MakeGlobalID(**glob_path_child_remote_pth),
-            'glob_id': global_id.MakeGlobalID(**glob_path_child),
+            'remote_path': full_remote_path,
+            'glob_id': full_glob_id,
             'customer': norm_path['customer'],
             'idurl': norm_path['idurl'],
             'path_id': i['path_id'],
@@ -707,6 +709,7 @@ def files_list(remote_path=None):
             'local_size': i['item']['s'],
             'latest': i['latest'],
             'key_id': i['item']['k'],
+            'key_alias': key_alias,
             'childs': i['childs'],
             'versions': i['versions'],
         })
@@ -721,6 +724,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         return ERROR('service_restores() is not started')
     from storage import backup_fs
     from lib import misc
+    from lib import packetid
     from system import bpio
     from userid import global_id
     glob_path = global_id.ParseGlobalID(remote_path)
@@ -733,20 +737,23 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     if not item:
         return ERROR('item "%s" is not found in catalog' % pathID)
     (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, customer_id=norm_path['customer'])
-    item_key = item.key_id
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
-    full_global_id = global_id.MakeGlobalID(**glob_path_item)
+    key_alias = 'master'
+    if item.key_id:
+        key_alias = packetid.KeyAlias(item.key_id)
     r = {
-        'remote_path': global_id.MakeGlobalID(**norm_path),
-        'glob_id': full_global_id,
+        'remote_path': global_id.MakeGlobalID(
+            path=norm_path['path'], customer=norm_path['customer'], key_alias=key_alias,),
+        'glob_id': global_id.MakeGlobalID(
+            path=norm_path['path_id'], customer=norm_path['customer'], key_alias=key_alias,),
         'customer': norm_path['idurl'],
         'path_id': pathID,
         'path': remotePath,
         'type': backup_fs.TYPES.get(item.type, '').lower(),
         'size': item_size,
         'latest': item_time,
-        'key_id': item_key,
+        'key_id': item.key_id,
         'versions': versions,
         'uploads': {
             'running': [],
@@ -830,6 +837,7 @@ def file_create(remote_path, as_folder=False):
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
     keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
+    keyAlias = parts['key_alias']
     if pathID:
         return ERROR('remote path "%s" already exist in catalog: "%s"' % (path, pathID))
     if as_folder:
@@ -873,7 +881,8 @@ def file_create(remote_path, as_folder=False):
             return ERROR('remote path can not be assigned, failed to create a new item: "%s"' % path)
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
-    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID)
+    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=keyAlias)
+    full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
     lg.out(4, 'api.file_create : "%s"' % full_glob_id)
     return OK(
         'new %s was created in "%s"' % (('folder' if as_folder else 'file'), full_glob_id),
@@ -881,7 +890,7 @@ def file_create(remote_path, as_folder=False):
             'path_id': newPathID,
             'key_id': keyID,
             'path': path,
-            'remote_path': global_id.MakeGlobalID(**parts),
+            'remote_path': full_remote_path,
             'glob_id': full_glob_id,
             'customer': parts['idurl'],
             'type': ('dir' if as_folder else 'file'),
@@ -911,7 +920,9 @@ def file_delete(remote_path):
     if not packetid.Valid(pathID):
         return ERROR('invalid item found: "%s"' % pathID)
     pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
-    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID)
+    keyAlias = parts['key_alias'] or 'master'
+    full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=pathID, key_alias=keyAlias)
+    full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
     result = backup_control.DeletePathBackups(pathID=pathIDfull, saveDB=False, calculate=False)
     if not result:
         return ERROR('remote item "%s" was not found' % pathIDfull)
@@ -926,7 +937,7 @@ def file_delete(remote_path):
     return OK('item "%s" was deleted from remote suppliers' % pathIDfull, extra_fields={
         'path_id': pathIDfull,
         'path': path,
-        'remote_path': global_id.MakeGlobalID(**parts),
+        'remote_path': full_remote_path,
         'glob_id': full_glob_id,
         'customer': parts['idurl'],
     })
