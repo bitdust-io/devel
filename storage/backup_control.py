@@ -515,6 +515,7 @@ class Task():
         self.backupID = None
         self.pathID = None
         self.fullGlobPath = None
+        self.fullCustomerID = None
         self.customerGlobID = None
         self.customerIDURL = None
         self.remotePath = None
@@ -565,13 +566,17 @@ class Task():
         self.customerGlobID = parts['customer']
         self.customerIDURL = parts['idurl']
         self.remotePath = parts['path']  # here it must be in 0/1/2 form
-        self.fullGlobPath = global_id.MakeGlobalID(
-            customer=self.customerGlobID, key_alias=self.keyAlias, path=self.remotePath)
+        if parts['key_alias']:
+            self.set_key_id(my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=self.customerGlobID))
         return parts
 
     def set_key_id(self, key_id):
         self.keyID = key_id
         self.keyAlias = packetid.KeyAlias(self.keyID)
+        self.fullGlobPath = global_id.MakeGlobalID(
+            customer=self.customerGlobID, key_alias=self.keyAlias, path=self.remotePath)
+        self.fullCustomerID = global_id.MakeGlobalID(
+            customer=self.customerGlobID, key_alias=self.keyAlias)
 
     def set_local_path(self, localPath):
         self.localPath = localPath
@@ -640,9 +645,9 @@ class Task():
                 i += 1
             dataID += str(i)
         self.backupID = packetid.MakeBackupID(
-            self.fullGlobPath,
-            self.remotePath,
-            dataID,
+            customer=self.fullCustomerID,
+            path_id=self.remotePath,
+            version=dataID,
         )
         if self.backupID in jobs():
             lg.warn('backup job %s already started' % self.backupID)

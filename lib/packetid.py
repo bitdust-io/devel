@@ -341,6 +341,8 @@ def UsrBidBnSnDp(packetID):
 def KeyAlias(inp, normalize_key_alias=True):
     """
     """
+    if not inp:
+        return None
     customerGlobalID = inp
     if ':' in inp:
         try:

@@ -354,11 +354,11 @@ class backup(automat.Automat):
         os.write(fileno, str(blocklen) + ":" + serializedblock)
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
-        key_alias = 'master'
-        if self.keyID:
-            key_alias = packetid.KeyAlias(self.keyID)
+        # key_alias = 'master'
+        # if self.keyID:
+        #     key_alias = packetid.KeyAlias(self.keyID)
         dt = time.time()
-        customer_dir = global_id.MakeGlobalID(customer=self.customerGlobalID, key_alias=key_alias)
+        customer_dir = self.customerGlobalID  # global_id.MakeGlobalID(customer=self.customerGlobalID, key_alias=key_alias)
         outputpath = os.path.join(
             settings.getLocalBackupsDir(), customer_dir, self.pathID, self.version)
         task_params = (filename, self.eccmap.name, self.version, newblock.BlockNumber, outputpath)
