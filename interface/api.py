@@ -637,6 +637,7 @@ def files_list(remote_path=None):
           u'result': [
                        { u'childs': False,
                          u'customer': u'veselin@veselin-p2p.ru',
+                         u'remote_path': u'master$veselin@veselin-p2p.ru:cats.png',
                          u'glob_id': u'master$veselin@veselin-p2p.ru:1',
                          u'idurl': u'http://veselin-p2p.ru/veselin.xml',
                          u'key_id': u'master$veselin@veselin-p2p.ru',
@@ -650,6 +651,7 @@ def files_list(remote_path=None):
                          u'versions': []},
                        { u'childs': False,
                          u'customer': u'veselin@veselin-p2p.ru',
+                         u'remote_path': u'master$veselin@veselin-p2p.ru:dogs.jpg',
                          u'glob_id': u'master$veselin@veselin-p2p.ru:2',
                          u'idurl': u'http://veselin-p2p.ru/veselin.xml',
                          u'key_id': u'master$veselin@veselin-p2p.ru',
@@ -685,12 +687,15 @@ def files_list(remote_path=None):
     for i in lookup:
         glob_path_child = norm_path.copy()
         glob_path_child['path'] = i['path_id']
+        glob_path_child_remote_pth = norm_path.copy()
+        glob_path_child_remote_pth['path'] = i['path']
         if not i['item']['k']:
             i['item']['k'] = my_id.getGlobalID(key_alias='master')
         if glob_path['key_alias'] and i['item']['k']:
             if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):
                 continue
         result.append({
+            'remote_path': global_id.MakeGlobalID(**glob_path_child_remote_pth),
             'glob_id': global_id.MakeGlobalID(**glob_path_child),
             'customer': norm_path['customer'],
             'idurl': norm_path['idurl'],
@@ -733,6 +738,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     glob_path_item['path'] = pathID
     full_global_id = global_id.MakeGlobalID(**glob_path_item)
     r = {
+        'remote_path': global_id.MakeGlobalID(**norm_path),
         'glob_id': full_global_id,
         'customer': norm_path['idurl'],
         'path_id': pathID,
@@ -875,6 +881,7 @@ def file_create(remote_path, as_folder=False):
             'path_id': newPathID,
             'key_id': keyID,
             'path': path,
+            'remote_path': global_id.MakeGlobalID(**parts),
             'glob_id': full_glob_id,
             'customer': parts['idurl'],
             'type': ('dir' if as_folder else 'file'),
@@ -919,6 +926,7 @@ def file_delete(remote_path):
     return OK('item "%s" was deleted from remote suppliers' % pathIDfull, extra_fields={
         'path_id': pathIDfull,
         'path': path,
+        'remote_path': global_id.MakeGlobalID(**parts),
         'glob_id': full_glob_id,
         'customer': parts['idurl'],
     })

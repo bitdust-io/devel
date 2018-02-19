@@ -115,12 +115,12 @@ def clear(exclude_list=None):
     iddir = settings.IdentityCacheDir()
     if not os.path.exists(iddir):
         return
-    for name in os.listdir(iddir):
-        path = os.path.join(iddir, name)
+    for file_name in os.listdir(iddir):
+        path = os.path.join(iddir, file_name)
         if not os.access(path, os.W_OK):
             continue
         if exclude_list:
-            idurl = nameurl.FilenameUrl(name)
+            idurl = nameurl.FilenameUrl(file_name)
             if idurl in exclude_list:
                 continue
         os.remove(path)

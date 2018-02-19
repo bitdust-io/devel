@@ -100,6 +100,7 @@ try:
     from system import bpio
     from lib import nameurl
     from lib import misc
+    from userid import global_id
     from main import settings
     from contacts import contactsdb
     from p2p import commands
@@ -135,7 +136,8 @@ def SpaceTime():
         if not os.path.isdir(onecustdir):
             remove_list[onecustdir] = 'is not a folder'
             continue
-        idurl = nameurl.FilenameUrl(customer_filename)
+        # idurl = nameurl.FilenameUrl(customer_filename)
+        idurl = global_id.GlobalUserToIDURL(customer_filename)
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
@@ -176,9 +178,11 @@ def SpaceTime():
                 except:
                     printlog('SpaceTime ERROR removing ' + path)
                 # time.sleep(0.01)
+
         used_space[idurl] = str(currentV)
         timedict.clear()
         sizedict.clear()
+
     for path in remove_list.keys():
         if not os.path.exists(path):
             continue
@@ -223,7 +227,8 @@ def UpdateCustomers():
         if not os.path.isdir(onecustdir):
             remove_list[onecustdir] = 'is not a folder'
             continue
-        idurl = nameurl.FilenameUrl(customer_filename)
+        # idurl = nameurl.FilenameUrl(customer_filename)
+        idurl = global_id.GlobalUserToIDURL(customer_filename)
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
@@ -270,43 +275,47 @@ def Validate():
         onecustdir = os.path.join(customers_dir, customer_filename)
         if not os.path.isdir(onecustdir):
             continue
+        for key_alias_filename in os.listdir(onecustdir):
+            onekeydir = os.path.join(onecustdir, key_alias_filename)
+            if not os.path.isdir(onekeydir):
+                continue
 
-        def cb(path, subpath, name):
-            #             if not os.access(path, os.R_OK | os.W_OK):
-            #                 return False
-            if not os.path.isfile(path):
-                return True
-#             if name in [settings.BackupIndexFileName(),]:
-#                 return False
-            packetsrc = bpio.ReadBinaryFile(path)
-            if not packetsrc:
-                try:
-                    os.remove(path)  # if is is no good it is of no use to anyone
-                    printlog('Validate ' + path + ' removed (empty file)')
-                except:
-                    printlog('Validate ERROR removing ' + path)
-                    return False
-            p = signed.Unserialize(packetsrc)
-            if p is None:
-                try:
-                    os.remove(path)  # if is is no good it is of no use to anyone
-                    printlog('Validate ' + path + ' removed (unserialize error)')
-                except:
-                    printlog('Validate ERROR removing ' + path)
-                    return False
-            result = p.Valid()
-            packetsrc = ''
-            del p
-            if not result:
-                try:
-                    os.remove(path)  # if is is no good it is of no use to anyone
-                    printlog('Validate ' + path + ' removed (invalid packet)')
-                except:
-                    printlog('Validate ERROR removing ' + path)
-                    return False
-            time.sleep(0.1)
-            return False
-        bpio.traverse_dir_recursive(cb, onecustdir)
+            def cb(path, subpath, name):
+                #             if not os.access(path, os.R_OK | os.W_OK):
+                #                 return False
+                if not os.path.isfile(path):
+                    return True
+    #             if name in [settings.BackupIndexFileName(),]:
+    #                 return False
+                packetsrc = bpio.ReadBinaryFile(path)
+                if not packetsrc:
+                    try:
+                        os.remove(path)  # if is is no good it is of no use to anyone
+                        printlog('Validate ' + path + ' removed (empty file)')
+                    except:
+                        printlog('Validate ERROR removing ' + path)
+                        return False
+                p = signed.Unserialize(packetsrc)
+                if p is None:
+                    try:
+                        os.remove(path)  # if is is no good it is of no use to anyone
+                        printlog('Validate ' + path + ' removed (unserialize error)')
+                    except:
+                        printlog('Validate ERROR removing ' + path)
+                        return False
+                result = p.Valid()
+                packetsrc = ''
+                del p
+                if not result:
+                    try:
+                        os.remove(path)  # if is is no good it is of no use to anyone
+                        printlog('Validate ' + path + ' removed (invalid packet)')
+                    except:
+                        printlog('Validate ERROR removing ' + path)
+                        return False
+                time.sleep(0.1)
+                return False
+            bpio.traverse_dir_recursive(cb, onekeydir)
 
 #------------------------------------------------------------------------------
 

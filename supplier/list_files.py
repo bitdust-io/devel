@@ -81,7 +81,8 @@ def send(customer_idurl, packet_id, format_type):
         if not misc.ValidKeyAlias(str(key_alias)):
             continue
         # plaintext += '%s\n' % str(key_alias)
-        plaintext += TreeSummary(ownerdir, key_alias)
+        key_alias_dir = os.path.join(ownerdir, key_alias)
+        plaintext += TreeSummary(key_alias_dir, key_alias)
     # plaintext = TreeSummary(ownerdir)
     if _Debug:
         lg.out(_DebugLevel + 8, '\n%s' % plaintext)
