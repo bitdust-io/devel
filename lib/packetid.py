@@ -83,7 +83,7 @@ def UniqueID():
     return str(_LastUniqueNumber)
 
 
-def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
+def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity, normalize_key_alias=True):
     """
     Create a full packet ID from backup ID and other parts
     Such call:
@@ -92,18 +92,29 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
 
     will return:
 
-        'alice@idhost.org:0/0/1/0/F20131120053803PM/1234-63-Data'
+        'master$alice@idhost.org:0/0/1/0/F20131120053803PM/1234-63-Data'
     """
+    if '$' not in backupID and normalize_key_alias:
+        backupID = 'master$' + backupID
     return backupID + '/' + str(blockNumber) + '-' + str(supplierNumber) + '-' + dataORparity
 
 
-def MakeBackupID(customer=None, path_id=None, version=None):
+def MakeBackupID(customer=None, path_id=None, version=None, normalize_key_alias=True):
     """
-    Will create something like:
+    Run:
 
-        "alice@idhost.org:0/0/1/0/F20131120053803PM"
+        MakeBackupID('alice@idhost.org', '0/0/1/0', 'F20131120053803PM')
+
+    Will create a string like that:
+
+        "master$alice@idhost.org:0/0/1/0/F20131120053803PM"
     """
+    if normalize_key_alias and not customer:
+        from userid import my_id
+        customer = my_id.getGlobalID(key_alias='master')
     if customer:
+        if '$' not in customer and normalize_key_alias:
+            customer = 'master$' + customer
         if version:
             return '{}:{}/{}'.format(customer, path_id, version)
         return '{}:{}'.format(customer, path_id)
@@ -150,12 +161,12 @@ def Valid(packetID):
     return True
 
 
-def Split(packetID):
+def Split(packetID, normalize_key_alias=True):
     """
     Split a full packet ID into tuple of 5 parts:
 
         packetid.Split("alice@idhost.org:0/0/1/0/F20131120053803PM/0-1-Data")
-        ('alice@idhost.org', '0/0/1/0/F20131120053803PM', 0, 1, 'Data')
+        ('master$alice@idhost.org', '0/0/1/0/F20131120053803PM', 0, 1, 'Data')
     """
     try:
         backupID, _, fileName = packetID.rpartition('/')
@@ -165,15 +176,17 @@ def Split(packetID):
         customerGlobalID, _, remotePathWithVersion = backupID.rpartition(':')
     except:
         return None, None, None, None, None
+    if '$' not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = 'master$' + customerGlobalID
     return customerGlobalID, remotePathWithVersion, blockNum, supplierNum, dataORparity
 
 
-def SplitFull(packetID):
+def SplitFull(packetID, normalize_key_alias=True):
     """
     Almost the same but return 6 parts:
 
         packetid.SplitFull("alice@idhost.org:0/0/1/0/F20131120053803PM/0-1-Data")
-        ('alice@idhost.org', '0/0/1/0', 'F20131120053803PM', 0, 1, 'Data')
+        ('master$alice@idhost.org', '0/0/1/0', 'F20131120053803PM', 0, 1, 'Data')
     """
     try:
         backupID, _, fileName = packetID.rpartition('/')
@@ -184,15 +197,17 @@ def SplitFull(packetID):
         customerGlobalID, _, remotePath = pathID.rpartition(':')
     except:
         return None, None, None, None, None, None
+    if '$' not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = 'master$' + customerGlobalID
     return customerGlobalID, remotePath, versionName, blockNum, supplierNum, dataORparity
 
 
-def SplitVersionFilename(packetID):
+def SplitVersionFilename(packetID, normalize_key_alias=True):
     """
     Return 4 parts:
 
         packetid.SplitVersionFilename("alice@idhost.org:0/0/1/0/F20131120053803PM/0-1-Data")
-        ('alice@idhost.org', '0/0/1/0', 'F20131120053803PM', '0-1-Data')
+        ('master$alice@idhost.org', '0/0/1/0', 'F20131120053803PM', '0-1-Data')
     """
     try:
         backupID, _, fileName = packetID.rpartition('/')
@@ -200,35 +215,41 @@ def SplitVersionFilename(packetID):
         customerGlobalID, _, remotePath = pathID.rpartition(':')
     except:
         return None, None, None, None
+    if '$' not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = 'master$' + customerGlobalID
     return customerGlobalID, remotePath, versionName, fileName
 
 
-def SplitBackupID(backupID):
+def SplitBackupID(backupID, normalize_key_alias=True):
     """
     This takes a backup ID string and split by 3 parts:
 
         packetid.SplitBackupID('alice@idhost.org:0/0/1/0/F20131120053803PM')
-        ('alice@idhost.org', '0/0/1/0', 'F20131120053803PM')
+        ('master$alice@idhost.org', '0/0/1/0', 'F20131120053803PM')
     """
     try:
         pathID, _, versionName = backupID.rpartition('/')
         customerGlobalID, _, pathID = pathID.rpartition(':')
     except:
         return None, None, None
+    if '$' not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = 'master$' + customerGlobalID
     return customerGlobalID, pathID, versionName
 
 
-def SplitPacketID(packetID):
+def SplitPacketID(packetID, normalize_key_alias=True):
     """
     This takes a backup ID string and split by 2 parts:
 
         packetid.SplitBackupID('alice@idhost.org:0/0/1/0/F20131120053803PM/1-2-Data')
-        ('alice@idhost.org', '0/0/1/0/F20131120053803PM/1-2-Data')
+        ('master$alice@idhost.org', '0/0/1/0/F20131120053803PM/1-2-Data')
     """
     try:
         customerGlobalID, _, pathID = packetID.rpartition(':')
     except:
         return None, None
+    if '$' not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = 'master$' + customerGlobalID
     return customerGlobalID, pathID
 
 
@@ -317,6 +338,23 @@ def UsrBidBnSnDp(packetID):
     return Split(packetID)
 
 
+def KeyAlias(inp, normalize_key_alias=True):
+    """
+    """
+    if not inp:
+        return None
+    customerGlobalID = inp
+    if ':' in inp:
+        try:
+            customerGlobalID, _, _ = inp.rpartition(':')
+        except:
+            return None
+    if '$' not in customerGlobalID and normalize_key_alias:
+        customerGlobalID = 'master$' + customerGlobalID
+    keyAlias, _, _ = customerGlobalID.rpartition('$')
+    return str(keyAlias)
+
+
 def CustomerIDURL(backupID):
     """
     A wrapper for ``Split()`` method to get customer idurl from backup ID.
@@ -344,7 +382,7 @@ def BackupID(packetID):
     A wrapper for ``Split()`` method to get the first part - backup ID.
     """
     customerGlobalID, remotePathWithVersion, _, _, _ = Split(packetID)[1]
-    return MakeBackupID(customerGlobalID, remotePathWithVersion)
+    return MakeBackupID(customer=customerGlobalID, path_id=remotePathWithVersion)
 
 
 def BlockNumber(packetID):

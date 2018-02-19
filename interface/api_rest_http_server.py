@@ -331,6 +331,19 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_upload_stop(remote_path=data['remote_path'])
 
+    @POST('^/file/download/start/v1$')
+    def file_download_start_v1(self, request):
+        data = _request_data(request, mandatory_keys=['remote_path', 'destination_folder', ])
+        return api.file_download_start(
+            remote_path=data['remote_path'],
+            destination_path=data['destination_folder'],
+            wait_result=data.get('wait_result', True), )
+
+    @POST('^/file/download/stop/v1$')
+    def file_download_stop_v1(self, request):
+        data = _request_data(request, mandatory_keys=['remote_path', ])
+        return api.file_download_stop(remote_path=data['remote_path'])
+
     @GET('^/file/sync/v1$')
     def file_sync_v1(self, request):
         return api.files_sync()

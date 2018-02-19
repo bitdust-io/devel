@@ -50,6 +50,13 @@ But local files is needed to rebuild the data - the "Parity" pieces is used in t
 to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import cStringIO
@@ -246,17 +253,23 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     Read ListFiles packet for given supplier and build a "remote" matrix. All
     lines are something like that:
 
+      Kmaster
       Findex 5456
       D0 -1
       D0/1 -1
       V0/1/F20090709034221PM 3 0-1000 7463434
-      V0/1/F20090709034221PM 3 0-1000 7463434
       D0/0/123/4567 -1
       V0/0/123/4567/F20090709034221PM 3 0-11 434353 missing Data:1,3
       V0/0/123/4/F20090709012331PM 3 0-5 434353 missing Data:1,3 Parity:0,1,2
+      Kkey_abc_123
+      Findex 205
+      D0 -1
+      D0/1 -1
+      V0/1/F20090709010203PM 3 0-3 174634
 
     First character can be:
 
+      "K" for keys
       "F" for files
       "D" for folders
       "V" for stored data
@@ -278,6 +291,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     newfiles = 0
     lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, is_in_sync=%s' % (
         len(listFileText), supplierNum, backup_control.revision(), is_in_sync))
+    current_key_alias = 'master'
     inpt = cStringIO.StringIO(listFileText)
     while True:
         line = inpt.readline()
@@ -292,7 +306,10 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
         if line.find('http://') != -1 or line.find('.xml') != -1:
             continue
         lg.out(8, '    %s:{%s}' % (typ, line))
-        if typ == 'F':
+        if typ == 'K':
+            current_key_alias = line.strip()
+
+        elif typ == 'F':
             # we don't have this path in the index
             # so we have several cases:
             #    1. this is old file and we need to remove it and all its backups
@@ -319,7 +336,12 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 if pth.strip('/') in [settings.BackupIndexFileName(), ]:
                     # this is the index file saved on remote supplier
                     # let's remember its size and put it in the backup_fs
-                    item = backup_fs.FSItemInfo(pth.strip('/'), pth.strip('/'), backup_fs.FILE)
+                    item = backup_fs.FSItemInfo(
+                        name=pth.strip('/'),
+                        path_id=pth.strip('/'),
+                        typ=backup_fs.FILE,
+                        # key_id=global_id.MakeGlobalID(idurl=customer_idurl, key_alias=current_key_alias),
+                    )
                     item.size = filesz
                     backup_fs.SetFile(
                         item,
@@ -344,7 +366,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                     paths2remove.add(pth)
                     lg.out(2, '        D%s - remove, not found in the index' % pth)
                 else:
-                    lg.warn('D%s not found in the index' % pth)
+                    lg.warn('D%s not found in the index, but we are not in sync, skip' % pth)
         elif typ == 'V':
             # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
@@ -377,7 +399,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                     paths2remove.add(remotePath)
                     lg.out(2, '        V%s - remove, path not found in the index' % remotePath)
                 else:
-                    lg.warn('V%s path is not found in the index' % remotePath)
+                    lg.warn('V%s path is not found in the index, but we are not in sync, skip' % remotePath)
                 continue
             item, _ = iter_path
             if isinstance(item, dict):
@@ -390,7 +412,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                     backups2remove.add(backupID)
                     lg.out(2, '        V%s - remove, version is not found in the index' % backupID)
                 else:
-                    lg.warn('V%s version is not found in the index' % backupID)
+                    lg.warn('V%s version is not found in the index, but we are not in sync, skip' % backupID)
                 continue
             missingBlocksSet = {'Data': set(), 'Parity': set()}
             if len(words) > 4:
@@ -414,7 +436,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                     remote_files()[backupID][blockNum] = {
                         'D': [0] * contactsdb.num_suppliers(),
                         'P': [0] * contactsdb.num_suppliers(), }
-                for dataORparity in ['Data', 'Parity']:
+                for dataORparity in ['Data', 'Parity', ]:
                     # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
                     bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
                     remote_files()[backupID][blockNum][dataORparity[0]][supplierNum] = bit
@@ -588,7 +610,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     if blockNum not in local_files()[backupID]:
         local_files()[backupID][blockNum] = {
             'D': [0] * contactsdb.num_suppliers(),
-            'P': [0] * contactsdb.num_suppliers()}
+            'P': [0] * contactsdb.num_suppliers(), }
     if not os.path.isfile(localDest):
         local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
         return
@@ -624,6 +646,8 @@ def LocalBlockReport(backupID, blockNumber, result):
     customer, remotePath = packetid.SplitPacketID(backupID)
     customer_idurl = global_id.GlobalUserToIDURL(customer)
     repaint_flag = False
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (blockNumber, backupID, customer, ))
     for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(remotePath, blockNum, supplierNum, dataORparity)
@@ -642,7 +666,6 @@ def LocalBlockReport(backupID, blockNumber, result):
                 repaint_flag = True
                 continue
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
-            # lg.out(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
             if backupID not in local_backup_size():
                 local_backup_size()[backupID] = 0
                 repaint_flag = True
@@ -651,6 +674,9 @@ def LocalBlockReport(backupID, blockNumber, result):
                 repaint_flag = True
             except:
                 lg.exc()
+            if _Debug:
+                lg.out(_DebugLevel, '    OK, local backup size is %s and max block num is %s' % (
+                    local_backup_size()[backupID], local_max_block_numbers()[backupID]))
     if backupID not in local_max_block_numbers():
         local_max_block_numbers()[backupID] = -1
     if local_max_block_numbers()[backupID] < blockNum:

@@ -176,19 +176,9 @@ def is_valid_key_id(global_key_id):
     if not parts['idurl']:
         lg.warn('no idurl found in the input')
         return False
-    key_alias = parts['key_alias']
-    if len(key_alias) > settings.MaximumUsernameLength():
-        lg.warn("key_alias too long: %d" % len(key_alias))
+    if not global_id.isValidKeyAlias():
+        lg.warn('invalid key alias in the input')
         return False
-    if len(key_alias) < settings.MinimumUsernameLength():
-        lg.warn("key_alias too short: %d" % len(key_alias))
-        return False
-    pos = 0
-    for c in key_alias:
-        if c not in settings.LegalUsernameChars():
-            lg.warn("key_alias has illegal character at position: %d" % pos)
-            return False
-        pos += 1
     return True
 
 #------------------------------------------------------------------------------
@@ -370,7 +360,7 @@ def encrypt(key_id, inp):
     """
     if key_id == 'master':
         return key.EncryptLocalPublicKey(inp)
-    if key_id == 'master$%s' % my_id.getGlobalID():
+    if key_id == my_id.getGlobalID(key_alias='master'):
         return key.EncryptLocalPublicKey(inp)
     if key_id == my_id.getGlobalID():
         return key.EncryptLocalPublicKey(inp)

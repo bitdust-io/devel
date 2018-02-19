@@ -143,13 +143,19 @@ def OkToShareSpace(desiredSharedSpaceMB):
     """
     dataDir = settings.getCustomersFilesDir()
     dataDriveFreeSpace, dataDriveTotalSpace = GetDriveSpace(dataDir)
-    if dataDriveFreeSpace is None:
+    if not dataDriveFreeSpace or not dataDriveTotalSpace:
+        return False
+    try:
+        # TODO: say if less than 10% free storage left of your HDD do not share
+        testFree = (dataDriveFreeSpace / dataDriveTotalSpace) > 0.1
+    except:
+        testFree = False
+    if not testFree:
         return False
     currentlySharedSpace = GetDirectorySize(dataDir)
     if (currentlySharedSpace + dataDriveFreeSpace / (1024 * 1024)) < desiredSharedSpaceMB:
         return False
-    else:
-        return True
+    return True
 
 
 def GetDirectorySize(directoryPath):

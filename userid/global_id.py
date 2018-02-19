@@ -207,6 +207,14 @@ def ParseGlobalID(inp, detect_version=False):
 
 def NormalizeGlobalID(inp, detect_version=False):
     """
+    Input `inp` is a string or glob_path_id dict.
+    This will fill out missed/empty fields from existing data.
+    Such an order:
+        1. if no idurl : use my local identity,
+        2. if no customer : use idurl
+        3. if no user : use customer
+        4. if no key alias : use "master"
+        5. if no idhost : use idurl
     """
     from userid import my_id
     if isinstance(inp, dict):
@@ -227,17 +235,19 @@ def NormalizeGlobalID(inp, detect_version=False):
     return g
 
 
-def CanonicalID(inp, include_key=False):
+def CanonicalID(inp, include_key=True):
     """
     """
     parts = NormalizeGlobalID(ParseGlobalID(inp))
-    if not include_key:
+    if include_key:
+        parts['key_alias'] = parts.get('key_alias') or 'master'
+    else:
         parts['key_alias'] = ''
     return MakeGlobalID(**parts)
 
 #------------------------------------------------------------------------------
 
-def UrlToGlobalID(url):
+def UrlToGlobalID(url, include_key=False):
     """
     """
     if not url:
@@ -248,6 +258,8 @@ def UrlToGlobalID(url):
         username = filename.split('.')[0]
     if port:
         host = '%s_%s' % (host, port)
+    if include_key:
+        username = 'master$%s' % username
     return '%s@%s' % (username, host)
 
 

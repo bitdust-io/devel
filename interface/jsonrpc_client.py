@@ -31,6 +31,7 @@ module:: jsonrpc_client
 """
 
 import time
+import pprint
 
 if __name__ == '__main__':
     import sys
@@ -47,7 +48,6 @@ from lib.fastjsonrpc.client import Proxy
 
 
 def output(value):
-    import pprint
     pprint.pprint(value)
     reactor.stop()
 
@@ -82,8 +82,10 @@ def loop_event_listen():
     proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
 
     def _loop(x=None):
-        print x
-        proxy.callRemote('events_listen', 'test_event_consumer').addBoth(_loop)
+        pprint.pprint(x)
+        d = proxy.callRemote('events_listen', 'test_event_consumer')
+        d.addCallback(_loop)
+        d.addErrback(lambda err: reactor.callLater(5, _loop))
 
     reactor.callLater(0, _loop)
     reactor.run()
@@ -106,5 +108,5 @@ def test():
 
 if __name__ == '__main__':
     # test()
-    loop_network_connected()
-    # loop_event_listen()
+    # loop_network_connected()
+    loop_event_listen()
