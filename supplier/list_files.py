@@ -80,8 +80,8 @@ def send(customer_idurl, packet_id, format_type):
     for key_alias in os.listdir(ownerdir):
         if not misc.ValidKeyAlias(str(key_alias)):
             continue
-        plaintext += '%s\n' % str(key_alias)
-        plaintext += TreeSummary(ownerdir)
+        # plaintext += '%s\n' % str(key_alias)
+        plaintext += TreeSummary(ownerdir, key_alias)
     # plaintext = TreeSummary(ownerdir)
     if _Debug:
         lg.out(_DebugLevel + 8, '\n%s' % plaintext)
@@ -186,8 +186,9 @@ def ListSummary(dirlist):
     return result
 
 
-def TreeSummary(ownerdir):
+def TreeSummary(ownerdir, key_alias):
     out = cStringIO.StringIO()
+    out.write('K%s\n' % key_alias)
 
     def cb(result, realpath, subpath, name):
         if not os.access(realpath, os.R_OK):
@@ -266,6 +267,7 @@ def TreeSummary(ownerdir):
         del dataMissing
         del parityMissing
         return False
+
     bpio.traverse_dir_recursive(lambda realpath, subpath, name: cb(out, realpath, subpath, name), ownerdir)
     src = out.getvalue()
     out.close()
