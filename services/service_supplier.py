@@ -264,7 +264,9 @@ class SupplierService(LocalService):
             if glob_path['idurl'] != customerIDURL:
                 lg.warn('making filename for another customer: %s != %s' % (
                     glob_path['idurl'], customerIDURL))
-        return self._do_construct_filename(customerIDURL, packetID, keyAlias)
+        filename = self._do_construct_filename(customerIDURL, packetID, keyAlias)
+        lg.info('making a new filename for customer: ' + filename)
+        return filename
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
