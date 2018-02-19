@@ -209,6 +209,63 @@ class SupplierService(LocalService):
         events.send('existing-customer-terminated', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
 
+    def _do_construct_filename(self, customerIDURL, packetID, keyAlias=None):
+        from lib import packetid
+        from lib import nameurl
+        from userid import global_id
+        from main import settings
+        from system import bpio
+        customerGlobID, packetID = packetid.SplitPacketID(packetID)
+        if customerGlobID:
+            customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
+            if customerIDURL_packet != customerIDURL:
+                lg.warn('construct filename for another customer: %s != %s' % (
+                    customerIDURL_packet, customerIDURL))
+        customerDirNameIDURL = nameurl.UrlFilename(customerIDURL)
+        keyAlias = keyAlias or 'master'
+        if keyAlias == 'master' and os.path.isdir(os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL)):
+            # TODO: remove after migration ...
+            return os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL, packetID)
+        customerDirName = str(customerGlobID)
+        customersDir = settings.getCustomersFilesDir()
+        if not os.path.exists(customersDir):
+            bpio._dir_make(customersDir)
+        ownerDir = os.path.join(customersDir, customerDirName)
+        if not os.path.exists(ownerDir):
+            bpio._dir_make(ownerDir)
+        keyAliasDir = os.path.join(ownerDir, keyAlias)
+        if not os.path.exists(keyAliasDir):
+            bpio._dir_make(keyAliasDir)
+        filename = os.path.join(keyAliasDir, packetID)
+        return filename
+
+    def _do_make_valid_filename(self, customerIDURL, glob_path):
+        """
+        Must be a customer, and then we make full path filename for where this
+        packet is stored locally.
+        """
+        from lib import packetid
+        from main import settings
+        from contacts import contactsdb
+        keyAlias = glob_path['key_alias'] or 'master'
+        packetID = glob_path['path']
+        customerGlobID = glob_path['customer']
+        if not packetid.Valid(packetID):  # SECURITY
+            if packetID not in [settings.BackupInfoFileName(),
+                                settings.BackupInfoFileNameOld(),
+                                settings.BackupInfoEncryptedFileName(),
+                                settings.BackupIndexFileName()]:
+                lg.warn('invalid file path')
+                return ''
+        if not contactsdb.is_customer(customerIDURL):  # SECURITY
+            lg.warn("%s is not a customer" % (customerIDURL))
+            return ''
+        if customerGlobID:
+            if glob_path['idurl'] != customerIDURL:
+                lg.warn('making filename for another customer: %s != %s' % (
+                    glob_path['idurl'], customerIDURL))
+        return self._do_construct_filename(customerIDURL, packetID, keyAlias)
+
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         if newpacket.Command == commands.DeleteFile():
@@ -244,14 +301,18 @@ class SupplierService(LocalService):
                 return False
             # TODO: add validation of customerGlobID
             # TODO: process requests from another customer
-            filename = p2p_service.makeFilename(newpacket.OwnerID, glob_path['path'])
-            if filename == "":
-                filename = p2p_service.constructFilename(newpacket.OwnerID, glob_path['path'])
-                if not os.path.exists(filename):
-                    lg.err("had unknown customer: %s or pathID is not correct or not exist: %s" % (
-                        newpacket.OwnerID, glob_path['path']))
-                    p2p_service.SendFail(newpacket, 'not a customer, or file not found')
-                    return False
+            filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
+            if not filename:
+                lg.warn("got empty filename, bad customer or wrong packetID?")
+                p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+                return False
+#             if filename == "":
+#                 filename = p2p_service.constructFilename(newpacket.OwnerID, glob_path['path'], glob_path['key_alias'])
+#                 if not os.path.exists(filename):
+#                     lg.err("had unknown customer: %s or pathID is not correct or not exist: %s" % (
+#                         newpacket.OwnerID, glob_path['path']))
+#                     p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+#                     return False
             if os.path.isfile(filename):
                 try:
                     os.remove(filename)
@@ -294,13 +355,17 @@ class SupplierService(LocalService):
                 return
             # TODO: add validation of customerGlobID
             # TODO: process requests from another customer
-            filename = p2p_service.makeFilename(newpacket.OwnerID, glob_path['path'])
-            if filename == "":
-                filename = p2p_service.constructFilename(newpacket.OwnerID, glob_path['path'])
-                if not os.path.exists(filename):
-                    lg.err("had unknown customer: %s or backupID: %s" (bkpID, newpacket.OwnerID))
-                    p2p_service.SendFail(newpacket, 'not a customer, or file not found')
-                    return False
+            filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
+            if not filename:
+                lg.warn("got empty filename, bad customer or wrong packetID?")
+                p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+                return False
+#             if filename == "":
+#                 filename = p2p_service.constructFilename(newpacket.OwnerID, glob_path['path'], glob_path['key_alias'])
+#                 if not os.path.exists(filename):
+#                     lg.err("had unknown customer: %s or backupID: %s" (bkpID, newpacket.OwnerID))
+#                     p2p_service.SendFail(newpacket, 'not a customer, or file not found')
+#                     return False
             if os.path.isdir(filename):
                 try:
                     bpio._dir_remove(filename)
@@ -354,11 +419,12 @@ class SupplierService(LocalService):
         else:
             lg.warn('no customer global id found in PacketID: %s' % newpacket.PacketID)
         # TODO: process requests from another customer : glob_path['idurl']
-        filename = p2p_service.makeFilename(newpacket.OwnerID, glob_path['path'])
+        filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
         if not filename:
             if True:
                 # TODO: settings.getCustomersDataSharingEnabled() and
-                filename = p2p_service.makeFilename(glob_path['idurl'], glob_path['path'])
+                # SECURITY
+                filename = self._do_make_valid_filename(glob_path['idurl'], glob_path)
         if not filename:
             lg.warn("had empty filename")
             p2p_service.SendFail(newpacket, 'empty filename')
@@ -416,7 +482,7 @@ class SupplierService(LocalService):
             p2p_service.SendFail(newpacket, 'incorrect path')
             return False
         # TODO: process files from another customer : glob_path['idurl']
-        filename = p2p_service.makeFilename(newpacket.OwnerID, glob_path['path'])
+        filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
         if not filename:
             lg.warn("got empty filename, bad customer or wrong packetID?")
             p2p_service.SendFail(newpacket, 'empty filename')

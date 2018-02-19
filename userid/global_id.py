@@ -207,6 +207,14 @@ def ParseGlobalID(inp, detect_version=False):
 
 def NormalizeGlobalID(inp, detect_version=False):
     """
+    Input `inp` is a string or glob_path_id dict.
+    This will fill out missed/empty fields from existing data.
+    Such an order:
+        1. if no idurl : use my local identity,
+        2. if no customer : use idurl
+        3. if no user : use customer
+        4. if no key alias : use "master"
+        5. if no idhost : use idurl
     """
     from userid import my_id
     if isinstance(inp, dict):

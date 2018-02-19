@@ -56,8 +56,6 @@ import json
 
 from logs import lg
 
-from system import bpio
-
 from userid import my_id
 from userid import identity
 from userid import global_id
@@ -180,50 +178,6 @@ def outbox(outpacket):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.outbox [%s] to %s" % (outpacket.Command, nameurl.GetName(outpacket.RemoteID)))
     return True
-
-#------------------------------------------------------------------------------
-
-
-def constructFilename(customerIDURL, packetID):
-    customerGlobID, packetID = packetid.SplitPacketID(packetID)
-    if customerGlobID:
-        customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
-        if customerIDURL_packet != customerIDURL:
-            lg.warn('construct filename for another customer: %s != %s' % (
-                customerIDURL_packet, customerIDURL))
-    customerDirName = nameurl.UrlFilename(customerIDURL)
-    customersDir = settings.getCustomersFilesDir()
-    if not os.path.exists(customersDir):
-        bpio._dir_make(customersDir)
-    ownerDir = os.path.join(customersDir, customerDirName)
-    if not os.path.exists(ownerDir):
-        bpio._dir_make(ownerDir)
-    filename = os.path.join(ownerDir, packetID)
-    return filename
-
-
-def makeFilename(customerIDURL, packetID):
-    """
-    Must be a customer, and then we make full path filename for where this
-    packet is stored locally.
-    """
-    customerGlobID, packetID = packetid.SplitPacketID(packetID)
-    if not packetid.Valid(packetID):  # SECURITY
-        if packetID not in [settings.BackupInfoFileName(),
-                            settings.BackupInfoFileNameOld(),
-                            settings.BackupInfoEncryptedFileName(),
-                            settings.BackupIndexFileName()]:
-            # lg.out(1, "p2p_service.makeFilename ERROR failed packetID format: " + packetID )
-            return ''
-    if not contactsdb.is_customer(customerIDURL):  # SECURITY
-        lg.warn("%s is not a customer" % (customerIDURL))
-        return ''
-    if customerGlobID:
-        customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
-        if customerIDURL_packet != customerIDURL:
-            lg.warn('making filename for another customer: %s != %s' % (
-                customerIDURL_packet, customerIDURL))
-    return constructFilename(customerIDURL, packetID)
 
 #------------------------------------------------------------------------------
 
