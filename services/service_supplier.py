@@ -209,18 +209,18 @@ class SupplierService(LocalService):
         events.send('existing-customer-terminated', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
 
-    def _do_construct_filename(self, customerIDURL, packetID, keyAlias=None):
-        from lib import packetid
-        from lib import nameurl
-        from userid import global_id
+    def _do_construct_filename(self, customerGlobID, packetID, keyAlias=None):
+        # from lib import packetid
+        # from lib import nameurl
+        # from userid import global_id
         from main import settings
         from system import bpio
-        customerGlobID, packetID = packetid.SplitPacketID(packetID)
-        if customerGlobID:
-            customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
-            if customerIDURL_packet != customerIDURL:
-                lg.warn('construct filename for another customer: %s != %s' % (
-                    customerIDURL_packet, customerIDURL))
+        # customerGlobID, packetID = packetid.SplitPacketID(packetID)
+#         if customerGlobID:
+#             customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
+#             if customerIDURL_packet != customerIDURL:
+#                 lg.warn('construct filename for another customer: %s != %s' % (
+#                     customerIDURL_packet, customerIDURL))
         keyAlias = keyAlias or 'master'
         # customerDirNameIDURL = nameurl.UrlFilename(customerIDURL)
         # if keyAlias == 'master' and os.path.isdir(os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL)):
@@ -264,7 +264,7 @@ class SupplierService(LocalService):
             if glob_path['idurl'] != customerIDURL:
                 lg.warn('making filename for another customer: %s != %s' % (
                     glob_path['idurl'], customerIDURL))
-        filename = self._do_construct_filename(customerIDURL, packetID, keyAlias)
+        filename = self._do_construct_filename(customerGlobID, packetID, keyAlias)
         lg.info('making a new filename for customer: ' + filename)
         return filename
 
