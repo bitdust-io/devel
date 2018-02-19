@@ -1035,7 +1035,8 @@ def file_upload_start(local_path, remote_path, wait_result=True):
     keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     if not pathID:
         return ERROR('path "%s" not registered yet' % path)
-    pathIDfull = packetid.MakeBackupID(parts['customer'], pathID)
+    customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=parts['key_alias'])
+    pathIDfull = packetid.MakeBackupID(customerID, pathID)
     if wait_result:
         d = Deferred()
         tsk = backup_control.StartSingle(
@@ -1193,9 +1194,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
         remote_path, destination_path, wait_result))
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if packetid.Valid(glob_path['path']):
-        customerGlobalID, pathID, version = packetid.SplitBackupID(remote_path)
-        if not customerGlobalID:
-            customerGlobalID = global_id.UrlToGlobalID(my_id.getLocalID())
+        _, pathID, version = packetid.SplitBackupID(remote_path)
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
         if not item:
             return ERROR('path "%s" is not found in catalog' % remote_path)
@@ -1203,6 +1202,10 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
             version = item.get_latest_version()
         if not version:
             return ERROR('not found any remote versions for "%s"' % remote_path)
+        key_alias = 'master'
+        if item.key_id:
+            key_alias = packetid.KeyAlias(item.key_id)
+        customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
         backupID = packetid.MakeBackupID(customerGlobalID, pathID, version)
     else:
         remotePath = bpio.remotePath(glob_path['path'])
@@ -1217,7 +1220,11 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
             version = item.get_latest_version()
         if not version:
             return ERROR('not found any remote versions for "%s"' % remote_path)
-        backupID = packetid.MakeBackupID(glob_path['customer'], knownPathID, version)
+        key_alias = 'master'
+        if item.key_id:
+            key_alias = packetid.KeyAlias(item.key_id)
+        customerGlobalID = global_id.MakeGlobalID(customer=glob_path['customer'], key_alias=key_alias)
+        backupID = packetid.MakeBackupID(customerGlobalID, knownPathID, version)
     if backup_control.IsBackupInProcess(backupID):
         return ERROR('download not possible, uploading "%s" is in process' % backupID)
     if restore_monitor.IsWorking(backupID):

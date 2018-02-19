@@ -247,7 +247,7 @@ def CanonicalID(inp, include_key=False):
 
 #------------------------------------------------------------------------------
 
-def UrlToGlobalID(url):
+def UrlToGlobalID(url, include_key=False):
     """
     """
     if not url:
@@ -258,6 +258,8 @@ def UrlToGlobalID(url):
         username = filename.split('.')[0]
     if port:
         host = '%s_%s' % (host, port)
+    if include_key:
+        username = 'master$%s' % username
     return '%s@%s' % (username, host)
 
 

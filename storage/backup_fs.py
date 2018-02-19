@@ -1830,7 +1830,9 @@ def Scan(basedir=None, customer_idurl=None):
         info.read_stats(path)
         if info.exist():
             summ[0] += info.size
-        key_alias = packetid.KeyAlias(info.key_id)
+        key_alias = 'master'
+        if info.key_id:
+            key_alias = packetid.KeyAlias(info.key_id)
         customer_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias=key_alias)
         versions_path = bpio.portablePath(os.path.join(basedir, customer_id, path_id))
         summ[1] += info.read_versions(versions_path)
