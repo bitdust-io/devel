@@ -229,12 +229,15 @@ class SupplierService(LocalService):
         customerDirName = str(customerGlobID)
         customersDir = settings.getCustomersFilesDir()
         if not os.path.exists(customersDir):
+            lg.info('making a new folder: ' + customersDir)
             bpio._dir_make(customersDir)
         ownerDir = os.path.join(customersDir, customerDirName)
         if not os.path.exists(ownerDir):
+            lg.info('making a new folder: ' + ownerDir)
             bpio._dir_make(ownerDir)
         keyAliasDir = os.path.join(ownerDir, keyAlias)
         if not os.path.exists(keyAliasDir):
+            lg.info('making a new folder: ' + keyAliasDir)
             bpio._dir_make(keyAliasDir)
         filename = os.path.join(keyAliasDir, packetID)
         return filename
@@ -265,7 +268,6 @@ class SupplierService(LocalService):
                 lg.warn('making filename for another customer: %s != %s' % (
                     glob_path['idurl'], customerIDURL))
         filename = self._do_construct_filename(customerGlobID, packetID, keyAlias)
-        lg.info('making a new filename for customer: ' + filename)
         return filename
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
@@ -296,7 +298,7 @@ class SupplierService(LocalService):
             glob_path = global_id.ParseGlobalID(pcktID)
             if not glob_path['path']:
                 # backward compatible check
-                glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
+                glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
             if not glob_path['path']:
                 lg.err("got incorrect PacketID")
                 p2p_service.SendFail(newpacket, 'incorrect path')
@@ -408,7 +410,7 @@ class SupplierService(LocalService):
         glob_path = global_id.ParseGlobalID(newpacket.PacketID)
         if not glob_path['path']:
             # backward compatible check
-            glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
+            glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
         if not glob_path['path']:
             lg.err("got incorrect PacketID")
             p2p_service.SendFail(newpacket, 'incorrect path')
@@ -478,7 +480,7 @@ class SupplierService(LocalService):
         glob_path = global_id.ParseGlobalID(newpacket.PacketID)
         if not glob_path['path']:
             # backward compatible check
-            glob_path = global_id.ParseGlobalID(my_id.getGlobalID() + ':' + newpacket.PacketID)
+            glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
         if not glob_path['path']:
             lg.err("got incorrect PacketID")
             p2p_service.SendFail(newpacket, 'incorrect path')
