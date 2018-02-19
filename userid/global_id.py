@@ -239,7 +239,9 @@ def CanonicalID(inp, include_key=False):
     """
     """
     parts = NormalizeGlobalID(ParseGlobalID(inp))
-    if not include_key:
+    if include_key:
+        parts['key_alias'] = parts.get('key_alias') or 'master'
+    else:
         parts['key_alias'] = ''
     return MakeGlobalID(**parts)
 

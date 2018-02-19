@@ -287,7 +287,7 @@ class FileToSend:
         except:
             lg.exc()
             self.fileSize = 0
-        self.packetID = global_id.CanonicalID(packetID)
+        self.packetID = global_id.CanonicalID(packetID, include_key=True)
         parts = global_id.ParseGlobalID(packetID)
         self.customerID = parts['customer']
         self.remotePath = parts['path']

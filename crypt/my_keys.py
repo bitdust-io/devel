@@ -360,7 +360,7 @@ def encrypt(key_id, inp):
     """
     if key_id == 'master':
         return key.EncryptLocalPublicKey(inp)
-    if key_id == 'master$%s' % my_id.getGlobalID():
+    if key_id == my_id.getGlobalID(key_alias='master'):
         return key.EncryptLocalPublicKey(inp)
     if key_id == my_id.getGlobalID():
         return key.EncryptLocalPublicKey(inp)

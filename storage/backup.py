@@ -354,6 +354,10 @@ class backup(automat.Automat):
         os.write(fileno, str(blocklen) + ":" + serializedblock)
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
+        key_alias = 'master'
+        if self.keyID:
+            from crypt import my_keys
+            key_alias, _ = my_keys.split_key_id(self.keyID)
         dt = time.time()
         outputpath = os.path.join(
             settings.getLocalBackupsDir(), self.customerGlobalID, self.pathID, self.version)

@@ -50,6 +50,13 @@ But local files is needed to rebuild the data - the "Parity" pieces is used in t
 to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import cStringIO
@@ -639,6 +646,8 @@ def LocalBlockReport(backupID, blockNumber, result):
     customer, remotePath = packetid.SplitPacketID(backupID)
     customer_idurl = global_id.GlobalUserToIDURL(customer)
     repaint_flag = False
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (blockNumber, backupID, customer, ))
     for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(remotePath, blockNum, supplierNum, dataORparity)
@@ -657,7 +666,6 @@ def LocalBlockReport(backupID, blockNumber, result):
                 repaint_flag = True
                 continue
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
-            # lg.out(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
             if backupID not in local_backup_size():
                 local_backup_size()[backupID] = 0
                 repaint_flag = True
@@ -666,6 +674,9 @@ def LocalBlockReport(backupID, blockNumber, result):
                 repaint_flag = True
             except:
                 lg.exc()
+            if _Debug:
+                lg.out(_DebugLevel, '    OK, local backup size is %s and max block num is %s' % (
+                    local_backup_size()[backupID], local_max_block_numbers()[backupID]))
     if backupID not in local_max_block_numbers():
         local_max_block_numbers()[backupID] = -1
     if local_max_block_numbers()[backupID] < blockNum:
