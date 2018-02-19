@@ -286,7 +286,10 @@ class IndexSynchronizer(automat.Automat):
         self.latest_supplier_revision = -1
         self.requesting_suppliers.clear()
         self.requested_suppliers_number = 0
-        packetID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
+        packetID = global_id.MakeGlobalID(
+            customer=my_id.getGlobalID(key_alias='master'),
+            path=settings.BackupIndexFileName(),
+        )
         # packetID = settings.BackupIndexFileName()
         localID = my_id.getLocalID()
         for supplierId in contactsdb.suppliers():
@@ -327,7 +330,10 @@ class IndexSynchronizer(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer.doSuppliersSendIndexFile')
-        packetID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
+        packetID = global_id.MakeGlobalID(
+            customer=my_id.getGlobalID(key_alias='master'),
+            path=settings.BackupIndexFileName(),
+        )
         self.sending_suppliers.clear()
         self.sent_suppliers_number = 0
         src = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
@@ -364,7 +370,10 @@ class IndexSynchronizer(automat.Automat):
         """
         Action method.
         """
-        packetID = global_id.MakeGlobalID(idurl=my_id.getLocalID(), path=settings.BackupIndexFileName())
+        packetID = global_id.MakeGlobalID(
+            customer=my_id.getGlobalID(key_alias='master'),
+            path=settings.BackupIndexFileName(),
+        )
         packetsToCancel = packet_out.search_by_backup_id(packetID)
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Retrieve():
