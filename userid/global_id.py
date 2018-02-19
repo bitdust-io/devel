@@ -235,7 +235,7 @@ def NormalizeGlobalID(inp, detect_version=False):
     return g
 
 
-def CanonicalID(inp, include_key=False):
+def CanonicalID(inp, include_key=True):
     """
     """
     parts = NormalizeGlobalID(ParseGlobalID(inp))

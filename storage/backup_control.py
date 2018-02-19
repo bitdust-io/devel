@@ -700,7 +700,7 @@ def PutTask(pathID, localPath=None, keyID=None):
     """
     Creates a new backup ``Task`` and append it to the list of tasks.
     """
-    pathID = global_id.CanonicalID(pathID, include_key=True)
+    pathID = global_id.CanonicalID(pathID)
     current_task = GetPendingTask(pathID)
     if current_task:
         current_task.set_path_id(pathID)
@@ -964,7 +964,7 @@ def StartRecursive(pathID, keyID=None):
     This is will traverse all paths below this ID in the 'tree' and add
     tasks for them.
     """
-    pathID = global_id.CanonicalID(pathID, include_key=True)
+    pathID = global_id.CanonicalID(pathID)
     from storage import backup_monitor
     startedtasks = []
 

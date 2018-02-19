@@ -400,7 +400,7 @@ class restore(automat.Automat):
 
     def doSavePacket(self, NewPacket):
         glob_path = global_id.ParseGlobalID(NewPacket.PacketID, detect_version=True)
-        packetID = global_id.CanonicalID(NewPacket.PacketID, include_key=True)
+        packetID = global_id.CanonicalID(NewPacket.PacketID)
         customer_id, _, _, _, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
         if dataORparity == 'Data':
             self.OnHandData[SupplierNumber] = True
