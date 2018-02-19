@@ -221,11 +221,11 @@ class SupplierService(LocalService):
             if customerIDURL_packet != customerIDURL:
                 lg.warn('construct filename for another customer: %s != %s' % (
                     customerIDURL_packet, customerIDURL))
-        customerDirNameIDURL = nameurl.UrlFilename(customerIDURL)
         keyAlias = keyAlias or 'master'
-        if keyAlias == 'master' and os.path.isdir(os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL)):
-            # TODO: remove after migration ...
-            return os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL, packetID)
+        # customerDirNameIDURL = nameurl.UrlFilename(customerIDURL)
+        # if keyAlias == 'master' and os.path.isdir(os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL)):
+        #     # TODO: remove after migration ...
+        #     return os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL, packetID)
         customerDirName = str(customerGlobID)
         customersDir = settings.getCustomersFilesDir()
         if not os.path.exists(customersDir):

@@ -94,10 +94,12 @@ def printlog(txt):
 #     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
 #     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
+
 try:
     from logs import lg
     from system import bpio
     from lib import nameurl
+    from lib import misc
     from main import settings
     from contacts import contactsdb
     from p2p import commands
@@ -150,28 +152,30 @@ def SpaceTime():
         sizedict = {}
 
         def cb(path, subpath, name):
-            #             if not os.access(path, os.R_OK | os.W_OK):
-            #                 return False
             if not os.path.isfile(path):
                 return True
-#             if name in [settings.BackupIndexFileName(),]:
-#                 return False
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
             sizedict[path] = stats.st_size
-        bpio.traverse_dir_recursive(cb, onecustdir)
-        currentV = 0
-        for path in sorted(timedict.keys(), key=lambda x: timedict[x], reverse=True):
-            filesize = sizedict.get(path, 0)
-            currentV += filesize
-            if currentV < maxspaceV:
+
+        for key_alias in os.listdir(onecustdir):
+            if not misc.ValidKeyAlias(key_alias):
+                remove_list[onecustdir] = 'invalid key alias'
                 continue
-            try:
-                os.remove(path)
-                printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)))
-            except:
-                printlog('SpaceTime ERROR removing ' + path)
-            # time.sleep(0.01)
+            okekeydir = os.path.join(onecustdir, key_alias)
+            bpio.traverse_dir_recursive(cb, okekeydir)
+            currentV = 0
+            for path in sorted(timedict.keys(), key=lambda x: timedict[x], reverse=True):
+                filesize = sizedict.get(path, 0)
+                currentV += filesize
+                if currentV < maxspaceV:
+                    continue
+                try:
+                    os.remove(path)
+                    printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)))
+                except:
+                    printlog('SpaceTime ERROR removing ' + path)
+                # time.sleep(0.01)
         used_space[idurl] = str(currentV)
         timedict.clear()
         sizedict.clear()

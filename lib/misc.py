@@ -331,19 +331,43 @@ def ToFloat(inpt, default=0.0):
 
 #------------------------------------------------------------------------------
 
+def ValidKeyAlias(key_alias):
+    if len(key_alias) > settings.MaximumUsernameLength():
+        lg.warn("key_alias is too long")
+        return False
+    if len(key_alias) < settings.MinimumUsernameLength():
+        lg.warn("key_alias is too short")
+        return False
+    pos = 0
+    for c in key_alias:
+        if c not in settings.LegalUsernameChars():
+            lg.warn("key_alias has illegal character at position: %d" % pos)
+            return False
+        pos += 1
+    if key_alias[0] not in set('abcdefghijklmnopqrstuvwxyz'):
+        lg.warn('key_alias not begins with letter')
+        return False
+    return True
+
 
 def ValidUserName(username):
     """
     A method to validate account name entered by user.
     """
     if len(username) < settings.MinimumUsernameLength():
+        lg.warn("username is too long")
         return False
     if len(username) > settings.MaximumUsernameLength():
+        lg.warn("username is too short")
         return False
+    pos = 0
     for c in username:
         if c not in settings.LegalUsernameChars():
+            lg.warn("username has illegal character at position: %d" % pos)
             return False
+        pos += 1
     if username[0] not in set('abcdefghijklmnopqrstuvwxyz'):
+        lg.warn('username not begins with letter')
         return False
     return True
 

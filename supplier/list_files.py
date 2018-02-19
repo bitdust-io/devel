@@ -39,6 +39,7 @@ from system import bpio
 
 from lib import nameurl
 from lib import packetid
+from lib import misc
 
 from main import settings
 
@@ -48,6 +49,7 @@ from p2p import p2p_service
 from contacts import contactsdb
 
 from userid import my_id
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -58,8 +60,9 @@ def send(customer_idurl, packet_id, format_type):
     PacketID = packet_id
     if _Debug:
         lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
-    custdir = settings.getCustomersFilesDir()
-    ownerdir = os.path.join(custdir, nameurl.UrlFilename(customer_idurl))
+    # ownerdir = os.path.join(custdir, nameurl.UrlFilename(customer_idurl))
+    ownerdir = settings.getCustomerFilesDir(customer_idurl)
+    # os.path.join(settings.getCustomersFilesDir(), global_id.UrlToGlobalID(customer_idurl))
     if not os.path.isdir(ownerdir):
         if _Debug:
             lg.out(_DebugLevel, "list_files.send did not found customer dir: " + ownerdir)
@@ -73,9 +76,15 @@ def send(customer_idurl, packet_id, format_type):
         # result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
         # gateway.outbox(result)
         # return result
-    plaintext = TreeSummary(ownerdir)
+    plaintext = ''
+    for key_alias in os.listdir(ownerdir):
+        if not misc.ValidKeyAlias(str(key_alias)):
+            continue
+        plaintext += '%s\n' % str(key_alias)
+        plaintext += TreeSummary(ownerdir)
+    # plaintext = TreeSummary(ownerdir)
     if _Debug:
-        lg.out(_DebugLevel + 8, '\n%s' % (plaintext))
+        lg.out(_DebugLevel + 8, '\n%s' % plaintext)
     return p2p_service.SendFiles(
         raw_list_files_info=PackListFiles(plaintext, format_type),
         ownerID=MyID,
@@ -107,6 +116,7 @@ def UnpackListFiles(payload, method):
 
 
 def ListCustomerFiles(customer_idurl):
+    # OBSOLETE
     filename = nameurl.UrlFilename(customer_idurl)
     customer_dir = os.path.join(settings.getCustomersFilesDir(), filename)
     result = cStringIO.StringIO()
@@ -125,6 +135,7 @@ def ListCustomerFiles(customer_idurl):
 
 def ListCustomerFiles1(customerNumber):
     """
+    OBSOLETE
     On the status form when clicking on a customer, find out what files we're
     holding for that customer.
     """

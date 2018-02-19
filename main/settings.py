@@ -1464,8 +1464,8 @@ def getCustomerFilesDir(idurl):
     Alias to get a given customer's files inside our donated location from
     settings.
     """
-    from lib import nameurl
-    return os.path.join(getCustomersFilesDir(), nameurl.UrlFilename(idurl))
+    from userid import global_id
+    return os.path.join(getCustomersFilesDir(), global_id.UrlToGlobalID(idurl))
 
 
 def getLocalBackupsDir():
