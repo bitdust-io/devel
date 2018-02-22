@@ -870,10 +870,16 @@ def ChatHistoryDir():
     return os.path.join(BaseDir(), 'messages', 'history')
 
 
-def PrivateKeysDir():
+def KeyStoreDir():
     """
     """
     return os.path.join(BaseDir(), 'keys')
+
+
+def BlockchainDir():
+    """
+    """
+    return os.path.join(BaseDir(), 'blockchain')
 
 #------------------------------------------------------------------------------
 #--- FILES --------------------------------------------------------------------
@@ -2511,6 +2517,16 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'false')
 
+    config.conf().setDefaultValue('services/blockchain/enabled', 'false')
+    config.conf().setDefaultValue('services/blockchain/host', 'localhost')
+    config.conf().setDefaultValue('services/blockchain/port', 9100)
+    config.conf().setDefaultValue('services/blockchain/seeds', '')
+    config.conf().setDefaultValue('services/blockchain/explorer/enabled', 'true')
+    config.conf().setDefaultValue('services/blockchain/explorer/port', 9180)
+    config.conf().setDefaultValue('services/blockchain/wallet/enabled', 'true')
+    config.conf().setDefaultValue('services/blockchain/wallet/port', 9280)
+    config.conf().setDefaultValue('services/blockchain/miner/enabled', 'false')
+
     config.conf().setDefaultValue('services/broadcasting/enabled', 'false')
     config.conf().setDefaultValue('services/broadcasting/routing-enabled', 'false')
     config.conf().setDefaultValue('services/broadcasting/max-broadcast-connections', '3')
@@ -2665,9 +2681,9 @@ def _checkStaticDirectories():
     if not os.path.exists(RatingsDir()):
         lg.out(6, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
-    if not os.path.exists(PrivateKeysDir()):
-        lg.out(6, 'settings.init want to create folder: ' + PrivateKeysDir())
-        os.makedirs(PrivateKeysDir())
+    if not os.path.exists(KeyStoreDir()):
+        lg.out(6, 'settings.init want to create folder: ' + KeyStoreDir())
+        os.makedirs(KeyStoreDir())
     if not os.path.exists(ChatChannelsDir()):
         lg.out(6, 'settings.init want to create folder: ' + ChatChannelsDir())
         os.makedirs(ChatChannelsDir())

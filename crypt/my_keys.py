@@ -187,7 +187,7 @@ def load_local_keys(keys_folder=None):
     """
     """
     if not keys_folder:
-        keys_folder = settings.PrivateKeysDir()
+        keys_folder = settings.KeyStoreDir()
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.load_local_keys will read files from %s' % keys_folder)
     known_keys().clear()
@@ -214,7 +214,7 @@ def save_keys_local(keys_folder=None, output_type='openssh'):
     """
     """
     if not keys_folder:
-        keys_folder = settings.PrivateKeysDir()
+        keys_folder = settings.KeyStoreDir()
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.save_keys_local will store all known keys in %s' % keys_folder)
     count = 0
@@ -242,7 +242,7 @@ def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh')
     key_object = keys.Key(rsa_key)
     known_keys()[key_id] = key_object
     if not keys_folder:
-        keys_folder = settings.PrivateKeysDir()
+        keys_folder = settings.KeyStoreDir()
     key_string = key_object.toString(output_type)
     if key_object.isPublic():
         key_filepath = os.path.join(keys_folder, key_id + '.public')
@@ -271,7 +271,7 @@ def register_key(key_id, key_object_or_openssh, keys_folder=None, output_type='o
         key_object = key_object_or_openssh
     known_keys()[key_id] = key_object
     if not keys_folder:
-        keys_folder = settings.PrivateKeysDir()
+        keys_folder = settings.KeyStoreDir()
     key_string = key_object.toString(output_type)
     if key_object.isPublic():
         key_filepath = os.path.join(keys_folder, key_id + '.public')
@@ -290,7 +290,7 @@ def erase_key(key_id, keys_folder=None):
         lg.warn('key %s is not found' % key_id)
         return False
     if not keys_folder:
-        keys_folder = settings.PrivateKeysDir()
+        keys_folder = settings.KeyStoreDir()
     if key_obj(key_id).isPublic():
         key_filepath = os.path.join(keys_folder, key_id + '.public')
     else:
