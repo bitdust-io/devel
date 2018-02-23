@@ -2444,26 +2444,32 @@ def network_connected(wait_timeout=5):
             return ret
 
     if not my_id.isLocalIdentityReady():
+        lg.warn('local identity is not exist')
         return ERROR('local identity is not exist', extra_fields={'reason': 'identity_not_exist'})
     if not driver.is_enabled('service_network'):
+        lg.warn('service_network() is disabled')
         return ERROR('service_network() is disabled', extra_fields={'reason': 'service_network_disabled'})
     if not driver.is_enabled('service_gateway'):
+        lg.warn('service_gateway() is disabled')
         return ERROR('service_gateway() is disabled', extra_fields={'reason': 'service_gateway_disabled'})
     if not driver.is_enabled('service_p2p_hookups'):
+        lg.warn('service_p2p_hookups() is disabled')
         return ERROR('service_p2p_hookups() is disabled', extra_fields={'reason': 'service_p2p_hookups_disabled'})
 
     def _do_p2p_connector_test():
         try:
             p2p_connector_lookup = automat.find('p2p_connector')
             if not p2p_connector_lookup:
+                lg.warn('disconnected, reason is "p2p_connector_not_found"')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}))
                 return None
             p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
             if not p2p_connector_machine:
+                lg.warn('disconnected, reason is "p2p_connector_not_exist"')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
                 return None
             if p2p_connector_machine.state != 'CONNECTED':
-                lg.warn('sending "check-synchronize" event to p2p_connector()')
+                lg.warn('disconnected, reason is "p2p_connector_not_found", sending "check-synchronize" event to p2p_connector()')
                 p2p_connector_machine.A('check-synchronize')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
                 return None
