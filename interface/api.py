@@ -2463,6 +2463,8 @@ def network_connected(wait_timeout=5):
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
                 return None
             if p2p_connector_machine.state != 'CONNECTED':
+                lg.warn('sending "check-synchronize" event to p2p_connector()')
+                p2p_connector_machine.A('check-synchronize')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
                 return None
             ret.callback(OK('connected'))
