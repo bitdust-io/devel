@@ -80,6 +80,7 @@ class BlockchainService(LocalService):
             peerstore_filename=os.path.join(pybc_home, 'peers'),
             minify=None,
             loglevel='DEBUG',
+            logfilepath=os.path.join(pybc_home, 'log'),
             stats_filename=None,  # os.path.join(pybc_home, 'log'),
         )
         if config.conf().getBool('services/blockchain/explorer/enabled'):

@@ -108,6 +108,7 @@ def init(host='127.0.0.1',
          peerstore_filename='./peerstore',
          minify=None,
          loglevel='INFO',
+         logfilepath='/tmp/pybc.log',
          stats_filename=None,
          ):
     global _PeerNode
@@ -115,7 +116,7 @@ def init(host='127.0.0.1',
     if _Debug:
         lg.out(_DebugLevel, 'pybc_service.init')
     # Set the log level
-    pybc.util.set_loglevel(loglevel, logformat="%(asctime)s [%(module)s] %(message)s")
+    pybc.util.set_loglevel(loglevel, logformat="%(asctime)s [%(module)s] %(message)s", logfilename=logfilepath)
     if stats_filename is not None:
         # Start the science
         pybc.science.log_to(stats_filename)

@@ -84,7 +84,7 @@ def time2string(seconds):
     return time.strftime("%d %b %Y %H:%M:%S", time.gmtime(seconds))
 
 
-def set_loglevel(loglevel, logformat="%(levelname)s:%(message)s", logdatefmt="%H:%M:%S"):
+def set_loglevel(loglevel, logformat="%(levelname)s:%(message)s", logdatefmt="%H:%M:%S", logfilename=None):
     """
     Given a string log level name, set the logging module's log level to that
     level. Raise an exception if the log level is invalid.
@@ -102,4 +102,4 @@ def set_loglevel(loglevel, logformat="%(levelname)s:%(message)s", logdatefmt="%H
         raise ValueError("Invalid log level: {}".format(loglevel))
 
     # Set the log level to the correct numeric value
-    logging.basicConfig(format=logformat, level=numeric_level, datefmt=logdatefmt)
+    logging.basicConfig(format=logformat, level=numeric_level, datefmt=logdatefmt, filename=logfilename)
