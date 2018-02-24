@@ -318,7 +318,8 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
     if _BlockInProgress is None:
         if with_inputs and not _PeerNode.blockchain.transactions:
             logging.info("Blockchain is empty, skip block generation and wait for incoming transactions, retry after 10 seconds...")
-            reactor.callLater(10, generate_block, json_data, with_inputs, repeat, with_outputs)
+            if repeat:
+                reactor.callLater(10, generate_block, json_data, with_inputs, repeat, with_outputs)
             return None
         # We need to start a new block
         _BlockInProgress = _PeerNode.blockchain.make_block(
@@ -328,13 +329,15 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
             with_outputs=with_outputs,
         )
         if _BlockInProgress is not None:
+            lg.info('started block generation with %d bytes json data, receiving address is %s, my ballance is %s' % (
+                len(json.dumps(json_data)), pybc.util.bytes2string(_Wallet.get_address()), _Wallet.get_balance()))
             logging.info("Starting a block!")
             # Might as well dump balance here too
             logging.info("Receiving address: {}".format(pybc.util.bytes2string(_Wallet.get_address())))
             logging.info("Current balance: {}".format(_Wallet.get_balance()))
         else:
             if repeat:
-                logging.info('Not able to start a new block, retry after 10 seconds')
+                logging.info('Not able to start a new block, retry after 10 seconds...')
                 reactor.callLater(10, generate_block, json_data, with_inputs, repeat, with_outputs)
             else:
                 logging.info('Failed to start a new block')
