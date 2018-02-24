@@ -90,8 +90,8 @@ class BlockchainService(LocalService):
             from twisted.internet import reactor
             reactor.callFromThread(pybc_service.generate_block,
                                    json_data={},
-                                   with_inputs=False,
-                                   with_outputs=True,
+                                   with_inputs=True,
+                                   # with_outputs=True,
                                    repeat=True, )
         return True
 

@@ -473,14 +473,14 @@ def main():
     if options.generate:
         reactor.callFromThread(generate_block,
                                json_data=dict(started=time.time(), data=json.loads(options.json)),
-                               with_inputs=True,
-                               with_outputs=False,
+                               with_inputs=False,
+                               # with_outputs=False,
                                repeat=False, )
     if options.mine:
         reactor.callFromThread(generate_block,
                                json_data=dict(started=time.time(), data=json.loads(options.json)),
-                               with_inputs=False,
-                               with_outputs=True,
+                               with_inputs=True,
+                               # with_outputs=True,
                                repeat=True, )
     if options.transaction:
         reactor.callLater(5, new_transaction,

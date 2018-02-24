@@ -792,6 +792,10 @@ class JsonCoinBlockchain(CoinBlockchain):
                 logging.debug("Can't make block without State")
                 return None
 
+            if with_inputs and not self.transactions:
+                logging.debug("No transactions found, skip block generation")
+                return None
+
             # This holds the list of Transaction objects to include
             to_include = []
             all_inputs = []
@@ -854,14 +858,11 @@ class JsonCoinBlockchain(CoinBlockchain):
 
                 return None
 
-            if with_outputs and not to_include:
-                logging.debug("No outputs found, skip block generation")
-                return None
+            # if with_outputs and not to_include:
+            #     logging.debug("No outputs found, skip block generation")
+            #     return None
 
             to_include.append(reward_transaction)
-            if with_inputs and len(all_inputs) == 0:
-                logging.debug("No inputs found, skip block generation")
-                return None
 
             # Make a block moving to the state we have after we apply all those
             # transactions, with the transaction packed into its payload
