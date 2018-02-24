@@ -535,7 +535,8 @@ class Automat(object):
                 self._timers[name] = LoopingCall(self.timerEvent, name, interval)
                 self._timers[name].start(interval, self.instant_timers)
                 # self.log(self.debug_level * 4, '%s.startTimers timer %s started' % (self, name))
-        except:
+        except Exception as exc:
+            self.log(max(_DebugLevel, self.debug_level), 'error in %s machine: %s' % (self.name, str(exc)))
             traceback.print_exc()
 
     def restartTimers(self):
