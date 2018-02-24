@@ -560,7 +560,7 @@ class Peer(object):
         and send it off to our peers, if appropriate.
 
         """
-
+        logging.info('Sending transaction:\n{}'.format(str(transaction)))
         # Add the transaction, and, if valid, announce it
         self.blockchain.add_transaction(transaction,
                                         callback=self.was_transaction_valid)

@@ -310,7 +310,7 @@ class TokenWallet(json_coin.JsonWallet):
                 spendable_filter=lambda tr_input: self._skip_tokens_except_one(token, tr_input),
             )
 
-    def token_transfer(self, token, new_address, new_value=None, fee=1, payload=None):
+    def token_transfer(self, token, new_address, new_value=None, fee=1, payload=None, payload_history=True):
         """
         """
         with self.lock:
@@ -321,7 +321,10 @@ class TokenWallet(json_coin.JsonWallet):
                 raise Exception('this token is not belong to you')
             payloads = token_profile.owner().output_payloads
             if payload:
-                payloads += [payload, ]
+                if payload_history:
+                    payloads += [payload, ]
+                else:
+                    payloads = [payload, ]
             new_value = new_value or token_profile.owner().amount
             return self.make_simple_transaction(
                 new_value,
