@@ -116,6 +116,10 @@ class Blockchain(object):
         # out of sync with the blockchain when we kill the program?
         self.state = state
 
+        # This keeps a list of listener functions to call with block and state
+        # changes.
+        self.listeners = []
+
         # This keeps track of whether the state is actually correct, or whether
         # we had to cross a mini-block and need to redownload it. It starts out
         # available if we have no blocks.
@@ -149,10 +153,6 @@ class Blockchain(object):
         # This keeps the state at the tip of the longest fork, plus any pending
         # transactions.
         self.transaction_state = self.state.copy()
-
-        # This keeps a list of listener functions to call with block and state
-        # changes.
-        self.listeners = []
 
         # Start a timer measuring how long it takes us to download the
         # blockchain.
@@ -1791,7 +1791,6 @@ class Blockchain(object):
 
             # At some point we will need to fill in the root that we need to
             # download.
-
             logging.info("Invaidated current State; need to re-download")
 
     def validate_state(self):

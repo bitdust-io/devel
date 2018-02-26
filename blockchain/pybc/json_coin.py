@@ -1040,9 +1040,6 @@ class JsonWallet(Wallet):
                 self.spendable.commit()
                 self.keystore.sync()
 
-            elif event == "ready":
-                logging.info("Blockchain is ready")
-
             else:
                 logging.warning("Unknown event {} from blockchain".format(event))
 

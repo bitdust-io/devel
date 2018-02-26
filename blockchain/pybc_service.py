@@ -150,17 +150,17 @@ def init(host='127.0.0.1',
         port=port,
     )
 
-    def _on_listenere_started(l):
+    def _on_listener_started(l):
         global _PeerListener
         _PeerListener = l
 
-    _PeerNode.listener.addCallback(_on_listenere_started)
+    _PeerNode.listener.addCallback(_on_listener_started)
     # Start connecting to seed nodes
     for peer_host, peer_port in seed_nodes:
         if peer_host == host and peer_port == port:
             # Skip our own node
             continue
-        logging.info('Connecting via TCP to peer {}:{}'.format(peer_host, peer_port))
+        # logging.info('Connecting via TCP to peer {}:{}'.format(peer_host, peer_port))
         _PeerNode.connect(peer_host, peer_port)
         _PeerNode.peer_seen(peer_host, peer_port, None)
     logging.info("Number of blocks: {}".format(len(_PeerNode.blockchain.blockstore)))
@@ -233,7 +233,9 @@ def on_event(event, argument):
     incoming blocks.
     """
     logging.info("EVENT: [{}] with {} bytes".format(event, len(str(argument))))
-    events.send('blockchain-{}'.format(event), )  # data=dict(argument=argument))
+    # reactor.callFromThread(events.send, 'blockchain-{}'.format(event), )  # data=dict(argument=argument))
+    events.send('blockchain-{}'.format(event), )
+
 #     global _SeenAddresses
 #     if event == "forward":
 #         # We're moving forward a block, and the argument is a block.

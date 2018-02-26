@@ -42,7 +42,8 @@ class BlockchainService(LocalService):
     service_name = 'service_blockchain'
     config_path = 'services/blockchain/enabled'
 
-    flag_ready = False
+    # flag_public_key_registered = False
+    # flag_public_key_transaction_sent = False
 
     def dependent_on(self):
         return ['service_tcp_connections',
@@ -68,6 +69,8 @@ class BlockchainService(LocalService):
         from main import settings
         from main import events
         from blockchain import pybc_service
+        self.flag_public_key_registered = False
+        self.flag_public_key_transaction_sent = False
         pybc_home = settings.BlockchainDir()
         seeds = config.conf().getString('services/blockchain/seeds')
         if seeds:
@@ -96,56 +99,69 @@ class BlockchainService(LocalService):
                                    with_inputs=True,
                                    repeat=True, )
         events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
-        events.add_subscriber(self._on_blockchain_ready, 'blockchain-ready')
+        events.add_subscriber(self._on_blockchain_forward, 'blockchain-forward')
+        events.add_subscriber(self._on_blockchain_sync, 'blockchain-sync')
+        reactor.callLater(0, self._do_check_register_my_identity)
         return True
 
     def stop(self):
         from blockchain import pybc_service
         pybc_service.shutdown()
+        self.flag_public_key_registered = False
+        self.flag_public_key_transaction_sent = False
         return True
 
-    def _on_blockchain_ready(self, evt):
-        to_be_checked = False
-        if not self.flag_ready:
-            to_be_checked = True
-        self.flag_ready = True
-        if to_be_checked:
-            self._do_check_register_my_identity()
+    def _on_blockchain_forward(self, evt):
+        self._do_check_register_my_identity()
+        return True
+
+    def _on_blockchain_sync(self, evt):
+        self._do_check_register_my_identity()
+        return True
 
     def _on_local_identity_modified(self, evt):
-        from twisted.internet import reactor
-        reactor.callLater(0, self._do_check_register_my_identity)
+        self._do_check_register_my_identity()
         return True
 
     def _do_check_register_my_identity(self):
+        if self.flag_public_key_registered:
+            return True
         from logs import lg
         from userid import my_id
         from blockchain import pybc_service
         from blockchain.pybc import util
-        if not self.flag_ready:
+        if not pybc_service.node().blockchain.state_available:
             lg.warn('skip, blockchain is not ready yet')
-            return
+            return False
         found = False
         for tr in pybc_service.node().blockchain.iterate_transactions_by_address(pybc_service.wallet().get_address()):
             for auth in tr.authorizations:
-                auth_data = util.bytes2string(auth[2])
+                try:
+                    auth_data = util.bytes2string(auth[2])
+                except:
+                    continue
                 if not auth_data or 'k' not in auth_data:
                     continue
                 if auth_data['k'] == my_id.getLocalIdentity().publickey:
                     found = True
                     break
-        if not found:
-            if pybc_service.wallet().get_balance() < 2:
-                pybc_service.generate_block(
-                    json_data=None,
-                    with_inputs=False,
-                    repeat=False,
-                    threaded=False,
-                )
-            if pybc_service.wallet().get_balance() < 2:
-                lg.warn('not able to generate some balance')
-                return
-            pybc_service.new_transaction(
+        if found:
+            self.flag_public_key_registered = True
+            lg.info('found my public key in the blockchain')
+            return True
+        if pybc_service.wallet().get_balance() < 2:
+            pybc_service.generate_block(
+                json_data=None,
+                with_inputs=False,
+                repeat=False,
+                threaded=False,
+            )
+        if pybc_service.wallet().get_balance() < 2:
+            lg.warn('not able to generate some balance')
+            return False
+        if not self.flag_public_key_transaction_sent:
+            lg.info('my balance is %d, starting new transaction to store my public key in the blockchain' % pybc_service.wallet().get_balance())
+            tr = pybc_service.new_transaction(
                 destination=util.bytes2string(pybc_service.wallet().get_address()),
                 amount=1,
                 json_data=None,
@@ -155,3 +171,6 @@ class BlockchainService(LocalService):
                     'd': my_id.getLocalIdentity().date,
                 },
             )
+            if tr:
+                self.flag_public_key_transaction_sent = True
+        return False
