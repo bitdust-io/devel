@@ -124,6 +124,8 @@ class BlockchainService(LocalService):
         return True
 
     def _do_check_register_my_identity(self):
+        # TODO: issues with mining a coin and reading my pub key
+        return False
         if self.flag_public_key_registered:
             return True
         from logs import lg
