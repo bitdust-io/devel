@@ -19,7 +19,7 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-        
+
 
 """
 .. module:: shared_access_initiator
@@ -30,10 +30,12 @@ BitDust shared_access_initiator() Automat
 EVENTS:
     * :red:`ack`
     * :red:`all-suppliers-acked`
+    * :red:`blockchain-ok`
     * :red:`fail`
     * :red:`init`
     * :red:`timer-10sec`
     * :red:`timer-5sec`
+    * :red:`user-identity-cached`
 """
 
 
@@ -47,8 +49,8 @@ class SharedAccessInitiator(automat.Automat):
 
     timers = {
         'timer-10sec': (10.0, ['PUB_KEY']),
-        'timer-5sec': (5.0, ['PING?','PRIV_KEY','VERIFY?']),
-        }
+        'timer-5sec': (5.0, ['PING','PRIV_KEY','PUB_KEY','VERIFY','CACHE']),
+    }
 
     def __init__(self, state):
         """
@@ -62,6 +64,7 @@ class SharedAccessInitiator(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of shared_access_initiator() machine.
         """
+        self.caching_deferred = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -81,17 +84,8 @@ class SharedAccessInitiator(automat.Automat):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
-                self.state = 'PING?'
-                self.doSendMyIdentityToUser(arg)
-        #---PING?---
-        elif self.state == 'PING?':
-            if event == 'ack':
-                self.state = 'VERIFY?'
-                self.doSendEncryptedSample(arg)
-            elif event == 'fail' or event == 'timer-5sec':
-                self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.state = 'CACHE'
+                self.doCacheRemoteIdentity(arg)
         #---PRIV_KEY---
         elif self.state == 'PRIV_KEY':
             if event == 'fail' or event == 'timer-5sec':
@@ -107,11 +101,24 @@ class SharedAccessInitiator(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportDone(arg)
                 self.doDestroyMe(arg)
+            elif event == 'fail' or event == 'timer-5sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        #---VERIFY?---
-        elif self.state == 'VERIFY?':
+        #---PING---
+        elif self.state == 'PING':
+            if event == 'ack':
+                self.state = 'BLOCKCHAIN'
+                self.doBlockchainLookupVerifyUserPubKey(arg)
+            elif event == 'fail' or event == 'timer-5sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+        #---VERIFY---
+        elif self.state == 'VERIFY':
             if ( event == 'ack' and not self.isResponseValid(arg) ) or event == 'fail' or event == 'timer-5sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
@@ -119,16 +126,29 @@ class SharedAccessInitiator(automat.Automat):
             elif event == 'ack' and self.isResponseValid(arg):
                 self.state = 'PRIV_KEY'
                 self.doSendPrivKeyToUser(arg)
-
+        #---CACHE---
+        elif self.state == 'CACHE':
+            if event == 'user-identity-cached':
+                self.state = 'PING'
+                self.doSendMyIdentityToUser(arg)
+            elif event == 'fail' or event == 'timer-5sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+        #---BLOCKCHAIN---
+        elif self.state == 'BLOCKCHAIN':
+            if event == 'blockchain-ok':
+                self.state = 'VERIFY'
+                self.doSendEncryptedSample(arg)
+            elif event == 'fail':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+        return None
 
     def isResponseValid(self, arg):
         """
         Condition method.
-        """
-
-    def doReportDone(self, arg):
-        """
-        Action method.
         """
 
     def doSendPrivKeyToUser(self, arg):
@@ -151,14 +171,42 @@ class SharedAccessInitiator(automat.Automat):
         Action method.
         """
 
-    def doDestroyMe(self, arg):
+    def doCacheRemoteIdentity(self, arg):
         """
-        Remove all references to the state machine object to destroy it.
+        Action method.
         """
-        self.unregister()
+        from contacts import identitycache
+        self.remote_idurl = arg
+        self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
+        self.caching_deferred.addCallback(self._remote_identity_cached)
+        self.caching_deferred.addErrback(lambda err: self.automat('fail'))
+
+    def doBlockchainLookupVerifyUserPubKey(self, arg):
+        """
+        Action method.
+        """
+
+    def doReportDone(self, arg):
+        """
+        Action method.
+        """
 
     def doReportFailed(self, arg):
         """
         Action method.
         """
 
+    def doDestroyMe(self, arg):
+        """
+        Remove all references to the state machine object to destroy it.
+        """
+        self.unregister()
+
+    def _on_remote_identity_cached(self, xmlsrc):
+        from contacts import contactsdb
+        self.caching_deferred = None
+        self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
+        if self.remote_identity is None:
+            self.automat('fail')
+        else:
+            self.automat('user-identity-cached')
