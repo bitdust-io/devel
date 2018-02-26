@@ -279,7 +279,7 @@ class TokenWallet(json_coin.JsonWallet):
     def tokens_list(self):
         return self.blockchain.get_token_profiles_by_owner(self.get_address())
 
-    def token_create(self, token, value, address=None, fee=1, payload=None):
+    def token_create(self, token, value, address=None, fee=1, payload=None, auth_data=None):
         """
         """
         with self.lock:
@@ -290,10 +290,11 @@ class TokenWallet(json_coin.JsonWallet):
                 address or self.get_address(),
                 fee=fee,
                 json_data=pack_token(token, [payload, ]),
+                auth_data=auth_data,
                 spendable_filter=self._skip_all_tokens,
             )
 
-    def token_delete(self, token, address=None, fee=1):
+    def token_delete(self, token, address=None, fee=1, auth_data=None):
         """
         """
         with self.lock:
@@ -307,10 +308,11 @@ class TokenWallet(json_coin.JsonWallet):
                 address or self.get_address(),
                 fee=fee,
                 json_data=None,
+                auth_data=auth_data,
                 spendable_filter=lambda tr_input: self._skip_tokens_except_one(token, tr_input),
             )
 
-    def token_transfer(self, token, new_address, new_value=None, fee=1, payload=None, payload_history=True):
+    def token_transfer(self, token, new_address, new_value=None, fee=1, payload=None, payload_history=True, auth_data=None):
         """
         """
         with self.lock:
@@ -331,6 +333,7 @@ class TokenWallet(json_coin.JsonWallet):
                 new_address,
                 fee=fee,
                 json_data=pack_token(token, payloads),
+                auth_data=auth_data,
                 spendable_filter=lambda tr_input: self._skip_tokens_except_one(token, tr_input),
             )
 

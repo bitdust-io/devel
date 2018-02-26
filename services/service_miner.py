@@ -44,6 +44,7 @@ class MinerService(LocalService):
 
     def dependent_on(self):
         return ['service_nodes_lookup',
+                'service_blockchain',
                 ]
 
     def start(self):

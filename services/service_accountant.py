@@ -44,6 +44,7 @@ class CoinsAccountantService(LocalService):
 
     def dependent_on(self):
         return ['service_broadcasting',
+                'service_blockchain',
                 ]
 
     def start(self):

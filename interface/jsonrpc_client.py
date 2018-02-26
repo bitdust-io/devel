@@ -82,10 +82,15 @@ def loop_event_listen():
     proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
 
     def _loop(x=None):
-        pprint.pprint(x)
+        if x:
+            for evt in x.get('result', []):
+                print 'EVENT:', evt['id']
+                # pprint.pprint(evt)
+        else:
+            print '.',
         d = proxy.callRemote('events_listen', 'test_event_consumer')
         d.addCallback(_loop)
-        d.addErrback(lambda err: reactor.callLater(5, _loop))
+        d.addErrback(lambda err: reactor.callLater(1, _loop))
 
     reactor.callLater(0, _loop)
     reactor.run()

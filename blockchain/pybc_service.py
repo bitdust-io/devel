@@ -300,7 +300,7 @@ def stop_wallet():
 
 #------------------------------------------------------------------------------
 
-def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=True, ):
+def generate_block(json_data=None, with_inputs=True, repeat=False, threaded=True):
     """
     Keep on generating blocks in the background.
     Put the blocks in the given peer's blockchain, and send the proceeds to the
@@ -311,6 +311,8 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
     global _PeerNode
     global _Wallet
     global _BlockInProgress
+    success = False
+
     if not _PeerNode:
         logging.info("Peer node is not exist, stop")
         return None
@@ -319,14 +321,13 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
         if with_inputs and not _PeerNode.blockchain.transactions:
             logging.info("Blockchain is empty, skip block generation and wait for incoming transactions, retry after 10 seconds...")
             if repeat:
-                reactor.callLater(10, generate_block, json_data, with_inputs, repeat, with_outputs)
+                reactor.callLater(10, generate_block, json_data, with_inputs, repeat,)
             return None
         # We need to start a new block
         _BlockInProgress = _PeerNode.blockchain.make_block(
             _Wallet.get_address(),
             json_data=json_data,  # timestamped_json_data,
             with_inputs=with_inputs,
-            with_outputs=with_outputs,
         )
         if _BlockInProgress is not None:
             lg.info('started block generation with %d bytes json data, receiving address is %s, my ballance is %s' % (
@@ -338,7 +339,7 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
         else:
             if repeat:
                 logging.info('Not able to start a new block, retry after 10 seconds...')
-                reactor.callLater(10, generate_block, json_data, with_inputs, repeat, with_outputs)
+                reactor.callLater(10, generate_block, json_data, with_inputs, repeat, )
             else:
                 logging.info('Failed to start a new block')
             return None
@@ -356,24 +357,33 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
             _PeerNode.send_block(_BlockInProgress)
             # Start again
             _BlockInProgress = None
-        elif int(time.time()) > _BlockInProgress.timestamp + 60:
-            # This block is too old. Try a new one.
-            logging.info("Current generating block is {} seconds old. Restart mining!".format(
-                int(time.time()) - _BlockInProgress.timestamp))
-            _BlockInProgress = None
-        elif (_PeerNode.blockchain.highest_block is not None and
-              _PeerNode.blockchain.highest_block.block_hash() != _BlockInProgress.previous_hash):
-            # This block is no longer based on the top of the chain
-            logging.info("New block from elsewhere! Restart generation!")
-            _BlockInProgress = None
+        else:
+            if int(time.time()) > _BlockInProgress.timestamp + 60:
+                # This block is too old. Try a new one.
+                logging.info("Current generating block is {} seconds old. Restart mining!".format(
+                    int(time.time()) - _BlockInProgress.timestamp))
+                _BlockInProgress = None
+            elif (_PeerNode.blockchain.highest_block is not None and
+                  _PeerNode.blockchain.highest_block.block_hash() != _BlockInProgress.previous_hash):
+                # This block is no longer based on the top of the chain
+                logging.info("New block from elsewhere! Restart generation!")
+                _BlockInProgress = None
 
-    # Tell the main thread to make us another thread.
-    reactor.callFromThread(reactor.callInThread, generate_block, json_data=json_data, with_inputs=with_inputs, repeat=repeat, with_outputs=with_outputs, )
-    return None
+    if threaded:
+        # Tell the main thread to make us another thread.
+        reactor.callFromThread(reactor.callInThread, generate_block,
+                               json_data=json_data, with_inputs=with_inputs, repeat=repeat, threaded=threaded)
+        return None
+
+    if not _BlockInProgress:
+        return success
+
+    # now _BlockInProgress must exist and we will start mining directly in that thread
+    return generate_block(json_data=json_data, with_inputs=with_inputs, repeat=repeat, threaded=threaded)
 
 #------------------------------------------------------------------------------
 
-def new_transaction(destination, amount, json_data):
+def new_transaction(destination, amount, json_data, auth_data=None):
     global _Wallet
     global _PeerNode
     if amount <= 0:
@@ -388,16 +398,20 @@ def new_transaction(destination, amount, json_data):
             current_balance, total_input))
     # If we get here this is an actually sane transaction.
     # Make the transaction
-    transaction = _Wallet.make_simple_transaction(amount,
-                                                  pybc.util.string2bytes(destination),
-                                                  fee=fee,
-                                                  json_data=json_data)
+    transaction = _Wallet.make_simple_transaction(
+        amount,
+        pybc.util.string2bytes(destination),
+        fee=fee,
+        json_data=json_data,
+        auth_data=auth_data,
+    )
     # The user wants to make the transaction. Send it.
     if not transaction:
         logging.warning('Failed to create a new transaction: {} to {}'.format(amount, destination))
     else:
         logging.info('Starting a new transaction:\n{}'.format(str(transaction)))
         _PeerNode.send_transaction(transaction.to_bytes())
+    return transaction
 
 #------------------------------------------------------------------------------
 
@@ -478,13 +492,11 @@ def main():
         reactor.callFromThread(generate_block,
                                json_data=dict(started=time.time(), data=json.loads(options.json)),
                                with_inputs=False,
-                               # with_outputs=False,
                                repeat=False, )
     if options.mine:
         reactor.callFromThread(generate_block,
                                json_data=dict(started=time.time(), data=json.loads(options.json)),
                                with_inputs=True,
-                               # with_outputs=True,
                                repeat=True, )
     if options.transaction:
         reactor.callLater(5, new_transaction,

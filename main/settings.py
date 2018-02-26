@@ -2690,6 +2690,9 @@ def _checkStaticDirectories():
     if not os.path.exists(ChatHistoryDir()):
         lg.out(6, 'settings.init want to create folder: ' + ChatHistoryDir())
         os.makedirs(ChatHistoryDir())
+    if not os.path.exists(BlockchainDir()):
+        lg.out(6, 'settings.init want to create folder: ' + BlockchainDir())
+        os.makedirs(BlockchainDir())
 
 
 def _checkCustomDirectories():

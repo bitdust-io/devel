@@ -93,7 +93,6 @@ class MainPage(resource.Resource):
             self.wallet.get_address(),
             json_data=json_data,
             with_inputs=False,
-            # with_outputs=False,
         )
         if not new_block:
             return None

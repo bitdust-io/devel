@@ -61,9 +61,10 @@ class BlockchainService(LocalService):
 
     def start(self):
         import os
-        from logs import lg
+        from twisted.internet import reactor
         from main import config
         from main import settings
+        from main import events
         from blockchain import pybc_service
         pybc_home = settings.BlockchainDir()
         seeds = config.conf().getString('services/blockchain/seeds')
@@ -81,22 +82,63 @@ class BlockchainService(LocalService):
             minify=None,
             loglevel='DEBUG',
             logfilepath=os.path.join(pybc_home, 'log'),
-            stats_filename=None,  # os.path.join(pybc_home, 'log'),
+            stats_filename=None,
         )
         if config.conf().getBool('services/blockchain/explorer/enabled'):
             pybc_service.start_block_explorer(config.conf().getInt('services/blockchain/explorer/port'), pybc_service.node())
         if config.conf().getBool('services/blockchain/wallet/enabled'):
             pybc_service.start_wallet(config.conf().getInt('services/blockchain/wallet/port'), pybc_service.node(), pybc_service.wallet())
         if config.conf().getBool('services/blockchain/miner/enabled'):
-            from twisted.internet import reactor
             reactor.callFromThread(pybc_service.generate_block,
                                    json_data={},
                                    with_inputs=True,
-                                   # with_outputs=True,
                                    repeat=True, )
+        events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
+        reactor.callLater(5, self._do_check_register_my_identity)
         return True
 
     def stop(self):
         from blockchain import pybc_service
         pybc_service.shutdown()
         return True
+
+    def _on_local_identity_modified(self, evt):
+        from twisted.internet import reactor
+        reactor.callLater(0, self._do_check_register_my_identity)
+        return True
+
+    def _do_check_register_my_identity(self):
+        from logs import lg
+        from userid import my_id
+        from blockchain import pybc_service
+        from blockchain.pybc import util
+        found = False
+        for tr in pybc_service.node().blockchain.iterate_transactions_by_address(pybc_service.wallet().get_address()):
+            for auth in tr.authorizations:
+                auth_data = util.bytes2string(auth[2])
+                if not auth_data or 'k' not in auth_data:
+                    continue
+                if auth_data['k'] == my_id.getLocalIdentity().publickey:
+                    found = True
+                    break
+        if not found:
+            if pybc_service.wallet().get_balance() < 2:
+                pybc_service.generate_block(
+                    json_data=None,
+                    with_inputs=False,
+                    repeat=False,
+                    threaded=False,
+                )
+            if pybc_service.wallet().get_balance() < 2:
+                lg.warn('not able to generate some balance')
+                return
+            pybc_service.new_transaction(
+                destination=util.bytes2string(pybc_service.wallet().get_address()),
+                amount=1,
+                json_data=None,
+                auth_data={
+                    'k': my_id.getLocalIdentity().publickey,
+                    'u': my_id.getLocalIdentity().getIDName(),
+                    'd': my_id.getLocalIdentity().date,
+                },
+            )

@@ -278,20 +278,9 @@ def identity_get(include_xml_source=False):
     from userid import my_id
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not exist')
-    r = {
-        'name': my_id.getIDName(),
-        'idurl': my_id.getLocalID(),
-        'glob_id': my_id.getGlobalID(),
-        'sources': my_id.getLocalIdentity().getSources(),
-        'contacts': my_id.getLocalIdentity().getContacts(),
-        'date': my_id.getLocalIdentity().date,
-        'version': my_id.getLocalIdentity().version,
-        'revision': my_id.getLocalIdentity().revision,
-        'publickey': my_id.getLocalIdentity().publickey,
-        'signature': my_id.getLocalIdentity().signature,
-    }
+    r = my_id.getLocalIdentity().serialize_json()
     if include_xml_source:
-        r['xml'] = my_id.getLocalIdentity().serialize(),
+        r['xml'] = my_id.getLocalIdentity().serialize()
     return RESULT([r, ])
 
 def identity_create(username):
@@ -317,19 +306,9 @@ def identity_create(username):
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity creation FAILED')
-            ret.callback(RESULT([{
-                'name': my_id.getIDName(),
-                'idurl': my_id.getLocalID(),
-                'glob_id': my_id.getGlobalID(),
-                'sources': my_id.getLocalIdentity().getSources(),
-                'contacts': my_id.getLocalIdentity().getContacts(),
-                'date': my_id.getLocalIdentity().date,
-                'version': my_id.getLocalIdentity().version,
-                'revision': my_id.getLocalIdentity().revision,
-                'publickey': my_id.getLocalIdentity().publickey,
-                'signature': my_id.getLocalIdentity().signature,
-                'xml': my_id.getLocalIdentity().serialize(),
-            }, ]))
+            r = my_id.getLocalIdentity().serialize_json()
+            r['xml'] = my_id.getLocalIdentity().serialize()
+            ret.callback(RESULT([r, ]))
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
@@ -374,19 +353,9 @@ def identity_recover(private_key_source, known_idurl=None):
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity recovery FAILED')
-            ret.callback(RESULT([{
-                'name': my_id.getIDName(),
-                'idurl': my_id.getLocalID(),
-                'glob_id': my_id.getGlobalID(),
-                'sources': my_id.getLocalIdentity().getSources(),
-                'contacts': my_id.getLocalIdentity().getContacts(),
-                'date': my_id.getLocalIdentity().date,
-                'version': my_id.getLocalIdentity().version,
-                'revision': my_id.getLocalIdentity().revision,
-                'publickey': my_id.getLocalIdentity().publickey,
-                'signature': my_id.getLocalIdentity().signature,
-                'xml': my_id.getLocalIdentity().serialize(),
-            }, ]))
+            r = my_id.getLocalIdentity().serialize_json()
+            r['xml'] = my_id.getLocalIdentity().serialize()
+            ret.callback(RESULT([r, ]))
             return
 
     my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
