@@ -158,6 +158,7 @@ def init(host='127.0.0.1',
         if peer_host == host and peer_port == port:
             # Skip our own node
             continue
+        logging.info('Connecting via TCP to peer {}:{}'.format(peer_host, peer_port))
         _PeerNode.connect(peer_host, peer_port)
         _PeerNode.peer_seen(peer_host, peer_port, None)
     logging.info("Number of blocks: {}".format(len(_PeerNode.blockchain.blockstore)))

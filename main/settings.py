@@ -2518,7 +2518,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'false')
 
     config.conf().setDefaultValue('services/blockchain/enabled', 'false')
-    config.conf().setDefaultValue('services/blockchain/host', 'localhost')
+    config.conf().setDefaultValue('services/blockchain/host', '127.0.0.1')
     config.conf().setDefaultValue('services/blockchain/port', 9100)
     config.conf().setDefaultValue('services/blockchain/seeds', '')
     config.conf().setDefaultValue('services/blockchain/explorer/enabled', 'true')
