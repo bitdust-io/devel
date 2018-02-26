@@ -240,7 +240,10 @@ class Peer(object):
             # IPv6 addresses and pass them unchanged.
             if host.count(':'):
                 host = host.split(':')[0]
-            host = socket.gethostbyname(host)
+            try:
+                host = socket.gethostbyname(host)
+            except:
+                logging.exception('socket.gethostbyname failed, will use original host value')
             key = '{}:{}'.format(host, port)
 
             if key in self.known_peers:

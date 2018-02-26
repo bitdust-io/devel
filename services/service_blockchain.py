@@ -72,6 +72,11 @@ class BlockchainService(LocalService):
             seed_nodes = [(i.split(':')[0], int(i.split(':')[1]), ) for i in seeds.split(',')]
         else:
             seed_nodes = pybc_service.seed_nodes()
+        logfilepath = os.path.join(pybc_home, 'log')
+        try:
+            os.remove(logfilepath)
+        except:
+            pass
         pybc_service.init(
             host=config.conf().getData('services/blockchain/host'),
             port=config.conf().getInt('services/blockchain/port'),
@@ -81,7 +86,7 @@ class BlockchainService(LocalService):
             peerstore_filename=os.path.join(pybc_home, 'peers'),
             minify=None,
             loglevel='DEBUG',
-            logfilepath=os.path.join(pybc_home, 'log'),
+            logfilepath=logfilepath,
             stats_filename=None,
         )
         if config.conf().getBool('services/blockchain/explorer/enabled'):
