@@ -1192,6 +1192,7 @@ class Wallet(object):
                 self.blockchain.send_event("reset", self.blockchain.state)
         else:
             logging.info("Wallet is in sync with blockchain.")
+            self.blockchain.send_event("ready", None)
 
     def blockchain_event(self, event, argument):
         """
@@ -1315,6 +1316,10 @@ class Wallet(object):
 
                 self.spendable.commit()
                 self.keystore.sync()
+
+            elif event == "ready":
+                logging.info("Blockchain is ready")
+
             else:
                 logging.warning("Unknown event {} from blockchain".format(
                     event))

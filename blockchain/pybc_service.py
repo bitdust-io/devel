@@ -82,6 +82,8 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from main import events
+
 #------------------------------------------------------------------------------
 
 import pybc.util
@@ -231,6 +233,7 @@ def on_event(event, argument):
     incoming blocks.
     """
     logging.info("EVENT: [{}] with {} bytes".format(event, len(str(argument))))
+    events.send('blockchain-{}'.format(event), )  # data=dict(argument=argument))
 #     global _SeenAddresses
 #     if event == "forward":
 #         # We're moving forward a block, and the argument is a block.

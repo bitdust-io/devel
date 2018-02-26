@@ -102,4 +102,4 @@ def set_loglevel(loglevel, logformat="%(levelname)s:%(message)s", logdatefmt="%H
         raise ValueError("Invalid log level: {}".format(loglevel))
 
     # Set the log level to the correct numeric value
-    logging.basicConfig(format=logformat, level=numeric_level, datefmt=logdatefmt, filename=logfilename)
+    logging.basicConfig(format=logformat, level=numeric_level, datefmt=logdatefmt, filename=logfilename, filemode='w')

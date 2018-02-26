@@ -42,6 +42,8 @@ class BlockchainService(LocalService):
     service_name = 'service_blockchain'
     config_path = 'services/blockchain/enabled'
 
+    flag_ready = False
+
     def dependent_on(self):
         return ['service_tcp_connections',
                 ]
@@ -72,11 +74,6 @@ class BlockchainService(LocalService):
             seed_nodes = [(i.split(':')[0], int(i.split(':')[1]), ) for i in seeds.split(',')]
         else:
             seed_nodes = pybc_service.seed_nodes()
-        logfilepath = os.path.join(pybc_home, 'log')
-        try:
-            os.remove(logfilepath)
-        except:
-            pass
         pybc_service.init(
             host=config.conf().getData('services/blockchain/host'),
             port=config.conf().getInt('services/blockchain/port'),
@@ -86,7 +83,7 @@ class BlockchainService(LocalService):
             peerstore_filename=os.path.join(pybc_home, 'peers'),
             minify=None,
             loglevel='DEBUG',
-            logfilepath=logfilepath,
+            logfilepath=os.path.join(pybc_home, 'log'),
             stats_filename=None,
         )
         if config.conf().getBool('services/blockchain/explorer/enabled'):
@@ -99,13 +96,21 @@ class BlockchainService(LocalService):
                                    with_inputs=True,
                                    repeat=True, )
         events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
-        reactor.callLater(5, self._do_check_register_my_identity)
+        events.add_subscriber(self._on_blockchain_ready, 'blockchain-ready')
         return True
 
     def stop(self):
         from blockchain import pybc_service
         pybc_service.shutdown()
         return True
+
+    def _on_blockchain_ready(self, evt):
+        to_be_checked = False
+        if not self.flag_ready:
+            to_be_checked = True
+        self.flag_ready = True
+        if to_be_checked:
+            self._do_check_register_my_identity()
 
     def _on_local_identity_modified(self, evt):
         from twisted.internet import reactor
@@ -117,6 +122,9 @@ class BlockchainService(LocalService):
         from userid import my_id
         from blockchain import pybc_service
         from blockchain.pybc import util
+        if not self.flag_ready:
+            lg.warn('skip, blockchain is not ready yet')
+            return
         found = False
         for tr in pybc_service.node().blockchain.iterate_transactions_by_address(pybc_service.wallet().get_address()):
             for auth in tr.authorizations:

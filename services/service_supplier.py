@@ -554,7 +554,7 @@ class SupplierService(LocalService):
             return
         customer_glob_id = global_id.idurl2glob(customer_idurl)
         queue_id = global_id.MakeGlobalQueueID(
-            queue_alias='event-supplier-file-modified',
+            queue_alias='supplier-file-modified',
             owner_id=customer_glob_id,
             supplier_id=my_id.getGlobalID(),
         )
@@ -592,7 +592,7 @@ class SupplierService(LocalService):
             return
         customer_glob_id = global_id.idurl2glob(customer_idurl)
         queue_id = global_id.MakeGlobalQueueID(
-            queue_alias='event-supplier-file-modified',
+            queue_alias='supplier-file-modified',
             owner_id=customer_glob_id,
             supplier_id=my_id.getGlobalID(),
         )
