@@ -1751,8 +1751,7 @@ class Blockchain(object):
 
                 # The transaction is valid in our current fork.
                 # Keep it around.
-                self.transactions[transaction_hash] = \
-                    transaction
+                self.transactions[transaction_hash] = transaction
 
                 # Our transaction_state has automatically been advanced.
 
@@ -1762,7 +1761,7 @@ class Blockchain(object):
             else:
                 # Record that it wasn't verified.
                 verified = False
-                logging.warn('Invalid transaction: {}'.format(str(transaction_hash)))
+                logging.warn('Invalid transaction: {}'.format(pybc.util.bytes2string(transaction_hash)))
 
         # Notify the callback outside the critical section.
         if callback is not None:

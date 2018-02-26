@@ -135,6 +135,8 @@ class BlockchainService(LocalService):
             return False
         found = False
         for tr in pybc_service.node().blockchain.iterate_transactions_by_address(pybc_service.wallet().get_address()):
+            if found:
+                break
             for auth in tr.authorizations:
                 try:
                     auth_data = util.bytes2string(auth[2])
@@ -150,21 +152,17 @@ class BlockchainService(LocalService):
             lg.info('found my public key in the blockchain')
             return True
         if pybc_service.wallet().get_balance() < 2:
-            pybc_service.generate_block(
-                json_data=None,
-                with_inputs=False,
-                repeat=False,
-                threaded=False,
-            )
+            lg.info('my balance is %d, need to mine a block to be able to register' % pybc_service.wallet().get_balance())
+            self._do_solve_block(json_data={'a': 'pay', 'u': my_id.getLocalIdentity().getIDName(), })
         if pybc_service.wallet().get_balance() < 2:
-            lg.warn('not able to generate some balance')
+            lg.warn('not able to mine some coins')
             return False
         if not self.flag_public_key_transaction_sent:
             lg.info('my balance is %d, starting new transaction to store my public key in the blockchain' % pybc_service.wallet().get_balance())
             tr = pybc_service.new_transaction(
                 destination=util.bytes2string(pybc_service.wallet().get_address()),
                 amount=1,
-                json_data=None,
+                json_data={'a': 'register', 'u': my_id.getLocalIdentity().getIDName(), },
                 auth_data={
                     'k': my_id.getLocalIdentity().publickey,
                     'u': my_id.getLocalIdentity().getIDName(),
@@ -174,3 +172,17 @@ class BlockchainService(LocalService):
             if tr:
                 self.flag_public_key_transaction_sent = True
         return False
+
+    def _do_solve_block(self, json_data=None):
+        from blockchain import pybc_service
+        new_block = pybc_service.node().blockchain.make_block(
+            pybc_service.wallet().get_address(),
+            json_data=json_data,
+            with_inputs=False,
+        )
+        if not new_block:
+            return None
+        if not new_block.do_some_work(pybc_service.node().blockchain.algorithm, iterations=10000000):
+            return None
+        pybc_service.node().send_block(new_block)
+        return new_block
