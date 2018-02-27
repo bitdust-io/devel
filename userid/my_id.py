@@ -48,6 +48,7 @@ from logs import lg
 from system import bpio
 
 from main import settings
+from main import events
 
 from lib import misc
 from lib import nameurl
@@ -101,9 +102,18 @@ def setLocalIdentity(ident):
     global _LocalName
     if not ident:
         return
+    modified = False
+    old_json = {}
+    if _LocalIdentity:
+        current_src = _LocalIdentity.serialize()
+        if current_src != ident.serialize():
+            modified = True
+            old_json = _LocalIdentity.serialize_json()
     _LocalIdentity = ident
     _LocalIDURL = _LocalIdentity.getIDURL()
     _LocalName = _LocalIdentity.getIDName()
+    if modified:
+        events.send('local-identity-modified', dict(old=old_json, new=_LocalIdentity.serialize_json()))
 
 
 def setLocalIdentityXML(idxml):
@@ -186,9 +196,10 @@ def loadLocalIdentity():
     if not lid.Valid():
         lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Valid")
         return
-    _LocalIdentity = lid
-    _LocalIDURL = lid.getIDURL()
-    _LocalName = lid.getIDName()
+    setLocalIdentity(lid)
+#     _LocalIdentity = lid
+#     _LocalIDURL = lid.getIDURL()
+#     _LocalName = lid.getIDName()
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
     lg.out(6, "my_id.loadLocalIdentity my name is [%s]" % lid.getIDName())
 
@@ -215,7 +226,6 @@ def saveLocalIdentity():
 
 def forgetLocalIdentity():
     """
-    
     """
     global _LocalIdentity
     if not isLocalIdentityReady():
@@ -223,6 +233,7 @@ def forgetLocalIdentity():
         return
     lg.out(6, "my_id.saveLocalIdentity")
     _LocalIdentity = None
+    events.send('local-identity-deleted', dict())
 
 
 def eraseLocalIdentity():
@@ -246,7 +257,6 @@ def eraseLocalIdentity():
 
 def getValidTransports():
     """
-    
     """
     global _ValidTransports
     return _ValidTransports

@@ -240,7 +240,10 @@ class Peer(object):
             # IPv6 addresses and pass them unchanged.
             if host.count(':'):
                 host = host.split(':')[0]
-            host = socket.gethostbyname(host)
+            try:
+                host = socket.gethostbyname(host)
+            except:
+                logging.exception('socket.gethostbyname failed, will use original host value')
             key = '{}:{}'.format(host, port)
 
             if key in self.known_peers:
@@ -560,7 +563,7 @@ class Peer(object):
         and send it off to our peers, if appropriate.
 
         """
-
+        logging.info('Sending transaction of %d bytes:\n{}'.format(len(str(transaction))))
         # Add the transaction, and, if valid, announce it
         self.blockchain.add_transaction(transaction,
                                         callback=self.was_transaction_valid)

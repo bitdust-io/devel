@@ -564,6 +564,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
 
 def do_notify(callback_method, consumer_id, queue_id, message_id):
     existing_message = queue(queue_id)[message_id]
+    event_id = global_id.ParseGlobalQueueID(queue_id)['queue_alias']
 
     if consumer_id in existing_message.notifications:
         # notification already sent to given consumer
@@ -574,7 +575,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
     if isinstance(callback_method, str) or isinstance(callback_method, unicode):
         p2p_service.SendEvent(
             remote_idurl=str(callback_method),
-            event_id=queue_id,
+            event_id=event_id,
             payload=existing_message.payload,
             producer_id=existing_message.producer_id,
             message_id=existing_message.message_id,
@@ -587,7 +588,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
     else:
         try:
             result = callback_method(dict(
-                event_id=existing_message.queue_id,
+                event_id=event_id,
                 payload=existing_message.payload,
                 producer_id=existing_message.producer_id,
                 message_id=existing_message.message_id,

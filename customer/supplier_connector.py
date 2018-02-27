@@ -340,7 +340,7 @@ class SupplierConnector(automat.Automat):
             'action': 'subscribe',
             'consumer_id': my_id.getGlobalID(),
             'queue_id': global_id.MakeGlobalQueueID(
-                queue_alias='event-supplier-file-modified',
+                queue_alias='supplier-file-modified',
                 owner_id=my_id.getGlobalID(),
                 supplier_id=global_id.MakeGlobalID(idurl=self.idurl),
             ),
@@ -359,7 +359,7 @@ class SupplierConnector(automat.Automat):
             'action': 'unsubscribe',
             'consumer_id': my_id.getGlobalID(),
             'queue_id': global_id.MakeGlobalQueueID(
-                queue_alias='event-supplier-file-modified',
+                queue_alias='supplier-file-modified',
                 owner_id=my_id.getGlobalID(),
                 supplier_id=global_id.MakeGlobalID(idurl=self.idurl),
             ),

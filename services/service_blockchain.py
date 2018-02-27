@@ -42,6 +42,9 @@ class BlockchainService(LocalService):
     service_name = 'service_blockchain'
     config_path = 'services/blockchain/enabled'
 
+    # flag_public_key_registered = False
+    # flag_public_key_transaction_sent = False
+
     def dependent_on(self):
         return ['service_tcp_connections',
                 ]
@@ -61,10 +64,13 @@ class BlockchainService(LocalService):
 
     def start(self):
         import os
-        from logs import lg
+        from twisted.internet import reactor
         from main import config
         from main import settings
+        from main import events
         from blockchain import pybc_service
+        self.flag_public_key_registered = False
+        self.flag_public_key_transaction_sent = False
         pybc_home = settings.BlockchainDir()
         seeds = config.conf().getString('services/blockchain/seeds')
         if seeds:
@@ -80,22 +86,105 @@ class BlockchainService(LocalService):
             peerstore_filename=os.path.join(pybc_home, 'peers'),
             minify=None,
             loglevel='DEBUG',
-            stats_filename=None,  # os.path.join(pybc_home, 'log'),
+            logfilepath=os.path.join(pybc_home, 'log'),
+            stats_filename=None,
         )
         if config.conf().getBool('services/blockchain/explorer/enabled'):
             pybc_service.start_block_explorer(config.conf().getInt('services/blockchain/explorer/port'), pybc_service.node())
         if config.conf().getBool('services/blockchain/wallet/enabled'):
             pybc_service.start_wallet(config.conf().getInt('services/blockchain/wallet/port'), pybc_service.node(), pybc_service.wallet())
         if config.conf().getBool('services/blockchain/miner/enabled'):
-            from twisted.internet import reactor
             reactor.callFromThread(pybc_service.generate_block,
                                    json_data={},
-                                   with_inputs=False,
-                                   with_outputs=True,
+                                   with_inputs=True,
                                    repeat=True, )
+        events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
+        events.add_subscriber(self._on_blockchain_forward, 'blockchain-forward')
+        events.add_subscriber(self._on_blockchain_sync, 'blockchain-sync')
+        reactor.callLater(0, self._do_check_register_my_identity)
         return True
 
     def stop(self):
         from blockchain import pybc_service
         pybc_service.shutdown()
+        self.flag_public_key_registered = False
+        self.flag_public_key_transaction_sent = False
         return True
+
+    def _on_blockchain_forward(self, evt):
+        self._do_check_register_my_identity()
+        return True
+
+    def _on_blockchain_sync(self, evt):
+        self._do_check_register_my_identity()
+        return True
+
+    def _on_local_identity_modified(self, evt):
+        self._do_check_register_my_identity()
+        return True
+
+    def _do_check_register_my_identity(self):
+        # TODO: issues with mining a coin and reading my pub key
+        return False
+        if self.flag_public_key_registered:
+            return True
+        from logs import lg
+        from userid import my_id
+        from blockchain import pybc_service
+        from blockchain.pybc import util
+        if not pybc_service.node().blockchain.state_available:
+            lg.warn('skip, blockchain is not ready yet')
+            return False
+        found = False
+        for tr in pybc_service.node().blockchain.iterate_transactions_by_address(pybc_service.wallet().get_address()):
+            if found:
+                break
+            for auth in tr.authorizations:
+                try:
+                    auth_data = util.bytes2string(auth[2])
+                except:
+                    continue
+                if not auth_data or 'k' not in auth_data:
+                    continue
+                if auth_data['k'] == my_id.getLocalIdentity().publickey:
+                    found = True
+                    break
+        if found:
+            self.flag_public_key_registered = True
+            lg.info('found my public key in the blockchain')
+            return True
+        if pybc_service.wallet().get_balance() < 2:
+            lg.info('my balance is %d, need to mine a block to be able to register' % pybc_service.wallet().get_balance())
+            self._do_solve_block(json_data={'a': 'pay', 'u': my_id.getLocalIdentity().getIDName(), })
+        if pybc_service.wallet().get_balance() < 2:
+            lg.warn('not able to mine some coins')
+            return False
+        if not self.flag_public_key_transaction_sent:
+            lg.info('my balance is %d, starting new transaction to store my public key in the blockchain' % pybc_service.wallet().get_balance())
+            tr = pybc_service.new_transaction(
+                destination=util.bytes2string(pybc_service.wallet().get_address()),
+                amount=1,
+                json_data={'a': 'register', 'u': my_id.getLocalIdentity().getIDName(), },
+                auth_data={
+                    'k': my_id.getLocalIdentity().publickey,
+                    'u': my_id.getLocalIdentity().getIDName(),
+                    'd': my_id.getLocalIdentity().date,
+                },
+            )
+            if tr:
+                self.flag_public_key_transaction_sent = True
+        return False
+
+    def _do_solve_block(self, json_data=None):
+        from blockchain import pybc_service
+        new_block = pybc_service.node().blockchain.make_block(
+            pybc_service.wallet().get_address(),
+            json_data=json_data,
+            with_inputs=False,
+        )
+        if not new_block:
+            return None
+        if not new_block.do_some_work(pybc_service.node().blockchain.algorithm, iterations=10000000):
+            return None
+        pybc_service.node().send_block(new_block)
+        return new_block

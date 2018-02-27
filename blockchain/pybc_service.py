@@ -82,6 +82,8 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from main import events
+
 #------------------------------------------------------------------------------
 
 import pybc.util
@@ -108,6 +110,7 @@ def init(host='127.0.0.1',
          peerstore_filename='./peerstore',
          minify=None,
          loglevel='INFO',
+         logfilepath='/tmp/pybc.log',
          stats_filename=None,
          ):
     global _PeerNode
@@ -115,7 +118,7 @@ def init(host='127.0.0.1',
     if _Debug:
         lg.out(_DebugLevel, 'pybc_service.init')
     # Set the log level
-    pybc.util.set_loglevel(loglevel, logformat="%(asctime)s [%(module)s] %(message)s")
+    pybc.util.set_loglevel(loglevel, logformat="%(asctime)s [%(module)s] %(message)s", logfilename=logfilepath)
     if stats_filename is not None:
         # Start the science
         pybc.science.log_to(stats_filename)
@@ -147,16 +150,17 @@ def init(host='127.0.0.1',
         port=port,
     )
 
-    def _on_listenere_started(l):
+    def _on_listener_started(l):
         global _PeerListener
         _PeerListener = l
 
-    _PeerNode.listener.addCallback(_on_listenere_started)
+    _PeerNode.listener.addCallback(_on_listener_started)
     # Start connecting to seed nodes
     for peer_host, peer_port in seed_nodes:
         if peer_host == host and peer_port == port:
             # Skip our own node
             continue
+        # logging.info('Connecting via TCP to peer {}:{}'.format(peer_host, peer_port))
         _PeerNode.connect(peer_host, peer_port)
         _PeerNode.peer_seen(peer_host, peer_port, None)
     logging.info("Number of blocks: {}".format(len(_PeerNode.blockchain.blockstore)))
@@ -229,6 +233,9 @@ def on_event(event, argument):
     incoming blocks.
     """
     logging.info("EVENT: [{}] with {} bytes".format(event, len(str(argument))))
+    # reactor.callFromThread(events.send, 'blockchain-{}'.format(event), )  # data=dict(argument=argument))
+    events.send('blockchain-{}'.format(event), )
+
 #     global _SeenAddresses
 #     if event == "forward":
 #         # We're moving forward a block, and the argument is a block.
@@ -299,7 +306,7 @@ def stop_wallet():
 
 #------------------------------------------------------------------------------
 
-def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=True, ):
+def generate_block(json_data=None, with_inputs=True, repeat=False, threaded=True):
     """
     Keep on generating blocks in the background.
     Put the blocks in the given peer's blockchain, and send the proceeds to the
@@ -310,6 +317,8 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
     global _PeerNode
     global _Wallet
     global _BlockInProgress
+    success = False
+
     if not _PeerNode:
         logging.info("Peer node is not exist, stop")
         return None
@@ -317,24 +326,26 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
     if _BlockInProgress is None:
         if with_inputs and not _PeerNode.blockchain.transactions:
             logging.info("Blockchain is empty, skip block generation and wait for incoming transactions, retry after 10 seconds...")
-            reactor.callLater(10, generate_block, json_data, with_inputs, repeat, with_outputs)
+            if repeat:
+                reactor.callLater(10, generate_block, json_data, with_inputs, repeat,)
             return None
         # We need to start a new block
         _BlockInProgress = _PeerNode.blockchain.make_block(
             _Wallet.get_address(),
             json_data=json_data,  # timestamped_json_data,
             with_inputs=with_inputs,
-            with_outputs=with_outputs,
         )
         if _BlockInProgress is not None:
+            lg.info('started block generation with %d bytes json data, receiving address is %s, my ballance is %s' % (
+                len(json.dumps(json_data)), pybc.util.bytes2string(_Wallet.get_address()), _Wallet.get_balance()))
             logging.info("Starting a block!")
             # Might as well dump balance here too
             logging.info("Receiving address: {}".format(pybc.util.bytes2string(_Wallet.get_address())))
             logging.info("Current balance: {}".format(_Wallet.get_balance()))
         else:
             if repeat:
-                logging.info('Not able to start a new block, retry after 10 seconds')
-                reactor.callLater(10, generate_block, json_data, with_inputs, repeat, with_outputs)
+                logging.info('Not able to start a new block, retry after 10 seconds...')
+                reactor.callLater(10, generate_block, json_data, with_inputs, repeat, )
             else:
                 logging.info('Failed to start a new block')
             return None
@@ -352,24 +363,33 @@ def generate_block(json_data=None, with_inputs=True, repeat=False, with_outputs=
             _PeerNode.send_block(_BlockInProgress)
             # Start again
             _BlockInProgress = None
-        elif int(time.time()) > _BlockInProgress.timestamp + 60:
-            # This block is too old. Try a new one.
-            logging.info("Current generating block is {} seconds old. Restart mining!".format(
-                int(time.time()) - _BlockInProgress.timestamp))
-            _BlockInProgress = None
-        elif (_PeerNode.blockchain.highest_block is not None and
-              _PeerNode.blockchain.highest_block.block_hash() != _BlockInProgress.previous_hash):
-            # This block is no longer based on the top of the chain
-            logging.info("New block from elsewhere! Restart generation!")
-            _BlockInProgress = None
+        else:
+            if int(time.time()) > _BlockInProgress.timestamp + 60:
+                # This block is too old. Try a new one.
+                logging.info("Current generating block is {} seconds old. Restart mining!".format(
+                    int(time.time()) - _BlockInProgress.timestamp))
+                _BlockInProgress = None
+            elif (_PeerNode.blockchain.highest_block is not None and
+                  _PeerNode.blockchain.highest_block.block_hash() != _BlockInProgress.previous_hash):
+                # This block is no longer based on the top of the chain
+                logging.info("New block from elsewhere! Restart generation!")
+                _BlockInProgress = None
 
-    # Tell the main thread to make us another thread.
-    reactor.callFromThread(reactor.callInThread, generate_block, json_data=json_data, with_inputs=with_inputs, repeat=repeat, with_outputs=with_outputs, )
-    return None
+    if threaded:
+        # Tell the main thread to make us another thread.
+        reactor.callFromThread(reactor.callInThread, generate_block,
+                               json_data=json_data, with_inputs=with_inputs, repeat=repeat, threaded=threaded)
+        return None
+
+    if not _BlockInProgress:
+        return success
+
+    # now _BlockInProgress must exist and we will start mining directly in that thread
+    return generate_block(json_data=json_data, with_inputs=with_inputs, repeat=repeat, threaded=threaded)
 
 #------------------------------------------------------------------------------
 
-def new_transaction(destination, amount, json_data):
+def new_transaction(destination, amount, json_data, auth_data=None):
     global _Wallet
     global _PeerNode
     if amount <= 0:
@@ -384,16 +404,20 @@ def new_transaction(destination, amount, json_data):
             current_balance, total_input))
     # If we get here this is an actually sane transaction.
     # Make the transaction
-    transaction = _Wallet.make_simple_transaction(amount,
-                                                  pybc.util.string2bytes(destination),
-                                                  fee=fee,
-                                                  json_data=json_data)
+    transaction = _Wallet.make_simple_transaction(
+        amount,
+        pybc.util.string2bytes(destination),
+        fee=fee,
+        json_data=json_data,
+        auth_data=auth_data,
+    )
     # The user wants to make the transaction. Send it.
     if not transaction:
         logging.warning('Failed to create a new transaction: {} to {}'.format(amount, destination))
     else:
         logging.info('Starting a new transaction:\n{}'.format(str(transaction)))
         _PeerNode.send_transaction(transaction.to_bytes())
+    return transaction
 
 #------------------------------------------------------------------------------
 
@@ -473,14 +497,12 @@ def main():
     if options.generate:
         reactor.callFromThread(generate_block,
                                json_data=dict(started=time.time(), data=json.loads(options.json)),
-                               with_inputs=True,
-                               with_outputs=False,
+                               with_inputs=False,
                                repeat=False, )
     if options.mine:
         reactor.callFromThread(generate_block,
                                json_data=dict(started=time.time(), data=json.loads(options.json)),
-                               with_inputs=False,
-                               with_outputs=True,
+                               with_inputs=True,
                                repeat=True, )
     if options.transaction:
         reactor.callLater(5, new_transaction,

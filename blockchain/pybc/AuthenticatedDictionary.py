@@ -598,8 +598,8 @@ l3yNr1m9i9inTKl+pWhOQC0rRg==
 
         # Get the child pointer value, or None if there is no child there.
         child = self.get_node_children(node)[child_index]
-        logging.debug('INSERT to [{}:{}] with "{}" {} bytes'.format(
-            self.store.table, node, key_hash[:8], len(value)))
+        # logging.debug('INSERT to [{}:{}] with "{}" {} bytes'.format(
+        #     self.store.table, node, key_hash[:8], len(value)))
 
         if child is None:
             # If that slot is empty, put the value there in a new node.
@@ -730,7 +730,7 @@ l3yNr1m9i9inTKl+pWhOQC0rRg==
         # Get the pointer value, or None if there is no child there.
         child = self.get_node_children(node)[child_index]
 
-        logging.debug('REMOVE from [{}:{}] key {}'.format(self.store.table, node, key_hash[:8]))
+        # logging.debug('REMOVE from [{}:{}] key {}'.format(self.store.table, node, key_hash[:8]))
 
         if child is None:
             # If that slot is empty, the key can't possibly be in the trie.

@@ -93,7 +93,6 @@ class MainPage(resource.Resource):
             self.wallet.get_address(),
             json_data=json_data,
             with_inputs=False,
-            with_outputs=False,
         )
         if not new_block:
             return None
@@ -182,6 +181,7 @@ class MainPage(resource.Resource):
             destination = request.args.get('destination', ['', ])[0]
             fee = request.args.get('fee', ['1', ])[0]
             json_data = request.args.get('json', ['{}', ])[0]
+            json_history = bool(request.args.get('json_history', ['', ])[0])
             try:
                 amount = int(amount or 0)
                 fee = int(fee or 1)
@@ -192,6 +192,7 @@ class MainPage(resource.Resource):
                     new_value=amount,
                     fee=fee,
                     payload=json_data,
+                    payload_history=json_history,
                 )
                 if new_transaction:
                     self.peer.send_transaction(new_transaction.to_bytes())
@@ -276,12 +277,14 @@ result: %(code)s
         src += 'software version: {}<br>\n'.format(self.peer.version)
         src += 'number of blocks: {}<br>\n'.format(len(self.peer.blockchain.blockstore))
         src += 'local disk usage: {} bytes<br><br>\n'.format(self.peer.blockchain.get_disk_usage())
+        #--- form_block
         src += '<div id="form_block" class="panel-big">\n'
         src += '<form method="post" action="">\n'
         src += '<div class=field>json:<input size=60 type=text name=json placeholder="{}"/></div>\n'
         src += '<div class="field-right"><input type=submit name="command" value="solve block" /></div>\n'
         src += '</form>\n'
-        src += '</div>\n'  # form_block
+        src += '</div>\n'
+        #--- form_transaction
         src += '<div id="form_transaction" class="panel-big">\n'
         src += '<form method="post" action="">\n'
         src += '<div class=field>destination:<input size=42 type=text name=destination placeholder="PyBC address"/></div>\n'
@@ -290,7 +293,8 @@ result: %(code)s
         src += '<div class=field>json:<input size=40 type=text name=json placeholder="{}"/></div>\n'
         src += '<div class="field-right"><input type=submit name="command" value="create output" /></div>\n'
         src += '</form>\n'
-        src += '</div>\n'  # form_transaction
+        src += '</div>\n'
+        #--- form_token
         src += '<div id="form_token" class="panel-big">\n'
         src += '<form method="post" action="">\n'
         src += '<div class=field>token:<input size=16 type=text name=token_id placeholder="token ID"/></div>\n'
@@ -299,7 +303,8 @@ result: %(code)s
         src += '<div class=field>json payload:<input size=40 type=text name=json placeholder="{}"/></div>\n'
         src += '<div class="field-right"><input type=submit name="command" value="create token" /></div>\n'
         src += '</form>\n'
-        src += '</div>\n'  # form_token
+        src += '</div>\n'
+        #--- form_token_transfer
         src += '<div id="form_token_transfer" class="panel-big">\n'
         src += '<form method="post" action="">\n'
         src += '<div class=field>token:<input size=16 type=text name=token_id placeholder="token ID"/></div>\n'
@@ -307,9 +312,11 @@ result: %(code)s
         src += '<div class=field>new value:<input size=4 type=text name=amount placeholder="coins"/></div>\n'
         src += '<div class=field>fee:<input size=1 type=text name=fee placeholder="1"/></div>\n'
         src += '<div class=field>json:<input size=30 type=text name=json placeholder="{}"/></div>\n'
+        src += '<div class=field>history:<input size=1 type=checkbox name=json_history checked /></div>\n'
         src += '<div class="field-right"><input type=submit name="command" value="transfer token" /></div>\n'
         src += '</form>\n'
-        src += '</div>\n'  # form_token_transfer
+        src += '</div>\n'
+        #--- form_token_delete
         src += '<div id="form_token_delete" class="panel-big">\n'
         src += '<form method="post" action="">\n'
         src += '<div class=field>token:<input size=16 type=text name=token_id placeholder="token ID"/></div>\n'
@@ -317,7 +324,7 @@ result: %(code)s
         src += '<div class=field>fee:<input size=1 type=text name=fee placeholder="1"/></div>\n'
         src += '<div class="field-right"><input type=submit name="command" value="delete token" /></div>\n'
         src += '</form>\n'
-        src += '</div>\n'  # form_token_delete
+        src += '</div>\n'
         src += '<h1>tokens:</h1>\n'
         for token_profile in self.wallet.tokens_list():
             src += '<div class="token panel-big">\n'

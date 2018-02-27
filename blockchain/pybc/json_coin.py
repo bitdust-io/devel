@@ -777,7 +777,7 @@ class JsonCoinBlockchain(CoinBlockchain):
 
         return True
 
-    def make_block(self, destination, min_fee=1, json_data=None, with_inputs=False, with_outputs=True, ):
+    def make_block(self, destination, min_fee=1, json_data=None, with_inputs=False):
         """
         Override CoinBlockchain make_block with a additional json_data parameter.
         """
@@ -790,6 +790,10 @@ class JsonCoinBlockchain(CoinBlockchain):
             if not self.state_available:
                 # We can't mine without the latest State
                 logging.debug("Can't make block without State")
+                return None
+
+            if with_inputs and not self.transactions:
+                logging.debug("No transactions found, skip block generation")
                 return None
 
             # This holds the list of Transaction objects to include
@@ -838,7 +842,8 @@ class JsonCoinBlockchain(CoinBlockchain):
             # Add a transaction that gives all the generated coins and fees to
             # us.
             reward_transaction = JsonTransaction()
-            reward_transaction.add_output(total_fee, destination, json_data)
+            reward_json = {'j': json_data, 'f': total_fee, }
+            reward_transaction.add_output(total_fee, destination, reward_json)
 
             # This may match exactly the reward transaction in the last block if
             # we just made and solved that. What unused output does the
@@ -854,14 +859,7 @@ class JsonCoinBlockchain(CoinBlockchain):
 
                 return None
 
-            if with_outputs and not to_include:
-                logging.debug("No outputs found, skip block generation")
-                return None
-
             to_include.append(reward_transaction)
-            if with_inputs and len(all_inputs) == 0:
-                logging.debug("No inputs found, skip block generation")
-                return None
 
             # Make a block moving to the state we have after we apply all those
             # transactions, with the transaction packed into its payload
@@ -1041,6 +1039,7 @@ class JsonWallet(Wallet):
 
                 self.spendable.commit()
                 self.keystore.sync()
+
             else:
                 logging.warning("Unknown event {} from blockchain".format(event))
 
@@ -1060,13 +1059,14 @@ class JsonWallet(Wallet):
         return balance
 
     def make_simple_transaction(self, amount, destination, fee=1,
-                                json_data=None, spendable_filter=None):
+                                json_data=None, auth_data=None, spendable_filter=None):
         """
         Return a JsonTransaction object sending the given amount to the given
         destination, and any remaining change back to ourselves, leaving the
         specified miner's fee unspent.
 
-        Optional json_data field can be passed to the transaction.
+        Optional json_data field can be passed as JSON to the transaction output.
+        Optional auth_data field can be passed as JSON to the authorization.
 
         If we don't have enough in outputs that we're willing to spend (i.e.
         which we haven't used to make transaction already, and which aren't
@@ -1151,9 +1151,9 @@ class JsonWallet(Wallet):
                 # Then the change, if any, back to us at some address we can
                 # receive on.
                 json_transaction.add_output(
-                    coins_collected - amount - fee,
-                    self.get_address(),
-                    None,
+                    amount=coins_collected - amount - fee,
+                    destination=self.get_address(),
+                    json_data={'f': fee, 'c': coins_collected, },
                 )
                 # The fee should be left over.
 
@@ -1171,7 +1171,7 @@ class JsonWallet(Wallet):
                 signature = keypair.sign(to_sign)
 
                 # Add the authorization to the transaction
-                json_transaction.add_authorization(public_key, signature, None)
+                json_transaction.add_authorization(public_key, signature, auth_data)
 
             # TODO: If we have a change output, put it in the willing to spend
             # set so we can immediately spend from it.
@@ -1235,10 +1235,15 @@ if __name__ == "__main__":
 
     # Send some coins to ourselves
     print "Sending ourselves 10 coins..."
-    transaction = wallet.make_simple_transaction(10, wallet.get_address(), json_data=dict(
-        test=456,
-        time=int(time.time()),
-    ))
+    transaction = wallet.make_simple_transaction(
+        10,
+        wallet.get_address(),
+        json_data=dict(
+            test=456,
+            time=int(time.time()),
+        ),
+        auth_data=dict(k='test123'),
+    )
     print transaction
     blockchain.add_transaction(transaction.to_bytes())
 

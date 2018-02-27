@@ -1315,9 +1315,9 @@ class Wallet(object):
 
                 self.spendable.commit()
                 self.keystore.sync()
+
             else:
-                logging.warning("Unknown event {} from blockchain".format(
-                    event))
+                logging.warning("Unknown event {} from blockchain".format(event))
 
     def generate_address(self):
         """
