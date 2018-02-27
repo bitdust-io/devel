@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# shared_access_initiator.py
+# shared_access_donor.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (shared_access_initiator.py) is part of BitDust Software.
+# This file (shared_access_donor.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -22,10 +22,10 @@
 
 
 """
-.. module:: shared_access_initiator
+.. module:: shared_access_donor
 .. role:: red
 
-BitDust shared_access_initiator() Automat
+BitDust shared_access_donor() Automat
 
 EVENTS:
     * :red:`ack`
@@ -38,42 +38,52 @@ EVENTS:
     * :red:`user-identity-cached`
 """
 
+#------------------------------------------------------------------------------
 
 from automats import automat
 
+from transport import callback
 
-class SharedAccessInitiator(automat.Automat):
+from contacts import identitycache
+from contacts import contactsdb
+
+from p2p import p2p_service
+from p2p import commands
+
+#------------------------------------------------------------------------------
+
+class SharedAccessDonor(automat.Automat):
     """
-    This class implements all the functionality of the ``shared_access_initiator()`` state machine.
+    This class implements all the functionality of the ``shared_access_donor()`` state machine.
     """
 
     timers = {
         'timer-10sec': (10.0, ['PUB_KEY']),
-        'timer-5sec': (5.0, ['PING','PRIV_KEY','PUB_KEY','VERIFY','CACHE']),
+        'timer-5sec': (5.0, ['PING','PRIV_KEY','VERIFY','CACHE']),
     }
 
     def __init__(self, state):
         """
-        Create shared_access_initiator() state machine.
+        Create shared_access_donor() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
         """
-        super(SharedAccessInitiator, self).__init__("shared_access_initiator", state)
+        super(SharedAccessDonor, self).__init__("shared_access_donor", state)
 
     def init(self):
         """
         Method to initialize additional variables and flags
-        at creation phase of shared_access_initiator() machine.
+        at creation phase of shared_access_donor() machine.
         """
         self.caching_deferred = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to catch the moment when shared_access_initiator() state were changed.
+        Method to catch the moment when shared_access_donor() state were changed.
         """
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the shared_access_initiator()
+        This method intended to catch the moment when some event was fired in the shared_access_donor()
         but its state was not changed.
         """
 
@@ -85,6 +95,7 @@ class SharedAccessInitiator(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'CACHE'
+                self.doInsertInboxCallback(arg)
                 self.doCacheRemoteIdentity(arg)
         #---PRIV_KEY---
         elif self.state == 'PRIV_KEY':
@@ -100,10 +111,6 @@ class SharedAccessInitiator(automat.Automat):
             if event == 'all-suppliers-acked' or event == 'timer-10sec':
                 self.state = 'CLOSED'
                 self.doReportDone(arg)
-                self.doDestroyMe(arg)
-            elif event == 'fail' or event == 'timer-5sec':
-                self.state = 'CLOSED'
-                self.doReportFailed(arg)
                 self.doDestroyMe(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -151,37 +158,57 @@ class SharedAccessInitiator(automat.Automat):
         Condition method.
         """
 
+    def doInsertInboxCallback(self, arg):
+        """
+        Action method.
+        """
+        callback.insert_inbox_callback(0, self._on_inbox_packet_received)
+
+    def doCacheRemoteIdentity(self, arg):
+        """
+        Action method.
+        """
+        self.remote_idurl = arg
+        self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
+        self.caching_deferred.addCallback(self._on_remote_identity_cached)
+        self.caching_deferred.addErrback(lambda err: self.automat('fail'))
+
+    def doSendMyIdentityToUser(self, arg):
+        """
+        Action method.
+        """
+        p2p_service.SendIdentity(self.target_idurl, wide=True)
+
+    def doBlockchainLookupVerifyUserPubKey(self, arg):
+        """
+        Action method.
+        """
+        # TODO:
+        self.automat('blockchain-ok')
+
+    def doSendEncryptedSample(self, arg):
+        """
+        Action method.
+        """
+        from crypt import encrypted
+        from userid import my_id
+        from crypt import key
+        sample_key = ''
+        encrypted.Block(
+            CreatorID=my_id.getLocalID(),
+            BackupID='encrypted_sample',
+            BlockNumber=0,
+            SessionKey=key.NewSessionKey(),
+            Data=sample_key,
+            EncryptKey=lambda inp: self.remote_identity.encrypt(inp),
+        )
+
     def doSendPrivKeyToUser(self, arg):
         """
         Action method.
         """
 
     def doSendPubKeyToSuppliers(self, arg):
-        """
-        Action method.
-        """
-
-    def doSendEncryptedSample(self, arg):
-        """
-        Action method.
-        """
-
-    def doSendMyIdentityToUser(self, arg):
-        """
-        Action method.
-        """
-
-    def doCacheRemoteIdentity(self, arg):
-        """
-        Action method.
-        """
-        from contacts import identitycache
-        self.remote_idurl = arg
-        self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
-        self.caching_deferred.addCallback(self._remote_identity_cached)
-        self.caching_deferred.addErrback(lambda err: self.automat('fail'))
-
-    def doBlockchainLookupVerifyUserPubKey(self, arg):
         """
         Action method.
         """
@@ -200,13 +227,25 @@ class SharedAccessInitiator(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        if self.caching_deferred:
+            self.caching_deferred.cancel()
+            self.caching_deferred = None
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.unregister()
 
     def _on_remote_identity_cached(self, xmlsrc):
-        from contacts import contactsdb
         self.caching_deferred = None
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
             self.automat('fail')
         else:
             self.automat('user-identity-cached')
+
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        if newpacket.Command == commands.Ack() and \
+                newpacket.OwnerID == self.target_idurl and \
+                newpacket.PacketID == 'identity' and \
+                self.state == 'ACK?':
+            self.automat('ack', self.target_idurl)
+            return True
+        return False

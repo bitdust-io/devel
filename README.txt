@@ -36,7 +36,7 @@ Install BitDust software
 
 Seems like in Ubuntu (probably most other distros) you can install all dependencies in that way:
 
-        sudo apt-get install git python-dev python-virtualenv
+        sudo apt-get install git gcc python-dev python-virtualenv
 
 
 Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
