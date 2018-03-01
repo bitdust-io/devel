@@ -33,7 +33,6 @@ EVENTS:
     * :red:`blockchain-ok`
     * :red:`fail`
     * :red:`init`
-    * :red:`timer-10sec`
     * :red:`timer-5sec`
     * :red:`user-identity-cached`
 """
@@ -58,8 +57,7 @@ class SharedAccessDonor(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['PUB_KEY']),
-        'timer-5sec': (5.0, ['PING','PRIV_KEY','VERIFY','CACHE']),
+        'timer-5sec': (5.0, ['PUB_KEY','PING','PRIV_KEY','VERIFY','CACHE','LIST_FILES']),
     }
 
     def __init__(self, state):
@@ -104,14 +102,19 @@ class SharedAccessDonor(automat.Automat):
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
             elif event == 'ack':
-                self.state = 'PUB_KEY'
-                self.doSendPubKeyToSuppliers(arg)
+                self.state = 'LIST_FILES'
+                self.doSendMyListFiles(arg)
         #---PUB_KEY---
         elif self.state == 'PUB_KEY':
-            if event == 'all-suppliers-acked' or event == 'timer-10sec':
+            if event == 'ack':
+                self.doCheckAllAcked(arg)
+            elif event == 'timer-5sec' and not self.isSomeSuppliersAcked(arg):
                 self.state = 'CLOSED'
-                self.doReportDone(arg)
+                self.doReportFailed(arg)
                 self.doDestroyMe(arg)
+            elif event == 'all-suppliers-acked' or ( event == 'timer-5sec' and self.isSomeSuppliersAcked(arg) ):
+                self.state = 'PRIV_KEY'
+                self.doSendPrivKeyToUser(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -131,8 +134,8 @@ class SharedAccessDonor(automat.Automat):
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
             elif event == 'ack' and self.isResponseValid(arg):
-                self.state = 'PRIV_KEY'
-                self.doSendPrivKeyToUser(arg)
+                self.state = 'PUB_KEY'
+                self.doSendPubKeyToSuppliers(arg)
         #---CACHE---
         elif self.state == 'CACHE':
             if event == 'user-identity-cached':
@@ -150,6 +153,16 @@ class SharedAccessDonor(automat.Automat):
             elif event == 'fail':
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+        #---LIST_FILES---
+        elif self.state == 'LIST_FILES':
+            if event == 'fail' or event == 'timer-5sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+            elif event == 'ack':
+                self.state = 'CLOSED'
+                self.doReportDone(arg)
                 self.doDestroyMe(arg)
         return None
 
@@ -232,6 +245,21 @@ class SharedAccessDonor(automat.Automat):
             self.caching_deferred = None
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.unregister()
+
+    def isSomeSuppliersAcked(self, arg):
+        """
+        Condition method.
+        """
+
+    def doSendMyListFiles(self, arg):
+        """
+        Action method.
+        """
+
+    def doCheckAllAcked(self, arg):
+        """
+        Action method.
+        """
 
     def _on_remote_identity_cached(self, xmlsrc):
         self.caching_deferred = None
