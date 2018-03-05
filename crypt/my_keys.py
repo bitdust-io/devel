@@ -474,6 +474,8 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     r['private'] = None
     if key_object.isPublic():
         r['public'] = str(key_object.toString('openssh'))
+        if include_private:
+            raise Exception('this key contains only public component')
     else:
         r['public'] = str(key_object.public().toString('openssh'))
         if include_private:
@@ -516,7 +518,8 @@ def get_key_info(key_id, include_private=False):
                 key_id = key_id_form_2
     if not key_object:
         raise Exception('key not found')
-    return make_key_info(key_object, key_id=key_id, include_private=include_private, )
+    key_info = make_key_info(key_object, key_id=key_id, include_private=include_private, )
+    return key_info
 
 
 def read_key_info(key_json):

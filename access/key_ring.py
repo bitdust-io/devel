@@ -115,7 +115,12 @@ def _do_transfer_key(key_id, idurl, include_private=False):
         lg.warn('unknown key: "%s"' % key_id)
         result.errback(Exception('unknown key: "%s"' % key_id))
         return result
-    key_json = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private)
+    try:
+        key_json = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private)
+    except Exception as exc:
+        lg.exc()
+        result.errback(exc)
+        return result
     key_data = json.dumps(key_json)
     block = encrypted.Block(
         BackupID=key_id,

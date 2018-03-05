@@ -430,7 +430,11 @@ def keys_list(sort=False, include_private=False):
         if not key_alias or not creator_idurl:
             lg.warn('incorrect key_id: %s' % key_id)
             continue
-        r.append(my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private))
+        try:
+            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private)
+        except:
+            key_info = my_keys.make_key_info(key_object, key_id=key_id, include_private=False)
+        r.append(key_info)
     if sort:
         r = sorted(r, key=lambda i: i['alias'])
     r.insert(0, my_keys.make_master_key_info(include_private=include_private))
@@ -501,8 +505,10 @@ def key_erase(key_id):
 
 def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout=10):
     """
-    Connect to remote node identified by `idurl` parameter and transfer private key `key_id` to that machine.
+    Connects to remote node and transfer private key to that machine.
     This way remote user will be able to access those of your files which were encrypted with that private key.
+    You can also share a public key, this way your supplier will know which data packets can be accessed by
+    another customer.
 
     Returns:
 
@@ -512,7 +518,7 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
         trusted_global_id_or_idurl = str(trusted_global_id_or_idurl)
         full_key_id = str(key_id)
     except:
-        return succeed(ERROR('error input parameters'))
+        return succeed(ERROR('error reading input parameters'))
     if not driver.is_on('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
     glob_id = global_id.ParseGlobalID(full_key_id)
@@ -527,6 +533,47 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
     from access import key_ring
     ret = Deferred()
     d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, timeout=timeout)
+    d.addCallback(
+        lambda resp: ret.callback(
+            OK(str(resp))))
+    d.addErrback(
+        lambda err: ret.callback(
+            ERROR(err.getErrorMessage())))
+    return ret
+
+
+def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10):
+    """
+    Connects to remote node identified by `idurl` parameter and request audit
+    of a public or private key `key_id` on that machine.
+    Returns True in the callback if audit process succeed - that means remote user
+    posses that public or private key.
+
+    Returns:
+    """
+    from userid import global_id
+    try:
+        untrusted_global_id_or_idurl = str(untrusted_global_id_or_idurl)
+        full_key_id = str(key_id)
+    except:
+        return succeed(ERROR('error reading input parameters'))
+    if not driver.is_on('service_keys_registry'):
+        return succeed(ERROR('service_keys_registry() is not started'))
+    glob_id = global_id.ParseGlobalID(full_key_id)
+    if glob_id['key_alias'] == 'master':
+        return succeed(ERROR('"master" key can not be shared'))
+    if not glob_id['key_alias'] or not glob_id['idurl']:
+        return succeed(ERROR('icorrect key_id format'))
+    if global_id.IsValidGlobalUser(untrusted_global_id_or_idurl):
+        idurl = global_id.GlobalUserToIDURL(untrusted_global_id_or_idurl)
+    else:
+        idurl = untrusted_global_id_or_idurl
+    from access import key_ring
+    ret = Deferred()
+    if is_private:
+        d = key_ring.audit_private_key(key_id=key_id, untrusted_idurl=idurl, timeout=timeout)
+    else:
+        d = key_ring.audit_public_key(key_id=key_id, untrusted_idurl=idurl, timeout=timeout)
     d.addCallback(
         lambda resp: ret.callback(
             OK(str(resp))))
