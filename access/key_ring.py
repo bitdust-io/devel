@@ -159,8 +159,11 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
 def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
     orig_sample = my_keys.encrypt(key_id, test_sample)
     if response.Payload == orig_sample:
+        if _Debug:
+            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
         result.callback(True)
         return True
+    lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
     result.callback(False)
     return False
 
@@ -224,8 +227,11 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
 def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
     decrypted_sample = my_keys.decrypt(key_id, response.Payload)
     if decrypted_sample == test_sample:
+        if _Debug:
+            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
         result.callback(True)
         return True
+    lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
     result.callback(False)
     return False
 

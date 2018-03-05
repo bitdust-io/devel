@@ -457,6 +457,7 @@ class Automat(object):
             self.event(event_string, arg)
         else:
             reactor.callLater(0, self.event, event_string, arg)  # @UndefinedVariable
+        return self
 
     def event(self, event_string, arg=None):
         """
@@ -503,6 +504,7 @@ class Automat(object):
         else:
             self.state_not_changed(self.state, event_string, arg)
         self.executeStateChangedCallbacks(old_state, new_state, event_string, arg)
+        return self
 
     def timerEvent(self, name, interval):
         """

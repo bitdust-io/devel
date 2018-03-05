@@ -64,8 +64,6 @@ from logs import lg
 
 from automats import automat
 
-from main import settings
-
 from driver import services
 from driver import on_service_callback
 from driver import RequireSubclass

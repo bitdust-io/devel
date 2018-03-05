@@ -39,6 +39,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from logs import lg
+
 from automats import automat
 
 from transport import callback
@@ -61,7 +63,7 @@ class SharedAccessDonor(automat.Automat):
     """
 
     timers = {
-        'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'VERIFY', 'CACHE', 'LIST_FILES']),
+        'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'AUDIT', 'CACHE', 'LIST_FILES']),
     }
 
     def __init__(self, state, debug_level=0, log_events=False, publish_events=False, **kwargs):
@@ -86,7 +88,7 @@ class SharedAccessDonor(automat.Automat):
         self.caching_deferred = None
         self.remote_idurl = None
         self.key_id = None
-        self.test_sample = ''
+        self.suppliers_responses = {}
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -142,15 +144,6 @@ class SharedAccessDonor(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-        #---VERIFY---
-        elif self.state == 'VERIFY':
-            if ( event == 'ack' and not self.isResponseValid(arg) ) or event == 'fail' or event == 'timer-5sec':
-                self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'ack' and self.isResponseValid(arg):
-                self.state = 'PUB_KEY'
-                self.doSendPubKeyToSuppliers(arg)
         #---CACHE---
         elif self.state == 'CACHE':
             if event == 'user-identity-cached':
@@ -162,13 +155,13 @@ class SharedAccessDonor(automat.Automat):
                 self.doDestroyMe(arg)
         #---BLOCKCHAIN---
         elif self.state == 'BLOCKCHAIN':
-            if event == 'blockchain-ok':
-                self.state = 'VERIFY'
-                self.doSendEncryptedSample(arg)
-            elif event == 'fail':
+            if event == 'fail':
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
+            elif event == 'blockchain-ok':
+                self.state = 'AUDIT'
+                self.doAuditUserMasterKey(arg)
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
             if event == 'fail' or event == 'timer-5sec':
@@ -179,6 +172,15 @@ class SharedAccessDonor(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportDone(arg)
                 self.doDestroyMe(arg)
+        #---AUDIT---
+        elif self.state == 'AUDIT':
+            if ( event == 'ack' and not self.isResponseValid(arg) ) or event == 'fail' or event == 'timer-5sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+            elif event == 'ack' and self.isResponseValid(arg):
+                self.state = 'PUB_KEY'
+                self.doSendPubKeyToSuppliers(arg)
         return None
 
     def isResponseValid(self, arg):
@@ -224,6 +226,19 @@ class SharedAccessDonor(automat.Automat):
         # TODO:
         self.automat('blockchain-ok')
 
+    def doAuditUserMasterKey(self, arg):
+        """
+        Action method.
+        """
+        master_key_id = my_keys.make_key_id(alias='master', creator_idurl=self.remote_idurl)
+        d = key_ring.audit_private_key(master_key_id, self.remote_idurl)
+        d.addCallback(lambda audit_result: (
+            self.automat('key-ok')
+            if audit_result else
+            self.automat('fail', audit_result),
+        ))
+        d.addErrback(lambda err: self.automat('fail', err))
+
     def doSendPubKeyToSuppliers(self, arg):
         """
         Action method.
@@ -233,23 +248,24 @@ class SharedAccessDonor(automat.Automat):
             return
         for supplier_idurl in contactsdb.suppliers():
             d = key_ring.share_key(self.key_id, supplier_idurl, include_private=False)
-            d.addCallback(lambda resp: self.automat('ack', resp))
-            d.addErrback(lambda _: None)
+            d.addCallback(self._on_supplier_pub_key_shared, supplier_idurl)
+            d.addErrback(self._on_supplier_pub_key_failed, supplier_idurl)
+            self.suppliers_responses[supplier_idurl] = d
 
     def doCheckAllAcked(self, arg):
         """
         Action method.
         """
-
-    def doSendEncryptedSample(self, arg):
-        """
-        Action method.
-        """
+        if len(self.suppliers_responses) == 0:
+            self.automat('all-suppliers-acked')
 
     def doSendPrivKeyToUser(self, arg):
         """
         Action method.
         """
+        d = key_ring.share_key(self.key_id, self.remote_idurl, include_private=True)
+        d.addCallback(self._on_user_priv_key_shared)
+        d.addErrback(self._on_user_priv_key_failed)
 
     def doSendMyListFiles(self, arg):
         """
@@ -272,7 +288,7 @@ class SharedAccessDonor(automat.Automat):
         """
         self.remote_idurl = None
         self.key_id = None
-        self.test_sample = ''
+        self.suppliers_responses.clear()
         if self.caching_deferred:
             self.caching_deferred.cancel()
             self.caching_deferred = None
@@ -295,3 +311,23 @@ class SharedAccessDonor(automat.Automat):
             self.automat('ack', self.target_idurl)
             return True
         return False
+
+    def _on_supplier_pub_key_shared(self, response, supplier_idurl):
+        self.suppliers_responses.pop(supplier_idurl)
+        self.automat('ack', response)
+        return None
+
+    def _on_supplier_pub_key_failed(self, err, supplier_idurl):
+        self.suppliers_responses.pop(supplier_idurl)
+        lg.warn(err)
+        return None
+
+    def _on_user_priv_key_shared(self, response):
+        lg.info('your private key %s was shared to %s' % (self.key_id, self.remote_idurl, ))
+        self.automat('ack', response)
+        return None
+
+    def _on_user_priv_key_failed(self, err):
+        lg.warn(err)
+        self.automat('fail', err)
+        return None

@@ -108,6 +108,7 @@ class BackupsService(LocalService):
         backup_monitor.A('restart')
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        from logs import lg
         from main import settings
         from userid import my_id
         from userid import global_id
@@ -117,7 +118,7 @@ class BackupsService(LocalService):
             if newpacket.OwnerID != my_id.getLocalID():
                 # only catch data belongs to me
                 return False
-            self.log(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
+            lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
                 newpacket, newpacket.RemoteID, ))
             if newpacket.PacketID == global_id.MakeGlobalID(
                 idurl=my_id.getLocalID(),
@@ -127,7 +128,7 @@ class BackupsService(LocalService):
                 backup_control.IncomingSupplierBackupIndex(newpacket)
                 return True
         if newpacket.Command == commands.Files():
-            self.log(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
+            lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
                 newpacket, newpacket.RemoteID, ))
             return backup_control.IncomingSupplierListFiles(newpacket)
         return False
