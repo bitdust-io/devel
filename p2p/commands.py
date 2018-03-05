@@ -245,6 +245,12 @@ def Key():
     return "Key"
 
 
+def AuditKey():
+    """
+    """
+    return "AuditKey"
+
+
 def Event():
     """
     """

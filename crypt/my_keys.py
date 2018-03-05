@@ -55,6 +55,8 @@ from logs import lg
 
 from system import bpio
 
+from lib import misc
+
 from main import settings
 
 from crypt import key
@@ -176,7 +178,7 @@ def is_valid_key_id(global_key_id):
     if not parts['idurl']:
         lg.warn('no idurl found in the input')
         return False
-    if not global_id.isValidKeyAlias():
+    if not misc.ValidKeyAlias(parts['key_alias']):
         lg.warn('invalid key alias in the input')
         return False
     return True

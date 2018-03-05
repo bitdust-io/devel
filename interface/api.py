@@ -499,7 +499,7 @@ def key_erase(key_id):
     return OK(message='private key "%s" was erased successfully' % key_alias)
 
 
-def key_share(key_id, trusted_global_id_or_idurl, timeout=10):
+def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout=10):
     """
     Connect to remote node identified by `idurl` parameter and transfer private key `key_id` to that machine.
     This way remote user will be able to access those of your files which were encrypted with that private key.
@@ -526,7 +526,7 @@ def key_share(key_id, trusted_global_id_or_idurl, timeout=10):
         idurl = trusted_global_id_or_idurl
     from access import key_ring
     ret = Deferred()
-    d = key_ring.share_private_key(key_id=full_key_id, trusted_idurl=idurl, timeout=timeout)
+    d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, timeout=timeout)
     d.addCallback(
         lambda resp: ret.callback(
             OK(str(resp))))

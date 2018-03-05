@@ -80,6 +80,8 @@ class KeysRegistryService(LocalService):
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
         from access import key_ring
-        if newpacket.Command != commands.Key():
-            return False
-        return key_ring.on_private_key_received(newpacket, info, status, error_message)
+        if newpacket.Command == commands.Key():
+            return key_ring.on_key_received(newpacket, info, status, error_message)
+        elif newpacket.Command == commands.AuditKey():
+            return key_ring.on
+        return False

@@ -134,8 +134,12 @@ class Block:
 
     def SessionKey(self):
         """
-        Return original SessionKey from ``EncryptedSessionKey`` using
-        ``crypt.key.DecryptLocalPrivateKey()`` method.
+        Return original SessionKey from ``EncryptedSessionKey`` using one of the methods
+        depend on the type of ``DecryptKey`` parameter passed in the __init__()
+
+            + ``crypt.key.DecryptLocalPrivateKey()`` if DecryptKey is None
+            + ``my_keys.decrypt()`` if DecryptKey is a string with key_id
+            + ``DecryptKey()`` if this is a callback method
         """
         if callable(self.DecryptKey):
             return self.DecryptKey(self.EncryptedSessionKey)
