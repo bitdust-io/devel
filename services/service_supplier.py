@@ -30,21 +30,7 @@
 module:: service_supplier
 """
 
-#------------------------------------------------------------------------------
-
-import os
-
-#------------------------------------------------------------------------------
-
-from twisted.internet import reactor
-
-#------------------------------------------------------------------------------
-
-from logs import lg
-
 from services.local_service import LocalService
-
-#------------------------------------------------------------------------------
 
 
 def create_service():
@@ -94,18 +80,17 @@ class SupplierService(LocalService):
         return True
 
     def request(self, json_payload, newpacket, info):
-        # import json
+        from twisted.internet import reactor
+        from logs import lg
         from main import events
         from crypt import my_keys
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        # words = newpacket.Payload.split(' ')
         customer_public_key = None
         customer_public_key_id = None
         bytes_for_customer = None
         try:
-            # json_info = json.loads(newpacket.Payload[newpacket.Payload.find(' '):])
             bytes_for_customer = json_payload['needed_bytes']
             customer_public_key = json_payload['customer_public_key']
             customer_public_key_id = customer_public_key['key_id']
@@ -178,6 +163,8 @@ class SupplierService(LocalService):
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, json_payload, newpacket, info):
+        from twisted.internet import reactor
+        from logs import lg
         from main import events
         from p2p import p2p_service
         from contacts import contactsdb
@@ -210,22 +197,11 @@ class SupplierService(LocalService):
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def _do_construct_filename(self, customerGlobID, packetID, keyAlias=None):
-        # from lib import packetid
-        # from lib import nameurl
-        # from userid import global_id
+        import os
+        from logs import lg
         from main import settings
         from system import bpio
-        # customerGlobID, packetID = packetid.SplitPacketID(packetID)
-#         if customerGlobID:
-#             customerIDURL_packet = global_id.GlobalUserToIDURL(customerGlobID)
-#             if customerIDURL_packet != customerIDURL:
-#                 lg.warn('construct filename for another customer: %s != %s' % (
-#                     customerIDURL_packet, customerIDURL))
         keyAlias = keyAlias or 'master'
-        # customerDirNameIDURL = nameurl.UrlFilename(customerIDURL)
-        # if keyAlias == 'master' and os.path.isdir(os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL)):
-        #     # TODO: remove after migration ...
-        #     return os.path.join(settings.getCustomersFilesDir(), customerDirNameIDURL, packetID)
         customerDirName = str(customerGlobID)
         customersDir = settings.getCustomersFilesDir()
         if not os.path.exists(customersDir):
@@ -247,6 +223,7 @@ class SupplierService(LocalService):
         Must be a customer, and then we make full path filename for where this
         packet is stored locally.
         """
+        from logs import lg
         from lib import packetid
         from main import settings
         from contacts import contactsdb
@@ -283,6 +260,8 @@ class SupplierService(LocalService):
         return False
 
     def _on_delete_file(self, newpacket):
+        import os
+        from logs import lg
         from system import bpio
         from userid import my_id
         from userid import global_id
@@ -310,13 +289,6 @@ class SupplierService(LocalService):
                 lg.warn("got empty filename, bad customer or wrong packetID?")
                 p2p_service.SendFail(newpacket, 'not a customer, or file not found')
                 return False
-#             if filename == "":
-#                 filename = p2p_service.constructFilename(newpacket.OwnerID, glob_path['path'], glob_path['key_alias'])
-#                 if not os.path.exists(filename):
-#                     lg.err("had unknown customer: %s or pathID is not correct or not exist: %s" % (
-#                         newpacket.OwnerID, glob_path['path']))
-#                     p2p_service.SendFail(newpacket, 'not a customer, or file not found')
-#                     return False
             if os.path.isfile(filename):
                 try:
                     os.remove(filename)
@@ -336,12 +308,14 @@ class SupplierService(LocalService):
                 glob_path=glob_path['path'],
                 owner_id=newpacket.OwnerID,
             ))
-        self.log(self.debug_level, "service_supplier._on_delete_file from [%s] with %d IDs, %d files and %d folders were removed" % (
+        lg.out(self.debug_level, "service_supplier._on_delete_file from [%s] with %d IDs, %d files and %d folders were removed" % (
             newpacket.OwnerID, len(ids), filescount, dirscount))
         p2p_service.SendAck(newpacket)
         return True
 
     def _on_delete_backup(self, newpacket):
+        import os
+        from logs import lg
         from system import bpio
         from userid import global_id
         from p2p import p2p_service
@@ -364,12 +338,6 @@ class SupplierService(LocalService):
                 lg.warn("got empty filename, bad customer or wrong packetID?")
                 p2p_service.SendFail(newpacket, 'not a customer, or file not found')
                 return False
-#             if filename == "":
-#                 filename = p2p_service.constructFilename(newpacket.OwnerID, glob_path['path'], glob_path['key_alias'])
-#                 if not os.path.exists(filename):
-#                     lg.err("had unknown customer: %s or backupID: %s" (bkpID, newpacket.OwnerID))
-#                     p2p_service.SendFail(newpacket, 'not a customer, or file not found')
-#                     return False
             if os.path.isdir(filename):
                 try:
                     bpio._dir_remove(filename)
@@ -389,12 +357,14 @@ class SupplierService(LocalService):
                 glob_path=glob_path['path'],
                 owner_id=newpacket.OwnerID,
             ))
-        self.log(self.debug_level, "supplier_service._on_delete_backup from [%s] with %d IDs, %d were removed" % (
+        lg.out(self.debug_level, "supplier_service._on_delete_backup from [%s] with %d IDs, %d were removed" % (
             newpacket.OwnerID, len(ids), count))
         p2p_service.SendAck(newpacket)
         return True
 
     def _on_retreive(self, newpacket):
+        import os
+        from logs import lg
         from system import bpio
         from userid import my_id
         from userid import global_id
@@ -458,12 +428,15 @@ class SupplierService(LocalService):
             return False
         if outpacket.Command != commands.Data():
             lg.warn('sending back packet which is not a Data')
-        self.log(self.debug_level, "service_supplier._on_retreive %r : sending %r back to %s" % (
+        lg.out(self.debug_level, "service_supplier._on_retreive %r : sending %r back to %s" % (
             newpacket, outpacket, outpacket.CreatorID))
         gateway.outbox(outpacket, target=outpacket.CreatorID)
         return True
 
     def _on_data(self, newpacket):
+        import os
+        from twisted.internet import reactor
+        from logs import lg
         from system import bpio
         from main import settings
         from userid import my_id
@@ -526,7 +499,7 @@ class SupplierService(LocalService):
             return False
         sz = len(data)
         del data
-        self.log(self.debug_level, "service_supplier._on_data %r saved from [%s | %s] to %s with %d bytes" % (
+        lg.out(self.debug_level, "service_supplier._on_data %r saved from [%s | %s] to %s with %d bytes" % (
             newpacket, newpacket.OwnerID, newpacket.CreatorID, filename, sz, ))
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
@@ -545,6 +518,7 @@ class SupplierService(LocalService):
         return True
 
     def _on_customer_accepted(self, e):
+        from logs import lg
         from userid import my_id
         from userid import global_id
         from p2p import p2p_queue
@@ -583,6 +557,7 @@ class SupplierService(LocalService):
                             lg.warn('failed to start event publisher: %s' % str(exc))
 
     def _on_customer_terminated(self, e):
+        from logs import lg
         from userid import my_id
         from userid import global_id
         from p2p import p2p_queue

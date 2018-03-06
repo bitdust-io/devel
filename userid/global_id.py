@@ -297,6 +297,7 @@ def IsValidGlobalUser(inp):
         return False
     if not idhost:
         return False
+    # TODO: validate user and idhost
     return True
 
 

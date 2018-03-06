@@ -213,8 +213,13 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_key_erase(self, key_id):
         return api.key_erase(key_id)
 
-    def jsonrpc_key_share(self, key_id, idurl):
-        return api.key_share(key_id, idurl)
+    def jsonrpc_key_share(self, key_id, trusted_global_id_or_idurl, include_private=False, timeout=10):
+        return api.key_share(key_id=key_id, trusted_global_id_or_idurl=trusted_global_id_or_idurl,
+                             include_private=include_private, timeout=timeout)
+
+    def jsonrpc_key_audit(self, key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10):
+        return api.key_audit(key_id=key_id, untrusted_global_id_or_idurl=untrusted_global_id_or_idurl,
+                             is_private=is_private, timeout=timeout)
 
     def jsonrpc_files_list(self, remote_path=None):
         return api.files_list(remote_path=remote_path)

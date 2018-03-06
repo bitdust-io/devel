@@ -33,12 +33,13 @@ EVENTS:
     * :red:`blockchain-ok`
     * :red:`fail`
     * :red:`init`
-    * :red:`timer-10sec`
     * :red:`timer-5sec`
     * :red:`user-identity-cached`
 """
 
 #------------------------------------------------------------------------------
+
+from logs import lg
 
 from automats import automat
 
@@ -50,6 +51,10 @@ from contacts import contactsdb
 from p2p import p2p_service
 from p2p import commands
 
+from crypt import my_keys
+
+from access import key_ring
+
 #------------------------------------------------------------------------------
 
 class SharedAccessDonor(automat.Automat):
@@ -58,16 +63,22 @@ class SharedAccessDonor(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['PUB_KEY']),
-        'timer-5sec': (5.0, ['PING','PRIV_KEY','VERIFY','CACHE']),
+        'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'AUDIT', 'CACHE', 'LIST_FILES']),
     }
 
-    def __init__(self, state):
+    def __init__(self, state, debug_level=0, log_events=False, publish_events=False, **kwargs):
         """
         Create shared_access_donor() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
         """
-        super(SharedAccessDonor, self).__init__("shared_access_donor", state)
+        super(SharedAccessDonor, self).__init__(
+            name="shared_access_donor",
+            state=state,
+            debug_level=debug_level,
+            log_events=log_events,
+            publish_events=publish_events,
+            **kwargs
+        )
 
     def init(self):
         """
@@ -75,6 +86,9 @@ class SharedAccessDonor(automat.Automat):
         at creation phase of shared_access_donor() machine.
         """
         self.caching_deferred = None
+        self.remote_idurl = None
+        self.key_id = None
+        self.suppliers_responses = {}
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -95,6 +109,7 @@ class SharedAccessDonor(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'CACHE'
+                self.doInit(arg)
                 self.doInsertInboxCallback(arg)
                 self.doCacheRemoteIdentity(arg)
         #---PRIV_KEY---
@@ -104,13 +119,18 @@ class SharedAccessDonor(automat.Automat):
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
             elif event == 'ack':
-                self.state = 'PUB_KEY'
-                self.doSendPubKeyToSuppliers(arg)
+                self.state = 'LIST_FILES'
+                self.doSendMyListFiles(arg)
         #---PUB_KEY---
         elif self.state == 'PUB_KEY':
-            if event == 'all-suppliers-acked' or event == 'timer-10sec':
+            if event == 'ack':
+                self.doCheckAllAcked(arg)
+            elif event == 'all-suppliers-acked' or ( event == 'timer-5sec' and self.isSomeSuppliersAcked(arg) ):
+                self.state = 'PRIV_KEY'
+                self.doSendPrivKeyToUser(arg)
+            elif event == 'fail' or ( event == 'timer-5sec' and not self.isSomeSuppliersAcked(arg) ):
                 self.state = 'CLOSED'
-                self.doReportDone(arg)
+                self.doReportFailed(arg)
                 self.doDestroyMe(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -124,15 +144,6 @@ class SharedAccessDonor(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-        #---VERIFY---
-        elif self.state == 'VERIFY':
-            if ( event == 'ack' and not self.isResponseValid(arg) ) or event == 'fail' or event == 'timer-5sec':
-                self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'ack' and self.isResponseValid(arg):
-                self.state = 'PRIV_KEY'
-                self.doSendPrivKeyToUser(arg)
         #---CACHE---
         elif self.state == 'CACHE':
             if event == 'user-identity-cached':
@@ -144,19 +155,49 @@ class SharedAccessDonor(automat.Automat):
                 self.doDestroyMe(arg)
         #---BLOCKCHAIN---
         elif self.state == 'BLOCKCHAIN':
-            if event == 'blockchain-ok':
-                self.state = 'VERIFY'
-                self.doSendEncryptedSample(arg)
-            elif event == 'fail':
+            if event == 'fail':
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
+            elif event == 'blockchain-ok':
+                self.state = 'AUDIT'
+                self.doAuditUserMasterKey(arg)
+        #---LIST_FILES---
+        elif self.state == 'LIST_FILES':
+            if event == 'fail' or event == 'timer-5sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+            elif event == 'ack':
+                self.state = 'CLOSED'
+                self.doReportDone(arg)
+                self.doDestroyMe(arg)
+        #---AUDIT---
+        elif self.state == 'AUDIT':
+            if ( event == 'ack' and not self.isResponseValid(arg) ) or event == 'fail' or event == 'timer-5sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+            elif event == 'ack' and self.isResponseValid(arg):
+                self.state = 'PUB_KEY'
+                self.doSendPubKeyToSuppliers(arg)
         return None
 
     def isResponseValid(self, arg):
         """
         Condition method.
         """
+
+    def isSomeSuppliersAcked(self, arg):
+        """
+        Condition method.
+        """
+
+    def doInit(self, arg):
+        """
+        Action method.
+        """
+        self.remote_idurl, self.key_id = arg
 
     def doInsertInboxCallback(self, arg):
         """
@@ -168,10 +209,9 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        self.remote_idurl = arg
         self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
         self.caching_deferred.addCallback(self._on_remote_identity_cached)
-        self.caching_deferred.addErrback(lambda err: self.automat('fail'))
+        self.caching_deferred.addErrback(lambda err: self.automat('fail', err))
 
     def doSendMyIdentityToUser(self, arg):
         """
@@ -186,29 +226,48 @@ class SharedAccessDonor(automat.Automat):
         # TODO:
         self.automat('blockchain-ok')
 
-    def doSendEncryptedSample(self, arg):
+    def doAuditUserMasterKey(self, arg):
         """
         Action method.
         """
-        from crypt import encrypted
-        from userid import my_id
-        from crypt import key
-        sample_key = ''
-        encrypted.Block(
-            CreatorID=my_id.getLocalID(),
-            BackupID='encrypted_sample',
-            BlockNumber=0,
-            SessionKey=key.NewSessionKey(),
-            Data=sample_key,
-            EncryptKey=lambda inp: self.remote_identity.encrypt(inp),
-        )
+        master_key_id = my_keys.make_key_id(alias='master', creator_idurl=self.remote_idurl)
+        d = key_ring.audit_private_key(master_key_id, self.remote_idurl)
+        d.addCallback(lambda audit_result: (
+            self.automat('key-ok')
+            if audit_result else
+            self.automat('fail', audit_result),
+        ))
+        d.addErrback(lambda err: self.automat('fail', err))
+
+    def doSendPubKeyToSuppliers(self, arg):
+        """
+        Action method.
+        """
+        if not my_keys.is_key_registered(self.key_id):
+            self.automat('fail', Exception('key not found'))
+            return
+        for supplier_idurl in contactsdb.suppliers():
+            d = key_ring.share_key(self.key_id, supplier_idurl, include_private=False)
+            d.addCallback(self._on_supplier_pub_key_shared, supplier_idurl)
+            d.addErrback(self._on_supplier_pub_key_failed, supplier_idurl)
+            self.suppliers_responses[supplier_idurl] = d
+
+    def doCheckAllAcked(self, arg):
+        """
+        Action method.
+        """
+        if len(self.suppliers_responses) == 0:
+            self.automat('all-suppliers-acked')
 
     def doSendPrivKeyToUser(self, arg):
         """
         Action method.
         """
+        d = key_ring.share_key(self.key_id, self.remote_idurl, include_private=True)
+        d.addCallback(self._on_user_priv_key_shared)
+        d.addErrback(self._on_user_priv_key_failed)
 
-    def doSendPubKeyToSuppliers(self, arg):
+    def doSendMyListFiles(self, arg):
         """
         Action method.
         """
@@ -227,6 +286,9 @@ class SharedAccessDonor(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.remote_idurl = None
+        self.key_id = None
+        self.suppliers_responses.clear()
         if self.caching_deferred:
             self.caching_deferred.cancel()
             self.caching_deferred = None
@@ -237,7 +299,7 @@ class SharedAccessDonor(automat.Automat):
         self.caching_deferred = None
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
-            self.automat('fail')
+            self.automat('fail', Exception('remote id caching failed'))
         else:
             self.automat('user-identity-cached')
 
@@ -249,3 +311,23 @@ class SharedAccessDonor(automat.Automat):
             self.automat('ack', self.target_idurl)
             return True
         return False
+
+    def _on_supplier_pub_key_shared(self, response, supplier_idurl):
+        self.suppliers_responses.pop(supplier_idurl)
+        self.automat('ack', response)
+        return None
+
+    def _on_supplier_pub_key_failed(self, err, supplier_idurl):
+        self.suppliers_responses.pop(supplier_idurl)
+        lg.warn(err)
+        return None
+
+    def _on_user_priv_key_shared(self, response):
+        lg.info('your private key %s was shared to %s' % (self.key_id, self.remote_idurl, ))
+        self.automat('ack', response)
+        return None
+
+    def _on_user_priv_key_failed(self, err):
+        lg.warn(err)
+        self.automat('fail', err)
+        return None

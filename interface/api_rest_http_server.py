@@ -279,12 +279,34 @@ class BitDustRESTHTTPServer(APIResource):
     @PUT('^/key/share/(?P<key_id>[^/]+)/v1$')
     def key_share_arg_v1(self, request, key_id):
         data = _request_data(request, mandatory_keys=['trusted_user', ])
-        return api.key_share(key_id=key_id, trusted_global_id_or_idurl=data['trusted_user'])
+        return api.key_share(
+            key_id=key_id,
+            trusted_global_id_or_idurl=data['trusted_user'],
+            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @PUT('^/key/share/v1$')
     def key_share_v1(self, request):
         data = _request_data(request, mandatory_keys=['key_id', 'trusted_user', ])
-        return api.key_share(key_id=data['key_id'], trusted_global_id_or_idurl=data['trusted_user'])
+        return api.key_share(
+            key_id=data['key_id'],
+            trusted_global_id_or_idurl=data['trusted_user'],
+            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
+
+    @POST('^/key/audit/(?P<key_id>[^/]+)/v1$')
+    def key_audit_arg_v1(self, request, key_id):
+        data = _request_data(request, mandatory_keys=['untrusted_user', ])
+        return api.key_audit(
+            key_id=key_id,
+            untrusted_global_id_or_idurl=data['untrusted_user'],
+            is_private=bool(data.get('is_private', '0') in ['1', 'true', ]), )
+
+    @POST('^/key/audit/v1$')
+    def key_audit_v1(self, request):
+        data = _request_data(request, mandatory_keys=['key_id', 'untrusted_user', ])
+        return api.key_audit(
+            key_id=data['key_id'],
+            untrusted_global_id_or_idurl=data['untrusted_user'],
+            is_private=bool(data.get('is_private', '0') in ['1', 'true', ]), )
 
     #------------------------------------------------------------------------------
 

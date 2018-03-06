@@ -281,7 +281,6 @@ class NetworkTransport(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         # gateway.transports().pop(self.proto)
-        self.log(self.debug_level, 'doDestroyMe(%s)' % str(arg))
         self.interface.shutdown()
         self.destroy()
         self.interface = None
