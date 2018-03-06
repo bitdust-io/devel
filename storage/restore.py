@@ -183,7 +183,7 @@ class restore(automat.Automat):
         self.packetInCallback = None
         self.blockRestoredCallback = None
 
-        automat.Automat.__init__(self, 'restore_%s' % self.BackupID, 'AT_STARTUP', _DebugLevel, _Debug)
+        automat.Automat.__init__(self, 'restore_%s' % self.Version, 'AT_STARTUP', _DebugLevel, _Debug)
         events.send('restore-started', dict(backup_id=self.BackupID))
         # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
