@@ -76,6 +76,7 @@ def init():
     P2PCommandAcks[Coin()] = None
     P2PCommandAcks[RetrieveCoin()] = Coin()
     P2PCommandAcks[Key()] = Ack()
+    P2PCommandAcks[AuditKey()] = Ack()
     P2PCommandAcks[Event()] = Ack()
 
 

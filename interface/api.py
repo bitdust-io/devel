@@ -560,8 +560,6 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
     if not driver.is_on('service_keys_registry'):
         return succeed(ERROR('service_keys_registry() is not started'))
     glob_id = global_id.ParseGlobalID(full_key_id)
-    if glob_id['key_alias'] == 'master':
-        return succeed(ERROR('"master" key can not be shared'))
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return succeed(ERROR('icorrect key_id format'))
     if global_id.IsValidGlobalUser(untrusted_global_id_or_idurl):
