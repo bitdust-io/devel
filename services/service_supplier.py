@@ -87,16 +87,18 @@ class SupplierService(LocalService):
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        customer_public_key = None
-        customer_public_key_id = None
         bytes_for_customer = None
         try:
             bytes_for_customer = json_payload['needed_bytes']
-            customer_public_key = json_payload['customer_public_key']
-            customer_public_key_id = customer_public_key['key_id']
         except:
             lg.warn("wrong payload" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
+        try:
+            customer_public_key = json_payload['customer_public_key']
+            customer_public_key_id = customer_public_key['key_id']
+        except:
+            customer_public_key = None
+            customer_public_key_id = None
         if not bytes_for_customer or bytes_for_customer < 0:
             lg.warn("wrong payload : %s" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong storage value')
@@ -153,6 +155,8 @@ class SupplierService(LocalService):
                         lg.warn('failed to register customer public key')
             except:
                 lg.exc()
+        else:
+            lg.warn('customer public key was not provided in the request')
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")

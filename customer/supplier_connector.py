@@ -300,11 +300,14 @@ class SupplierConnector(automat.Automat):
             bytes_per_supplier = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
         service_info = {
             'needed_bytes': bytes_per_supplier,
-            'customer_public_key': my_keys.get_key_info(
+        }
+        try:
+            service_info['customer_public_key'] = my_keys.get_key_info(
                 key_id=customer_state.customer_key_id(),
                 include_private=False,
             )
-        }
+        except:
+            pass
         request = p2p_service.SendRequestService(self.idurl, 'service_supplier', json_payload=service_info, callbacks={
             commands.Ack(): self._supplier_acked,
             commands.Fail(): self._supplier_failed,

@@ -336,7 +336,7 @@ class PacketOut(automat.Automat):
         self.response_info = None
         self.timeout = None  # 300  # settings.SendTimeOut() * 3
         if self.response_timeout:
-            self.timers['response-timeout'] = (self.response_timeout, ['RESPONSE?']),
+            self.timers['response-timeout'] = (self.response_timeout, ['RESPONSE?'])
 
     def msg(self, msgid, arg=None):
         return self.MESSAGES.get(msgid, '')

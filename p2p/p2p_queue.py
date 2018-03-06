@@ -451,7 +451,7 @@ def push_message(producer_id, queue_id, data, creation_time=None):
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
     if len(queue(queue_id)) >= MAX_QUEUE_LENGTH:
-        raise Exception('queue is overloaded')
+        raise P2PQueueIsOverloaded('queue is overloaded')
     new_message = QueueMessage(producer_id, queue_id, data, created=creation_time)
     queue(queue_id)[new_message.message_id] = new_message
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
@@ -732,12 +732,15 @@ class ProducerInfo(object):
             lg.warn('producer is not connected to any queue')
             return False
         for queue_id in self.queues:
-            push_message(
-                producer_id=self.producer_id,
-                queue_id=queue_id,
-                data=evt.data,
-                creation_time=evt.created,
-            )
+            try:
+                push_message(
+                    producer_id=self.producer_id,
+                    queue_id=queue_id,
+                    data=evt.data,
+                    creation_time=evt.created,
+                )
+            except P2PQueueIsOverloaded as exc:
+                lg.warn('queue_id=%s producer_id=%s: %s' % (queue_id, self.producer_id, exc))
         return True
 
     def start_publisher(self, event_id):
@@ -755,6 +758,11 @@ class ProducerInfo(object):
         if not result:
             lg.warn('event subscriber for %s was not removed' % event_id)
         return result
+
+#------------------------------------------------------------------------------
+
+class P2PQueueIsOverloaded(Exception):
+    pass
 
 #------------------------------------------------------------------------------
 

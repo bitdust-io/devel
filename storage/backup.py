@@ -68,6 +68,7 @@ EVENTS:
     * :red:`block-encrypted`
     * :red:`block-raid-done`
     * :red:`block-raid-started`
+    * :red:`fail`
     * :red:`read-success`
     * :red:`start`
     * :red:`timer-001sec`
@@ -185,28 +186,23 @@ class backup(automat.Automat):
                 self.doFirstBlock(arg)
         #---READ---
         elif self.state == 'READ':
-            if event == 'read-success' and not self.isReadingNow(arg) and (self.isBlockReady(arg) or self.isEOF(arg)):
+            if event == 'read-success' and not self.isReadingNow(arg) and ( self.isBlockReady(arg) or self.isEOF(arg) ):
                 self.state = 'ENCRYPT'
                 self.doEncryptBlock(arg)
+            elif event == 'fail' or ( ( event == 'read-success' or event == 'timer-001sec' ) and self.isAborted(arg) ):
+                self.state = 'ABORTED'
+                self.doClose(arg)
+                self.doReport(arg)
+                self.doDestroyMe(arg)
+            elif ( event == 'read-success' or event == 'timer-001sec' ) and not self.isAborted(arg) and self.isPipeReady(arg) and not self.isEOF(arg) and not self.isReadingNow(arg) and not self.isBlockReady(arg):
+                self.doRead(arg)
             elif event == 'block-raid-done' and not self.isAborted(arg):
                 self.doPopBlock(arg)
                 self.doBlockReport(arg)
                 data_sender.A('new-data')
-            elif (event == 'read-success' or event == 'timer-001sec') and self.isAborted(arg):
-                self.state = 'ABORTED'
-                self.doClose(arg)
-                self.doReport(arg)
-                self.doDestroyMe(arg)
-            elif (event == 'read-success' or event == 'timer-001sec') and not self.isAborted(arg) and self.isPipeReady(arg) and not self.isEOF(arg) and not self.isReadingNow(arg) and not self.isBlockReady(arg):
-                self.doRead(arg)
         #---RAID---
         elif self.state == 'RAID':
-            if (event == 'timer-01sec' or event == 'block-raid-done' or event == 'block-raid-started') and self.isAborted(arg):
-                self.state = 'ABORTED'
-                self.doClose(arg)
-                self.doReport(arg)
-                self.doDestroyMe(arg)
-            elif event == 'block-raid-done' and not self.isMoreBlocks(arg) and not self.isAborted(arg):
+            if event == 'block-raid-done' and not self.isMoreBlocks(arg) and not self.isAborted(arg):
                 self.state = 'DONE'
                 self.doPopBlock(arg)
                 self.doBlockReport(arg)
@@ -222,6 +218,11 @@ class backup(automat.Automat):
                 self.doPopBlock(arg)
                 self.doBlockReport(arg)
                 data_sender.A('new-data')
+            elif event == 'fail' or ( ( event == 'timer-01sec' or event == 'block-raid-done' or event == 'block-raid-started' ) and self.isAborted(arg) ):
+                self.state = 'ABORTED'
+                self.doClose(arg)
+                self.doReport(arg)
+                self.doDestroyMe(arg)
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -230,13 +231,19 @@ class backup(automat.Automat):
             pass
         #---ENCRYPT---
         elif self.state == 'ENCRYPT':
-            if event == 'block-raid-done' and not self.isAborted(arg):
+            if event == 'block-encrypted':
+                self.state = 'RAID'
+                self.doBlockPushAndRaid(arg)
+            elif event == 'fail':
+                self.state = 'ABORTED'
+                self.doClose(arg)
+                self.doReport(arg)
+                self.doDestroyMe(arg)
+            elif event == 'block-raid-done' and not self.isAborted(arg):
                 self.doPopBlock(arg)
                 self.doBlockReport(arg)
                 data_sender.A('new-data')
-            elif event == 'block-encrypted':
-                self.state = 'RAID'
-                self.doBlockPushAndRaid(arg)
+        return None
 
     def isAborted(self, arg):
         """
@@ -308,8 +315,11 @@ class backup(automat.Automat):
                 self.stateEOF = True
             reactor.callLater(0, self.automat, 'read-success')
             #out(12, 'backup.readDone %d bytes' % len(data))
+
         self.stateReading = True
-        maybeDeferred(readChunk).addCallback(readDone)
+        d = maybeDeferred(readChunk)
+        d.addCallback(readDone)
+        d.addErrback(lambda err: self.automat('fail', err))
 
     def doEncryptBlock(self, arg):
         def _doBlock():
@@ -332,7 +342,7 @@ class backup(automat.Automat):
             return block
         d = maybeDeferred(_doBlock)
         d.addCallback(lambda block: self.automat('block-encrypted', block))
-        d.addErrback(lambda err: self.automat('block-encrypted', None))
+        d.addErrback(lambda err: self.automat('fail', err))
 
     def doBlockPushAndRaid(self, arg):
         """
@@ -340,9 +350,10 @@ class backup(automat.Automat):
         """
         newblock = arg
         if newblock is None:
-            self.automat('block-raid-done', (newblock.BlockNumber, None))
-            lg.out(_DebugLevel, 'backup.doBlockPushAndRaid ERROR, terminating=True')
-            lg.warn('failed to encrypt block %s, ABORTING' % newblock.BlockNumber)
+            self.abort()
+            self.automat('fail')
+            lg.out(_DebugLevel, 'backup.doBlockPushAndRaid ERROR newblock is empty, terminating=%s' % self.terminating)
+            lg.warn('failed to encrypt block, ABORTING')
             return
         if self.terminating:
             self.automat('block-raid-done', (newblock.BlockNumber, None))
@@ -442,11 +453,11 @@ class backup(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'backup.abort id %s, %d' % (str(self.backupID), id(self.ask4abort)))
         self.terminating = True
-        if len(self.workBlocks) > 0:
-            for blockNumber, filename in self.workBlocks.items():
-                raid_worker.cancel_task('make', filename)
-        else:
-            self._kill_pipe()
+        for blockNumber, filename in self.workBlocks.items():
+            lg.warn('aborting raid make worker for block %d in %s' % (blockNumber, filename))
+            raid_worker.cancel_task('make', filename)
+        lg.warn('killing backup pipe')
+        self._kill_pipe()
 
     def progress(self):
         """

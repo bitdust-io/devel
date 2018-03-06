@@ -214,9 +214,12 @@ class DHTUDPConnector(automat.Automat):
         if not self.working_deferred:
             self.automat('dht-write-failed')
         else:
-            self.working_deferred.addCallback(self._wrote_peer_incoming)
-            self.working_deferred.addErrback(
-                lambda x: self.automat('dht-write-failed'))
+            try:
+                self.working_deferred.addCallback(self._wrote_peer_incoming)
+                self.working_deferred.addErrback(
+                    lambda x: self.automat('dht-write-failed'))
+            except:
+                self.automat('dht-write-failed')
 
     def doStartNewSession(self, arg):
         """
