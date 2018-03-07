@@ -649,7 +649,10 @@ class PacketOut(automat.Automat):
         """
         if self.response_packet.Command in self.callbacks:
             for cb in self.callbacks[self.response_packet.Command]:
-                cb(self.response_packet, self.response_info)
+                try:
+                    cb(self.response_packet, self.response_info)
+                except:
+                    lg.exc()
 
     def doReportTimeOut(self, arg):
         """
