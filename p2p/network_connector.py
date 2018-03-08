@@ -146,7 +146,7 @@ class NetworkConnector(automat.Automat):
     }
 
     def init(self):
-        self.log_transitions = True
+        self.log_transitions = _Debug
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'
