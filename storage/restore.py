@@ -196,6 +196,7 @@ class restore(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'RUN'
+                self.doInit(arg)
         #---RUN---
         elif self.state == 'RUN':
             if ( event == 'timer-01sec' or event == 'instant' ) and self.isAborted(arg):
@@ -228,7 +229,7 @@ class restore(automat.Automat):
                 self.state = 'RAID'
                 self.doPausePacketsQueue(arg)
                 self.doReadRaid(arg)
-            elif ( event == 'timer-5sec' and not self.isAnyDataComming(arg) ) or ( event == 'request-failed' and not self.isStillCorrectable(arg) ):
+            elif ( ( event == 'timer-5sec' and not self.isAnyDataComming(arg) ) or event == 'request-failed' ) and not self.isStillCorrectable(arg):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(arg)
                 self.doRemoveTempFile(arg)
@@ -331,6 +332,11 @@ class restore(automat.Automat):
         from transport import packet_in
         related_packets = packet_in.search(sender_idurl=contactsdb.suppliers())
         return len(related_packets) > 0
+
+    def doInit(self, arg):
+        """
+        Action method.
+        """
 
     def doStartNewBlock(self, arg):
         self.LastAction = time.time()

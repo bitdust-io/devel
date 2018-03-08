@@ -286,7 +286,7 @@ class UDPStream(automat.Automat):
                                  _DebugLevel,
                                  _Debug and lg.is_debug(_DebugLevel + 8),
                                  )
-        self.log_transitions = False
+        self.log_transitions = _Debug
 
     def __del__(self):
         if _Debug:

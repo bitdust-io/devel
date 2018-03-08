@@ -747,6 +747,9 @@ def ScanMissingBlocks(backupID):
                 # so no need to scan for missing blocks
                 if supplierActiveArray[supplierNum] != 1:
                     continue
+                if supplierNum not in remoteData or supplierNum not in remoteParity:
+                    missingBlocks.add(blockNum)
+                    continue
                 if remoteData[supplierNum] != 1:    # -1 means missing
                     missingBlocks.add(blockNum)     # 0 - no info yet
                 if remoteParity[supplierNum] != 1:  # 1 - file exist on remote supplier
