@@ -172,7 +172,7 @@ class backup(automat.Automat):
         self.totalSize = -1
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
-        automat.Automat.__init__(self, 'backup_%s' % self.backupID, 'AT_STARTUP', _DebugLevel)
+        automat.Automat.__init__(self, 'backup_%s' % self.version, 'AT_STARTUP', _DebugLevel)
 
     #------------------------------------------------------------------------------
 
