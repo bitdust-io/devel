@@ -368,7 +368,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             lg.out(_DebugLevel, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
         address = self.getAddress()
         name = 'tcp_connection[%s:%d]' % (address[0], address[1])
-        automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel, _Debug)
+        automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel)
+        self.log_transitions = _Debug
         self.automat('connection-made')
 
     def connectionLost(self, reason):

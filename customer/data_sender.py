@@ -95,7 +95,7 @@ def A(event=None, arg=None):
     """
     global _DataSender
     if _DataSender is None:
-        _DataSender = DataSender('data_sender', 'READY', _DebugLevel, _Debug)
+        _DataSender = DataSender('data_sender', 'READY', _DebugLevel)
     if event is not None:
         _DataSender.automat(event, arg)
     return _DataSender
@@ -123,6 +123,9 @@ class DataSender(automat.Automat):
         'timer-1sec': (1.0, ['SENDING']),
     }
     statistic = {}
+
+    def init(self):
+        self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('DATASEND ' + newstate)
