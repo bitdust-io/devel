@@ -184,9 +184,9 @@ def outbox(outpacket):
 
 def Ack(newpacket, info):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Ack %s from [%s] at %s://%s : %s" % (
+        lg.out(_DebugLevel, "p2p_service.Ack %s from [%s] at %s://%s with %d bytes payload" % (
             newpacket.PacketID, nameurl.GetName(newpacket.CreatorID),
-            info.proto, info.host, newpacket.Payload))
+            info.proto, info.host, len(newpacket.Payload)))
 
 
 def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
@@ -198,7 +198,8 @@ def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
         response,
         packettoack.OwnerID)
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendAck %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
+        lg.out(_DebugLevel, "p2p_service.SendAck %s to %s  with %d bytes" % (
+            result.PacketID, result.RemoteID, len(response)))
     gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
 
@@ -212,8 +213,8 @@ def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
         response,
         remoteID)
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendAckNoRequest packetID=%s to %s    response: %s ..." % (
-            result.PacketID, result.RemoteID, str(response)[:15]))
+        lg.out(_DebugLevel, "p2p_service.SendAckNoRequest packetID=%s to %s  with %d bytes" % (
+            result.PacketID, result.RemoteID, len(response)))
     gateway.outbox(result, wide=wide, callbacks=callbacks)
 
 #------------------------------------------------------------------------------
@@ -236,8 +237,8 @@ def SendFail(request, response='', remote_idurl=None):
         remote_idurl,
     )
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendFail packetID=%s to %s    response: %s ..." % (
-            result.PacketID, result.RemoteID, str(response)[:40]))
+        lg.out(_DebugLevel, "p2p_service.SendFail packetID=%s to %s  with %d bytes" % (
+            result.PacketID, result.RemoteID, len(response)))
     gateway.outbox(result)
     return result
 
@@ -332,8 +333,12 @@ def RequestService(request, info):
 #         return SendFail(request, 'wrong payload')
 #     service_name = words[0]
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.RequestService from %s with %s" % (
-            request.OwnerID, request.Payload[:10]))
+        lg.out(_DebugLevel, 'p2p_service.RequestService %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
+#     if _Debug:
+#         lg.out(_DebugLevel, "p2p_service.RequestService from %s with %s" % (
+#             request.OwnerID, request.Payload[:10]))
 #     if not driver.is_exist(service_name):
 #         lg.warn("got wrong payload in %s" % service_name)
 #         return SendFail(request, 'service %s not exist' % service_name)
@@ -365,7 +370,11 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
 def CancelService(request, info):
     # TODO: move to services.driver
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.CancelService from %s" % request.OwnerID)
+        lg.out(_DebugLevel, 'p2p_service.CancelService %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
+#     if _Debug:
+#         lg.out(_DebugLevel, "p2p_service.CancelService from %s" % request.OwnerID)
     # TODO: move code into driver module, use callback module here instead of direct call
 #     words = request.Payload.split(' ')
 #     if len(words) < 1:
@@ -402,7 +411,7 @@ def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, c
 
 #------------------------------------------------------------------------------
 
-def ListFiles(newpacket, info):
+def ListFiles(request, info):
     """
     We will want to use this to see what needs to be resent, and expect normal
     case is very few missing.
@@ -411,8 +420,12 @@ def ListFiles(newpacket, info):
     They repply fith Files() if service_supplier is started on their side
     """
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.ListFiles from %s at %s://%s" % (
-            nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
+        lg.out(_DebugLevel, 'p2p_service.ListFiles %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
+#     if _Debug:
+#         lg.out(_DebugLevel, "p2p_service.ListFiles from %s at %s://%s" % (
+#             nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
 #     # TODO: move to service_supplier
 #     if not driver.is_on('service_supplier'):
 #         return SendFail(request, 'supplier service is off')
@@ -441,13 +454,17 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None):
 
 #------------------------------------------------------------------------------
 
-def Files(newpacket, info):
+def Files(request, info):
     """
     A directory list came in from some supplier.
     """
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Files from %s at %s://%s" % (
-            nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
+        lg.out(_DebugLevel, 'p2p_service.Files %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
+#     if _Debug:
+#         lg.out(_DebugLevel, "p2p_service.Files from %s at %s://%s" % (
+#             nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
     # TODO: use callback module here instead of direct call
     # TODO: move to service_customer
 #     from storage import backup_control
@@ -838,7 +855,11 @@ def SendDeleteListBackups(SupplierID, ListBackupIDs):
 
 def Correspondent(request):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Correspondent")
+        lg.out(_DebugLevel, 'p2p_service.Correspondent %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
+#     if _Debug:
+#         lg.out(_DebugLevel, "p2p_service.Correspondent")
     # TODO: need to connect users here
 
 #------------------------------------------------------------------------------
@@ -902,7 +923,11 @@ def CheckWholeBackup(BackupID):
 
 def Broadcast(request, info):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Broadcast   %r from %s" % (request, info.sender_idurl))
+        lg.out(_DebugLevel, 'p2p_service.Broadcast %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s  sender_idurl=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
+#     if _Debug:
+#         lg.out(_DebugLevel, "p2p_service.Broadcast   %r from %s" % (request, info.sender_idurl))
 
 
 def SendBroadcastMessage(outpacket):
@@ -960,8 +985,9 @@ def Key(request, info):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Key from %s with %d bytes in json" % (
-            info.sender_idurl, len(request.Payload), ))
+        lg.out(_DebugLevel, 'p2p_service.Key %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s  sender_idurl=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
 
 
 def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}):
@@ -986,11 +1012,15 @@ def AuditKey(request, info):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.AuditKey from %s with %d bytes in json" % (
-            info.sender_idurl, len(request.Payload), ))
+        lg.out(_DebugLevel, 'p2p_service.AuditKey %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s  sender_idurl=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
+#     if _Debug:
+#         lg.out(_DebugLevel, "p2p_service.AuditKey from %s with %d bytes in json" % (
+#             info.sender_idurl, len(request.Payload), ))
 
 
-def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, wide=False, callbacks={}):
+def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, timeout=10, wide=False, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAuditKey to %s with %d bytes in json payload data" % (
             remote_idurl, len(encrypted_payload)))
@@ -1004,7 +1034,7 @@ def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, wide=False, ca
         Payload=encrypted_payload,
         RemoteID=remote_idurl,
     )
-    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return outpacket
 
 #------------------------------------------------------------------------------

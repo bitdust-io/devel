@@ -83,5 +83,5 @@ class KeysRegistryService(LocalService):
         if newpacket.Command == commands.Key():
             return key_ring.on_key_received(newpacket, info, status, error_message)
         elif newpacket.Command == commands.AuditKey():
-            return key_ring.on
+            return key_ring.on_audit_key_received(newpacket, info, status, error_message)
         return False
