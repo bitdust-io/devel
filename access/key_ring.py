@@ -37,6 +37,7 @@ _DebugLevel = 4
 
 import sys
 import json
+import base64
 
 from twisted.internet.defer import Deferred
 
@@ -202,7 +203,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
     json_payload = {
         'key_id': key_id,
         'audit': {
-            'public_sample': public_test_sample,
+            'public_sample': base64.b64encode(public_test_sample),
             'private_sample': '',
         }
     }
@@ -272,7 +273,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         'key_id': key_id,
         'audit': {
             'public_sample': '',
-            'private_sample': private_test_encrypted_sample,
+            'private_sample': base64.b64encode(private_test_encrypted_sample),
         }
     }
     raw_payload = json.dumps(json_payload)
@@ -330,8 +331,8 @@ def on_audit_key_received(newpacket, info, status, error_message):
         json_payload = json.loads(raw_payload)
         key_id = json_payload['key_id']
         json_payload['audit']
-        public_sample = json_payload['audit']['public_sample']
-        private_sample = json_payload['audit']['private_sample']
+        public_sample = base64.b64decode(json_payload['audit']['public_sample'])
+        private_sample = base64.b64decode(json_payload['audit']['private_sample'])
     except Exception as exc:
         lg.exc()
         p2p_service.SendFail(newpacket, str(exc))
