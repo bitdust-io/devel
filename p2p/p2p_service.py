@@ -1020,7 +1020,7 @@ def AuditKey(request, info):
 #             info.sender_idurl, len(request.Payload), ))
 
 
-def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, wide=False, callbacks={}):
+def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, timeout=10, wide=False, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAuditKey to %s with %d bytes in json payload data" % (
             remote_idurl, len(encrypted_payload)))
@@ -1034,7 +1034,7 @@ def SendAuditKey(remote_idurl, encrypted_payload, packet_id=None, wide=False, ca
         Payload=encrypted_payload,
         RemoteID=remote_idurl,
     )
-    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return outpacket
 
 #------------------------------------------------------------------------------

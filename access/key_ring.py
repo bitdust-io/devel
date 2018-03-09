@@ -164,7 +164,8 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
 
 def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
     orig_sample = my_keys.encrypt(key_id, test_sample)
-    if response.Payload == orig_sample:
+    response_sample = base64.b64decode(response.Payload)
+    if response_sample == orig_sample:
         if _Debug:
             lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
         result.callback(True)
@@ -231,8 +232,9 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
 #------------------------------------------------------------------------------
 
 def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
-    decrypted_sample = my_keys.decrypt(key_id, response.Payload)
-    if decrypted_sample == test_sample:
+    response_sample = base64.b64decode(response.Payload)
+    decrypted_response_sample = my_keys.decrypt(key_id, response_sample)
+    if decrypted_response_sample == test_sample:
         if _Debug:
             lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
         result.callback(True)
@@ -344,14 +346,14 @@ def on_audit_key_received(newpacket, info, status, error_message):
         p2p_service.SendFail(newpacket, 'key not registered')
         return False
     if public_sample:
-        response_payload = my_keys.encrypt(key_id, public_sample)
+        response_payload = base64.b64encode(my_keys.encrypt(key_id, public_sample))
         p2p_service.SendAck(newpacket, response_payload)
         return True
     if private_sample:
         if not my_keys.is_key_private(key_id):
             p2p_service.SendFail(newpacket, 'private key not registered')
             return False
-        response_payload = my_keys.decrypt(key_id, private_sample)
+        response_payload = base64.b64encode(my_keys.decrypt(key_id, private_sample))
         p2p_service.SendAck(newpacket, response_payload)
         return True
     p2p_service.SendFail(newpacket, 'wrong audit request')
