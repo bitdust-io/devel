@@ -413,6 +413,13 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/transfer/v1$')
+    @GET('^/transfer/list/v1$')
+    def transfers_list(self, request):
+        return api.transfers_list()
+
+    #------------------------------------------------------------------------------
+
     @ALL('^/*')
     def not_found(self, request):
         return api.ERROR('method %s:%s not found' % (request.method, request.path))
