@@ -1486,7 +1486,7 @@ def getRestoreDir():
     """
     Alias for restore location, see ``DefaultRestoreDir()``.
     """
-    return config.conf().getData('paths/restore').strip()
+    return config.conf().getString('paths/restore').strip()
 
 
 def getReceiptsDir():

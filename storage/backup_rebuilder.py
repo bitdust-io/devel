@@ -115,7 +115,7 @@ def A(event=None, arg=None):
     global _BackupRebuilder
     if _BackupRebuilder is None:
         _BackupRebuilder = BackupRebuilder(
-            'backup_rebuilder', 'STOPPED', 6, True)
+            'backup_rebuilder', 'STOPPED', _DebugLevel)
     if event is not None:
         _BackupRebuilder.automat(event, arg)
     return _BackupRebuilder
@@ -153,6 +153,7 @@ class BackupRebuilder(automat.Automat):
         self.backupsWasRebuilt = []
         self.missingPackets = 0
         self.missingSuppliers = set()
+        self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, arg):
         """

@@ -226,7 +226,7 @@ class PacketIn(automat.Automat):
         self.status = None
         self.error_message = None
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel)
         increment_packets_counter()
 
     def is_timed_out(self):
@@ -241,6 +241,7 @@ class PacketIn(automat.Automat):
         state machine.
         """
         self.log_events = False
+        self.log_transitions = _Debug
 
     def A(self, event, arg):
         #---AT_STARTUP---

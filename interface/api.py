@@ -702,6 +702,8 @@ def files_list(remote_path=None):
     for i in lookup:
         # if not i['item']['k']:
         #     i['item']['k'] = my_id.getGlobalID(key_alias='master')
+        if i['path_id'] == 'index':
+            continue
         if glob_path['key_alias'] and i['item']['k']:
             if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):
                 continue
@@ -1920,6 +1922,8 @@ def transfers_list():
                     'customer': i.customerID,
                     'remote_path': i.remotePath,
                     'filename': i.fileName,
+                    'created': i.created,
+                    'sent': i.sendTime,
                 })
         for packet_id in q.ListRequestItems():
             i = q.GetRequestItem(packet_id)
@@ -1931,6 +1935,8 @@ def transfers_list():
                     'customer': i.customerID,
                     'remote_path': i.remotePath,
                     'filename': i.fileName,
+                    'created': i.created,
+                    'requested': i.requestTime,
                 })
         result.append(r)
     return RESULT(result)

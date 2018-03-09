@@ -307,8 +307,11 @@ class PacketOut(automat.Automat):
         if self.route:
             self.description = self.route['description']
             self.remote_idurl = self.route['remoteid']
+        if not self.remote_idurl:
+            self.remote_idurl = correct_packet_destination(self.outpacket)
+        self.remote_name = nameurl.GetName(self.remote_idurl)
         self.label = 'out_%d_%s' % (
-            get_packets_counter(), self.description)
+            get_packets_counter(), self.remote_name)
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
         for command, cb in callbacks.items():
@@ -324,8 +327,6 @@ class PacketOut(automat.Automat):
         self.time = time.time()
         self.description = self.outpacket.Command + '(' + self.outpacket.PacketID + ')'
         self.payloadsize = len(self.outpacket.Payload)
-        if not self.remote_idurl:
-            self.remote_idurl = correct_packet_destination(self.outpacket)
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.packetdata = None
         self.filename = None
