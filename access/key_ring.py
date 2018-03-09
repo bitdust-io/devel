@@ -233,8 +233,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
 
 def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
     response_sample = base64.b64decode(response.Payload)
-    decrypted_response_sample = my_keys.decrypt(key_id, response_sample)
-    if decrypted_response_sample == test_sample:
+    if response_sample == test_sample:
         if _Debug:
             lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
         result.callback(True)
