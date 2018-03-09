@@ -314,6 +314,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_streams_list(self, wanted_protos=None):
         return api.streams_list(wanted_protos)
 
+    def jsonrpc_transfers_list(self):
+        return api.transfers_list()
+
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
 

@@ -363,6 +363,18 @@ class SupplierQueue:
         self.requestTask = None
         self.requestTaskDelay = 0.1
 
+    def ListSendItems(self):
+        return self.fileSendQueue
+
+    def GetSendItem(self, packetID):
+        return self.fileSendDict.get(packetID)
+
+    def ListRequestItems(self):
+        return self.fileRequestQueue
+
+    def GetRequestItem(self, packetID):
+        return self.fileRequestDict.get(packetID)
+
     def RemoveSupplierWork(self):
         """
         """
@@ -833,6 +845,12 @@ class IOThrottle:
         self.creatorID = my_id.getLocalID()
         self.supplierQueues = {}
         self.paintFunc = None
+
+    def GetSupplierQueue(self, supplierIDURL):
+        return self.supplierQueues.get(supplierIDURL)
+
+    def ListSupplierQueues(self):
+        return self.supplierQueues.keys()
 
     def SetSupplierQueueCallbackFunc(self, func):
         self.paintFunc = func

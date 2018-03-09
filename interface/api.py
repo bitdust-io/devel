@@ -1896,6 +1896,46 @@ def packets_list():
     return RESULT(result)
 
 
+def transfers_list():
+    """
+    """
+    if not driver.is_on('service_data_motion'):
+        return ERROR('service_data_motion() is not started')
+    from customer import io_throttle
+    result = []
+    for supplier_idurl in io_throttle.throttle().ListSupplierQueues():
+        r = {
+            'idurl': supplier_idurl,
+            'outgoing': [],
+            'incoming': [],
+        }
+        q = io_throttle.throttle().GetSupplierQueue(supplier_idurl)
+        for packet_id in q.ListSendItems():
+            i = q.GetSendItem(packet_id)
+            if i:
+                r['outgoing'].append({
+                    'packet_id': i.packetID,
+                    'owner_id': i.ownerID,
+                    'remote_id': i.remoteID,
+                    'customer': i.customerID,
+                    'remote_path': i.remotePath,
+                    'filename': i.fileName,
+                })
+        for packet_id in q.ListRequestItems():
+            i = q.GetRequestItem(packet_id)
+            if i:
+                r['incoming'].append({
+                    'packet_id': i.packetID,
+                    'owner_id': i.ownerID,
+                    'remote_id': i.remoteID,
+                    'customer': i.customerID,
+                    'remote_path': i.remotePath,
+                    'filename': i.fileName,
+                })
+        result.append(r)
+    return RESULT(result)
+
+
 def connections_list(wanted_protos=None):
     """
     Returns list of opened/active network connections. Argument `wanted_protos`
