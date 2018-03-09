@@ -1462,7 +1462,7 @@ def getCustomersFilesDir():
     """
     Alias to get a user donated location from settings.
     """
-    return config.conf().getData('paths/customers').strip()
+    return config.conf().getString('paths/customers', default=DefaultCustomersDir()).strip()
 
 
 def getCustomerFilesDir(idurl):
@@ -1479,21 +1479,21 @@ def getLocalBackupsDir():
     Alias to get local backups folder from settings, see
     ``DefaultBackupsDBDir()``.
     """
-    return config.conf().getData('paths/backups').strip()
+    return config.conf().getString('paths/backups', default=DefaultBackupsDBDir()).strip()
 
 
 def getRestoreDir():
     """
     Alias for restore location, see ``DefaultRestoreDir()``.
     """
-    return config.conf().getString('paths/restore').strip()
+    return config.conf().getString('paths/restore', default=DefaultRestoreDir()).strip()
 
 
 def getReceiptsDir():
     """
     Alias to get from user config a folder location where receipts is stored.
     """
-    return config.conf().getData('paths/receipts').strip()
+    return config.conf().getString('paths/receipts', default=DefaultReceiptsDir()).strip()
 
 
 def getTempDir():
