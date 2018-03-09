@@ -355,10 +355,10 @@ class BitDustRESTHTTPServer(APIResource):
 
     @POST('^/file/download/start/v1$')
     def file_download_start_v1(self, request):
-        data = _request_data(request, mandatory_keys=['remote_path', 'destination_folder', ])
+        data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_download_start(
             remote_path=data['remote_path'],
-            destination_path=data['destination_folder'],
+            destination_path=data.get('destination_folder', None),
             wait_result=data.get('wait_result', True), )
 
     @POST('^/file/download/stop/v1$')
