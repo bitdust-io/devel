@@ -756,7 +756,7 @@ def DeleteFile(request):
 
 def SendDeleteFile(SupplierID, pathID):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteFile SupplierID=%s PathID=%s " % (SupplierID, pathID))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteFile SupplierID=%s PathID=%s" % (SupplierID, pathID))
     MyID = my_id.getLocalID()
     PacketID = pathID
     RemoteID = SupplierID
@@ -767,8 +767,7 @@ def SendDeleteFile(SupplierID, pathID):
 
 def SendDeleteListPaths(SupplierID, ListPathIDs):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs number: %d" % (
-            SupplierID, len(ListPathIDs)))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs: %s" % (SupplierID, ListPathIDs))
     MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
@@ -830,7 +829,7 @@ def DeleteBackup(request):
 
 def SendDeleteBackup(SupplierID, BackupID):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteBackup SupplierID=%s  BackupID=%s " % (SupplierID, BackupID))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteBackup SupplierID=%s  BackupID=%s" % (SupplierID, BackupID))
     MyID = my_id.getLocalID()
     PacketID = packetid.RemotePath(BackupID)
     RemoteID = SupplierID
@@ -841,7 +840,7 @@ def SendDeleteBackup(SupplierID, BackupID):
 
 def SendDeleteListBackups(SupplierID, ListBackupIDs):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteListBackups SupplierID=%s BackupIDs number: %d" % (SupplierID, len(ListBackupIDs)))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteListBackups SupplierID=%s BackupIDs: %s" % (SupplierID, ListBackupIDs))
     MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID

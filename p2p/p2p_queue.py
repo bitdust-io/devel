@@ -547,7 +547,10 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.on_notification_succeed : message %s delivered to consumer %s from queue %s' % (
             message_id, consumer_id, queue_id))
-    finish_notification(consumer_id, queue_id, message_id, success=True)
+    try:
+        finish_notification(consumer_id, queue_id, message_id, success=True)
+    except:
+        lg.exc()
     reactor.callLater(0, do_cleanup)
     return result
 
@@ -556,7 +559,10 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.on_notification_failed : FAILED message %s delivery to consumer %s from queue %s : %s' % (
             message_id, consumer_id, queue_id, err))
-    finish_notification(consumer_id, queue_id, message_id, success=False)
+    try:
+        finish_notification(consumer_id, queue_id, message_id, success=False)
+    except:
+        lg.exc()
     reactor.callLater(0, do_cleanup)
     return err
 

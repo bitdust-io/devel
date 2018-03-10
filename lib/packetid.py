@@ -99,7 +99,7 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity, normalize_
     return backupID + '/' + str(blockNumber) + '-' + str(supplierNumber) + '-' + dataORparity
 
 
-def MakeBackupID(customer=None, path_id=None, version=None, normalize_key_alias=True):
+def MakeBackupID(customer=None, path_id=None, version=None, normalize_key_alias=True, key_alias=None):
     """
     Run:
 
@@ -111,10 +111,10 @@ def MakeBackupID(customer=None, path_id=None, version=None, normalize_key_alias=
     """
     if normalize_key_alias and not customer:
         from userid import my_id
-        customer = my_id.getGlobalID(key_alias='master')
+        customer = my_id.getGlobalID(key_alias=key_alias or 'master')
     if customer:
         if '$' not in customer and normalize_key_alias:
-            customer = 'master$' + customer
+            customer = '{}${}'.format(key_alias or 'master', customer)
         if version:
             return '{}:{}/{}'.format(customer, path_id, version)
         return '{}:{}'.format(customer, path_id)

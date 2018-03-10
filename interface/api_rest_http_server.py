@@ -259,7 +259,7 @@ class BitDustRESTHTTPServer(APIResource):
         return api.key_create(
             key_alias=data['alias'],
             key_size=int(data.get('size', 4096)),
-            include_private=bool(data.get('include_private')), )
+            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @DELETE('^/key/erase/v1$')
     def key_erase_v1(self, request):
@@ -301,7 +301,7 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_create(
             remote_path=data['remote_path'],
-            as_folder=data.get('as_folder', False), )
+            as_folder=bool(data.get('as_folder', '0') in ['1', 'true', ]), )
 
     @DELETE('^/file/delete/v1$')
     def file_delete_v1(self, request):
@@ -320,7 +320,7 @@ class BitDustRESTHTTPServer(APIResource):
         return api.file_upload_start(
             local_path=data['local_path'],
             remote_path=data['remote_path'],
-            wait_result=data.get('wait_result', True), )
+            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]), )
 
     @POST('^/file/upload/stop/v1$')
     def file_upload_stop_v1(self, request):
@@ -333,7 +333,7 @@ class BitDustRESTHTTPServer(APIResource):
         return api.file_download_start(
             remote_path=data['remote_path'],
             destination_path=data.get('destination_folder', None),
-            wait_result=data.get('wait_result', True), )
+            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]), )
 
     @POST('^/file/download/stop/v1$')
     def file_download_stop_v1(self, request):

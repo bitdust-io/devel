@@ -93,7 +93,7 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
         return
     _do_transfer_key(key_id, idurl, include_private=include_private).addCallbacks(
         callback=result.callback,
-        errback=result.errback
+        errback=result.errback,
     )
 
 

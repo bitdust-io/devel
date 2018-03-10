@@ -1376,6 +1376,8 @@ def GetBackupStatus(backupID, item_info, item_name, parent_path_existed=None):
 
 
 def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
+    if not customer_id:
+        customer_id = item_info.key_id or my_id.getGlobalID(key_alias='master')
     item_size = 0
     item_time = 0
     # item_status = ''
@@ -1647,7 +1649,7 @@ def ListChildsByPath(path, iter=None, iterID=None):
 
     def visitor(item_type, item_name, item_path_id, item_info, num_childs):
         item_id = (pathID + '/' + item_path_id).strip('/')
-        (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist, customer_id)
+        (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)  # , customer_id)
         result.append({
             'type': item_type,
             'name': item_info.name(),
@@ -1696,12 +1698,12 @@ def ListByPathAdvanced(path, iter=None, iterID=None):
     def visitor(item_type, item_name, item_path_id, item_info, num_childs):
         if item_type == DIR:
             item_id = (pathID + '/' + item_path_id).strip('/')
-            (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist, customer_id)
+            (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)  # , customer_id)
             result.append(('dir', item_info.name(), item_id,
                            item_size, item_time, path, num_childs, item_info, versions))
         elif item_type == FILE:
             item_id = (pathID + '/' + item_path_id).strip('/')
-            (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist, customer_id)
+            (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)  # , customer_id)
             result.append(('file', item_info.name(), item_id,
                            item_size, item_time, path, False, item_info, versions))
 
@@ -1724,7 +1726,7 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
         if (len(info.versions) == 0):
             return
         dirpath = os.path.dirname(path)
-        (item_size, item_time, versions) = ExtractVersions(path_id, info, dirpath, customer_id)
+        (item_size, item_time, versions) = ExtractVersions(path_id, info, dirpath)  # , customer_id)
         if info.type == DIR:
             result.append(('dir', info.name(), path_id,
                            item_size, item_time, dirpath, num_childs, info.exist(), versions,))

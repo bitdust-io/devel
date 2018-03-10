@@ -686,7 +686,6 @@ def files_list(remote_path=None):
     from lib import packetid
     from system import bpio
     from userid import global_id
-    from userid import my_id
     from crypt import my_keys
     glob_path = global_id.ParseGlobalID(remote_path)
     norm_path = global_id.NormalizeGlobalID(glob_path.copy())
@@ -752,7 +751,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(norm_path['idurl']))
     if not item:
         return ERROR('item "%s" is not found in catalog' % pathID)
-    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, customer_id=norm_path['customer'])
+    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)  # , customer_id=norm_path['customer'])
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
     key_alias = 'master'

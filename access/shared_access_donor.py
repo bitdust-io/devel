@@ -30,9 +30,12 @@ BitDust shared_access_donor() Automat
 EVENTS:
     * :red:`ack`
     * :red:`all-suppliers-acked`
+    * :red:`audit-ok`
     * :red:`blockchain-ok`
     * :red:`fail`
     * :red:`init`
+    * :red:`list-files-ok`
+    * :red:`priv-key-ok`
     * :red:`timer-5sec`
     * :red:`user-identity-cached`
 """
@@ -89,6 +92,7 @@ class SharedAccessDonor(automat.Automat):
         self.remote_idurl = None
         self.key_id = None
         self.suppliers_responses = {}
+        self.suppliers_acks = 0
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -118,7 +122,7 @@ class SharedAccessDonor(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'ack':
+            elif event == 'priv-key-ok':
                 self.state = 'LIST_FILES'
                 self.doSendMyListFiles(arg)
         #---PUB_KEY---
@@ -168,30 +172,26 @@ class SharedAccessDonor(automat.Automat):
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'ack':
+            elif event == 'list-files-ok':
                 self.state = 'CLOSED'
                 self.doReportDone(arg)
                 self.doDestroyMe(arg)
         #---AUDIT---
         elif self.state == 'AUDIT':
-            if ( event == 'ack' and not self.isResponseValid(arg) ) or event == 'fail' or event == 'timer-5sec':
+            if event == 'fail' or event == 'timer-5sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'ack' and self.isResponseValid(arg):
+            elif event == 'audit-ok':
                 self.state = 'PUB_KEY'
                 self.doSendPubKeyToSuppliers(arg)
         return None
-
-    def isResponseValid(self, arg):
-        """
-        Condition method.
-        """
 
     def isSomeSuppliersAcked(self, arg):
         """
         Condition method.
         """
+        return self.suppliers_acks > 0
 
     def doInit(self, arg):
         """
@@ -233,9 +233,7 @@ class SharedAccessDonor(automat.Automat):
         master_key_id = my_keys.make_key_id(alias='master', creator_idurl=self.remote_idurl)
         d = key_ring.audit_private_key(master_key_id, self.remote_idurl)
         d.addCallback(lambda audit_result: (
-            self.automat('key-ok')
-            if audit_result else
-            self.automat('fail', audit_result),
+            self.automat('audit-ok') if audit_result else self.automat('fail', audit_result),
         ))
         d.addErrback(lambda err: self.automat('fail', err))
 
@@ -246,6 +244,7 @@ class SharedAccessDonor(automat.Automat):
         if not my_keys.is_key_registered(self.key_id):
             self.automat('fail', Exception('key not found'))
             return
+        self.suppliers_acks = 0
         for supplier_idurl in contactsdb.suppliers():
             d = key_ring.share_key(self.key_id, supplier_idurl, include_private=False)
             d.addCallback(self._on_supplier_pub_key_shared, supplier_idurl)
@@ -289,6 +288,7 @@ class SharedAccessDonor(automat.Automat):
         self.remote_idurl = None
         self.key_id = None
         self.suppliers_responses.clear()
+        self.suppliers_acks = 0
         if self.caching_deferred:
             self.caching_deferred.cancel()
             self.caching_deferred = None
@@ -314,6 +314,7 @@ class SharedAccessDonor(automat.Automat):
 
     def _on_supplier_pub_key_shared(self, response, supplier_idurl):
         self.suppliers_responses.pop(supplier_idurl)
+        self.suppliers_acks += 1
         self.automat('ack', response)
         return None
 
@@ -323,8 +324,8 @@ class SharedAccessDonor(automat.Automat):
         return None
 
     def _on_user_priv_key_shared(self, response):
-        lg.info('your private key %s was shared to %s' % (self.key_id, self.remote_idurl, ))
-        self.automat('ack', response)
+        lg.info('your private key %s was sent to %s' % (self.key_id, self.remote_idurl, ))
+        self.automat('priv-key-ok', response)
         return None
 
     def _on_user_priv_key_failed(self, err):
