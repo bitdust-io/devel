@@ -247,12 +247,6 @@ class BitDustRESTHTTPServer(APIResource):
             sort=bool(_request_arg(request, 'sort', '0') != '0'),
             include_private=bool(_request_arg(request, 'include_private', '0') != '0'), )
 
-    @GET('^/key/get/(?P<key_id>[^/]+)/v1$')
-    def key_get_arg_v1(self, request, key_id):
-        return api.key_get(
-            key_id=key_id,
-            include_private=bool(_request_arg(request, 'include_private', '0') != '0'), )
-
     @GET('^/key/get/v1$')
     def key_get_v1(self, request):
         return api.key_get(
@@ -267,22 +261,10 @@ class BitDustRESTHTTPServer(APIResource):
             key_size=int(data.get('size', 4096)),
             include_private=bool(data.get('include_private')), )
 
-    @DELETE('^/key/erase/(?P<key_id>[^/]+)/v1$')
-    def key_erase_arg_v1(self, request, key_id):
-        return api.key_erase(key_id)
-
     @DELETE('^/key/erase/v1$')
     def key_erase_v1(self, request):
         data = _request_data(request, mandatory_keys=['key_id', ])
         return api.key_erase(key_id=data['key_id'])
-
-    @PUT('^/key/share/(?P<key_id>[^/]+)/v1$')
-    def key_share_arg_v1(self, request, key_id):
-        data = _request_data(request, mandatory_keys=['trusted_user', ])
-        return api.key_share(
-            key_id=key_id,
-            trusted_global_id_or_idurl=data['trusted_user'],
-            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @PUT('^/key/share/v1$')
     def key_share_v1(self, request):
@@ -291,14 +273,6 @@ class BitDustRESTHTTPServer(APIResource):
             key_id=data['key_id'],
             trusted_global_id_or_idurl=data['trusted_user'],
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
-
-    @POST('^/key/audit/(?P<key_id>[^/]+)/v1$')
-    def key_audit_arg_v1(self, request, key_id):
-        data = _request_data(request, mandatory_keys=['untrusted_user', ])
-        return api.key_audit(
-            key_id=key_id,
-            untrusted_global_id_or_idurl=data['untrusted_user'],
-            is_private=bool(data.get('is_private', '0') in ['1', 'true', ]), )
 
     @POST('^/key/audit/v1$')
     def key_audit_v1(self, request):

@@ -163,8 +163,22 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
 #------------------------------------------------------------------------------
 
 def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
-    orig_sample = my_keys.encrypt(key_id, test_sample)
-    response_sample = base64.b64decode(response.Payload)
+    try:
+        response_sample = base64.b64decode(response.Payload)
+    except:
+        lg.exc()
+        result.callback(False)
+        return False
+    key_alias, creator_idurl = my_keys.split_key_id(key_id)
+    if creator_idurl == untrusted_idurl and key_alias == 'master':
+        recipient_id_obj = identitycache.FromCache(creator_idurl)
+        if not recipient_id_obj:
+            lg.warn('not found "%s" in identity cache' % creator_idurl)
+            result.errback(Exception('not found "%s" in identity cache' % creator_idurl))
+            return result
+        orig_sample = recipient_id_obj.encrypt(test_sample)
+    else:
+        orig_sample = my_keys.encrypt(key_id, test_sample)
     if response_sample == orig_sample:
         if _Debug:
             lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
@@ -196,10 +210,13 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
-    if not my_keys.is_key_registered(key_id):
-        lg.warn('unknown key: "%s"' % key_id)
-        result.errback(Exception('unknown key: "%s"' % key_id))
-        return result
+    if untrusted_idurl == creator_idurl and key_alias == 'master':
+        lg.warn('audit master key (public part) of remote user')
+    else:
+        if not my_keys.is_key_registered(key_id):
+            lg.warn('unknown key: "%s"' % key_id)
+            result.errback(Exception('unknown key: "%s"' % key_id))
+            return result
     public_test_sample = key.NewSessionKey()
     json_payload = {
         'key_id': key_id,
@@ -232,7 +249,12 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
 #------------------------------------------------------------------------------
 
 def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
-    response_sample = base64.b64decode(response.Payload)
+    try:
+        response_sample = base64.b64decode(response.Payload)
+    except:
+        lg.exc()
+        result.callback(False)
+        return False
     if response_sample == test_sample:
         if _Debug:
             lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
@@ -264,10 +286,13 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
-    if not my_keys.is_key_registered(key_id):
-        lg.warn('unknown key: "%s"' % key_id)
-        result.errback(Exception('unknown key: "%s"' % key_id))
-        return result
+    if untrusted_idurl == creator_idurl and key_alias == 'master':
+        lg.warn('audit master key (private part) of remote user')
+    else:
+        if not my_keys.is_key_registered(key_id):
+            lg.warn('unknown key: "%s"' % key_id)
+            result.errback(Exception('unknown key: "%s"' % key_id))
+            return result
     private_test_sample = key.NewSessionKey()
     private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
     json_payload = {
@@ -341,7 +366,7 @@ def on_audit_key_received(newpacket, info, status, error_message):
     if not my_keys.is_valid_key_id(key_id):
         p2p_service.SendFail(newpacket, 'invalid key id')
         return False
-    if not my_keys.is_key_registered(key_id, include_master=False):
+    if not my_keys.is_key_registered(key_id, include_master=True):
         p2p_service.SendFail(newpacket, 'key not registered')
         return False
     if public_sample:

@@ -360,11 +360,11 @@ def encrypt(key_id, inp):
 
     Return encrypted string.
     """
-    if key_id == 'master':
+    if key_id == 'master':  # master
         return key.EncryptLocalPublicKey(inp)
-    if key_id == my_id.getGlobalID(key_alias='master'):
+    if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
         return key.EncryptLocalPublicKey(inp)
-    if key_id == my_id.getGlobalID():
+    if key_id == my_id.getGlobalID():  # user@host.org
         return key.EncryptLocalPublicKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
@@ -386,11 +386,11 @@ def decrypt(key_id, inp):
 
     Return decrypted string or raise exception.
     """
-    if key_id == 'master':
+    if key_id == 'master':  # master
         return key.DecryptLocalPrivateKey(inp)
-    if key_id == 'master$%s' % my_id.getGlobalID():
+    if key_id == 'master$%s' % my_id.getGlobalID():  # master$user@host.org
         return key.DecryptLocalPrivateKey(inp)
-    if key_id == my_id.getGlobalID():
+    if key_id == my_id.getGlobalID():  # user@host.org
         return key.DecryptLocalPrivateKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
