@@ -659,9 +659,9 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-#         if commands.Fail() in self.callbacks:
-#             for cb in self.callbacks[commands.Fail()]:
-#                 cb(None, None)  # no response packet, no info : that means timeout responding
+        if None in self.callbacks:
+            for cb in self.callbacks[None]:
+                cb(self)
 
     def doReportDoneWithAck(self, arg):
         """

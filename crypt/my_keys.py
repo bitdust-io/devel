@@ -114,9 +114,11 @@ def is_key_registered(key_id, include_master=True):
     return key_id in known_keys()
 
 
-def is_key_private(key_id):
+def is_key_private(key_id, include_master=True):
     if not is_key_registered(key_id):
         return False
+    if include_master and key_id == global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias='master'):
+        return True
     return not key_obj(key_id).isPublic()
 
 
@@ -361,15 +363,23 @@ def encrypt(key_id, inp):
     Return encrypted string.
     """
     if key_id == 'master':  # master
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     if key_id == my_id.getGlobalID():  # user@host.org
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
         return key.EncryptLocalPublicKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
         return None
+    if _Debug:
+        lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
     # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
     # See bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
     # So we add a "1" in front now and in decrypt() we will remove it
@@ -387,15 +397,23 @@ def decrypt(key_id, inp):
     Return decrypted string or raise exception.
     """
     if key_id == 'master':  # master
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
     if key_id == 'master$%s' % my_id.getGlobalID():  # master$user@host.org
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
     if key_id == my_id.getGlobalID():  # user@host.org
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
     key_object = known_keys().get(key_id)
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
         return None
+    if _Debug:
+        lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
     atuple = (inp,)
     padresult = key_object.keyObject.decrypt(atuple)
     # remove the "1" added in encrypt() method

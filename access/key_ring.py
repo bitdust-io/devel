@@ -238,10 +238,12 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         remote_idurl=recipient_id_obj.getIDURL(),
         encrypted_payload=encrypted_payload,
         packet_id=key_id,
+        timeout=timeout,
         callbacks={
             commands.Ack(): lambda response, info:
                 _on_audit_public_key_response(response, info, key_id, untrusted_idurl, public_test_sample, result),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            None: lambda pkt_out: result.errback(Exception('timeout')),  # timeout
         },
     )
     return result
@@ -286,15 +288,16 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
+    private_test_sample = key.NewSessionKey()
     if untrusted_idurl == creator_idurl and key_alias == 'master':
         lg.warn('audit master key (private part) of remote user')
+        private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
             result.errback(Exception('unknown key: "%s"' % key_id))
             return result
-    private_test_sample = key.NewSessionKey()
-    private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
+        private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
     json_payload = {
         'key_id': key_id,
         'audit': {
@@ -315,10 +318,12 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         remote_idurl=recipient_id_obj.getIDURL(),
         encrypted_payload=encrypted_payload,
         packet_id=key_id,
+        timeout=timeout,
         callbacks={
             commands.Ack(): lambda response, info:
                 _on_audit_private_key_response(response, info, key_id, untrusted_idurl, private_test_sample, result),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            None: lambda pkt_out: result.errback(Exception('timeout')),  # timeout
         },
     )
     return result
