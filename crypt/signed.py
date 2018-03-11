@@ -266,7 +266,13 @@ class Packet:
 
         This is useful when need to save the packet on disk.
         """
+        if hasattr(self, 'Packets'):
+            currentPackets = getattr(self, 'Packets')
+            delattr(self, 'Packets')
+        else:
+            currentPackets = []
         src = misc.ObjectToString(self)
+        setattr(self, 'Packets', currentPackets)
         # lg.out(10, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
         return src
 
@@ -310,6 +316,8 @@ def Unserialize(data):
         return None
     if not hasattr(newobject, 'KeyID'):
         setattr(newobject, 'KeyID', None)
+    if not hasattr(newobject, 'Packets'):
+        setattr(newobject, 'Packets', [])
     return newobject
 
 
@@ -337,6 +345,7 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     return threads.deferToThread(MakePacket, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
     bpio.init()
