@@ -433,7 +433,14 @@ def ListFiles(request, info):
 #     from supplier import list_files
 #     return list_files.send(request.OwnerID, request.PacketID, request.Payload)
 
-def SendListFiles(supplierNumORidurl, customer_idurl=None):
+def SendListFiles(supplierNumORidurl, customer_idurl=None, payload=None, wide=False, callbacks={}):
+    """
+    You can send a list of your files to another user if you want he to access them.
+    This will not send any personal data : only file names, ids, versions, etc.
+    This also used as a request to supplier : if you send an empty ListFiles() packet
+    to your supplier he will reply you with a list of stored files in a Files() packet.
+    Pass list of files in encrypted form in the `payload` or leave it empty.
+    """
     MyID = my_id.getLocalID()
     if not customer_idurl:
         customer_idurl = MyID
@@ -447,9 +454,9 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
     PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
-    Payload = settings.ListFilesFormat()
+    Payload = payload or settings.ListFilesFormat()
     result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
-    gateway.outbox(result)
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
 
 #------------------------------------------------------------------------------

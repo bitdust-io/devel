@@ -195,7 +195,7 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/identity/get/v1$')
     def identity_get_v1(self, request):
         return api.identity_get(
-            include_xml_source=bool(_request_arg(request, 'include_xml_source', '0') != '0'), )
+            include_xml_source=bool(_request_arg(request, 'include_xml_source', '0') in ['1', 'true', ]), )
 
     @POST('^/identity/create/v1$')
     def identity_create_v1(self, request):
@@ -244,14 +244,14 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/key/list/v1$')
     def key_list_v1(self, request):
         return api.keys_list(
-            sort=bool(_request_arg(request, 'sort', '0') != '0'),
-            include_private=bool(_request_arg(request, 'include_private', '0') != '0'), )
+            sort=bool(_request_arg(request, 'sort', '0') in ['1', 'true', ]),
+            include_private=bool(_request_arg(request, 'include_private', '0') in ['1', 'true', ]), )
 
     @GET('^/key/get/v1$')
     def key_get_v1(self, request):
         return api.key_get(
             key_id=_request_arg(request, 'key_id', mandatory=True),
-            include_private=bool(_request_arg(request, 'include_private', '0') != '0'), )
+            include_private=bool(_request_arg(request, 'include_private', '0') in ['1', 'true', ]), )
 
     @POST('^/key/create/v1$')
     def key_create_v1(self, request):
@@ -287,14 +287,17 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/file/v1$')
     @GET('^/file/list/v1$')
     def file_list_v1(self, request):
-        return api.files_list(remote_path=_request_arg(request, 'remote_path', None))
+        return api.files_list(
+            remote_path=_request_arg(request, 'remote_path', None),
+            key_id=_request_arg(request, 'key_id', None),
+            recursive=bool(_request_arg(request, 'recursive', '0') in ['1', 'true', ]), )
 
     @GET('^/file/info/v1$')
     def file_info_v1(self, request):
         return api.file_info(
             remote_path=_request_arg(request, 'remote_path', mandatory=True),
-            include_uploads=bool(_request_arg(request, 'include_uploads', '1') != '0'),
-            include_downloads=bool(_request_arg(request, 'include_downloads', '1') != '0'), )
+            include_uploads=bool(_request_arg(request, 'include_uploads', '1') in ['1', 'true', ]),
+            include_downloads=bool(_request_arg(request, 'include_downloads', '1') in ['1', 'true', ]), )
 
     @POST('^/file/create/v1$')
     def file_create_v1(self, request):
@@ -311,8 +314,8 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/file/upload/v1$')
     def files_uploads_v1(self, request):
         return api.files_uploads(
-            include_running=bool(_request_arg(request, 'include_running', '1') != '0'),
-            include_pending=bool(_request_arg(request, 'include_pending', '1') != '0'), )
+            include_running=bool(_request_arg(request, 'include_running', '1') in ['1', 'true', ]),
+            include_pending=bool(_request_arg(request, 'include_pending', '1') in ['1', 'true', ]), )
 
     @POST('^/file/upload/start/v1$')
     def file_upload_start_v1(self, request):

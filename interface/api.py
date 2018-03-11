@@ -641,10 +641,11 @@ def files_sync():
     return OK('the main files sync loop has been restarted')
 
 
-def files_list(remote_path=None):
+def files_list(remote_path=None, key_id=None, recursive=True):
     """
     Returns list of known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
+    If `key_id` is passed will only return items encrypted using that key.
 
     Return:
         { u'execution': u'0.001040',
@@ -692,7 +693,8 @@ def files_list(remote_path=None):
     remotePath = bpio.remotePath(norm_path['path'])
     result = []
     lookup = backup_fs.ListChildsByPath(
-        remotePath,
+        path=remotePath,
+        recursive=recursive,
         iter=backup_fs.fs(norm_path['idurl']),
         iterID=backup_fs.fsID(norm_path['idurl']),
     )
@@ -702,6 +704,8 @@ def files_list(remote_path=None):
         # if not i['item']['k']:
         #     i['item']['k'] = my_id.getGlobalID(key_alias='master')
         if i['path_id'] == 'index':
+            continue
+        if key_id is not None and key_id != i['item']['k']:
             continue
         if glob_path['key_alias'] and i['item']['k']:
             if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):

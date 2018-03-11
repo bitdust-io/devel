@@ -54,9 +54,15 @@ from contacts import contactsdb
 from p2p import p2p_service
 from p2p import commands
 
+from crypt import key
 from crypt import my_keys
+from crypt import encrypted
+
+from userid import my_id
 
 from access import key_ring
+
+from storage import backup_fs
 
 #------------------------------------------------------------------------------
 
@@ -91,6 +97,7 @@ class SharedAccessDonor(automat.Automat):
         self.caching_deferred = None
         self.remote_idurl = None
         self.key_id = None
+        self.result_defer = None
         self.suppliers_responses = {}
         self.suppliers_acks = 0
 
@@ -197,7 +204,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        self.remote_idurl, self.key_id = arg
+        self.remote_idurl, self.key_id, self.result_defer = arg
 
     def doInsertInboxCallback(self, arg):
         """
@@ -270,16 +277,41 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
+        raw_list_files = backup_fs.Serialize(
+            to_json=True,
+            filter_cb=lambda path_id, path, info: True if info.key_id == self.key_id else False,
+        )
+        block = encrypted.Block(
+            BackupID=self.key_id,
+            Data=raw_list_files,
+            SessionKey=key.NewSessionKey(),
+            # encrypt data using public key of recipient
+            EncryptKey=lambda inp: self.remote_identity.encrypt(inp),
+        )
+        encrypted_list_files = block.Serialize()
+        p2p_service.SendListFiles(
+            self.remote_idurl,
+            customer_idurl=my_id.getLocalID(),
+            payload=encrypted_list_files,
+            callbacks={
+                commands.Ack(): lambda response, _: self.automat('list-files-ok', response),
+                commands.Fail(): lambda response, _: self.automat('fail', response),
+            },
+        )
 
     def doReportDone(self, arg):
         """
         Action method.
         """
+        if self.result_defer:
+            self.result_defer.callback(True)
 
     def doReportFailed(self, arg):
         """
         Action method.
         """
+        if self.result_defer:
+            self.result_defer.callback(False)
 
     def doDestroyMe(self, arg):
         """
@@ -287,6 +319,7 @@ class SharedAccessDonor(automat.Automat):
         """
         self.remote_idurl = None
         self.key_id = None
+        self.result_defer = None
         self.suppliers_responses.clear()
         self.suppliers_acks = 0
         if self.caching_deferred:

@@ -125,6 +125,8 @@ class Packet:
         self.Signature = None
         # must be signed to be valid
         self.Sign()
+        # stores list of related objects packet_in() or packet_out()
+        self.Packets = []
 
     def __repr__(self):
         args = '%s(%s)' % (str(self.Command), str(self.PacketID))

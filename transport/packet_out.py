@@ -526,6 +526,10 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
+        if self in self.outpacket.Packets:
+            lg.warn('packet_out already connected to the packet')
+        else:
+            self.outpacket.Packets.append(self)
 
     def doCacheRemoteIdentity(self, arg):
         """
@@ -719,6 +723,10 @@ class PacketOut(automat.Automat):
         if self.caching_deferred:
             self.caching_deferred.cancel()
             self.caching_deferred = None
+        if self not in self.outpacket.Packets:
+            lg.warn('packet_out not connected to the packet')
+        else:
+            self.outpacket.Packets.remove(self)
         self.outpacket = None
         self.remote_identity = None
         self.callbacks.clear()

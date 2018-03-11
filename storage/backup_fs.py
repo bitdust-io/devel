@@ -1546,13 +1546,13 @@ def ListAllBackupIDs(sorted=False, reverse=False, iterID=None):
     """
     if iterID is None:
         iterID = fsID()
-    customer_idurl = customerIDURLFromRootItemID(iterID)
-    customer_id = global_id.UrlToGlobalID(customer_idurl)
+    # customer_idurl = customerIDURLFromRootItemID(iterID)
+    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     lst = []
 
     def visitor(path_id, _, info):
         for version in info.list_versions(sorted, reverse):
-            lst.append(packetid.MakeBackupID(customer_id, path_id.lstrip('/'), version))
+            lst.append(packetid.MakeBackupID(info.key_id, path_id.lstrip('/'), version))
 
     TraverseByID(visitor, iterID=iterID)
     return lst
@@ -1564,13 +1564,13 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
     """
     if iterID is None:
         iterID = fsID()
-    customer_idurl = customerIDURLFromRootItemID(iterID)
-    customer_id = global_id.UrlToGlobalID(customer_idurl)
+    # customer_idurl = customerIDURLFromRootItemID(iterID)
+    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     lst = []
 
     def visitor(path_id, path, info):
         for version in info.list_versions(sorted=sorted, reverse=reverse):
-            backupID = packetid.MakeBackupID(customer_id, path_id.lstrip('/'), version)
+            backupID = packetid.MakeBackupID(info.key_id, path_id.lstrip('/'), version)
             lst.append((info.name(), backupID, info.get_version_info(version), ResolvePath(path), info))
 
     TraverseByID(visitor, iterID=iterID)
@@ -1618,7 +1618,7 @@ def ListExpandedFoldersAndBackups(expanded_dirs, selected_items, iterID=None):
     return lst, backups
 
 
-def ListChildsByPath(path, iter=None, iterID=None):
+def ListChildsByPath(path, recursive=False, iter=None, iterID=None):
     """
     List all items at given ``path`` and return data as a list of dict objects.
     Return string with error message if operation failed.
@@ -1627,8 +1627,8 @@ def ListChildsByPath(path, iter=None, iterID=None):
         iter = fs()
     if iterID is None:
         iterID = fsID()
-    customer_idurl = customerIDURLFromRootItem(iter)
-    customer_id = global_id.UrlToGlobalID(customer_idurl)
+    # customer_idurl = customerIDURLFromRootItem(iter)
+    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path == '/':
         path = ''
     path = bpio.remotePath(path)
@@ -1646,11 +1646,12 @@ def ListChildsByPath(path, iter=None, iterID=None):
     if isinstance(iterID, FSItemInfo):
         return 'path "%s" is a file' % path
     result = []
+    sub_dirs = []
 
     def visitor(item_type, item_name, item_path_id, item_info, num_childs):
         item_id = (pathID + '/' + item_path_id).strip('/')
         (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)  # , customer_id)
-        result.append({
+        i = {
             'type': item_type,
             'name': item_info.name(),
             'path': ResolvePath(path, item_info.name()),
@@ -1660,9 +1661,19 @@ def ListChildsByPath(path, iter=None, iterID=None):
             'childs': num_childs,
             'item': item_info.serialize(to_json=True),
             'versions': versions,
-        })
+        }
+        result.append(i)
+        if item_type == DIR:
+            sub_dirs.append(i)
 
     TraverseChildsByID(visitor, iterID)
+
+    if recursive:
+        for sub_dir in sub_dirs:
+            sub_lookup = ListChildsByPath(sub_dir['path'])
+            if not isinstance(sub_lookup, list):
+                return sub_lookup
+            result.extend(sub_lookup)
     return result
 
 
@@ -1677,8 +1688,8 @@ def ListByPathAdvanced(path, iter=None, iterID=None):
         iter = fs()
     if iterID is None:
         iterID = fsID()
-    customer_idurl = customerIDURLFromRootItem(iter)
-    customer_id = global_id.UrlToGlobalID(customer_idurl)
+    # customer_idurl = customerIDURLFromRootItem(iter)
+    # customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path == '/':
         path = ''
     path = bpio.remotePath(path)
@@ -1717,8 +1728,8 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
     """
     if not iterID:
         iterID = fsID()
-    customer_idurl = customerIDURLFromRootItemID(iterID)
-    customer_id = global_id.UrlToGlobalID(customer_idurl)
+    # customer_idurl = customerIDURLFromRootItemID(iterID)
+    # customer_id = global_id.UrlToGlobalID(customer_idurl)
 
     result = []
 
@@ -1958,7 +1969,7 @@ def Clear(customer_idurl=None):
     fsID(customer_idurl=customer_idurl).clear()
 
 
-def Serialize(iterID=None, to_json=False, encoding='utf-8'):
+def Serialize(iterID=None, to_json=False, encoding='utf-8', filter_cb=None):
     """
     Use this to write index to the local file.
     """
@@ -1969,6 +1980,9 @@ def Serialize(iterID=None, to_json=False, encoding='utf-8'):
         result = cStringIO.StringIO()
 
     def cb(path_id, path, info):
+        if filter_cb is not None:
+            if not filter_cb(path_id, path, info):
+                return
         if to_json:
             result['items'].append(info.serialize(encoding=encoding, to_json=True))
         else:

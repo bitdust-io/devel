@@ -116,7 +116,7 @@ class SupplierConnector(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['REFUSE','QUEUE?']),
+        'timer-10sec': (10.0, ['REFUSE', 'QUEUE?']),
         'timer-20sec': (20.0, ['REQUEST']),
     }
 
@@ -292,7 +292,10 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
+        if arg:
+            bytes_needed = arg
+        else:
+            bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         num_suppliers = settings.getSuppliersNumberDesired()
         if num_suppliers > 0:
             bytes_per_supplier = int(math.ceil(2.0 * bytes_needed / float(num_suppliers)))
