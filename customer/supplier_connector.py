@@ -317,7 +317,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         service_info = {
-            'needed_bytes': bytes_per_supplier,
+            'needed_bytes': self.needed_bytes,
         }
         try:
             service_info['customer_public_key'] = my_keys.get_key_info(
