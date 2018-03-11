@@ -42,8 +42,8 @@ Methods to establish a messages queue between two or more nodes.:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 4
+_Debug = False
+_DebugLevel = 20
 
 #------------------------------------------------------------------------------
 
@@ -74,7 +74,7 @@ from lib import utime
 from lib import misc
 from lib import packetid
 
-from userid import global_id
+from main import events
 
 from crypt import my_keys
 from crypt import signed
@@ -82,7 +82,8 @@ from crypt import signed
 from p2p import commands
 from p2p import p2p_service
 
-from main import events
+from userid import global_id
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -568,6 +569,76 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
 
 #------------------------------------------------------------------------------
 
+def on_event_packet_received(newpacket, info, status, error_message):
+    if newpacket.Command != commands.Event():
+        return False
+    try:
+        e_json = json.loads(newpacket.Payload)
+        event_id = e_json['event_id']
+        payload = e_json['payload']
+        queue_id = e_json.get('queue_id')
+        producer_id = e_json.get('producer_id')
+        message_id = e_json.get('message_id')
+        created = e_json.get('created')
+    except:
+        lg.warn("invlid json payload")
+        return False
+    if queue_id and producer_id and message_id:
+        # this message have an ID and producer so it came from a queue and needs to be consumed
+        # also add more info comming from the queue
+        if _Debug:
+            lg.info('received event from the queue at %s' % queue_id)
+        payload.update(dict(
+            queue_id=queue_id,
+            producer_id=producer_id,
+            message_id=message_id,
+            created=created,
+        ))
+        events.send(event_id, data=payload)
+        p2p_service.SendAck(newpacket)
+        return True
+    # this message does not have nor ID nor producer so it came from another user directly
+    # lets' try to find a queue for that event and see if we need to publish it or not
+    queue_id = global_id.MakeGlobalQueueID(
+        queue_alias=event_id,
+        owner_id=global_id.MakeGlobalID(idurl=newpacket.OwnerID),
+        supplier_id=global_id.MakeGlobalID(idurl=my_id.getGlobalID()),
+    )
+    if queue_id not in queue():
+        # such queue is not found locally, that means message is
+        # probably addressed to that node and needs to be consumed directly
+        if _Debug:
+            lg.warn('received event was not delivered to any queue, consume now and send an Ack')
+        # also add more info comming from the queue
+        payload.update(dict(
+            queue_id=queue_id,
+            producer_id=producer_id,
+            message_id=message_id,
+            created=created,
+        ))
+        events.send(event_id, data=payload)
+        p2p_service.SendAck(newpacket)
+        return True
+    # found a queue for that message, pushing there
+    # TODO: add verification of producer's identity and signature
+    if _Debug:
+        lg.info('pushing event to the queue %s on behalf of producer %s' % (queue_id, producer_id))
+    try:
+        push_message(
+            producer_id=producer_id,
+            queue_id=queue_id,
+            data=payload,
+            creation_time=created,
+        )
+    except Exception as exc:
+        lg.warn(exc)
+        p2p_service.SendFail(newpacket, str(exc))
+        return True
+    p2p_service.SendAck(newpacket)
+    return True
+
+#------------------------------------------------------------------------------
+
 def do_notify(callback_method, consumer_id, queue_id, message_id):
     existing_message = queue(queue_id)[message_id]
     event_id = global_id.ParseGlobalQueueID(queue_id)['queue_alias']
@@ -704,7 +775,8 @@ class QueueMessage(object):
             if queue_id in consumer(consumer_id).queues:
                 self.consumers.append(consumer_id)
         if len(self.consumers) == 0:
-            lg.warn('message will have no consumers')
+            if _Debug:
+                lg.warn('message will have no consumers')
 
 #------------------------------------------------------------------------------
 
@@ -735,7 +807,8 @@ class ProducerInfo(object):
 
     def do_push_message(self, evt):
         if not self.queues:
-            lg.warn('producer is not connected to any queue')
+            if _Debug:
+                lg.warn('producer is not connected to any queue')
             return False
         for queue_id in self.queues:
             try:
