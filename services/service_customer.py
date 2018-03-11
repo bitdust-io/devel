@@ -57,17 +57,21 @@ class CustomerService(LocalService):
         from crypt import my_keys
         from customer import supplier_connector
         from customer import customer_state
+        from userid import my_id
         from logs import lg
         if not my_keys.is_key_registered(customer_state.customer_key_id()):
             lg.warn('customer key was not found, generate new key: %s' % customer_state.customer_key_id())
             my_keys.generate_key(customer_state.customer_key_id())
         for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl):
-                supplier_connector.create(supplier_idurl)
+            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getLocalID()):
+                supplier_connector.create(supplier_idurl, customer_idurl=my_id.getLocalID())
+        # TODO: read from dht and connect to other suppliers - from other customers who shared data to me
         return True
 
     def stop(self):
         from customer import supplier_connector
-        for sc in supplier_connector.connectors().values():
+        from userid import my_id
+        for sc in supplier_connector.connectors(my_id.getLocalID()).values():
             sc.automat('shutdown')
+        # TODO: disconnect other suppliers
         return True

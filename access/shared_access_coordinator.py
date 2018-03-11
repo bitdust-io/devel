@@ -210,12 +210,16 @@ class SharedAccessCoordinator(automat.Automat):
         """
         self.suppliers_list.extend(filter(None, arg))
         for supplier_idurl in self.suppliers_list:
-            sc = supplier_connector.by_idurl(supplier_idurl)
+            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:
-                sc = supplier_connector.create(supplier_idurl)
+                sc = supplier_connector.create(
+                    supplier_idurl=supplier_idurl,
+                    customer_idurl=self.customer_idurl,
+                    needed_bytes=0,
+                )
             sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
             # self.connect_list.append(supplier_idurl)
-            sc.automat('connect', 0)  # we only want to read the data, so requesting 0 bytes from that supplier
+            sc.automat('connect')  # we only want to read the data, so requesting 0 bytes from that supplier
 
     def doRequestSupplierFiles(self, arg):
         """
