@@ -2618,6 +2618,8 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/restores/enabled', 'true')
 
+    config.conf().setDefaultValue('services/shared-data/enabled', 'true')
+
     config.conf().setDefaultValue('services/supplier/enabled', 'true')
     config.conf().setDefaultValue('services/supplier/donated-space',
                                   diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
@@ -2625,7 +2627,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/supplier-contracts/enabled', 'false')
 
     config.conf().setDefaultValue('services/supplier-relations/enabled', 'true')
-
+    
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())
     config.conf().setDefaultValue('services/tcp-connections/upnp-enabled', 'true')

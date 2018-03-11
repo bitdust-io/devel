@@ -1663,11 +1663,23 @@ def share_open(remote_user, key_id):
         return ERROR('wrong user id')
     from access import shared_access_donor
     ret = Deferred()
+
+    def _on_shared_access_donor_success(result):
+        if result:
+            ret.callback(OK())
+        else:
+            ret.callback(ERROR('failed'))
+        return None
+
+    def _on_shared_access_donor_failed(err):
+        ret.callback(ERROR(err.getErrorMessage()))
+        return None
+
     d = Deferred()
-    d.addCallback(lambda resp: ret.callback(OK(resp)))
-    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
+    d.addCallback(_on_shared_access_donor_success)
+    d.addErrback(_on_shared_access_donor_failed)
     shared_access_donor_machine = shared_access_donor.SharedAccessDonor()
-    shared_access_donor_machine.automat('init', remote_idurl, key_id, d)
+    shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
     return ret
 
 #------------------------------------------------------------------------------

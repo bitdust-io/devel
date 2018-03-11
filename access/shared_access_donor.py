@@ -42,6 +42,15 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
+import time
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -75,7 +84,7 @@ class SharedAccessDonor(automat.Automat):
         'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'AUDIT', 'CACHE', 'LIST_FILES']),
     }
 
-    def __init__(self, debug_level=0, log_events=False, publish_events=False, **kwargs):
+    def __init__(self, debug_level=None, log_events=False, publish_events=False, **kwargs):
         """
         Create shared_access_donor() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
@@ -83,7 +92,7 @@ class SharedAccessDonor(automat.Automat):
         super(SharedAccessDonor, self).__init__(
             name="shared_access_donor",
             state='AT_STARTUP',
-            debug_level=debug_level,
+            debug_level=debug_level or _DebugLevel,
             log_events=log_events,
             publish_events=publish_events,
             **kwargs
@@ -94,8 +103,11 @@ class SharedAccessDonor(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of shared_access_donor() machine.
         """
+        self.log_transitions = _Debug
         self.caching_deferred = None
         self.remote_idurl = None
+        self.remote_identity = None
+        self.ping_response = None
         self.key_id = None
         self.result_defer = None
         self.suppliers_responses = {}
@@ -210,7 +222,6 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        callback.insert_inbox_callback(0, self._on_inbox_packet_received)
 
     def doCacheRemoteIdentity(self, arg):
         """
@@ -224,7 +235,20 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendIdentity(self.target_idurl, wide=True)
+        def _on_ack(response, info):
+            self.ping_response = time.time()
+            self.automat('ack', response)
+
+        p2p_service.SendIdentity(
+            remote_idurl=self.remote_idurl,
+            wide=True,
+            timeout=5,
+            callbacks={
+                commands.Ack(): _on_ack,
+                commands.Fail(): lambda response, _: self.automat('fail', Exception(str(response))),
+                None: lambda pkt_out: self.automat('fail', Exception('remote node not responding')),
+            },
+        )
 
     def doBlockchainLookupVerifyUserPubKey(self, arg):
         """
@@ -240,7 +264,8 @@ class SharedAccessDonor(automat.Automat):
         master_key_id = my_keys.make_key_id(alias='master', creator_idurl=self.remote_idurl)
         d = key_ring.audit_private_key(master_key_id, self.remote_idurl)
         d.addCallback(lambda audit_result: (
-            self.automat('audit-ok') if audit_result else self.automat('fail', audit_result),
+            self.automat('audit-ok') if audit_result else self.automat('fail', Exception(
+                'remote user master key audit process failed')),
         ))
         d.addErrback(lambda err: self.automat('fail', err))
 
@@ -295,7 +320,7 @@ class SharedAccessDonor(automat.Automat):
             payload=encrypted_list_files,
             callbacks={
                 commands.Ack(): lambda response, _: self.automat('list-files-ok', response),
-                commands.Fail(): lambda response, _: self.automat('fail', response),
+                commands.Fail(): lambda response, _: self.automat('fail', Exception(str(response))),
             },
         )
 
@@ -311,13 +336,24 @@ class SharedAccessDonor(automat.Automat):
         Action method.
         """
         if self.result_defer:
-            self.result_defer.callback(False)
+            if arg:
+                self.result_defer.errback(Exception(arg))
+            else:
+                if self.remote_identity is None:
+                    self.result_defer.errback(Exception('remote id caching failed'))
+                else:
+                    if self.ping_response is None:
+                        self.result_defer.errback(Exception('remote node not responding'))
+                    else:
+                        self.result_defer.errback(Exception('failed'))
 
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
         self.remote_idurl = None
+        self.remote_identity = None
+        self.ping_response = None
         self.key_id = None
         self.result_defer = None
         self.suppliers_responses.clear()
@@ -325,7 +361,6 @@ class SharedAccessDonor(automat.Automat):
         if self.caching_deferred:
             self.caching_deferred.cancel()
             self.caching_deferred = None
-        callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.unregister()
 
     def _on_remote_identity_cached(self, xmlsrc):
@@ -335,15 +370,6 @@ class SharedAccessDonor(automat.Automat):
             self.automat('fail', Exception('remote id caching failed'))
         else:
             self.automat('user-identity-cached')
-
-    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-        if newpacket.Command == commands.Ack() and \
-                newpacket.OwnerID == self.target_idurl and \
-                newpacket.PacketID == 'identity' and \
-                self.state == 'ACK?':
-            self.automat('ack', self.target_idurl)
-            return True
-        return False
 
     def _on_supplier_pub_key_shared(self, response, supplier_idurl):
         self.suppliers_responses.pop(supplier_idurl)
@@ -363,5 +389,5 @@ class SharedAccessDonor(automat.Automat):
 
     def _on_user_priv_key_failed(self, err):
         lg.warn(err)
-        self.automat('fail', err)
+        self.automat('fail', Exception('private key delivery failed to remote node'))
         return None

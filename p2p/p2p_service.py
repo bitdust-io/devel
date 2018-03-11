@@ -305,7 +305,7 @@ def Identity(newpacket):
     return True
 
 
-def SendIdentity(remote_idurl, wide=False, callbacks={}):
+def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
     """
     """
     if _Debug:
@@ -314,7 +314,7 @@ def SendIdentity(remote_idurl, wide=False, callbacks={}):
         commands.Identity(), my_id.getLocalID(),
         my_id.getLocalID(), 'identity',
         my_id.getLocalIdentity().serialize(), remote_idurl)
-    gateway.outbox(result, wide=wide, callbacks=callbacks)
+    gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 
 #------------------------------------------------------------------------------
