@@ -181,7 +181,8 @@ def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_
         orig_sample = my_keys.encrypt(key_id, test_sample)
     if response_sample == orig_sample:
         if _Debug:
-            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, '         is OK !!!!!!!!!!!!!!!!!!!!!!!!!')
         result.callback(True)
         return True
     lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
@@ -259,7 +260,8 @@ def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test
         return False
     if response_sample == test_sample:
         if _Debug:
-            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, '         is OK !!!!!!!!!!!!!!!!!!!!!!!!!')
         result.callback(True)
         return True
     lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
@@ -349,6 +351,8 @@ def on_key_received(newpacket, info, status, error_message):
         p2p_service.SendFail(newpacket, str(exc))
         return False
     p2p_service.SendAck(newpacket)
+    if _Debug:
+        lg.info('received and stored locally a new key %s, include_private=%s' % (key_id, key_json.get('include_private')))
     return True
 
 
@@ -377,6 +381,8 @@ def on_audit_key_received(newpacket, info, status, error_message):
     if public_sample:
         response_payload = base64.b64encode(my_keys.encrypt(key_id, public_sample))
         p2p_service.SendAck(newpacket, response_payload)
+        if _Debug:
+            lg.info('remote user %s requested audit of public key %s' % (newpacket.OwnerID, key_id))
         return True
     if private_sample:
         if not my_keys.is_key_private(key_id):
@@ -384,6 +390,8 @@ def on_audit_key_received(newpacket, info, status, error_message):
             return False
         response_payload = base64.b64encode(my_keys.decrypt(key_id, private_sample))
         p2p_service.SendAck(newpacket, response_payload)
+        if _Debug:
+            lg.info('remote user %s requested audit of private key %s' % (newpacket.OwnerID, key_id))
         return True
     p2p_service.SendFail(newpacket, 'wrong audit request')
     return False
