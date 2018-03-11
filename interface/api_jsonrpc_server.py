@@ -284,6 +284,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_space_local(self):
         return api.space_local()
 
+    def jsonrpc_share_history(self):
+        return api.share_history()
+
+    def jsonrpc_share_open(self, remote_user, key_id):
+        return api.share_open(remote_user=remote_user, key_id=key_id)
+
     def jsonrpc_automats_list(self):
         return api.automats_list()
 
@@ -316,6 +322,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_transfers_list(self):
         return api.transfers_list()
+
+    def jsonrpc_queue_list(self):
+        return api.queue_list()
 
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
@@ -376,9 +385,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_reconnect(self):  # alias
         return api.network_reconnect()
-
-    def jsonrpc_queue_list(self):
-        return api.queue_list()
 
 #------------------------------------------------------------------------------
 

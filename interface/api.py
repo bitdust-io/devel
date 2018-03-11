@@ -1643,6 +1643,35 @@ def space_local():
 #------------------------------------------------------------------------------
 
 
+def share_history():
+    """
+    """
+    return RESULT([],)
+
+
+def share_open(remote_user, key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    from userid import global_id
+    remote_idurl = remote_user
+    if remote_user.count('@'):
+        glob_id = global_id.ParseGlobalID(remote_user)
+        remote_idurl = glob_id['idurl']
+    if not remote_idurl:
+        return ERROR('wrong user id')
+    from access import shared_access_donor
+    ret = Deferred()
+    d = Deferred()
+    d.addCallback(lambda resp: ret.callback(OK(resp)))
+    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor()
+    shared_access_donor_machine.automat('init', remote_idurl, key_id, d)
+    return ret
+
+#------------------------------------------------------------------------------
+
 def automats_list():
     """
     Returns a list of all currently running state machines.
@@ -2066,6 +2095,16 @@ def streams_list(wanted_protos=None):
                     })
             result.append(item)
     return RESULT(result)
+
+
+def queue_list():
+    """
+    """
+    from p2p import p2p_queue
+    return RESULT([{
+        'queue_id': queue_id,
+        'messages': len(p2p_queue.queue(queue_id)),
+    } for queue_id in p2p_queue.queue().keys()])
 
 #------------------------------------------------------------------------------
 
@@ -2579,16 +2618,5 @@ def network_connected(wait_timeout=5):
 
     _do_service_test('service_network')
     return ret
-
-#------------------------------------------------------------------------------
-
-def queue_list():
-    """
-    """
-    from p2p import p2p_queue
-    return RESULT([{
-        'queue_id': queue_id,
-        'messages': len(p2p_queue.queue(queue_id)),
-    } for queue_id in p2p_queue.queue().keys()])
 
 #------------------------------------------------------------------------------

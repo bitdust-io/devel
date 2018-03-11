@@ -75,14 +75,14 @@ class SharedAccessDonor(automat.Automat):
         'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'AUDIT', 'CACHE', 'LIST_FILES']),
     }
 
-    def __init__(self, state, debug_level=0, log_events=False, publish_events=False, **kwargs):
+    def __init__(self, debug_level=0, log_events=False, publish_events=False, **kwargs):
         """
         Create shared_access_donor() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
         """
         super(SharedAccessDonor, self).__init__(
             name="shared_access_donor",
-            state=state,
+            state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
             publish_events=publish_events,

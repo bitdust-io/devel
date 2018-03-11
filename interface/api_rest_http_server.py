@@ -349,6 +349,17 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/share/history/v1$')
+    def share_history(self, request):
+        return api.share_history()
+
+    @POST('^/share/open/v1$')
+    def share_open(self, request):
+        data = _request_data(request, mandatory_keys=['remote_user', 'key_id', ])
+        return api.share_open(remote_user=data['remote_user'], key_id=data['key_id'])
+
+    #------------------------------------------------------------------------------
+
     @GET('^/service/v1$')
     @GET('^/service/list/v1$')
     def service_list(self, request):
@@ -383,17 +394,15 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/queue/v1$')
-    @GET('^/queue/list/v1$')
-    def queue_list(self, request):
-        return api.queue_list()
-
-    #------------------------------------------------------------------------------
-
     @GET('^/transfer/v1$')
     @GET('^/transfer/list/v1$')
     def transfers_list(self, request):
         return api.transfers_list()
+
+    @GET('^/queue/v1$')
+    @GET('^/queue/list/v1$')
+    def queue_list(self, request):
+        return api.queue_list()
 
     #------------------------------------------------------------------------------
 
