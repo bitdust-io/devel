@@ -307,6 +307,7 @@ class SharedAccessDonor(automat.Automat):
             filter_cb=lambda path_id, path, info: True if info.key_id == self.key_id else False,
         )
         block = encrypted.Block(
+            CreatorID=my_id.getLocalID(),
             BackupID=self.key_id,
             Data=raw_list_files,
             SessionKey=key.NewSessionKey(),

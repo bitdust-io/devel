@@ -517,9 +517,12 @@ class SupplierService(LocalService):
         return True
 
     def _on_list_files(self, newpacket):
-        from supplier import list_files
-        list_files.send(newpacket.OwnerID, newpacket.PacketID, newpacket.Payload)
-        return True
+        from main import settings
+        if newpacket.Payload == settings.ListFilesFormat():
+            from supplier import list_files
+            list_files.send(newpacket.OwnerID, newpacket.PacketID, newpacket.Payload)
+            return True
+        return False
 
     def _on_customer_accepted(self, e):
         from logs import lg

@@ -57,6 +57,7 @@ class CustomerService(LocalService):
         from crypt import my_keys
         from customer import supplier_connector
         from customer import customer_state
+        from transport import callback
         from userid import my_id
         from logs import lg
         if not my_keys.is_key_registered(customer_state.customer_key_id()):
@@ -66,12 +67,48 @@ class CustomerService(LocalService):
             if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getLocalID()):
                 supplier_connector.create(supplier_idurl, customer_idurl=my_id.getLocalID())
         # TODO: read from dht and connect to other suppliers - from other customers who shared data to me
+        callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
         from customer import supplier_connector
+        from transport import callback
         from userid import my_id
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
         for sc in supplier_connector.connectors(my_id.getLocalID()).values():
             sc.automat('shutdown')
         # TODO: disconnect other suppliers
         return True
+
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        from logs import lg
+        from p2p import commands
+        from p2p import p2p_service
+        from main import settings
+        from storage import backup_fs
+        from crypt import encrypted
+        if newpacket.Command == commands.ListFiles():
+            if newpacket.Payload == settings.ListFilesFormat():
+                return False
+            block = encrypted.Unserialize(newpacket.Payload)
+            if block is None:
+                lg.out(2, 'key_ring.on_key_received ERROR reading data from %s' % newpacket.RemoteID)
+                return False
+            try:
+                list_files_raw = block.Data()
+                customer_idurl = block.CreatorID
+                count = backup_fs.Unserialize(
+                    raw_data=list_files_raw,
+                    iter=backup_fs.fs(customer_idurl),
+                    iterID=backup_fs.fsID(customer_idurl),
+                    from_json=True,
+                )
+                import pprint
+                pprint.pprint(backup_fs.fs(customer_idurl))
+            except Exception as exc:
+                lg.exc()
+                p2p_service.SendFail(newpacket, str(exc))
+                return False
+            p2p_service.SendAck(newpacket, str(count))
+            return True
+        return False
