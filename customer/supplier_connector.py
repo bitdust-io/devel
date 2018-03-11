@@ -145,7 +145,10 @@ class SupplierConnector(automat.Automat):
                 self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
             else:
                 self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
-        name = 'supplier_%s_%s' % (nameurl.GetName(self.supplier_idurl), diskspace.MakeStringFromBytes(self.needed_bytes))
+        name = 'supplier_%s_%s' % (
+            nameurl.GetName(self.supplier_idurl),
+            diskspace.MakeStringFromBytes(self.needed_bytes).replace(' ', ''),
+        )
         self.request_packet_id = None
         self.callbacks = {}
         try:
