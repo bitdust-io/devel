@@ -97,6 +97,24 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
     )
 
 
+def _on_transfer_key_response(response, info, key_id, result):
+    if response.Command == commands.Ack():
+        result.callback(response)
+        if _Debug:
+            lg.info('key %s transfer success to %s' % (key_id, response.OwnerID))
+        return None
+    if response.Command == commands.Fail():
+        if response.Payload == 'key already registered':
+            result.callback(response)
+            if _Debug:
+                lg.warn('key %s already registered on %s' % (key_id, response.OwnerID))
+            return None
+    result.errback(Exception(response.Payload))
+    if _Debug:
+        lg.warn('key transfer failed: %s' % response.Payload)
+    return None
+
+
 def _do_transfer_key(key_id, idurl, include_private=False):
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, idurl))
@@ -136,8 +154,10 @@ def _do_transfer_key(key_id, idurl, include_private=False):
         encrypted_key_data=encrypted_key_data,
         packet_id=key_id,
         callbacks={
-            commands.Ack(): lambda response, info: result.callback(response),
-            commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            commands.Ack(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
+            commands.Fail(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
+            # commands.Ack(): lambda response, info: result.callback(response),
+            # commands.Fail(): lambda response, info: result.errback(Exception(response)),
         },
     )
     return result
@@ -212,7 +232,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         result.errback(Exception('wrong key_id'))
         return result
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.warn('audit master key (public part) of remote user')
+        lg.warn('doing audit of master key (public part) of remote user')
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
@@ -292,7 +312,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         return result
     private_test_sample = key.NewSessionKey()
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.warn('audit master key (private part) of remote user')
+        lg.warn('doing audit of master key (private part) of remote user')
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):
@@ -342,10 +362,10 @@ def on_key_received(newpacket, info, status, error_message):
         key_json = json.loads(key_data)
         key_id = key_json['key_id']
         if my_keys.is_key_registered(key_id):
-            raise Exception('key "%s" already registered' % key_id)
+            raise Exception('key already registered')
         key_id, key_object = my_keys.read_key_info(key_json)
         if not my_keys.register_key(key_id, key_object):
-            raise Exception('failed to register key %s' % key_id)
+            raise Exception('key register failed')
     except Exception as exc:
         lg.exc()
         p2p_service.SendFail(newpacket, str(exc))

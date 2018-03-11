@@ -1678,7 +1678,7 @@ def share_open(remote_user, key_id):
     d = Deferred()
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
-    shared_access_donor_machine = shared_access_donor.SharedAccessDonor()
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True)
     shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
     return ret
 

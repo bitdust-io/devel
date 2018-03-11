@@ -375,6 +375,7 @@ class SharedAccessDonor(automat.Automat):
         self.suppliers_responses.pop(supplier_idurl)
         self.suppliers_acks += 1
         self.automat('ack', response)
+        lg.warn('suppliers_acks=%d, suppliers_responses=%d' % (self.suppliers_acks, len(self.suppliers_responses)))
         return None
 
     def _on_supplier_pub_key_failed(self, err, supplier_idurl):
