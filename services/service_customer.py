@@ -87,6 +87,7 @@ class CustomerService(LocalService):
         from p2p import p2p_service
         from main import settings
         from storage import backup_fs
+        from storage import backup_control
         from crypt import encrypted
         if newpacket.Command == commands.ListFiles():
             if newpacket.Payload == settings.ListFilesFormat():
@@ -111,12 +112,12 @@ class CustomerService(LocalService):
                     iterID=backup_fs.fsID(customer_idurl),
                     from_json=True,
                 )
-                import pprint
-                pprint.pprint(backup_fs.fs(customer_idurl))
             except Exception as exc:
                 lg.exc()
                 p2p_service.SendFail(newpacket, str(exc))
                 return False
+            if count > 0:
+                backup_control.Save()
             p2p_service.SendAck(newpacket, str(count))
             return True
         return False
