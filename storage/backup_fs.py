@@ -1975,7 +1975,7 @@ def Serialize(iterID=None, to_json=False, encoding='utf-8', filter_cb=None):
     """
     cnt = [0]
     if to_json:
-        result = {'items': []}
+        result = {'items': [], }
     else:
         result = cStringIO.StringIO()
 
@@ -1991,7 +1991,8 @@ def Serialize(iterID=None, to_json=False, encoding='utf-8', filter_cb=None):
 
     TraverseByID(cb, iterID=iterID)
     if to_json:
-        src = json.dumps(result, indent=2, encoding=encoding)
+        # src = json.dumps(result, indent=2, encoding=encoding)
+        src = result
     else:
         src = result.getvalue()
         result.close()
@@ -2005,7 +2006,8 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
     """
     count = 0
     if from_json:
-        json_data = json.loads(raw_data, encoding=decoding)
+        # json_data = json.loads(raw_data, encoding=decoding)
+        json_data = raw_data
         for json_item in json_data['items']:
             item = FSItemInfo()
             item.unserialize(json_item, decoding=decoding, from_json=True)

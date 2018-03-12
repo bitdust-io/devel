@@ -48,14 +48,13 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import time
+import json
 
 #------------------------------------------------------------------------------
 
 from logs import lg
 
 from automats import automat
-
-from transport import callback
 
 from contacts import identitycache
 from contacts import contactsdb
@@ -302,10 +301,11 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        raw_list_files = backup_fs.Serialize(
+        json_list_files = backup_fs.Serialize(
             to_json=True,
             filter_cb=lambda path_id, path, info: True if info.key_id == self.key_id else False,
         )
+        raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
         block = encrypted.Block(
             CreatorID=my_id.getLocalID(),
             BackupID=self.key_id,

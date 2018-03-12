@@ -81,6 +81,7 @@ class CustomerService(LocalService):
         return True
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        import json
         from logs import lg
         from p2p import commands
         from p2p import p2p_service
@@ -95,10 +96,17 @@ class CustomerService(LocalService):
                 lg.out(2, 'key_ring.on_key_received ERROR reading data from %s' % newpacket.RemoteID)
                 return False
             try:
-                list_files_raw = block.Data()
+                raw_list_files = block.Data()
+                try:
+                    json_data = json.loads(raw_list_files, encoding='utf-8')
+                    json_data['items']
+                except Exception as exc:
+                    lg.exc()
+                    p2p_service.SendFail(newpacket, str(exc))
+                    return False
                 customer_idurl = block.CreatorID
                 count = backup_fs.Unserialize(
-                    raw_data=list_files_raw,
+                    raw_data=json_data,
                     iter=backup_fs.fs(customer_idurl),
                     iterID=backup_fs.fsID(customer_idurl),
                     from_json=True,
