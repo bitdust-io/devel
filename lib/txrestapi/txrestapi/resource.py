@@ -11,7 +11,12 @@ from twisted.internet.defer import Deferred
 
 
 def _to_json(output_object):
-    return json.dumps(output_object, indent=2, separators=(',', ':')) + '\n'
+    return json.dumps(
+        output_object,
+        indent=2,
+        separators=(',', ': '),
+        sort_keys=True,
+    ) + '\n'
 
 
 class _JsonResource(Resource):

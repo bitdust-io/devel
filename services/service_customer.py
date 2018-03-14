@@ -57,17 +57,63 @@ class CustomerService(LocalService):
         from crypt import my_keys
         from customer import supplier_connector
         from customer import customer_state
+        from transport import callback
+        from userid import my_id
         from logs import lg
         if not my_keys.is_key_registered(customer_state.customer_key_id()):
             lg.warn('customer key was not found, generate new key: %s' % customer_state.customer_key_id())
             my_keys.generate_key(customer_state.customer_key_id())
         for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl):
-                supplier_connector.create(supplier_idurl)
+            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getLocalID()):
+                supplier_connector.create(supplier_idurl, customer_idurl=my_id.getLocalID())
+        # TODO: read from dht and connect to other suppliers - from other customers who shared data to me
+        callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
         from customer import supplier_connector
-        for sc in supplier_connector.connectors().values():
+        from transport import callback
+        from userid import my_id
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
+        for sc in supplier_connector.connectors(my_id.getLocalID()).values():
             sc.automat('shutdown')
+        # TODO: disconnect other suppliers
+        return True
+
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        import json
+        from logs import lg
+        from p2p import commands
+        from p2p import p2p_service
+        from main import settings
+        from storage import backup_fs
+        from storage import backup_control
+        from crypt import encrypted
+        if newpacket.Command != commands.ListFiles():
+            return False
+        if newpacket.Payload == settings.ListFilesFormat():
+            # skip old format
+            return False
+        block = encrypted.Unserialize(newpacket.Payload)
+        if block is None:
+            lg.out(2, 'key_ring.on_key_received ERROR reading data from %s' % newpacket.RemoteID)
+            return False
+        try:
+            raw_list_files = block.Data()
+            json_data = json.loads(raw_list_files, encoding='utf-8')
+            json_data['items']
+            customer_idurl = block.CreatorID
+            count = backup_fs.Unserialize(
+                raw_data=json_data,
+                iter=backup_fs.fs(customer_idurl),
+                iterID=backup_fs.fsID(customer_idurl),
+                from_json=True,
+            )
+        except Exception as exc:
+            lg.exc()
+            p2p_service.SendFail(newpacket, str(exc))
+            return False
+        if count > 0:
+            backup_control.Save()
+        p2p_service.SendAck(newpacket, str(count))
         return True

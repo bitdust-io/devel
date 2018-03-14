@@ -305,7 +305,7 @@ def Identity(newpacket):
     return True
 
 
-def SendIdentity(remote_idurl, wide=False, callbacks={}):
+def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
     """
     """
     if _Debug:
@@ -314,7 +314,7 @@ def SendIdentity(remote_idurl, wide=False, callbacks={}):
         commands.Identity(), my_id.getLocalID(),
         my_id.getLocalID(), 'identity',
         my_id.getLocalIdentity().serialize(), remote_idurl)
-    gateway.outbox(result, wide=wide, callbacks=callbacks)
+    gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 
 #------------------------------------------------------------------------------
@@ -433,7 +433,14 @@ def ListFiles(request, info):
 #     from supplier import list_files
 #     return list_files.send(request.OwnerID, request.PacketID, request.Payload)
 
-def SendListFiles(supplierNumORidurl, customer_idurl=None):
+def SendListFiles(supplierNumORidurl, customer_idurl=None, payload=None, wide=False, callbacks={}):
+    """
+    You can send a list of your files to another user if you want he to access them.
+    This will not send any personal data : only file names, ids, versions, etc.
+    This also used as a request to supplier : if you send an empty ListFiles() packet
+    to your supplier he will reply you with a list of stored files in a Files() packet.
+    Pass list of files in encrypted form in the `payload` or leave it empty.
+    """
     MyID = my_id.getLocalID()
     if not customer_idurl:
         customer_idurl = MyID
@@ -447,9 +454,16 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
     PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
-    Payload = settings.ListFilesFormat()
-    result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
-    gateway.outbox(result)
+    Payload = payload or settings.ListFilesFormat()
+    result = signed.Packet(
+        Command=commands.ListFiles(),
+        OwnerID=MyID,
+        CreatorID=MyID,
+        PacketID=PacketID,
+        Payload=Payload,
+        RemoteID=RemoteID,
+    )
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
 
 #------------------------------------------------------------------------------
@@ -756,7 +770,7 @@ def DeleteFile(request):
 
 def SendDeleteFile(SupplierID, pathID):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteFile SupplierID=%s PathID=%s " % (SupplierID, pathID))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteFile SupplierID=%s PathID=%s" % (SupplierID, pathID))
     MyID = my_id.getLocalID()
     PacketID = pathID
     RemoteID = SupplierID
@@ -767,8 +781,7 @@ def SendDeleteFile(SupplierID, pathID):
 
 def SendDeleteListPaths(SupplierID, ListPathIDs):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs number: %d" % (
-            SupplierID, len(ListPathIDs)))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs: %s" % (SupplierID, ListPathIDs))
     MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
@@ -830,7 +843,7 @@ def DeleteBackup(request):
 
 def SendDeleteBackup(SupplierID, BackupID):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteBackup SupplierID=%s  BackupID=%s " % (SupplierID, BackupID))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteBackup SupplierID=%s  BackupID=%s" % (SupplierID, BackupID))
     MyID = my_id.getLocalID()
     PacketID = packetid.RemotePath(BackupID)
     RemoteID = SupplierID
@@ -841,7 +854,7 @@ def SendDeleteBackup(SupplierID, BackupID):
 
 def SendDeleteListBackups(SupplierID, ListBackupIDs):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendDeleteListBackups SupplierID=%s BackupIDs number: %d" % (SupplierID, len(ListBackupIDs)))
+        lg.out(_DebugLevel, "p2p_service.SendDeleteListBackups SupplierID=%s BackupIDs: %s" % (SupplierID, ListBackupIDs))
     MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID

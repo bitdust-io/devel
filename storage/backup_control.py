@@ -43,6 +43,7 @@ _DebugLevel = 12
 import os
 import sys
 import time
+import json
 import cStringIO
 
 try:
@@ -162,7 +163,7 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 
-def WriteIndex(filepath=None):
+def WriteIndex(filepath=None, encoding='utf-8'):
     """
     Write index data base to the local file .bitdust/metadata/index.
     """
@@ -171,12 +172,23 @@ def WriteIndex(filepath=None):
         return
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
+    json_data = backup_fs.Serialize(to_json=True, encoding=encoding)
+    for customer_idurl in backup_fs.known_customers():
+        customer_id = global_id.UrlToGlobalID(customer_idurl)
+        json_data[customer_id] = backup_fs.Serialize(
+            iterID=backup_fs.fsID(customer_idurl),
+            to_json=True,
+            encoding=encoding,
+        )
     src = '%d\n' % revision()
-    src += backup_fs.Serialize(to_json=True)
+    src += json.dumps(json_data, indent=2, encoding=encoding)
+    if _Debug:
+        import pprint
+        pprint.pprint(json_data)
     return bpio.AtomicWriteFile(filepath, src)
 
 
-def ReadIndex(raw_data):
+def ReadIndex(raw_data, encoding='utf-8'):
     """
     Read index data base, ``input`` is a ``cStringIO.StringIO`` object which
     keeps the data.
@@ -188,21 +200,35 @@ def ReadIndex(raw_data):
     if _LoadingFlag:
         return False
     _LoadingFlag = True
-#     try:
-#         new_revision = int(inpt.readline().rstrip('\n'))
-#     except:
-#         _LoadingFlag = False
-#         lg.exc()
-#         return False
     backup_fs.Clear()
     try:
-        count = backup_fs.Unserialize(raw_data, from_json=True)
-    except KeyError:
-        lg.warn('fallback to old (non-json) index format')
-        count = backup_fs.Unserialize(raw_data, from_json=False)
-    except ValueError:
+        json_data = json.loads(raw_data, encoding=encoding)
+    except:
         lg.exc()
-        return False
+        json_data = raw_data
+    if _Debug:
+        import pprint
+        pprint.pprint(json_data)
+    for customer_id in json_data.keys():
+        if customer_id == 'items':
+            try:
+                count = backup_fs.Unserialize(json_data, from_json=True, decoding=encoding)
+            except:
+                lg.exc()
+                return False
+        else:
+            customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+            try:
+                count = backup_fs.Unserialize(
+                    json_data[customer_idurl],
+                    iter=backup_fs.fs(customer_idurl),
+                    iterID=backup_fs.fsID(customer_idurl),
+                    from_json=True,
+                    decoding=encoding,
+                )
+            except:
+                lg.exc()
+                return False
     if _Debug:
         lg.out(_DebugLevel, 'backup_control.ReadIndex %d items loaded' % count)
     # local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())

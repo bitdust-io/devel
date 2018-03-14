@@ -85,7 +85,7 @@ def A(event=None, arg=None):
     """
     global _ListFilesOrator
     if _ListFilesOrator is None:
-        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4, True)
+        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4)
     if event is not None:
         _ListFilesOrator.automat(event, arg)
     return _ListFilesOrator
@@ -112,6 +112,9 @@ class ListFilesOrator(automat.Automat):
     timers = {
         'timer-10sec': (10.0, ['REMOTE_FILES']),
     }
+
+    def init(self):
+        self.log_transitions = True
 
     def state_changed(self, oldstate, newstate, event, arg):
         #global_state.set_global_state('ORATOR ' + newstate)

@@ -31,17 +31,28 @@ EVENTS:
     * :red:`ack`
     * :red:`all-suppliers-connected`
     * :red:`customer-list-files-received`
+    * :red:`dht-lookup-ok`
     * :red:`fail`
-    * :red:`private-key-received`
+    * :red:`new-private-key-registered`
+    * :red:`restart`
+    * :red:`shutdown`
     * :red:`supplier-connected`
-    * :red:`supplier-list-files-received`
     * :red:`timer-10sec`
-    * :red:`timer-1sec`
+    * :red:`timer-15sec`
+    * :red:`timer-3sec`
 """
 
 #------------------------------------------------------------------------------
 
+from logs import lg
+
 from automats import automat
+
+from dht import dht_relations
+
+from userid import global_id
+
+from customer import supplier_connector
 
 #------------------------------------------------------------------------------
 
@@ -51,22 +62,35 @@ class SharedAccessCoordinator(automat.Automat):
     """
 
     timers = {
-        'timer-1sec': (1.0, ['SUPPLIERS?']),
-        'timer-10sec': (10.0, ['SUPPLIERS?', 'LIST_FILES?', ]),
+        'timer-3sec': (3.0, ['SUPPLIERS?']),
+        'timer-10sec': (10.0, ['SUPPLIERS?', 'LIST_FILES?']),
+        'timer-15sec': (15.0, ['DHT_LOOKUP']),
     }
 
-    def __init__(self, state):
+    def __init__(self, key_id, debug_level=0, log_events=False, publish_events=False, **kwargs):
         """
         Create shared_access_coordinator() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
         """
-        super(SharedAccessCoordinator, self).__init__("shared_access_coordinator", state)
+        self.key_id = key_id
+        glob_id = global_id.ParseGlobalID(self.key_id)
+        self.customer_idurl = glob_id['idurl']
+        super(SharedAccessCoordinator, self).__init__(
+            name="shared_%s$%s" % (glob_id['key_alias'], glob_id['user']),
+            state='AT_STARTUP',
+            debug_level=debug_level,
+            log_events=log_events,
+            publish_events=publish_events,
+            **kwargs
+        )
 
     def init(self):
         """
         Method to initialize additional variables and flags
         at creation phase of shared_access_coordinator() machine.
         """
+        self.suppliers_list = []
+        self.result_defer = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -85,54 +109,88 @@ class SharedAccessCoordinator(automat.Automat):
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'private-key-received':
-                self.state = 'SUPPLIERS?'
-                self.doConnectCustomerSuppliers(arg)
+            if event == 'restart' or event == 'new-private-key-registered':
+                self.state = 'DHT_LOOKUP'
+                self.doInit(arg)
+                self.doDHTLookupSuppliers(arg)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
-            if event == 'timer-10sec':
-                self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'all-suppliers-connected' or ( event == 'timer-1sec' and self.isAnySuppliersConnected(arg) ):
-                self.state = 'LIST_FILES?'
-            elif event == 'supplier-list-files-received':
-                self.doProcessSupplierListFile(arg)
-            elif event == 'supplier-connected':
-                self.doRequestSupplierListFiles(arg)
+            if event == 'supplier-connected':
+                self.doRequestSupplierFiles(arg)
                 self.doCheckAllConnected(arg)
-        #---FAILED---
-        elif self.state == 'FAILED':
-            pass
+            elif event == 'customer-list-files-received':
+                self.doProcessCustomerListFiles(arg)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'timer-10sec':
+                self.state = 'DISCONNECTED'
+                self.doReportDisconnected(arg)
+            elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(arg) ) ) and not self.isAnyFilesShared(arg):
+                self.state = 'LIST_FILES?'
+            elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(arg) ) ) and self.isAnyFilesShared(arg):
+                self.state = 'CONNECTED'
+                self.doRequestRandomPacket(arg)
         #---LIST_FILES?---
         elif self.state == 'LIST_FILES?':
-            if event == 'timer-10sec':
-                self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'supplier-connected':
-                self.doRequestListFiles(arg)
-            elif event == 'supplier-list-files-received':
-                self.doProcessSupplierListFile(arg)
+            if event == 'supplier-connected':
+                self.doRequestSupplierFiles(arg)
             elif event == 'customer-list-files-received':
                 self.state = 'VERIFY?'
                 self.doProcessCustomerListFiles(arg)
                 self.doRequestRandomPacket(arg)
-        #---SUCCESS---
-        elif self.state == 'SUCCESS':
-            pass
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'timer-10sec':
+                self.state = 'DISCONNECTED'
+                self.doReportDisconnected(arg)
         #---VERIFY?---
         elif self.state == 'VERIFY?':
-            if event == 'ack' and self.isPacketValid(arg):
-                self.state = 'SUCCESS'
+            if event == 'supplier-connected':
+                self.doRequestSupplierFiles(arg)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'ack' and self.isPacketValid(arg):
+                self.state = 'CONNECTED'
                 self.doReportSuccess(arg)
                 self.doDestroyMe(arg)
             elif event == 'fail' or ( event == 'ack' and not self.isPacketValid(arg) ):
-                self.state = 'FAILED'
-                self.doReportFailed(arg)
+                self.state = 'DISCONNECTED'
+                self.doReportDisconnected(arg)
+        #---DHT_LOOKUP---
+        elif self.state == 'DHT_LOOKUP':
+            if event == 'customer-list-files-received':
+                self.doProcessCustomerListFiles(arg)
+            elif event == 'dht-lookup-ok':
+                self.state = 'SUPPLIERS?'
+                self.doConnectCustomerSuppliers(arg)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'supplier-list-files-received':
-                self.doProcessSupplierListFile(arg)
+            elif event == 'fail' or event == 'timer-15sec':
+                self.state = 'DISCONNECTED'
+                self.doReportDisconnected(arg)
+        #---DISCONNECTED---
+        elif self.state == 'DISCONNECTED':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'restart':
+                self.state = 'DHT_LOOKUP'
+                self.doDHTLookupSuppliers(arg)
+        #---CONNECTED---
+        elif self.state == 'CONNECTED':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'restart':
+                self.state = 'DHT_LOOKUP'
+                self.doDHTLookupSuppliers(arg)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
         return None
 
     def isPacketValid(self, arg):
@@ -140,17 +198,47 @@ class SharedAccessCoordinator(automat.Automat):
         Condition method.
         """
 
-    def isAnySuppliersConnected(self, arg):
+    def isAnySupplierConnected(self, arg):
         """
         Condition method.
         """
+
+    def isAnyFilesShared(self, arg):
+        """
+        Condition method.
+        """
+
+    def doInit(self, arg):
+        """
+        Action method.
+        """
+
+    def doDHTLookupSuppliers(self, arg):
+        """
+        Action method.
+        """
+        d = dht_relations.scan_customer_supplier_relations(self.customer_idurl)
+        d.addCallback(lambda result_list: self.automat('dht-lookup-ok', result_list))
+        d.addErrback(lambda err: self.automat('fail', err))
 
     def doConnectCustomerSuppliers(self, arg):
         """
         Action method.
         """
+        self.suppliers_list.extend(filter(None, arg))
+        for supplier_idurl in self.suppliers_list:
+            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+            if sc is None:
+                sc = supplier_connector.create(
+                    supplier_idurl=supplier_idurl,
+                    customer_idurl=self.customer_idurl,
+                    needed_bytes=0,
+                )
+            sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
+            # self.connect_list.append(supplier_idurl)
+            sc.automat('connect')  # we only want to read the data, so requesting 0 bytes from that supplier
 
-    def doRequestSupplierListFiles(self, arg):
+    def doRequestSupplierFiles(self, arg):
         """
         Action method.
         """
@@ -175,18 +263,35 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
 
+    def doReportDisconnected(self, arg):
+        """
+        Action method.
+        """
+
     def doReportSuccess(self, arg):
         """
         Action method.
         """
+        if self.result_defer:
+            self.result_defer.callback(True)
 
     def doReportFailed(self, arg):
         """
         Action method.
         """
+        if self.result_defer:
+            self.result_defer.errback(Exception(arg))
 
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.result_defer = None
         self.unregister()
+
+    def _on_supplier_connector_state_changed(self, idurl, newstate):
+        lg.out(14, 'fire_hire._supplier_connector_state_changed %s to %s, own state is %s' % (
+            idurl, newstate, self.state))
+        supplier_connector.by_idurl(idurl).remove_callback('shared_access_coordinator')
+        if newstate == 'CONNECTED':
+            self.automat('supplier-connected', idurl)

@@ -195,7 +195,7 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/identity/get/v1$')
     def identity_get_v1(self, request):
         return api.identity_get(
-            include_xml_source=bool(_request_arg(request, 'include_xml_source', '0') != '0'), )
+            include_xml_source=bool(_request_arg(request, 'include_xml_source', '0') in ['1', 'true', ]), )
 
     @POST('^/identity/create/v1$')
     def identity_create_v1(self, request):
@@ -226,38 +226,18 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/network/reconnect/v1$')
-    def network_reconnect_v1(self, request):
-        return api.network_reconnect()
-
-    @GET('^/network/stun/v1$')
-    def network_stun_v1(self, request):
-        return api.network_stun()
-
-    @GET('^/network/connected/v1$')
-    def network_connected_v1(self, request):
-        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '5')))
-
-    #------------------------------------------------------------------------------
-
     @GET('^/key/v1$')
     @GET('^/key/list/v1$')
     def key_list_v1(self, request):
         return api.keys_list(
-            sort=bool(_request_arg(request, 'sort', '0') != '0'),
-            include_private=bool(_request_arg(request, 'include_private', '0') != '0'), )
-
-    @GET('^/key/get/(?P<key_id>[^/]+)/v1$')
-    def key_get_arg_v1(self, request, key_id):
-        return api.key_get(
-            key_id=key_id,
-            include_private=bool(_request_arg(request, 'include_private', '0') != '0'), )
+            sort=bool(_request_arg(request, 'sort', '0') in ['1', 'true', ]),
+            include_private=bool(_request_arg(request, 'include_private', '0') in ['1', 'true', ]), )
 
     @GET('^/key/get/v1$')
     def key_get_v1(self, request):
         return api.key_get(
             key_id=_request_arg(request, 'key_id', mandatory=True),
-            include_private=bool(_request_arg(request, 'include_private', '0') != '0'), )
+            include_private=bool(_request_arg(request, 'include_private', '0') in ['1', 'true', ]), )
 
     @POST('^/key/create/v1$')
     def key_create_v1(self, request):
@@ -265,24 +245,12 @@ class BitDustRESTHTTPServer(APIResource):
         return api.key_create(
             key_alias=data['alias'],
             key_size=int(data.get('size', 4096)),
-            include_private=bool(data.get('include_private')), )
-
-    @DELETE('^/key/erase/(?P<key_id>[^/]+)/v1$')
-    def key_erase_arg_v1(self, request, key_id):
-        return api.key_erase(key_id)
+            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @DELETE('^/key/erase/v1$')
     def key_erase_v1(self, request):
         data = _request_data(request, mandatory_keys=['key_id', ])
         return api.key_erase(key_id=data['key_id'])
-
-    @PUT('^/key/share/(?P<key_id>[^/]+)/v1$')
-    def key_share_arg_v1(self, request, key_id):
-        data = _request_data(request, mandatory_keys=['trusted_user', ])
-        return api.key_share(
-            key_id=key_id,
-            trusted_global_id_or_idurl=data['trusted_user'],
-            include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @PUT('^/key/share/v1$')
     def key_share_v1(self, request):
@@ -291,14 +259,6 @@ class BitDustRESTHTTPServer(APIResource):
             key_id=data['key_id'],
             trusted_global_id_or_idurl=data['trusted_user'],
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
-
-    @POST('^/key/audit/(?P<key_id>[^/]+)/v1$')
-    def key_audit_arg_v1(self, request, key_id):
-        data = _request_data(request, mandatory_keys=['untrusted_user', ])
-        return api.key_audit(
-            key_id=key_id,
-            untrusted_global_id_or_idurl=data['untrusted_user'],
-            is_private=bool(data.get('is_private', '0') in ['1', 'true', ]), )
 
     @POST('^/key/audit/v1$')
     def key_audit_v1(self, request):
@@ -310,24 +270,31 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/file/sync/v1$')
+    def file_sync_v1(self, request):
+        return api.files_sync()
+
     @GET('^/file/v1$')
     @GET('^/file/list/v1$')
     def file_list_v1(self, request):
-        return api.files_list(remote_path=_request_arg(request, 'remote_path', None))
+        return api.files_list(
+            remote_path=_request_arg(request, 'remote_path', None),
+            key_id=_request_arg(request, 'key_id', None),
+            recursive=bool(_request_arg(request, 'recursive', '0') in ['1', 'true', ]), )
 
     @GET('^/file/info/v1$')
     def file_info_v1(self, request):
         return api.file_info(
             remote_path=_request_arg(request, 'remote_path', mandatory=True),
-            include_uploads=bool(_request_arg(request, 'include_uploads', '1') != '0'),
-            include_downloads=bool(_request_arg(request, 'include_downloads', '1') != '0'), )
+            include_uploads=bool(_request_arg(request, 'include_uploads', '1') in ['1', 'true', ]),
+            include_downloads=bool(_request_arg(request, 'include_downloads', '1') in ['1', 'true', ]), )
 
     @POST('^/file/create/v1$')
     def file_create_v1(self, request):
         data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_create(
             remote_path=data['remote_path'],
-            as_folder=data.get('as_folder', False), )
+            as_folder=bool(data.get('as_folder', '0') in ['1', 'true', ]), )
 
     @DELETE('^/file/delete/v1$')
     def file_delete_v1(self, request):
@@ -337,8 +304,8 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/file/upload/v1$')
     def files_uploads_v1(self, request):
         return api.files_uploads(
-            include_running=bool(_request_arg(request, 'include_running', '1') != '0'),
-            include_pending=bool(_request_arg(request, 'include_pending', '1') != '0'), )
+            include_running=bool(_request_arg(request, 'include_running', '1') in ['1', 'true', ]),
+            include_pending=bool(_request_arg(request, 'include_pending', '1') in ['1', 'true', ]), )
 
     @POST('^/file/upload/start/v1$')
     def file_upload_start_v1(self, request):
@@ -346,7 +313,7 @@ class BitDustRESTHTTPServer(APIResource):
         return api.file_upload_start(
             local_path=data['local_path'],
             remote_path=data['remote_path'],
-            wait_result=data.get('wait_result', True), )
+            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]), )
 
     @POST('^/file/upload/stop/v1$')
     def file_upload_stop_v1(self, request):
@@ -359,16 +326,36 @@ class BitDustRESTHTTPServer(APIResource):
         return api.file_download_start(
             remote_path=data['remote_path'],
             destination_path=data.get('destination_folder', None),
-            wait_result=data.get('wait_result', True), )
+            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]), )
 
     @POST('^/file/download/stop/v1$')
     def file_download_stop_v1(self, request):
         data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_download_stop(remote_path=data['remote_path'])
 
-    @GET('^/file/sync/v1$')
-    def file_sync_v1(self, request):
-        return api.files_sync()
+    @GET('^/file/explore/v1$')
+    def file_explore_v1(self, request):
+        return api.file_explore(local_path=_request_arg(request, 'local_path', mandatory=True))
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/supplier/v1$')
+    @GET('^/supplier/list/v1$')
+    def supplier_list(self, request):
+        return api.suppliers_list(
+            customer_idurl=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl')
+        )
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/share/history/v1$')
+    def share_history(self, request):
+        return api.share_history()
+
+    @POST('^/share/open/v1$')
+    def share_open(self, request):
+        data = _request_data(request, mandatory_keys=['remote_user', 'key_id', ])
+        return api.share_open(remote_user=data['remote_user'], key_id=data['key_id'])
 
     #------------------------------------------------------------------------------
 
@@ -396,27 +383,70 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
-    def event_listen(self, request, consumer_id):
-        return api.events_listen(consumer_id)
-
     @POST('^/event/send/(?P<event_id>[^/]+)/v1$')
     def event_send(self, request, event_id):
         return api.event_send(event_id, json_data=_request_data(request,))
 
+    @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
+    def event_listen(self, request, consumer_id):
+        return api.events_listen(consumer_id)
+
     #------------------------------------------------------------------------------
 
-    @GET('^/queue/v1$')
-    @GET('^/queue/list/v1$')
-    def queue_list(self, request):
-        return api.queue_list()
+    @GET('^/network/reconnect/v1$')
+    def network_reconnect_v1(self, request):
+        return api.network_reconnect()
+
+    @GET('^/network/stun/v1$')
+    def network_stun_v1(self, request):
+        return api.network_stun()
+
+    @GET('^/network/connected/v1$')
+    def network_connected_v1(self, request):
+        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '5')))
+
+    @GET('^/network/status/v1$')
+    def network_status_v1(self, request):
+        return api.network_status()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/packet/v1$')
+    @GET('^/packet/list/v1$')
+    def packet_list_v1(self, request):
+        return api.packets_list()
+
+    @GET('^/packet/stats/v1$')
+    def packet_stats_v1(self, request):
+        return api.packets_stats()
 
     #------------------------------------------------------------------------------
 
     @GET('^/transfer/v1$')
     @GET('^/transfer/list/v1$')
-    def transfers_list(self, request):
+    def transfers_list_v1(self, request):
         return api.transfers_list()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/connection/v1$')
+    @GET('^/connection/list/v1$')
+    def connection_list_v1(self, request):
+        return api.connections_list()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/stream/v1$')
+    @GET('^/stream/list/v1$')
+    def stream_list_v1(self, request):
+        return api.streams_list()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/queue/v1$')
+    @GET('^/queue/list/v1$')
+    def queue_list_v1(self, request):
+        return api.queue_list()
 
     #------------------------------------------------------------------------------
 

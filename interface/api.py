@@ -641,10 +641,11 @@ def files_sync():
     return OK('the main files sync loop has been restarted')
 
 
-def files_list(remote_path=None):
+def files_list(remote_path=None, key_id=None, recursive=True):
     """
     Returns list of known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
+    If `key_id` is passed will only return items encrypted using that key.
 
     Return:
         { u'execution': u'0.001040',
@@ -686,14 +687,14 @@ def files_list(remote_path=None):
     from lib import packetid
     from system import bpio
     from userid import global_id
-    from userid import my_id
     from crypt import my_keys
     glob_path = global_id.ParseGlobalID(remote_path)
     norm_path = global_id.NormalizeGlobalID(glob_path.copy())
     remotePath = bpio.remotePath(norm_path['path'])
     result = []
     lookup = backup_fs.ListChildsByPath(
-        remotePath,
+        path=remotePath,
+        recursive=recursive,
         iter=backup_fs.fs(norm_path['idurl']),
         iterID=backup_fs.fsID(norm_path['idurl']),
     )
@@ -703,6 +704,8 @@ def files_list(remote_path=None):
         # if not i['item']['k']:
         #     i['item']['k'] = my_id.getGlobalID(key_alias='master')
         if i['path_id'] == 'index':
+            continue
+        if key_id is not None and key_id != i['item']['k']:
             continue
         if glob_path['key_alias'] and i['item']['k']:
             if i['item']['k'] != my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']):
@@ -752,7 +755,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(norm_path['idurl']))
     if not item:
         return ERROR('item "%s" is not found in catalog' % pathID)
-    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item, customer_id=norm_path['customer'])
+    (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)  # , customer_id=norm_path['customer'])
     glob_path_item = norm_path.copy()
     glob_path_item['path'] = pathID
     key_alias = 'master'
@@ -1357,10 +1360,21 @@ def file_download_stop(remote_path):
     return RESULT(r)
 
 
+def file_explore(local_path):
+    """
+    """
+    from lib import misc
+    from system import bpio
+    locpath = bpio.portablePath(local_path)
+    if not bpio.pathExist(locpath):
+        return ERROR('local path not exist')
+    misc.ExplorePathInOS(locpath)
+    return OK()
+
 #------------------------------------------------------------------------------
 
 
-def suppliers_list():
+def suppliers_list(customer_idurl=None):
     """
     This method returns a list of suppliers - nodes which stores your encrypted data on own machines.
 
@@ -1370,30 +1384,43 @@ def suppliers_list():
          'result':[{
             'connected': '05-06-2016 13:06:05',
             'idurl': 'http://p2p-id.ru/bitdust_j_vps1014.xml',
-            'numfiles': 14,
+            'files_count': 14,
             'position': 0,
-            'status': 'offline'
+            'contact_status': 'offline'
          }, {
             'connected': '05-06-2016 13:04:57',
             'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml',
-            'numfiles': 14,
+            'files_count': 14,
             'position': 1,
-            'status': 'offline'
+            'contact_status': 'offline'
         }]}
     """
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
+    from customer import supplier_connector
     from p2p import contact_status
     from lib import misc
     from userid import my_id
+    from userid import global_id
+    if customer_idurl is None:
+        customer_idurl = my_id.getLocalID()
+    else:
+        if global_id.IsValidGlobalUser(customer_idurl):
+            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     return RESULT([{
-        'position': s[0],
-        'idurl': s[1],
-        'connected': misc.readSupplierData(s[1], 'connected', my_id.getLocalID()),
-        'numfiles': len(misc.readSupplierData(s[1], 'listfiles', my_id.getLocalID()).split('\n')) - 1,
-        'status': contact_status.getStatusLabel(s[1]),
-    } for s in enumerate(contactsdb.suppliers())])
+        'position': pos,
+        'idurl': supplier_idurl,
+        'supplier_state':
+            None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
+            else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
+        'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
+        'files_count': len(misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')) - 1,
+        'contact_status': contact_status.getStatusLabel(supplier_idurl),
+        'contact_state': (
+            None if not contact_status.isKnown(supplier_idurl)
+            else contact_status.getInstance(supplier_idurl).state),
+    } for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl))])
 
 
 def supplier_replace(index_or_idurl):
@@ -1410,18 +1437,20 @@ def supplier_replace(index_or_idurl):
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
-    idurl = index_or_idurl
-    if idurl.isdigit():
-        idurl = contactsdb.supplier(int(idurl))
-    if idurl and contactsdb.is_supplier(idurl):
+    from userid import my_id
+    customer_idurl = my_id.getLocalID()
+    supplier_idurl = index_or_idurl
+    if supplier_idurl.isdigit():
+        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl)
+    if supplier_idurl and contactsdb.is_supplier(supplier_idurl, customer_idurl):
         from customer import fire_hire
-        fire_hire.AddSupplierToFire(idurl)
+        fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
-        return OK('supplier "%s" will be replaced by new peer' % idurl)
+        return OK('supplier "%s" will be replaced by new peer' % supplier_idurl)
     return ERROR('supplier not found')
 
 
-def supplier_change(index_or_idurl, new_idurl):
+def supplier_change(index_or_idurl, new_supplier_idurl):
     """
     Doing same as supplier_replace() but new node must be provided by you - you can manually assign a supplier.
 
@@ -1432,19 +1461,21 @@ def supplier_change(index_or_idurl, new_idurl):
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
-    idurl = index_or_idurl
-    if idurl.isdigit():
-        idurl = contactsdb.supplier(int(idurl))
-    if not idurl or not contactsdb.is_supplier(idurl):
+    from userid import my_id
+    customer_idurl = my_id.getLocalID()
+    supplier_idurl = index_or_idurl
+    if supplier_idurl.isdigit():
+        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl)
+    if not contactsdb.is_supplier(supplier_idurl, customer_idurl):
         return ERROR('supplier not found')
-    if contactsdb.is_supplier(new_idurl):
-        return ERROR('peer "%s" is your supplier already' % new_idurl)
+    if contactsdb.is_supplier(new_supplier_idurl, customer_idurl):
+        return ERROR('peer "%s" is your supplier already' % new_supplier_idurl)
     from customer import fire_hire
     from customer import supplier_finder
-    supplier_finder.AddSupplierToHire(new_idurl)
-    fire_hire.AddSupplierToFire(idurl)
+    supplier_finder.AddSupplierToHire(new_supplier_idurl)
+    fire_hire.AddSupplierToFire(supplier_idurl)
     fire_hire.A('restart')
-    return OK('supplier "%s" will be replaced by "%s"' % (idurl, new_idurl))
+    return OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl))
 
 
 def suppliers_ping():
@@ -1481,10 +1512,13 @@ def customers_list():
     from contacts import contactsdb
     from p2p import contact_status
     return RESULT([{
-        'position': s[0],
-        'idurl': s[1],
-        'status': contact_status.getStatusLabel(s[1])
-    } for s in enumerate(contactsdb.customers())])
+        'position': pos,
+        'idurl': customer_idurl,
+        'contact_status': contact_status.getStatusLabel(customer_idurl),
+        'contact_state': (
+            None if not contact_status.isKnown(customer_idurl)
+            else contact_status.getInstance(customer_idurl).state),
+    } for (pos, customer_idurl, ) in enumerate(contactsdb.customers())])
 
 
 def customer_reject(idurl):
@@ -1639,6 +1673,87 @@ def space_local():
 
 #------------------------------------------------------------------------------
 
+def share_create(key_alias, folder_name=None):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    ret = Deferred()
+    return ret
+
+
+def share_grant(remote_user, key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    from userid import global_id
+    remote_idurl = remote_user
+    if remote_user.count('@'):
+        glob_id = global_id.ParseGlobalID(remote_user)
+        remote_idurl = glob_id['idurl']
+    if not remote_idurl:
+        return ERROR('wrong user id')
+    from access import shared_access_donor
+    ret = Deferred()
+
+    def _on_shared_access_donor_success(result):
+        ret.callback(OK() if result else ERROR('failed'))
+        return None
+
+    def _on_shared_access_donor_failed(err):
+        ret.callback(ERROR(err.getErrorMessage()))
+        return None
+
+    d = Deferred()
+    d.addCallback(_on_shared_access_donor_success)
+    d.addErrback(_on_shared_access_donor_failed)
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True)
+    shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
+    return ret
+
+
+def share_open(key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    from access import shared_access_coordinator
+    ret = Deferred()
+
+    def _on_shared_access_coordinator_success(result):
+        ret.callback(OK() if result else ERROR('failed'))
+        return None
+
+    def _on_shared_access_donor_failed(err):
+        ret.callback(ERROR(err.getErrorMessage()))
+        return None
+
+    d = Deferred()
+    d.addCallback(_on_shared_access_coordinator_success)
+    d.addErrback(_on_shared_access_donor_failed)
+    shared_access_coordinator_machine = shared_access_coordinator.SharedAccessCoordinator(log_events=True)
+    shared_access_coordinator_machine.automat('init', (key_id, ))
+    return ret
+
+
+def share_close(key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    ret = Deferred()
+    return ret
+
+
+def share_history():
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    return RESULT([],)
+
+#------------------------------------------------------------------------------
 
 def automats_list():
     """
@@ -1897,6 +2012,7 @@ def packets_list():
         })
     return RESULT(result)
 
+#------------------------------------------------------------------------------
 
 def transfers_list():
     """
@@ -1941,6 +2057,7 @@ def transfers_list():
         result.append(r)
     return RESULT(result)
 
+#------------------------------------------------------------------------------
 
 def connections_list(wanted_protos=None):
     """
@@ -2005,6 +2122,7 @@ def connections_list(wanted_protos=None):
             result.append(item)
     return RESULT(result)
 
+#------------------------------------------------------------------------------
 
 def streams_list(wanted_protos=None):
     """
@@ -2063,6 +2181,17 @@ def streams_list(wanted_protos=None):
                     })
             result.append(item)
     return RESULT(result)
+
+#------------------------------------------------------------------------------
+
+def queue_list():
+    """
+    """
+    from p2p import p2p_queue
+    return RESULT([{
+        'queue_id': queue_id,
+        'messages': len(p2p_queue.queue(queue_id)),
+    } for queue_id in p2p_queue.queue().keys()])
 
 #------------------------------------------------------------------------------
 
@@ -2577,15 +2706,50 @@ def network_connected(wait_timeout=5):
     _do_service_test('service_network')
     return ret
 
-#------------------------------------------------------------------------------
 
-def queue_list():
+def network_status():
     """
     """
-    from p2p import p2p_queue
-    return RESULT([{
-        'queue_id': queue_id,
-        'messages': len(p2p_queue.queue(queue_id)),
-    } for queue_id in p2p_queue.queue().keys()])
+    from automats import automat
+    from main import settings
+    from userid import my_id
+    from contacts import contactsdb
+    from p2p import contact_status
+    r = {
+        'p2p_connector_state': None,
+        'network_connector_state': None,
+        'idurl': None,
+        'global_id': None,
+        'suppliers': {
+            'desired': 0,
+            'requested': 0,
+            'connected': 0,
+            'total': 0,
+        },
+        'customers': {
+            'connected': 0,
+            'total': 0,
+        },
+    }
+    p2p_connector_lookup = automat.find('p2p_connector')
+    if p2p_connector_lookup:
+        p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
+        if p2p_connector_machine:
+            r['p2p_connector_state'] = p2p_connector_machine.state
+    network_connector_lookup = automat.find('network_connector')
+    if network_connector_lookup:
+        network_connector_machine = automat.objects().get(network_connector_lookup[0])
+        if network_connector_machine:
+            r['network_connector_state'] = network_connector_machine.state
+    if my_id.isLocalIdentityReady():
+        r['idurl'] = my_id.getLocalID()
+        r['global_id'] = my_id.getGlobalID()
+    r['suppliers']['desired'] = settings.getSuppliersNumberDesired()
+    r['suppliers']['requested'] = contactsdb.num_suppliers()
+    r['suppliers']['connected'] = contact_status.countOnlineAmong(contactsdb.all_suppliers())
+    r['suppliers']['total'] = contactsdb.total_suppliers()
+    r['customers']['connected'] = contact_status.countOnlineAmong(contactsdb.customers())
+    r['customers']['total'] = contactsdb.num_customers()
+    return RESULT([r, ])
 
 #------------------------------------------------------------------------------

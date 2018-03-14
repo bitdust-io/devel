@@ -93,8 +93,26 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
         return
     _do_transfer_key(key_id, idurl, include_private=include_private).addCallbacks(
         callback=result.callback,
-        errback=result.errback
+        errback=result.errback,
     )
+
+
+def _on_transfer_key_response(response, info, key_id, result):
+    if response.Command == commands.Ack():
+        result.callback(response)
+        if _Debug:
+            lg.info('key %s transfer success to %s' % (key_id, response.OwnerID))
+        return None
+    if response.Command == commands.Fail():
+        if response.Payload == 'key already registered':
+            result.callback(response)
+            if _Debug:
+                lg.warn('key %s already registered on %s' % (key_id, response.OwnerID))
+            return None
+    result.errback(Exception(response.Payload))
+    if _Debug:
+        lg.warn('key transfer failed: %s' % response.Payload)
+    return None
 
 
 def _do_transfer_key(key_id, idurl, include_private=False):
@@ -136,8 +154,10 @@ def _do_transfer_key(key_id, idurl, include_private=False):
         encrypted_key_data=encrypted_key_data,
         packet_id=key_id,
         callbacks={
-            commands.Ack(): lambda response, info: result.callback(response),
-            commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            commands.Ack(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
+            commands.Fail(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
+            # commands.Ack(): lambda response, info: result.callback(response),
+            # commands.Fail(): lambda response, info: result.errback(Exception(response)),
         },
     )
     return result
@@ -163,11 +183,26 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
 #------------------------------------------------------------------------------
 
 def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
-    orig_sample = my_keys.encrypt(key_id, test_sample)
-    response_sample = base64.b64decode(response.Payload)
+    try:
+        response_sample = base64.b64decode(response.Payload)
+    except:
+        lg.exc()
+        result.callback(False)
+        return False
+    key_alias, creator_idurl = my_keys.split_key_id(key_id)
+    if creator_idurl == untrusted_idurl and key_alias == 'master':
+        recipient_id_obj = identitycache.FromCache(creator_idurl)
+        if not recipient_id_obj:
+            lg.warn('not found "%s" in identity cache' % creator_idurl)
+            result.errback(Exception('not found "%s" in identity cache' % creator_idurl))
+            return result
+        orig_sample = recipient_id_obj.encrypt(test_sample)
+    else:
+        orig_sample = my_keys.encrypt(key_id, test_sample)
     if response_sample == orig_sample:
         if _Debug:
-            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, '         is OK !!!!!!!!!!!!!!!!!!!!!!!!!')
         result.callback(True)
         return True
     lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
@@ -196,10 +231,13 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
-    if not my_keys.is_key_registered(key_id):
-        lg.warn('unknown key: "%s"' % key_id)
-        result.errback(Exception('unknown key: "%s"' % key_id))
-        return result
+    if untrusted_idurl == creator_idurl and key_alias == 'master':
+        lg.warn('doing audit of master key (public part) of remote user')
+    else:
+        if not my_keys.is_key_registered(key_id):
+            lg.warn('unknown key: "%s"' % key_id)
+            result.errback(Exception('unknown key: "%s"' % key_id))
+            return result
     public_test_sample = key.NewSessionKey()
     json_payload = {
         'key_id': key_id,
@@ -221,10 +259,12 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         remote_idurl=recipient_id_obj.getIDURL(),
         encrypted_payload=encrypted_payload,
         packet_id=key_id,
+        timeout=timeout,
         callbacks={
             commands.Ack(): lambda response, info:
                 _on_audit_public_key_response(response, info, key_id, untrusted_idurl, public_test_sample, result),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            None: lambda pkt_out: result.errback(Exception('timeout')),  # timeout
         },
     )
     return result
@@ -232,10 +272,16 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
 #------------------------------------------------------------------------------
 
 def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test_sample, result):
-    response_sample = base64.b64decode(response.Payload)
+    try:
+        response_sample = base64.b64decode(response.Payload)
+    except:
+        lg.exc()
+        result.callback(False)
+        return False
     if response_sample == test_sample:
         if _Debug:
-            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s is OK!' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s' % (key_id, untrusted_idurl, ))
+            lg.out(_DebugLevel, '         is OK !!!!!!!!!!!!!!!!!!!!!!!!!')
         result.callback(True)
         return True
     lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
@@ -264,12 +310,16 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
-    if not my_keys.is_key_registered(key_id):
-        lg.warn('unknown key: "%s"' % key_id)
-        result.errback(Exception('unknown key: "%s"' % key_id))
-        return result
     private_test_sample = key.NewSessionKey()
-    private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
+    if untrusted_idurl == creator_idurl and key_alias == 'master':
+        lg.warn('doing audit of master key (private part) of remote user')
+        private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
+    else:
+        if not my_keys.is_key_registered(key_id):
+            lg.warn('unknown key: "%s"' % key_id)
+            result.errback(Exception('unknown key: "%s"' % key_id))
+            return result
+        private_test_encrypted_sample = my_keys.encrypt(key_id, private_test_sample)
     json_payload = {
         'key_id': key_id,
         'audit': {
@@ -290,10 +340,12 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         remote_idurl=recipient_id_obj.getIDURL(),
         encrypted_payload=encrypted_payload,
         packet_id=key_id,
+        timeout=timeout,
         callbacks={
             commands.Ack(): lambda response, info:
                 _on_audit_private_key_response(response, info, key_id, untrusted_idurl, private_test_sample, result),
             commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            None: lambda pkt_out: result.errback(Exception('timeout')),  # timeout
         },
     )
     return result
@@ -310,15 +362,17 @@ def on_key_received(newpacket, info, status, error_message):
         key_json = json.loads(key_data)
         key_id = key_json['key_id']
         if my_keys.is_key_registered(key_id):
-            raise Exception('key "%s" already registered' % key_id)
+            raise Exception('key already registered')
         key_id, key_object = my_keys.read_key_info(key_json)
         if not my_keys.register_key(key_id, key_object):
-            raise Exception('failed to register key %s' % key_id)
+            raise Exception('key register failed')
     except Exception as exc:
         lg.exc()
         p2p_service.SendFail(newpacket, str(exc))
         return False
     p2p_service.SendAck(newpacket)
+    if _Debug:
+        lg.info('received and stored locally a new key %s, include_private=%s' % (key_id, key_json.get('include_private')))
     return True
 
 
@@ -341,12 +395,14 @@ def on_audit_key_received(newpacket, info, status, error_message):
     if not my_keys.is_valid_key_id(key_id):
         p2p_service.SendFail(newpacket, 'invalid key id')
         return False
-    if not my_keys.is_key_registered(key_id, include_master=False):
+    if not my_keys.is_key_registered(key_id, include_master=True):
         p2p_service.SendFail(newpacket, 'key not registered')
         return False
     if public_sample:
         response_payload = base64.b64encode(my_keys.encrypt(key_id, public_sample))
         p2p_service.SendAck(newpacket, response_payload)
+        if _Debug:
+            lg.info('remote user %s requested audit of public key %s' % (newpacket.OwnerID, key_id))
         return True
     if private_sample:
         if not my_keys.is_key_private(key_id):
@@ -354,6 +410,8 @@ def on_audit_key_received(newpacket, info, status, error_message):
             return False
         response_payload = base64.b64encode(my_keys.decrypt(key_id, private_sample))
         p2p_service.SendAck(newpacket, response_payload)
+        if _Debug:
+            lg.info('remote user %s requested audit of private key %s' % (newpacket.OwnerID, key_id))
         return True
     p2p_service.SendFail(newpacket, 'wrong audit request')
     return False

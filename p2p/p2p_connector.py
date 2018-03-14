@@ -155,8 +155,7 @@ def A(event=None, arg=None):
     if event is None and arg is None:
         return _P2PConnector
     if _P2PConnector is None:
-        _P2PConnector = P2PConnector(
-            'p2p_connector', 'AT_STARTUP', _DebugLevel, _Debug)
+        _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', _DebugLevel)
     if event is not None:
         _P2PConnector.automat(event, arg)
     return _P2PConnector
@@ -181,6 +180,9 @@ class P2PConnector(automat.Automat):
     timers = {
         'timer-20sec': (20.0, ['INCOMMING?']),
     }
+
+    def init(self):
+        self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('P2P ' + newstate)

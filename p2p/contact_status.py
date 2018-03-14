@@ -128,13 +128,24 @@ def shutdown():
     """
     Called from top level code when the software is finishing.
     """
-    lg.out(4, 'contact_status.shutdown')
     global _ShutdownFlag
     global _ContactsStatusDict
+    lg.out(4, 'contact_status.shutdown')
     for A in _ContactsStatusDict.values():
         A.destroy()
     _ContactsStatusDict.clear()
     _ShutdownFlag = True
+
+
+#------------------------------------------------------------------------------
+
+def check_create(idurl):
+    """
+    """
+    if idurl not in _ContactsStatusDict.keys():
+        A(idurl)
+        lg.info('contact %s is not found, made a new instance' % idurl)
+    return True
 
 
 def isKnown(idurl):
@@ -161,10 +172,13 @@ def isOnline(idurl):
         return False
     if idurl in [None, 'None', '']:
         return False
-    if idurl not in _ContactsStatusDict.keys():
-        A(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
+    if not isKnown(idurl):
+        return False
+#     check_create(idurl)
+#     if idurl not in _ContactsStatusDict.keys():
+#         A(idurl)
+#         if _Debug:
+#             lg.out(_DebugLevel, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'CONNECTED'
 
 
@@ -178,10 +192,12 @@ def isOffline(idurl):
         return True
     if idurl in [None, 'None', '']:
         return True
-    if idurl not in _ContactsStatusDict.keys():
-        A(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
+    if not isKnown(idurl):
+        return True
+#     if idurl not in _ContactsStatusDict.keys():
+#         A(idurl)
+#         if _Debug:
+#             lg.out(_DebugLevel, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'OFFLINE'
 
 
@@ -195,12 +211,26 @@ def isCheckingNow(idurl):
         return False
     if idurl in [None, 'None', '']:
         return False
-    if idurl not in _ContactsStatusDict.keys():
-        A(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
+    if not isKnown(idurl):
+        return False
+#     if idurl not in _ContactsStatusDict.keys():
+#         A(idurl)
+#         if _Debug:
+#             lg.out(_DebugLevel, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
     st = A(idurl).state
     return st == 'PING' or st == 'ACK?'
+
+
+def getInstance(idurl):
+    """
+    """
+    global _ContactsStatusDict
+    if _ShutdownFlag:
+        return None
+    if idurl in [None, 'None', '']:
+        return None
+    check_create(idurl)
+    return A(idurl)
 
 
 def getStatusLabel(idurl):
@@ -214,10 +244,7 @@ def getStatusLabel(idurl):
         return '?'
     if idurl in [None, 'None', '']:
         return '?'
-    if idurl not in _ContactsStatusDict.keys():
-        A(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'contact_status.getStatusLabel contact %s is not found, made a new instance' % idurl)
+    check_create(idurl)
     return _StatusLabels.get(A(idurl).state, '?')
 
 
@@ -232,10 +259,7 @@ def getStatusIcon(idurl):
         return '?'
     if idurl in [None, 'None', '']:
         return '?'
-    if idurl not in _ContactsStatusDict.keys():
-        A(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'contact_status.getStatusIcon contact %s is not found, made a new instance' % idurl)
+    check_create(idurl)
     return _StatusIcons.get(A(idurl).state, '?')
 
 
@@ -422,6 +446,9 @@ def OutboxStatus(pkt_out, status, error=''):
 
     If packet sending was failed - user seems to be OFFLINE.
     """
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return False
     if pkt_out.remote_idurl == my_id.getLocalID():
         return False
     if pkt_out.outpacket.CreatorID != my_id.getLocalID():
@@ -439,6 +466,9 @@ def Inbox(newpacket, info, status, message):
     """
     This is called when some ``packet`` was received from remote peer - user seems to be ONLINE.
     """
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return False
     if newpacket.OwnerID == my_id.getLocalID():
         return False
     if newpacket.RemoteID != my_id.getLocalID():
@@ -455,6 +485,9 @@ def Outbox(pkt_out):
     This packet can be our Identity packet - this is a sort of PING operation
     to try to connect with that man.
     """
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return False
     if pkt_out.outpacket.RemoteID == my_id.getLocalID():
         return False
     if pkt_out.outpacket.CreatorID != my_id.getLocalID():

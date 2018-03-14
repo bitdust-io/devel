@@ -121,6 +121,17 @@ def customers():
     return _CustomersList
 
 
+def all_suppliers():
+    """
+    """
+    global _SuppliersList
+    result = []
+    for suppliers_list in _SuppliersList.values():
+        for supplier_idurl in suppliers_list:
+            if supplier_idurl not in result:
+                result.append(supplier_idurl)
+    return result
+
 def contacts(include_all=False):
     """
     Return a union of suppliers and customers ID's.
@@ -202,12 +213,20 @@ def add_supplier(idurl, position=-1, customer_idurl=None):
 
 def clear_suppliers(customer_idurl=None):
     """
-    Remove all suppliers.
+    Remove all suppliers for given customer, if customer_idurl is None will erase all my suppliers.
     """
     global _SuppliersList
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     _SuppliersList.pop(customer_idurl)
+
+
+def clear_all_suppliers():
+    """
+    Remove all suppliers.
+    """
+    global _SuppliersList
+    _SuppliersList.clear()
 
 
 def clear_customers():
@@ -369,6 +388,16 @@ def num_suppliers(customer_idurl=None):
     Return current number of suppliers.
     """
     return len(suppliers(customer_idurl=customer_idurl))
+
+
+def total_suppliers():
+    """
+    """
+    global _SuppliersList
+    result = set()
+    for suppliers_list in _SuppliersList.values():
+        result.update(set(suppliers_list))
+    return len(result)
 
 
 def supplier(index, customer_idurl=None):
