@@ -221,11 +221,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return api.key_audit(key_id=key_id, untrusted_global_id_or_idurl=untrusted_global_id_or_idurl,
                              is_private=is_private, timeout=timeout)
 
-    def jsonrpc_files_list(self, remote_path=None):
-        return api.files_list(remote_path=remote_path)
-
     def jsonrpc_files_sync(self):
         return api.files_sync()
+
+    def jsonrpc_files_list(self, remote_path=None):
+        return api.files_list(remote_path=remote_path)
 
     def jsonrpc_file_info(self, remote_path):
         return api.file_info(remote_path)
@@ -239,12 +239,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_files_downloads(self):
         return api.files_downloads()
 
-    def jsonrpc_file_download_start(self, remote_path, destination_path=None):
-        return api.file_download_start(remote_path, destination_path=destination_path)
-
-    def jsonrpc_file_download_stop(self, remote_path):
-        return api.file_download_stop(remote_path)
-
     def jsonrpc_files_uploads(self, include_running=True, include_pending=True):
         return api.files_uploads(include_running=include_running, include_pending=include_pending)
 
@@ -253,6 +247,15 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_file_upload_stop(self, remote_path):
         return api.file_upload_stop(remote_path)
+
+    def jsonrpc_file_download_start(self, remote_path, destination_path=None):
+        return api.file_download_start(remote_path, destination_path=destination_path)
+
+    def jsonrpc_file_download_stop(self, remote_path):
+        return api.file_download_stop(remote_path)
+
+    def jsonrpc_file_explore(self, local_path):
+        return api.file_explore(local_path)
 
     def jsonrpc_suppliers_list(self):
         return api.suppliers_list()
@@ -382,6 +385,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_network_connected(self, wait_timeout=5):
         return api.network_connected(wait_timeout=wait_timeout)
+
+    def jsonrpc_network_status(self):
+        return api.network_status()
 
     def jsonrpc_reconnect(self):  # alias
         return api.network_reconnect()

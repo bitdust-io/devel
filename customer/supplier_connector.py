@@ -111,6 +111,19 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None):
     return connectors(customer_idurl)[supplier_idurl]
 
 
+def is_supplier(supplier_idurl, customer_idurl=None):
+    """
+    """
+    global _SuppliersConnectors
+    if customer_idurl is None:
+        customer_idurl = my_id.getLocalID()
+    if customer_idurl not in _SuppliersConnectors:
+        return False
+    if supplier_idurl not in _SuppliersConnectors[customer_idurl]:
+        return False
+    return True
+
+
 def by_idurl(supplier_idurl, customer_idurl=None):
     """
     """

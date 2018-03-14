@@ -112,27 +112,27 @@ def readExternalIP():
     return bpio.ReadBinaryFile(settings.ExternalIPFilename())
 
 
-def readSupplierData(idurl, filename, customer_idurl):
+def readSupplierData(supplier_idurl, filename, customer_idurl):
     """
     Read a file from [BitDust data dir]/suppliers/[IDURL] folder.
 
     The file names right now is ['connected', 'disconnected',
     'listfiles'].
     """
-    path = settings.SupplierPath(idurl, customer_idurl, filename)
+    path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     if not os.path.isfile(path):
         return ''
     return bpio.ReadTextFile(path)
 
 
-def writeSupplierData(idurl, filename, data, customer_idurl):
+def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
     """
     Writes to a config file for given supplier.
     """
-    dirPath = settings.SupplierPath(idurl, customer_idurl)
+    dirPath = settings.SupplierPath(supplier_idurl, customer_idurl)
     if not os.path.isdir(dirPath):
         os.makedirs(dirPath)
-    path = settings.SupplierPath(idurl, customer_idurl, filename)
+    path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     return bpio.WriteFile(path, data)
 
 #-------------------------------------------------------------------------------

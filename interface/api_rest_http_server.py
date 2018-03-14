@@ -226,20 +226,6 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/network/reconnect/v1$')
-    def network_reconnect_v1(self, request):
-        return api.network_reconnect()
-
-    @GET('^/network/stun/v1$')
-    def network_stun_v1(self, request):
-        return api.network_stun()
-
-    @GET('^/network/connected/v1$')
-    def network_connected_v1(self, request):
-        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '5')))
-
-    #------------------------------------------------------------------------------
-
     @GET('^/key/v1$')
     @GET('^/key/list/v1$')
     def key_list_v1(self, request):
@@ -283,6 +269,10 @@ class BitDustRESTHTTPServer(APIResource):
             is_private=bool(data.get('is_private', '0') in ['1', 'true', ]), )
 
     #------------------------------------------------------------------------------
+
+    @GET('^/file/sync/v1$')
+    def file_sync_v1(self, request):
+        return api.files_sync()
 
     @GET('^/file/v1$')
     @GET('^/file/list/v1$')
@@ -343,9 +333,18 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_download_stop(remote_path=data['remote_path'])
 
-    @GET('^/file/sync/v1$')
-    def file_sync_v1(self, request):
-        return api.files_sync()
+    @GET('^/file/explore/v1$')
+    def file_explore_v1(self, request):
+        return api.file_explore(local_path=_request_arg(request, 'local_path', mandatory=True))
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/supplier/v1$')
+    @GET('^/supplier/list/v1$')
+    def supplier_list(self, request):
+        return api.suppliers_list(
+            customer_idurl=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl')
+        )
 
     #------------------------------------------------------------------------------
 
@@ -384,24 +383,69 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @POST('^/event/send/(?P<event_id>[^/]+)/v1$')
+    def event_send(self, request, event_id):
+        return api.event_send(event_id, json_data=_request_data(request,))
+
     @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
     def event_listen(self, request, consumer_id):
         return api.events_listen(consumer_id)
 
-    @POST('^/event/send/(?P<event_id>[^/]+)/v1$')
-    def event_send(self, request, event_id):
-        return api.event_send(event_id, json_data=_request_data(request,))
+    #------------------------------------------------------------------------------
+
+    @GET('^/network/reconnect/v1$')
+    def network_reconnect_v1(self, request):
+        return api.network_reconnect()
+
+    @GET('^/network/stun/v1$')
+    def network_stun_v1(self, request):
+        return api.network_stun()
+
+    @GET('^/network/connected/v1$')
+    def network_connected_v1(self, request):
+        return api.network_connected(wait_timeout=int(_request_arg(request, 'wait_timeout', '5')))
+
+    @GET('^/network/status/v1$')
+    def network_status_v1(self, request):
+        return api.network_status()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/packet/v1$')
+    @GET('^/packet/list/v1$')
+    def packet_list_v1(self, request):
+        return api.packets_list()
+
+    @GET('^/packet/stats/v1$')
+    def packet_stats_v1(self, request):
+        return api.packets_stats()
 
     #------------------------------------------------------------------------------
 
     @GET('^/transfer/v1$')
     @GET('^/transfer/list/v1$')
-    def transfers_list(self, request):
+    def transfers_list_v1(self, request):
         return api.transfers_list()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/connection/v1$')
+    @GET('^/connection/list/v1$')
+    def connection_list_v1(self, request):
+        return api.connections_list()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/stream/v1$')
+    @GET('^/stream/list/v1$')
+    def stream_list_v1(self, request):
+        return api.streams_list()
+
+    #------------------------------------------------------------------------------
 
     @GET('^/queue/v1$')
     @GET('^/queue/list/v1$')
-    def queue_list(self, request):
+    def queue_list_v1(self, request):
         return api.queue_list()
 
     #------------------------------------------------------------------------------

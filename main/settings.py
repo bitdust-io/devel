@@ -1104,7 +1104,7 @@ def BackupIndexFilePath():
     return os.path.join(MetaDataDir(), BackupIndexFileName())
 
 
-def SupplierPath(idurl, customer_idurl, filename=None):
+def SupplierPath(supplier_idurl, customer_idurl, filename=None):
     """
     A location to given supplier's data.
 
@@ -1119,22 +1119,22 @@ def SupplierPath(idurl, customer_idurl, filename=None):
     from lib import nameurl
     customer = global_id.UrlToGlobalID(customer_idurl)
     if filename is not None:
-        return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(idurl), filename)
-    return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(idurl))
+        return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(supplier_idurl), filename)
+    return os.path.join(SuppliersDir(), customer, nameurl.UrlFilename(supplier_idurl))
 
 
-def SupplierListFilesFilename(idurl, customer_idurl):
+def SupplierListFilesFilename(supplier_idurl, customer_idurl):
     """
     Return a "listfiles" file location for given supplier.
     """
-    return os.path.join(SupplierPath(idurl, customer_idurl), 'listfiles')
+    return os.path.join(SupplierPath(supplier_idurl, customer_idurl), 'listfiles')
 
 
-def SupplierServiceFilename(idurl, customer_idurl):
+def SupplierServiceFilename(supplier_idurl, customer_idurl):
     """
     Return a "service" file location for given supplier.
     """
-    return os.path.join(SupplierPath(idurl, customer_idurl), 'service')
+    return os.path.join(SupplierPath(supplier_idurl, customer_idurl), 'service')
 
 
 def LocalTesterLogFilename():
