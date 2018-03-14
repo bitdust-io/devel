@@ -89,35 +89,31 @@ class CustomerService(LocalService):
         from storage import backup_fs
         from storage import backup_control
         from crypt import encrypted
-        if newpacket.Command == commands.ListFiles():
-            if newpacket.Payload == settings.ListFilesFormat():
-                return False
-            block = encrypted.Unserialize(newpacket.Payload)
-            if block is None:
-                lg.out(2, 'key_ring.on_key_received ERROR reading data from %s' % newpacket.RemoteID)
-                return False
-            try:
-                raw_list_files = block.Data()
-                try:
-                    json_data = json.loads(raw_list_files, encoding='utf-8')
-                    json_data['items']
-                except Exception as exc:
-                    lg.exc()
-                    p2p_service.SendFail(newpacket, str(exc))
-                    return False
-                customer_idurl = block.CreatorID
-                count = backup_fs.Unserialize(
-                    raw_data=json_data,
-                    iter=backup_fs.fs(customer_idurl),
-                    iterID=backup_fs.fsID(customer_idurl),
-                    from_json=True,
-                )
-            except Exception as exc:
-                lg.exc()
-                p2p_service.SendFail(newpacket, str(exc))
-                return False
-            if count > 0:
-                backup_control.Save()
-            p2p_service.SendAck(newpacket, str(count))
-            return True
-        return False
+        if newpacket.Command != commands.ListFiles():
+            return False
+        if newpacket.Payload == settings.ListFilesFormat():
+            # skip old format
+            return False
+        block = encrypted.Unserialize(newpacket.Payload)
+        if block is None:
+            lg.out(2, 'key_ring.on_key_received ERROR reading data from %s' % newpacket.RemoteID)
+            return False
+        try:
+            raw_list_files = block.Data()
+            json_data = json.loads(raw_list_files, encoding='utf-8')
+            json_data['items']
+            customer_idurl = block.CreatorID
+            count = backup_fs.Unserialize(
+                raw_data=json_data,
+                iter=backup_fs.fs(customer_idurl),
+                iterID=backup_fs.fsID(customer_idurl),
+                from_json=True,
+            )
+        except Exception as exc:
+            lg.exc()
+            p2p_service.SendFail(newpacket, str(exc))
+            return False
+        if count > 0:
+            backup_control.Save()
+        p2p_service.SendAck(newpacket, str(count))
+        return True
