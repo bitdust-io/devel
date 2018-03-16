@@ -2702,22 +2702,22 @@ def _checkCustomDirectories():
     Check existance of user configurable folders.
     """
     if getCustomersFilesDir() == '':
-        config.conf().setData('paths/customers', DefaultCustomersDir())
+        config.conf().setString('paths/customers', DefaultCustomersDir())
     if not os.path.exists(getCustomersFilesDir()):
         lg.out(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
     if getLocalBackupsDir() == '':
-        config.conf().setData('paths/backups', DefaultBackupsDBDir())
+        config.conf().setString('paths/backups', DefaultBackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
         lg.out(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
     if getReceiptsDir() == '':
-        config.conf().setData('paths/receipts', DefaultReceiptsDir())
+        config.conf().setString('paths/receipts', DefaultReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
         lg.out(6, 'settings.init want to create folder: ' + getReceiptsDir())
         os.makedirs(getReceiptsDir())
     if getRestoreDir() == '':
-        config.conf().setData('paths/restore', DefaultRestoreDir())
+        config.conf().setString('paths/restore', DefaultRestoreDir())
 
 #-------------------------------------------------------------------------------
 
