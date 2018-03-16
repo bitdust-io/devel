@@ -348,6 +348,41 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
+    def user_search(self, request, nickname):
+        return api.user_search(nickname)
+    
+    @POST('^/user/ping/v1$')
+    def user_ping(self, request):
+        data = _request_data(request, mandatory_keys=['customer_idurl'])
+        return api.user_ping(
+            idurl=data['customer_idurl'],
+            timeout=data['timeout']
+        )
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/friends/v1$')
+    def friend_list(self, request):
+        return api.user_list()
+
+    @POST('^/friends/add/v1$')
+    def friend_add(self, request):
+        data = _request_data(request, mandatory_keys=['customer_idurl'])
+        return api.user_add(
+            idurl=data['customer_idurl'],
+            nickname=data['nickname']
+        )
+
+    @POST('^/friends/remove/v1$')
+    def friend_remove(self, request):
+        data = _request_data(request, mandatory_keys=['customer_idurl'])
+        return api.user_remove(
+            idurl=data['customer_idurl']
+        )
+
+    #------------------------------------------------------------------------------
+
     @GET('^/share/history/v1$')
     def share_history(self, request):
         return api.share_history()
