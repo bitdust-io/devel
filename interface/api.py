@@ -2310,14 +2310,16 @@ def user_search(nickname, attempts=1):
     )
     return ret
 
-def user_list():
+#------------------------------------------------------------------------------
+
+def friend_list():
     """
     Returns list of correspondents ids
     """
     from contacts import contactsdb
     return contactsdb.correspondents_ids()
 
-def user_add(idurl, alias):
+def friend_add(idurl, alias):
     """
     Add user to the list of friends
     """
@@ -2330,7 +2332,7 @@ def user_add(idurl, alias):
         return OK('user has been added')
     return OK('user has been already added')
 
-def user_remove(idurl):
+def friend_remove(idurl):
     """
     Remove user from the list of friends
     """
