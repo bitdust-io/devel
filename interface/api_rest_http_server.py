@@ -350,8 +350,8 @@ class BitDustRESTHTTPServer(APIResource):
 
     @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
     def user_search(self, request, nickname):
-        return api.user_search(nickname)
-    
+        return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
+
     @POST('^/user/ping/v1$')
     def user_ping(self, request):
         data = _request_data(request, mandatory_keys=['customer_idurl'])

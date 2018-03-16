@@ -2284,7 +2284,7 @@ def user_ping(idurl, timeout=10):
             ERROR(err.getErrorMessage())))
     return ret
 
-def user_search(nickname):
+def user_search(nickname, attempts=1):
     """
     Starts nickname_observer() Automat to lookup existing nickname registered
     in DHT network.
@@ -2302,10 +2302,12 @@ def user_search(nickname):
             'position': pos,
             'idurl': idurl,
         }]))
-    nickname_observer.find_one(nickname,
-                               results_callback=_result)
-    # nickname_observer.observe_many(nickname,
-    # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
+
+    nickname_observer.find_one(
+        nickname,
+        attempts=attempts,
+        results_callback=_result,
+    )
     return ret
 
 def user_list():
@@ -2322,7 +2324,6 @@ def user_add(idurl, alias):
     from contacts import contactsdb
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
-    
     if not contactsdb.is_correspondent(idurl):
         contactsdb.add_correspondent(idurl, alias)
         contactsdb.save_correspondents()
@@ -2336,7 +2337,6 @@ def user_remove(idurl):
     from contacts import contactsdb
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
-
     if contactsdb.is_correspondent(idurl):
         contactsdb.remove_correspondent(idurl)
         contactsdb.save_correspondents()
