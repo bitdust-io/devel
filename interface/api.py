@@ -166,14 +166,39 @@ def config_get(key):
         return ERROR('wrong key')
     lg.out(4, 'api.config_get [%s]' % key)
     from main import config
+    from main import config_types
     if key and not config.conf().exist(key):
         return ERROR('option "%s" not exist' % key)
-    if key and not config.conf().hasChilds(key):
-        return RESULT([{
+
+    def _get_item(key):
+        typ = config.conf().getType(key)
+        typ_label = config.conf().getTypeLabel(key)
+        value = None
+        if not typ or typ in [config_types.TYPE_STRING,
+                              config_types.TYPE_TEXT,
+                              config_types.TYPE_UNDEFINED, ]:
+            value = config.conf().getData(key)
+        elif typ in [config_types.TYPE_BOOLEAN, ]:
+            value = config.conf().getBool(key)
+        elif typ in [config_types.TYPE_INTEGER,
+                     config_types.TYPE_POSITIVE_INTEGER,
+                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
+            value = config.conf().getInt(key)
+        elif typ in [config_types.TYPE_FOLDER_PATH,
+                     config_types.TYPE_FILE_PATH,
+                     config_types.TYPE_COMBO_BOX,
+                     config_types.TYPE_PASSWORD, ]:
+            value = config.conf().getString(key)
+        else:
+            value = config.conf().getData(key)
+        return {
             'key': key,
-            'value': config.conf().getData(key),
-            'type': config.conf().getTypeLabel(key),
-        }])
+            'value': value,
+            'type': typ_label,
+        }
+
+    if key and not config.conf().hasChilds(key):
+        return RESULT([_get_item(key), ], )
     childs = []
     for child in config.conf().listEntries(key):
         if config.conf().hasChilds(child):
@@ -182,11 +207,7 @@ def config_get(key):
                 'childs': len(config.conf().listEntries(child)),
             })
         else:
-            childs.append({
-                'key': child,
-                'value': config.conf().getData(child),
-                'type': config.conf().getTypeLabel(child),
-            })
+            childs.append(_get_item(key))
     return RESULT(childs)
 
 
@@ -835,7 +856,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
                     'eccmap': '' if not r.EccMap else r.EccMap.name,
                 })
         r['downloads'] = downloads
-    lg.out(4, 'api.file_info : "%s"' % full_global_id)
+    lg.out(4, 'api.file_info : "%s"' % pathID)
     return RESULT([r, ])
 
 
@@ -1256,6 +1277,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
         return ERROR('location "%s" not found in catalog' % knownPath)
     if not destination_path:
         destination_path = settings.getRestoreDir()
+    if not destination_path:
+        destination_path = settings.DefaultRestoreDir()
     if wait_result:
         d = Deferred()
 
@@ -1290,7 +1313,14 @@ def file_download_start(remote_path, destination_path=None, wait_result=False):
         control.request_update([('pathID', knownPath), ])
         lg.out(4, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
         return d
-    restore_monitor.Start(backupID, destination_path, keyID=my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer']))
+    restore_monitor.Start(
+        backupID,
+        destination_path,
+        keyID=my_keys.make_key_id(
+            alias=glob_path['key_alias'],
+            creator_glob_id=glob_path['customer'],
+        ),
+    )
     control.request_update([('pathID', knownPath), ])
     lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
     return OK(

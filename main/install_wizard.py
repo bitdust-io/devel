@@ -158,11 +158,11 @@ class InstallWizard(automat.Automat):
         if donated:
             config.conf().setData('services/supplier/donated-space', donated + ' MB')
         if customersdir:
-            config.conf().setData('paths/customers', customersdir)
+            config.conf().setString('paths/customers', customersdir)
         if localbackupsdir:
-            config.conf().setData('paths/backups', localbackupsdir)
+            config.conf().setString('paths/backups', localbackupsdir)
         if restoredir:
-            config.conf().setData('paths/restore', restoredir)
+            config.conf().setString('paths/restore', restoredir)
 
     def doSaveContacts(self, arg):
         config.conf().setData('personal/email', arg.get('email', '').strip())
