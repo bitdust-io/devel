@@ -65,7 +65,6 @@ _NicknameObserver = None
 
 def find_one(nickname, attempts=3, results_callback=None):
     """
-    
     """
     lg.out(12, 'nickname_observer.find_one %s %d' % (nickname, attempts))
     observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
@@ -75,7 +74,6 @@ def find_one(nickname, attempts=3, results_callback=None):
 
 def observe_many(nickname, attempts=10, results_callback=None):
     """
-    
     """
     lg.out(12, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
     observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
@@ -85,7 +83,6 @@ def observe_many(nickname, attempts=10, results_callback=None):
 
 def stop_all():
     """
-    
     """
     for a in automat.objects().values():
         if isinstance(a, NicknameObserver):
@@ -179,7 +176,7 @@ class NicknameObserver(automat.Automat):
         """
         Condition method.
         """
-        return self.attempts > 0
+        return self.attempts > 1
 
     def doInit(self, arg):
         """
@@ -302,6 +299,7 @@ def main():
     else:
         find_one(sys.argv[2], int(sys.argv[3]), _result)
     reactor.run()
+
 
 if __name__ == "__main__":
     main()

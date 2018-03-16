@@ -2284,7 +2284,7 @@ def user_ping(idurl, timeout=10):
             ERROR(err.getErrorMessage())))
     return ret
 
-def user_search(nickname):
+def user_search(nickname, attempts=1):
     """
     Starts nickname_observer() Automat to lookup existing nickname registered
     in DHT network.
@@ -2302,41 +2302,43 @@ def user_search(nickname):
             'position': pos,
             'idurl': idurl,
         }]))
-    nickname_observer.find_one(nickname,
-                               results_callback=_result)
-    # nickname_observer.observe_many(nickname,
-    # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
+
+    nickname_observer.find_one(
+        nickname,
+        attempts=attempts,
+        results_callback=_result,
+    )
     return ret
 
-def user_list():
+#------------------------------------------------------------------------------
+
+def friend_list():
     """
     Returns list of correspondents ids
     """
     from contacts import contactsdb
     return contactsdb.correspondents_ids()
 
-def user_add(idurl, alias):
+def friend_add(idurl, alias):
     """
     Add user to the list of friends
     """
     from contacts import contactsdb
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
-    
     if not contactsdb.is_correspondent(idurl):
         contactsdb.add_correspondent(idurl, alias)
         contactsdb.save_correspondents()
         return OK('user has been added')
     return OK('user has been already added')
 
-def user_remove(idurl):
+def friend_remove(idurl):
     """
     Remove user from the list of friends
     """
     from contacts import contactsdb
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
-
     if contactsdb.is_correspondent(idurl):
         contactsdb.remove_correspondent(idurl)
         contactsdb.save_correspondents()
