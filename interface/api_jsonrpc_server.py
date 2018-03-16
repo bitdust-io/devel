@@ -335,8 +335,17 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_user_ping(self, idurl, timeout=10):
         return api.user_ping(str(idurl), timeout)
 
-    def jsonrpc_user_search(self, nickname):
-        return api.user_search(nickname)
+    def jsonrpc_user_search(self, nickname, attempts=1):
+        return api.user_search(nickname, attempts=attempts)
+
+    def jsonrpc_friend_list(self):
+        return api.friend_list()
+
+    def jsonrpc_friend_add(self, idurl, alias=None):
+        return api.friend_add(idurl, alias=alias)
+
+    def jsonrpc_friend_remove(self, idurl):
+        return api.friend_remove(idurl)
 
     def jsonrpc_message_send(self, recipient, message_body):
         return api.message_send(recipient, message_body)
