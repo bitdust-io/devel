@@ -104,6 +104,12 @@ def MakeGlobalID(
     return out
 
 
+def ParseIDURL(idurl):
+    """
+    """
+    return ParseGlobalID(UrlToGlobalID(idurl, include_key=False))
+
+
 def ParseGlobalID(inp, detect_version=False):
     """
     Split input string by parts according to different global ID formats:

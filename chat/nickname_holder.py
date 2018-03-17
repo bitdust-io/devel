@@ -199,6 +199,7 @@ class NicknameHolder(automat.Automat):
         self.nickname = a or \
             settings.getNickName() or \
             my_id.getLocalIdentity().getIDName()
+        settings.setNickName(self.nickname)
         self.result_callback = c
 
     def doMakeKey(self, arg):
@@ -322,6 +323,7 @@ def main():
     dht_service.init(settings.getDHTPort())
     reactor.callWhenRunning(A, 'init', sys.argv[1])
     reactor.run()
+
 
 if __name__ == "__main__":
     main()

@@ -674,7 +674,7 @@ def files_list(remote_path=None, key_id=None, recursive=True):
                        { u'childs': False,
                          u'customer': u'veselin@veselin-p2p.ru',
                          u'remote_path': u'master$veselin@veselin-p2p.ru:cats.png',
-                         u'glob_id': u'master$veselin@veselin-p2p.ru:1',
+                         u'global_id': u'master$veselin@veselin-p2p.ru:1',
                          u'idurl': u'http://veselin-p2p.ru/veselin.xml',
                          u'key_id': u'master$veselin@veselin-p2p.ru',
                          u'latest': u'',
@@ -688,7 +688,7 @@ def files_list(remote_path=None, key_id=None, recursive=True):
                        { u'childs': False,
                          u'customer': u'veselin@veselin-p2p.ru',
                          u'remote_path': u'master$veselin@veselin-p2p.ru:dogs.jpg',
-                         u'glob_id': u'master$veselin@veselin-p2p.ru:2',
+                         u'global_id': u'master$veselin@veselin-p2p.ru:2',
                          u'idurl': u'http://veselin-p2p.ru/veselin.xml',
                          u'key_id': u'master$veselin@veselin-p2p.ru',
                          u'latest': u'',
@@ -738,7 +738,7 @@ def files_list(remote_path=None, key_id=None, recursive=True):
         full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=norm_path['customer'], key_alias=key_alias, )
         result.append({
             'remote_path': full_remote_path,
-            'glob_id': full_glob_id,
+            'global_id': full_glob_id,
             'customer': norm_path['customer'],
             'idurl': norm_path['idurl'],
             'path_id': i['path_id'],
@@ -785,7 +785,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     r = {
         'remote_path': global_id.MakeGlobalID(
             path=norm_path['path'], customer=norm_path['customer'], key_alias=key_alias,),
-        'glob_id': global_id.MakeGlobalID(
+        'global_id': global_id.MakeGlobalID(
             path=norm_path['path_id'], customer=norm_path['customer'], key_alias=key_alias,),
         'customer': norm_path['idurl'],
         'path_id': pathID,
@@ -931,7 +931,7 @@ def file_create(remote_path, as_folder=False):
             'key_id': keyID,
             'path': path,
             'remote_path': full_remote_path,
-            'glob_id': full_glob_id,
+            'global_id': full_glob_id,
             'customer': parts['idurl'],
             'type': ('dir' if as_folder else 'file'),
         })
@@ -978,7 +978,7 @@ def file_delete(remote_path):
         'path_id': pathIDfull,
         'path': path,
         'remote_path': full_remote_path,
-        'glob_id': full_glob_id,
+        'global_id': full_glob_id,
         'customer': parts['idurl'],
     })
 
@@ -2225,36 +2225,6 @@ def queue_list():
 
 #------------------------------------------------------------------------------
 
-
-def ping(idurl, timeout=10):
-    """
-    Sends Identity packet to remote peer and wait for Ack packet to check connection status.
-    The "ping" command performs following actions:
-
-      1. Request remote identity source by idurl,
-      2. Sends my Identity to remote contact addresses, taken from identity,
-      3. Wait first Ack packet from remote peer,
-      4. Failed by timeout or identity fetching error.
-
-    You can use this method to check and be sure that remote node is alive at the moment.
-
-    Return:
-
-        {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
-    """
-    if not driver.is_on('service_identity_propagate'):
-        return succeed(ERROR('service_identity_propagate() is not started'))
-    from p2p import propagate
-    ret = Deferred()
-    d = propagate.PingContact(idurl, int(timeout))
-    d.addCallback(
-        lambda resp: ret.callback(
-            OK(str(resp))))
-    d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
-    return ret
-
 def user_ping(idurl, timeout=10):
     """
     Sends Identity packet to remote peer and wait for Ack packet to check connection status.
@@ -2284,13 +2254,20 @@ def user_ping(idurl, timeout=10):
             ERROR(err.getErrorMessage())))
     return ret
 
+
 def user_search(nickname, attempts=1):
     """
     Starts nickname_observer() Automat to lookup existing nickname registered
     in DHT network.
     """
+    from lib import misc
+    if not nickname:
+        return ERROR('requires nickname of the user')
+    if not misc.ValidNickName(nickname):
+        return ERROR('invalid nickname')
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
+
     from chat import nickname_observer
     nickname_observer.stop_all()
     ret = Deferred()
@@ -2312,47 +2289,25 @@ def user_search(nickname, attempts=1):
 
 #------------------------------------------------------------------------------
 
-def friend_list():
+def nickname_get():
     """
-    Returns list of correspondents ids
     """
-    from contacts import contactsdb
-    return contactsdb.correspondents_ids()
-
-def friend_add(idurl, alias):
-    """
-    Add user to the list of friends
-    """
-    from contacts import contactsdb
-    if not idurl:
-        return ERROR('you must specify the global IDURL address where your identity file was last located')
-    if not contactsdb.is_correspondent(idurl):
-        contactsdb.add_correspondent(idurl, alias)
-        contactsdb.save_correspondents()
-        return OK('user has been added')
-    return OK('user has been already added')
-
-def friend_remove(idurl):
-    """
-    Remove user from the list of friends
-    """
-    from contacts import contactsdb
-    if not idurl:
-        return ERROR('you must specify the global IDURL address where your identity file was last located')
-    if contactsdb.is_correspondent(idurl):
-        contactsdb.remove_correspondent(idurl)
-        contactsdb.save_correspondents()
-        return OK('user has been removed')
-    return ERROR('user not found')
-
-#------------------------------------------------------------------------------
+    from main import settings
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    return OK(extra_fields={'nickname': settings.getNickName(), })
 
 
-def set_my_nickname(nickname):
+def nickname_set(nickname):
     """
     Starts nickname_holder() machine to register and keep your nickname in DHT
     network.
     """
+    from lib import misc
+    if not nickname:
+        return ERROR('requires nickname of the user')
+    if not misc.ValidNickName(nickname):
+        return ERROR('invalid nickname')
     if not driver.is_on('service_private_messages'):
         return ERROR('service_private_messages() is not started')
     from chat import nickname_holder
@@ -2370,34 +2325,51 @@ def set_my_nickname(nickname):
     nickname_holder.A('set', (nickname, _nickname_holder_result))
     return ret
 
+#------------------------------------------------------------------------------
 
-def find_peer_by_nickname(nickname):
+def friend_list():
     """
-    Starts nickname_observer() Automat to lookup existing nickname registered
-    in DHT network.
+    Returns list of correspondents ids
     """
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
-    if not nickname:
-        return ERROR('requires nickname of the user')
-
-    from chat import nickname_observer
-    nickname_observer.stop_all()
-    ret = Deferred()
-
-    def _result(result, nik, pos, idurl):
-        return ret.callback(RESULT([{
-            'result': result,
-            'nickname': nik,
-            'position': pos,
+    from contacts import contactsdb
+    from userid import global_id
+    result = []
+    for idurl, alias in contactsdb.correspondents():
+        glob_id = global_id.ParseIDURL(idurl)
+        result.append({
             'idurl': idurl,
-        }]))
-    nickname_observer.find_one(
-        nickname,
-        results_callback=_result)
-    # nickname_observer.observe_many(nickname,
-    # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
-    return ret
+            'global_id': glob_id['customer'],
+            'idhost': glob_id['idhost'],
+            'username': glob_id['user'],
+            'alias': alias,
+        })
+    return RESULT(result)
+
+def friend_add(idurl, alias):
+    """
+    Add user to the list of friends
+    """
+    from contacts import contactsdb
+    if not idurl:
+        return ERROR('you must specify the global IDURL address where your identity file was last located')
+    if not contactsdb.is_correspondent(idurl):
+        contactsdb.add_correspondent(idurl, alias)
+        contactsdb.save_correspondents()
+        return OK('new friend has been added')
+    return OK('this friend has been already added')
+
+def friend_remove(idurl):
+    """
+    Remove user from the list of friends
+    """
+    from contacts import contactsdb
+    if not idurl:
+        return ERROR('you must specify the global IDURL address where your identity file was last located')
+    if contactsdb.is_correspondent(idurl):
+        contactsdb.remove_correspondent(idurl)
+        contactsdb.save_correspondents()
+        return OK('friend has been removed')
+    return ERROR('friend not found')
 
 #------------------------------------------------------------------------------
 
