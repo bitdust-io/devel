@@ -362,12 +362,12 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/friends/v1$')
-    @GET('^/friends/list/v1$')
+    @GET('^/friend/v1$')
+    @GET('^/friend/list/v1$')
     def friend_list(self, request):
         return api.friend_list()
 
-    @POST('^/friends/add/v1$')
+    @POST('^/friend/add/v1$')
     def friend_add(self, request):
         data = _request_data(request, mandatory_keys=['idurl'])
         return api.friend_add(
@@ -375,7 +375,7 @@ class BitDustRESTHTTPServer(APIResource):
             alias=data['alias']
         )
 
-    @POST('^/friends/remove/v1$')
+    @POST('^/friend/remove/v1$')
     def friend_remove(self, request):
         data = _request_data(request, mandatory_keys=['idurl'])
         return api.friend_remove(
