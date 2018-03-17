@@ -221,8 +221,8 @@ class BitDustRESTHTTPServer(APIResource):
 
     @GET('^/identity/find/v1$')
     def identity_find_v1(self, request):
-        nickname = _request_arg(request, 'nickname', None)
-        return api.find_peer_by_nickname(nickname=nickname)
+        nickname = _request_arg(request, 'nickname', mandatory=True)
+        return api.user_search(nickname=nickname)
 
     #------------------------------------------------------------------------------
 
@@ -372,14 +372,14 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=['idurl'])
         return api.friend_add(
             idurl=data['idurl'],
-            alias=data['alias']
+            alias=data.get('alias'),
         )
 
-    @POST('^/friend/remove/v1$')
+    @DELETE('^/friend/remove/v1$')
     def friend_remove(self, request):
         data = _request_data(request, mandatory_keys=['idurl'])
         return api.friend_remove(
-            idurl=data['idurl']
+            idurl=data['idurl'],
         )
 
     #------------------------------------------------------------------------------
