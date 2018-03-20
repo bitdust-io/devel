@@ -111,8 +111,16 @@ def _request_data(request, mandatory_keys=[], default_value=None):
     except:
         raise Exception('invalid json input')
     for k in mandatory_keys:
-        if k not in data:
-            raise Exception('one of mandatory parameters missed: %s' % mandatory_keys)
+        if isinstance(k, tuple):
+            found = False
+            for f in k:
+                if f in data:
+                    found = True
+            if not found:
+                raise Exception('one of mandatory parameters missed: %s' % k)
+        else:
+            if k not in data:
+                raise Exception('one of mandatory parameters missed: %s' % mandatory_keys)
     return data
 
 #------------------------------------------------------------------------------
@@ -136,15 +144,15 @@ class BitDustRESTHTTPServer(APIResource):
     #------------------------------------------------------------------------------
 
     @GET('^/process/stop/v1$')
-    def process_stop(self, request):
+    def process_stop_v1(self, request):
         return api.stop()
 
     @GET('^/process/restart/v1$')
-    def process_restart(self, request):
+    def process_restart_v1(self, request):
         return api.restart(showgui=bool(request.args.get('showgui')))
 
     @GET('^/process/show/v1$')
-    def process_show(self, request):
+    def process_show_v1(self, request):
         return api.show()
 
     #------------------------------------------------------------------------------
@@ -339,92 +347,135 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/supplier/v1$')
-    @GET('^/supplier/list/v1$')
-    def supplier_list(self, request):
-        return api.suppliers_list(
-            customer_idurl=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl')
-        )
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
-    def user_search(self, request, nickname):
-        return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
-
-    @POST('^/user/ping/v1$')
-    def user_ping(self, request):
-        data = _request_data(request, mandatory_keys=['customer_idurl'])
-        return api.user_ping(
-            idurl=data['customer_idurl'],
-            timeout=data['timeout']
-        )
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/friend/v1$')
-    @GET('^/friend/list/v1$')
-    def friend_list(self, request):
-        return api.friend_list()
-
-    @POST('^/friend/add/v1$')
-    def friend_add(self, request):
-        data = _request_data(request, mandatory_keys=['idurl'])
-        return api.friend_add(
-            idurl=data['idurl'],
-            alias=data.get('alias'),
-        )
-
-    @DELETE('^/friend/remove/v1$')
-    def friend_remove(self, request):
-        data = _request_data(request, mandatory_keys=['idurl'])
-        return api.friend_remove(
-            idurl=data['idurl'],
-        )
-
-    #------------------------------------------------------------------------------
-
     @GET('^/share/history/v1$')
-    def share_history(self, request):
+    def share_history_v1(self, request):
         return api.share_history()
 
     @POST('^/share/open/v1$')
-    def share_open(self, request):
+    def share_open_v1(self, request):
         data = _request_data(request, mandatory_keys=['remote_user', 'key_id', ])
         return api.share_open(remote_user=data['remote_user'], key_id=data['key_id'])
 
     #------------------------------------------------------------------------------
 
+    @GET('^/friend/v1$')
+    @GET('^/friend/list/v1$')
+    def friend_list_v1(self, request):
+        return api.friend_list()
+
+    @POST('^/friend/add/v1$')
+    def friend_add_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
+        return api.friend_add(
+            idurl_or_global_id=data.get('global_id') or data.get('idurl'),
+            alias=data.get('alias'),
+        )
+
+    @DELETE('^/friend/remove/v1$')
+    def friend_remove_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
+        return api.friend_remove(
+            idurl_or_global_id=data.get('global_id') or data.get('idurl'),
+        )
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/supplier/v1$')
+    @GET('^/supplier/list/v1$')
+    def supplier_list_v1(self, request):
+        return api.suppliers_list(
+            customer_idurl_or_global_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl')
+        )
+
+    @DELETE('^/supplier/replace/v1$')
+    def supplier_replace_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('index', 'idurl', 'global_id', ), ])
+        return api.supplier_replace(
+            index_or_idurl_or_global_id=data.get('index') or data.get('global_id') or data.get('idurl'),
+        )
+
+    @PUT('^/supplier/switch/v1$')
+    def supplier_switch_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('index', 'idurl', 'global_id', ), ('new_idurl', 'new_global_id', ), ])
+        return api.supplier_change(
+            index_or_idurl_or_global_id=data.get('index') or data.get('global_id') or data.get('idurl'),
+            new_supplier_idurl_or_global_id=data.get('new_global_id') or data.get('new_idurl'),
+        )
+
+    @POST('^/supplier/ping/v1$')
+    def supplier_ping_v1(self, request):
+        return api.suppliers_ping()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/customer/v1$')
+    @GET('^/customer/list/v1$')
+    def customer_list_v1(self, request):
+        return api.customers_list()
+
+    @DELETE('^/customer/reject/v1$')
+    def customer_reject_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
+        return api.customer_reject(
+            idurl_or_global_id=data.get('global_id') or data.get('idurl'),
+        )
+
+    @POST('^/customer/ping/v1$')
+    def customer_ping_v1(self, request):
+        return api.customers_ping()
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/user/search/(?P<nickname>[^/]+)/v1$')
+    def user_search_v1(self, request, nickname):
+        return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
+
+    @GET('^/user/status/v1$')
+    def user_status_v1(self, request):
+        return api.user_status(
+            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl')
+        )
+
+    @POST('^/user/ping/v1$')
+    def user_ping_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
+        return api.user_ping(
+            idurl_or_global_id=data.get('global_id') or data.get('idurl'),
+            timeout=data['timeout']
+        )
+
+    #------------------------------------------------------------------------------
+
     @GET('^/service/v1$')
     @GET('^/service/list/v1$')
-    def service_list(self, request):
+    def service_list_v1(self, request):
         return api.services_list()
 
     @GET('^/service/info/(?P<service_name>[^/]+)/v1$')
-    def service_info(self, request, service_name):
+    def service_info_v1(self, request, service_name):
         return api.service_info(service_name)
 
     @POST('^/service/start/(?P<service_name>[^/]+)/v1$')
-    def service_start(self, request, service_name):
+    def service_start_v1(self, request, service_name):
         return api.service_start(service_name)
 
     @POST('^/service/stop/(?P<service_name>[^/]+)/v1$')
-    def service_stop(self, request, service_name):
+    def service_stop_v1(self, request, service_name):
         return api.service_stop(service_name)
 
     @POST('^/service/restart/(?P<service_name>[^/]+)/v1$')
-    def service_restart(self, request, service_name):
+    def service_restart_v1(self, request, service_name):
         return api.service_restart(
             service_name, wait_timeout=_request_data(request, default_value={}).get('wait_timeout', 10))
 
     #------------------------------------------------------------------------------
 
     @POST('^/event/send/(?P<event_id>[^/]+)/v1$')
-    def event_send(self, request, event_id):
+    def event_send_v1(self, request, event_id):
         return api.event_send(event_id, json_data=_request_data(request,))
 
     @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
-    def event_listen(self, request, consumer_id):
+    def event_listen_v1(self, request, consumer_id):
         return api.events_listen(consumer_id)
 
     #------------------------------------------------------------------------------
@@ -488,6 +539,6 @@ class BitDustRESTHTTPServer(APIResource):
 
     @ALL('^/*')
     def not_found(self, request):
-        return api.ERROR('method %s:%s not found' % (request.method, request.path))
+        return api.ERROR('method %s:%s is not found' % (request.method, request.path))
 
     #------------------------------------------------------------------------------
