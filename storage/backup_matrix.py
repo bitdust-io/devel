@@ -1111,8 +1111,12 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
             lessSuppliers = goodSuppliers
             weakBlockNum = blockNum
     # +1 since zero based and *0.5 because Data and Parity
-    return (maxBlockNum + 1, 100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * supplierCount),
-            weakBlockNum, 100.0 * float(lessSuppliers) / float(supplierCount))
+    return (
+        maxBlockNum + 1,
+        100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * supplierCount),
+        weakBlockNum,
+        100.0 * float(lessSuppliers) / float(supplierCount),
+    )
 
 
 def GetBackupRemoteArray(backupID):

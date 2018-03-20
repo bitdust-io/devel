@@ -233,19 +233,23 @@ def getInstance(idurl):
     return A(idurl)
 
 
+def stateToLabel(state, default='?'):
+    global _StatusLabels
+    return _StatusLabels.get(state, default)
+
+
 def getStatusLabel(idurl):
     """
     Return some text description about the current state of that user.
     """
     global _ContactsStatusDict
-    global _StatusLabels
     global _ShutdownFlag
     if _ShutdownFlag:
         return '?'
     if idurl in [None, 'None', '']:
         return '?'
     check_create(idurl)
-    return _StatusLabels.get(A(idurl).state, '?')
+    return stateToLabel(A(idurl).state)
 
 
 def getStatusIcon(idurl):

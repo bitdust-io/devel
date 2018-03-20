@@ -468,7 +468,7 @@ class identity:
         return {
             'name': self.getIDName(),
             'idurl': self.getIDURL(),
-            'glob_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
+            'global_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
             'sources': self.getSources(),
             'contacts': self.getContacts(),
             'certificates': self.certificates,

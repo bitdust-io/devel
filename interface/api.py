@@ -547,10 +547,9 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
         return succeed(ERROR('"master" key can not be shared'))
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return succeed(ERROR('icorrect key_id format'))
-    if global_id.IsValidGlobalUser(trusted_global_id_or_idurl):
-        idurl = global_id.GlobalUserToIDURL(trusted_global_id_or_idurl)
-    else:
-        idurl = trusted_global_id_or_idurl
+    idurl = trusted_global_id_or_idurl
+    if global_id.IsValidGlobalUser(idurl):
+        idurl = global_id.GlobalUserToIDURL(idurl)
     from access import key_ring
     ret = Deferred()
     d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, timeout=timeout)
@@ -1403,8 +1402,150 @@ def file_explore(local_path):
 
 #------------------------------------------------------------------------------
 
+def share_create(key_alias, folder_name=None):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    ret = Deferred()
+    return ret
 
-def suppliers_list(customer_idurl=None):
+
+def share_grant(remote_user, key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    from userid import global_id
+    remote_idurl = remote_user
+    if remote_user.count('@'):
+        glob_id = global_id.ParseGlobalID(remote_user)
+        remote_idurl = glob_id['idurl']
+    if not remote_idurl:
+        return ERROR('wrong user id')
+    from access import shared_access_donor
+    ret = Deferred()
+
+    def _on_shared_access_donor_success(result):
+        ret.callback(OK() if result else ERROR('failed'))
+        return None
+
+    def _on_shared_access_donor_failed(err):
+        ret.callback(ERROR(err.getErrorMessage()))
+        return None
+
+    d = Deferred()
+    d.addCallback(_on_shared_access_donor_success)
+    d.addErrback(_on_shared_access_donor_failed)
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True)
+    shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
+    return ret
+
+
+def share_open(key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    from access import shared_access_coordinator
+    ret = Deferred()
+
+    def _on_shared_access_coordinator_success(result):
+        ret.callback(OK() if result else ERROR('failed'))
+        return None
+
+    def _on_shared_access_donor_failed(err):
+        ret.callback(ERROR(err.getErrorMessage()))
+        return None
+
+    d = Deferred()
+    d.addCallback(_on_shared_access_coordinator_success)
+    d.addErrback(_on_shared_access_donor_failed)
+    shared_access_coordinator_machine = shared_access_coordinator.SharedAccessCoordinator(log_events=True)
+    shared_access_coordinator_machine.automat('init', (key_id, ))
+    return ret
+
+
+def share_close(key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    ret = Deferred()
+    return ret
+
+
+def share_list():
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    return RESULT([],)
+
+def share_history():
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    return RESULT([],)
+
+#------------------------------------------------------------------------------
+
+def friend_list():
+    """
+    Returns list of correspondents ids
+    """
+    from contacts import contactsdb
+    from userid import global_id
+    result = []
+    for idurl, alias in contactsdb.correspondents():
+        glob_id = global_id.ParseIDURL(idurl)
+        result.append({
+            'idurl': idurl,
+            'global_id': glob_id['customer'],
+            'idhost': glob_id['idhost'],
+            'username': glob_id['user'],
+            'alias': alias,
+        })
+    return RESULT(result)
+
+def friend_add(idurl_or_global_id, alias):
+    """
+    Add user to the list of friends
+    """
+    from contacts import contactsdb
+    from userid import global_id
+    idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(idurl_or_global_id):
+        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id)
+    if not idurl:
+        return ERROR('you must specify the global IDURL address where your identity file was last located')
+    if not contactsdb.is_correspondent(idurl):
+        contactsdb.add_correspondent(idurl, alias)
+        contactsdb.save_correspondents()
+        return OK('new friend has been added')
+    return OK('this friend has been already added')
+
+def friend_remove(idurl_or_global_id):
+    """
+    Remove user from the list of friends
+    """
+    from contacts import contactsdb
+    from userid import global_id
+    idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(idurl_or_global_id):
+        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id)
+    if not idurl:
+        return ERROR('you must specify the global IDURL address where your identity file was last located')
+    if contactsdb.is_correspondent(idurl):
+        contactsdb.remove_correspondent(idurl)
+        contactsdb.save_correspondents()
+        return OK('friend has been removed')
+    return ERROR('friend not found')
+
+#------------------------------------------------------------------------------
+
+def suppliers_list(customer_idurl_or_global_id=None):
     """
     This method returns a list of suppliers - nodes which stores your encrypted data on own machines.
 
@@ -1433,6 +1574,7 @@ def suppliers_list(customer_idurl=None):
     from lib import misc
     from userid import my_id
     from userid import global_id
+    customer_idurl = customer_idurl_or_global_id
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     else:
@@ -1441,6 +1583,7 @@ def suppliers_list(customer_idurl=None):
     return RESULT([{
         'position': pos,
         'idurl': supplier_idurl,
+        'global_id': global_id.UrlToGlobalID(supplier_idurl),
         'supplier_state':
             None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
             else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
@@ -1453,7 +1596,7 @@ def suppliers_list(customer_idurl=None):
     } for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl))])
 
 
-def supplier_replace(index_or_idurl):
+def supplier_replace(index_or_idurl_or_global_id):
     """
     Execute a fire/hire process for given supplier, another random node will
     replace this supplier. As soon as new supplier is found and connected,
@@ -1468,10 +1611,14 @@ def supplier_replace(index_or_idurl):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
     from userid import my_id
+    from userid import global_id
     customer_idurl = my_id.getLocalID()
-    supplier_idurl = index_or_idurl
+    supplier_idurl = index_or_idurl_or_global_id
     if supplier_idurl.isdigit():
         supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl)
+    else:
+        if global_id.IsValidGlobalUser(supplier_idurl):
+            supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
     if supplier_idurl and contactsdb.is_supplier(supplier_idurl, customer_idurl):
         from customer import fire_hire
         fire_hire.AddSupplierToFire(supplier_idurl)
@@ -1480,7 +1627,7 @@ def supplier_replace(index_or_idurl):
     return ERROR('supplier not found')
 
 
-def supplier_change(index_or_idurl, new_supplier_idurl):
+def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id):
     """
     Doing same as supplier_replace() but new node must be provided by you - you can manually assign a supplier.
 
@@ -1492,10 +1639,17 @@ def supplier_change(index_or_idurl, new_supplier_idurl):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
     from userid import my_id
+    from userid import global_id
     customer_idurl = my_id.getLocalID()
-    supplier_idurl = index_or_idurl
+    supplier_idurl = index_or_idurl_or_global_id
     if supplier_idurl.isdigit():
         supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl)
+    else:
+        if global_id.IsValidGlobalUser(supplier_idurl):
+            supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
+    new_supplier_idurl = new_supplier_idurl_or_global_id
+    if global_id.IsValidGlobalUser(new_supplier_idurl):
+        new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl)
     if not contactsdb.is_supplier(supplier_idurl, customer_idurl):
         return ERROR('supplier not found')
     if contactsdb.is_supplier(new_supplier_idurl, customer_idurl):
@@ -1541,8 +1695,10 @@ def customers_list():
         return ERROR('service_supplier() is not started')
     from contacts import contactsdb
     from p2p import contact_status
+    from userid import global_id
     return RESULT([{
         'position': pos,
+        'global_id': global_id.UrlToGlobalID(customer_idurl),
         'idurl': customer_idurl,
         'contact_status': contact_status.getStatusLabel(customer_idurl),
         'contact_state': (
@@ -1551,7 +1707,7 @@ def customers_list():
     } for (pos, customer_idurl, ) in enumerate(contactsdb.customers())])
 
 
-def customer_reject(idurl):
+def customer_reject(idurl_or_global_id):
     """
     Stop supporting given customer, remove all his files from local disc, close
     connections with that node.
@@ -1569,26 +1725,30 @@ def customer_reject(idurl):
     from supplier import local_tester
     from p2p import p2p_service
     from lib import packetid
-    if not contactsdb.is_customer(idurl):
+    from userid import global_id
+    customer_idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(customer_idurl):
+        customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+    if not contactsdb.is_customer(customer_idurl):
         return ERROR('customer not found')
     # send packet to notify about service from us was rejected
     # TODO - this is not yet handled on other side
-    p2p_service.SendFailNoRequest(idurl, packetid.UniqueID(), 'service rejected')
+    p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
     # remove from customers list
     current_customers = contactsdb.customers()
-    current_customers.remove(idurl)
+    current_customers.remove(customer_idurl)
     contactsdb.update_customers(current_customers)
     contactsdb.save_customers()
     # remove records for this customers from quotas info
     space_dict = accounting.read_customers_quotas()
-    consumed_by_cutomer = space_dict.pop(idurl, None)
+    consumed_by_cutomer = space_dict.pop(customer_idurl, None)
     consumed_space = accounting.count_consumed_space(space_dict)
     space_dict['free'] = settings.getDonatedBytes() - int(consumed_space)
     accounting.write_customers_quotas(space_dict)
-    events.send('existing-customer-terminated', dict(idurl=idurl))
+    events.send('existing-customer-terminated', dict(idurl=customer_idurl))
     # restart local tester
     local_tester.TestUpdateCustomers()
-    return OK('customer "%s" rejected, "%s" bytes were freed' % (idurl, consumed_by_cutomer))
+    return OK('customer "%s" rejected, "%s" bytes were freed' % (customer_idurl, consumed_by_cutomer))
 
 
 def customers_ping():
@@ -1700,88 +1860,6 @@ def space_local():
     result = accounting.report_local_storage()
     lg.out(4, 'api.space_local finished')
     return RESULT([result, ],)
-
-#------------------------------------------------------------------------------
-
-def share_create(key_alias, folder_name=None):
-    """
-    """
-    if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    ret = Deferred()
-    return ret
-
-
-def share_grant(remote_user, key_id):
-    """
-    """
-    if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    from userid import global_id
-    remote_idurl = remote_user
-    if remote_user.count('@'):
-        glob_id = global_id.ParseGlobalID(remote_user)
-        remote_idurl = glob_id['idurl']
-    if not remote_idurl:
-        return ERROR('wrong user id')
-    from access import shared_access_donor
-    ret = Deferred()
-
-    def _on_shared_access_donor_success(result):
-        ret.callback(OK() if result else ERROR('failed'))
-        return None
-
-    def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR(err.getErrorMessage()))
-        return None
-
-    d = Deferred()
-    d.addCallback(_on_shared_access_donor_success)
-    d.addErrback(_on_shared_access_donor_failed)
-    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True)
-    shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
-    return ret
-
-
-def share_open(key_id):
-    """
-    """
-    if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    from access import shared_access_coordinator
-    ret = Deferred()
-
-    def _on_shared_access_coordinator_success(result):
-        ret.callback(OK() if result else ERROR('failed'))
-        return None
-
-    def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR(err.getErrorMessage()))
-        return None
-
-    d = Deferred()
-    d.addCallback(_on_shared_access_coordinator_success)
-    d.addErrback(_on_shared_access_donor_failed)
-    shared_access_coordinator_machine = shared_access_coordinator.SharedAccessCoordinator(log_events=True)
-    shared_access_coordinator_machine.automat('init', (key_id, ))
-    return ret
-
-
-def share_close(key_id):
-    """
-    """
-    if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    ret = Deferred()
-    return ret
-
-
-def share_history():
-    """
-    """
-    if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    return RESULT([],)
 
 #------------------------------------------------------------------------------
 
@@ -2050,10 +2128,12 @@ def transfers_list():
     if not driver.is_on('service_data_motion'):
         return ERROR('service_data_motion() is not started')
     from customer import io_throttle
+    from userid import global_id
     result = []
     for supplier_idurl in io_throttle.throttle().ListSupplierQueues():
         r = {
             'idurl': supplier_idurl,
+            'global_id': global_id.UrlToGlobalID(supplier_idurl),
             'outgoing': [],
             'incoming': [],
         }
@@ -2099,6 +2179,7 @@ def connections_list(wanted_protos=None):
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
     from transport import gateway
+    from userid import global_id
     result = []
     if not wanted_protos:
         wanted_protos = gateway.list_active_transports()
@@ -2109,6 +2190,7 @@ def connections_list(wanted_protos=None):
                 'state': 'unknown',
                 'proto': proto,
                 'host': 'unknown',
+                'global_id': 'unknown',
                 'idurl': 'unknown',
                 'bytes_sent': 0,
                 'bytes_received': 0,
@@ -2123,6 +2205,7 @@ def connections_list(wanted_protos=None):
                         'status': 'active',
                         'state': connection.state,
                         'host': host,
+                        'global_id': global_id.UrlToGlobalID(connection.peer_idurl or ''),
                         'idurl': connection.peer_idurl or '',
                         'bytes_sent': connection.total_bytes_sent,
                         'bytes_received': connection.total_bytes_received,
@@ -2145,6 +2228,7 @@ def connections_list(wanted_protos=None):
                     'status': 'active',
                     'state': connection.state,
                     'host': host,
+                    'global_id': global_id.UrlToGlobalID(connection.peer_idurl or ''),
                     'idurl': connection.peer_idurl or '',
                     'bytes_sent': connection.bytes_sent,
                     'bytes_received': connection.bytes_received,
@@ -2225,7 +2309,7 @@ def queue_list():
 
 #------------------------------------------------------------------------------
 
-def user_ping(idurl, timeout=10):
+def user_ping(idurl_or_global_id, timeout=10):
     """
     Sends Identity packet to remote peer and wait for Ack packet to check connection status.
     The "ping" command performs following actions:
@@ -2244,6 +2328,10 @@ def user_ping(idurl, timeout=10):
     if not driver.is_on('service_identity_propagate'):
         return succeed(ERROR('service_identity_propagate() is not started'))
     from p2p import propagate
+    from userid import global_id
+    idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(idurl):
+        idurl = global_id.GlobalUserToIDURL(idurl)
     ret = Deferred()
     d = propagate.PingContact(idurl, int(timeout))
     d.addCallback(
@@ -2255,12 +2343,36 @@ def user_ping(idurl, timeout=10):
     return ret
 
 
+def user_status(idurl_or_global_id):
+    """
+    """
+    if not driver.is_on('service_identity_propagate'):
+        return succeed(ERROR('service_identity_propagate() is not started'))
+    from p2p import contact_status
+    from userid import global_id
+    idurl = idurl_or_global_id
+    if global_id.IsValidGlobalUser(idurl):
+        idurl = global_id.GlobalUserToIDURL(idurl)
+    if not contact_status.isKnown(idurl):
+        return ERROR('unknown user')
+    state_machine_inst = contact_status.getInstance(idurl)
+    if not state_machine_inst:
+        return ERROR('error fetching user status')
+    return RESULT([{
+        'contact_status': contact_status.stateToLabel(state_machine_inst.state),
+        'contact_state': state_machine_inst.state,
+        'idurl': idurl,
+        'global_id': global_id.UrlToGlobalID(idurl),
+    }])
+
+
 def user_search(nickname, attempts=1):
     """
     Starts nickname_observer() Automat to lookup existing nickname registered
     in DHT network.
     """
     from lib import misc
+    from userid import global_id
     if not nickname:
         return ERROR('requires nickname of the user')
     if not misc.ValidNickName(nickname):
@@ -2277,6 +2389,7 @@ def user_search(nickname, attempts=1):
             'result': result,
             'nickname': nik,
             'position': pos,
+            'global_id': global_id.UrlToGlobalID(idurl),
             'idurl': idurl,
         }]))
 
@@ -2313,6 +2426,7 @@ def nickname_set(nickname):
     from chat import nickname_holder
     from main import settings
     from userid import my_id
+    from userid import global_id
     settings.setNickName(nickname)
     ret = Deferred()
 
@@ -2320,59 +2434,13 @@ def nickname_set(nickname):
         return ret.callback(RESULT([{
             'result': result,
             'nickname': key,
+            'global_id': global_id.UrlToGlobalID(my_id.getLocalID()),
             'idurl': my_id.getLocalID(),
         }]))
     nickname_holder.A('set', (nickname, _nickname_holder_result))
     return ret
 
 #------------------------------------------------------------------------------
-
-def friend_list():
-    """
-    Returns list of correspondents ids
-    """
-    from contacts import contactsdb
-    from userid import global_id
-    result = []
-    for idurl, alias in contactsdb.correspondents():
-        glob_id = global_id.ParseIDURL(idurl)
-        result.append({
-            'idurl': idurl,
-            'global_id': glob_id['customer'],
-            'idhost': glob_id['idhost'],
-            'username': glob_id['user'],
-            'alias': alias,
-        })
-    return RESULT(result)
-
-def friend_add(idurl, alias):
-    """
-    Add user to the list of friends
-    """
-    from contacts import contactsdb
-    if not idurl:
-        return ERROR('you must specify the global IDURL address where your identity file was last located')
-    if not contactsdb.is_correspondent(idurl):
-        contactsdb.add_correspondent(idurl, alias)
-        contactsdb.save_correspondents()
-        return OK('new friend has been added')
-    return OK('this friend has been already added')
-
-def friend_remove(idurl):
-    """
-    Remove user from the list of friends
-    """
-    from contacts import contactsdb
-    if not idurl:
-        return ERROR('you must specify the global IDURL address where your identity file was last located')
-    if contactsdb.is_correspondent(idurl):
-        contactsdb.remove_correspondent(idurl)
-        contactsdb.save_correspondents()
-        return OK('friend has been removed')
-    return ERROR('friend not found')
-
-#------------------------------------------------------------------------------
-
 
 def send_message(recipient, message_body):
     """
