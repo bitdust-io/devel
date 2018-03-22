@@ -2511,9 +2511,9 @@ def receive_one_message():
     from chat import message
     ret = Deferred()
 
-    def _message_received(request, private_message_object, decrypted_message_body):
+    def _message_received(request, private_message_object, json_message):
         ret.callback(OK({
-            'message': decrypted_message_body,
+            'data': json_message,
             'recipient': private_message_object.recipient,
             'decrypted': bool(private_message_object.encrypted_session),
             'from': request.OwnerID,
@@ -2526,7 +2526,7 @@ def receive_one_message():
 
 #------------------------------------------------------------------------------
 
-def message_send(recipient, message_body):
+def message_send(recipient, json_data):
     """
     Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
 
@@ -2555,9 +2555,9 @@ def message_send(recipient, message_body):
         return ERROR('invalid key_id: %s' % target_glob_id)
 #     if not my_keys.is_key_registered(target_glob_id):
 #         return ERROR('unknown key_id: %s' % target_glob_id)
-    lg.out(4, 'api.message_send to "%s" with %d bytes' % (target_glob_id, len(message_body)))
+    lg.out(4, 'api.message_send to "%s"' % target_glob_id)
     result = message.send_message(
-        message_body=message_body,
+        json_data=json_data,
         recipient_global_id=target_glob_id,
     )
     if isinstance(result, Deferred):
@@ -2606,7 +2606,7 @@ def message_receive(consumer_id):
             if msg['type'] != 'private_message':
                 continue
             result.append({
-                'message': msg['body'],
+                'data': msg['data'],
                 'recipient': msg['to'],
                 'sender': msg['from'],
                 'time': msg['time'],

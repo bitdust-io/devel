@@ -38,6 +38,7 @@ _DebugLevel = 10
 
 import sys
 import time
+import json
 
 try:
     from twisted.internet import reactor
@@ -275,6 +276,7 @@ def on_incoming_message(request, info, status, error_message):
         lg.warn("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
     try:
         decrypted_message = private_message_object.decrypt()
+        json_message = json.loads(decrypted_message)
     except:
         lg.exc()
         return False
@@ -287,7 +289,7 @@ def on_incoming_message(request, info, status, error_message):
     p2p_service.SendAck(request)
     try:
         for cb in _IncomingMessageCallbacks:
-            cb(request, private_message_object, decrypted_message)
+            cb(request, private_message_object, json_message)
     except:
         lg.exc()
     return True
@@ -295,7 +297,7 @@ def on_incoming_message(request, info, status, error_message):
 #------------------------------------------------------------------------------
 
 
-def send_message(message_body, recipient_global_id, packet_id=None):
+def send_message(json_data, recipient_global_id, packet_id=None):
     """
     Send command.Message() packet to remote peer.
     Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
@@ -309,9 +311,10 @@ def send_message(message_body, recipient_global_id, packet_id=None):
     if remote_identity is None:
         d = identitycache.immediatelyCaching(remote_idurl, timeout=10)
         d.addCallback(lambda src: send_message(
-            message_body, recipient_global_id, packet_id))
+            json_data, recipient_global_id, packet_id))
         d.addErrback(lambda err: lg.warn('failed to retrieve %s : %s' (remote_idurl, err)))
         return d
+    message_body = json.dumps(json_data)
     lg.out(6, "message.send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))
     try:
         private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
@@ -332,7 +335,7 @@ def send_message(message_body, recipient_global_id, packet_id=None):
     result = gateway.outbox(outpacket, wide=True)
     try:
         for cp in _OutgoingMessageCallbacks:
-            cp(message_body, private_message_object, remote_identity, outpacket, result)
+            cp(json_data, private_message_object, remote_identity, outpacket, result)
     except:
         lg.exc()
     return result
@@ -353,7 +356,7 @@ def consume_messages(consumer_id):
     return d
 
 
-def push_incoming_message(request, private_message_object, decrypted_message_body):
+def push_incoming_message(request, private_message_object, json_message):
     """
     """
     for consumer_id in consumers_callbacks().keys():
@@ -364,7 +367,7 @@ def push_incoming_message(request, private_message_object, decrypted_message_bod
             'dir': 'incoming',
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
-            'body': decrypted_message_body,
+            'data': json_message,
             'id': request.PacketID,
             'time': utime.get_sec1970(),
         })
@@ -374,7 +377,7 @@ def push_incoming_message(request, private_message_object, decrypted_message_bod
     reactor.callLater(0, pop_messages)
 
 
-def push_outgoing_message(message_body, private_message_object, remote_identity, request, result):
+def push_outgoing_message(json_message, private_message_object, remote_identity, request, result):
     """
     """
     for consumer_id in consumers_callbacks().keys():
@@ -385,7 +388,7 @@ def push_outgoing_message(message_body, private_message_object, remote_identity,
             'dir': 'outgoing',
             'to': private_message_object.recipient_id(),
             'from': private_message_object.sender_id(),
-            'body': message_body,
+            'data': json_message,
             'id': request.PacketID,
             'time': utime.get_sec1970(),
         })
