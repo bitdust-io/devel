@@ -441,7 +441,21 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
         return api.user_ping(
             idurl_or_global_id=data.get('global_id') or data.get('idurl'),
-            timeout=data['timeout']
+            timeout=data.get('timeout', 10),
+        )
+
+    #------------------------------------------------------------------------------
+
+    @GET('^/message/receive/(?P<consumer_id>[^/]+)/v1$')
+    def message_receive_v1(self, request, consumer_id):
+        return api.message_receive(consumer_id=consumer_id)
+
+    @POST('^/message/send/v1')
+    def message_send_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), 'data', ])
+        return api.message_send(
+            recipient=data.get('global_id') or data.get('idurl'),
+            json_data=data['data'],
         )
 
     #------------------------------------------------------------------------------

@@ -333,7 +333,7 @@ def get_message_hash(message_json):
     return key.Hash(coin_hashbase, hexdigest=True)
 
 
-def build_json_message(body, message_id, sender=None, recipient=None):
+def build_json_message(data, message_id, sender=None, recipient=None):
     """
     """
     if not sender:
@@ -345,7 +345,7 @@ def build_json_message(body, message_id, sender=None, recipient=None):
             "type": "message",
             "message_id": message_id,
             "time": utime.utcnow_to_sec1970(),
-            "body": body,
+            "data": data,
         },
         'sender': {
             'glob_id': sender,

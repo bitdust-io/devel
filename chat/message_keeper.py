@@ -82,11 +82,11 @@ def messages_key_id():
 
 #------------------------------------------------------------------------------
 
-def on_incoming_message(packet_in_object, private_message_object, decrypted_message_body):
+def on_incoming_message(packet_in_object, private_message_object, json_message):
     """
     """
     cache_message(
-        message_body=decrypted_message_body,
+        data=json_message,
         message_id=packet_in_object.PacketID,
         sender=private_message_object.sender,
         recipient=private_message_object.recipient,
@@ -94,11 +94,11 @@ def on_incoming_message(packet_in_object, private_message_object, decrypted_mess
     backup_incoming_message(private_message_object, packet_in_object.PacketID)
 
 
-def on_outgoing_message(message_body, private_message_object, remote_identity, outpacket, packet_out_object):
+def on_outgoing_message(json_message, private_message_object, remote_identity, outpacket, packet_out_object):
     """
     """
     cache_message(
-        message_body=message_body,
+        data=json_message,
         message_id=outpacket.PacketID,
         sender=private_message_object.sender,
         recipient=private_message_object.recipient,
@@ -164,11 +164,11 @@ def backup_outgoing_message(private_message_object, message_id):
 
 #------------------------------------------------------------------------------
 
-def cache_message(message_body, message_id, sender, recipient):
+def cache_message(data, message_id, sender, recipient):
     """
     """
     message_json = message_db.build_json_message(
-        body=message_body,
+        data=data,
         message_id=message_id,
         sender=sender,
         recipient=recipient,
