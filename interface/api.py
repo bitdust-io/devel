@@ -2400,6 +2400,46 @@ def user_search(nickname, attempts=1):
     )
     return ret
 
+
+def user_observe(nickname, attempts=3):
+    """
+    Starts nickname_observer() Automat to lookup existing nickname registered
+    in DHT network.
+    """
+    from lib import misc
+    from userid import global_id
+    if not nickname:
+        return ERROR('requires nickname of the user')
+    if not misc.ValidNickName(nickname):
+        return ERROR('invalid nickname')
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+
+    from chat import nickname_observer
+    nickname_observer.stop_all()
+    ret = Deferred()
+    results = []
+
+    def _result(result, nik, pos, idurl):
+        if result != 'finished':
+            results.append({
+                'result': result,
+                'nickname': nik,
+                'position': pos,
+                'global_id': global_id.UrlToGlobalID(idurl),
+                'idurl': idurl,
+            })
+            return None
+        ret.callback(RESULT(results, ))
+        return None
+
+    nickname_observer.observe_many(
+        nickname,
+        attempts=attempts,
+        results_callback=_result,
+    )
+    return ret
+
 #------------------------------------------------------------------------------
 
 def nickname_get():
@@ -2426,18 +2466,20 @@ def nickname_set(nickname):
     from chat import nickname_holder
     from main import settings
     from userid import my_id
-    from userid import global_id
     settings.setNickName(nickname)
     ret = Deferred()
 
     def _nickname_holder_result(result, key):
-        return ret.callback(RESULT([{
+        nickname_holder.A().remove_result_callback(_nickname_holder_result)
+        return ret.callback(OK(extra_fields={
             'result': result,
             'nickname': key,
-            'global_id': global_id.UrlToGlobalID(my_id.getLocalID()),
+            'global_id': my_id.getGlobalID(),
             'idurl': my_id.getLocalID(),
-        }]))
-    nickname_holder.A('set', (nickname, _nickname_holder_result))
+        }))
+
+    nickname_holder.A().add_result_callback(_nickname_holder_result)
+    nickname_holder.A('set', nickname)
     return ret
 
 #------------------------------------------------------------------------------

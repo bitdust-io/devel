@@ -55,7 +55,7 @@ class PrivateMessagesService(LocalService):
         from chat import nickname_holder
         message.init()
         message_db.init()
-        nickname_holder.A('set', None)
+        nickname_holder.A('set')
         callback.append_inbox_callback(self._on_inbox_packet_received)
         message_keeper.init()
         return True

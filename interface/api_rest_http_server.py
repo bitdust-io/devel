@@ -430,6 +430,10 @@ class BitDustRESTHTTPServer(APIResource):
     def user_search_v1(self, request, nickname):
         return api.user_search(nickname, attempts=int(_request_arg(request, 'attempts', 1)))
 
+    @GET('^/user/observe/(?P<nickname>[^/]+)/v1$')
+    def user_observe_v1(self, request, nickname):
+        return api.user_observe(nickname, attempts=int(_request_arg(request, 'attempts', 3)))
+
     @GET('^/user/status/v1$')
     def user_status_v1(self, request):
         return api.user_status(

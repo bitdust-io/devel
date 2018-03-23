@@ -360,15 +360,11 @@ class NetworkConnector(automat.Automat):
             stun_client.A('start')
         if driver.is_on('service_private_messages'):
             from chat import nickname_holder
-            nickname_holder.A('set', None)
-        # if driver.is_on('service_gateway'):
-        #     from transport import gateway
-        #     gateway.start()
+            nickname_holder.A('set')
         self.automat('network-up')
 
     def doSetDown(self, arg):
         """
-        
         """
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetDown')
@@ -378,16 +374,9 @@ class NetworkConnector(automat.Automat):
         if driver.is_on('service_ip_port_responder'):
             from stun import stun_server
             stun_server.A('stop')
-        # if driver.is_on('service_identity_server'):
-        #     if settings.enableIdServer():
-        #         from userid import id_server
-        #         id_server.A('stop')
         if driver.is_on('service_gateway'):
             from transport import gateway
             gateway.stop()
-        # if driver.is_on('service_my_ip_port'):
-        #     from stun import stun_client
-        #     stun_client.A().drop...
         self.automat('network-down')
 
     def doUPNP(self, arg):

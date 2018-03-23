@@ -104,14 +104,15 @@ def test():
     # proxy.callRemote('filemanager_list', 'path=/').addBoth(output)
     # proxy.callRemote('keys_list').addBoth(output)
     # proxy.callRemote('key_create', 'ccc2').addBoth(output)
+    proxy.callRemote('nickname_set', 'veselin').addBoth(output)
     # proxy.callRemote('key_get', key_id='cool$testveselin@p2p-id.ru', include_private=True).addBoth(output)
-    proxy.callRemote('event_send', 'existing-customer-accepted', '{"idurl": "abc123@def.net"}').addBoth(output)
+    # proxy.callRemote('event_send', 'existing-customer-accepted', '{"idurl": "abc123@def.net"}').addBoth(output)
     reactor.run()
 
 #------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
-    # test()
+    test()
     # loop_network_connected()
-    loop_event_listen()
+    # loop_event_listen()
