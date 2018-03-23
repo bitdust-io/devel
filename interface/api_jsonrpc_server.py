@@ -335,6 +335,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_user_search(self, nickname, attempts=1):
         return api.user_search(nickname, attempts=attempts)
 
+    def jsonrpc_user_observe(self, nickname, attempts=3):
+        return api.user_observe(nickname, attempts=attempts)
+
     def jsonrpc_nickname_get(self):
         return api.nickname_get()
 
@@ -356,12 +359,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_message_receive(self, consumer_id):
         return api.message_receive(consumer_id)
 
-    def jsonrpc_receive_one_message(self):
-        return api.receive_one_message()
-
-    def jsonrpc_send_message(self, recipient, message_body):
-        return api.send_message(recipient, message_body)
-
 #     def jsonrpc_list_messages(self):
 #         return api.list_messages()
 
@@ -373,9 +370,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
 #     def jsonrpc_remove_correspondent(self, idurl):
 #         return api.remove_correspondent(idurl)
-
-    def jsonrpc_nickname_search(self, nickname):
-        return api.nickname_search(nickname)
 
 #     def jsonrpc_set_my_nickname(self, nickname):
 #         return api.set_my_nickname(nickname)

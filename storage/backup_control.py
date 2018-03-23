@@ -184,7 +184,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
     src += json.dumps(json_data, indent=2, encoding=encoding)
     if _Debug:
         import pprint
-        pprint.pprint(json_data)
+        lg.out(_DebugLevel, pprint.pformat(json_data))
     return bpio.AtomicWriteFile(filepath, src)
 
 
@@ -220,7 +220,7 @@ def ReadIndex(raw_data, encoding='utf-8'):
             customer_idurl = global_id.GlobalUserToIDURL(customer_id)
             try:
                 count = backup_fs.Unserialize(
-                    json_data[customer_idurl],
+                    json_data[customer_id],
                     iter=backup_fs.fs(customer_idurl),
                     iterID=backup_fs.fsID(customer_idurl),
                     from_json=True,

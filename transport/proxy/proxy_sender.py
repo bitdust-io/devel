@@ -229,7 +229,7 @@ class ProxySender(automat.Automat):
         if len(self.pending_packets) > self.max_pending_packets:
             if _Debug:
                 lg.warn('pending packets queue is full, skip sending outgoing packet')
-            return fail((outpacket, wide, callbacks))
+            return None
         pending_result = Deferred()
         self.pending_packets.append((outpacket, wide, callbacks, pending_result))
         if _Debug:

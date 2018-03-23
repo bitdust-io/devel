@@ -143,9 +143,6 @@ def inbox(newpacket, info, status, error_message):
         # handled by service_supplier()
         DeleteBackup(newpacket)
         commandhandled = False
-    elif newpacket.Command == commands.Message():
-        # handled by service_private_messages()
-        commandhandled = False
     elif newpacket.Command == commands.Correspondent():
         # TODO: contact asking for our current identity, not implemented yet
         Correspondent(newpacket)
@@ -169,6 +166,10 @@ def inbox(newpacket, info, status, error_message):
     elif newpacket.Command == commands.Event():
         # handled by service_p2p_hookups()
         Event(newpacket, info)
+        commandhandled = False
+    elif newpacket.Command == commands.Message():
+        # handled by service_private_messages()
+        Message(newpacket, info)
         commandhandled = False
 
     return commandhandled
@@ -1096,5 +1097,15 @@ def SendEvent(remote_idurl, event_id, payload=None,
     )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks, response_timeout=response_timeout)
     return outpacket
+
+#------------------------------------------------------------------------------
+
+def Message(request, info):
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.Message %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
 
 #------------------------------------------------------------------------------
