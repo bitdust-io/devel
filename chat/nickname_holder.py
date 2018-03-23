@@ -111,7 +111,13 @@ class NicknameHolder(automat.Automat):
         self.nickname = None
         self.key = None
         self.dht_read_defer = None
-        self.result_callback = None
+        self.result_callbacks = []
+
+    def add_result_callback(self, cb):
+        self.result_callbacks.append(cb)
+
+    def remove_result_callback(self, cb):
+        self.result_callbacks.remove(cb)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -192,15 +198,10 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        if arg is None:
-            a, c = None, None
-        else:
-            a, c = arg
-        self.nickname = a or \
+        self.nickname = arg or \
             settings.getNickName() or \
             my_id.getLocalIdentity().getIDName()
         settings.setNickName(self.nickname)
-        self.result_callback = c
 
     def doMakeKey(self, arg):
         """
@@ -254,33 +255,33 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(18, 'nickname_holder.doReportNicknameOwn : %s' % self.key)
-        if self.result_callback:
-            self.result_callback('my own', self.key)
+        lg.out(8, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, arg, ))
+        for cb in self.result_callbacks:
+            cb('my own', self.key)
 
     def doReportNicknameRegistered(self, arg):
         """
         Action method.
         """
-        lg.out(18, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
-        if self.result_callback:
-            self.result_callback('registered', self.key)
+        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s with %s' % (self.key, arg, ))
+        for cb in self.result_callbacks:
+            cb('registered', self.key)
 
     def doReportNicknameExist(self, arg):
         """
         Action method.
         """
-        lg.out(18, 'nickname_holder.doReportNicknameExist : %s' % self.key)
-        if self.result_callback:
-            self.result_callback('exist', self.key)
+        lg.out(8, 'nickname_holder.doReportNicknameExist : %s with %s' % (self.key, arg, ))
+        for cb in self.result_callbacks:
+            cb('exist', self.key)
 
     def doReportNicknameFailed(self, arg):
         """
         Action method.
         """
-        lg.out(18, 'nickname_holder.doReportNicknameFailed : %s' % self.key)
-        if self.result_callback:
-            self.result_callback('failed', self.key)
+        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s with %s' % (self.key, arg, ))
+        for cb in self.result_callbacks:
+            cb('failed', self.key)
 
     def _dht_read_result(self, value, key):
         self.dht_read_defer = None
