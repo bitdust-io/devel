@@ -53,6 +53,8 @@ from twisted.internet.defer import Deferred
 from logs import lg
 
 from p2p import commands
+from p2p import contact_status
+from p2p import propagate
 
 from lib import packetid
 
@@ -83,6 +85,9 @@ _IncomingMessageCallbacks = []
 _OutgoingMessageCallbacks = []
 
 _MessageQueuePerConsumer = {}
+
+_LastUserPingTime = {}
+_PingTrustIntervalSeconds = 60 * 2
 
 #------------------------------------------------------------------------------
 
@@ -294,36 +299,50 @@ def on_incoming_message(request, info, status, error_message):
         lg.exc()
     return True
 
+
+def on_ping_success(response_tuple, idurl):
+    global _LastUserPingTime
+    _LastUserPingTime[idurl] = time.time()
+    lg.info('node %s replied with Ack : %s' % (idurl, response_tuple, ))
+
+
+def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None):
+    global _LastUserPingTime
+    lg.info('message %s delivered to %s : %s with %s' % (packet_id, recipient_global_id, response, info, ))
+    _LastUserPingTime[idurl] = time.time()
+    if result_defer and not result_defer.called:
+        result_defer.callback(response)
+
+
+def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None):
+    global _LastUserPingTime
+    lg.err('message %s failed to %s : %s with %s' % (packet_id, recipient_global_id, response, info, ))
+    if idurl in _LastUserPingTime:
+        _LastUserPingTime[idurl] = 0
+    if result_defer and not result_defer.called:
+        result_defer.errback(Exception(response or 'timeout'))
+
 #------------------------------------------------------------------------------
 
-
-def send_message(json_data, recipient_global_id, packet_id=None):
-    """
-    Send command.Message() packet to remote peer.
-    Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
-    """
+def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_defer=None):
     global _OutgoingMessageCallbacks
-    if not packet_id:
-        packet_id = packetid.UniqueID()
     remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id)
+    if not remote_idurl:
+        raise Exception('invalid recipient')
     remote_identity = identitycache.FromCache(remote_idurl)
-    # make sure we have remote identity cached
-    if remote_identity is None:
-        d = identitycache.immediatelyCaching(remote_idurl, timeout=10)
-        d.addCallback(lambda src: send_message(
-            json_data, recipient_global_id, packet_id))
-        d.addErrback(lambda err: lg.warn('failed to retrieve %s : %s' (remote_idurl, err)))
-        return d
+    if not remote_identity:
+        raise Exception('remote identity object not exist in cache')
     message_body = json.dumps(json_data)
-    lg.out(6, "message.send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))
+    lg.out(4, "message.do_send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))
     try:
         private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
         private_message_object.encrypt(message_body)
     except Exception as exc:
-        return fail(exc)
+        lg.exc()
+        raise Exception('message encryption failed')
     # Payload = misc.ObjectToString(Amessage)
     Payload = private_message_object.serialize()
-    lg.out(6, "message.send_message payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
+    lg.out(4, "        payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
     outpacket = signed.Packet(
         commands.Message(),
         my_id.getLocalID(),
@@ -332,13 +351,57 @@ def send_message(json_data, recipient_global_id, packet_id=None):
         Payload,
         remote_idurl,
     )
-    result = gateway.outbox(outpacket, wide=True)
+    result = gateway.outbox(outpacket, wide=True, response_timeout=timeout, callbacks={
+        commands.Ack(): lambda response, info: on_message_delivered(
+            remote_idurl, json_data, recipient_global_id, packet_id, response, info, result_defer, ),
+        commands.Fail(): lambda response, info: on_message_failed(
+            remote_idurl, json_data, recipient_global_id, packet_id, response, info, result_defer, ),
+        None: lambda pkt_out: on_message_failed(
+            remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer, ),  # timeout
+    })
     try:
         for cp in _OutgoingMessageCallbacks:
             cp(json_data, private_message_object, remote_identity, outpacket, result)
     except:
         lg.exc()
+        raise Exception('failed sending message')
     return result
+
+
+def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
+    """
+    Send command.Message() packet to remote peer.
+    Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
+    """
+    global _LastUserPingTime
+    global _PingTrustIntervalSeconds
+    if not packet_id:
+        packet_id = packetid.UniqueID()
+    lg.out(4, "message.send_message to %s with PackteID=%s" % (recipient_global_id, packet_id))
+    remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id)
+    if not remote_idurl:
+        return fail(Exception('invalid recipient'))
+    ret = Deferred()
+    if remote_idurl not in _LastUserPingTime:
+        is_expired = True
+    else:
+        is_expired = time.time() - _LastUserPingTime[remote_idurl] > _PingTrustIntervalSeconds
+    remote_identity = identitycache.FromCache(remote_idurl)
+    if is_expired or remote_identity is None or not contact_status.isOnline(remote_idurl):
+        d = propagate.PingContact(remote_idurl, timeout=timeout or 5)
+        d.addCallback(lambda response_tuple: on_ping_success(response_tuple, remote_idurl))
+        d.addCallback(lambda response_tuple: do_send_message(
+            json_data, recipient_global_id, packet_id, timeout, result_defer=ret))
+        d.addErrback(lambda err: on_message_failed(
+            remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret))
+        return ret
+    try:
+        do_send_message(json_data, recipient_global_id, packet_id, timeout, ret)
+    except Exception as exc:
+        lg.warn(str(exc))
+        on_message_failed(remote_idurl, json_data, recipient_global_id, packet_id, None, None, )
+        ret.errback(exc)
+    return ret
 
 #------------------------------------------------------------------------------
 

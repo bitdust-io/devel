@@ -2484,7 +2484,7 @@ def nickname_set(nickname):
 
 #------------------------------------------------------------------------------
 
-def message_send(recipient, json_data):
+def message_send(recipient, json_data, timeout=5):
     """
     Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
 
@@ -2517,17 +2517,16 @@ def message_send(recipient, json_data):
     result = message.send_message(
         json_data=json_data,
         recipient_global_id=target_glob_id,
+        timeout=timeout,
     )
-    if isinstance(result, Deferred):
-        ret = Deferred()
-        result.addCallback(
-            lambda packet: ret.callback(
-                OK(str(packet.outpacket))))
-        result.addErrback(
-            lambda err: ret.callback(
-                ERROR(err.getErrorMessage())))
-        return ret
-    return OK(str(result.outpacket))
+    ret = Deferred()
+    result.addCallback(
+        lambda packet: ret.callback(
+            OK(str(packet))))
+    result.addErrback(
+        lambda err: ret.callback(
+            ERROR(err.getErrorMessage())))
+    return ret
 
 
 def message_receive(consumer_id):

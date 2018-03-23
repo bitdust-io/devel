@@ -460,6 +460,7 @@ class BitDustRESTHTTPServer(APIResource):
         return api.message_send(
             recipient=data.get('global_id') or data.get('idurl'),
             json_data=data['data'],
+            timeout=data.get('timeout', 5),
         )
 
     #------------------------------------------------------------------------------

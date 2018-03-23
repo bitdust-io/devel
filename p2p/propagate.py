@@ -455,10 +455,8 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
 
 def PingContact(idurl, timeout=30):
     """
-    Called from outside when need to "ping" some user, this will just send my
-    Identity to that guy, he will need to respond.
-
-    Previously it request his identity from ID server.
+    Can be called when you need to "ping" another user.
+    This will send your Identity to that node, and it must respond.
     """
     if _Debug:
         lg.out(_DebugLevel, "propagate.PingContact [%s]" % idurl)
