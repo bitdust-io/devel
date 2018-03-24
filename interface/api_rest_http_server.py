@@ -450,6 +450,10 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/message/list/v1?')
+    def message_list_v1(self):
+        return
+
     @GET('^/message/receive/(?P<consumer_id>[^/]+)/v1$')
     def message_receive_v1(self, request, consumer_id):
         return api.message_receive(consumer_id=consumer_id)
@@ -460,6 +464,7 @@ class BitDustRESTHTTPServer(APIResource):
         return api.message_send(
             recipient=data.get('global_id') or data.get('idurl'),
             json_data=data['data'],
+            timeout=data.get('timeout', 5),
         )
 
     #------------------------------------------------------------------------------
