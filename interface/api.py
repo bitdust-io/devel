@@ -2580,6 +2580,11 @@ def message_receive(consumer_id):
     lg.out(4, 'api.message_receive "%s"' % consumer_id)
     return ret
 
+
+def messages_cached():
+    return RESULT()
+
+
 #------------------------------------------------------------------------------
 
 

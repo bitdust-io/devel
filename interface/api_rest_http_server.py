@@ -450,6 +450,10 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/message/list/v1?')
+    def message_list_v1(self):
+        return
+
     @GET('^/message/receive/(?P<consumer_id>[^/]+)/v1$')
     def message_receive_v1(self, request, consumer_id):
         return api.message_receive(consumer_id=consumer_id)
