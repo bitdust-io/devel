@@ -95,11 +95,33 @@ class SharedDataService(LocalService):
         if block.CreatorID != global_id.GlobalUserToIDURL(user_id):
             lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (block.CreatorID, user_id, ))
             return False
-        from access import shared_access_coordinator
-        this_share = shared_access_coordinator.get_active_share(key_id)
-        if not this_share:
-            lg.warn('share is not opened: %s' % key_id)
-            p2p_service.SendFail(newpacket, 'share is not opened')
+        try:
+            json_data = json.loads(block.Data(), encoding='utf-8')
+            json_data['items']
+            customer_idurl = block.CreatorID
+            count = backup_fs.Unserialize(
+                raw_data=json_data,
+                iter=backup_fs.fs(customer_idurl),
+                iterID=backup_fs.fsID(customer_idurl),
+                from_json=True,
+            )
+        except Exception as exc:
+            lg.exc()
+            p2p_service.SendFail(newpacket, str(exc))
             return False
-        this_share.automat('customer-list-files-received', (newpacket, info, block, ))
+        p2p_service.SendAck(newpacket)
+        if count == 0:
+            lg.warn('no files were imported during file sharing')
+        else:
+            backup_control.Save()
+            lg.info('imported %d shared files from %s, key_id=%s' % (count, customer_idurl, key_id, ))
+        return True
+
+#         from access import shared_access_coordinator
+#         this_share = shared_access_coordinator.get_active_share(key_id)
+#         if not this_share:
+#             lg.warn('share is not opened: %s' % key_id)
+#             p2p_service.SendFail(newpacket, 'share is not opened')
+#             return False
+#         this_share.automat('customer-list-files-received', (newpacket, info, block, ))
         return True

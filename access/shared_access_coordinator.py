@@ -360,26 +360,6 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        newpacket, info, block = arg
-        try:
-            raw_list_files = block.Data()
-            json_data = json.loads(raw_list_files, encoding='utf-8')
-            json_data['items']
-            customer_idurl = block.CreatorID
-            count = backup_fs.Unserialize(
-                raw_data=json_data,
-                iter=backup_fs.fs(customer_idurl),
-                iterID=backup_fs.fsID(customer_idurl),
-                from_json=True,
-            )
-        except Exception as exc:
-            lg.exc()
-            return
-        if count == 0:
-            p2p_service.SendFail(newpacket, 'no files were imported')
-            return
-        backup_control.Save()
-        p2p_service.SendAck(newpacket)
 
     def doCheckAllConnected(self, arg):
         """
