@@ -315,13 +315,13 @@ class SharedAccessDonor(automat.Automat):
             EncryptKey=lambda inp: self.remote_identity.encrypt(inp),
         )
         encrypted_list_files = block.Serialize()
-        p2p_service.SendListFiles(
-            self.remote_idurl,
-            customer_idurl=my_id.getLocalID(),
+        p2p_service.SendFiles(
+            idurl=self.remote_idurl,
             payload=encrypted_list_files,
             callbacks={
                 commands.Ack(): lambda response, _: self.automat('list-files-ok', response),
                 commands.Fail(): lambda response, _: self.automat('fail', Exception(str(response))),
+                None: lambda pkt_out: self.automat('fail', Exception('timeout')),
             },
         )
 

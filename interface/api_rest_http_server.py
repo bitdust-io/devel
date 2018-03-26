@@ -347,14 +347,43 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/share/history/v1$')
-    def share_history_v1(self, request):
-        return api.share_history()
+    @GET('^/share/list/v1')
+    def share_list_v1(self, request):
+        return api.share_list()
+
+    @POST('^/share/create/v1$')
+    def share_create_v1(self, request):
+        data = _request_data(request, mandatory_keys=['key_alias', ])
+        return api.share_create(
+            key_alias=data['key_alias'],
+            remote_path=data.get('remote_path'),
+        )
+
+    @PUT('^/share/grant/v1$')
+    def share_grant_v1(self, request):
+        data = _request_data(request, mandatory_keys=[('trusted_global_id', 'trusted_idurl', ), 'key_id', ])
+        return api.share_grant(
+            trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl'),
+            key_id=data['key_id'],
+        )
 
     @POST('^/share/open/v1$')
     def share_open_v1(self, request):
-        data = _request_data(request, mandatory_keys=['remote_user', 'key_id', ])
-        return api.share_open(remote_user=data['remote_user'], key_id=data['key_id'])
+        data = _request_data(request, mandatory_keys=['key_id', ])
+        return api.share_open(
+            key_id=data['key_id'],
+        )
+
+    @DELETE('^/share/close/v1$')
+    def share_close_v1(self, request):
+        data = _request_data(request, mandatory_keys=['key_id', ])
+        return api.share_close(
+            key_id=data['key_id'],
+        )
+
+    @GET('^/share/history/v1$')
+    def share_history_v1(self, request):
+        return api.share_history()
 
     #------------------------------------------------------------------------------
 

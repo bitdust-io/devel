@@ -1111,35 +1111,42 @@ def ExistsBackupID(backupID, iterID=None):
 
 #------------------------------------------------------------------------------
 
-
 def HasChilds(path, iter=None):
     """
     Return True if that item has some childs in the index.
     """
+    if iter is None:
+        iter = fs()
+    if not path or path == '/':
+        return len(iter) > 0
     iter_and_id = WalkByPath(path, iter=iter)
     if iter_and_id is None:
         return False
-    iter, pathid = iter_and_id
+    iter, _ = iter_and_id
     if not isinstance(iter, dict):
         return False
     if 0 not in iter:
         raise Exception('Error, directory ID missed in the index')
-    return len(iter) > 1
+    return len(iter) > 0
 
 
 def HasChildsID(pathID, iterID=None):
     """
     Same, but access to item by its ID.
     """
+    if iterID is None:
+        iterID = fsID()
+    if not pathID:
+        return len(iterID) > 0
     iter_and_path = WalkByID(pathID, iterID=iterID)
     if iter_and_path is None:
         return False
-    iterID, path = iter_and_path
+    iterID, _ = iter_and_path
     if not isinstance(iterID, dict):
         return False
     if INFO_KEY not in iterID:
         raise Exception('Error, directory info missed in the index')
-    return len(iterID) > 1
+    return len(iterID) > 0
 
 #------------------------------------------------------------------------------
 
@@ -1417,7 +1424,6 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
     return (item_size, item_time, versions)
 
 #------------------------------------------------------------------------------
-
 
 def ListRootItems(iter=None, iterID=None):
     """
@@ -2065,7 +2071,10 @@ def _test():
     inpt = cStringIO.StringIO(src)
     inpt.readline()
     # count = Unserialize(inpt)
-    count = Unserialize(inpt.read(), from_json=True)
+    json_data = json.loads(inpt.read())
+    customer_id = 'veselin@veselin-p2p.ru'
+    customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+    count = Unserialize(json_data[customer_id], from_json=True, iter=fs(customer_idurl))
     inpt.close()
     # print count
     Scan()
@@ -2076,12 +2085,12 @@ def _test():
     # print
 
 #     print AddDir('dir1/dir2')
-    ii = GetIteratorsByPath('dir1')
-    print ii
-    print PutItem('fff', as_folder=False, iter=ii[0], iterID=ii[1])
-
-    print IsDir('dir1')
-    print IsFile('dir2/fff')
+#     ii = GetIteratorsByPath('dir1')
+#     print ii
+#     print PutItem('fff', as_folder=False, iter=ii[0], iterID=ii[1])
+# 
+#     print IsDir('dir1')
+#     print IsFile('dir2/fff')
 
     print '------------'
     pprint.pprint(fs())
@@ -2089,6 +2098,7 @@ def _test():
     pprint.pprint(fsID())
     print
 
+    print HasChilds('', iter=fs(customer_idurl))
 
     # PutItem('dir4', as_folder=True)
 

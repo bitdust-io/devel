@@ -434,13 +434,10 @@ def ListFiles(request, info):
 #     from supplier import list_files
 #     return list_files.send(request.OwnerID, request.PacketID, request.Payload)
 
-def SendListFiles(supplierNumORidurl, customer_idurl=None, payload=None, wide=False, callbacks={}):
+def SendListFiles(supplierNumORidurl, customer_idurl=None, wide=False, callbacks={}):
     """
-    You can send a list of your files to another user if you want he to access them.
-    This will not send any personal data : only file names, ids, versions, etc.
-    This also used as a request to supplier : if you send an empty ListFiles() packet
-    to your supplier he will reply you with a list of stored files in a Files() packet.
-    Pass list of files in encrypted form in the `payload` or leave it empty.
+    This is used as a request method from your supplier : if you send him a ListFiles() packet
+    he will reply you with a list of stored files in a Files() packet.
     """
     MyID = my_id.getLocalID()
     if not customer_idurl:
@@ -455,7 +452,7 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None, payload=None, wide=Fa
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
     PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
-    Payload = payload or settings.ListFilesFormat()
+    Payload = settings.ListFilesFormat()
     result = signed.Packet(
         Command=commands.ListFiles(),
         OwnerID=MyID,
@@ -471,7 +468,7 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None, payload=None, wide=Fa
 
 def Files(request, info):
     """
-    A directory list came in from some supplier.
+    A directory list came in from some supplier or another customer.
     """
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Files %d bytes in [%s]' % (len(request.Payload), request.PacketID))
@@ -486,22 +483,29 @@ def Files(request, info):
 #     backup_control.IncomingSupplierListFiles(newpacket)
 
 
-def SendFiles(raw_list_files_info, ownerID, creatorID, packetID, remoteID, callbacks={}):
+def SendFiles(idurl, raw_list_files_info, ownerID=None, creatorID=None, packetID=None, callbacks={}):
+# def SendFiles(raw_list_files_info, ownerID, creatorID, packetID, remoteID, callbacks={}):
     """
     Sending information about known files stored locally for given customer (if you are supplier).
+    You can also send a list of your files to another user if you wish to grand access.
+    This will not send any personal data : only file names, ids, versions, etc.
+    So pass list of files in encrypted form in the `payload` or leave it empty.
     """
+    # PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
+    MyID = my_id.getLocalID()
+    PacketID = packetID or ("%s:%s" % (global_id.UrlToGlobalID(idurl), packetid.UniqueID()))
     newpacket = signed.Packet(
-        commands.Files(),
-        ownerID,
-        creatorID,
-        packetID,
-        raw_list_files_info,
-        remoteID,
+        Command=commands.Files(),
+        OwnerID=ownerID or MyID,
+        CreatorID=creatorID or MyID,
+        PacketID=PacketID,
+        Payload=raw_list_files_info,
+        RemoteID=idurl,
     )
     result = gateway.outbox(newpacket, callbacks=callbacks)
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in packetID=%s' % (len(raw_list_files_info), packetID))
-        lg.out(_DebugLevel, '  to remoteID=%s  ownerID=%s  creatorID=%s' % (remoteID, ownerID, creatorID))
+        lg.out(_DebugLevel, '  to remoteID=%s  ownerID=%s  creatorID=%s' % (idurl, ownerID, creatorID))
     return result
 
 #------------------------------------------------------------------------------

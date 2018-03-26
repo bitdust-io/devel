@@ -44,6 +44,15 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
+import json
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -51,10 +60,78 @@ from automats import automat
 from dht import dht_relations
 
 from userid import global_id
+from userid import my_id
+
+from p2p import p2p_service
+
+from storage import backup_fs
+from storage import backup_control
 
 from customer import supplier_connector
 
 #------------------------------------------------------------------------------
+
+_ActiveShares = {}
+_ActiveSharesByIDURL = {}
+
+#------------------------------------------------------------------------------
+
+def register_share(A):
+    """
+    """
+    global _ActiveShares
+    global _ActiveSharesByIDURL
+    if A.key_id in _ActiveShares:
+        raise Exception('share already exist')
+    if A.customer_idurl not in _ActiveSharesByIDURL:
+        _ActiveSharesByIDURL[A.customer_idurl] = []
+    _ActiveSharesByIDURL[A.customer_idurl].append(A)
+    _ActiveShares[A.key_id] = A
+
+
+def unregister_share(A):
+    """
+    """
+    global _ActiveShares
+    global _ActiveSharesByIDURL
+    _ActiveShares.pop(A.key_id, None)
+    if A.customer_idurl not in _ActiveSharesByIDURL:
+        lg.warn('given customer idurl not found in active shares list')
+    else:
+        _ActiveSharesByIDURL[A.customer_idurl] = []
+
+#------------------------------------------------------------------------------
+
+def list_active_shares():
+    """
+    """
+    global _ActiveShares
+    return _ActiveShares.keys()
+
+def get_active_share(key_id):
+    """
+    """
+    global _ActiveShares
+    if key_id not in _ActiveShares:
+        return None
+    return _ActiveShares[key_id]
+
+
+def find_active_shares(customer_idurl):
+    """
+    """
+    global _ActiveSharesByIDURL
+    result = []
+    for automat_index in _ActiveSharesByIDURL.values():
+        A = automat.objects().get(automat_index, None)
+        if not A:
+            continue
+        if A.customer_idurl == customer_idurl:
+            result.append(A)
+    return result
+
+#-----------------------------------------------------------------------------
+
 
 class SharedAccessCoordinator(automat.Automat):
     """
@@ -67,7 +144,7 @@ class SharedAccessCoordinator(automat.Automat):
         'timer-15sec': (15.0, ['DHT_LOOKUP']),
     }
 
-    def __init__(self, key_id, debug_level=0, log_events=False, publish_events=False, **kwargs):
+    def __init__(self, key_id, debug_level=_DebugLevel, log_events=False, publish_events=False, **kwargs):
         """
         Create shared_access_coordinator() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
@@ -75,6 +152,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.key_id = key_id
         glob_id = global_id.ParseGlobalID(self.key_id)
         self.customer_idurl = glob_id['idurl']
+        self.suppliers_list = []
         super(SharedAccessCoordinator, self).__init__(
             name="shared_%s$%s" % (glob_id['key_alias'], glob_id['user']),
             state='AT_STARTUP',
@@ -84,12 +162,19 @@ class SharedAccessCoordinator(automat.Automat):
             **kwargs
         )
 
+    def to_json(self):
+        return {
+            'key_id': self.key_id,
+            'idurl': self.customer_idurl,
+            'state': self.state,
+            'suppliers': self.suppliers_list,
+        }
+
     def init(self):
         """
         Method to initialize additional variables and flags
         at creation phase of shared_access_coordinator() machine.
         """
-        self.suppliers_list = []
         self.result_defer = None
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -102,6 +187,19 @@ class SharedAccessCoordinator(automat.Automat):
         This method intended to catch the moment when some event was fired in the shared_access_coordinator()
         but its state was not changed.
         """
+
+    def register(self):
+        """
+        """
+        automat_index = automat.Automat.register(self)
+        register_share(self)
+        return automat_index
+
+    def unregister(self):
+        """
+        """
+        unregister_share(self)
+        return automat.Automat.unregister(self)
 
     def A(self, event, arg):
         """
@@ -197,16 +295,24 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Condition method.
         """
+        # TODO:
+        return True
 
     def isAnySupplierConnected(self, arg):
         """
         Condition method.
         """
+        for supplier_idurl in self.suppliers_list:
+            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+            if sc is not None and sc.state == 'CONNECTED':
+                return True
+        return False
 
     def isAnyFilesShared(self, arg):
         """
         Condition method.
         """
+        return backup_fs.HasChilds('', iter=backup_fs.fs(self.customer_idurl))
 
     def doInit(self, arg):
         """
@@ -232,41 +338,62 @@ class SharedAccessCoordinator(automat.Automat):
                 sc = supplier_connector.create(
                     supplier_idurl=supplier_idurl,
                     customer_idurl=self.customer_idurl,
+                    # we only want to read the data at the moment,
+                    # so requesting 0 bytes from that supplier
                     needed_bytes=0,
                 )
             sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
-            # self.connect_list.append(supplier_idurl)
-            sc.automat('connect')  # we only want to read the data, so requesting 0 bytes from that supplier
+            sc.automat('connect')
 
     def doRequestSupplierFiles(self, arg):
         """
         Action method.
         """
-
-    def doProcessSupplierListFile(self, arg):
-        """
-        Action method.
-        """
+        p2p_service.SendListFiles(arg, customer_idurl=self.customer_idurl)
 
     def doProcessCustomerListFiles(self, arg):
         """
         Action method.
         """
+        newpacket, info, block = arg
+        try:
+            raw_list_files = block.Data()
+            json_data = json.loads(raw_list_files, encoding='utf-8')
+            json_data['items']
+            customer_idurl = block.CreatorID
+            count = backup_fs.Unserialize(
+                raw_data=json_data,
+                iter=backup_fs.fs(customer_idurl),
+                iterID=backup_fs.fsID(customer_idurl),
+                from_json=True,
+            )
+        except Exception as exc:
+            lg.exc()
+            p2p_service.SendFail(newpacket, str(exc))
+            return
+        if count == 0:
+            p2p_service.SendFail(newpacket, 'no files were imported')
+            return
+        backup_control.Save()
+        p2p_service.SendAck(newpacket)
 
     def doCheckAllConnected(self, arg):
         """
         Action method.
         """
+        for supplier_idurl in self.suppliers_list:
+            sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
+            if sc is None or sc.state != 'CONNECTED':
+                return
+        self.automat('all-suppliers-connected')
 
     def doRequestRandomPacket(self, arg):
         """
         Action method.
         """
-
-    def doReportDisconnected(self, arg):
-        """
-        Action method.
-        """
+        # TODO: take random packet from random file that was shared and send RequestData() packet
+        # to one of suppliers - this way we can be sure that shared data is available
+        self.automat('ack')
 
     def doReportSuccess(self, arg):
         """
@@ -274,6 +401,13 @@ class SharedAccessCoordinator(automat.Automat):
         """
         if self.result_defer:
             self.result_defer.callback(True)
+
+    def doReportDisconnected(self, arg):
+        """
+        Action method.
+        """
+        if self.result_defer:
+            self.result_defer.errback(Exception('disconnected'))
 
     def doReportFailed(self, arg):
         """

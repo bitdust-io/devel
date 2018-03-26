@@ -208,7 +208,7 @@ def ReadIndex(raw_data, encoding='utf-8'):
         json_data = raw_data
     if _Debug:
         import pprint
-        pprint.pprint(json_data)
+        lg.out(_DebugLevel, pprint.pformat(json_data))
     for customer_id in json_data.keys():
         if customer_id == 'items':
             try:
@@ -372,7 +372,7 @@ def IncomingSupplierBackupIndex(newpacket):
         index_synchronizer.A('index-file-received', (newpacket, supplier_revision))
     if revision() >= supplier_revision:
         inpt.close()
-        lg.out(4, 'backup_control.IncomingSupplierBackupIndex skipped, supplier %s revision=%d, local revision=%d' % (
+        lg.out(4, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
             newpacket.RemoteID, supplier_revision, revision(), ))
         return
     raw_data = inpt.read()

@@ -128,6 +128,9 @@ class BackupsService(LocalService):
                 backup_control.IncomingSupplierBackupIndex(newpacket)
                 return True
         if newpacket.Command == commands.Files():
+            if not newpacket.PacketID.startswith(my_id.getGlobalID() + ':'):
+                # skip Files() which are from another customer
+                return False
             lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
                 newpacket, newpacket.RemoteID, ))
             return backup_control.IncomingSupplierListFiles(newpacket)
