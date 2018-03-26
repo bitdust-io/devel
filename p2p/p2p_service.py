@@ -491,7 +491,8 @@ def SendFiles(idurl, raw_list_files_info, packet_id=None, callbacks={}, timeout=
     So pass list of files in encrypted form in the `payload` or leave it empty.
     """
     MyID = my_id.getLocalID()
-    PacketID = packet_id or ("%s:%s" % (global_id.UrlToGlobalID(idurl), packetid.UniqueID()))
+    if not packet_id:
+        packet_id = "%s:%s" % (global_id.UrlToGlobalID(idurl), packetid.UniqueID())
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in packetID=%s' % (len(raw_list_files_info), packet_id))
         lg.out(_DebugLevel, '  to remoteID=%s' % idurl)
@@ -499,7 +500,7 @@ def SendFiles(idurl, raw_list_files_info, packet_id=None, callbacks={}, timeout=
         Command=commands.Files(),
         OwnerID=MyID,
         CreatorID=MyID,
-        PacketID=PacketID,
+        PacketID=packet_id,
         Payload=raw_list_files_info,
         RemoteID=idurl,
     )
