@@ -375,7 +375,7 @@ def on_key_received(newpacket, info, status, error_message):
                 if my_keys.is_key_private(key_id):
                     # we should not overwrite existing private key
                     raise Exception('private key already registered')
-                if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.public().toString('openssh'):
+                if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.toString('openssh'):
                     # and we should not overwrite existing public key as well
                     raise Exception('another key already registered with that ID')
                 p2p_service.SendAck(newpacket)
