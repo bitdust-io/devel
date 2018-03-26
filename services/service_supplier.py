@@ -283,9 +283,9 @@ class SupplierService(LocalService):
         lg.warn('going to erase files: %s' % ids)
         for pcktID in ids:
             glob_path = global_id.ParseGlobalID(pcktID)
-            if not glob_path['path']:
+            if not glob_path['path'] or not glob_path['customer']:
                 # backward compatible check
-                glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + newpacket.PacketID)
+                glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + pcktID)
             if not glob_path['path'] or not glob_path['customer']:
                 lg.err("got incorrect PacketID")
                 p2p_service.SendFail(newpacket, 'incorrect path')
@@ -326,6 +326,7 @@ class SupplierService(LocalService):
         from logs import lg
         from system import bpio
         from userid import global_id
+        from userid import my_id
         from p2p import p2p_service
         from main import events
         if newpacket.Payload == '':
@@ -336,6 +337,9 @@ class SupplierService(LocalService):
         lg.warn('going to erase backup ids: %s' % ids)
         for bkpID in ids:
             glob_path = global_id.ParseGlobalID(bkpID)
+            if not glob_path['path'] or not glob_path['customer']:
+                # backward compatible check
+                glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + bkpID)
             if not glob_path['path'] or not glob_path['customer']:
                 lg.err("got incorrect backupID")
                 p2p_service.SendFail(newpacket, 'incorrect backupID')

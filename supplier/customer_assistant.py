@@ -36,6 +36,11 @@ EVENTS:
     * :red:`shutdown`
     * :red:`timer-10sec`
     * :red:`timer-5min`
+
+
+TODO: periodically send Request service Customer to be sure that i am still your supplier
+if not - remove that customer and stop assistant
+
 """
 
 #------------------------------------------------------------------------------
