@@ -353,7 +353,14 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                         # so we have some modifications in the index - it is not empty!
                         # index_synchronizer() did his job - so we have up to date index on hands
                         # now we are sure that this file is old and must be removed from remote site
-                        paths2remove.add(pth)
+                        paths2remove.add(
+                            packetid.MakeBackupID(
+                                customer=global_id.UrlToGlobalID(customer_idurl),
+                                path_id=pth,
+                                key_alias=current_key_alias,
+                                version=None,
+                            )
+                        )
                         lg.out(2, '        F%s - remove, not found in the index' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
@@ -363,7 +370,14 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 pth = line
             if not backup_fs.ExistsID(pth, iterID=backup_fs.fsID(customer_idurl)):
                 if is_in_sync:
-                    paths2remove.add(pth)
+                    paths2remove.add(
+                        packetid.MakeBackupID(
+                            customer=global_id.UrlToGlobalID(customer_idurl),
+                            path_id=pth,
+                            key_alias=current_key_alias,
+                            version=None,
+                        )
+                    )
                     lg.out(2, '        D%s - remove, not found in the index' % pth)
                 else:
                     lg.warn('D%s not found in the index, but we are not in sync, skip' % pth)
@@ -375,7 +389,12 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 continue
             try:
                 customerID, remotePath, versionName = packetid.SplitBackupID(words[0])
-                backupID = packetid.MakeBackupID(global_id.UrlToGlobalID(customer_idurl), remotePath) + '/' + versionName
+                backupID = packetid.MakeBackupID(
+                    customer=global_id.UrlToGlobalID(customer_idurl),
+                    path_id=remotePath,
+                    key_alias=current_key_alias,
+                    version=versionName,
+                )
             except:
                 lg.warn('incorrect line (global id format): [%s]' % line)
                 continue
@@ -396,7 +415,14 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 # this version is not found in the index
                 if is_in_sync:
                     backups2remove.add(backupID)
-                    paths2remove.add(remotePath)
+                    paths2remove.add(
+                        packetid.MakeBackupID(
+                            customer=global_id.UrlToGlobalID(customer_idurl),
+                            path_id=remotePath,
+                            key_alias=current_key_alias,
+                            version=None,
+                        )
+                    )
                     lg.out(2, '        V%s - remove, path not found in the index' % remotePath)
                 else:
                     lg.warn('V%s path is not found in the index, but we are not in sync, skip' % remotePath)
