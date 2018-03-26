@@ -384,7 +384,7 @@ def on_key_received(newpacket, info, status, error_message):
             if not my_keys.register_key(key_id, key_object):
                 raise Exception('key register failed')
             else:
-                lg.info('added new key %s, is_public=%b' % (key_id, key_object.isPublic()))
+                lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
             p2p_service.SendAck(newpacket)
             if _Debug:
                 lg.info('received and stored locally a new key %s, include_private=%s' % (key_id, key_json.get('include_private')))
@@ -409,13 +409,13 @@ def on_key_received(newpacket, info, status, error_message):
             my_keys.erase_key(key_id)
             if not my_keys.register_key(key_id, key_object):
                 raise Exception('key register failed')
-            lg.info('added new key %s, is_public=%b' % (key_id, key_object.isPublic()))
+            lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
             p2p_service.SendAck(newpacket)
             return True
         # no private key with given ID was registered
         if not my_keys.register_key(key_id, key_object):
             raise Exception('key register failed')
-        lg.info('added new key %s, is_public=%b' % (key_id, key_object.isPublic()))
+        lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
         p2p_service.SendAck(newpacket)
         return True
     except Exception as exc:
