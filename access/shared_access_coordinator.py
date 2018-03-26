@@ -256,6 +256,8 @@ class SharedAccessCoordinator(automat.Automat):
             elif event == 'fail' or ( event == 'ack' and not self.isPacketValid(arg) ):
                 self.state = 'DISCONNECTED'
                 self.doReportDisconnected(arg)
+            elif event == 'customer-list-files-received':
+                self.doProcessCustomerListFiles(arg)
         #---DHT_LOOKUP---
         elif self.state == 'DHT_LOOKUP':
             if event == 'customer-list-files-received':
@@ -277,6 +279,8 @@ class SharedAccessCoordinator(automat.Automat):
             elif event == 'restart':
                 self.state = 'DHT_LOOKUP'
                 self.doDHTLookupSuppliers(arg)
+            elif event == 'customer-list-files-received':
+                self.doProcessCustomerListFiles(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'shutdown':
@@ -285,6 +289,8 @@ class SharedAccessCoordinator(automat.Automat):
             elif event == 'restart':
                 self.state = 'DHT_LOOKUP'
                 self.doDHTLookupSuppliers(arg)
+            elif event == 'customer-list-files-received':
+                self.doProcessCustomerListFiles(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -368,7 +374,6 @@ class SharedAccessCoordinator(automat.Automat):
             )
         except Exception as exc:
             lg.exc()
-            p2p_service.SendFail(newpacket, str(exc))
             return
         if count == 0:
             p2p_service.SendFail(newpacket, 'no files were imported')
@@ -407,13 +412,6 @@ class SharedAccessCoordinator(automat.Automat):
         """
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
-
-    def doReportFailed(self, arg):
-        """
-        Action method.
-        """
-        if self.result_defer:
-            self.result_defer.errback(Exception(arg))
 
     def doDestroyMe(self, arg):
         """

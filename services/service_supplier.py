@@ -522,7 +522,7 @@ class SupplierService(LocalService):
             return False
         # TODO: perform validations before sending back list of files
         from supplier import list_files
-        list_files.send(newpacket.OwnerID, newpacket.PacketID, newpacket.Payload)
+        list_files.send(newpacket.OwnerID, newpacket.PacketID, settings.ListFilesFormat())
         return True
 
     def _on_customer_accepted(self, e):

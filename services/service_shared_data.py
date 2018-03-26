@@ -69,27 +69,37 @@ class SharedDataService(LocalService):
         from storage import backup_fs
         from storage import backup_control
         from crypt import encrypted
+        from crypt import my_keys
         from userid import my_id
         from userid import global_id
         try:
             user_id = newpacket.PacketID.strip().split(':')[0]
-        except:
-            lg.exc()
-            return False
-        if user_id == my_id.getGlobalID():
-            # skip my own Files() packets which comes from my suppliers
-            # only process list Files() from other users who granted me access
+            if user_id == my_id.getGlobalID():
+                # skip my own Files() packets which comes from my suppliers
+                # only process list Files() from other users who granted me access
+                return False
+            key_id = user_id
+            if not my_keys.is_valid_key_id(key_id):
+                # ignore, invalid key id in packet id
+                return False
+            if not my_keys.is_key_private(key_id):
+                raise Exception('private key is not registered')
+        except Exception as exc:
+            lg.warn(str(exc))
+            p2p_service.SendFail(newpacket, str(exc))
             return False
         block = encrypted.Unserialize(newpacket.Payload)
         if block is None:
             lg.warn('failed reading data from %s' % newpacket.RemoteID)
             return False
         if block.CreatorID != global_id.GlobalUserToIDURL(user_id):
-            lg.warn('invalid packet, creator ID must be present in packet ID')
+            lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (block.CreatorID, user_id, ))
             return False
         from access import shared_access_coordinator
-        processed = False
-        for A in shared_access_coordinator.find_active_shares(block.CreatorID):
-            A.automat('customer-list-files-received', (newpacket, info, block, ))
-            processed = True
-        return processed
+        this_share = shared_access_coordinator.get_active_share(key_id)
+        if not this_share:
+            lg.warn('share is not opened: %s' % key_id)
+            p2p_service.SendFail(newpacket, 'share is not opened')
+            return False
+        this_share.automat('customer-list-files-received', (newpacket, info, block, ))
+        return True
