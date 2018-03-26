@@ -77,7 +77,7 @@ def send(customer_idurl, packet_id, format_type):
     return p2p_service.SendFiles(
         idurl=customer_idurl,
         raw_list_files_info=PackListFiles(plaintext, format_type),
-        packetID=packet_id,
+        packet_id=packet_id,
     )
 
 #------------------------------------------------------------------------------
