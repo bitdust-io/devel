@@ -270,7 +270,6 @@ class SupplierService(LocalService):
         import os
         from logs import lg
         from system import bpio
-        from userid import my_id
         from userid import global_id
         from p2p import p2p_service
         from main import events
@@ -281,15 +280,18 @@ class SupplierService(LocalService):
         filescount = 0
         dirscount = 0
         lg.warn('going to erase files: %s' % ids)
+        customer_id = global_id.UrlToGlobalID(newpacket.OwnerID)
         for pcktID in ids:
             glob_path = global_id.ParseGlobalID(pcktID)
-            if not glob_path['path'] or not glob_path['customer']:
-                # backward compatible check
-                glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + pcktID)
-            if not glob_path['path'] or not glob_path['customer']:
+            if not glob_path['customer']:
+                glob_path = global_id.ParseGlobalID(customer_id + ':' + pcktID)
+            if not glob_path['path']:
                 lg.err("got incorrect PacketID")
                 p2p_service.SendFail(newpacket, 'incorrect path')
                 return False
+            if customer_id != glob_path['customer']:
+                lg.warn('trying to delete file stored for another cusomer')
+                continue
             # TODO: add validation of customerGlobID
             # TODO: process requests from another customer
             filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
@@ -326,7 +328,6 @@ class SupplierService(LocalService):
         from logs import lg
         from system import bpio
         from userid import global_id
-        from userid import my_id
         from p2p import p2p_service
         from main import events
         if newpacket.Payload == '':
@@ -335,15 +336,18 @@ class SupplierService(LocalService):
             ids = newpacket.Payload.split('\n')
         count = 0
         lg.warn('going to erase backup ids: %s' % ids)
+        customer_id = global_id.UrlToGlobalID(newpacket.OwnerID)
         for bkpID in ids:
             glob_path = global_id.ParseGlobalID(bkpID)
-            if not glob_path['path'] or not glob_path['customer']:
-                # backward compatible check
-                glob_path = global_id.ParseGlobalID(my_id.getGlobalID('master') + ':' + bkpID)
-            if not glob_path['path'] or not glob_path['customer']:
-                lg.err("got incorrect backupID")
+            if not glob_path['customer']:
+                glob_path = global_id.ParseGlobalID(customer_id + ':' + bkpID)
+            if not glob_path['path']:
+                lg.err("got incorrect BackupID")
                 p2p_service.SendFail(newpacket, 'incorrect backupID')
-                return
+                return False
+            if customer_id != glob_path['customer']:
+                lg.warn('trying to delete file stored for another cusomer')
+                continue
             # TODO: add validation of customerGlobID
             # TODO: process requests from another customer
             filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
