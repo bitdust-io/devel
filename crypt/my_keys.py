@@ -444,11 +444,11 @@ def unserialize_key_to_object(openssh_string):
 #------------------------------------------------------------------------------
 
 def get_public_key_raw(key_id, type_format='openssh'):
-    return key(key_id).public().toString(type_format)
+    return key_obj(key_id).public().toString(type_format)
 
 
 def get_private_key_raw(key_id, type_format='openssh'):
-    return key(key_id).toString(type_format)
+    return key_obj(key_id).toString(type_format)
 
 #------------------------------------------------------------------------------
 
