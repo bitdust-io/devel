@@ -88,6 +88,7 @@ class SharedDataService(LocalService):
             lg.warn('invalid packet, creator ID must be present in packet ID')
             return False
         from access import shared_access_coordinator
+        processed = False
         for A in shared_access_coordinator.find_active_shares(block.CreatorID):
             A.automat('customer-list-files-received', (newpacket, info, block, ))
             processed = True

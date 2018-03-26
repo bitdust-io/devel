@@ -60,7 +60,6 @@ from automats import automat
 from dht import dht_relations
 
 from userid import global_id
-from userid import my_id
 
 from p2p import p2p_service
 

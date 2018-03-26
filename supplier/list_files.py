@@ -55,7 +55,6 @@ from userid import global_id
 
 def send(customer_idurl, packet_id, format_type):
     customer_name = nameurl.GetName(customer_idurl)
-    PacketID = packet_id
     if _Debug:
         lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
     ownerdir = settings.getCustomerFilesDir(customer_idurl)
@@ -65,7 +64,7 @@ def send(customer_idurl, packet_id, format_type):
         return p2p_service.SendFiles(
             idurl=customer_idurl,
             raw_list_files_info=PackListFiles('', format_type),
-            packetID=PacketID,
+            packet_id=packet_id,
         )
     plaintext = ''
     for key_alias in os.listdir(ownerdir):
@@ -78,7 +77,7 @@ def send(customer_idurl, packet_id, format_type):
     return p2p_service.SendFiles(
         idurl=customer_idurl,
         raw_list_files_info=PackListFiles(plaintext, format_type),
-        packetID=PacketID,
+        packetID=packet_id,
     )
 
 #------------------------------------------------------------------------------

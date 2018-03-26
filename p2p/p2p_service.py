@@ -348,7 +348,7 @@ def RequestService(request, info):
 #     return driver.request(service_name, request, info)
 
 
-def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}):
+def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=10):
     service_info = {
         'name': service_name,
         'payload': json_payload,
@@ -364,7 +364,7 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
         packetid.UniqueID(),
         service_info_raw,
         remote_idurl, )
-    gateway.outbox(result, wide=wide, callbacks=callbacks)
+    gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 
 
@@ -483,29 +483,27 @@ def Files(request, info):
 #     backup_control.IncomingSupplierListFiles(newpacket)
 
 
-def SendFiles(idurl, raw_list_files_info, ownerID=None, creatorID=None, packetID=None, callbacks={}):
-# def SendFiles(raw_list_files_info, ownerID, creatorID, packetID, remoteID, callbacks={}):
+def SendFiles(idurl, raw_list_files_info, packet_id=None, callbacks={}, timeout=10, ):
     """
     Sending information about known files stored locally for given customer (if you are supplier).
     You can also send a list of your files to another user if you wish to grand access.
     This will not send any personal data : only file names, ids, versions, etc.
     So pass list of files in encrypted form in the `payload` or leave it empty.
     """
-    # PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
     MyID = my_id.getLocalID()
-    PacketID = packetID or ("%s:%s" % (global_id.UrlToGlobalID(idurl), packetid.UniqueID()))
+    PacketID = packet_id or ("%s:%s" % (global_id.UrlToGlobalID(idurl), packetid.UniqueID()))
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in packetID=%s' % (len(raw_list_files_info), packet_id))
+        lg.out(_DebugLevel, '  to remoteID=%s' % idurl)
     newpacket = signed.Packet(
         Command=commands.Files(),
-        OwnerID=ownerID or MyID,
-        CreatorID=creatorID or MyID,
+        OwnerID=MyID,
+        CreatorID=MyID,
         PacketID=PacketID,
         Payload=raw_list_files_info,
         RemoteID=idurl,
     )
-    result = gateway.outbox(newpacket, callbacks=callbacks)
-    if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in packetID=%s' % (len(raw_list_files_info), packetID))
-        lg.out(_DebugLevel, '  to remoteID=%s  ownerID=%s  creatorID=%s' % (idurl, ownerID, creatorID))
+    result = gateway.outbox(newpacket, callbacks=callbacks, response_timeout=timeout)
     return result
 
 #------------------------------------------------------------------------------
@@ -1008,7 +1006,7 @@ def Key(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
 
 
-def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}):
+def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}, timeout=10, ):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendKey to %s with %d bytes encrypted key data" % (
             remote_idurl, len(encrypted_key_data)))
@@ -1022,7 +1020,7 @@ def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callba
         Payload=encrypted_key_data,
         RemoteID=remote_idurl,
     )
-    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return outpacket
 
 

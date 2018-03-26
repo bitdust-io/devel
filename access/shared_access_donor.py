@@ -56,6 +56,8 @@ from logs import lg
 
 from automats import automat
 
+from lib import packetid
+
 from contacts import identitycache
 from contacts import contactsdb
 
@@ -315,9 +317,11 @@ class SharedAccessDonor(automat.Automat):
             EncryptKey=lambda inp: self.remote_identity.encrypt(inp),
         )
         encrypted_list_files = block.Serialize()
+        packet_id = "%s:%s" % (my_id.getGlobalID(), packetid.UniqueID())
         p2p_service.SendFiles(
             idurl=self.remote_idurl,
-            payload=encrypted_list_files,
+            raw_list_files_info=encrypted_list_files,
+            packet_id=packet_id,
             callbacks={
                 commands.Ack(): lambda response, _: self.automat('list-files-ok', response),
                 commands.Fail(): lambda response, _: self.automat('fail', Exception(str(response))),

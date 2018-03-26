@@ -76,28 +76,38 @@ def shutdown():
 
 #-------------------------------------------------------------------------------
 
-def _do_request_service_keys_registry(key_id, idurl, include_private):
+def _do_request_service_keys_registry(key_id, idurl, include_private, timeout):
     result = Deferred()
     p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
         commands.Ack(): lambda response, indo:
-            _on_service_keys_registry_response(response, indo, key_id, idurl, include_private, result),
+            _on_service_keys_registry_response(response, indo, key_id, idurl, include_private, result, timeout),
         commands.Fail(): lambda response, indo:
-            result.errback(Exception('"service_keys_registry" not started on remote node'))
+            result.errback(Exception('"service_keys_registry" not started on remote node')),
+        None: lambda pkt_out: result.errback(Exception('timeout')),
     })
     return result
 
 
-def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result):
+def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout):
     if not response.Payload.startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return
-    _do_transfer_key(key_id, idurl, include_private=include_private).addCallbacks(
+    _do_transfer_key(
+        key_id, idurl,
+        include_private=include_private,
+        timeout=timeout,
+    ).addCallbacks(
         callback=result.callback,
         errback=result.errback,
     )
 
 
 def _on_transfer_key_response(response, info, key_id, result):
+    if not response or not info:
+        result.errback(Exception('timeout'))
+        if _Debug:
+            lg.warn('transfer failed, response timeout')
+        return None
     if response.Command == commands.Ack():
         result.callback(response)
         if _Debug:
@@ -115,7 +125,7 @@ def _on_transfer_key_response(response, info, key_id, result):
     return None
 
 
-def _do_transfer_key(key_id, idurl, include_private=False):
+def _do_transfer_key(key_id, idurl, include_private=False, timeout=10, ):
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, idurl))
     result = Deferred()
@@ -158,7 +168,9 @@ def _do_transfer_key(key_id, idurl, include_private=False):
             commands.Fail(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
             # commands.Ack(): lambda response, info: result.callback(response),
             # commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            None: lambda pkt_out: _on_transfer_key_response(None, None, key_id, result),
         },
+        timeout=timeout,
     )
     return result
 
@@ -171,7 +183,7 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     d = propagate.PingContact(trusted_idurl, timeout=timeout)
     d.addCallback(
         lambda resp: _do_request_service_keys_registry(
-            key_id, trusted_idurl, include_private,
+            key_id, trusted_idurl, include_private, timeout,
         ).addCallbacks(
             callback=result.callback,
             errback=result.errback
