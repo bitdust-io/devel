@@ -381,34 +381,47 @@ def on_key_received(newpacket, info, status, error_message):
                 p2p_service.SendAck(newpacket)
                 lg.warn('received existing public key: %s, skip' % key_id)
                 return True
-        else:
-            # received key is a private key
-            if my_keys.is_key_registered(key_id):
-                # chec if we already have that key
-                if my_keys.is_key_private(key_id):
-                    # we have already private key with same ID!!!
-                    if my_keys.get_private_key_raw(key_id, 'openssh') != key_object.toString('openssh'):
-                        # and this is a new private key : we should not overwrite!
-                        raise Exception('private key already registered')
-                else:
-                    # but we have a public key with same ID
-                    if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.public().toString('openssh'):
-                        # and we should not overwrite existing public key as well
-                        raise Exception('another key already registered with that ID')
-                    lg.info('erasing public key %s' % key_id)
-                    my_keys.erase_key(key_id)
+            if not my_keys.register_key(key_id, key_object):
+                raise Exception('key register failed')
+            else:
+                lg.info('added new key %s, is_public=%b' % (key_id, key_object.isPublic()))
+            p2p_service.SendAck(newpacket)
+            if _Debug:
+                lg.info('received and stored locally a new key %s, include_private=%s' % (key_id, key_json.get('include_private')))
+            return True
+        # received key is a private key
+        if my_keys.is_key_registered(key_id):
+            # check if we already have that key
+            if my_keys.is_key_private(key_id):
+                # we have already private key with same ID!!!
+                if my_keys.get_private_key_raw(key_id, 'openssh') != key_object.toString('openssh'):
+                    # and this is a new private key : we should not overwrite!
+                    raise Exception('private key already registered')
+                # this is the same private key
+                p2p_service.SendAck(newpacket)
+                lg.warn('received existing private key: %s, skip' % key_id)
+                return True
+            # but we have a public key with same ID
+            if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.public().toString('openssh'):
+                # and we should not overwrite existing public key as well
+                raise Exception('another key already registered with that ID')
+            lg.info('erasing public key %s' % key_id)
+            my_keys.erase_key(key_id)
+            if not my_keys.register_key(key_id, key_object):
+                raise Exception('key register failed')
+            lg.info('added new key %s, is_public=%b' % (key_id, key_object.isPublic()))
+            p2p_service.SendAck(newpacket)
+            return True
+        # no private key with given ID was registered
         if not my_keys.register_key(key_id, key_object):
             raise Exception('key register failed')
-        else:
-            lg.info('added new key %s, is_public=%b' % (key_id, key_object.isPublic()))
+        lg.info('added new key %s, is_public=%b' % (key_id, key_object.isPublic()))
+        p2p_service.SendAck(newpacket)
+        return True
     except Exception as exc:
         lg.exc()
         p2p_service.SendFail(newpacket, str(exc))
-        return False
-    p2p_service.SendAck(newpacket)
-    if _Debug:
-        lg.info('received and stored locally a new key %s, include_private=%s' % (key_id, key_json.get('include_private')))
-    return True
+    return False
 
 
 def on_audit_key_received(newpacket, info, status, error_message):
