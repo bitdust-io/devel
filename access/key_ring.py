@@ -76,28 +76,36 @@ def shutdown():
 
 #-------------------------------------------------------------------------------
 
-def _do_request_service_keys_registry(key_id, idurl, include_private):
-    result = Deferred()
+def _do_request_service_keys_registry(key_id, idurl, include_private, timeout, result):
+    # result = Deferred()
     p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
         commands.Ack(): lambda response, indo:
-            _on_service_keys_registry_response(response, indo, key_id, idurl, include_private, result),
+            _on_service_keys_registry_response(response, indo, key_id, idurl, include_private, result, timeout),
         commands.Fail(): lambda response, indo:
-            result.errback(Exception('"service_keys_registry" not started on remote node'))
+            result.errback(Exception('"service_keys_registry" not started on remote node')),
+        None: lambda pkt_out: result.errback(Exception('timeout')),
     })
     return result
 
 
-def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result):
+def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout):
     if not response.Payload.startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return
-    _do_transfer_key(key_id, idurl, include_private=include_private).addCallbacks(
-        callback=result.callback,
-        errback=result.errback,
+    _do_transfer_key(
+        key_id, idurl,
+        include_private=include_private,
+        timeout=timeout,
+        result=result,
     )
 
 
 def _on_transfer_key_response(response, info, key_id, result):
+    if not response or not info:
+        result.errback(Exception('timeout'))
+        if _Debug:
+            lg.warn('transfer failed, response timeout')
+        return None
     if response.Command == commands.Ack():
         result.callback(response)
         if _Debug:
@@ -115,10 +123,11 @@ def _on_transfer_key_response(response, info, key_id, result):
     return None
 
 
-def _do_transfer_key(key_id, idurl, include_private=False):
+def _do_transfer_key(key_id, idurl, include_private=False, timeout=10, result=None):
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, idurl))
-    result = Deferred()
+    if not result:
+        result = Deferred()
     recipient_id_obj = identitycache.FromCache(idurl)
     if not recipient_id_obj:
         lg.warn('not found "%s" in identity cache' % idurl)
@@ -158,7 +167,9 @@ def _do_transfer_key(key_id, idurl, include_private=False):
             commands.Fail(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
             # commands.Ack(): lambda response, info: result.callback(response),
             # commands.Fail(): lambda response, info: result.errback(Exception(response)),
+            None: lambda pkt_out: _on_transfer_key_response(None, None, key_id, result),
         },
+        timeout=timeout,
     )
     return result
 
@@ -169,14 +180,9 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     """
     result = Deferred()
     d = propagate.PingContact(trusted_idurl, timeout=timeout)
-    d.addCallback(
-        lambda resp: _do_request_service_keys_registry(
-            key_id, trusted_idurl, include_private,
-        ).addCallbacks(
-            callback=result.callback,
-            errback=result.errback
-        )
-    )
+    d.addCallback(lambda resp: _do_request_service_keys_registry(
+        key_id, trusted_idurl, include_private, timeout, result,
+    ))
     d.addErrback(result.errback)
     return result
 
@@ -361,19 +367,61 @@ def on_key_received(newpacket, info, status, error_message):
         key_data = block.Data()
         key_json = json.loads(key_data)
         key_id = key_json['key_id']
-        if my_keys.is_key_registered(key_id):
-            raise Exception('key already registered')
         key_id, key_object = my_keys.read_key_info(key_json)
+        if key_object.isPublic():
+            # received key is a public key
+            if my_keys.is_key_registered(key_id):
+                # but we already have a key with that ID
+                if my_keys.is_key_private(key_id):
+                    # we should not overwrite existing private key
+                    raise Exception('private key already registered')
+                if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.toString('openssh'):
+                    # and we should not overwrite existing public key as well
+                    raise Exception('another key already registered with that ID')
+                p2p_service.SendAck(newpacket)
+                lg.warn('received existing public key: %s, skip' % key_id)
+                return True
+            if not my_keys.register_key(key_id, key_object):
+                raise Exception('key register failed')
+            else:
+                lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
+            p2p_service.SendAck(newpacket)
+            if _Debug:
+                lg.info('received and stored locally a new key %s, include_private=%s' % (key_id, key_json.get('include_private')))
+            return True
+        # received key is a private key
+        if my_keys.is_key_registered(key_id):
+            # check if we already have that key
+            if my_keys.is_key_private(key_id):
+                # we have already private key with same ID!!!
+                if my_keys.get_private_key_raw(key_id, 'openssh') != key_object.toString('openssh'):
+                    # and this is a new private key : we should not overwrite!
+                    raise Exception('private key already registered')
+                # this is the same private key
+                p2p_service.SendAck(newpacket)
+                lg.warn('received existing private key: %s, skip' % key_id)
+                return True
+            # but we have a public key with same ID
+            if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.public().toString('openssh'):
+                # and we should not overwrite existing public key as well
+                raise Exception('another key already registered with that ID')
+            lg.info('erasing public key %s' % key_id)
+            my_keys.erase_key(key_id)
+            if not my_keys.register_key(key_id, key_object):
+                raise Exception('key register failed')
+            lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
+            p2p_service.SendAck(newpacket)
+            return True
+        # no private key with given ID was registered
         if not my_keys.register_key(key_id, key_object):
             raise Exception('key register failed')
+        lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
+        p2p_service.SendAck(newpacket)
+        return True
     except Exception as exc:
         lg.exc()
         p2p_service.SendFail(newpacket, str(exc))
-        return False
-    p2p_service.SendAck(newpacket)
-    if _Debug:
-        lg.info('received and stored locally a new key %s, include_private=%s' % (key_id, key_json.get('include_private')))
-    return True
+    return False
 
 
 def on_audit_key_received(newpacket, info, status, error_message):

@@ -110,6 +110,7 @@ class BackupsService(LocalService):
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from logs import lg
         from main import settings
+        from contacts import contactsdb
         from userid import my_id
         from userid import global_id
         from storage import backup_control
@@ -128,6 +129,12 @@ class BackupsService(LocalService):
                 backup_control.IncomingSupplierBackupIndex(newpacket)
                 return True
         if newpacket.Command == commands.Files():
+            if not newpacket.PacketID.startswith(my_id.getGlobalID() + ':'):
+                # skip Files() which are from another customer
+                return False
+            if not contactsdb.is_supplier(newpacket.OwnerID):
+                # skip Files() if this is not my supplier
+                return False
             lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
                 newpacket, newpacket.RemoteID, ))
             return backup_control.IncomingSupplierListFiles(newpacket)

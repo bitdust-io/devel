@@ -36,6 +36,7 @@ EVENTS:
     * :red:`init`
     * :red:`list-files-ok`
     * :red:`priv-key-ok`
+    * :red:`timer-10sec`
     * :red:`timer-5sec`
     * :red:`user-identity-cached`
 """
@@ -55,6 +56,8 @@ import json
 from logs import lg
 
 from automats import automat
+
+from lib import packetid
 
 from contacts import identitycache
 from contacts import contactsdb
@@ -80,7 +83,8 @@ class SharedAccessDonor(automat.Automat):
     """
 
     timers = {
-        'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'PRIV_KEY', 'AUDIT', 'CACHE', 'LIST_FILES']),
+        'timer-10sec': (10.0, ['PRIV_KEY', 'LIST_FILES']),
+        'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'AUDIT', 'CACHE']),
     }
 
     def __init__(self, debug_level=None, log_events=False, publish_events=False, **kwargs):
@@ -136,13 +140,13 @@ class SharedAccessDonor(automat.Automat):
                 self.doCacheRemoteIdentity(arg)
         #---PRIV_KEY---
         elif self.state == 'PRIV_KEY':
-            if event == 'fail' or event == 'timer-5sec':
+            if event == 'priv-key-ok':
+                self.state = 'LIST_FILES'
+                self.doSendMyListFiles(arg)
+            elif event == 'fail' or event == 'timer-10sec':
                 self.state = 'CLOSED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'priv-key-ok':
-                self.state = 'LIST_FILES'
-                self.doSendMyListFiles(arg)
         #---PUB_KEY---
         elif self.state == 'PUB_KEY':
             if event == 'ack':
@@ -186,13 +190,13 @@ class SharedAccessDonor(automat.Automat):
                 self.doAuditUserMasterKey(arg)
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
-            if event == 'fail' or event == 'timer-5sec':
-                self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'list-files-ok':
+            if event == 'list-files-ok':
                 self.state = 'CLOSED'
                 self.doReportDone(arg)
+                self.doDestroyMe(arg)
+            elif event == 'fail' or event == 'timer-10sec':
+                self.state = 'CLOSED'
+                self.doReportFailed(arg)
                 self.doDestroyMe(arg)
         #---AUDIT---
         elif self.state == 'AUDIT':
@@ -315,13 +319,15 @@ class SharedAccessDonor(automat.Automat):
             EncryptKey=lambda inp: self.remote_identity.encrypt(inp),
         )
         encrypted_list_files = block.Serialize()
-        p2p_service.SendListFiles(
-            self.remote_idurl,
-            customer_idurl=my_id.getLocalID(),
-            payload=encrypted_list_files,
+        packet_id = "%s:%s" % (self.key_id, packetid.UniqueID())
+        p2p_service.SendFiles(
+            idurl=self.remote_idurl,
+            raw_list_files_info=encrypted_list_files,
+            packet_id=packet_id,
             callbacks={
                 commands.Ack(): lambda response, _: self.automat('list-files-ok', response),
                 commands.Fail(): lambda response, _: self.automat('fail', Exception(str(response))),
+                None: lambda pkt_out: self.automat('fail', Exception('timeout')),
             },
         )
 

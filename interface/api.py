@@ -708,15 +708,18 @@ def files_list(remote_path=None, key_id=None, recursive=True):
     from system import bpio
     from userid import global_id
     from crypt import my_keys
+    result = []
     glob_path = global_id.ParseGlobalID(remote_path)
     norm_path = global_id.NormalizeGlobalID(glob_path.copy())
     remotePath = bpio.remotePath(norm_path['path'])
-    result = []
+    customer_idurl = norm_path['idurl']
+    if customer_idurl not in backup_fs.known_customers():
+        return ERROR('customer "%s" not found' % customer_idurl)
     lookup = backup_fs.ListChildsByPath(
         path=remotePath,
         recursive=recursive,
-        iter=backup_fs.fs(norm_path['idurl']),
-        iterID=backup_fs.fsID(norm_path['idurl']),
+        iter=backup_fs.fs(customer_idurl),
+        iterID=backup_fs.fsID(customer_idurl),
     )
     if not isinstance(lookup, list):
         return ERROR(lookup)
@@ -739,7 +742,7 @@ def files_list(remote_path=None, key_id=None, recursive=True):
             'remote_path': full_remote_path,
             'global_id': full_glob_id,
             'customer': norm_path['customer'],
-            'idurl': norm_path['idurl'],
+            'idurl': customer_idurl,
             'path_id': i['path_id'],
             'name': i['name'],
             'path': i['path'],
@@ -769,10 +772,13 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     glob_path = global_id.ParseGlobalID(remote_path)
     norm_path = global_id.NormalizeGlobalID(glob_path.copy())
     remotePath = bpio.remotePath(norm_path['path'])
-    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(norm_path['idurl']))
+    customer_idurl = norm_path['idurl']
+    if customer_idurl not in backup_fs.known_customers():
+        return ERROR('customer "%s" not found' % customer_idurl)
+    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl))
     if not pathID:
         return ERROR('path "%s" was not found in catalog' % remotePath)
-    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(norm_path['idurl']))
+    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
     if not item:
         return ERROR('item "%s" is not found in catalog' % pathID)
     (item_size, item_time, versions) = backup_fs.ExtractVersions(pathID, item)  # , customer_id=norm_path['customer'])
@@ -786,7 +792,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
             path=norm_path['path'], customer=norm_path['customer'], key_alias=key_alias,),
         'global_id': global_id.MakeGlobalID(
             path=norm_path['path_id'], customer=norm_path['customer'], key_alias=key_alias,),
-        'customer': norm_path['idurl'],
+        'customer': norm_path['customer'],
         'path_id': pathID,
         'path': remotePath,
         'type': backup_fs.TYPES.get(item.type, '').lower(),
@@ -1402,7 +1408,7 @@ def file_explore(local_path):
 
 #------------------------------------------------------------------------------
 
-def share_create(key_alias, folder_name=None):
+def share_create(key_alias, remote_path=None):
     """
     """
     if not driver.is_on('service_shared_data'):
@@ -1411,15 +1417,15 @@ def share_create(key_alias, folder_name=None):
     return ret
 
 
-def share_grant(remote_user, key_id):
+def share_grant(trusted_remote_user, key_id):
     """
     """
     if not driver.is_on('service_shared_data'):
         return succeed(ERROR('service_shared_data() is not started'))
     from userid import global_id
-    remote_idurl = remote_user
-    if remote_user.count('@'):
-        glob_id = global_id.ParseGlobalID(remote_user)
+    remote_idurl = trusted_remote_user
+    if trusted_remote_user.count('@'):
+        glob_id = global_id.ParseGlobalID(trusted_remote_user)
         remote_idurl = glob_id['idurl']
     if not remote_idurl:
         return ERROR('wrong user id')
@@ -1431,13 +1437,16 @@ def share_grant(remote_user, key_id):
         return None
 
     def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR(err.getErrorMessage()))
+        ret.callback(ERROR('failed'))
         return None
 
     d = Deferred()
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
-    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True)
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(
+        log_events=True,
+        publish_events=True,
+    )
     shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
     return ret
 
@@ -1448,21 +1457,36 @@ def share_open(key_id):
     if not driver.is_on('service_shared_data'):
         return succeed(ERROR('service_shared_data() is not started'))
     from access import shared_access_coordinator
+    if shared_access_coordinator.get_active_share(key_id):
+        return ERROR('share already opened')
     ret = Deferred()
 
     def _on_shared_access_coordinator_success(result):
-        ret.callback(OK() if result else ERROR('failed'))
+        lg.info(result)
+        if not result:
+            ret.callback(ERROR('failed opening share "%s"' % key_id))
+            return None
+        this_share = shared_access_coordinator.get_active_share(key_id)
+        if not this_share:
+            ret.callback(ERROR('share "%s" was not opened' % key_id))
+            return None
+        ret.callback(OK('share "%s" opened' % key_id, extra_fields=this_share.to_json()))
         return None
 
     def _on_shared_access_donor_failed(err):
+        lg.err(err)
         ret.callback(ERROR(err.getErrorMessage()))
         return None
 
     d = Deferred()
     d.addCallback(_on_shared_access_coordinator_success)
     d.addErrback(_on_shared_access_donor_failed)
-    shared_access_coordinator_machine = shared_access_coordinator.SharedAccessCoordinator(log_events=True)
-    shared_access_coordinator_machine.automat('init', (key_id, ))
+    shared_access_coordinator_machine = shared_access_coordinator.SharedAccessCoordinator(
+        key_id,
+        log_events=True,
+        publish_events=True,
+    )
+    shared_access_coordinator_machine.automat('restart')
     return ret
 
 
@@ -1471,8 +1495,25 @@ def share_close(key_id):
     """
     if not driver.is_on('service_shared_data'):
         return succeed(ERROR('service_shared_data() is not started'))
-    ret = Deferred()
-    return ret
+    from access import shared_access_coordinator
+    this_share = shared_access_coordinator.get_active_share(key_id)
+    if not this_share:
+        return ERROR('this share is not opened')
+    this_share.automat('shutdown')
+    return OK('share "%s" closed' % key_id, extra_fields=this_share.to_json())
+
+
+def share_refresh(key_id):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return succeed(ERROR('service_shared_data() is not started'))
+    from access import shared_access_coordinator
+    this_share = shared_access_coordinator.get_active_share(key_id)
+    if not this_share:
+        return ERROR('this share is not opened')
+    this_share.automat('restart')
+    return OK('share "%s" state machine restarted' % key_id, extra_fields=this_share.to_json())
 
 
 def share_list():
@@ -1480,7 +1521,16 @@ def share_list():
     """
     if not driver.is_on('service_shared_data'):
         return succeed(ERROR('service_shared_data() is not started'))
-    return RESULT([],)
+    from access import shared_access_coordinator
+    r = []
+    for key_id in shared_access_coordinator.list_active_shares():
+        cur_share = shared_access_coordinator.get_active_share(key_id)
+        if not cur_share:
+            lg.warn('share %s not found' % key_id)
+            continue
+        r.append(cur_share.to_json())
+    return RESULT(r)
+
 
 def share_history():
     """
@@ -2381,7 +2431,7 @@ def user_search(nickname, attempts=1):
         return ERROR('service_private_messages() is not started')
 
     from chat import nickname_observer
-    nickname_observer.stop_all()
+    # nickname_observer.stop_all()
     ret = Deferred()
 
     def _result(result, nik, pos, idurl):
@@ -2433,7 +2483,8 @@ def user_observe(nickname, attempts=3):
         ret.callback(RESULT(results, ))
         return None
 
-    nickname_observer.observe_many(
+    from twisted.internet import reactor
+    reactor.callLater(0.05, nickname_observer.observe_many,
         nickname,
         attempts=attempts,
         results_callback=_result,
@@ -2581,8 +2632,12 @@ def message_receive(consumer_id):
     return ret
 
 
-def messages_cached():
-    return RESULT()
+def messages_get_all(index_name, limit, offset, with_doc, with_storage):
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from chat import message_db
+    r = [m for m in message_db.get_all(index_name, limit, offset, with_doc, with_storage)]
+    return RESULT(r)
 
 
 #------------------------------------------------------------------------------

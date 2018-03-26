@@ -36,6 +36,11 @@ EVENTS:
     * :red:`shutdown`
     * :red:`timer-10sec`
     * :red:`timer-5min`
+
+
+TODO: periodically send Request service Customer to be sure that i am still your supplier
+if not - remove that customer and stop assistant
+
 """
 
 #------------------------------------------------------------------------------
@@ -61,6 +66,8 @@ from p2p import commands
 from supplier import list_files
 
 from storage import accounting
+
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -191,7 +198,8 @@ class CustomerAssistant(automat.Automat):
         """
         Action method.
         """
-        list_files.send(self.customer_idurl, packetid.UniqueID(), settings.ListFilesFormat())
+        packet_id = '%s:%s' % (global_id.UrlToGlobalID(self.customer_idurl), packetid.UniqueID(), )
+        list_files.send(self.customer_idurl, packet_id, settings.ListFilesFormat())
 
     def doDestroyMe(self, arg):
         """

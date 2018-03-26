@@ -314,7 +314,7 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
 
-    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, publish_events=False):
+    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, publish_events=False, **kwargs):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
@@ -324,7 +324,7 @@ class Automat(object):
         self.log_transitions = log_events
         self._timers = {}
         self._state_callbacks = {}
-        self.init()
+        self.init(**kwargs)
         self.startTimers()
         self.register()
         if _Debug:
@@ -348,6 +348,7 @@ class Automat(object):
         set_object(self.index, self)
         if self.publish_events:
             self.addStateChangedCallback(self._on_state_change)
+        return self.index
 
     def unregister(self):
         """
@@ -355,6 +356,7 @@ class Automat(object):
         """
         self.removeStateChangedCallback(self._on_state_change)
         clear_object(self.index)
+        return True
 
     def __del__(self):
         """
@@ -393,10 +395,10 @@ class Automat(object):
         """
         raise NotImplementedError
 
-    def init(self):
+    def init(self, **kwargs):
         """
-        Define this method in subclass to execute some code when creating an
-        object.
+        Define this method in subclass to execute some code when creating a
+        new instance of Automat class.
         """
 
     def destroy(self, dead_state='NOT_EXIST'):

@@ -444,11 +444,17 @@ def unserialize_key_to_object(openssh_string):
 #------------------------------------------------------------------------------
 
 def get_public_key_raw(key_id, type_format='openssh'):
-    return key(key_id).public().toString(type_format)
+    kobj = key_obj(key_id)
+    if kobj.isPublic():
+        return kobj.toString(type_format)
+    return kobj.public().toString(type_format)
 
 
 def get_private_key_raw(key_id, type_format='openssh'):
-    return key(key_id).toString(type_format)
+    kobj = key_obj(key_id)
+    if kobj.isPublic():
+        raise Exception('not a private key')
+    return kobj.toString(type_format)
 
 #------------------------------------------------------------------------------
 

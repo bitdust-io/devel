@@ -145,6 +145,12 @@ def getLocalID():
     return _LocalIDURL
 
 
+def getLocalIDURL():
+    # just an alias for now
+    # TODO: deprecate getLocalID() in favor of getLocalIDURL()
+    return getLocalID()
+
+
 def getIDName():
     """
     Return my account name, this is a filename part of IDURL without '.xml'.

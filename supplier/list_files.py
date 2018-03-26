@@ -55,48 +55,25 @@ from userid import global_id
 
 def send(customer_idurl, packet_id, format_type):
     customer_name = nameurl.GetName(customer_idurl)
-    MyID = my_id.getLocalID()
-    RemoteID = customer_idurl
-    PacketID = packet_id
     if _Debug:
         lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
-    # ownerdir = os.path.join(custdir, nameurl.UrlFilename(customer_idurl))
     ownerdir = settings.getCustomerFilesDir(customer_idurl)
-    # os.path.join(settings.getCustomersFilesDir(), global_id.UrlToGlobalID(customer_idurl))
-    if not os.path.isdir(ownerdir):
-        if _Debug:
-            lg.out(_DebugLevel, "list_files.send did not found customer dir: " + ownerdir)
-        return p2p_service.SendFiles(
-            raw_list_files_info=PackListFiles('', format_type),
-            ownerID=MyID,
-            creatorID=MyID,
-            packetID=PacketID,
-            remoteID=RemoteID,
-        )
-        # result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-        # gateway.outbox(result)
-        # return result
     plaintext = ''
-    for key_alias in os.listdir(ownerdir):
-        if not misc.ValidKeyAlias(str(key_alias)):
-            continue
-        # plaintext += '%s\n' % str(key_alias)
-        key_alias_dir = os.path.join(ownerdir, key_alias)
-        plaintext += TreeSummary(key_alias_dir, key_alias)
-    # plaintext = TreeSummary(ownerdir)
+    if os.path.isdir(ownerdir):
+        for key_alias in os.listdir(ownerdir):
+            if not misc.ValidKeyAlias(str(key_alias)):
+                continue
+            key_alias_dir = os.path.join(ownerdir, key_alias)
+            plaintext += TreeSummary(key_alias_dir, key_alias)
+    else:
+        lg.warn('did not found customer dir: %s' % ownerdir)
     if _Debug:
         lg.out(_DebugLevel + 8, '\n%s' % plaintext)
     return p2p_service.SendFiles(
+        idurl=customer_idurl,
         raw_list_files_info=PackListFiles(plaintext, format_type),
-        ownerID=MyID,
-        creatorID=MyID,
-        packetID=PacketID,
-        remoteID=RemoteID,
+        packet_id=packet_id,
     )
-    # src = PackListFiles(plaintext, format_type)
-    # result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-    # gateway.outbox(result)
-    # return result
 
 #------------------------------------------------------------------------------
 
@@ -115,77 +92,7 @@ def UnpackListFiles(payload, method):
         return zlib.decompress(payload)
     return payload
 
-
-def ListCustomerFiles(customer_idurl):
-    # OBSOLETE
-    filename = nameurl.UrlFilename(customer_idurl)
-    customer_dir = os.path.join(settings.getCustomersFilesDir(), filename)
-    result = cStringIO.StringIO()
-
-    def cb(realpath, subpath, name):
-        if os.path.isdir(realpath):
-            result.write('D%s\n' % subpath)
-        else:
-            result.write('F%s\n' % subpath)
-        return True
-    bpio.traverse_dir_recursive(cb, customer_dir)
-    src = result.getvalue()
-    result.close()
-    return src
-
-
-def ListCustomerFiles1(customerNumber):
-    """
-    OBSOLETE
-    On the status form when clicking on a customer, find out what files we're
-    holding for that customer.
-    """
-    idurl = contactsdb.customer(customerNumber)
-    filename = nameurl.UrlFilename(idurl)
-    customerDir = os.path.join(settings.getCustomersFilesDir(), filename)
-    if os.path.exists(customerDir) and os.path.isdir(customerDir):
-        backupFilesList = os.listdir(customerDir)
-        if len(backupFilesList) > 0:
-            return ListSummary(backupFilesList)
-    return "No files stored for this customer"
-
-
-def ListSummary(dirlist):
-    """
-    Take directory listing and make summary of format:: BackupID-1-Data 1-1873
-    missing for 773,883, BackupID-1-Parity 1-1873 missing for 777,982,
-    """
-    BackupMax = {}
-    BackupAll = {}
-    result = ""
-    for filename in dirlist:
-        if not packetid.Valid(filename):       # if not type we can summarize
-            result += filename + "\n"  # then just include filename
-        else:
-            BackupID, BlockNum, SupNum, DataOrParity = packetid.BidBnSnDp(filename)
-            LocalID = BackupID + "-" + str(SupNum) + "-" + DataOrParity
-            blocknum = int(BlockNum)
-            BackupAll[(LocalID, blocknum)] = True
-            if LocalID in BackupMax:
-                if BackupMax[LocalID] < blocknum:
-                    BackupMax[LocalID] = blocknum
-            else:
-                BackupMax[LocalID] = blocknum
-    for BackupName in sorted(BackupMax.keys()):
-        missing = []
-        thismax = BackupMax[BackupName]
-        for blocknum in range(0, thismax):
-            if not (BackupName, blocknum) in BackupAll:
-                missing.append(str(blocknum))
-        result += BackupName + " from 0-" + str(thismax)
-        if len(missing) > 0:
-            result += ' missing '
-            result += ','.join(missing)
-#            for m in missing:
-#                result += str(m) + ","
-        result += "\n"
-    return result
-
+#------------------------------------------------------------------------------
 
 def TreeSummary(ownerdir, key_alias):
     out = cStringIO.StringIO()
@@ -273,3 +180,5 @@ def TreeSummary(ownerdir, key_alias):
     src = out.getvalue()
     out.close()
     return src
+
+#------------------------------------------------------------------------------
