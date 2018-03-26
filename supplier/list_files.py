@@ -59,20 +59,19 @@ def send(customer_idurl, packet_id, format_type):
         lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
     ownerdir = settings.getCustomerFilesDir(customer_idurl)
     plaintext = ''
-    if not os.path.isdir(ownerdir):
-        lg.warn('did not found customer dir: %s' % ownerdir)
-    else:
+    if os.path.isdir(ownerdir):
         for key_alias in os.listdir(ownerdir):
             if not misc.ValidKeyAlias(str(key_alias)):
                 continue
             key_alias_dir = os.path.join(ownerdir, key_alias)
             plaintext += TreeSummary(key_alias_dir, key_alias)
-        raw_list_files_info = PackListFiles(plaintext, format_type)
+    else:
+        lg.warn('did not found customer dir: %s' % ownerdir)
     if _Debug:
         lg.out(_DebugLevel + 8, '\n%s' % plaintext)
     return p2p_service.SendFiles(
         idurl=customer_idurl,
-        raw_list_files_info=raw_list_files_info,
+        raw_list_files_info=PackListFiles(plaintext, format_type),
         packet_id=packet_id,
     )
 
