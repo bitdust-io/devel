@@ -2742,6 +2742,8 @@ def network_connected(wait_timeout=5):
     If all is good this method will block for `wait_timeout` seconds.
     In case of some network issues method will return result asap.
     """
+    if not driver.is_on('service_network'):
+        return ERROR('service_network() is not started')
     from userid import my_id
     from twisted.internet import reactor
     from automats import automat
@@ -2831,29 +2833,20 @@ def network_connected(wait_timeout=5):
     return ret
 
 
-def network_status():
+def network_status(show_suppliers=False, show_customers=False, show_cache=False, show_tcp=False, show_udp=False, ):
     """
     """
+    if not driver.is_on('service_network'):
+        return ERROR('service_network() is not started')
     from automats import automat
     from main import settings
     from userid import my_id
-    from contacts import contactsdb
-    from p2p import contact_status
+    from userid import global_id
     r = {
         'p2p_connector_state': None,
         'network_connector_state': None,
         'idurl': None,
         'global_id': None,
-        'suppliers': {
-            'desired': 0,
-            'requested': 0,
-            'connected': 0,
-            'total': 0,
-        },
-        'customers': {
-            'connected': 0,
-            'total': 0,
-        },
     }
     p2p_connector_lookup = automat.find('p2p_connector')
     if p2p_connector_lookup:
@@ -2868,12 +2861,121 @@ def network_status():
     if my_id.isLocalIdentityReady():
         r['idurl'] = my_id.getLocalID()
         r['global_id'] = my_id.getGlobalID()
-    r['suppliers']['desired'] = settings.getSuppliersNumberDesired()
-    r['suppliers']['requested'] = contactsdb.num_suppliers()
-    r['suppliers']['connected'] = contact_status.countOnlineAmong(contactsdb.all_suppliers())
-    r['suppliers']['total'] = contactsdb.total_suppliers()
-    r['customers']['connected'] = contact_status.countOnlineAmong(contactsdb.customers())
-    r['customers']['total'] = contactsdb.num_customers()
+    if True in [show_suppliers, show_customers, show_cache, ]:
+        if not driver.is_on('service_p2p_hookups'):
+            return ERROR('service_p2p_hookups() is not started')
+        from contacts import contactsdb
+        from p2p import contact_status
+        if show_suppliers:
+            connected = 0
+            items = []
+            for idurl in contactsdb.all_suppliers():
+                i = {
+                    'idurl': idurl,
+                    'global_id': global_id.UrlToGlobalID(idurl),
+                    'state': None
+                }
+                inst = contact_status.getInstance(idurl)
+                if inst:
+                    i['state'] = inst.state
+                    if inst.state == 'CONNECTED':
+                        connected += 1
+                items.append(i)
+            r['suppliers'] = {
+                'desired': settings.getSuppliersNumberDesired(),
+                'requested': contactsdb.num_suppliers(),
+                'connected': connected,
+                'total': contactsdb.total_suppliers(),
+                'peers': items,
+            }
+        if show_customers:
+            connected = 0
+            items = []
+            for idurl in contactsdb.customers():
+                i = {
+                    'idurl': idurl,
+                    'global_id': global_id.UrlToGlobalID(idurl),
+                    'state': None
+                }
+                inst = contact_status.getInstance(idurl)
+                if inst:
+                    i['state'] = inst.state
+                    if inst.state == 'CONNECTED':
+                        connected += 1
+                items.append(i)
+            r['customers'] = {
+                'connected': connected,
+                'total': contactsdb.num_customers(),
+                'peers': items,
+            }
+        if show_cache:
+            from contacts import identitycache
+            connected = 0
+            items = []
+            for idurl in identitycache.Items().keys():
+                i = {
+                    'idurl': idurl,
+                    'global_id': global_id.UrlToGlobalID(idurl),
+                    'state': None
+                }
+                inst = contact_status.getInstance(idurl)
+                if inst:
+                    i['state'] = inst.state
+                    if inst.state == 'CONNECTED':
+                        connected += 1
+                items.append(i)
+            r['peers'] = {
+                'total': identitycache.CacheLen(),
+                'connected': connected,
+                'peers': items,
+            }
+    if show_tcp:
+        if not driver.is_on('service_tcp_transport'):
+            return ERROR('service_tcp_transport() is not started')
+        from transport import gateway
+        sessions = []
+        for s in gateway.list_active_sessions('tcp'):
+            i = {
+                'type': str(type(s)),
+                'state': None,
+                'idurl': None,
+                'address': None,
+                'external_address': None,
+                'connection_address': None,
+                'bytes_received': 0,
+                'bytes_sent': 0,
+            }
+            if hasattr(s, 'state'):
+                i['state'] = s.state
+            if hasattr(s, 'peer_idurl'):
+                i['idurl'] = s.peer_idurl
+            if hasattr(s, 'total_bytes_received'):
+                i['bytes_received'] = s.total_bytes_received
+            if hasattr(s, 'total_bytes_sent'):
+                i['bytes_sent'] = s.total_bytes_sent
+            if hasattr(s, 'peer_address'):
+                i['address'] = s.peer_address
+            if hasattr(s, 'peer_external_address'):
+                i['external_address'] = s.peer_external_address
+            if hasattr(s, 'connection_address'):
+                i['connection_address'] = s.connection_address
+            sessions.append(i)
+        streams = []
+        for s in gateway.list_active_streams('tcp'):
+            i = {
+                'type': str(type(s)),
+                'started': s.started,
+                'outgoing': len(s.outboxFiles),
+                'incoming': len(s.inboxFiles),
+            }
+            streams.append(i)
+        r['tcp'] = {
+            'sessions': sessions,
+            'streams': streams,
+        }
+    if show_udp:
+        if not driver.is_on('service_udp_transport'):
+            return ERROR('service_udp_transport() is not started')
     return RESULT([r, ])
 
 #------------------------------------------------------------------------------

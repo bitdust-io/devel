@@ -413,8 +413,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_network_connected(self, wait_timeout=5):
         return api.network_connected(wait_timeout=wait_timeout)
 
-    def jsonrpc_network_status(self):
-        return api.network_status()
+    def jsonrpc_network_status(self, show_suppliers=False, show_customers=False, show_cache=False, show_tcp=False, show_udp=False, ):
+        return api.network_status(show_suppliers, show_customers, show_cache, show_tcp, show_udp, )
 
     def jsonrpc_reconnect(self):  # alias
         return api.network_reconnect()

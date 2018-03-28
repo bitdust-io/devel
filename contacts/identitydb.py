@@ -192,8 +192,7 @@ def idset(idurl, id_obj):
         except:
             pass
     # TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
-    fire_cache_updated_callbacks(single_item=(
-        identid, idurl, id_obj))
+    fire_cache_updated_callbacks(single_item=(identid, idurl, id_obj))
 
 
 def idget(url):

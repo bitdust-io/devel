@@ -546,7 +546,13 @@ class BitDustRESTHTTPServer(APIResource):
 
     @GET('^/network/status/v1$')
     def network_status_v1(self, request):
-        return api.network_status()
+        return api.network_status(
+            show_suppliers=bool(_request_arg(request, 'suppliers', '0') in ['1', 'true', ]),
+            show_customers=bool(_request_arg(request, 'customers', '0') in ['1', 'true', ]),
+            show_cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true', ]),
+            show_tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true', ]),
+            show_udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true', ]),
+        )
 
     #------------------------------------------------------------------------------
 
