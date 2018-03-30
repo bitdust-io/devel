@@ -1559,7 +1559,7 @@ def friend_list():
         })
     return RESULT(result)
 
-def friend_add(idurl_or_global_id, alias):
+def friend_add(idurl_or_global_id, alias=''):
     """
     Add user to the list of friends
     """
@@ -2929,53 +2929,70 @@ def network_status(show_suppliers=False, show_customers=False, show_cache=False,
                 'connected': connected,
                 'peers': items,
             }
-    if show_tcp:
-        if not driver.is_on('service_tcp_transport'):
-            return ERROR('service_tcp_transport() is not started')
+    if show_tcp or show_udp:
         from transport import gateway
-        sessions = []
-        for s in gateway.list_active_sessions('tcp'):
-            i = {
-                'type': str(type(s)),
-                'state': None,
-                'idurl': None,
-                'address': None,
-                'external_address': None,
-                'connection_address': None,
-                'bytes_received': 0,
-                'bytes_sent': 0,
+        if show_tcp:
+            if not driver.is_on('service_tcp_transport'):
+                return ERROR('service_tcp_transport() is not started')
+            sessions = []
+            for s in gateway.list_active_sessions('tcp'):
+                i = {
+                    'peer': getattr(s, 'peer', None),
+                    'state': getattr(s, 'state', None),
+                    'id': getattr(s, 'id', None),
+                    'idurl': getattr(s, 'peer_idurl', None),
+                    'address': getattr(s, 'peer_address', None),
+                    'external_address': getattr(s, 'peer_external_address', None),
+                    'connection_address': getattr(s, 'connection_address', None),
+                    'bytes_received': getattr(s, 'total_bytes_received', 0),
+                    'bytes_sent': getattr(s, 'total_bytes_sent', 0),
+                }
+                sessions.append(i)
+            streams = []
+            for s in gateway.list_active_streams('tcp'):
+                i = {
+                    'started': s.started,
+                    'stream_id': s.file_id,
+                    'transfer_id': s.transfer_id,
+                    'size': s.size,
+                    'type': s.typ,
+                }
+                streams.append(i)
+            r['tcp'] = {
+                'sessions': sessions,
+                'streams': streams,
             }
-            if hasattr(s, 'state'):
-                i['state'] = s.state
-            if hasattr(s, 'peer_idurl'):
-                i['idurl'] = s.peer_idurl
-            if hasattr(s, 'total_bytes_received'):
-                i['bytes_received'] = s.total_bytes_received
-            if hasattr(s, 'total_bytes_sent'):
-                i['bytes_sent'] = s.total_bytes_sent
-            if hasattr(s, 'peer_address'):
-                i['address'] = s.peer_address
-            if hasattr(s, 'peer_external_address'):
-                i['external_address'] = s.peer_external_address
-            if hasattr(s, 'connection_address'):
-                i['connection_address'] = s.connection_address
-            sessions.append(i)
-        streams = []
-        for s in gateway.list_active_streams('tcp'):
-            i = {
-                'type': str(type(s)),
-                'started': s.started,
-                'outgoing': len(s.outboxFiles),
-                'incoming': len(s.inboxFiles),
+        if show_udp:
+            if not driver.is_on('service_udp_transport'):
+                return ERROR('service_udp_transport() is not started')
+            sessions = []
+            for s in gateway.list_active_sessions('udp'):
+                sessions.append({
+                    'peer': s.peer_id,
+                    'state': s.state,
+                    'id': s.id,
+                    'idurl': s.peer_idurl,
+                    'address': s.peer_address,
+                    'bytes_received': s.bytes_sent,
+                    'bytes_sent': s.bytes_received,
+                    'outgoing': len(s.file_queue.outboxFiles),
+                    'incoming': len(s.file_queue.inboxFiles),
+                    'queue': len(s.file_queue.outboxQueue),
+                    'dead_streams': len(s.file_queue.dead_streams),
+                })
+            streams = []
+            for s in gateway.list_active_streams('udp'):
+                streams.append({
+                    'started': s.started,
+                    'stream_id': s.stream_id,
+                    'transfer_id': s.transfer_id,
+                    'size': s.size,
+                    'type': s.typ,
+                })
+            r['udp'] = {
+                'sessions': sessions,
+                'streams': streams,
             }
-            streams.append(i)
-        r['tcp'] = {
-            'sessions': sessions,
-            'streams': streams,
-        }
-    if show_udp:
-        if not driver.is_on('service_udp_transport'):
-            return ERROR('service_udp_transport() is not started')
     return RESULT([r, ])
 
 #------------------------------------------------------------------------------

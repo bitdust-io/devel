@@ -236,7 +236,7 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
         return pending_result
 
-    def _on_outbox_packet(self, outpacket, wide, callbacks, **kwargs):
+    def _on_outbox_packet(self, outpacket, wide, callbacks, target, route, response_timeout, keep_alive):
         """
         """
         if not driver.is_on('service_proxy_transport'):
@@ -293,7 +293,10 @@ class ProxySender(automat.Automat):
                 'host': router_host,
                 'remoteid': router_idurl,
                 'description': 'Relay_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
-            })
+            },
+            response_timeout=response_timeout,
+            keep_alive=keep_alive,
+        )
         self.event('outbox-packet-sent', (outpacket, newpacket, result_packet))
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))

@@ -110,12 +110,12 @@ def queue():
     return _OutboxQueue
 
 
-def create(outpacket, wide, callbacks, target=None, route=None, response_timeout=None):
+def create(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
     """
     """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
-    p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout)
+    p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     queue().append(p)
     p.automat('run')
     return p
@@ -295,7 +295,7 @@ class PacketOut(automat.Automat):
         'MSG_5': 'pushing outgoing packet was cancelled',
     }
 
-    def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None):
+    def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = {}
@@ -312,6 +312,7 @@ class PacketOut(automat.Automat):
         self.remote_name = nameurl.GetName(self.remote_idurl)
         self.label = 'out_%d_%s' % (
             get_packets_counter(), self.remote_name)
+        self.keep_alive = keep_alive
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
         for command, cb in callbacks.items():
@@ -749,7 +750,8 @@ class PacketOut(automat.Automat):
                 self.route['proto'],
                 self.route['host'],
                 self.filename,
-                self.description)
+                self.description,
+            )
             self.items.append(WorkItem(
                 self.route['proto'],
                 self.route['host'],

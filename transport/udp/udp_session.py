@@ -30,10 +30,11 @@ BitDust udp_session() Automat
 EVENTS:
     * :red:`datagram-received`
     * :red:`init`
+    * :red:`send-keep-alive`
     * :red:`shutdown`
     * :red:`timer-10sec`
-    * :red:`timer-1min`
     * :red:`timer-1sec`
+    * :red:`timer-20sec`
     * :red:`timer-30sec`
 """
 
@@ -77,23 +78,28 @@ _ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
 
 def sessions():
     """
-    
     """
     global _SessionsDict
     return _SessionsDict
 
 
 def sessions_by_peer_address():
+    """
+    """
     global _SessionsDictByPeerAddress
     return _SessionsDictByPeerAddress
 
 
 def sessions_by_peer_id():
+    """
+    """
     global _SessionsDictByPeerID
     return _SessionsDictByPeerID
 
 
 def pending_outbox_files():
+    """
+    """
     global _PendingOutboxFiles
     return _PendingOutboxFiles
 
@@ -102,13 +108,9 @@ def pending_outbox_files():
 
 def create(node, peer_address, peer_id=None):
     """
-    
     """
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'udp_session.create peer_address=%s' %
-            str(peer_address))
+        lg.out(_DebugLevel, 'udp_session.create peer_address=%s' % str(peer_address))
     s = UDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
     try:
@@ -125,70 +127,44 @@ def create(node, peer_address, peer_id=None):
 
 def get(peer_address):
     """
-    
     """
-#     if _Debug:
-#         lg.out(_DebugLevel, 'udp_session.get %s %s' % (str(peer_address),
-#             str(map(lambda s:s.peer_address, sessions().values()))))
-    for s in sessions_by_peer_address().get(peer_address, []):
-        return s
-    # for id, s in sessions().items():
-    #     if s.peer_address == peer_address:
-    #         return s
-    return None
+    return sessions_by_peer_address().get(peer_address, [])
 
 
 def get_by_peer_id(peer_id):
     """
-    
     """
-    for s in sessions_by_peer_id().get(peer_id, []):
-        return s
-    # for id, s in sessions().items():
-    #     if s.peer_id == peer_id:
-    #         return s
-    return None
+    return sessions_by_peer_id().get(peer_id, [])
 
 
 def close(peer_address):
     """
-    
     """
-    s = get(peer_address)
-    if s is None:
+    active_sessions = get(peer_address)
+    if not active_sessions:
         return False
-    s.automat('shutdown')
+    for s in active_sessions:
+        s.automat('shutdown')
     return True
 
 
-def add_pending_outbox_file(
-        filename,
-        host,
-        description='',
-        result_defer=None,
-        single=False):
+def add_pending_outbox_file(filename, host, description='', result_defer=None, keep_alive=True):
     """
-    
     """
-    pending_outbox_files().append(
-        (filename, host, description, result_defer, single, time.time()))
+    pending_outbox_files().append((filename, host, description, result_defer, keep_alive, time.time()))
     if _Debug:
-        lg.out(
-            _DebugLevel, 'udp_session.add_pending_outbox_file %s for %s : %s' %
-            (os.path.basename(filename), host, description))
+        lg.out(_DebugLevel, 'udp_session.add_pending_outbox_file %s for %s : %s' % (
+            os.path.basename(filename), host, description))
 
 
 def remove_pending_outbox_file(host, filename):
     ok = False
     i = 0
     while i < len(pending_outbox_files()):
-        fn, hst, description, result_defer, single, tm = pending_outbox_files()[
-            i]
+        fn, hst, description, result_defer, keep_alive, tm = pending_outbox_files()[i]
         if fn == filename and host == hst:
             if _Debug:
-                lg.out(
-                    _DebugLevel, 'udp_interface.cancel_outbox_file removed pending %s for %s' %
-                    (os.path.basename(fn), hst))
+                lg.out(_DebugLevel, 'udp_interface.cancel_outbox_file removed pending %s for %s' % (os.path.basename(fn), hst))
             pending_outbox_files().pop(i)
             ok = True
         else:
@@ -198,23 +174,22 @@ def remove_pending_outbox_file(host, filename):
 
 def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
     """
-    
     """
     from transport.udp import udp_interface
     global _PendingOutboxFiles
     i = 0
     while i < len(_PendingOutboxFiles):
-        filename, host, description, result_defer, single, tm = _PendingOutboxFiles[
+        filename, host, description, result_defer, keep_alive, tm = _PendingOutboxFiles[
             i]
-        if host == remote_host:
-            udp_interface.interface_cancelled_file_sending(
-                remote_host, filename, 0, description, error_message)
-            if result_defer:
-                result_defer.callback(
-                    ((filename, description), 'failed', error_message))
-            _PendingOutboxFiles.pop(i)
-        else:
+        if host != remote_host:
             i += 1
+            continue
+        udp_interface.interface_cancelled_file_sending(
+            remote_host, filename, 0, description, error_message)
+        if result_defer:
+            result_defer.callback(
+                ((filename, description), 'failed', error_message))
+        _PendingOutboxFiles.pop(i)
 
 
 def process_sessions(sessions_to_process=None):
@@ -265,10 +240,10 @@ class UDPSession(automat.Automat):
     fast = True
 
     timers = {
-        'timer-1min': (60, ['PING', 'CONNECTED']),
         'timer-1sec': (1.0, ['PING', 'GREETING']),
         'timer-30sec': (30.0, ['GREETING']),
         'timer-10sec': (10.0, ['CONNECTED']),
+        'timer-20sec': (20.0, ['PING']),
     }
 
     MESSAGES = {
@@ -289,7 +264,7 @@ class UDPSession(automat.Automat):
         self.file_queue = udp_file_queue.FileQueue(self)
         name = 'udp_session[%s:%d:%s]' % (
             self.peer_address[0], self.peer_address[1], str(self.peer_id))
-        automat.Automat.__init__(self, name, 'AT_STARTUP', 18)
+        automat.Automat.__init__(self, name, 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
 
     def msg(self, msgid, arg=None):
         return self.MESSAGES.get(msgid, '')
@@ -299,7 +274,9 @@ class UDPSession(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
-        self.log_events = False
+        if _Debug:
+            self.log_events = True
+            self.log_transitions = True
         self.last_datagram_received_time = 0
         self.my_rtt_id = '0'  # out
         self.peer_rtt_id = '0'  # in
@@ -314,11 +291,9 @@ class UDPSession(automat.Automat):
     def A(self, event, arg):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'timer-10sec':
-                self.doAlive(arg)
-            elif event == 'shutdown' or (event == 'timer-1min' and not self.isSessionActive(arg)):
+            if event == 'shutdown' or ( event == 'timer-10sec' and not self.isSessionActive(arg) ):
                 self.state = 'CLOSED'
-                self.doErrMsg(event, self.msg('MSG_1', arg))
+                self.doErrMsg(event,self.msg('MSG_1', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -331,6 +306,8 @@ class UDPSession(automat.Automat):
             elif event == 'datagram-received' and self.isPing(arg):
                 self.doAcceptPing(arg)
                 self.doGreeting(arg)
+            elif event == 'send-keep-alive' or event == 'timer-10sec':
+                self.doAlive(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
@@ -340,7 +317,7 @@ class UDPSession(automat.Automat):
                 self.doPing(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doErrMsg(event, self.msg('MSG_4', arg))
+                self.doErrMsg(event,self.msg('MSG_4', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -360,9 +337,9 @@ class UDPSession(automat.Automat):
                 self.doAcceptPing(arg)
                 self.doStartRTT(arg)
                 self.doGreeting(arg)
-            elif event == 'shutdown' or event == 'timer-1min':
+            elif event == 'shutdown' or event == 'timer-20sec':
                 self.state = 'CLOSED'
-                self.doErrMsg(event, self.msg('MSG_3', arg))
+                self.doErrMsg(event,self.msg('MSG_3', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -373,7 +350,7 @@ class UDPSession(automat.Automat):
                 self.doGreeting(arg)
             elif event == 'shutdown' or event == 'timer-30sec':
                 self.state = 'CLOSED'
-                self.doErrMsg(event, self.msg('MSG_2', arg))
+                self.doErrMsg(event,self.msg('MSG_2', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -436,7 +413,7 @@ class UDPSession(automat.Automat):
         """
         Condition method.
         """
-        return time.time() - self.last_datagram_received_time < 60
+        return time.time() - self.last_datagram_received_time < 20
 
     def doInit(self, arg):
         """
@@ -621,8 +598,7 @@ class UDPSession(automat.Automat):
         outgoings = 0
         # print 'doCheckPendingFiles', self.peer_id, len(_PendingOutboxFiles)
         while i < len(_PendingOutboxFiles):
-            filename, host, description, result_defer, single, tm = _PendingOutboxFiles[
-                i]
+            filename, host, description, result_defer, keep_alive, tm = _PendingOutboxFiles[i]
             # print filename, host, description,
             if host == self.peer_id:
                 outgoings += 1
@@ -631,14 +607,14 @@ class UDPSession(automat.Automat):
                 if description.startswith(
                         'Identity') or description.startswith('Ack'):
                     self.file_queue.insert_outbox_file(
-                        filename, description, result_defer, single)
+                        filename, description, result_defer, keep_alive)
                 else:
                     self.file_queue.append_outbox_file(
-                        filename, description, result_defer, single)
+                        filename, description, result_defer, keep_alive)
                 _PendingOutboxFiles.pop(i)
                 # print 'pop'
             else:
-                # _PendingOutboxFiles.insert(i, (filename, host, description, result_defer, single, tm))
+                # _PendingOutboxFiles.insert(i, (filename, host, description, result_defer, keep_alive, tm))
                 i += 1
                 # print 'skip'
         # print len(_PendingOutboxFiles)

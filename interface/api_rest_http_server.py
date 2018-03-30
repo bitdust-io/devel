@@ -397,7 +397,7 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
         return api.friend_add(
             idurl_or_global_id=data.get('global_id') or data.get('idurl'),
-            alias=data.get('alias'),
+            alias=data.get('alias', ''),
         )
 
     @DELETE('^/friend/remove/v1$')

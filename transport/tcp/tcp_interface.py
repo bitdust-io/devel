@@ -160,14 +160,19 @@ class GateInterface():
         """
         host = host.split(':')
         host = (host[0], int(host[1]))
-        return tcp_node.send(filename, host, description, False)
+        return tcp_node.send(filename, host, description, keep_alive=True)
 
     def send_file_single(self, remote_idurl, filename, host, description=''):
         """
         """
         host = host.split(':')
         host = (host[0], int(host[1]))
-        return tcp_node.send(filename, host, description, True)
+        return tcp_node.send(filename, host, description, keep_alive=False)
+
+    def send_keep_alive(self, host):
+        """
+        """
+        return tcp_node.send_keep_alive(host)
 
     def connect_to(self, host):
         """
@@ -201,7 +206,7 @@ class GateInterface():
         for opened_connection in tcp_node.opened_connections().values():
             for channel in opened_connection:
                 result.append(channel)
-        for started_connection in tcp_node.started_connections():
+        for started_connection in tcp_node.started_connections().values():
             result.append(started_connection)
         return result
 
@@ -212,6 +217,16 @@ class GateInterface():
         result.extend(tcp_node.list_input_streams(sorted_by_time))
         result.extend(tcp_node.list_output_streams(sorted_by_time))
         return result
+
+    def find_session(self, host):
+        """
+        """
+        return tcp_node.opened_connections().get(host, [])
+
+    def find_stream(self, stream_id=None, transfer_id=None):
+        """
+        """
+        return tcp_node.find_stream(file_id=stream_id, transfer_id=transfer_id)
 
 #------------------------------------------------------------------------------
 

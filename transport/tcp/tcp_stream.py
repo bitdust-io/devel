@@ -36,6 +36,7 @@ import os
 import time
 import cStringIO
 import struct
+import random
 
 from twisted.internet import reactor
 from twisted.protocols import basic
@@ -64,9 +65,9 @@ MAX_SIMULTANEOUS_OUTGOING_FILES = 1
 _LastFileID = None
 _ProcessStreamsDelay = 0.01
 _ProcessStreamsTask = None
+_StreamCounter = 0
 
 #------------------------------------------------------------------------------
-
 
 def start_process_streams():
     reactor.callLater(0, process_streams)
@@ -129,7 +130,32 @@ def list_output_streams(sorted_by_time=True):
         streams.sort(key=lambda stream: stream.started)
     return streams
 
+
+def find_stream(file_id=None, transfer_id=None):
+    from transport.tcp import tcp_node
+    for connections in tcp_node.opened_connections().values():
+        for connection in connections:
+            if connection.stream:
+                for out_file in connection.stream.outboxFiles.values():
+                    if file_id and out_file.file_id == file_id:
+                        return out_file
+                    if transfer_id and out_file.transfer_id == transfer_id:
+                        return out_file
+                for in_file in connection.stream.inboxFiles.values():
+                    if file_id and in_file.file_id == file_id:
+                        return in_file
+                    if transfer_id and in_file.transfer_id == transfer_id:
+                        return in_file
+    return None
+
 #------------------------------------------------------------------------------
+
+def make_stream_id():
+    """
+    """
+    global _StreamCounter
+    _StreamCounter += 1
+    return random.randint(10, 99) * 1000000 + random.randint(10, 99) * 10000 + _StreamCounter % 10000
 
 
 def make_file_id():
@@ -150,6 +176,7 @@ def make_file_id():
 class TCPFileStream():
 
     def __init__(self, connection):
+        self.stream_id = make_stream_id()  # not used at the moment, use file_id instead
         self.connection = connection
         self.outboxFiles = {}
         self.inboxFiles = {}
@@ -262,24 +289,11 @@ class TCPFileStream():
             lg.out(_DebugLevel - 8, '        close session %s' % self.session)
         self.connection.automat('disconnect')
 
-    def create_outbox_file(
-            self,
-            filename,
-            filesize,
-            description,
-            result_defer,
-            single):
+    def create_outbox_file(self, filename, filesize, description, result_defer, keep_alive,):
         from transport.tcp import tcp_interface
         file_id = make_file_id()
-        outfile = OutboxFile(
-            self,
-            filename,
-            file_id,
-            filesize,
-            description,
-            result_defer,
-            single)
-        if not single:
+        outfile = OutboxFile(self, filename, file_id, filesize, description, result_defer, keep_alive)
+        if keep_alive:
             d = tcp_interface.interface_register_file_sending(
                 self.connection.getAddress(), self.connection.peer_idurl, filename, description)
             d.addCallback(self.on_outbox_file_registered, file_id)
@@ -300,14 +314,8 @@ class TCPFileStream():
 
     def on_outbox_file_register_failed(self, err, file_id):
         if _Debug:
-            lg.warn(
-                'failed to register, file_id=%s :\n%s' %
-                (str(file_id), str(err)))
-            lg.out(
-                _DebugLevel -
-                8,
-                '        close session %s' %
-                self.connection)
+            lg.warn('failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
+            lg.out(_DebugLevel - 8, '        close session %s' % self.connection)
         self.connection.automat('disconnect')
 
     def close_outbox_file(self, file_id):
@@ -341,6 +349,8 @@ class TCPFileStream():
             transfer_id, status, bytes_received, error_message)
 
     def inbox_file_done(self, file_id, status, error_message=None):
+        """
+        """
         try:
             infile = self.inboxFiles[file_id]
         except:
@@ -350,18 +360,13 @@ class TCPFileStream():
             return
         self.close_inbox_file(file_id)
         if infile.transfer_id:
-            self.report_inbox_file(
-                infile.transfer_id,
-                status,
-                infile.get_bytes_received(),
-                error_message)
+            self.report_inbox_file(infile.transfer_id, status, infile.get_bytes_received(), error_message)
         else:
             lg.warn('transfer_id is None, file_id=%s' % (str(file_id)))
         del infile
 
     def outbox_file_done(self, file_id, status, error_message=None):
         """
-        
         """
         try:
             outfile = self.outboxFiles[file_id]
@@ -375,12 +380,8 @@ class TCPFileStream():
             return
         self.close_outbox_file(file_id)
         if outfile.transfer_id:
-            self.report_outbox_file(
-                outfile.transfer_id,
-                status,
-                outfile.get_bytes_sent(),
-                error_message)
-        if outfile.single and not self.connection.factory.keep_alive:
+            self.report_outbox_file(outfile.transfer_id, status, outfile.get_bytes_sent(), error_message)
+        if not outfile.keep_alive and not self.connection.factory.keep_alive:
             self.connection.automat('disconnect')
         del outfile
 
@@ -390,6 +391,7 @@ class TCPFileStream():
 class InboxFile():
 
     def __init__(self, stream, file_id, file_size):
+        self.typ = 'tcp-in'
         self.transfer_id = None
         self.registration = None
         self.stream = stream
@@ -435,15 +437,8 @@ class InboxFile():
 
 class OutboxFile():
 
-    def __init__(
-            self,
-            stream,
-            filename,
-            file_id,
-            filesize,
-            description='',
-            result_defer=None,
-            single=False):
+    def __init__(self, stream, filename, file_id, filesize, description='', result_defer=None, keep_alive=True):
+        self.typ = 'tcp-out'
         self.transfer_id = None
         self.registration = None
         self.stream = stream
@@ -451,7 +446,7 @@ class OutboxFile():
         self.filename = filename
         self.size = filesize
         self.description = description
-        self.single = single
+        self.keep_alive = keep_alive
         self.result_defer = result_defer
         self.ok_received = False
         self.bytes_sent = 0

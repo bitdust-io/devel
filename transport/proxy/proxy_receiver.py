@@ -92,6 +92,7 @@ from transport import callback
 from transport import packet_in
 from transport import packet_out
 
+from transport import gateway
 from transport.proxy import proxy_interface
 
 from userid import my_id
@@ -196,6 +197,7 @@ class ProxyReceiver(automat.Automat):
         self.router_proto_host = None
         self.request_service_packet_id = []
         self.latest_packet_received = 0
+        self.router_connection_info = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -481,6 +483,21 @@ class ProxyReceiver(automat.Automat):
                 self._on_router_contact_status_connected, newstate='CONNECTED')
             contact_status.A(self.router_idurl).addStateChangedCallback(
                 self._on_router_contact_status_offline, newstate='OFFLINE')
+        active_router_sessions = gateway.find_active_session(info.proto, info.host)
+        if active_router_sessions:
+            self.router_connection_info = {
+                'id': active_router_sessions[0].id,
+                'index': active_router_sessions[0].index,
+                'proto': info.proto,
+                'host': info.host,
+            }
+            active_router_session_machine = automat.objects().get(self.router_connection_info['index'], None)
+            if active_router_session_machine:
+                active_router_session_machine.addStateChangedCallback(
+                    self._on_router_session_disconnected, oldstate='CONNECTED')
+            lg.info('connected to proxy router and set active session id: %s' % self.router_connection_info)
+        else:
+            lg.warn('active connection with proxy router was not found')
         if _Debug:
             lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
                 self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
@@ -499,6 +516,7 @@ class ProxyReceiver(automat.Automat):
         self.router_idurl = None
         self.router_proto_host = None
         self.request_service_packet_id = []
+        self.router_connection_info = None
         my_id.rebuildLocalIdentity()
         if _Debug:
             lg.out(2, 'proxy_receiver.doStopListening')
@@ -522,8 +540,10 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        if self.router_connection_info:
+            gateway.send_keep_alive(self.router_connection_info['proto'], self.router_connection_info['host'])
         live_time = time.time() - self.latest_packet_received
-        if live_time < 10.0:
+        if live_time < 60.0:
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_receiver.doCheckPingRouter OK, latest packet received %f sec ago' % live_time)
             return
@@ -576,14 +596,22 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, '        contacts=%s, sources=%s' % (identity_obj.contacts, identity_obj.sources))
         newpacket = signed.Packet(
-            commands.Identity(), my_id.getLocalID(),
-            my_id.getLocalID(), 'identity',
-            identity_source, self.router_idurl,
+            commands.Identity(),
+            my_id.getLocalID(),
+            my_id.getLocalID(),
+            'identity',
+            identity_source,
+            self.router_idurl,
         )
-        packet_out.create(newpacket, wide=True, callbacks={
-            commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
-            commands.Fail(): lambda x: self.automat(failed_event),
-        })
+        packet_out.create(
+            newpacket,
+            wide=True,
+            callbacks={
+                commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
+                commands.Fail(): lambda x: self.automat(failed_event),
+            },
+            keep_alive=True,
+        )
 
     def _on_nodes_lookup_finished(self, idurls):
         if _Debug:
@@ -672,7 +700,7 @@ class ProxyReceiver(automat.Automat):
             lg.warn('%s was not found in pending requests: %s' % (response.PacketID, self.request_service_packet_id))
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
-        if response.Payload.startswith('accepted'):
+        if not response.Payload.startswith('rejected'):
             self.automat('service-accepted', (response, info))
         else:
             self.automat('service-refused', (response, info))
@@ -711,6 +739,10 @@ class ProxyReceiver(automat.Automat):
         lg.warn('router disconnected: %s->%s' % (oldstate, newstate))
         self.automat('router-disconnected')
 
+    def _on_router_session_disconnected(self, oldstate, newstate, event_string, args):
+        lg.warn('router session disconnected: %s->%s' % (oldstate, newstate))
+        self.automat('router-disconnected')
+
 #------------------------------------------------------------------------------
 
 
@@ -718,6 +750,7 @@ def main():
     from twisted.internet import reactor
     reactor.callWhenRunning(A, 'init')
     reactor.run()
+
 
 if __name__ == "__main__":
     main()

@@ -667,9 +667,9 @@ class Automat(object):
             catched = False
             if old is None and new is None:
                 catched = True
-            elif old is None and new == newstate:
+            elif old is None and new == newstate and newstate != oldstate:
                 catched = True
-            elif new is None and old == oldstate:
+            elif new is None and old == oldstate and newstate != oldstate:
                 catched = True
             elif old == oldstate and new == newstate:
                 catched = True

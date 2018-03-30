@@ -70,6 +70,7 @@ _ByTransferID = {}
 _OpenedConnections = {}
 _StartedConnections = {}
 _ConnectionsCounter = 0
+_ConnectionTimeout = 10
 
 #------------------------------------------------------------------------------
 
@@ -177,7 +178,7 @@ def connect_to(host, keep_alive=True):
     if _Debug:
         lg.out(_DebugLevel, 'tcp_node.connect_to "%s", keep_alive=%s' % (host, keep_alive))
     connection = TCPFactory(host, keep_alive=keep_alive)
-    connection.connector = reactor.connectTCP(host[0], host[1], connection)
+    connection.connector = reactor.connectTCP(host[0], host[1], connection, timeout=_ConnectionTimeout)
     started_connections()[host] = connection
     return False
 
@@ -227,74 +228,87 @@ def close_connections():
             oc.automat('connection-lost')
 
 
-def send(filename, remoteaddress, description=None, single=False):
+def send(filename, remoteaddress, description=None, keep_alive=True):
     """
     """
     result_defer = Deferred()
     if remoteaddress in started_connections():
-        started_connections()[remoteaddress].add_outbox_file(filename, description, result_defer, single)
-        if single:
-            lg.out(6, 'tcp_node.send single, use started connection to %s, %d already started and %d opened' % (
-                str(remoteaddress), len(started_connections()), len(opened_connections())))
+        started_connections()[remoteaddress].add_outbox_file(filename, description, result_defer, keep_alive)
+        if not keep_alive:
+            if _Debug:
+                lg.out(_DebugLevel, 'tcp_node.send single, use started connection to %s, %d already started and %d opened' % (
+                    str(remoteaddress), len(started_connections()), len(opened_connections())))
         return result_defer
     for peeraddr, connections in opened_connections().items():
         for connection in connections:
             if peeraddr == remoteaddress:
-                connection.append_outbox_file(filename, description, result_defer, single)
-                if single:
-                    lg.out(6, 'tcp_node.send single, use opened connection to %s, %d already started and %d opened' % (
-                        str(remoteaddress), len(started_connections()), len(opened_connections())))
+                connection.append_outbox_file(filename, description, result_defer, keep_alive)
+                if not keep_alive:
+                    if _Debug:
+                        lg.out(_DebugLevel, 'tcp_node.send single, use opened connection to %s, %d already started and %d opened' % (
+                            str(remoteaddress), len(started_connections()), len(opened_connections())))
                 return result_defer
             if connection.getConnectionAddress():
                 if connection.getConnectionAddress() == remoteaddress:
-                    connection.append_outbox_file(filename, description, result_defer, single)
-                    if single:
-                        lg.out(6, 'tcp_node.send single, use opened(2) connection to %s, %d already started and %d opened' % (
-                            str(remoteaddress), len(started_connections()), len(opened_connections())))
+                    connection.append_outbox_file(filename, description, result_defer, keep_alive)
+                    if not keep_alive:
+                        if _Debug:
+                            lg.out(_DebugLevel, 'tcp_node.send single, use opened connection to %s, %d already started and %d opened' % (
+                                str(remoteaddress), len(started_connections()), len(opened_connections())))
                     return result_defer
     if _Debug:
         lg.out(_DebugLevel, 'tcp_node.send start connecting to "%s"' % str(remoteaddress))
-    connection = TCPFactory(remoteaddress, keep_alive=(not single))
-    connection.add_outbox_file(filename, description, result_defer, single)
-    connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection)
+    connection = TCPFactory(remoteaddress, keep_alive=keep_alive)
+    connection.add_outbox_file(filename, description, result_defer, keep_alive)
+    connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection, timeout=_ConnectionTimeout)
     started_connections()[remoteaddress] = connection
-    if single:
-        lg.out(6, 'tcp_node.send opened a single connection to %s, %d already started and %d opened' % (
-            str(remoteaddress), len(started_connections()), len(opened_connections())))
+    if not keep_alive:
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_node.send opened a single connection to %s, %d already started and %d opened' % (
+                str(remoteaddress), len(started_connections()), len(opened_connections())))
     return result_defer
+
+
+def send_keep_alive(host):
+    sent_something = False
+    for channel in opened_connections().get(host, []):
+        channel.automat('send-keep-alive')
+        sent_something = True
+    return sent_something
 
 
 def start_streams():
     """
-    
     """
     return tcp_stream.start_process_streams()
 
 
 def stop_streams():
     """
-    
     """
     return tcp_stream.stop_process_streams()
 
 
 def list_input_streams(sorted_by_time=True):
     """
-    
     """
     return tcp_stream.list_input_streams(sorted_by_time)
 
 
 def list_output_streams(sorted_by_time=True):
     """
-    
     """
     return tcp_stream.list_output_streams(sorted_by_time)
 
 
+def find_stream(file_id=None, transfer_id=None):
+    """
+    """
+    return tcp_stream.find_stream(file_id=file_id, transfer_id=transfer_id)
+
+
 def cancel_file_receiving(transferID):
     """
-    
     """
     # at the moment for TCP transport we can not stop particular file transfer
     # we can only close connection itself, which is not we really want
@@ -330,11 +344,11 @@ def cancel_outbox_file(host, filename):
     from transport.tcp import tcp_interface
     for connections in opened_connections().values():
         for connection in connections:
-            if  connection.peer_address and connection.peer_address == host or \
+            if connection.peer_address and connection.peer_address == host or \
                     connection.peer_external_address and connection.peer_external_address == host:
                 i = 0
                 while i < len(connection.outboxQueue):
-                    fn, description, result_defer, single = connection.outboxQueue[i]
+                    fn, description, result_defer, keep_alive = connection.outboxQueue[i]
                     if fn == filename:
                         connection.outboxQueue.pop(i)
                         connection.failed_outbox_queue_item(fn, description, 'cancelled')
@@ -344,12 +358,10 @@ def cancel_outbox_file(host, filename):
         if connection.connection_address and connection.connection_address == host:
             i = 0
             while i < len(connection.pendingoutboxfiles):
-                fn, description, result_defer, single = connection.pendingoutboxfiles[i]
+                fn, description, result_defer, keep_alive = connection.pendingoutboxfiles[i]
                 if fn == filename:
                     connection.pendingoutboxfiles.pop(i)
-                    if not single:
-                        tcp_interface.interface_cancelled_file_sending(
-                            host, filename, 0, description, 'cancelled')
+                    tcp_interface.interface_cancelled_file_sending(host, filename, 0, description, 'cancelled')
                     if result_defer:
                         result_defer.callback((filename, description, 'failed', 'cancelled'))
                     continue
@@ -379,18 +391,16 @@ class TCPFactory(protocol.ClientFactory):
         connection = started_connections().pop(self.connection_address, None)
         if connection:
             connection.connector = None
-        for filename, description, result_defer, single in self.pendingoutboxfiles:
-            if not single:
-                tcp_interface.interface_cancelled_file_sending(
-                    destaddress, filename, 0, description, 'connection failed')
+        for filename, description, result_defer, keep_alive in self.pendingoutboxfiles:
+            tcp_interface.interface_cancelled_file_sending(destaddress, filename, 0, description, 'connection failed')
             if result_defer:
                 result_defer.callback((filename, description, 'failed', 'connection failed'))
         self.pendingoutboxfiles = []
         # lg.out(18, 'tcp_node.clientConnectionFailed from %s  :   %s closed, %d more started' % (
         #     str(destaddress), self, len(started_connections())))
 
-    def add_outbox_file(self, filename, description='', result_defer=None, single=False):
-        self.pendingoutboxfiles.append((filename, description, result_defer, single))
+    def add_outbox_file(self, filename, description='', result_defer=None, keep_alive=True):
+        self.pendingoutboxfiles.append((filename, description, result_defer, keep_alive))
         tcp_stream.process_streams()
 
 #------------------------------------------------------------------------------
