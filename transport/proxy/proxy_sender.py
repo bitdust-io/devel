@@ -236,7 +236,7 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
         return pending_result
 
-    def _on_outbox_packet(self, outpacket, wide, callbacks, target, route, response_timeout, keep_alive):
+    def _on_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
         """
         if not driver.is_on('service_proxy_transport'):

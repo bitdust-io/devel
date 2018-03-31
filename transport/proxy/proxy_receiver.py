@@ -97,6 +97,7 @@ from transport.proxy import proxy_interface
 
 from userid import my_id
 from userid import identity
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -490,6 +491,8 @@ class ProxyReceiver(automat.Automat):
                 'index': active_router_sessions[0].index,
                 'proto': info.proto,
                 'host': info.host,
+                'idurl': self.router_idurl,
+                'global_id': global_id.UrlToGlobalID(self.router_idurl),
             }
             active_router_session_machine = automat.objects().get(self.router_connection_info['index'], None)
             if active_router_session_machine:
@@ -497,7 +500,7 @@ class ProxyReceiver(automat.Automat):
                     self._on_router_session_disconnected, oldstate='CONNECTED')
             lg.info('connected to proxy router and set active session id: %s' % self.router_connection_info)
         else:
-            lg.warn('active connection with proxy router was not found')
+            lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
         if _Debug:
             lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
                 self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
