@@ -124,7 +124,6 @@ def PrintAllInCache():
 
 def Items():
     """
-    
     """
     return identitydb.cache()
 
@@ -134,6 +133,12 @@ def HasKey(idurl):
     Check for some user IDURL in the cache.
     """
     return identitydb.has_idurl(idurl) or IsOverridden(idurl)
+
+
+def GetLastModifiedTime(idurl):
+    """
+    """
+    return identitydb.get_last_modified_time(idurl)
 
 
 def HasFile(idurl):

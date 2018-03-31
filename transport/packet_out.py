@@ -328,7 +328,10 @@ class PacketOut(automat.Automat):
         self.time = time.time()
         self.description = self.outpacket.Command + '(' + self.outpacket.PacketID + ')'
         self.payloadsize = len(self.outpacket.Payload)
-        self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
+        last_modified_time = identitycache.GetLastModifiedTime(self.remote_idurl)
+        if not last_modified_time or time.time() - last_modified_time < 60:
+            # use known identity from cache
+            self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.packetdata = None
         self.filename = None
         self.filesize = None
