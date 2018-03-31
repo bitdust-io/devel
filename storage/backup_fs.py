@@ -61,6 +61,7 @@ import sys
 import cStringIO
 import time
 import json
+import random
 
 #------------------------------------------------------------------------------
 
@@ -426,25 +427,38 @@ class FSItemInfo():
 #------------------------------------------------------------------------------
 
 
-def MakeID(itr, startID=-1):
+def MakeID(itr, startID=-1, randomized=True):
     """
     Create a new unique number for the folder to create a index ID.
 
     Parameter ``itrID`` is a reference for a single item in the ``fs()``.
     """
-    _id = 0
+    random.seed()
+    new_id = 0
     if startID >= 0:
         _id = startID
-    _ids = []
+    current_ids = []
     for k in itr.keys():
-        if k != 0:
-            if isinstance(itr[k], int):
-                _ids.append(itr[k])
-                continue
-            _ids.append(itr[k][0])
-    while _id in _ids:
-        _id += 1
-    return _id
+        if k == 0:
+            continue
+        if isinstance(itr[k], int):
+            current_ids.append(int(itr[k]))
+        else:
+            current_ids.append(int(itr[k][0]))
+    if randomized:
+        digits = 1
+        while True:
+            attempts = 0
+            new_id = int(random.choice('0123456789'))
+            while new_id in current_ids and attempts <= 2:
+                new_id = int(''.join([v() for v in [lambda: random.choice('0123456789'), ] * digits]))
+                attempts += 1
+            if new_id not in current_ids:
+                return new_id
+            digits += 1
+    while new_id in current_ids:
+        new_id += 1
+    return new_id
 
 #------------------------------------------------------------------------------
 
@@ -2079,6 +2093,8 @@ def _test():
     # print count
     Scan()
     Calculate()
+    
+    
     # pprint.pprint(fs())
     # print
     # pprint.pprint(fsID())
@@ -2099,6 +2115,11 @@ def _test():
     print
 
     print HasChilds('', iter=fs(customer_idurl))
+
+#     for i in range(10000):
+#         r = AddFile('file' + str(i))
+#         print r[0], len(fs())
+#         # pprint.pprint(fs())
 
     # PutItem('dir4', as_folder=True)
 

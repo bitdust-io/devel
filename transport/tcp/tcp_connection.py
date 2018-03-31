@@ -33,6 +33,7 @@ EVENTS:
     * :red:`connection-made`
     * :red:`data-received`
     * :red:`disconnect`
+    * :red:`send-keep-alive`
     * :red:`timer-10sec`
 """
 #------------------------------------------------------------------------------
@@ -81,16 +82,30 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.total_bytes_received = 0
         self.total_bytes_sent = 0
         self.outboxQueue = []
+        self.last_wazap_received = 0
 
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
+        if _Debug:
+            self.log_events = True
+            self.log_transitions = True
 
     def A(self, event, arg):
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'connection-made' and not self.isOutgoing(arg):
+                self.state = 'SERVER?'
+                self.doInit(arg)
+            elif event == 'connection-made' and self.isOutgoing(arg):
+                self.state = 'CLIENT?'
+                self.doInit(arg)
+                self.doCloseOutgoing(arg)
+                self.doSendHello(arg)
         #---CONNECTED---
-        if self.state == 'CONNECTED':
+        elif self.state == 'CONNECTED':
             if event == 'data-received':
                 self.doReceiveData(arg)
             elif event == 'connection-lost':
@@ -103,16 +118,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 self.doStopInOutFiles(arg)
                 self.doCloseStream(arg)
                 self.doDisconnect(arg)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'connection-made' and not self.isOutgoing(arg):
-                self.state = 'SERVER?'
-                self.doInit(arg)
-            elif event == 'connection-made' and self.isOutgoing(arg):
-                self.state = 'CLIENT?'
-                self.doInit(arg)
-                self.doCloseOutgoing(arg)
-                self.doSendHello(arg)
+            elif event == 'send-keep-alive':
+                self.doSendWazap(arg)
         #---CLIENT?---
         elif self.state == 'CLIENT?':
             if event == 'connection-lost':
@@ -123,7 +130,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 self.doReadWazap(arg)
                 self.doOpenStream(arg)
                 self.doStartPendingFiles(arg)
-            elif event == 'timer-10sec' or event == 'disconnect' or (event == 'data-received' and not (self.isWazap(arg) and self.isSomePendingFiles())):
+            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not ( self.isWazap(arg) and self.isSomePendingFiles(arg) ) ):
                 self.state = 'DISCONNECT'
                 self.doDisconnect(arg)
         #---SERVER?---
@@ -137,7 +144,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 self.doSendWazap(arg)
                 self.doOpenStream(arg)
                 self.doStartPendingFiles(arg)
-            elif event == 'timer-10sec' or event == 'disconnect' or (event == 'data-received' and not self.isHello(arg)):
+            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not self.isHello(arg) ):
                 self.state = 'DISCONNECT'
                 self.doDisconnect(arg)
         #---CLOSED---
@@ -266,6 +273,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             self.stream.ok_received(payload)
         elif command == CMD_ABORT:
             self.stream.abort_received(payload)
+        elif command == CMD_WAZAP:
+            self.last_wazap_received = time.time()
         else:
             pass
 
@@ -291,8 +300,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
-        for filename, description, result_defer, single in self.factory.pendingoutboxfiles:
-            self.append_outbox_file(filename, description, result_defer, single)
+        for filename, description, result_defer, keep_alive in self.factory.pendingoutboxfiles:
+            self.append_outbox_file(filename, description, result_defer, keep_alive)
         self.factory.pendingoutboxfiles = []
 
     def doStopInOutFiles(self, arg):
@@ -404,8 +413,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         # print '>>>>>> [%s] %d bytes' % (command, len(payload))
         self.automat('data-received', (command, payload))
 
-    def append_outbox_file(self, filename, description='', result_defer=None, single=False):
-        self.outboxQueue.append((filename, description, result_defer, single))
+    def append_outbox_file(self, filename, description='', result_defer=None, keep_alive=True):
+        self.outboxQueue.append((filename, description, result_defer, keep_alive))
 
     def process_outbox_queue(self):
         if self.state != 'CONNECTED':
@@ -415,24 +424,24 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         from transport.tcp import tcp_stream
         has_reads = False
         while len(self.outboxQueue) > 0 and len(self.stream.outboxFiles) < tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES:
-            filename, description, result_defer, single = self.outboxQueue.pop(0)
+            filename, description, result_defer, keep_alive = self.outboxQueue.pop(0)
             has_reads = True
             # we have a queue of files to be sent
             # somehow file may be removed before we start sending it
             # so we check it here and skip not existed files
             if not os.path.isfile(filename):
                 self.failed_outbox_queue_item(filename, description, 'file not exist')
-                if single:
+                if not keep_alive:
                     self.automat('shutdown')
                 continue
             try:
                 filesize = os.path.getsize(filename)
             except:
                 self.failed_outbox_queue_item(filename, description, 'can not get file size')
-                if single:
+                if not keep_alive:
                     self.automat('shutdown')
                 continue
-            self.stream.create_outbox_file(filename, filesize, description, result_defer, single)
+            self.stream.create_outbox_file(filename, filesize, description, result_defer, keep_alive)
         return has_reads
 
     def failed_outbox_queue_item(self, filename, description='', error_message=''):

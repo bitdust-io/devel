@@ -264,7 +264,7 @@ def SendServers():
         webport, tcpport = known_servers.by_host().get(host, (
             settings.IdentityWebPort(), settings.IdentityServerPort()))
         # srvhost = '%s:%d' % (host, int(tcpport))
-        dlist.append(tcp_node.send(sendfilename, (host, int(tcpport)), 'Identity', True))
+        dlist.append(tcp_node.send(sendfilename, (host, int(tcpport)), 'Identity', keep_alive=False))
         # dlist.append(gateway.send_file_single('tcp', srvhost, sendfilename, 'Identity'))
     dl = DeferredList(dlist, consumeErrors=True)
     return dl

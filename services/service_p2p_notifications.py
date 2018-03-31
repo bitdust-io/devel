@@ -43,9 +43,13 @@ class P2PNotificationsService(LocalService):
     config_path = 'services/p2p-notifications/enabled'
 
     def dependent_on(self):
-        return [
+        from main import settings
+        depends = [
             'service_p2p_hookups',
         ]
+        if settings.enablePROXY():
+            depends.append('service_proxy_transport')
+        return depends
 
     def start(self):
         from transport import callback

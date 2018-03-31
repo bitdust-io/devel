@@ -260,11 +260,7 @@ class ProxyRouter(automat.Automat):
                 self.routes[user_id]['address'] = []
                 self._write_route(user_id)
                 self.acks.append(
-                    p2p_service.SendAck(
-                        request,
-                        'accepted',
-                        wide=True,
-                        packetid=request.PacketID))
+                    p2p_service.SendAck(request, 'accepted', wide=True))
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, user_id))
         elif request.Command == commands.CancelService():
@@ -282,7 +278,7 @@ class ProxyRouter(automat.Automat):
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % user_id)
                     lg.out(_DebugLevel, '    %s' % pprint.pformat(self.routes))
         else:
-            p2p_service.SendFail(request, 'wrong command or payload')  # , wide=True)
+            p2p_service.SendFail(request, 'rejected', wide=True)
 
     def doUnregisterAllRouts(self, arg):
         """

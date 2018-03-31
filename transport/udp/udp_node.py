@@ -230,15 +230,15 @@ class UDPNode(automat.Automat):
             return False
         if address in stun_client.A().stun_servers:
             return True
-        s = udp_session.get(address)
-        return s is not None
+        active_sessions = udp_session.get(address)
+        return len(active_sessions) > 0
 
     def isKnownUser(self, arg):
         """
         Condition method.
         """
         user_id = arg
-        if udp_session.get_by_peer_id(user_id) is not None:
+        if udp_session.get_by_peer_id(user_id):
             return True
         if udp_connector.get(user_id) is not None:
             return True
@@ -344,29 +344,21 @@ class UDPNode(automat.Automat):
                 lg.out(_DebugLevel, '%r' % incoming_str)
             lg.exc()
             return
-        s = udp_session.get(incoming_user_address)
-        if s:
+        active_sessions = udp_session.get(incoming_user_address)
+        if active_sessions:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_node.doCheckAndStartNewSessions SKIP because found existing %s' %
-                    s)
+                lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSessions SKIP because found existing by address %s : %s' % (
+                    incoming_user_address, active_sessions, ))
             return
-        s = udp_session.get_by_peer_id(incoming_user_id)
-        if s:
+        active_sessions = udp_session.get_by_peer_id(incoming_user_id)
+        if active_sessions:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'udp_node.doCheckAndStartNewSession SKIP because found existing by peer id:%s %s' %
-                    (incoming_user_id,
-                     s))
+                lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSession SKIP because found existing by peer id %s : %s' % (
+                    incoming_user_id, active_sessions, ))
             return
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'udp_node.doCheckAndStartNewSession wants to start a new session with incoming peer %s at %s' %
-                (incoming_user_id,
-                 incoming_user_address))
+            lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSession wants to start a new session with incoming peer %s at %s' % (
+                incoming_user_id, incoming_user_address))
         s = udp_session.create(self, incoming_user_address, incoming_user_id)
         s.automat('init')
 
@@ -477,11 +469,11 @@ class UDPNode(automat.Automat):
     def _datagram_received(self, datagram, address):
         """
         """
-        # command, payload = datagram
         # lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
-        s = udp_session.get(address)
-        if s:
-            s.automat('datagram-received', (datagram, address))
+        active_sessions = udp_session.get(address)
+        if active_sessions:
+            for s in active_sessions:
+                s.automat('datagram-received', (datagram, address))
         self.automat('datagram-received', (datagram, address))
         return False
 

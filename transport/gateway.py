@@ -252,7 +252,6 @@ def cold_start():
 
 def stop():
     """
-    
     """
     if _Debug:
         lg.out(4, 'gateway.stop')
@@ -276,7 +275,6 @@ def stop():
 
 def verify():
     """
-    
     """
     ordered_list = transports().keys()
     ordered_list.sort(key=settings.getTransportPriority, reverse=True)
@@ -435,7 +433,7 @@ def inbox(info):
     return newpacket
 
 
-def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, response_timeout=None):
+def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True, ):
     """
     Sends `packet` to the network.
 
@@ -473,6 +471,7 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
         target=target,
         route=route,
         response_timeout=response_timeout,
+        keep_alive=keep_alive,
     )
 
 #------------------------------------------------------------------------------
@@ -504,35 +503,36 @@ def send_work_item(proto, host, filename, description):
 
 def connect_to(proto, host):
     """
-    
     """
     return transport(proto).call('connect_to', host)
 
 
 def disconnect_from(proto, host):
     """
-    
     """
     return transport(proto).call('disconnect_from', host)
 
 
 def send_file(remote_idurl, proto, host, filename, description=''):
     """
-    
     """
     return transport(proto).call('send_file', remote_idurl, filename, host, description)
 
 
 def send_file_single(remote_idurl, proto, host, filename, description=''):
     """
-    
     """
     return transport(proto).call('send_file_single', remote_idurl, filename, host, description)
 
 
+def send_keep_alive(proto, host):
+    """
+    """
+    return transport(proto).call('send_keep_alive', host)
+
+
 def list_active_transports():
     """
-    
     """
     result = []
     for proto, transp in transports().items():
@@ -544,16 +544,25 @@ def list_active_transports():
 
 def list_active_sessions(proto):
     """
-    
     """
     return transport(proto).call('list_sessions')
 
 
 def list_active_streams(proto):
     """
-    
     """
     return transport(proto).call('list_streams')
+
+
+def find_active_session(proto, host):
+    """
+    """
+    return transport(proto).call('find_session', host)
+
+def find_active_stream(proto, stream_id=None, transfer_id=None):
+    """
+    """
+    return transport(proto).call('find_stream', stream_id=stream_id, transfer_id=transfer_id)
 
 #------------------------------------------------------------------------------
 
@@ -613,7 +622,6 @@ def current_bytes_received():
 
 def shutdown_all_outbox_packets():
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.shutdown_all_outbox_packets, %d live objects at the moment' % len(packet_out.queue()))
@@ -623,7 +631,6 @@ def shutdown_all_outbox_packets():
 
 def shutdown_all_inbox_packets():
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(packet_in.items().values()))
@@ -682,7 +689,7 @@ def monitoring():
 #------------------------------------------------------------------------------
 
 
-def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, response_timeout=None):
+def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
     """
     """
     started_packets = packet_out.search_similar_packets(outpacket)
@@ -692,7 +699,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
                 for command, cb in callbacks.items():
                     active_packet.set_callback(command, cb)
             return active_packet
-    pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout)
+    pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
     control.request_update([('packet', outpacket.PacketID)])
@@ -831,7 +838,6 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
 
 def on_cancelled_file_sending(proto, host, filename, size, description='', error_message=None):
     """
-    
     """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:

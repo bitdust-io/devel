@@ -150,12 +150,12 @@ class GateInterface():
             lg.out(4, 'http_interface.verify_contacts returning True')
         return True
 
-    def send_file(self, remote_idurl, filename, host, description=''):
+    def send_file(self, remote_idurl, filename, host, description='', keep_alive=True):
         """
         """
         return http_node.send_file(remote_idurl, filename)
 
-    def send_file_single(self, remote_idurl, filename, host, description=''):
+    def send_file_single(self, remote_idurl, filename, host, description='', keep_alive=False):
         """
         """
         return http_node.send_file(remote_idurl, filename)
