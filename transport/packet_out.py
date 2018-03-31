@@ -743,9 +743,9 @@ class PacketOut(automat.Automat):
     def _on_remote_identity_cached(self, xmlsrc):
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
-            reactor.callLater(0, self.automat, 'failed')
+            self.automat('failed')
         else:
-            reactor.callLater(0, self.automat, 'remote-identity-on-hand')
+            self.automat('remote-identity-on-hand')
         return xmlsrc
 
     def _on_remote_identity_cache_failed(self, err):
