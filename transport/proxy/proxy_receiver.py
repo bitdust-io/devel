@@ -199,6 +199,7 @@ class ProxyReceiver(automat.Automat):
         self.request_service_packet_id = []
         self.latest_packet_received = 0
         self.router_connection_info = None
+        self.traffic_in = 0
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -441,9 +442,10 @@ class ProxyReceiver(automat.Automat):
         if not routed_packet:
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
             return
+        self.traffic_in += len(data)
         if _Debug:
-            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s' % (
-                str(routed_packet), info.proto, info.host,))
+            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
+                str(routed_packet), info.proto, info.host, len(data)))
         packet_in.process(routed_packet, info)
         del block
         del data

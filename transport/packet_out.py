@@ -750,7 +750,7 @@ class PacketOut(automat.Automat):
 
     def _on_remote_identity_cache_failed(self, err):
         self.automat('failed')
-        lg.exc(str(err))
+        lg.warn(str(err))
         return None
 
     def _push(self):

@@ -224,7 +224,14 @@ class GateInterface():
     def list_sessions(self):
         """
         """
-        return []
+        from transport.proxy import proxy_receiver
+        from transport.proxy import proxy_sender
+        result = []
+        if proxy_receiver.A():
+            result.append(proxy_receiver.A())
+        if proxy_sender.A():
+            result.append(proxy_sender.A())
+        return result
 
     def list_streams(self, sorted_by_time=True):
         """
