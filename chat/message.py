@@ -275,7 +275,8 @@ def on_incoming_message(request, info, status, error_message):
     Message came in for us
     """
     global _IncomingMessageCallbacks
-    lg.out(6, "message.Message from " + str(request.OwnerID))
+    if _Debug:
+        lg.out(_DebugLevel, "message.Message from " + str(request.OwnerID))
     private_message_object = PrivateMessage.deserialize(request.Payload)
     if private_message_object is None:
         lg.warn("PrivateMessage deserialize failed, can not extract message from request payload of %d bytes" % len(request.Payload))
@@ -287,7 +288,8 @@ def on_incoming_message(request, info, status, error_message):
         return False
     for known_id in received_messages_ids():
         if known_id == request.PacketID:
-            lg.out(6, "message.Message SKIP, message %s found in history" % known_id)
+            if _Debug:
+                lg.out(_DebugLevel, "message.Message SKIP, message %s found in history" % known_id)
             return False
     received_messages_ids().add(request.PacketID)
     from p2p import p2p_service
@@ -297,6 +299,8 @@ def on_incoming_message(request, info, status, error_message):
             cb(request, private_message_object, json_message)
     except:
         lg.exc()
+    if _Debug:
+        lg.out(_DebugLevel, '        %s' % json_message)
     return True
 
 

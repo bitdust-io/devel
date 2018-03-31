@@ -188,7 +188,7 @@ def err(message, level=0):
     return message
 
 
-def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None):
+def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs):
     global _UseColors
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows'

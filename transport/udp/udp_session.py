@@ -184,8 +184,11 @@ def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
         if host != remote_host:
             i += 1
             continue
-        udp_interface.interface_cancelled_file_sending(
-            remote_host, filename, 0, description, error_message)
+        try:
+            udp_interface.interface_cancelled_file_sending(
+                remote_host, filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
+        except Exception as exc:
+            lg.warn(str(exc))
         if result_defer:
             result_defer.callback(
                 ((filename, description), 'failed', error_message))

@@ -447,5 +447,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
     def failed_outbox_queue_item(self, filename, description='', error_message=''):
         from transport.tcp import tcp_interface
         lg.out(6, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
-        tcp_interface.interface_cancelled_file_sending(
-            self.getAddress(), filename, 0, description, error_message)
+        try:
+            tcp_interface.interface_cancelled_file_sending(
+                self.getAddress(), filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
+        except Exception as exc:
+            lg.warn(str(exc))

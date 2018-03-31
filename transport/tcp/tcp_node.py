@@ -361,7 +361,11 @@ def cancel_outbox_file(host, filename):
                 fn, description, result_defer, keep_alive = connection.pendingoutboxfiles[i]
                 if fn == filename:
                     connection.pendingoutboxfiles.pop(i)
-                    tcp_interface.interface_cancelled_file_sending(host, filename, 0, description, 'cancelled')
+                    try:
+                        tcp_interface.interface_cancelled_file_sending(
+                            host, filename, 0, description, 'cancelled')
+                    except Exception as exc:
+                        lg.warn(str(exc))
                     if result_defer:
                         result_defer.callback((filename, description, 'failed', 'cancelled'))
                     continue
@@ -392,7 +396,11 @@ class TCPFactory(protocol.ClientFactory):
         if connection:
             connection.connector = None
         for filename, description, result_defer, keep_alive in self.pendingoutboxfiles:
-            tcp_interface.interface_cancelled_file_sending(destaddress, filename, 0, description, 'connection failed')
+            try:
+                tcp_interface.interface_cancelled_file_sending(
+                    destaddress, filename, 0, description, 'connection failed').addErrback(lambda err: lg.exc(err))
+            except Exception as exc:
+                lg.warn(str(exc))
             if result_defer:
                 result_defer.callback((filename, description, 'failed', 'connection failed'))
         self.pendingoutboxfiles = []

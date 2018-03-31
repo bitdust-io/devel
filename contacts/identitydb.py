@@ -31,7 +31,10 @@ changing identities sources and maintain a several "index" dictionaries
 to speed up processes.
 """
 
+#------------------------------------------------------------------------------
+
 import os
+import time
 
 #------------------------------------------------------------------------------
 
@@ -53,11 +56,11 @@ from userid import identity
 _IdentityCache = {}
 _IdentityCacheIDs = {}
 _IdentityCacheCounter = 0
+_IdentityCacheModifiedTime = {}
 _Contact2IDURL = {}
 _IDURL2Contacts = {}
 _IPPort2IDURL = {}
 _LocalIPs = {}
-
 _IdentityCacheUpdatedCallbacks = []
 
 #------------------------------------------------------------------------------
@@ -101,14 +104,16 @@ def clear(exclude_list=None):
     """
     Clear the database, indexes and cached files from disk.
     """
-    global _IdentityCache
     global _Contact2IDURL
     global _IPPort2IDURL
     global _IDURL2Contacts
+    global _IdentityCache
     global _IdentityCacheIDs
+    global _IdentityCacheModifiedTime
     lg.out(4, "identitydb.clear")
     _IdentityCache.clear()
     _IdentityCacheIDs.clear()
+    _IdentityCacheModifiedTime.clear()
     _Contact2IDURL.clear()
     _IPPort2IDURL.clear()
     _IDURL2Contacts.clear()
@@ -161,15 +166,17 @@ def idset(idurl, id_obj):
     """
     Important method - need to call that to update indexes.
     """
-    global _IdentityCache
-    global _IdentityCacheIDs
-    global _IdentityCacheCounter
     global _Contact2IDURL
     global _IDURL2Contacts
     global _IPPort2IDURL
+    global _IdentityCache
+    global _IdentityCacheIDs
+    global _IdentityCacheCounter
+    global _IdentityCacheModifiedTime
     if not has_idurl(idurl):
         lg.out(6, 'identitydb.idset new identity: ' + idurl)
     _IdentityCache[idurl] = id_obj
+    _IdentityCacheModifiedTime[idurl] = time.time()
     identid = _IdentityCacheIDs.get(idurl, None)
     if identid is None:
         identid = _IdentityCacheCounter
@@ -211,11 +218,13 @@ def idremove(url):
     """
     global _IdentityCache
     global _IdentityCacheIDs
+    global _IdentityCacheModifiedTime
     global _Contact2IDURL
     global _IDURL2Contacts
     global _IPPort2IDURL
     idobj = _IdentityCache.pop(url, None)
     identid = _IdentityCacheIDs.pop(url, None)
+    _IdentityCacheModifiedTime.pop(url, None)
     _IDURL2Contacts.pop(url, None)
     if idobj is not None:
         for contact in idobj.getContacts():
@@ -391,6 +400,13 @@ def search_local_ip(ip):
         if localip == ip:
             return idurl
     return None
+
+
+def get_last_modified_time(idurl):
+    """
+    """
+    global _IdentityCacheModifiedTime
+    return _IdentityCacheModifiedTime.get(idurl, None)
 
 #------------------------------------------------------------------------------
 

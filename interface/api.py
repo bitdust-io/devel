@@ -2833,7 +2833,8 @@ def network_connected(wait_timeout=5):
     return ret
 
 
-def network_status(show_suppliers=False, show_customers=False, show_cache=False, show_tcp=False, show_udp=False, ):
+def network_status(show_suppliers=False, show_customers=False, show_cache=False,
+                   show_tcp=False, show_udp=False, show_proxy=True, ):
     """
     """
     if not driver.is_on('service_network'):
@@ -2929,7 +2930,7 @@ def network_status(show_suppliers=False, show_customers=False, show_cache=False,
                 'connected': connected,
                 'peers': items,
             }
-    if show_tcp or show_udp:
+    if True in [show_tcp, show_udp, show_proxy, ]:
         from transport import gateway
         if show_tcp:
             if not driver.is_on('service_tcp_transport'):
@@ -2992,6 +2993,30 @@ def network_status(show_suppliers=False, show_customers=False, show_cache=False,
             r['udp'] = {
                 'sessions': sessions,
                 'streams': streams,
+            }
+        if show_proxy:
+            if not driver.is_on('service_proxy_transport'):
+                return ERROR('service_proxy_transport() is not started')
+            sessions = []
+            for s in gateway.list_active_sessions('proxy'):
+                i = {
+                    'state': s.state,
+                    'id': s.id,
+                }
+                if getattr(s, 'router_proto_host', None):
+                    i['proto'] = s.router_proto_host[0]
+                    i['peer'] = s.router_proto_host[1]
+                if getattr(s, 'router_idurl', None):
+                    i['idurl'] = s.router_idurl
+                if getattr(s, 'traffic_out', None):
+                    i['bytes_sent'] = s.traffic_out
+                if getattr(s, 'traffic_in', None):
+                    i['bytes_received'] = s.traffic_in
+                if getattr(s, 'pending_packets', None):
+                    i['queue'] = len(s.pending_packets)
+                sessions.append(i)
+            r['proxy'] = {
+                'sessions': sessions,
             }
     return RESULT([r, ])
 

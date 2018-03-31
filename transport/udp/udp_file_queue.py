@@ -387,8 +387,11 @@ class FileQueue:
         from transport.udp import udp_interface
         if _Debug:
             lg.out(18, 'udp_file_queue.failed_outbox_queue_item %s because %s' % (filename, error_message))
-        udp_interface.interface_cancelled_file_sending(
-            self.session.peer_id, filename, 0, description, error_message)
+        try:
+            udp_interface.interface_cancelled_file_sending(
+                self.session.peer_id, filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
+        except Exception as exc:
+            lg.warn(str(exc))
         if result_defer:
             result_defer.callback(
                 ((filename, description), 'failed', error_message))
