@@ -332,6 +332,9 @@ class PacketOut(automat.Automat):
         if not last_modified_time or time.time() - last_modified_time < 60:
             # use known identity from cache
             self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
+        else:
+            self.remote_identity = None
+            lg.warn('cached identity copy is outdated or not exist: %s' % self.remote_idurl)
         self.packetdata = None
         self.filename = None
         self.filesize = None
