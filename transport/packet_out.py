@@ -543,8 +543,8 @@ class PacketOut(automat.Automat):
         Action method.
         """
         self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
-        self.caching_deferred.addCallback(self._remote_identity_cached)
         self.caching_deferred.addErrback(lambda err: self.automat('failed'))
+        self.caching_deferred.addCallback(self._remote_identity_cached)
 
     def doSerializeAndWrite(self, arg):
         """
@@ -744,9 +744,9 @@ class PacketOut(automat.Automat):
         self.caching_deferred = None
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
-            self.automat('failed')
+            reactor.callLater(0, self.automat, 'failed')
         else:
-            self.automat('remote-identity-on-hand')
+            reactor.callLater(0, self.automat, 'remote-identity-on-hand')
 
     def _push(self):
         if self.route:
