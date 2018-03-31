@@ -543,8 +543,8 @@ class PacketOut(automat.Automat):
         Action method.
         """
         self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
-        self.caching_deferred.addErrback(lambda err: self.automat('failed'))
-        self.caching_deferred.addCallback(self._remote_identity_cached)
+        self.caching_deferred.addCallback(self._on_remote_identity_cached)
+        self.caching_deferred.addErrback(self._on_remote_identity_cache_failed)
 
     def doSerializeAndWrite(self, arg):
         """
@@ -727,9 +727,9 @@ class PacketOut(automat.Automat):
             size=len(self.outpacket.Payload),
             remote_id=self.outpacket.RemoteID,
         ))
-        if self.caching_deferred:
+        if self.caching_deferred and not self.caching_deferred.called:
             self.caching_deferred.cancel()
-            self.caching_deferred = None
+        self.caching_deferred = None
         if self not in self.outpacket.Packets:
             lg.warn('packet_out not connected to the packet')
         else:
@@ -740,13 +740,18 @@ class PacketOut(automat.Automat):
         queue().remove(self)
         self.destroy()
 
-    def _remote_identity_cached(self, xmlsrc):
-        self.caching_deferred = None
+    def _on_remote_identity_cached(self, xmlsrc):
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
             reactor.callLater(0, self.automat, 'failed')
         else:
             reactor.callLater(0, self.automat, 'remote-identity-on-hand')
+        return xmlsrc
+
+    def _on_remote_identity_cache_failed(self, err):
+        self.automat('failed')
+        lg.exc(str(err))
+        return None
 
     def _push(self):
         if self.route:
