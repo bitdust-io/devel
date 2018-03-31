@@ -344,12 +344,12 @@ class ProxyReceiver(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s' % self.router_idurl)
-        self._do_send_identity_to_router(my_id.getLocalIdentity().serialize())
+        self._do_send_identity_to_router(my_id.getLocalIdentity().serialize(), failed_event='fail-received')
         identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if identity_source:
             if _Debug:
                 lg.out(_DebugLevel, '    also sending identity loaded from "my-original-identity" config')
-            self._do_send_identity_to_router(identity_source)
+            self._do_send_identity_to_router(identity_source, failed_event='fail-received')
 
     def doRememberNode(self, arg):
         """
@@ -590,7 +590,7 @@ class ProxyReceiver(automat.Automat):
         del _ProxyReceiver
         _ProxyReceiver = None
 
-    def _do_send_identity_to_router(self, identity_source, failed_event='nodes-not-found'):
+    def _do_send_identity_to_router(self, identity_source, failed_event):
         try:
             identity_obj = identity.identity(xmlsrc=identity_source)
         except:

@@ -47,6 +47,8 @@ EVENTS:
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
+    * :red:`unknown-identity-received`
+    * :red:`unknown-packet-received`
 """
 
 #------------------------------------------------------------------------------
@@ -170,8 +172,13 @@ class ProxyRouter(automat.Automat):
             elif event == 'request-route-ack-sent':
                 self.doSaveRouteProtoHost(arg)
             elif event == 'known-identity-received':
-                self.doCheckOverride(arg)
+                self.doSetContactsOverride(arg)
                 self.doSendAck(arg)
+            elif event == 'unknown-identity-received':
+                self.doClearContactsOverride(arg)
+                self.doSendAck(arg)
+            elif event == 'unknown-packet-received':
+                self.doSendFail(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
@@ -424,12 +431,12 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
                 item.proto, item.host, nameurl.GetName(idurl)))
 
-    def doCheckOverride(self, arg):
+    def doSetContactsOverride(self, arg):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doCheckOverride identity for %s' % arg.CreatorID)
+            lg.out(_DebugLevel, 'proxy_router.doSetContactsOverride identity for %s' % arg.CreatorID)
         user_id = arg.CreatorID
         idsrc = arg.Payload
         try:
@@ -446,19 +453,20 @@ class ProxyRouter(automat.Automat):
             current_contacts = identity.identity(xmlsrc=current_overridden_identity).getContacts()
         except:
             current_contacts = []
-        if _Debug:
-            lg.out(_DebugLevel, '    current override contacts is : %s' % current_contacts)
         identitycache.StopOverridingIdentity(user_id)
-        if not self._is_my_contacts_present_in_identity(new_ident):
-            if _Debug:
-                lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % arg.CreatorID)
-                lg.out(_DebugLevel, '    new contacts is : %s' % new_ident.getContacts())
-            identitycache.OverrideIdentity(arg.CreatorID, idsrc)
-        else:
-            if _Debug:
-                lg.out(_DebugLevel, '    SKIP OVERRIDE identity from %s' % arg.CreatorID)
-                lg.out(_DebugLevel, '    new contacts was : %s' % new_ident.getContacts())
-
+        result = identitycache.OverrideIdentity(arg.CreatorID, idsrc)
+        if _Debug:
+            lg.out(_DebugLevel, '    current overridden contacts is : %s' % current_contacts)
+            lg.out(_DebugLevel, '    new override contacts will be : %s' % new_ident.getContacts())
+            lg.out(_DebugLevel, '    result=%s' % result)
+#         if self._is_my_contacts_present_in_identity(new_ident):
+#             if _Debug:
+#                 lg.out(_DebugLevel, '    SKIP OVERRIDE identity from %s' % arg.CreatorID)
+#                 lg.out(_DebugLevel, '    current contacts : %s' % new_ident.getContacts())
+#         else:
+#             if _Debug:
+#                 lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % arg.CreatorID)
+#                 lg.out(_DebugLevel, '    new contacts will be : %s' % new_ident.getContacts())
 #             for new_contact in new_ident.getContacts():
 #                 if new_contact in current_contacts:
 #                     override_required = False
@@ -466,11 +474,26 @@ class ProxyRouter(automat.Automat):
 #                         lg.out(_DebugLevel, '   new contact %s found in current override contacts' % (new_contact))
 #                     break
 
+    def doClearContactsOverride(self, arg):
+        """
+        Action method.
+        """
+        result = identitycache.StopOverridingIdentity(arg.CreatorID)
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router.doClearContactsOverride identity for %s, result=%s' % (
+                arg.CreatorID, result, ))
+
     def doSendAck(self, arg):
         """
         Action method.
         """
         p2p_service.SendAck(arg, wide=True)
+
+    def doSendFail(self, arg):
+        """
+        Action method.
+        """
+        p2p_service.SendFail(arg, wide=True)
 
     def doDestroyMe(self, arg):
         """
@@ -506,23 +529,23 @@ class ProxyRouter(automat.Automat):
                     # addressed to some third node B in outside world - need to route
                     self.automat('routed-outbox-packet-received', (newpacket, info))
                     return True
-                lg.warn('packet %s from %s SKIPPED, because no routes with %s' % (
+                lg.warn('unknown packet %s from %s received because no routes with %s' % (
                     newpacket, newpacket.CreatorID, newpacket.CreatorID))
-                return False
+                self.automat('unknown-packet-received', (newpacket, info))
+                return True
             # and this is not a Relay packet
             if newpacket.Command == commands.Identity() and newpacket.CreatorID == newpacket.OwnerID:
                 if newpacket.CreatorID in self.routes.keys():
                     # this is a "propagate" packet from node A addressed to this proxy
-                    # mark that packet as handled and send Ack
-                    # otherwise it will be wrongly handled in p2p_service
+                    # also we need to "reset" overriden identity
+                    # mark that packet as handled and send Ack()
                     self.automat('known-identity-received', newpacket)
                     return True
-                else:
-                    # this node is not yet in routers list,
-                    # but seems like it tries to contact me
-                    # mark this packet as handled and try to process it
-                    self.automat('unknown-identity-received', newpacket)
-                    return True
+                # this node is not yet in routers list,
+                # but seems like it tries to contact me
+                # mark that packet as handled and send Ack()
+                self.automat('unknown-identity-received', newpacket)
+                return True
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet

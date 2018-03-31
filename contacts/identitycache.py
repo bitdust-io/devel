@@ -241,8 +241,8 @@ def OverrideIdentity(idurl, xml_src):
     if idurl in _OverriddenIdentities:
         if _OverriddenIdentities[idurl] == xml_src:
             if _Debug:
-                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s" , no changes' % idurl)
-            return
+                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s", no changes' % idurl)
+            return False
         if _Debug:
             lg.out(4, 'identitycache.OverrideIdentity replacing overriden identity "%s" with new one' % idurl)
             lg.out(4, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
@@ -252,7 +252,7 @@ def OverrideIdentity(idurl, xml_src):
         if orig and orig == xml_src:
             if _Debug:
                 lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s" , overriden copy is the same as original' % idurl)
-            return
+            return False
         if _Debug:
             lg.out(4, 'identitycache.OverrideIdentity replacing original identity for "%s"' % idurl)
             lg.out(4, '\nORIGINAL:\n' + orig)
@@ -260,6 +260,7 @@ def OverrideIdentity(idurl, xml_src):
     _OverriddenIdentities[idurl] = xml_src
     if _Debug:
         lg.out(4, '    total number of overrides: %d' % len(_OverriddenIdentities))
+    return True
 
 
 def StopOverridingIdentity(idurl):
