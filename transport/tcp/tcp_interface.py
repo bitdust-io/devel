@@ -248,7 +248,7 @@ def interface_transport_initialized(xmlrpcurl):
     if proxy():
         return proxy().callRemote('transport_initialized', 'tcp', xmlrpcurl).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 def interface_receiving_started(host, new_options={}):
@@ -257,7 +257,7 @@ def interface_receiving_started(host, new_options={}):
     if proxy():
         return proxy().callRemote('receiving_started', 'tcp', host, new_options).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 def interface_receiving_failed(error_code=None):
@@ -266,7 +266,7 @@ def interface_receiving_failed(error_code=None):
     if proxy():
         return proxy().callRemote('receiving_failed', 'tcp', error_code).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 def interface_disconnected(result=None):
@@ -275,8 +275,6 @@ def interface_disconnected(result=None):
     if proxy():
         return proxy().callRemote('disconnected', 'tcp', result).addErrback(proxy_errback)
     return succeed(result)
-    # lg.warn('transport_tcp is not ready')
-    # return fail(Failure(Exception('transport_tcp is not ready')))
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
@@ -287,7 +285,7 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
             'register_file_sending', 'tcp', '%s:%d' % host, receiver_idurl,
             filename, size, description).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
@@ -297,7 +295,7 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
         return proxy().callRemote(
             'register_file_receiving', 'tcp', '%s:%d' % host, sender_idurl, filename, size).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
@@ -308,7 +306,7 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
             'unregister_file_sending', transfer_id, status,
             size, error_message).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
@@ -319,7 +317,7 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
             'unregister_file_receiving', transfer_id, status,
             size, error_message).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
 
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
@@ -330,4 +328,14 @@ def interface_cancelled_file_sending(host, filename, size=0, description=None, e
             'cancelled_file_sending', 'tcp', '%s:%d' % host, filename,
             size, description, error_message).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
-    return fail(Failure(Exception('transport_tcp is not ready')))
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
+
+
+def interface_cancelled_file_receiving(host, filename, size, error_message=None):
+    """
+    """
+    if proxy():
+        return proxy().callRemote(
+            'cancelled_file_receiving', 'tcp', host, filename, size, error_message).addErrback(proxy_errback)
+    lg.warn('transport_tcp is not ready')
+    return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)

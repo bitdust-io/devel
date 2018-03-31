@@ -398,7 +398,7 @@ class TCPFactory(protocol.ClientFactory):
         for filename, description, result_defer, keep_alive in self.pendingoutboxfiles:
             try:
                 tcp_interface.interface_cancelled_file_sending(
-                    destaddress, filename, 0, description, 'connection failed')
+                    destaddress, filename, 0, description, 'connection failed').addErrback(lambda err: lg.exc(err))
             except Exception as exc:
                 lg.warn(str(exc))
             if result_defer:

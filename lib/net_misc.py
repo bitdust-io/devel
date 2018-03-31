@@ -410,7 +410,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
             cert_found = True
             break
     if not cert_found:
-        return fail(Failure(Exception('no one ssl certificate found')))
+        return fail(Exception('no one ssl certificate found'))
     factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
     contextFactory = MyClientContextFactory(certificates_filenames)
     reactor.connectSSL(host, port, factory, contextFactory)
