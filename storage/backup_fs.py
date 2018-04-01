@@ -427,24 +427,29 @@ class FSItemInfo():
 #------------------------------------------------------------------------------
 
 
-def MakeID(itr, startID=-1, randomized=True):
+def MakeID(itr, randomized=True):
     """
     Create a new unique number for the folder to create a index ID.
 
     Parameter ``itrID`` is a reference for a single item in the ``fs()``.
     """
-    random.seed()
-    new_id = 0
-    if startID >= 0:
-        _id = startID
     current_ids = []
     for k in itr.keys():
         if k == 0:
             continue
-        if isinstance(itr[k], int):
-            current_ids.append(int(itr[k]))
-        else:
-            current_ids.append(int(itr[k][0]))
+        if k == settings.BackupIndexFileName():
+            continue
+        try:
+            if isinstance(itr[k], int):
+                current_ids.append(int(itr[k]))
+            elif isinstance(itr[k], dict) and 0 in itr[k]:
+                current_ids.append(int(itr[k][0]))
+            else:
+                continue
+        except:
+            lg.exc()
+            continue
+    new_id = 0
     if randomized:
         digits = 1
         while True:
@@ -461,7 +466,6 @@ def MakeID(itr, startID=-1, randomized=True):
     return new_id
 
 #------------------------------------------------------------------------------
-
 
 def AddFile(path, read_stats=False, iter=None, iterID=None, key_id=None):
     """
@@ -658,7 +662,7 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
     return None, None, None, 0
 
 
-def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, startID=-1, key_id=None):
+def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, key_id=None):
     """
     Acts like AddFile() but do not follow the directory structure. This just
     "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
@@ -670,7 +674,7 @@ def PutItem(name, parent_path_id, as_folder=False, iter=None, iterID=None, start
     if not iterID:
         iterID = fsID()
     # make an ID for the filename
-    newItemID = MakeID(iter, startID=startID)
+    newItemID = MakeID(iter)
     resultID = (parent_path_id.strip('/') + '/' + str(newItemID)).strip('/')
     typ = DIR if as_folder else FILE
     ii = FSItemInfo(name=remote_path, path_id=resultID, typ=typ, key_id=key_id)
