@@ -570,10 +570,13 @@ class ProxyRouter(automat.Automat):
             else:
                 # sender of that packet is not creator or recipient - probably another router
                 if newpacket.RemoteID in self.routes.keys():
-                    # must be router still
+                    # must be routed still to another node
+                    # addressed to a man behind this proxy - need to route to node A
                     receiver_idurl = newpacket.RemoteID
                 else:
-                    lg.warn('unidentified Data packet received: %s from %s' % (newpacket, info.sender_idurl))
+                    # addressed to someone else - skip processing
+                    lg.warn('SKIP, unidentified Data packet received: %s from %s' % (newpacket, info.sender_idurl))
+                    return False
         else:
             # other packets (not Data) always should be routed to node A by RemoteID
             if newpacket.RemoteID in self.routes.keys():
@@ -581,7 +584,9 @@ class ProxyRouter(automat.Automat):
                 # addressed to a man behind this proxy - need to route to node A
                 receiver_idurl = newpacket.RemoteID
             else:
-                lg.warn('unidentified packet received: %s from %s' % (newpacket, info.sender_idurl))
+                # addressed to someone else - skip processing
+                lg.warn('SKIP, unidentified packet received: %s from %s' % (newpacket, info.sender_idurl))
+                return False
         if receiver_idurl is not None:
             self.automat('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
