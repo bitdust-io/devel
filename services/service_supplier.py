@@ -521,12 +521,12 @@ class SupplierService(LocalService):
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)
-        from main import events
-        events.send('supplier-file-modified', data=dict(
-            action='write',
-            glob_path=glob_path['path'],
-            owner_id=newpacket.OwnerID,
-        ))
+        # from main import events
+        # events.send('supplier-file-modified', data=dict(
+        #     action='write',
+        #     glob_path=glob_path['path'],
+        #     owner_id=newpacket.OwnerID,
+        # ))
         return True
 
     def _on_list_files(self, newpacket):

@@ -727,15 +727,15 @@ class PacketOut(automat.Automat):
             size=len(self.outpacket.Payload),
             remote_id=self.outpacket.RemoteID,
         ))
-        if self.caching_deferred and not self.caching_deferred.called:
-            self.caching_deferred.cancel()
-        self.caching_deferred = None
         if self not in self.outpacket.Packets:
             lg.warn('packet_out not connected to the packet')
         else:
             self.outpacket.Packets.remove(self)
         self.outpacket = None
         self.remote_identity = None
+        if self.caching_deferred and not self.caching_deferred.called:
+            self.caching_deferred.cancel()
+        self.caching_deferred = None
         self.callbacks.clear()
         queue().remove(self)
         self.destroy()
@@ -749,8 +749,9 @@ class PacketOut(automat.Automat):
         return xmlsrc
 
     def _on_remote_identity_cache_failed(self, err):
-        self.automat('failed')
-        lg.warn(str(err))
+        if self.outpacket:
+            self.automat('failed')
+            lg.warn(str(err))
         return None
 
     def _push(self):
