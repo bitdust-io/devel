@@ -316,7 +316,7 @@ def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
         CreatorID=my_id.getLocalID(),
         PacketID='identity',
         Payload=my_id.getLocalIdentity().serialize(),
-        RempteID=remote_idurl,
+        RemoteID=remote_idurl,
     )
     gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
