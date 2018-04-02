@@ -527,7 +527,7 @@ class ProxyRouter(automat.Automat):
                     # sent by proxy_sender() from node A : a man behind proxy_router()
                     # addressed to some third node B in outside world - need to route
                     if _Debug:
-                        lg.out('        sending "routed-outbox-packet-received" event')
+                        lg.out(_DebugLevel, '        sending "routed-outbox-packet-received" event')
                     self.automat('routed-outbox-packet-received', (newpacket, info))
                     return True
                 lg.warn('unknown %s from %s received, no known routes with %s' % (
@@ -540,11 +540,15 @@ class ProxyRouter(automat.Automat):
                     # this is a "propagate" packet from node A addressed to this proxy
                     # also we need to "reset" overriden identity
                     # return False so that other services also can process that Identity()
+                    if _Debug:
+                        lg.out(_DebugLevel, '        sending "known-identity-received" event')
                     self.automat('known-identity-received', newpacket)
                     return False
                 # this node is not yet in routers list,
                 # but seems like it tries to contact me
                 # return False so that other services also can process that Identity()
+                if _Debug:
+                    lg.out(_DebugLevel, '        sending "unknown-identity-received" event')
                 self.automat('unknown-identity-received', newpacket)
                 return False
             elif newpacket.Command == commands.Data():
@@ -556,7 +560,7 @@ class ProxyRouter(automat.Automat):
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s SKIPEED, addressed to me' % (
+                lg.out(_DebugLevel, '        SKIP   %s from %s addressed to me' % (
                     newpacket, newpacket.CreatorID))
             return False
         # this packet was addressed to someone else
