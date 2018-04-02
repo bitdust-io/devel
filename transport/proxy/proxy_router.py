@@ -173,10 +173,8 @@ class ProxyRouter(automat.Automat):
                 self.doSaveRouteProtoHost(arg)
             elif event == 'known-identity-received':
                 self.doSetContactsOverride(arg)
-                self.doSendAck(arg)
             elif event == 'unknown-identity-received':
                 self.doClearContactsOverride(arg)
-                self.doSendAck(arg)
             elif event == 'unknown-packet-received':
                 self.doSendFail(arg)
         #---AT_STARTUP---
@@ -518,8 +516,9 @@ class ProxyRouter(automat.Automat):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s for %s' % (
-                newpacket, newpacket.CreatorID, newpacket.RemoteID))
+            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s' % newpacket)
+            lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
+            lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
         if newpacket.RemoteID == my_id.getLocalID():
             # this packet was addressed directly to me ...
             if newpacket.Command == commands.Relay():
@@ -527,25 +526,32 @@ class ProxyRouter(automat.Automat):
                 if newpacket.CreatorID in self.routes.keys():
                     # sent by proxy_sender() from node A : a man behind proxy_router()
                     # addressed to some third node B in outside world - need to route
+                    if _Debug:
+                        lg.out('        sending "routed-outbox-packet-received" event')
                     self.automat('routed-outbox-packet-received', (newpacket, info))
                     return True
-                lg.warn('unknown packet %s from %s received because no routes with %s' % (
+                lg.warn('unknown %s from %s received, no known routes with %s' % (
                     newpacket, newpacket.CreatorID, newpacket.CreatorID))
                 self.automat('unknown-packet-received', (newpacket, info))
                 return True
             # and this is not a Relay packet
-            if newpacket.Command == commands.Identity() and newpacket.CreatorID == newpacket.OwnerID:
+            elif newpacket.Command == commands.Identity():
                 if newpacket.CreatorID in self.routes.keys():
                     # this is a "propagate" packet from node A addressed to this proxy
                     # also we need to "reset" overriden identity
-                    # mark that packet as handled and send Ack()
+                    # return False so that other services also can process that Identity()
                     self.automat('known-identity-received', newpacket)
-                    return True
+                    return False
                 # this node is not yet in routers list,
                 # but seems like it tries to contact me
-                # mark that packet as handled and send Ack()
+                # return False so that other services also can process that Identity()
                 self.automat('unknown-identity-received', newpacket)
-                return True
+                return False
+            elif newpacket.Command == commands.Data():
+                # received a Data() packet addressed to me
+                # need to skip it because it must be processed in another service
+                lg.warn('SKIP, incoming Data() addressed directly to me')
+                return False
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet
@@ -568,13 +574,13 @@ class ProxyRouter(automat.Automat):
                     # addressed to a man behind this proxy_router() - need to route to node A
                     receiver_idurl = newpacket.CreatorID
             else:
-                # sender of that packet is not creator or recipient - probably another router
+                # sender of that Data is not creator or recipient - probably another router resending to us
                 if newpacket.RemoteID in self.routes.keys():
-                    # must be routed still to another node
-                    # addressed to a man behind this proxy - need to route to node A
+                    # if we know that guy - Data() must be routed to him
                     receiver_idurl = newpacket.RemoteID
                 else:
-                    # addressed to someone else - skip processing
+                    # but we do not know him, so we must skip this Data()
+                    # then it must be processed in another service or marked as not-handled
                     lg.warn('SKIP, unidentified Data packet received: %s from %s' % (newpacket, info.sender_idurl))
                     return False
         else:
@@ -584,14 +590,14 @@ class ProxyRouter(automat.Automat):
                 # addressed to a man behind this proxy - need to route to node A
                 receiver_idurl = newpacket.RemoteID
             else:
-                # addressed to someone else - skip processing
+                # but we do not know him, so we must skip this packet
+                # then it must be processed in another service or marked as not-handled
                 lg.warn('SKIP, unidentified packet received: %s from %s' % (newpacket, info.sender_idurl))
                 return False
         if receiver_idurl is not None:
             self.automat('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received SKIPPED %s' % newpacket)
+        lg.warn('packet SKIPPED %s' % newpacket)
         return False
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event, arg):

@@ -286,14 +286,13 @@ def Identity(newpacket):
     if newpacket.OwnerID == idurl:
         # TODO: this needs to be moved to a service
         # wide=True : a small trick to respond to all contacts if we receive pings
-        SendAck(newpacket, wide=True)
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity idurl=%s  ... also sent WIDE Acks" % nameurl.GetName(idurl))
     else:
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity idurl=%s, but packet ownerID=%s  ... also sent WIDE Acks" % (
                 nameurl.GetName(idurl), newpacket.OwnerID, ))
-        SendAck(newpacket, wide=True)
+    SendAck(newpacket, wide=True)
     # TODO: after receiving the full identity sources we can call ALL OF them if some are not cached yet.
     # this way we can be sure that even if first source (server holding your public key) is not availabble
     # other sources still can give you required user info: public key, contacts, etc..
@@ -310,11 +309,15 @@ def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendIdentity to %s  wide=%s" % (nameurl.GetName(remote_idurl), wide, ))
+        lg.out(_DebugLevel, "p2p_service.SendIdentity to %s wide=%s" % (nameurl.GetName(remote_idurl), wide, ))
     result = signed.Packet(
-        commands.Identity(), my_id.getLocalID(),
-        my_id.getLocalID(), 'identity',
-        my_id.getLocalIdentity().serialize(), remote_idurl)
+        Command=commands.Identity(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID='identity',
+        Payload=my_id.getLocalIdentity().serialize(),
+        RempteID=remote_idurl,
+    )
     gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 

@@ -380,7 +380,8 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
         my_id.getLocalID(),  # MyID,
         'Identity',  # my_id.getLocalID(), #PacketID,
         thePayload,
-        idurl)
+        idurl,
+    )
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
     gateway.outbox(p, wide, callbacks={
         commands.Ack(): ack_handler,
@@ -439,7 +440,8 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
             my_id.getLocalID(),  # MyID,
             'Identity',  # my_id.getLocalID(), #PacketID,
             Payload,
-            contact)
+            contact,
+        )
         lg.out(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
         # callback.register_interest(AckHandler, signed.RemoteID, signed.PacketID)
         gateway.outbox(p, wide, callbacks={

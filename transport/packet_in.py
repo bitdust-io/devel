@@ -185,7 +185,7 @@ def process(newpacket, info):
         p.automat('inbox-packet', (newpacket, info))
         handled = True
     handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
-    if not handled and newpacket.Command not in [commands.Ack(), commands.Fail()]:
+    if not handled and newpacket.Command not in [commands.Ack(), commands.Fail(), commands.Identity(), ]:
         if _Debug:
             lg.out(_DebugLevel - 8, '    incoming %s from [%s://%s]' % (
                 newpacket, info.proto, info.host))
