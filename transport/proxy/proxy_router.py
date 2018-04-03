@@ -482,17 +482,12 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, 'proxy_router.doClearContactsOverride identity for %s, result=%s' % (
                 arg.CreatorID, result, ))
 
-    def doSendAck(self, arg):
-        """
-        Action method.
-        """
-        p2p_service.SendAck(arg, wide=True)
-
     def doSendFail(self, arg):
         """
         Action method.
         """
-        p2p_service.SendFail(arg, wide=True)
+        newpacket, info = arg
+        p2p_service.SendFail(newpacket, wide=True)
 
     def doDestroyMe(self, arg):
         """

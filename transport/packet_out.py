@@ -751,7 +751,7 @@ class PacketOut(automat.Automat):
     def _on_remote_identity_cache_failed(self, err):
         if self.outpacket:
             self.automat('failed')
-            lg.warn(str(err))
+            lg.warn('%s : %s' % (self.remote_idurl, str(err)))
         return None
 
     def _push(self):
