@@ -177,7 +177,7 @@ class P2PServiceSeeker(automat.Automat):
         Action method.
         """
         self.exclude_nodes = arg[0]
-        callback.insert_inbox_callback(0, self._inbox_packet_received)
+        callback.append_inbox_callback(self._inbox_packet_received)
 
     def doSetRequest(self, arg):
         """

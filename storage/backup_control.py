@@ -440,7 +440,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     io_throttle.DeleteBackupRequests(backupID)
     io_throttle.DeleteBackupSendings(backupID)
     # remove interests in transport_control
-    callback.delete_backup_interest(backupID)
+    # callback.delete_backup_interest(backupID)
     # mark it as being deleted in the db, well... just remove it from the index now
     if not backup_fs.DeleteBackupID(backupID):
         return False
@@ -489,7 +489,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
         io_throttle.DeleteBackupRequests(backupID)
         io_throttle.DeleteBackupSendings(backupID)
         # remove interests in transport_control
-        callback.delete_backup_interest(backupID)
+        # callback.delete_backup_interest(backupID)
         # remove local files for this backupID
         if removeLocalFilesToo:
             backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
@@ -860,7 +860,7 @@ def OnJobDone(backupID, result):
                         backup_rebuilder.RemoveBackupToWork(backupID)
                         io_throttle.DeleteBackupRequests(backupID)
                         io_throttle.DeleteBackupSendings(backupID)
-                        callback.delete_backup_interest(backupID)
+                        # callback.delete_backup_interest(backupID)
                         backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)

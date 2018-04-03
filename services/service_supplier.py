@@ -445,8 +445,11 @@ class SupplierService(LocalService):
             return False
         if outpacket.Command != commands.Data():
             lg.warn('sending back packet which is not a Data')
-        lg.out(self.debug_level, "service_supplier._on_retreive %r : sending %r back to %s" % (
-            newpacket, outpacket, outpacket.CreatorID))
+        # here Data() packet is sent back as it is...
+        # that means outpacket.RemoteID=my_id.getLocalID() - it was addressed to that node and stored as it is
+        # need to take that in account every time you receive Data() packet
+        # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
+        lg.warn('from request %r : sending %r back to %s' % (newpacket, outpacket, outpacket.CreatorID))
         gateway.outbox(outpacket, target=outpacket.CreatorID)
         return True
 
@@ -514,6 +517,7 @@ class SupplierService(LocalService):
             lg.err("can not write to %s" % str(filename))
             p2p_service.SendFail(newpacket, 'write error')
             return False
+        # Here Data() packet was stored as it is on supplier node (current machine)
         sz = len(data)
         del data
         lg.out(self.debug_level, "service_supplier._on_data %r saved from [%s | %s] to %s with %d bytes" % (
@@ -521,6 +525,7 @@ class SupplierService(LocalService):
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)
+        # temporary disabled
         # from main import events
         # events.send('supplier-file-modified', data=dict(
         #     action='write',

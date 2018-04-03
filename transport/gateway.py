@@ -210,6 +210,7 @@ def start():
     if _Debug:
         lg.out(4, 'gateway.start')
     callback.append_outbox_filter_callback(on_outbox_packet)
+    callback.add_finish_file_receiving_callback(on_file_received)
     result = []
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto):
@@ -231,6 +232,7 @@ def cold_start():
     if _Debug:
         lg.out(4, 'gateway.cold_start : sending "start" only to one transport - most preferable')
     callback.append_outbox_filter_callback(on_outbox_packet)
+    callback.add_finish_file_receiving_callback(on_file_received)
     ordered_list = transports().keys()
     ordered_list.sort(key=settings.getTransportPriority, reverse=True)
     result = []
@@ -269,6 +271,7 @@ def stop():
             else:
                 if _Debug:
                     lg.out(4, '    %s already stopped' % proto)
+    callback.remove_finish_file_receiving_callback(on_file_received)
     callback.remove_outbox_filter_callback(on_outbox_packet)
     return result
 
@@ -391,6 +394,9 @@ def inbox(info):
         return None
     if len(data) == 0:
         lg.err("gateway.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
+        return None
+    if callback.run_finish_file_receiving_callbacks(info, data):
+        lg.warn('incoming data of %d bytes was filtered out in file receiving callback' % len(data))
         return None
     try:
         newpacket = signed.Unserialize(data)
@@ -687,6 +693,12 @@ def monitoring():
         transport_log().flush()
 
 #------------------------------------------------------------------------------
+
+
+def on_file_received(info, data):
+    if _Debug:
+        lg.out(_DebugLevel, '~~~~ received %d bytes in %s' % (len(data), info))
+    return False
 
 
 def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
@@ -1058,8 +1070,8 @@ def main():
     def _in(a, b, c, d):
         lg.out(2, 'INBOX %d : %r' % (globals()['num_in'], a))
         globals()['num_in'] += 1
-        return True
-    callback.insert_inbox_callback(-1, _in)
+        return False
+    callback.insert_inbox_callback(0, _in)
     if len(args) > 0:
         globals()['num_out'] = 0
 

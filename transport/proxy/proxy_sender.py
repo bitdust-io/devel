@@ -282,7 +282,8 @@ class ProxySender(automat.Automat):
             my_id.getLocalID(),
             outpacket.PacketID,
             block_encrypted,
-            router_idurl)
+            router_idurl,
+        )
         result_packet = packet_out.create(
             outpacket,
             wide=wide,

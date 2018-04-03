@@ -68,7 +68,7 @@ def init(root=None, path='traffic', port=9997):
     global _WebListener
     if root is not None:
         from transport import callback
-        callback.insert_inbox_callback(-1, inbox)
+        callback.append_inbox_callback(inbox)
         callback.add_finish_file_sending_callback(outbox)
         root.putChild(path, TrafficPage())
         return
@@ -84,7 +84,7 @@ def init(root=None, path='traffic', port=9997):
         lg.exc()
         return
     from transport import callback
-    callback.insert_inbox_callback(-1, inbox)
+    callback.append_inbox_callback(inbox)
     callback.add_finish_file_sending_callback(outbox)
 
 
