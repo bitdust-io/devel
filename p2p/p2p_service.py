@@ -226,7 +226,7 @@ def Fail(newpacket):
         lg.out(_DebugLevel, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
 
 
-def SendFail(request, response='', remote_idurl=None):
+def SendFail(request, response='', remote_idurl=None, wide=False):
     if remote_idurl is None:
         remote_idurl = request.OwnerID
     result = signed.Packet(
@@ -240,7 +240,7 @@ def SendFail(request, response='', remote_idurl=None):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendFail packetID=%s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
-    gateway.outbox(result)
+    gateway.outbox(result, wide=wide)
     return result
 
 
