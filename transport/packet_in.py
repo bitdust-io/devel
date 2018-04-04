@@ -167,7 +167,7 @@ def process(newpacket, info):
         return
     from p2p import commands
     from p2p import p2p_service
-    if newpacket.Command == commands.Identity() and newpacket.RemoteID == my_id.getLocalID():
+    if newpacket.Command == commands.Identity():  # and newpacket.RemoteID == my_id.getLocalID():
         # contact sending us current identity we might not have
         # so we handle it before check that packet is valid
         # because we might not have his identity on hands and so can not verify the packet
@@ -185,11 +185,8 @@ def process(newpacket, info):
         p.automat('inbox-packet', (newpacket, info))
         handled = True
     handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
-    if not handled and newpacket.Command not in [commands.Ack(), commands.Fail()]:
-        if _Debug:
-            lg.out(_DebugLevel - 8, '    incoming %s from [%s://%s]' % (
-                newpacket, info.proto, info.host))
-            lg.out(_DebugLevel - 8, '        NOT HANDLED !!!')
+    if not handled and newpacket.Command not in [commands.Ack(), commands.Fail(), commands.Identity(), ]:
+        lg.warn('incoming %s from [%s://%s] was NOT HANDLED' % (newpacket, info.proto, info.host))
     if _Debug:
         history().append({
             'time': newpacket.Date,

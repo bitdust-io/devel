@@ -119,7 +119,7 @@ def init():
     Needs to be called before other methods here.
     """
     lg.out(4, 'contact_status.init')
-    callback.insert_inbox_callback(-1, Inbox)
+    callback.insert_inbox_callback(1, Inbox)  # try to not overwrite top callback in the list, but stay on top
     callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
 

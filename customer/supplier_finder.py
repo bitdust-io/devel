@@ -209,7 +209,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        callback.insert_inbox_callback(0, self._inbox_packet_received)
+        callback.append_inbox_callback(self._inbox_packet_received)
 
     def doSendMyIdentity(self, arg):
         """

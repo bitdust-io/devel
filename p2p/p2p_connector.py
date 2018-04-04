@@ -292,7 +292,7 @@ class P2PConnector(automat.Automat):
         version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         if _Debug:
             lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
-        callback.insert_inbox_callback(0, inbox)
+        callback.append_inbox_callback(inbox)
 
     def doUpdateMyIdentity(self, arg):
         if _Debug:
