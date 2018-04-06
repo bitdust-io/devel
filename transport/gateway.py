@@ -65,7 +65,7 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
@@ -656,12 +656,12 @@ def packets_timeout_loop():
     for pkt_in in packet_in.items().values():
         if pkt_in.is_timed_out():
             if _Debug:
-                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out' % pkt_in)
+                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_in, pkt_in.timeout))
             pkt_in.automat('cancel', 'timeout')
     for pkt_out in packet_out.queue():
         if pkt_out.is_timed_out():
             if _Debug:
-                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out' % pkt_out)
+                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_out, pkt_out.timeout))
             pkt_out.automat('cancel', 'timeout')
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()

@@ -314,20 +314,20 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
 
-    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, publish_events=False, **kwargs):
+    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
         self.debug_level = debug_level
         self.log_events = log_events
+        self.log_transitions = log_transitions
         self.publish_events = publish_events
-        self.log_transitions = log_events
         self._timers = {}
         self._state_callbacks = {}
         self.init(**kwargs)
         self.startTimers()
         self.register()
-        if _Debug:
+        if _Debug and self.log_transitions:
             self.log(max(_DebugLevel, self.debug_level),
                      'CREATED AUTOMAT %s with index %d, %d running' % (
                 str(self), self.index, len(objects())))
@@ -374,7 +374,7 @@ class Automat(object):
             _StateChangedCallback(index, automatid, name, '')
         debug_level = max(_DebugLevel, self.debug_level)
         erase_index(automatid)
-        if _Debug:
+        if _Debug and self.log_transitions:
             self.log(debug_level,
                      'DESTROYED AUTOMAT %s with index %d, %d running' % (
                          str(o), index, len(objects())))

@@ -45,12 +45,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import Deferred, fail
+from twisted.internet.defer import Deferred
 from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ def A(event=None, arg=None):
         return _ProxySender
     if _ProxySender is None:
         # set automat name and starting state here
-        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP', _DebugLevel, _Debug)
+        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
     if event is not None:
         _ProxySender.automat(event, arg)
     return _ProxySender

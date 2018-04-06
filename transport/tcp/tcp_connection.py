@@ -38,8 +38,8 @@ EVENTS:
 """
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 8
+_Debug = False
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -84,14 +84,27 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.outboxQueue = []
         self.last_wazap_received = 0
 
+    def connectionMade(self):
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
+        address = self.getAddress()
+        name = 'tcp_connection[%s:%d]' % (address[0], address[1])
+        automat.Automat.__init__(
+            self, name, 'AT_STARTUP',
+            debug_level=_DebugLevel, log_events=_Debug, publish_events=False)
+        self.log_transitions = _Debug
+        self.automat('connection-made')
+
+    def connectionLost(self, reason):
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
+        self.automat('connection-lost')
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
-        if _Debug:
-            self.log_events = True
-            self.log_transitions = True
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -371,20 +384,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         if not addr:
             addr = self.getTransportAddress()
         return addr
-
-    def connectionMade(self):
-        if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
-        address = self.getAddress()
-        name = 'tcp_connection[%s:%d]' % (address[0], address[1])
-        automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel)
-        self.log_transitions = _Debug
-        self.automat('connection-made')
-
-    def connectionLost(self, reason):
-        if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
-        self.automat('connection-lost')
 
     def sendData(self, command, payload):
         try:

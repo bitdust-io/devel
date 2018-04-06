@@ -58,7 +58,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -167,7 +167,7 @@ def A(event=None, arg=None):
         return _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', _DebugLevel, _Debug)
+        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver
