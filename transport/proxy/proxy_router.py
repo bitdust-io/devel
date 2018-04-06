@@ -296,7 +296,7 @@ class ProxyRouter(automat.Automat):
                         lg.err('not found session state machine: %s' % user_connection_info['index'])
                 else:
                     lg.err('active connection with user at %s:%s was not found' % (info.proto, info.host, ))
-                    lg.err('active sessions: %s' % gateway.list_active_sessions())
+                    lg.err('active sessions: %s' % gateway.list_active_sessions(info.proto))
                 self.acks.append(
                     p2p_service.SendAck(request, 'accepted', wide=True))
                 if _Debug:
