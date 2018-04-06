@@ -481,14 +481,14 @@ def DefaultBackupBlockSize():
 
     perform RAID operation on every block - one by one.
     """
-    return 16 * 1024 * 1024  # 16 MB
+    return 2 * 1024 * 1024  # 2 MB
 
 
 def DefaultBackupMaxBlockSize():
     """
     The maximum default block size, user can set this in the settings.
     """
-    return 128 * 1024 * 1024  # 128 MB is fine
+    return 4 * 1024 * 1024  # 4 MB is fine
 
 
 def MinimumBandwidthInLimitKBSec():
@@ -554,13 +554,6 @@ def DefaultEccMapName():
     This is a ecc map name used by default - must comply with ``DefaultDesiredSuppliers()``.
     """
     return 'ecc/4x4'
-
-
-def HMAC_key_word():
-    """
-    I was playing with HMAC hash, this is a "secret password" :-)
-    """
-    return 'Vince+Veselin+Derek=BigMoneyAndSuccess'
 
 
 def DefaultRepo():
@@ -2627,7 +2620,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/supplier-contracts/enabled', 'false')
 
     config.conf().setDefaultValue('services/supplier-relations/enabled', 'true')
-    
+
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())
     config.conf().setDefaultValue('services/tcp-connections/upnp-enabled', 'true')

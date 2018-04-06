@@ -68,10 +68,10 @@ class ProxyServerService(LocalService):
 
     def request(self, json_payload, newpacket, info):
         from transport.proxy import proxy_router
-        proxy_router.A('request-route', (json_payload, newpacket, info, ))
+        proxy_router.A('request-route-received', (json_payload, newpacket, info, ))
         return True
 
     def cancel(self, json_payload, newpacket, info):
         from transport.proxy import proxy_router
-        proxy_router.A('cancel-route', (json_payload, newpacket, info, ))
+        proxy_router.A('cancel-route-received', (json_payload, newpacket, info, ))
         return True
