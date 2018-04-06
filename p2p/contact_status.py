@@ -330,7 +330,8 @@ def A(idurl, event=None, arg=None):
         if _ShutdownFlag:
             return None
         _ContactsStatusDict[idurl] = ContactStatus(
-            idurl, 'status_%s' % nameurl.GetName(idurl), 'OFFLINE', 8)
+            idurl, 'status_%s' % nameurl.GetName(idurl), 'OFFLINE',
+            debug_level=_DebugLevel, log_events=False, log_transition=_Debug)
     if event is not None:
         _ContactsStatusDict[idurl].automat(event, arg)
     return _ContactsStatusDict[idurl]
@@ -347,10 +348,13 @@ class ContactStatus(automat.Automat):
         'timer-20sec': (20.0, ['PING', 'ACK?']),
     }
 
-    def __init__(self, idurl, name, state, debug_level):
+    def __init__(self, idurl, name, state, debug_level=False, log_events=False, log_transition=False):
         self.idurl = idurl
         self.time_connected = None
-        automat.Automat.__init__(self, name, state, debug_level)
+        automat.Automat.__init__(self, name, state,
+                                 debug_level=debug_level,
+                                 log_events=log_events,
+                                 log_transition=log_transition,)
         if _Debug:
             lg.out(_DebugLevel + 2, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
 

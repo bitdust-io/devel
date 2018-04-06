@@ -313,7 +313,9 @@ class PacketOut(automat.Automat):
         self.label = 'out_%d_%s' % (
             get_packets_counter(), self.remote_name)
         self.keep_alive = keep_alive
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
+        automat.Automat.__init__(
+            self, self.label, 'AT_STARTUP',
+            debug_level=_DebugLevel, log_events=_Debug, publish_events=False, )
         increment_packets_counter()
         for command, cb in callbacks.items():
             self.set_callback(command, cb)
@@ -323,7 +325,6 @@ class PacketOut(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
-        self.log_events = True
         self.error_message = None
         self.time = time.time()
         self.description = self.outpacket.Command + '(' + self.outpacket.PacketID + ')'
@@ -334,7 +335,8 @@ class PacketOut(automat.Automat):
             self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         else:
             self.remote_identity = None
-            lg.warn('cached identity copy is outdated or not exist: %s' % self.remote_idurl)
+            if _Debug:
+                lg.out(_DebugLevel, 'packet_out.init  cached identity copy is outdated or not exist: %s' % self.remote_idurl)
         self.packetdata = None
         self.filename = None
         self.filesize = None
@@ -353,7 +355,7 @@ class PacketOut(automat.Automat):
         if self.state == 'RESPONSE?':
             return False
         if self.time is None or self.timeout is None:
-            return True
+            return False
         return time.time() - self.time > self.timeout
 
     def set_callback(self, command, cb):

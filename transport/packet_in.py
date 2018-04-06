@@ -46,7 +46,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -223,7 +223,9 @@ class PacketIn(automat.Automat):
         self.status = None
         self.error_message = None
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel)
+        automat.Automat.__init__(
+            self, self.label, 'AT_STARTUP',
+            debug_level=_DebugLevel, log_events=_Debug, publish_events=False, )
         increment_packets_counter()
 
     def is_timed_out(self):
@@ -237,8 +239,6 @@ class PacketIn(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
-        self.log_events = False
-        self.log_transitions = _Debug
 
     def A(self, event, arg):
         #---AT_STARTUP---
