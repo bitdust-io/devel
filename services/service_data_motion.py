@@ -49,13 +49,17 @@ class DataMotionService(LocalService):
     def start(self):
         from customer import io_throttle
         from customer import data_sender
+        from customer import data_receiver
         io_throttle.init()
         data_sender.A('init')
+        data_receiver.A('init')
         return True
 
     def stop(self):
         from customer import io_throttle
         from customer import data_sender
+        from customer import data_receiver
+        data_receiver.A('shutdown')
         data_sender.SetShutdownFlag()
         data_sender.Destroy()
         io_throttle.shutdown()

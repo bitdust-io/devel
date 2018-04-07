@@ -519,16 +519,20 @@ def disconnect_from(proto, host):
     return transport(proto).call('disconnect_from', host)
 
 
-def send_file(remote_idurl, proto, host, filename, description=''):
+def send_file(remote_idurl, proto, host, filename, description='', pkt_out=None):
     """
     """
-    return transport(proto).call('send_file', remote_idurl, filename, host, description)
+    result_defer = transport(proto).call('send_file', remote_idurl, filename, host, description)
+    callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out)
+    return result_defer
 
 
-def send_file_single(remote_idurl, proto, host, filename, description=''):
+def send_file_single(remote_idurl, proto, host, filename, description='', pkt_out=None):
     """
     """
-    return transport(proto).call('send_file_single', remote_idurl, filename, host, description)
+    result_defer = transport(proto).call('send_file_single', remote_idurl, filename, host, description)
+    callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out)
+    return result_defer
 
 
 def send_keep_alive(proto, host):
@@ -879,7 +883,8 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
         lg.out(_DebugLevel, '... IN ... %d receive {%s} via [%s] from %s at %s' % (
             transfer_id, os.path.basename(filename), proto,
             nameurl.GetName(sender_idurl), host))
-    packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))
+    incoming_packet = packet_in.create(transfer_id)
+    incoming_packet.automat('register-item', (proto, host, sender_idurl, filename, size))
     control.request_update([('stream', transfer_id)])
     return transfer_id
 

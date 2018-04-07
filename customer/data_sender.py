@@ -34,11 +34,11 @@
     </a>
 
 A state machine to manage data sending process, acts very simple:
-    1) when new local data is created it tries to send it to needed supplier
+    1) when new local data is created it tries to send it to the correct supplier
     2) wait while ``p2p.io_throttle`` is doing some data transmission to remote suppliers
     3) calls ``p2p.backup_matrix.ScanBlocksToSend()`` to get a list of pieces needs to be send
-    4) this machine is restarted every minute to try to send the data ASAP
-    5) also can be restarted at any time when other code decides that
+    4) this machine is restarted every minute to check if some more data needs to be send
+    5) also can be restarted at any time when it is needed
 
 EVENTS:
     * :red:`block-acked`
@@ -50,6 +50,13 @@ EVENTS:
     * :red:`timer-1min`
     * :red:`timer-1sec`
 """
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------
 
 import os
 import time
@@ -68,18 +75,12 @@ from lib import packetid
 from contacts import contactsdb
 
 from userid import my_id
-from userid import global_id
 
 from main import settings
 
 from p2p import contact_status
 
 import io_throttle
-
-#------------------------------------------------------------------------------
-
-_Debug = True
-_DebugLevel = 18
 
 #------------------------------------------------------------------------------
 
@@ -211,7 +212,7 @@ class DataSender(automat.Automat):
                             customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                             filename = os.path.join(
                                 settings.getLocalBackupsDir(),
-                                customerGlobalID,  # global_id.UrlToGlobalID(customer_idurl),
+                                customerGlobalID,
                                 pathID,
                             )
                             if not os.path.isfile(filename):
