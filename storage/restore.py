@@ -42,8 +42,8 @@ and not gotten data packets from a supplier we can flag him as suspect-bad
 and start requesting a parity packet to cover him right away.
 
 When we are missing a data packet we pick a parity packet where we have all the
-other data packets for that parity so we can recover the missing data packet .
-This network cost for this is just as low as if we read the data packet .
+other data packets for that parity so we can recover the missing data packet.
+This network cost for this is just as low as if we read the data packet.
 But most of the time we won't bother reading the parities.  Just uses up bandwidth.
 
 We don't want to fire someone till
@@ -55,16 +55,11 @@ At the "tar" level a user will have choice of full restore (to new empty system 
 or to restore to another location on disk, or to just recover certain files.  However,
 in this module we have to read block by block all of the blocks.
 
-
 How do we restore if we lost everything?
-Our ( public/private-key and eccmap) could be:
-
-    1)  at BitDust  (encrypted with pass phrase)
-    2)  on USB in safe or deposit box   (encrypted with passphrase or clear text)
-    3)  with friends or scrubbers (encrypted with passphrase)
+Our ( public/private-key and eccmap) needs to be stored previously
+on USB, in safe or deposit box (encrypted with passphrase or clear text).
 
 The other thing we need is the backupIDs which we can get from our suppliers with the ListFiles command.
-The ID is something like ``F200801161206`` or ``I200801170401`` indicating full or incremental.
 
 
 EVENTS:
@@ -560,6 +555,8 @@ class restore(automat.Automat):
         elif state == 'failed':
             self.RequestFails.append(NewPacket)
             self.automat('request-failed', NewPacket)
+        else:
+            lg.warn('packet %s got not recognized result: %s' % (NewPacket, state, ))
 
     def _do_process_inbox_queue(self):
         if len(self.InboxPacketsQueue) > 0:

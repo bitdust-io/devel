@@ -81,23 +81,6 @@ class DataReceiver(automat.Automat):
             **kwargs
         )
 
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of `data_receiver()` machine.
-        """
-
-    def state_changed(self, oldstate, newstate, event, arg):
-        """
-        Method to catch the moment when `data_receiver()` state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, arg):
-        """
-        This method intended to catch the moment when some event was fired in the `data_receiver()`
-        but automat state was not changed.
-        """
-
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.

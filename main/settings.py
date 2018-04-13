@@ -312,7 +312,7 @@ def MaxPacketsOutstanding():
 
 def SendingSpeedLimit():
     """
-    This is lower limit during file sending in Kilobytes per second.
+    This is lower limit during file sending in bytes per second.
 
     Used to calculate a packet timeout - bigger packets should have longer timeouts.
     If sending below this speed - we count this supplier as failed.
