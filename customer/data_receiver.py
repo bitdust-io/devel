@@ -55,6 +55,8 @@ def A(event=None, arg=None):
     Access method to interact with the state machine.
     """
     global _DataReceiver
+    if event is None and arg is None:
+        return _DataReceiver
     if _DataReceiver is None:
         _DataReceiver = DataReceiver(publish_events=True, log_events=_Debug, debug_level=_DebugLevel)
     if event is not None:

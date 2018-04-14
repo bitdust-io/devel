@@ -324,6 +324,9 @@ class restore(automat.Automat):
         """
         Condition method.
         """
+        from customer import data_receiver
+        if data_receiver.A().state == 'RECEIVING':
+            return True
         from transport import packet_in
         related_packets = packet_in.search(sender_idurl=contactsdb.suppliers())
         return len(related_packets) > 0
@@ -500,7 +503,9 @@ class restore(automat.Automat):
         lg.out(6, 'restore.doRemoveTempFile %d files were removed' % count)
 
     def doCloseFile(self, arg):
-        os.close(self.File)
+        """
+        """
+        # os.close(self.File)
 
     def doReportAborted(self, arg):
         lg.out(6, "restore.doReportAborted " + self.BackupID)
