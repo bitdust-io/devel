@@ -262,6 +262,14 @@ def add_queue_item_status_callback(cb):
         _QueueItemStatusCallbacksList.append(cb)
 
 
+def remove_queue_item_status_callback(cb):
+    """
+    """
+    global _QueueItemStatusCallbacksList
+    if cb in _QueueItemStatusCallbacksList:
+        _QueueItemStatusCallbacksList.remove(cb)
+
+
 def add_begin_file_sending_callback(cb):
     """
     cb(result_defer, remote_idurl, proto, host, filename, description, pkt_out)

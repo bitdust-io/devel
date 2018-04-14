@@ -48,7 +48,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 8
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -470,6 +470,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
+        
         connectors(self.customer_idurl).pop(self.supplier_idurl)
         self.request_packet_id = None
         self.supplier_idurl = None

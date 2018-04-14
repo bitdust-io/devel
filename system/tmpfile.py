@@ -258,10 +258,10 @@ def erase(name, filename, why='no reason'):
         except:
             lg.warn('we do not know about file %s in sub folder %s' % (filename, name))
     else:
-        lg.warn('we do not know sub folder ' + name)
+        lg.warn('we do not know sub folder: [%s]')
 
     if not os.path.exists(filename):
-        lg.warn('%s not exist' % filename)
+        lg.warn('[%s] not exist' % filename)
         return
 
     if os.path.isfile(filename):

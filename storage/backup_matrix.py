@@ -53,7 +53,7 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -1104,12 +1104,12 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
       (blocks, percent, weakBlock, weakBlockPercent)
     """
     if backupID not in remote_files():
-        return 0, 0, 0, 0
+        return -1, 0, -1, 0
     # get max block number
     # ??? maxBlockNum = remote_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     if maxBlockNum == -1:
-        return 0, 0, 0, 0
+        return -1, 0, -1, 0
     customer_idurl = packetid.CustomerIDURL(backupID)
     supplierCount = contactsdb.num_suppliers(customer_idurl=customer_idurl)
     fileCounter = 0

@@ -705,7 +705,7 @@ class PacketOut(automat.Automat):
         msg = arg
         if not isinstance(msg, str):
             msg = 'cancelled'
-        callback.run_queue_item_status_callbacks(self, 'failed', msg)
+        callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
 
     def doErrMsg(self, event, arg):
         """
