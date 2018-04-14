@@ -142,6 +142,16 @@ __correctable_errors = {
     2: 1,
 }
 
+__fire_hire_errors = {
+    64: 5,
+    26: 3,
+    18: 2,
+    13: 2,
+    7: 2,
+    4: 1,
+    2: 1,
+}
+
 #------------------------------------------------------------------------------
 
 CurrentMap = None
@@ -256,6 +266,14 @@ def GetCorrectableErrors(suppliers_number):
     """
     global __correctable_errors
     return __correctable_errors.get(suppliers_number, 1)
+
+
+def GetFireHireErrors(suppliers_number):
+    """
+    For every map we have different amount of "fixable" errors.
+    """
+    global __fire_hire_errors
+    return __fire_hire_errors.get(suppliers_number, 1)
 
 #------------------------------------------------------------------------------
 

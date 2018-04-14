@@ -53,7 +53,7 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 18
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -581,7 +581,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
         return
     if backupID not in remote_files():
         remote_files()[backupID] = {}
-        lg.out(8, 'backup_matrix.RemoteFileReport new remote entry for %s created in the memory' % backupID)
+        lg.info('new remote entry for %s created in the memory' % backupID)
     if blockNum not in remote_files()[backupID]:
         remote_files()[backupID][blockNum] = {
             'D': [0] * contactsdb.num_suppliers(),
@@ -721,6 +721,8 @@ def ScanMissingBlocks(backupID):
     suppliers. Should return a list of numbers of missed blocks for
     given backup.
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.ScanMissingBlocks for %s' % backupID)
     customer_idurl = packetid.CustomerIDURL(backupID)
     missingBlocks = set()
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
@@ -732,13 +734,14 @@ def ScanMissingBlocks(backupID):
             # we have no local and no remote info for this backup
             # no chance to do some rebuilds...
             # TODO: but how we get here ?!
-            lg.out(4, 'backup_matrix.ScanMissingBlocks no local and no remote info for %s' % backupID)
+            if _Debug:
+                lg.out(_DebugLevel, '    no local and no remote info found !!!')
         else:
             # we have no remote info, but some local files exists
             # so let's try to sent all of them
             # need to scan all block numbers
-            lg.out(6, 'backup_matrix.ScanMissingBlocks for %s, use LOCAL maxBlockNum=%d' % (
-                backupID, localMaxBlockNum))
+            if _Debug:
+                lg.out(_DebugLevel, '    no remote info but found local info, maxBlockNum=%d' % localMaxBlockNum)
             for blockNum in xrange(localMaxBlockNum + 1):
                 # we check for Data and Parity packets
                 localData = GetLocalDataArray(backupID, blockNum)
@@ -756,8 +759,8 @@ def ScanMissingBlocks(backupID):
         # now we have some remote info
         # we take max block number from local and remote
         maxBlockNum = max(remoteMaxBlockNum, localMaxBlockNum)
-        lg.out(6, 'backup_matrix.ScanMissingBlocks for %s, maxBlockNum=%d' % (
-            backupID, maxBlockNum))
+        if _Debug:
+            lg.out(_DebugLevel, '    found remote info, maxBlockNum=%d' % maxBlockNum)
         # and increase by one because range(3) give us [0, 1, 2], but we want [0, 1, 2, 3]
         for blockNum in xrange(maxBlockNum + 1):
             # if we have few remote files, but many locals - we want to send all missed
@@ -773,7 +776,7 @@ def ScanMissingBlocks(backupID):
                 # so no need to scan for missing blocks
                 if supplierActiveArray[supplierNum] != 1:
                     continue
-                if supplierNum not in remoteData or supplierNum not in remoteParity:
+                if supplierNum >= len(remoteData) or supplierNum >= len(remoteParity):
                     missingBlocks.add(blockNum)
                     continue
                 if remoteData[supplierNum] != 1:    # -1 means missing
@@ -781,7 +784,8 @@ def ScanMissingBlocks(backupID):
                 if remoteParity[supplierNum] != 1:  # 1 - file exist on remote supplier
                     missingBlocks.add(blockNum)
 
-    # lg.out(6, 'backup_matrix.ScanMissingBlocks %s' % missingBlocks)
+    if _Debug:
+        lg.out(_DebugLevel, '    missingBlocks=%s' % missingBlocks)
     return list(missingBlocks)
 
 
@@ -866,6 +870,8 @@ def ScanBlocksToSend(backupID):
             localParity = GetLocalParityArray(backupID, blockNum)
             for supplierNum in xrange(len(supplierActiveArray)):
                 if supplierActiveArray[supplierNum] != 1:
+                    continue
+                if supplierNum >= len(remoteData) or supplierNum >= len(remoteParity):
                     continue
                 if remoteData[supplierNum] != 1 and localData[supplierNum] == 1:
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Data'))
@@ -1098,12 +1104,12 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
       (blocks, percent, weakBlock, weakBlockPercent)
     """
     if backupID not in remote_files():
-        return 0, 0, 0, 0
+        return -1, 0, -1, 0
     # get max block number
     # ??? maxBlockNum = remote_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     if maxBlockNum == -1:
-        return 0, 0, 0, 0
+        return -1, 0, -1, 0
     customer_idurl = packetid.CustomerIDURL(backupID)
     supplierCount = contactsdb.num_suppliers(customer_idurl=customer_idurl)
     fileCounter = 0

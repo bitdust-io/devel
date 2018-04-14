@@ -160,10 +160,11 @@ def QueueSendFile(fileName, packetID, remoteID, ownerID, callOnAck=None, callOnF
 
 def QueueRequestFile(callOnReceived, creatorID, packetID, ownerID, remoteID):
     """
-    Place a request to download a single file from given remote peer.
+    Place a request to download a single data packet from given remote supplier
+    Remote user will verify our identity and decide to send the Data or not.
+    Two scenarios possible when executing a `callOnReceived` callback:
 
-    Remote user will verify our identity and decide to send the Data or
-    not.
+        callOnReceived(newpacket, result)  or  callOnReceived(packetID, result)
     """
     return throttle().QueueRequestFile(callOnReceived, creatorID, packetID, ownerID, remoteID)
 
@@ -593,19 +594,21 @@ class SupplierQueue:
                 self.requestFailedPacketIDs.remove(packetID)
                 packetsToRemove[packetID] = 'failed'
                 continue
-            currentTime = time.time()
-            if self.fileRequestDict[packetID].requestTime is not None:
-                # the packet were requested
-                if self.fileRequestDict[packetID].fileReceivedTime is None:
-                    # but no answer yet ...
-                    if currentTime - self.fileRequestDict[packetID].requestTime > self.fileRequestDict[packetID].requestTimeout:
-                        # and time is out!!!
-                        self.fileRequestDict[packetID].report = 'timeout'
-                        packetsToRemove[packetID] = 'timeout'
-                else:
-                    # the packet were received (why it is not removed from the queue yet ???)
-                    self.fileRequestDict[packetID].result = 'received'
-                    packetsToRemove[packetID] = 'received'
+            # request timeouts are disabled for now
+#             currentTime = time.time()
+#             if self.fileRequestDict[packetID].requestTime is not None:
+#                 # the packet was requested
+#                 if self.fileRequestDict[packetID].fileReceivedTime is None:
+#                     # but no answer yet ...
+#                     if currentTime - self.fileRequestDict[packetID].requestTime > self.fileRequestDict[packetID].requestTimeout:
+#                         # and time is out!!!
+#                         self.fileRequestDict[packetID].report = 'timeout'
+#                         packetsToRemove[packetID] = 'timeout'
+#                 else:
+#                     # the packet were received (why it is not removed from the queue yet ???)
+#                     self.fileRequestDict[packetID].result = 'received'
+#                     packetsToRemove[packetID] = 'received'
+            # the packet was not requested yet
             if self.fileRequestDict[packetID].requestTime is None:
                 customer, pathID = packetid.SplitPacketID(packetID)
                 if not os.path.exists(os.path.join(settings.getLocalBackupsDir(), customer, pathID)):
@@ -622,7 +625,9 @@ class SupplierQueue:
                         callbacks={
                             commands.Data(): self.OnDataReceived,
                             commands.Fail(): self.OnDataReceived,
-                        }
+                            # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
+                        },
+                        # response_timeout=10,
                     )
 #                     newpacket = signed.Packet(
 #                         commands.Retrieve(),
@@ -827,12 +832,26 @@ class SupplierQueue:
             lg.out(_DebugLevel, "io_throttle.OnFileSendFailReceived %s to [%s] because %s" % (
                 PacketID, nameurl.GetName(fileToSend.remoteID), why))
 
-    def OnDataReceived(self, newpacket, info):
+    def OnDataReceived(self, newpacket, result):
+#         if result == 'timeout':
+#             packetID = global_id.CanonicalID(newpacket)
+#             if packetID in self.fileRequestDict:
+#                 self.fileRequestDict[packetID].fileReceivedTime = time.time()
+#                 self.fileRequestDict[packetID].result = 'timeout'
+#                 for callBack in self.fileRequestDict[packetID].callOnReceived:
+#                     callBack(None, 'timeout')
+#             return
         # we requested some data from a supplier, just received it
+        packetID = global_id.CanonicalID(newpacket.PacketID)
         if self.shutdown:
             # if we're closing down this queue (supplier replaced, don't any anything new)
+            if packetID in self.fileRequestDict:
+                for callBack in self.fileRequestDict[packetID].callOnReceived:
+                    callBack(newpacket, 'shutdown')
+            if packetID in self.fileRequestDict:
+                del self.fileRequestDict[packetID]
+            lg.warn('supplier queue is shutting down')
             return
-        packetID = global_id.CanonicalID(newpacket.PacketID)
         if packetID in self.fileRequestQueue:
             self.fileRequestQueue.remove(packetID)
             if _Debug:
@@ -851,7 +870,7 @@ class SupplierQueue:
                 for callBack in self.fileRequestDict[packetID].callOnReceived:
                     callBack(newpacket, 'failed')
         else:
-            raise Exception('incorrect response command')
+            lg.err('incorrect response command')
         if packetID in self.fileRequestDict:
             del self.fileRequestDict[packetID]
         if _Debug:
@@ -863,6 +882,12 @@ class SupplierQueue:
         # we requested some data from a supplier, but this failed for some reason
         if self.shutdown:
             # if we're closing down this queue (supplier replaced, don't any anything new)
+            if packetID in self.fileRequestDict:
+                for callBack in self.fileRequestDict[packetID].callOnReceived:
+                    callBack(packetID, 'shutdown')
+            if packetID in self.fileRequestDict:
+                del self.fileRequestDict[packetID]
+            lg.warn('supplier queue is shutting down')
             return
         if packetID in self.fileRequestQueue:
             self.fileRequestQueue.remove(packetID)
@@ -873,9 +898,9 @@ class SupplierQueue:
             lg.warn('packet %s not found in request queue for %s' % (packetID, self.remoteName))
         if packetID in self.fileRequestDict:
             self.fileRequestDict[packetID].fileReceivedTime = time.time()
-            self.fileRequestDict[packetID].result = 'failed'
+            self.fileRequestDict[packetID].result = why or 'failed'
             for callBack in self.fileRequestDict[packetID].callOnReceived:
-                callBack(None, 'failed')
+                callBack(packetID, why or 'failed')
             del self.fileRequestDict[packetID]
         else:
             lg.warn('packet %s not found request info for %s' % (packetID, self.remoteName))

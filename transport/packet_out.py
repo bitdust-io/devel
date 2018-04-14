@@ -705,7 +705,7 @@ class PacketOut(automat.Automat):
         msg = arg
         if not isinstance(msg, str):
             msg = 'cancelled'
-        callback.run_queue_item_status_callbacks(self, 'failed', msg)
+        callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
 
     def doErrMsg(self, event, arg):
         """
@@ -765,6 +765,7 @@ class PacketOut(automat.Automat):
                 self.route['host'],
                 self.filename,
                 self.description,
+                self,
             )
             self.items.append(WorkItem(
                 self.route['proto'],
@@ -786,7 +787,7 @@ class PacketOut(automat.Automat):
                         gateway.is_installed(proto):
                     if proto == 'tcp' and localIP:
                         host = localIP
-                    gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                    gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
                     self.items.append(WorkItem(proto, host, self.filesize))
                     workitem_sent = True
             if not workitem_sent:
@@ -821,7 +822,7 @@ class PacketOut(automat.Automat):
                 proto, host, port, fn = nameurl.UrlParse(tcp_contact)
                 if port:
                     host = localIP + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -839,7 +840,7 @@ class PacketOut(automat.Automat):
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -849,7 +850,7 @@ class PacketOut(automat.Automat):
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
                 if port:
                     host = host + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -857,7 +858,7 @@ class PacketOut(automat.Automat):
         if proxy_contact and 'proxy' in working_protos:
             proto, host = nameurl.IdContactSplit(proxy_contact)
             if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -871,7 +872,7 @@ class PacketOut(automat.Automat):
                 # try sending with tcp even if it is switched off in the settings
                 if gateway.is_installed(proto) and gateway.can_send(proto):
                     if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
-                        gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                        gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
                         self.items.append(WorkItem(proto, host, self.filesize))
                         self.automat('items-sent')
                         return

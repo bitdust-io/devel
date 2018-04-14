@@ -172,7 +172,8 @@ def WriteIndex(filepath=None, encoding='utf-8'):
         return
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
-    json_data = backup_fs.Serialize(to_json=True, encoding=encoding)
+    json_data = {}
+    # json_data = backup_fs.Serialize(to_json=True, encoding=encoding)
     for customer_idurl in backup_fs.known_customers():
         customer_id = global_id.UrlToGlobalID(customer_idurl)
         json_data[customer_id] = backup_fs.Serialize(
@@ -479,10 +480,12 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     item = backup_fs.GetByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
     if item is None:
         return False
+    lg.out(8, 'backup_control.DeletePathBackups ' + pathID)
     # this is a list of all known backups of this path
     versions = item.list_versions()
     for version in versions:
         backupID = packetid.MakeBackupID(customer, remotePath, version)
+        lg.out(8, '        removing %s' % backupID)
         # abort backup if it just started and is running at the moment
         AbortRunningBackup(backupID)
         # if we requested for files for this backup - we do not need it anymore
@@ -494,7 +497,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
         if removeLocalFilesToo:
             backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
         # remove remote info for this backup from the memory
-        backup_matrix.EraseBackupLocalInfo(backupID)
+        backup_matrix.EraseBackupRemoteInfo(backupID)
         # also remove local info
         backup_matrix.EraseBackupLocalInfo(backupID)
         # finally remove this backup from the index

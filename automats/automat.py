@@ -314,7 +314,14 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
 
-    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False, log_transitions=False, publish_events=False, **kwargs):
+    def __init__(self,
+                 name,
+                 state,
+                 debug_level=_DebugLevel * 2,
+                 log_events=False,
+                 log_transitions=False,
+                 publish_events=False,
+                 **kwargs):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
@@ -364,7 +371,7 @@ class Automat(object):
         """
         global _StateChangedCallback
         if self is None:
-            # Some crazy stuff happens? :-)
+            # Some crazy stuff happens?
             return
         o = self
         automatid = self.id

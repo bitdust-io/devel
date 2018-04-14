@@ -498,6 +498,15 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/state/v1$')
+    @GET('^/state/list/v1$')
+    @GET('^/automat/v1$')
+    @GET('^/automat/list/v1$')
+    def automat_list_v1(self, request):
+        return api.automats_list()
+
+    #------------------------------------------------------------------------------
+
     @GET('^/service/v1$')
     @GET('^/service/list/v1$')
     def service_list_v1(self, request):

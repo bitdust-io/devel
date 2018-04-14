@@ -42,7 +42,6 @@ from logs import lg
 
 from system import tmpfile
 
-from storage import restore
 from storage import backup_tar
 from storage import backup_matrix
 
@@ -126,12 +125,16 @@ def extract_failed(err, backupID, callback_method):
     return err
 
 
-def restore_done(result, backupID, tarfilename, outputlocation, callback_method):
+def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_method):
     lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     lg.out(4, 'restore_monitor.restore_done for %s with result=%s' % (backupID, result))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
+    try:
+        os.close(outfd)
+    except:
+        lg.exc()
     if result == 'done':
         p = backup_tar.extracttar(tarfilename, outputlocation)
         if p:
@@ -188,8 +191,13 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
     outfd, outfilename = tmpfile.make(
         'restore', '.tar.gz',
         backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_')
-    r = restore.restore(backupID, outfd, KeyID=keyID)
-    r.MyDeferred.addCallback(restore_done, backupID, outfilename, outputLocation, callback)
+    if False:
+        from storage import restore
+        r = restore.restore(backupID, outfd, KeyID=keyID)
+    else:
+        from storage import restore_worker
+        r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)
+    r.MyDeferred.addCallback(restore_done, backupID, outfd, outfilename, outputLocation, callback)
     # r.MyDeferred.addErrback(restore_failed, outfilename, callback)
     r.set_block_restored_callback(block_restored_callback)
     r.set_packet_in_callback(packet_in_callback)

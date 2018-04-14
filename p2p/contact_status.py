@@ -57,7 +57,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 6
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -131,6 +131,9 @@ def shutdown():
     global _ShutdownFlag
     global _ContactsStatusDict
     lg.out(4, 'contact_status.shutdown')
+    callback.remove_inbox_callback(Inbox)
+    callback.remove_outbox_callback(Outbox)
+    callback.remove_queue_item_status_callback(OutboxStatus)
     for A in _ContactsStatusDict.values():
         A.destroy()
     _ContactsStatusDict.clear()
@@ -466,7 +469,12 @@ def OutboxStatus(pkt_out, status, error=''):
     else:
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.OutboxStatus %s: [%s] with %s' % (status, pkt_out, pkt_out.outpacket))
-        A(pkt_out.remote_idurl, 'sent-failed', (pkt_out, status, error))
+        if status == 'cancelled':
+            if _Debug:
+                lg.out(_DebugLevel, '    skipped')
+        else:
+            # lg.warn('sending event "sent-failed" to contact status of : %s' % pkt_out.remote_idurl)
+            A(pkt_out.remote_idurl, 'sent-failed', (pkt_out, status, error))
     return False
 
 

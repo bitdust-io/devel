@@ -262,8 +262,17 @@ def add_queue_item_status_callback(cb):
         _QueueItemStatusCallbacksList.append(cb)
 
 
+def remove_queue_item_status_callback(cb):
+    """
+    """
+    global _QueueItemStatusCallbacksList
+    if cb in _QueueItemStatusCallbacksList:
+        _QueueItemStatusCallbacksList.remove(cb)
+
+
 def add_begin_file_sending_callback(cb):
     """
+    cb(result_defer, remote_idurl, proto, host, filename, description, pkt_out)
     """
     global _BeginFileSendingCallbacksList
     if cb not in _BeginFileSendingCallbacksList:
@@ -272,7 +281,7 @@ def add_begin_file_sending_callback(cb):
 
 def add_finish_file_sending_callback(cb):
     """
-    pkt_out, item, status, size, error_message.
+    cb(pkt_out, item, status, size, error_message)
     """
     global _FinishFileSendingCallbacksList
     if cb not in _FinishFileSendingCallbacksList:
@@ -289,14 +298,24 @@ def remove_finish_file_sending_callback(cb):
 
 def add_begin_file_receiving_callback(cb):
     """
+    cb(pkt_in)
     """
     global _BeginFileReceivingCallbacksList
     if cb not in _BeginFileReceivingCallbacksList:
         _BeginFileReceivingCallbacksList.append(cb)
 
 
+def remove_begin_file_receiving_callback(cb):
+    """
+    """
+    global _BeginFileReceivingCallbacksList
+    if cb in _BeginFileReceivingCallbacksList:
+        _BeginFileReceivingCallbacksList.remove(cb)
+
+
 def add_finish_file_receiving_callback(cb, index=0):
     """
+    cb(pkt_in, data)
     """
     global _FinishFileReceivingCallbacksList
     if cb not in _FinishFileReceivingCallbacksList:
@@ -400,9 +419,25 @@ def run_queue_item_status_callbacks(pkt_out, status, error_message):
     return handled
 
 
-def run_begin_file_sending_callbacks(outboxfile):
+def run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out):
     """
     """
+    global _BeginFileSendingCallbacksList
+    if _Debug:
+        lg.out(_DebugLevel, 'callback.run_begin_file_sending_callbacks %s to %s:%s at %s' % (
+            description, proto, host, remote_idurl))
+    handled = False
+    for cb in _BeginFileSendingCallbacksList:
+        try:
+            if cb(result_defer, remote_idurl, proto, host, filename, description, pkt_out):
+                handled = True
+        except:
+            lg.exc()
+        if handled:
+            if _Debug:
+                lg.out(_DebugLevel, '    handled by %s' % cb)
+            break
+    return handled
 
 
 def run_finish_file_sending_callbacks(pkt_out, item, status, size, error_message):
@@ -421,9 +456,24 @@ def run_finish_file_sending_callbacks(pkt_out, item, status, size, error_message
     return handled
 
 
-def run_begin_file_receiving_callbacks():
+def run_begin_file_receiving_callbacks(pkt_in):
     """
     """
+    global _BeginFileReceivingCallbacksList
+    if _Debug:
+        lg.out(_DebugLevel, 'callback.run_begin_file_receiving_callbacks for %s' % pkt_in)
+    handled = False
+    for cb in _BeginFileReceivingCallbacksList:
+        try:
+            if cb(pkt_in):
+                handled = True
+        except:
+            lg.exc()
+        if handled:
+            if _Debug:
+                lg.out(_DebugLevel, '    handled by %s' % cb)
+            break
+    return handled
 
 
 def run_finish_file_receiving_callbacks(info, data):
@@ -432,7 +482,6 @@ def run_finish_file_receiving_callbacks(info, data):
     global _FinishFileReceivingCallbacksList
     if _Debug:
         lg.out(_DebugLevel, 'callback.run_finish_file_receiving_callbacks %d bytes : %s' % (len(data), info, ))
-        # lg.out(_DebugLevel, '    %s' % _FinishFileReceivingCallbacksList)
     handled = False
     for cb in _FinishFileReceivingCallbacksList:
         try:

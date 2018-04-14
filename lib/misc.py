@@ -993,14 +993,6 @@ def setClipboardText(txt):
 #------------------------------------------------------------------------------
 
 
-def hmac_hash(string):
-    """
-    Not used.
-    """
-    h = hmac.HMAC(settings.HMAC_key_word(), string)
-    return h.hexdigest().upper()
-
-
 def encode64(s):
     """
     A wrapper for built-in ``base64.b64encode``.

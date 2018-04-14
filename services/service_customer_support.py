@@ -76,6 +76,7 @@ class CustomerSupportService(LocalService):
                 ca = customer_assistant.by_idurl(pkt_out.outpacket.RemoteID)
                 if ca:
                     ca.automat('propagate', pkt_out)
+        return False
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands

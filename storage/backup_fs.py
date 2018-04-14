@@ -1375,14 +1375,30 @@ def IterateIDs(iterID=None):
 #------------------------------------------------------------------------------
 
 
-def GetBackupStatus(backupID, item_info, item_name, parent_path_existed=None):
+def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None):
     from storage import backup_control
     from storage import restore_monitor
     from storage import backup_matrix
+    blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
+    totalNumberOfFiles, maxBlockNum, statsArray = backup_matrix.GetBackupStats(backupID)
+    ret = {
+        'state': 'ready',
+        'delivered': misc.percent2string(percent),
+        'reliable': misc.percent2string(weakPercent),
+        'fragments': totalNumberOfFiles,
+        'weak_block': weakBlock,
+        'max_block': maxBlockNum,
+        'suppliers': [{
+            'stored': misc.percent2string(i[0]),
+            'fragments': i[1],
+        } for i in statsArray],
+    }
     if backup_control.IsBackupInProcess(backupID):
         backupObj = backup_control.GetRunningBackupObject(backupID)
         if backupObj:
-            return 'up', misc.percent2string(backupObj.progress())
+            ret['state'] = 'uploading'
+            ret['progress'] = misc.percent2string(backupObj.progress())
+            return ret
     elif restore_monitor.IsWorking(backupID):
         restoreObj = restore_monitor.GetWorkingRestoreObject(backupID)
         if restoreObj:
@@ -1391,14 +1407,10 @@ def GetBackupStatus(backupID, item_info, item_name, parent_path_existed=None):
             percent = 0.0
             if maxBlockNum > 0:
                 percent = 100.0 * currentBlock / maxBlockNum
-            # blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
-            # return '%s / %s' % (misc.percent2string(percent), misc.percent2string(weakPercent))
-            return 'down', misc.percent2string(percent)
-    blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
-    # localPercent, localFiles, totalSize, maxBlockNum, localStats = backup_matrix.GetBackupLocalStats(backupID)
-    # return '%s / %s' % (misc.percent2string(localPercent), misc.percent2string(weakPercent))
-    return 'ready', misc.percent2string(weakPercent)
-
+            ret['state'] = 'downloading'
+            ret['progress'] = misc.percent2string(percent)
+            return ret
+    return ret
 
 def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
     if not customer_id:
@@ -1424,18 +1436,25 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
                 b[1:5], b[5:7], b[7:9], b[9:11], b[11:13], b[13:15], b[15:17])
         else:
             version_label = backupID
-        version_state, version_status = GetBackupStatus(backupID, item_info, item_info.name(), path_exist)
-        # item_status += version_status + ' '
-        versions.append({
+        backup_info_dict = GetBackupStatusInfo(backupID, item_info, item_info.name(), path_exist)
+        backup_info_dict.update({
             'backup_id': backupID,
-            # 'backupid': backupID,  # temporary to not brake UI
             'label': version_label,
             'time': version_time,
             'size': version_size,
-            'status': version_status,
-            'state': version_state,
-            'blocks': version_maxblocknum + 1,
         })
+        versions.append(backup_info_dict)
+        # item_status += version_status + ' '
+#         versions.append({
+#             'backup_id': backupID,
+#             # 'backupid': backupID,  # temporary to not brake UI
+#             'label': version_label,
+#             'time': version_time,
+#             'size': version_size,
+#             'status': version_status,
+#             'state': version_state,
+#             'blocks': version_maxblocknum + 1,
+#         })
     # if not item_status:
         # item_status = '-'
     item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''

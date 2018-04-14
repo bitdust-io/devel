@@ -325,6 +325,7 @@ class PacketIn(automat.Automat):
             self.timeout = 300
         if not self.sender_idurl:
             lg.warn('sender_idurl is None: %s' % str(arg))
+        reactor.callLater(0, callback.run_begin_file_receiving_callbacks, self)
 
     def doEraseInputFile(self, arg):
         """

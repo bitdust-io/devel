@@ -75,7 +75,8 @@ class KeysRegistryService(LocalService):
         # TODO: work in progress
         from p2p import commands
         if pkt_out.outpacket.Command == commands.Key():
-            pass
+            return True
+        return False
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands

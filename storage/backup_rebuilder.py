@@ -362,8 +362,7 @@ class BackupRebuilder(automat.Automat):
                     'D': [0] * contactsdb.num_suppliers(),
                     'P': [0] * contactsdb.num_suppliers()}
         # detect missing blocks from remote info
-        self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(
-            self.currentBackupID)
+        self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(self.currentBackupID)
         # find the correct max block number for this backup
         # we can have remote and local files
         # will take biggest block number from both
@@ -461,6 +460,10 @@ class BackupRebuilder(automat.Automat):
                     self.currentBackupID, blockNum)
                 localParity = backup_matrix.GetLocalParityArray(
                     self.currentBackupID, blockNum)
+                if supplierNum >= len(remoteData) or supplierNum >= len(remoteParity):
+                    break
+                if supplierNum >= len(localData) or supplierNum >= len(localParity):
+                    break
                 # if remote Data exist and is available because supplier is on-line,
                 # but we do not have it on hand - do request
                 if localData[supplierNum] == 0:
