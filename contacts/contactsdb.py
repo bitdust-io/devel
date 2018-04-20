@@ -473,7 +473,7 @@ def save_suppliers(path=None, customer_idurl=None):
         path = settings.SupplierIDsFilename()
     if customer_idurl is not None:
         path += ('_%s' % global_id.UrlToGlobalID(customer_idurl))
-    bpio._write_list(path, suppliers())
+    bpio._write_list(path, suppliers(customer_idurl=customer_idurl))
 
 
 def save_customers(path=None):

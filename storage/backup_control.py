@@ -202,6 +202,7 @@ def ReadIndex(raw_data, encoding='utf-8'):
         return False
     _LoadingFlag = True
     backup_fs.Clear()
+    count = 0
     try:
         json_data = json.loads(raw_data, encoding=encoding)
     except:

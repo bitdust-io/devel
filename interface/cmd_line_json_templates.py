@@ -138,7 +138,7 @@ TPL_OPTION_SINGLE = tpl_4_items.format(
 TPL_SUPPLIERS = tpl_4_items.format(
     tpl_status,
     tpl_execution,
-    ls("{position}: {idurl}, since {connected}, keeps {files_count} files, {status}\n"),
+    ls("{position}: {idurl}, since {connected}, keeps {.section fragments}{files}{.end} files, {contact_state}\n"),
     tpl_errors)
 
 #------------------------------------------------------------------------------

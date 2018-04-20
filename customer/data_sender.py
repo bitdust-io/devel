@@ -185,15 +185,18 @@ class DataSender(automat.Automat):
                     for supplierNum in packetsBySupplier.keys():
                         supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
                         if not supplier_idurl:
-                            lg.warn('?supplierNum? %s for %s' % (supplierNum, backupID))
+                            lg.warn('unkown supplier_idurl supplierNum=%s for %s, customer_idurl=%s' % (
+                                supplierNum, backupID, customer_idurl))
                             continue
                         for packetID in packetsBySupplier[supplierNum]:
                             backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
                             if backupID_ != backupID:
-                                lg.warn('?backupID? %s for %s' % (packetID, backupID))
+                                lg.warn('unexpected backupID supplierNum=%s for %s, customer_idurl=%s' % (
+                                    packetID, backupID, customer_idurl))
                                 continue
                             if supplierNum_ != supplierNum:
-                                lg.warn('?supplierNum? %s for %s' % (packetID, backupID))
+                                lg.warn('unexpected supplierNum %s for %s, customer_idurl=%s' % (
+                                    packetID, backupID, customer_idurl))
                                 continue
                             if io_throttle.HasPacketInSendQueue(
                                     supplier_idurl, packetID):
@@ -202,7 +205,7 @@ class DataSender(automat.Automat):
                                 continue
                             if not io_throttle.OkToSend(supplier_idurl):
                                 if _Debug:
-                                    log.write('ok to send %s ? - NO!\n' % supplier_idurl)
+                                    log.write('skip, not ok to send %s\n' % supplier_idurl)
                                 continue
                             customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                             # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
