@@ -1286,15 +1286,15 @@ def GetSupplierStats(supplierNum, customer_idurl=None):
     for backupID in remote_files().keys():
         if customer_idurl != packetid.CustomerIDURL(backupID):
             continue
-        result[backupID] = [0, 0]
+        result[backupID] = {'data': 0, 'parity': 0, 'total': 0, }
         for blockNum in remote_files()[backupID].keys():
             if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
-                result[backupID][0] += 1
+                result[backupID]['data'] += 1
                 files += 1
             if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
-                result[backupID][0] += 1
+                result[backupID]['parity'] += 1
                 files += 1
-            result[backupID][1] += 2
+            result[backupID]['total'] += 2
             total += 2
     return files, total, result
 

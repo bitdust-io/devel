@@ -470,7 +470,6 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        
         connectors(self.customer_idurl).pop(self.supplier_idurl)
         self.request_packet_id = None
         self.supplier_idurl = None

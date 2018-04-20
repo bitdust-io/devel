@@ -37,8 +37,10 @@ EVENTS:
     * :red:`restart`
     * :red:`shutdown`
     * :red:`supplier-connected`
+    * :red:`supplier-failed`
     * :red:`timer-10sec`
     * :red:`timer-15sec`
+    * :red:`timer-1min`
     * :red:`timer-3sec`
 """
 
@@ -62,6 +64,10 @@ from dht import dht_relations
 from userid import global_id
 
 from p2p import p2p_service
+
+from contacts import contactsdb
+
+from lib import misc
 
 from storage import backup_fs
 from storage import backup_control
@@ -138,12 +144,18 @@ class SharedAccessCoordinator(automat.Automat):
     """
 
     timers = {
+        'timer-1min': (60, ['CONNECTED']),
         'timer-3sec': (3.0, ['SUPPLIERS?']),
         'timer-10sec': (10.0, ['SUPPLIERS?', 'LIST_FILES?']),
         'timer-15sec': (15.0, ['DHT_LOOKUP']),
     }
 
-    def __init__(self, key_id, debug_level=_DebugLevel, log_events=False, publish_events=False, **kwargs):
+    def __init__(self,
+                 key_id,
+                 debug_level=_DebugLevel,
+                 log_events=_Debug,
+                 log_transitions=_Debug,
+                 publish_events=False, **kwargs):
         """
         Create shared_access_coordinator() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
@@ -157,6 +169,7 @@ class SharedAccessCoordinator(automat.Automat):
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
+            log_transitions=log_transitions,
             publish_events=publish_events,
             **kwargs
         )
@@ -286,11 +299,13 @@ class SharedAccessCoordinator(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'restart':
-                self.state = 'DHT_LOOKUP'
-                self.doDHTLookupSuppliers(arg)
             elif event == 'customer-list-files-received':
                 self.doProcessCustomerListFiles(arg)
+            elif event == 'timer-1min':
+                self.doCheckReconnectSuppliers(arg)
+            elif event == 'supplier-failed' or event == 'restart':
+                self.state = 'DHT_LOOKUP'
+                self.doDHTLookupSuppliers(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -337,6 +352,9 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         self.suppliers_list.extend(filter(None, arg))
+        contactsdb.update_suppliers(self.suppliers_list, customer_idurl=self.customer_idurl)
+        contactsdb.save_suppliers(customer_idurl=self.customer_idurl)
+
         for supplier_idurl in self.suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:
@@ -371,6 +389,12 @@ class SharedAccessCoordinator(automat.Automat):
                 return
         self.automat('all-suppliers-connected')
 
+    def doCheckReconnectSuppliers(self, arg):
+        """
+        Action method.
+        """
+        # TODO:
+
     def doRequestRandomPacket(self, arg):
         """
         Action method.
@@ -401,8 +425,11 @@ class SharedAccessCoordinator(automat.Automat):
         self.unregister()
 
     def _on_supplier_connector_state_changed(self, idurl, newstate):
-        lg.out(14, 'fire_hire._supplier_connector_state_changed %s to %s, own state is %s' % (
-            idurl, newstate, self.state))
-        supplier_connector.by_idurl(idurl).remove_callback('shared_access_coordinator')
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire._supplier_connector_state_changed %s to %s, own state is %s' % (
+                idurl, newstate, self.state))
+        sc = supplier_connector.by_idurl(idurl)
+        if sc:
+            sc.remove_callback('shared_access_coordinator')
         if newstate == 'CONNECTED':
             self.automat('supplier-connected', idurl)

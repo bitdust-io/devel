@@ -1457,8 +1457,10 @@ def share_open(key_id):
     if not driver.is_on('service_shared_data'):
         return succeed(ERROR('service_shared_data() is not started'))
     from access import shared_access_coordinator
-    if shared_access_coordinator.get_active_share(key_id):
-        return ERROR('share already opened')
+    active_share = shared_access_coordinator.get_active_share(key_id)
+    if active_share:
+        active_share.automat('restart')
+        return OK('share "%s" already opened, refresing' % key_id, extra_fields=active_share.to_json())
     ret = Deferred()
 
     def _on_shared_access_coordinator_success(result):
@@ -1624,26 +1626,37 @@ def suppliers_list(customer_idurl_or_global_id=None):
     from lib import misc
     from userid import my_id
     from userid import global_id
+    from storage import backup_matrix
     customer_idurl = customer_idurl_or_global_id
-    if customer_idurl is None:
+    if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     else:
         if global_id.IsValidGlobalUser(customer_idurl):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
-    return RESULT([{
-        'position': pos,
-        'idurl': supplier_idurl,
-        'global_id': global_id.UrlToGlobalID(supplier_idurl),
-        'supplier_state':
-            None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
-            else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
-        'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
-        'files_count': len(misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')) - 1,
-        'contact_status': contact_status.getStatusLabel(supplier_idurl),
-        'contact_state': (
-            None if not contact_status.isKnown(supplier_idurl)
-            else contact_status.getInstance(supplier_idurl).state),
-    } for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl))])
+    results = []
+    for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
+        _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
+        r = {
+            'position': pos,
+            'idurl': supplier_idurl,
+            'global_id': global_id.UrlToGlobalID(supplier_idurl),
+            'supplier_state':
+                None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
+                else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
+            'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
+            'files_count': len(misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')) - 1,
+            'fragments': {
+                'items': _files,
+                'files': _total,
+                'details': _report,
+            },
+            'contact_status': contact_status.getStatusLabel(supplier_idurl),
+            'contact_state': (
+                None if not contact_status.isKnown(supplier_idurl)
+                else contact_status.getInstance(supplier_idurl).state),
+        }
+        results.append(r)
+    return RESULT(results)
 
 
 def supplier_replace(index_or_idurl_or_global_id):
