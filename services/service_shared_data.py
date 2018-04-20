@@ -74,7 +74,7 @@ class SharedDataService(LocalService):
         from userid import global_id
         try:
             user_id = newpacket.PacketID.strip().split(':')[0]
-            if user_id == my_id.getGlobalID():
+            if user_id.count(my_id.getGlobalID()):
                 # skip my own Files() packets which comes from my suppliers
                 # only process list Files() from other users who granted me access
                 return False

@@ -373,7 +373,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendListFiles(arg, customer_idurl=self.customer_idurl)
+        p2p_service.SendListFiles(arg, customer_idurl=self.customer_idurl, key_id=self.key_id)
 
     def doProcessCustomerListFiles(self, arg):
         """

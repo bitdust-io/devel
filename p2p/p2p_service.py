@@ -395,7 +395,7 @@ def ListFiles(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendListFiles(supplierNumORidurl, customer_idurl=None, wide=False, callbacks={}):
+def SendListFiles(supplierNumORidurl, customer_idurl=None, key_id=None, wide=False, callbacks={}):
     """
     This is used as a request method from your supplier : if you send him a ListFiles() packet
     he will reply you with a list of stored files in a Files() packet.
@@ -412,7 +412,9 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None, wide=False, callbacks
         return None
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
-    PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
+    if not key_id:
+        key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias='master')
+    PacketID = "%s:%s" % (key_id, packetid.UniqueID())
     Payload = settings.ListFilesFormat()
     result = signed.Packet(
         Command=commands.ListFiles(),
