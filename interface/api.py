@@ -1461,35 +1461,36 @@ def share_open(key_id):
     if active_share:
         active_share.automat('restart')
         return OK('share "%s" already opened, refresing' % key_id, extra_fields=active_share.to_json())
-    ret = Deferred()
 
-    def _on_shared_access_coordinator_success(result):
-        lg.info(result)
-        if not result:
-            ret.callback(ERROR('failed opening share "%s"' % key_id))
-            return None
-        this_share = shared_access_coordinator.get_active_share(key_id)
-        if not this_share:
-            ret.callback(ERROR('share "%s" was not opened' % key_id))
-            return None
-        ret.callback(OK('share "%s" opened' % key_id, extra_fields=this_share.to_json()))
-        return None
+#     ret = Deferred()
 
-    def _on_shared_access_donor_failed(err):
-        lg.err(err)
-        ret.callback(ERROR(err.getErrorMessage()))
-        return None
+#     def _on_shared_access_coordinator_success(result):
+#         lg.info(result)
+#         if not result:
+#             ret.callback(ERROR('failed opening share "%s"' % key_id))
+#             return None
+#         this_share = shared_access_coordinator.get_active_share(key_id)
+#         if not this_share:
+#             ret.callback(ERROR('share "%s" was not opened' % key_id))
+#             return None
+#         ret.callback(OK('share "%s" opened' % key_id, extra_fields=this_share.to_json()))
+#         return None
 
-    d = Deferred()
-    d.addCallback(_on_shared_access_coordinator_success)
-    d.addErrback(_on_shared_access_donor_failed)
-    shared_access_coordinator_machine = shared_access_coordinator.SharedAccessCoordinator(
+#     def _on_shared_access_donor_failed(err):
+#         lg.err(err)
+#         ret.callback(ERROR(err.getErrorMessage()))
+#         return None
+
+#     d = Deferred()
+#     d.addCallback(_on_shared_access_coordinator_success)
+#     d.addErrback(_on_shared_access_donor_failed)
+
+    new_share = shared_access_coordinator.SharedAccessCoordinator(
         key_id,
-        log_events=True,
         publish_events=True,
     )
-    shared_access_coordinator_machine.automat('restart')
-    return ret
+    new_share.automat('restart')
+    return OK('new share "%s" opened' % key_id, extra_fields=new_share.to_json())
 
 
 def share_close(key_id):

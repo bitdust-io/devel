@@ -87,9 +87,9 @@ class SupplierService(LocalService):
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        bytes_for_customer = None
+        bytes_for_customer = 0
         try:
-            bytes_for_customer = json_payload['needed_bytes']
+            bytes_for_customer = int(json_payload['needed_bytes'])
         except:
             lg.warn("wrong payload" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong payload')
@@ -99,9 +99,9 @@ class SupplierService(LocalService):
         except:
             customer_public_key = None
             customer_public_key_id = None
-        if not bytes_for_customer or bytes_for_customer < 0:
-            lg.warn("wrong payload : %s" % newpacket.Payload)
-            return p2p_service.SendFail(newpacket, 'wrong storage value')
+        # if not bytes_for_customer or bytes_for_customer < 0:
+        #     lg.warn("wrong payload : %s" % newpacket.Payload)
+        #     return p2p_service.SendFail(newpacket, 'wrong storage value')
         current_customers = contactsdb.customers()
         if accounting.check_create_customers_quotas():
             lg.out(6, 'service_supplier.request created a new space file')

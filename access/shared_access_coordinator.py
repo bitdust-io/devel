@@ -155,7 +155,8 @@ class SharedAccessCoordinator(automat.Automat):
                  debug_level=_DebugLevel,
                  log_events=_Debug,
                  log_transitions=_Debug,
-                 publish_events=False, **kwargs):
+                 publish_events=False,
+                 **kwargs):
         """
         Create shared_access_coordinator() state machine.
         Use this method if you need to call Automat.__init__() in a special way.
