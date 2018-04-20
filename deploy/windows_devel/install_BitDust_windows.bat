@@ -126,7 +126,8 @@ echo.                                                                   >> %DLOA
 
 
 echo Downloading wget.exe
-cscript //Nologo %DLOAD_SCRIPT% https://mingw-and-ndk.googlecode.com/files/wget.exe wget0.exe
+rem cscript //Nologo %DLOAD_SCRIPT% https://mingw-and-ndk.googlecode.com/files/wget.exe wget0.exe
+cscript //Nologo %DLOAD_SCRIPT% https://eternallybored.org/misc/wget/1.19.4/32/wget.exe wget0.exe
 :WGetDownloaded
 
 
