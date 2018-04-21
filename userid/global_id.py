@@ -70,6 +70,7 @@ def MakeGlobalID(
     key_alias=None,
     path=None,
     version=None,
+    key_id=None,
 ):
     """
     Based on input parameters returns string like this:
@@ -79,24 +80,27 @@ def MakeGlobalID(
     """
     output_format = _FORMAT_GLOBAL_ID_KEY_USER
     out = ''
-    if customer:
-        idurl = GlobalUserToIDURL(customer)
-        if customer.count('$'):
-            key_alias, _, _ = customer.rpartition('$')
-        if customer.count('!'):
-            user_and_key, _, _ = customer.rpartition('@')
-            _, _, key_alias = user_and_key.rpartition('!')
-    if idurl:
-        from lib import nameurl
-        _, idhost, port, filename = nameurl.UrlParse(idurl)
-        if port:
-            idhost += '_' + str(port)
-        user = filename.strip()[0:-4]
-    if key_alias:
-        out = output_format.format(user=user, key_alias=key_alias)
+    if key_id:
+        out = key_id
     else:
-        out = user
-    out += '@{}'.format(idhost)
+        if customer:
+            idurl = GlobalUserToIDURL(customer)
+            if customer.count('$'):
+                key_alias, _, _ = customer.rpartition('$')
+            if customer.count('!'):
+                user_and_key, _, _ = customer.rpartition('@')
+                _, _, key_alias = user_and_key.rpartition('!')
+        if idurl:
+            from lib import nameurl
+            _, idhost, port, filename = nameurl.UrlParse(idurl)
+            if port:
+                idhost += '_' + str(port)
+            user = filename.strip()[0:-4]
+        if key_alias:
+            out = output_format.format(user=user, key_alias=key_alias)
+        else:
+            out = user
+        out += '@{}'.format(idhost)
     if path:
         out += ':{}'.format(path)
         if version:

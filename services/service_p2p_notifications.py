@@ -144,7 +144,7 @@ class P2PNotificationsService(LocalService):
                                 queue_id=r_json.get('queue_id'),
                             ) else 'OK'
             except Exception as exc:
-                lg.exc()
+                lg.warn(str(exc))
                 resp['result'] = 'denied'
                 resp['reason'] = str(exc)
             service_responses_list.append(resp)
