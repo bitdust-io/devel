@@ -196,6 +196,8 @@ class SupplierService(LocalService):
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
+        from dht import dht_relations
+        reactor.callLater(0, dht_relations.close_customer_supplier_relation, newpacket.OwnerID)
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
         events.send('existing-customer-terminated', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')

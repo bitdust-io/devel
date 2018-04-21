@@ -57,7 +57,6 @@ class SupplierRelationsService(LocalService):
         events.add_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
         for customer_idurl in contactsdb.customers():
             dht_relations.publish_customer_supplier_relation(customer_idurl)
-        dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
         return True
 
     def stop(self):
