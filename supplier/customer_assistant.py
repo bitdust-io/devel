@@ -200,12 +200,16 @@ class CustomerAssistant(automat.Automat):
         """
         Action method.
         """
-        list_files.send(
-            customer_idurl=self.customer_idurl,
-            packet_id='%s:%s' % (global_id.UrlToGlobalID(self.customer_idurl), packetid.UniqueID(), ),
-            format_type=settings.ListFilesFormat(),
-            key_id=my_keys.make_key_id(alias='customer', creator_idurl=self.customer_idurl),
-        )
+        customer_key_id = my_keys.make_key_id(alias='customer', creator_idurl=self.customer_idurl)
+        if my_keys.is_key_registered(customer_key_id):
+            list_files.send(
+                customer_idurl=self.customer_idurl,
+                packet_id='%s:%s' % (global_id.UrlToGlobalID(self.customer_idurl), packetid.UniqueID(), ),
+                format_type=settings.ListFilesFormat(),
+                key_id=customer_key_id,
+            )
+        else:
+            lg.warn('key %s is not registered, not able to send his files' % customer_key_id)
 
     def doDestroyMe(self, arg):
         """
