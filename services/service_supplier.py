@@ -57,21 +57,26 @@ class SupplierService(LocalService):
         from transport import callback
         from main import events
         from contacts import contactsdb
+        from storage import accounting
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-denied')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
+        space_dict = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
-            events.send('existing-customer-accepted', data=dict(idurl=customer_idurl))
+            events.send('existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=space_dict.get(customer_idurl),
+            ))
         return True
 
     def stop(self):
         from transport import callback
         from main import events
         from contacts import contactsdb
-        for customer_idurl in contactsdb.customers():
-            events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
+        # for customer_idurl in contactsdb.customers():
+        #     events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
         events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.remove_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.remove_subscriber(self._on_customer_terminated, 'existing-customer-denied')
@@ -160,7 +165,11 @@ class SupplierService(LocalService):
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
-            events.send('new-customer-accepted', dict(idurl=newpacket.OwnerID))
+            events.send('new-customer-accepted', dict(
+                idurl=newpacket.OwnerID,
+                allocated_bytes=bytes_for_customer,
+                key_id=customer_public_key_id,
+            ))
         else:
             lg.out(8, "    OLD CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
             events.send('existing-customer-accepted', dict(idurl=newpacket.OwnerID))
