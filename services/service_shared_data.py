@@ -100,7 +100,8 @@ class SharedDataService(LocalService):
             lg.warn('failed reading data from %s' % newpacket.RemoteID)
             return False
         if block.CreatorID != list_files_global_id['idurl']:
-            lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (block.CreatorID, incoming_key_id, ))
+            lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (
+                block.CreatorID, list_files_global_id['idurl'], ))
             return False
         try:
             json_data = json.loads(block.Data(), encoding='utf-8')

@@ -423,7 +423,7 @@ def keys_list(sort=False, include_private=False):
         {'status': 'OK',
          'result': [{
              'alias': 'master',
-             'id': 'master$veselin@p2p-id.ru',
+             'key_id': 'master$veselin@p2p-id.ru',
              'creator': 'http://p2p-id.ru/veselin.xml',
              'fingerprint': '60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
              'size': '2048',
@@ -433,7 +433,7 @@ def keys_list(sort=False, include_private=False):
              'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
          }, {
              'alias': 'another_key01',
-             'id': 'another_key01$veselin@p2p-id.ru',
+             'key_id': 'another_key01$veselin@p2p-id.ru',
              'creator': 'http://p2p-id.ru/veselin.xml',
              'fingerprint': '43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
              'size': '4096',
