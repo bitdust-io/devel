@@ -99,7 +99,7 @@ class SharedDataService(LocalService):
         if block is None:
             lg.warn('failed reading data from %s' % newpacket.RemoteID)
             return False
-        if block.CreatorID != list_files_global_id['idurl']:
+        if block.BackupID != incoming_key_id:
             lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (
                 block.CreatorID, list_files_global_id['idurl'], ))
             return False

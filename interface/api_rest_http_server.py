@@ -413,7 +413,8 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/supplier/list/v1$')
     def supplier_list_v1(self, request):
         return api.suppliers_list(
-            customer_idurl_or_global_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl')
+            customer_idurl_or_global_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl'),
+            verbose=bool(_request_arg(request, 'verbose', '0') in ['1', 'true', ]),
         )
 
     @DELETE('^/supplier/replace/v1$')

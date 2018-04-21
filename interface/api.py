@@ -1598,7 +1598,7 @@ def friend_remove(idurl_or_global_id):
 
 #------------------------------------------------------------------------------
 
-def suppliers_list(customer_idurl_or_global_id=None):
+def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
     """
     This method returns a list of suppliers - nodes which stores your encrypted data on own machines.
 
@@ -1636,7 +1636,6 @@ def suppliers_list(customer_idurl_or_global_id=None):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
-        _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
         r = {
             'position': pos,
             'idurl': supplier_idurl,
@@ -1645,17 +1644,20 @@ def suppliers_list(customer_idurl_or_global_id=None):
                 None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
                 else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
             'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
-            'files_count': len(misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')) - 1,
-            'fragments': {
-                'items': _files,
-                'files': _total,
-                'details': _report,
-            },
             'contact_status': contact_status.getStatusLabel(supplier_idurl),
             'contact_state': (
                 None if not contact_status.isKnown(supplier_idurl)
-                else contact_status.getInstance(supplier_idurl).state),
+                else contact_status.getInstance(supplier_idurl).state
+            ),
         }
+        if verbose:
+            _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
+            r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl)
+            r['fragments'] = {
+                'items': _files,
+                'files': _total,
+                'details': _report,
+            }
         results.append(r)
     return RESULT(results)
 
@@ -1743,7 +1745,7 @@ def suppliers_ping():
 #------------------------------------------------------------------------------
 
 
-def customers_list():
+def customers_list(verbose=False):
     """
     List of customers - nodes who stores own data on your machine.
 

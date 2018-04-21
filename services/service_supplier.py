@@ -541,11 +541,16 @@ class SupplierService(LocalService):
         # TODO: perform validations before sending back list of files
         from supplier import list_files
         from crypt import my_keys
+        from userid import global_id
+        list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
         list_files.send(
             customer_idurl=newpacket.OwnerID,
             packet_id=newpacket.PacketID,
             format_type=settings.ListFilesFormat(),
-            key_id=my_keys.make_key_id(alias='customer', creator_idurl=newpacket.OwnerID),
+            key_id=(
+                list_files_global_id['key_id'] or
+                my_keys.make_key_id(alias='customer', creator_idurl=newpacket.OwnerID)
+            ),
         )
         return True
 
