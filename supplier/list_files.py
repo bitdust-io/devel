@@ -45,6 +45,7 @@ from main import settings
 
 from crypt import encrypted
 from crypt import key
+from crypt import my_keys
 
 from p2p import commands
 from p2p import p2p_service
@@ -54,6 +55,10 @@ from userid import my_id
 #------------------------------------------------------------------------------
 
 def send(customer_idurl, packet_id, format_type, key_id):
+    if not my_keys.is_key_registered(key_id):
+        lg.warn('not able to return Files() for customer %s, key %s not registered' % (
+            customer_idurl, key_id, ))
+        return p2p_service.SendFailNoRequest(customer_idurl, packet_id)
     customer_name = nameurl.GetName(customer_idurl)
     if _Debug:
         lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
