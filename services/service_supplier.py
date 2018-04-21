@@ -540,7 +540,13 @@ class SupplierService(LocalService):
             return False
         # TODO: perform validations before sending back list of files
         from supplier import list_files
-        list_files.send(newpacket.OwnerID, newpacket.PacketID, settings.ListFilesFormat())
+        from crypt import my_keys
+        list_files.send(
+            customer_idurl=newpacket.OwnerID,
+            packet_id=newpacket.PacketID,
+            format_type=settings.ListFilesFormat(),
+            key_id=my_keys.make_key_id(alias='customer', creator_idurl=newpacket.OwnerID),
+        )
         return True
 
     def _on_customer_accepted(self, e):

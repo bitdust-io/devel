@@ -129,14 +129,18 @@ class BackupsService(LocalService):
                 backup_control.IncomingSupplierBackupIndex(newpacket)
                 return True
         if newpacket.Command == commands.Files():
-            if not newpacket.PacketID.count(my_id.getGlobalID() + ':'):
-                # skip Files() which are from another customer
+            list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+            if not list_files_global_id['idurl']:
+                lg.warn('invalid PacketID: %s' % newpacket.PacketID)
+                return False
+            if list_files_global_id['idurl'] != my_id.getLocalIDURL():
+                lg.warn('skip %s which is from another customer' % newpacket)
                 return False
             if not contactsdb.is_supplier(newpacket.OwnerID):
-                lg.warn('%s came, but %s is not my supplier' % (newpacket, newpacket.OwnerID))
+                lg.warn('%s came, but %s is not my supplier' % (newpacket, newpacket.OwnerID, ))
                 # skip Files() if this is not my supplier
                 return False
             lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
                 newpacket, newpacket.RemoteID, ))
-            return backup_control.IncomingSupplierListFiles(newpacket)
+            return backup_control.IncomingSupplierListFiles(newpacket, list_files_global_id)
         return False

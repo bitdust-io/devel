@@ -139,6 +139,7 @@ def ParseGlobalID(inp, detect_version=False):
         {
             "user": "alice",
             "key_alias": "group_abc",
+            "key_id": "group_abc$alice@first-machine.com",
             "idhost": "first-machine.com",
             "customer": "alice@first-machine.com",
             "idurl": "http://first-machine.com/alice.xml",
@@ -149,6 +150,7 @@ def ParseGlobalID(inp, detect_version=False):
     result = {
         "user": "",
         "key_alias": "",
+        "key_id": "",
         "idhost": "",
         "customer": "",
         "idurl": "",
@@ -208,6 +210,7 @@ def ParseGlobalID(inp, detect_version=False):
                     result['version'] = versionName
             except:
                 pass
+    result['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(result['key_alias'], result['customer'])
     return result
 
 

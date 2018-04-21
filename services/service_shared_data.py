@@ -72,28 +72,35 @@ class SharedDataService(LocalService):
         from crypt import my_keys
         from userid import my_id
         from userid import global_id
-        try:
-            user_id = newpacket.PacketID.strip().split(':')[0]
-            if user_id.count(my_id.getGlobalID()):
-                # skip my own Files() packets which comes from my suppliers
-                # only process list Files() from other users who granted me access
-                return False
-            key_id = user_id
-            if not my_keys.is_valid_key_id(key_id):
-                # ignore, invalid key id in packet id
-                return False
-            if not my_keys.is_key_private(key_id):
-                raise Exception('private key is not registered')
-        except Exception as exc:
-            lg.warn(str(exc))
-            p2p_service.SendFail(newpacket, str(exc))
+        list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+        if not list_files_global_id['idurl']:
+            lg.warn('invalid PacketID: %s' % newpacket.PacketID)
             return False
-        block = encrypted.Unserialize(newpacket.Payload)
+        incoming_key_id = list_files_global_id['key_id']
+        if list_files_global_id['idurl'] == my_id.getGlobalID():
+            lg.warn('skip %s packet which seems to came from my own supplier' % newpacket)
+            # only process list Files() from other users who granted me access
+            return False
+        if not my_keys.is_valid_key_id(incoming_key_id):
+            lg.warn('ignore, invalid key id in packet %s' % newpacket)
+            return False
+        if not my_keys.is_key_private(incoming_key_id):
+            lg.warn('private key is not registered : %s' % incoming_key_id)
+            p2p_service.SendFail(newpacket, 'private key is not registered')
+            return False
+        try:
+            block = encrypted.Unserialize(
+                newpacket.Payload,
+                decrypt_key=incoming_key_id,
+            )
+        except:
+            lg.exc(newpacket.Payload)
+            return False
         if block is None:
             lg.warn('failed reading data from %s' % newpacket.RemoteID)
             return False
-        if block.CreatorID != global_id.GlobalUserToIDURL(user_id):
-            lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (block.CreatorID, user_id, ))
+        if block.CreatorID != list_files_global_id['idurl']:
+            lg.warn('invalid packet, creator ID must be present in packet ID : %s ~ %s' % (block.CreatorID, incoming_key_id, ))
             return False
         try:
             json_data = json.loads(block.Data(), encoding='utf-8')
@@ -105,16 +112,15 @@ class SharedDataService(LocalService):
                 iterID=backup_fs.fsID(customer_idurl),
                 from_json=True,
             )
-        except Exception as exc:
+        except Exception:
             lg.exc()
-            p2p_service.SendFail(newpacket, str(exc))
             return False
         p2p_service.SendAck(newpacket)
         if count == 0:
             lg.warn('no files were imported during file sharing')
         else:
             backup_control.Save()
-            lg.info('imported %d shared files from %s, key_id=%s' % (count, customer_idurl, key_id, ))
+            lg.info('imported %d shared files from %s, key_id=%s' % (count, customer_idurl, incoming_key_id, ))
         return True
 
 #         from access import shared_access_coordinator

@@ -43,17 +43,17 @@ from lib import misc
 
 from main import settings
 
+from crypt import encrypted
+from crypt import key
+
 from p2p import commands
 from p2p import p2p_service
 
-from contacts import contactsdb
-
 from userid import my_id
-from userid import global_id
 
 #------------------------------------------------------------------------------
 
-def send(customer_idurl, packet_id, format_type):
+def send(customer_idurl, packet_id, format_type, key_id):
     customer_name = nameurl.GetName(customer_idurl)
     if _Debug:
         lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
@@ -69,11 +69,40 @@ def send(customer_idurl, packet_id, format_type):
         lg.warn('did not found customer dir: %s' % ownerdir)
     if _Debug:
         lg.out(_DebugLevel + 8, '\n%s' % plaintext)
-    return p2p_service.SendFiles(
-        idurl=customer_idurl,
-        raw_list_files_info=PackListFiles(plaintext, format_type),
-        packet_id=packet_id,
+    raw_list_files = PackListFiles(plaintext, format_type)
+    block = encrypted.Block(
+        CreatorID=my_id.getLocalID(),
+        BackupID=key_id,
+        Data=raw_list_files,
+        SessionKey=key.NewSessionKey(),
+        EncryptKey=key_id,
     )
+    encrypted_list_files = block.Serialize()
+    newpacket = p2p_service.SendFiles(
+        idurl=customer_idurl,
+        raw_list_files_info=encrypted_list_files,
+        packet_id=packet_id,
+        callbacks={
+            commands.Ack(): on_acked,
+            commands.Fail(): on_failed,
+            None: on_timeout,
+        },
+    )
+    return newpacket
+
+#------------------------------------------------------------------------------
+
+def on_acked(response, info):
+    if _Debug:
+        lg.out(_DebugLevel, 'list_files.on_acked with %s in %s' % (response, info, ))
+
+
+def on_failed(response, error):
+    lg.warn('send files %s failed with %s' % (response, error, ))
+
+
+def on_timeout(pkt_out):
+    lg.warn('send files with %s was timed out' % pkt_out)
 
 #------------------------------------------------------------------------------
 
