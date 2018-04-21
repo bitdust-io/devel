@@ -142,7 +142,7 @@ class SharedDataService(LocalService):
             # list_files_orator.IncomingListFiles(newpacket)
             backup_matrix.SaveLatestRawListFiles(
                 supplier_idurl=external_supplier_idurl,
-                listFileText=supplier_raw_list_files,
+                raw_data=supplier_raw_list_files,
                 customer_idurl=trusted_customer_idurl,
             )
         except:

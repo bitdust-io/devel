@@ -231,21 +231,21 @@ def SuppliersChangedNumbers(oldSupplierList, customer_idurl=None):
     return changedList
 
 
-def SaveLatestRawListFiles(idurl, listFileText, customer_idurl=None):
+def SaveLatestRawListFiles(supplier_idurl, raw_data, customer_idurl=None):
     """
     Save a ListFiles packet from given supplier on local HDD.
     """
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    lg.out(4, 'backup_matrix.SaveLatestRawListFiles, %s, customer_idurl=%s' % (idurl, customer_idurl))
-    supplierPath = settings.SupplierPath(idurl, customer_idurl)
+    lg.out(4, 'backup_matrix.SaveLatestRawListFiles, %s, customer_idurl=%s' % (supplier_idurl, customer_idurl))
+    supplierPath = settings.SupplierPath(supplier_idurl, customer_idurl)
     if not os.path.isdir(supplierPath):
         try:
             os.makedirs(supplierPath)
         except:
             lg.exc()
             return
-    bpio.WriteFile(settings.SupplierListFilesFilename(idurl, customer_idurl), listFileText)
+    bpio.WriteFile(settings.SupplierListFilesFilename(supplier_idurl, customer_idurl), raw_data)
 
 
 def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
