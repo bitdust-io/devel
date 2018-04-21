@@ -311,7 +311,7 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     try:
         block = encrypted.Unserialize(
             newpacket.Payload,
-            decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=supplier_idurl,),
+            decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=my_id.getLocalIDURL(), ),
         )
         input_data = block.Data()
     except:
