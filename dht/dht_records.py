@@ -68,6 +68,20 @@ def get_rules(record_type):
 
 #------------------------------------------------------------------------------
 
+def make_key(key, index, prefix, version=1):
+    return '{}:{}:{}:{}'.format(prefix, key, index, version)
+
+def split_key(key_str):
+    prefix, key, index, version = key_str.split(':')
+    return dict(
+        key=key,
+        prefix=prefix,
+        index=index,
+        version=version,
+    )
+
+#------------------------------------------------------------------------------
+
 def get_nickname(key):
     return dht_service.get_valid_data(key, rules=get_rules('nickname'))
 

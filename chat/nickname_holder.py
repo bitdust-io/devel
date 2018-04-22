@@ -209,20 +209,31 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        self.key = self.nickname + ':' + '0'
+        # self.key = self.nickname + ':' + '0'
+        self.key = dht_records.make_key(
+            key=self.nickname,
+            index=0,
+            prefix='nickname',
+        )
 
     def doNextKey(self, arg):
         """
         Action method.
         """
         try:
-            nik, number = self.key.rsplit(':', 1)
-            number = int(number)
+            key_info = dht_records.split_key(self.key)
+            # nik, number = self.key.rsplit(':', 1)
+            index = int(key_info['index'])
         except:
             lg.exc()
-            number = 0
-        number += 1
-        self.key = self.nickname + ':' + str(number)
+            index = 0
+        index += 1
+        # self.key = self.nickname + ':' + str(index)
+        self.key = dht_records.make_key(
+            key=self.nickname,
+            index=index,
+            prefix='nickname',
+        )
 
     def doDHTReadKey(self, arg):
         """

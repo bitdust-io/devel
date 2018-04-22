@@ -55,14 +55,10 @@ from system import bpio
 from main import settings
 
 from userid import my_id
+from userid import global_id
 
 from dht import dht_service
 from dht import dht_records
-
-#------------------------------------------------------------------------------
-
-def make_dht_key(key, index, prefix):
-    return '{}:{}:{}'.format(prefix, key, index)
 
 #------------------------------------------------------------------------------
 
@@ -71,6 +67,7 @@ class RelationsLookup(object):
     def __init__(self, customer_idurl, new_data=None, publish=False,
                  limit_lookups=100, max_misses_in_row=3, prefix='customer_supplier'):
         self.customer_idurl = customer_idurl
+        self.customer_id = global_id.UrlToGlobalID(self.customer_idurl)
         self._result_defer = Deferred()
         self._new_data = new_data
         self._publish = publish
@@ -108,7 +105,11 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel + 6, 'dht_relations.do_read %s index:%d missed:%d' % (
                 self.customer_idurl, self._index, self._missed))
-        target_dht_key = make_dht_key(self.customer_idurl, self._index, self._prefix)
+        target_dht_key = dht_records.make_key(
+            key=self.customer_id,
+            index=self._index,
+            prefix=self._prefix,
+        )
         d = dht_records.get_relation(target_dht_key)
         d.addCallback(self.do_verify)
         d.addErrback(self.do_report_failed)
@@ -117,7 +118,12 @@ class RelationsLookup(object):
     def do_erase(self):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_erase %s' % self._index)
-        d = dht_service.delete_key(make_dht_key(self.customer_idurl, self._index, self._prefix))
+        target_dht_key = dht_records.make_key(
+            key=self.customer_id,
+            index=self._index,
+            prefix=self._prefix,
+        )
+        d = dht_service.delete_key(target_dht_key)
         d.addCallback(self.do_report_success)
         d.addErrback(self.do_report_failed)
         return 3
@@ -126,7 +132,11 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_write %s' % self._index)
         # new_payload = json.dumps(self._new_data)
-        new_dht_key = make_dht_key(self.customer_idurl, self._index, self._prefix)
+        new_dht_key = dht_records.make_key(
+            key=self.customer_id,
+            index=self._index,
+            prefix=self._prefix,
+        )
         json_data = {
             'idurl': self.customer_idurl,
             'index': self._index,
