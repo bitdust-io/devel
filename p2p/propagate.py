@@ -87,6 +87,7 @@ from transport import stats
 from transport import packet_out
 
 from dht import dht_service
+from dht import dht_records
 
 #------------------------------------------------------------------------------
 
@@ -201,10 +202,9 @@ def write_to_dht():
     """
     lg.out(6, "propagate.write_to_dht")
     LocalIdentity = my_id.getLocalIdentity()
-    return dht_service.set_value(
+    return dht_records.set_identity(
         LocalIdentity.getIDURL(),
         LocalIdentity.serialize(),
-        age=int(time.time()),
     )
 
 #------------------------------------------------------------------------------

@@ -57,6 +57,7 @@ from main import settings
 from userid import my_id
 
 from dht import dht_service
+from dht import dht_records
 
 #------------------------------------------------------------------------------
 
@@ -107,7 +108,8 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel + 6, 'dht_relations.do_read %s index:%d missed:%d' % (
                 self.customer_idurl, self._index, self._missed))
-        d = dht_service.get_value(make_dht_key(self.customer_idurl, self._index, self._prefix))
+        target_dht_key = make_dht_key(self.customer_idurl, self._index, self._prefix)
+        d = dht_records.get_relation(target_dht_key)
         d.addCallback(self.do_verify)
         d.addErrback(self.do_report_failed)
         return d
@@ -123,8 +125,15 @@ class RelationsLookup(object):
     def do_write(self):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_write %s' % self._index)
-        new_payload = json.dumps(self._new_data)
-        d = dht_service.set_value(make_dht_key(self.customer_idurl, self._index, self._prefix), new_payload, age=int(time.time()))
+        # new_payload = json.dumps(self._new_data)
+        new_dht_key = make_dht_key(self.customer_idurl, self._index, self._prefix)
+        json_data = {
+            'idurl': self.customer_idurl,
+            'index': self._index,
+            'prefix': self._prefix,
+            'data': self._new_data,
+        }
+        d = dht_records.set_relation(new_dht_key, json_data)
         d.addCallback(self.do_report_success)
         d.addErrback(self.do_report_failed)
         return 2
@@ -141,13 +150,13 @@ class RelationsLookup(object):
 
     def do_verify(self, dht_value):
         try:
-            json_value = dht_value[dht_service.key_to_hash(make_dht_key(self.customer_idurl, self._index, self._prefix))]
-            record = json.loads(json_value)
+            record = dht_value['data']
             record['customer_idurl'] = str(record['customer_idurl'])
             record['supplier_idurl'] = str(record['supplier_idurl'])
             record['time'] = int(record['time'])
             record['signature'] = str(record['signature'])
         except:
+            lg.exc()
             record = None
 
         if not record:

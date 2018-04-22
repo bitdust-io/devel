@@ -270,51 +270,20 @@ def delete_key(key):
 
 #------------------------------------------------------------------------------
 
-def get_node_data(key):
-    if not node():
-        return None
-    if key not in node().data:
-        return None
-    value = node().data[key]
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.get_node_data key=[%s] returning: %s' % (key, str(value)))
-    return value
-
-
-def set_node_data(key, value):
-    if not node():
-        return False
-    node().data[key] = value
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)))
-    return True
-
-
-def delete_node_data(key):
-    if not node():
-        return False
-    if key not in node().data:
-        return False
-    node().data.pop(key)
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.delete_node_data key=[%s]' % key)
-    return True
-
-#------------------------------------------------------------------------------
-
 def read_json_response(response, key, result_defer=None):
-    try:
-        raw_json_data = response[key]
-        value = json.loads(raw_json_data)
-    except:
-        lg.exc()
-        value = None
+    value = None
+    if isinstance(response, dict):
+        try:
+            value = json.loads(response[key])
+        except:
+            lg.exc()
     if result_defer:
         if value is None:
             result_defer.errback(Exception('invalid json data in response'))
         else:
             result_defer.callback(value)
     return value
+
 
 def get_json_value(key):
     if not node():
@@ -326,6 +295,7 @@ def get_json_value(key):
     d.addCallback(read_json_response, key_to_hash(key), ret)
     d.addErrback(ret.errback)
     return ret
+
 
 def set_json_value(key, json_data, age=0):
     if not node():
@@ -344,10 +314,13 @@ def set_json_value(key, json_data, age=0):
 def validate_data(value, rules, result_defer=None):
     passed = True
     for field, field_rules in rules.items():
-        for one_rule in field_rules:
-            if len(one_rule) < 2:
+        for rule in field_rules:
+            if 'op' not in rule:
                 continue
-            if one_rule['op'] == 'equal' and one_rule['arg'] != value.get(field, None):
+            if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
+                passed = False
+                break
+            if rule['op'] == 'exist' and field not in value:
                 passed = False
                 break
         if not passed:
@@ -408,6 +381,38 @@ def find_node(node_id):
     _ActiveLookup.addErrback(on_lookup_failed, node_id64)
     _ActiveLookup.addCallback(on_nodes_found, node_id64)
     return _ActiveLookup
+
+#------------------------------------------------------------------------------
+
+def get_node_data(key):
+    if not node():
+        return None
+    if key not in node().data:
+        return None
+    value = node().data[key]
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.get_node_data key=[%s] returning: %s' % (key, str(value)))
+    return value
+
+
+def set_node_data(key, value):
+    if not node():
+        return False
+    node().data[key] = value
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)))
+    return True
+
+
+def delete_node_data(key):
+    if not node():
+        return False
+    if key not in node().data:
+        return False
+    node().data.pop(key)
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.delete_node_data key=[%s]' % key)
+    return True
 
 #------------------------------------------------------------------------------
 

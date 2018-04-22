@@ -55,6 +55,7 @@ from main import settings
 from userid import my_id
 
 from dht import dht_service
+from dht import dht_records
 
 #------------------------------------------------------------------------------
 
@@ -213,7 +214,7 @@ class NicknameObserver(automat.Automat):
             self.dht_read_defer.pause()
             self.dht_read_defer.cancel()
             self.dht_read_defer = None
-        d = dht_service.get_value(self.key)
+        d = dht_records.get_nickname(self.key)
         d.addCallback(self._dht_read_result, self.key)
         d.addErrback(self._dht_read_failed)
         self.dht_read_defer = d
@@ -259,11 +260,8 @@ class NicknameObserver(automat.Automat):
         if self.dht_read_defer is None:
             return
         self.dht_read_defer = None
-        if not isinstance(value, dict):
-            self.automat('dht-read-failed')
-            return
         try:
-            v = value[dht_service.key_to_hash(key)]
+            v = value['idurl']
         except:
             lg.out(14, '%r' % value)
             lg.exc()
