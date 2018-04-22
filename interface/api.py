@@ -1742,6 +1742,29 @@ def suppliers_ping():
     propagate.SlowSendSuppliers(0.1)
     return OK('requests to all suppliers was sent')
 
+
+def suppliers_dht_lookup(customer_idurl_or_global_id):
+    """
+    Scans DHT network for key-value pairs related to given customer and
+    returns a list of his "possible" suppliers.
+    """
+    if not driver.is_on('service_supplier_relations'):
+        return ERROR('service_supplier_relations() is not started')
+    from dht import dht_relations
+    from userid import my_id
+    from userid import global_id
+    customer_idurl = customer_idurl_or_global_id
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    else:
+        if global_id.IsValidGlobalUser(customer_idurl):
+            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+    ret = Deferred()
+    d = dht_relations.scan_customer_supplier_relations(customer_idurl)
+    d.addCallback(lambda result_list: ret.callback(RESULT(result_list)))
+    d.addErrback(lambda err: ret.errback(ERROR([err, ])))
+    return ret
+
 #------------------------------------------------------------------------------
 
 

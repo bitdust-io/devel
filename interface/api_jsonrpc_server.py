@@ -290,6 +290,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_suppliers_ping(self):
         return api.suppliers_ping()
 
+    def jsonrpc_suppliers_dht_lookup(self, customer_idurl_or_global_id):
+        return api.suppliers_dht_lookup(customer_idurl_or_global_id)
+
     def jsonrpc_customers_list(self):
         return api.customers_list()
 

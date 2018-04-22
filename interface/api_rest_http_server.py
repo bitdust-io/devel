@@ -436,6 +436,12 @@ class BitDustRESTHTTPServer(APIResource):
     def supplier_ping_v1(self, request):
         return api.suppliers_ping()
 
+    @GET('^/supplier/list/dht/v1$')
+    def supplier_dht_list_v1(self, request):
+        return api.suppliers_dht_lookup(
+            customer_idurl_or_global_id=_request_arg(request, 'customer_id') or _request_arg(request, 'customer_idurl'),
+        )
+
     #------------------------------------------------------------------------------
 
     @GET('^/customer/v1$')

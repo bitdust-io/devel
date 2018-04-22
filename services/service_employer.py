@@ -50,17 +50,19 @@ class EmployerService(LocalService):
     def start(self):
         from customer import fire_hire
         from main.config import conf
+        from services import driver
         fire_hire.A('init')
         conf().addCallback('services/customer/suppliers-number',
                            self._on_suppliers_number_modified)
         conf().addCallback('services/customer/needed-space',
                            self._on_needed_space_modified)
         # clean up old suppliers
-        from dht import dht_relations
-        from userid import my_id
-        d = dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
-        d.addCallback(self._on_my_dht_relations_discovered)
-        d.addErrback(self._on_my_dht_relations_failed)
+        if driver.is_on('service_supplier_relations'):
+            from dht import dht_relations
+            from userid import my_id
+            d = dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
+            d.addCallback(self._on_my_dht_relations_discovered)
+            d.addErrback(self._on_my_dht_relations_failed)
         return True
 
     def stop(self):

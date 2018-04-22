@@ -182,6 +182,7 @@ class SupplierService(LocalService):
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
+        from services import driver
         if not contactsdb.is_customer(newpacket.OwnerID):
             lg.warn("got packet from %s, but he is not a customer" % newpacket.OwnerID)
             return p2p_service.SendFail(newpacket, 'not a customer')
@@ -205,8 +206,9 @@ class SupplierService(LocalService):
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
-        from dht import dht_relations
-        reactor.callLater(0, dht_relations.close_customer_supplier_relation, newpacket.OwnerID)
+        if driver.is_on('service_supplier_relations'):
+            from dht import dht_relations
+            reactor.callLater(0, dht_relations.close_customer_supplier_relation, newpacket.OwnerID)
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
         events.send('existing-customer-terminated', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
