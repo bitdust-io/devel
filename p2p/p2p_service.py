@@ -244,7 +244,7 @@ def SendFail(request, response='', remote_idurl=None, wide=False):
     return result
 
 
-def SendFailNoRequest(remoteID, packetID, response):
+def SendFailNoRequest(remoteID, packetID, response=''):
     result = signed.Packet(
         commands.Fail(),
         my_id.getLocalID(),
