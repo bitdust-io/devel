@@ -277,11 +277,11 @@ def read_json_response(response, key, result_defer=None):
             value = json.loads(response[key])
         except:
             lg.exc()
+            if result_defer:
+                result_defer.callback(None)
+            return
     if result_defer:
-        if value is None:
-            result_defer.errback(Exception('invalid json data in response'))
-        else:
-            result_defer.callback(value)
+        result_defer.callback(value)
     return value
 
 
@@ -312,6 +312,10 @@ def set_json_value(key, json_data, age=0):
 #------------------------------------------------------------------------------
 
 def validate_data(value, rules, result_defer=None):
+    if not isinstance(value, dict):
+        if result_defer:
+            result_defer.callback(None)
+        return None
     passed = True
     for field, field_rules in rules.items():
         for rule in field_rules:
@@ -326,12 +330,12 @@ def validate_data(value, rules, result_defer=None):
         if not passed:
             break
     if not passed:
-        value = None
+        lg.warn('invalid data in response, validation rules failed')
+        if result_defer:
+            result_defer.callback(None)
+        return None
     if result_defer:
-        if value is None:
-            result_defer.errback(Exception('invalid data in response, validation rules failed'))
-        else:
-            result_defer.callback(value)
+        result_defer.callback(value)
     return value
 
 

@@ -127,7 +127,17 @@ def set_udp_incoming():
 def get_relation(key):
     return dht_service.get_valid_data(key, rules=get_rules('relation'))
 
-def set_relation(key, json_data):
-    return dht_service.set_valid_data(key=key, json_data=json_data, rules=get_rules('relation'))
+def set_relation(key, idurl, data, prefix, index):
+    return dht_service.set_valid_data(
+        key=key,
+        json_data={
+            'type': 'relation',
+            'idurl': idurl,
+            'index': index,
+            'prefix': prefix,
+            'data': data,
+        },
+        rules=get_rules('relation'),
+    )
 
 #------------------------------------------------------------------------------

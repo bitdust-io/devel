@@ -185,11 +185,8 @@ class NicknameObserver(automat.Automat):
         """
         self.nickname, self.attempts, self.result_callback = arg
         try:
-            # nik, number = self.nickname.rsplit(':', 1)
-            # number = int(number)
-            key_info = dht_records.split_key(self.nickname)
-            nick = key_info['key']
-            index = int(key_info['index'])
+            nick, index = self.nickname.rsplit(':', 1)
+            index = int(index)
         except:
             nick = self.nickname.replace(':', '_')
             index = 0

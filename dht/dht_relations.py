@@ -112,7 +112,7 @@ class RelationsLookup(object):
         )
         d = dht_records.get_relation(target_dht_key)
         d.addCallback(self.do_verify)
-        d.addErrback(self.do_report_failed)
+        d.addErrback(self.do_report_success)
         return d
 
     def do_erase(self):
@@ -137,13 +137,8 @@ class RelationsLookup(object):
             index=self._index,
             prefix=self._prefix,
         )
-        json_data = {
-            'idurl': self.customer_idurl,
-            'index': self._index,
-            'prefix': self._prefix,
-            'data': self._new_data,
-        }
-        d = dht_records.set_relation(new_dht_key, json_data)
+        d = dht_records.set_relation(
+            new_dht_key, self.customer_idurl, self._new_data, self._prefix, self._index, )
         d.addCallback(self.do_report_success)
         d.addErrback(self.do_report_failed)
         return 2
@@ -159,6 +154,13 @@ class RelationsLookup(object):
         self._index += 1
 
     def do_verify(self, dht_value):
+        if not dht_value:
+            if _Debug:
+                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
+                    self.customer_idurl, self._index))
+            # record not exist or invalid
+            return self.do_process(None, -1)
+
         try:
             record = dht_value['data']
             record['customer_idurl'] = str(record['customer_idurl'])
@@ -171,7 +173,7 @@ class RelationsLookup(object):
 
         if not record:
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
+                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: bad record found at pos %s' % (
                     self.customer_idurl, self._index))
             # record not exist or invalid
             return self.do_process(record, -1)
@@ -265,7 +267,7 @@ class RelationsLookup(object):
         lg.warn(err)
         self._result_defer.errback(err)
         self.do_close()
-        return err
+        return None
 
 #------------------------------------------------------------------------------
 
