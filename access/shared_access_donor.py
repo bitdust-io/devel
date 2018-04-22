@@ -315,11 +315,10 @@ class SharedAccessDonor(automat.Automat):
             BackupID=self.key_id,
             Data=raw_list_files,
             SessionKey=key.NewSessionKey(),
-            # encrypt data using public key of recipient
-            EncryptKey=lambda inp: self.remote_identity.encrypt(inp),
+            EncryptKey=self.key_id,
         )
         encrypted_list_files = block.Serialize()
-        packet_id = "%s:%s" % (self.key_id, packetid.UniqueID())
+        packet_id = "%s:%s" % (self.key_id, packetid.UniqueID(), )
         p2p_service.SendFiles(
             idurl=self.remote_idurl,
             raw_list_files_info=encrypted_list_files,

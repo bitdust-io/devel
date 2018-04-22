@@ -55,13 +55,10 @@ from system import bpio
 from main import settings
 
 from userid import my_id
+from userid import global_id
 
 from dht import dht_service
-
-#------------------------------------------------------------------------------
-
-def make_dht_key(key, index, prefix):
-    return '{}:{}:{}'.format(prefix, key, index)
+from dht import dht_records
 
 #------------------------------------------------------------------------------
 
@@ -70,6 +67,7 @@ class RelationsLookup(object):
     def __init__(self, customer_idurl, new_data=None, publish=False,
                  limit_lookups=100, max_misses_in_row=3, prefix='customer_supplier'):
         self.customer_idurl = customer_idurl
+        self.customer_id = global_id.UrlToGlobalID(self.customer_idurl)
         self._result_defer = Deferred()
         self._new_data = new_data
         self._publish = publish
@@ -107,15 +105,25 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel + 6, 'dht_relations.do_read %s index:%d missed:%d' % (
                 self.customer_idurl, self._index, self._missed))
-        d = dht_service.get_value(make_dht_key(self.customer_idurl, self._index, self._prefix))
+        target_dht_key = dht_records.make_key(
+            key=self.customer_id,
+            index=self._index,
+            prefix=self._prefix,
+        )
+        d = dht_records.get_relation(target_dht_key)
         d.addCallback(self.do_verify)
-        d.addErrback(self.do_report_failed)
+        d.addErrback(self.do_report_success)
         return d
 
     def do_erase(self):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_erase %s' % self._index)
-        d = dht_service.delete_key(make_dht_key(self.customer_idurl, self._index, self._prefix))
+        target_dht_key = dht_records.make_key(
+            key=self.customer_id,
+            index=self._index,
+            prefix=self._prefix,
+        )
+        d = dht_service.delete_key(target_dht_key)
         d.addCallback(self.do_report_success)
         d.addErrback(self.do_report_failed)
         return 3
@@ -123,8 +131,14 @@ class RelationsLookup(object):
     def do_write(self):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_write %s' % self._index)
-        new_payload = json.dumps(self._new_data)
-        d = dht_service.set_value(make_dht_key(self.customer_idurl, self._index, self._prefix), new_payload, age=int(time.time()))
+        # new_payload = json.dumps(self._new_data)
+        new_dht_key = dht_records.make_key(
+            key=self.customer_id,
+            index=self._index,
+            prefix=self._prefix,
+        )
+        d = dht_records.set_relation(
+            new_dht_key, self.customer_idurl, self._new_data, self._prefix, self._index, )
         d.addCallback(self.do_report_success)
         d.addErrback(self.do_report_failed)
         return 2
@@ -140,19 +154,26 @@ class RelationsLookup(object):
         self._index += 1
 
     def do_verify(self, dht_value):
+        if not dht_value:
+            if _Debug:
+                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
+                    self.customer_idurl, self._index))
+            # record not exist or invalid
+            return self.do_process(None, -1)
+
         try:
-            json_value = dht_value[dht_service.key_to_hash(make_dht_key(self.customer_idurl, self._index, self._prefix))]
-            record = json.loads(json_value)
+            record = dht_value['data']
             record['customer_idurl'] = str(record['customer_idurl'])
             record['supplier_idurl'] = str(record['supplier_idurl'])
             record['time'] = int(record['time'])
             record['signature'] = str(record['signature'])
         except:
+            lg.exc()
             record = None
 
         if not record:
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
+                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: bad record found at pos %s' % (
                     self.customer_idurl, self._index))
             # record not exist or invalid
             return self.do_process(record, -1)
@@ -246,7 +267,7 @@ class RelationsLookup(object):
         lg.warn(err)
         self._result_defer.errback(err)
         self.do_close()
-        return err
+        return None
 
 #------------------------------------------------------------------------------
 

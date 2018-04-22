@@ -33,7 +33,7 @@ module:: dht_service
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 18
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -42,6 +42,7 @@ import hashlib
 import random
 import base64
 import optparse
+import json
 
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, fail
@@ -216,19 +217,20 @@ def key_to_hash(key):
 
 #------------------------------------------------------------------------------
 
-def okay(result, method, key, arg=None):
+def on_success(result, method, key, arg=None):
     if isinstance(result, dict):
         v = str(result.values())
     else:
         v = 'None'
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   result=%s' % (
+            method, key, v[:20].replace('\n', '')))
     return result
 
 
-def error(err, method, key):
+def on_error(err, method, key):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
+        lg.out(_DebugLevel, 'dht_service.on_error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
     return err
 
 #------------------------------------------------------------------------------
@@ -239,19 +241,20 @@ def get_value(key):
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeFindValue(key_to_hash(key))
-    d.addCallback(okay, 'get_value', key)
-    d.addErrback(error, 'get_value', key)
+    d.addCallback(on_success, 'get_value', key)
+    d.addErrback(on_error, 'get_value', key)
     return d
 
 
 def set_value(key, value, age=0):
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
+        lg.out(_DebugLevel + 10, 'dht_service.set_value key=[%s] value=[%s]' % (
+            key, str(value).replace('\n', '')))
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeStore(key_to_hash(key), value, age=age)
-    d.addCallback(okay, 'set_value', key, value)
-    d.addErrback(error, 'set_value', key)
+    d.addCallback(on_success, 'set_value', key, value)
+    d.addErrback(on_error, 'set_value', key)
     return d
 
 
@@ -261,28 +264,108 @@ def delete_key(key):
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeDelete(key_to_hash(key))
-    d.addCallback(okay, 'delete_value', key)
-    d.addErrback(error, 'delete_key', key)
+    d.addCallback(on_success, 'delete_value', key)
+    d.addErrback(on_error, 'delete_key', key)
     return d
 
+#------------------------------------------------------------------------------
 
-def set_node_data(key, value):
+def read_json_response(response, key, result_defer=None):
+    value = None
+    if isinstance(response, dict):
+        try:
+            value = json.loads(response[key])
+        except:
+            lg.exc()
+            if result_defer:
+                result_defer.callback(None)
+            return
+    if result_defer:
+        result_defer.callback(value)
+    return value
+
+
+def get_json_value(key):
     if not node():
-        return
+        return fail(Exception('DHT service is off'))
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
-    node().data[key] = value
+        lg.out(_DebugLevel + 10, 'dht_service.get_value key=[%s]' % key)
+    ret = Deferred()
+    d = get_value(key)
+    d.addCallback(read_json_response, key_to_hash(key), ret)
+    d.addErrback(ret.errback)
+    return ret
+
+
+def set_json_value(key, json_data, age=0):
+    if not node():
+        return fail(Exception('DHT service is off'))
+    try:
+        value = json.dumps(json_data, indent=0, separators=(',', ':'), encoding='utf-8')
+    except:
+        return fail(Exception('bad input json data'))
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.set_json_value key=[%s] value=[%s]' % (
+            key, str(value).replace('\n', '')))
+    return set_value(key=key, value=value, age=age)
+
+#------------------------------------------------------------------------------
+
+def validate_data(value, rules, result_defer=None):
+    if not isinstance(value, dict):
+        if result_defer:
+            result_defer.callback(None)
+        return None
+    passed = True
+    for field, field_rules in rules.items():
+        for rule in field_rules:
+            if 'op' not in rule:
+                continue
+            if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
+                passed = False
+                break
+            if rule['op'] == 'exist' and field not in value:
+                passed = False
+                break
+        if not passed:
+            break
+    if not passed:
+        lg.warn('invalid data in response, validation rules failed')
+        if result_defer:
+            result_defer.callback(None)
+        return None
+    if result_defer:
+        result_defer.callback(value)
+    return value
+
+
+def get_valid_data(key, rules={}):
+    if not node():
+        return fail(Exception('DHT service is off'))
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.get_valid_data key=%s rules=%s' % (key, rules, ))
+    ret = Deferred()
+    d = get_json_value(key)
+    d.addCallback(validate_data, rules, ret)
+    d.addErrback(ret.errback)
+    return ret
+
+
+def set_valid_data(key, json_data, age=0, rules={}):
+    if validate_data(json_data, rules) is None:
+        return fail(Exception('invalid data, validation failed'))
+    return set_json_value(key, json_data=json_data, age=age)
 
 #------------------------------------------------------------------------------
 
 def on_nodes_found(result, node_id64):
-    okay(result, 'find_node', node_id64)
+    on_success(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_nodes_found   node_id=[%s], %d nodes found' % (node_id64, len(result)))
     return result
 
 def on_lookup_failed(result, node_id64):
-    error(result, 'find_node', node_id64)
+    on_error(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_lookup_failed   node_id=[%s], result=%s' % (node_id64, result))
     return result
@@ -305,6 +388,38 @@ def find_node(node_id):
 
 #------------------------------------------------------------------------------
 
+def get_node_data(key):
+    if not node():
+        return None
+    if key not in node().data:
+        return None
+    value = node().data[key]
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.get_node_data key=[%s] returning: %s' % (key, str(value)))
+    return value
+
+
+def set_node_data(key, value):
+    if not node():
+        return False
+    node().data[key] = value
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)))
+    return True
+
+
+def delete_node_data(key):
+    if not node():
+        return False
+    if key not in node().data:
+        return False
+    node().data.pop(key)
+    if _Debug:
+        lg.out(_DebugLevel + 10, 'dht_service.delete_node_data key=[%s]' % key)
+    return True
+
+#------------------------------------------------------------------------------
+
 class DHTNode(DistributedTupleSpacePeer):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
@@ -315,23 +430,31 @@ class DHTNode(DistributedTupleSpacePeer):
     def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
         if _Debug:
             lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-                base64.b32encode(key), str(value)[:20]))
+                base64.b32encode(key), str(value).replace('\n', '')))
+        self.data[key] = value
         try:
             # TODO: add verification methods for different type of data we store in DHT
             # TODO: add signature validation to be sure this is the owner of that key:value pair
-            return DistributedTupleSpacePeer.store(self, key, value,
-                                                   originalPublisherID=originalPublisherID, age=age, **kwargs)
+            return DistributedTupleSpacePeer.store(
+                self, key, value,
+                originalPublisherID=originalPublisherID, age=age, **kwargs)
         except:
             lg.exc()
             return 'OK'
 
     @rpcmethod
     def request(self, key):
-        value = str(self.data.get(key, None))
+        try:
+            value = str(self.data.get(key, None))
+        except:
+            lg.exc()
+            value = None
+        if value is None and key in self._dataStore:
+            value = {key: self._dataStore[key], }
         if _Debug:
             lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
                 base64.b32encode(key), str(value)[:20]))
-        return {str(key): value, }
+        return {key: value, }
 
     def reconnect(self, knownNodeAddresses=None):
         """
@@ -392,29 +515,40 @@ def parseCommandLine():
 def main():
     bpio.init()
     settings.init()
-    lg.set_debug_level(18)
+    lg.set_debug_level(28)
     (options, args) = parseCommandLine()
     init(options.udpport, options.dhtdb)
 
     def _go(nodes):
-        if len(args) == 0:
-            pass
-        elif len(args) > 0:
-            def _r(x):
-                print x
-                reactor.stop()
-            cmd = args[0]
-            if cmd == 'get':
-                get_value(args[1]).addBoth(_r)
-            elif cmd == 'set':
-                set_value(args[1], args[2]).addBoth(_r)
-            elif cmd == 'find':
-                find_node(key_to_hash(args[1])).addBoth(_r)
-            elif cmd == 'discover':
-                def _l(x):
+        try:
+            if len(args) == 0:
+                pass
+            elif len(args) > 0:
+                def _r(x):
                     print x
-                    find_node(random_key()).addBoth(_l)
-                _l('')
+                    reactor.stop()
+                cmd = args[0]
+                if cmd == 'get':
+                    get_value(args[1]).addBoth(_r)
+                elif cmd == 'set':
+                    set_value(args[1], args[2]).addBoth(_r)
+                if cmd == 'get_json':
+                    get_json_value(args[1]).addBoth(_r)
+                elif cmd == 'set_json':
+                    set_json_value(args[1], args[2]).addBoth(_r)
+                if cmd == 'get_valid_data':
+                    get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
+                elif cmd == 'set_valid_data':
+                    set_valid_data(args[1], json.loads(args[2]), rules=json.loads(args[3])).addBoth(_r)
+                elif cmd == 'find':
+                    find_node(key_to_hash(args[1])).addBoth(_r)
+                elif cmd == 'discover':
+                    def _l(x):
+                        print x
+                        find_node(random_key()).addBoth(_l)
+                    _l('')
+        except:
+            lg.exc()
 
     connect().addBoth(_go)
     reactor.run()

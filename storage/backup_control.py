@@ -290,7 +290,7 @@ def Save(filepath=None):
 
 #------------------------------------------------------------------------------
 
-def IncomingSupplierListFiles(newpacket):
+def IncomingSupplierListFiles(newpacket, list_files_global_id):
     """
     Called by ``p2p.p2p_service`` when command "Files" were received from one
     of our suppliers.
@@ -300,19 +300,24 @@ def IncomingSupplierListFiles(newpacket):
     """
     from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
-    customer_idurl = my_id.getLocalID()
-    if newpacket.PacketID.count(':') and newpacket.PacketID.count('@'):
-        try:
-            customer_idurl = global_id.GlobalUserToIDURL(newpacket.PacketID.split(':')[0])
-        except:
-            lg.exc()
+    # incoming_key_id = newpacket.PacketID.strip().split(':')[0]
+    customer_idurl = list_files_global_id['idurl']
     num = contactsdb.supplier_position(supplier_idurl, customer_idurl=customer_idurl)
     if num < -1:
-        lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
+        lg.warn('unknown supplier: %s' % supplier_idurl)
         return False
     from supplier import list_files
     from customer import list_files_orator
-    src = list_files.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
+    try:
+        block = encrypted.Unserialize(
+            newpacket.Payload,
+            decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=my_id.getLocalIDURL(), ),
+        )
+        input_data = block.Data()
+    except:
+        lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR decrypting data from %s' % newpacket)
+        return False
+    src = list_files.UnpackListFiles(input_data, settings.ListFilesFormat())
     backups2remove, paths2remove, missed_backups = backup_matrix.ReadRawListFiles(num, src)
     list_files_orator.IncomingListFiles(newpacket)
     backup_matrix.SaveLatestRawListFiles(supplier_idurl, src)

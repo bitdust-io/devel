@@ -22,9 +22,10 @@
 
 
 """
-.. module:: nickname_holder.
+.. module:: nickname_holder
 
 .. role:: red
+
 
 BitDust nickname_holder() Automat
 
@@ -58,6 +59,7 @@ from main import settings
 from userid import my_id
 
 from dht import dht_service
+from dht import dht_records
 
 #------------------------------------------------------------------------------
 
@@ -207,20 +209,31 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        self.key = self.nickname + ':' + '0'
+        # self.key = self.nickname + ':' + '0'
+        self.key = dht_records.make_key(
+            key=self.nickname,
+            index=0,
+            prefix='nickname',
+        )
 
     def doNextKey(self, arg):
         """
         Action method.
         """
         try:
-            nik, number = self.key.rsplit(':', 1)
-            number = int(number)
+            key_info = dht_records.split_key(self.key)
+            # nik, number = self.key.rsplit(':', 1)
+            index = int(key_info['index'])
         except:
             lg.exc()
-            number = 0
-        number += 1
-        self.key = self.nickname + ':' + str(number)
+            index = 0
+        index += 1
+        # self.key = self.nickname + ':' + str(index)
+        self.key = dht_records.make_key(
+            key=self.nickname,
+            index=index,
+            prefix='nickname',
+        )
 
     def doDHTReadKey(self, arg):
         """
@@ -230,7 +243,7 @@ class NicknameHolder(automat.Automat):
             self.dht_read_defer.pause()
             self.dht_read_defer.cancel()
             self.dht_read_defer = None
-        d = dht_service.get_value(self.key)
+        d = dht_records.get_nickname(self.key)
         d.addCallback(self._dht_read_result, self.key)
         d.addErrback(self._dht_read_failed)
         self.dht_read_defer = d
@@ -239,7 +252,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        d = dht_service.set_value(self.key, my_id.getLocalID(), age=int(time.time()))
+        d = dht_records.set_nickname(self.key, my_id.getLocalID())
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
@@ -285,11 +298,8 @@ class NicknameHolder(automat.Automat):
 
     def _dht_read_result(self, value, key):
         self.dht_read_defer = None
-        if not isinstance(value, dict):
-            self.automat('dht-read-failed')
-            return
         try:
-            v = value[dht_service.key_to_hash(key)]
+            v = value['idurl']
         except:
             lg.out(8, '%r' % value)
             lg.exc()

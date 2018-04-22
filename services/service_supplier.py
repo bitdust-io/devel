@@ -57,21 +57,26 @@ class SupplierService(LocalService):
         from transport import callback
         from main import events
         from contacts import contactsdb
+        from storage import accounting
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-denied')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
+        space_dict = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
-            events.send('existing-customer-accepted', data=dict(idurl=customer_idurl))
+            events.send('existing-customer-accepted', data=dict(
+                idurl=customer_idurl,
+                allocated_bytes=space_dict.get(customer_idurl),
+            ))
         return True
 
     def stop(self):
         from transport import callback
         from main import events
         from contacts import contactsdb
-        for customer_idurl in contactsdb.customers():
-            events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
+        # for customer_idurl in contactsdb.customers():
+        #     events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
         events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.remove_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.remove_subscriber(self._on_customer_terminated, 'existing-customer-denied')
@@ -160,7 +165,11 @@ class SupplierService(LocalService):
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
-            events.send('new-customer-accepted', dict(idurl=newpacket.OwnerID))
+            events.send('new-customer-accepted', dict(
+                idurl=newpacket.OwnerID,
+                allocated_bytes=bytes_for_customer,
+                key_id=customer_public_key_id,
+            ))
         else:
             lg.out(8, "    OLD CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
             events.send('existing-customer-accepted', dict(idurl=newpacket.OwnerID))
@@ -173,6 +182,7 @@ class SupplierService(LocalService):
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
+        from services import driver
         if not contactsdb.is_customer(newpacket.OwnerID):
             lg.warn("got packet from %s, but he is not a customer" % newpacket.OwnerID)
             return p2p_service.SendFail(newpacket, 'not a customer')
@@ -196,6 +206,9 @@ class SupplierService(LocalService):
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
+        if driver.is_on('service_supplier_relations'):
+            from dht import dht_relations
+            reactor.callLater(0, dht_relations.close_customer_supplier_relation, newpacket.OwnerID)
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
         events.send('existing-customer-terminated', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
@@ -540,7 +553,18 @@ class SupplierService(LocalService):
             return False
         # TODO: perform validations before sending back list of files
         from supplier import list_files
-        list_files.send(newpacket.OwnerID, newpacket.PacketID, settings.ListFilesFormat())
+        from crypt import my_keys
+        from userid import global_id
+        list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+        list_files.send(
+            customer_idurl=newpacket.OwnerID,
+            packet_id=newpacket.PacketID,
+            format_type=settings.ListFilesFormat(),
+            key_id=(
+                list_files_global_id['key_id'] or
+                my_keys.make_key_id(alias='customer', creator_idurl=newpacket.OwnerID)
+            ),
+        )
         return True
 
     def _on_customer_accepted(self, e):

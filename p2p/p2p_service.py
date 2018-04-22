@@ -395,7 +395,7 @@ def ListFiles(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendListFiles(supplierNumORidurl, customer_idurl=None, wide=False, callbacks={}):
+def SendListFiles(supplierNumORidurl, customer_idurl=None, key_id=None, wide=False, callbacks={}):
     """
     This is used as a request method from your supplier : if you send him a ListFiles() packet
     he will reply you with a list of stored files in a Files() packet.
@@ -412,7 +412,9 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None, wide=False, callbacks
         return None
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
-    PacketID = "%s:%s" % (global_id.UrlToGlobalID(customer_idurl), packetid.UniqueID())
+    if not key_id:
+        key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias='customer')
+    PacketID = "%s:%s" % (key_id, packetid.UniqueID(), )
     Payload = settings.ListFilesFormat()
     result = signed.Packet(
         Command=commands.ListFiles(),
@@ -437,7 +439,7 @@ def Files(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendFiles(idurl, raw_list_files_info, packet_id=None, callbacks={}, timeout=10, ):
+def SendFiles(idurl, raw_list_files_info, packet_id, callbacks={}, timeout=10, ):
     """
     Sending information about known files stored locally for given customer (if you are supplier).
     You can also send a list of your files to another user if you wish to grand access.
@@ -445,8 +447,6 @@ def SendFiles(idurl, raw_list_files_info, packet_id=None, callbacks={}, timeout=
     So pass list of files in encrypted form in the `payload` or leave it empty.
     """
     MyID = my_id.getLocalID()
-    if not packet_id:
-        packet_id = "%s:%s" % (global_id.UrlToGlobalID(idurl), packetid.UniqueID())
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendFiles %d bytes in packetID=%s' % (len(raw_list_files_info), packet_id))
         lg.out(_DebugLevel, '  to remoteID=%s' % idurl)

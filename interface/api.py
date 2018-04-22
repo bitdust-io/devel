@@ -423,7 +423,7 @@ def keys_list(sort=False, include_private=False):
         {'status': 'OK',
          'result': [{
              'alias': 'master',
-             'id': 'master$veselin@p2p-id.ru',
+             'key_id': 'master$veselin@p2p-id.ru',
              'creator': 'http://p2p-id.ru/veselin.xml',
              'fingerprint': '60:ce:ea:98:bf:3d:aa:ba:29:1e:b9:0c:3e:5c:3e:32',
              'size': '2048',
@@ -433,7 +433,7 @@ def keys_list(sort=False, include_private=False):
              'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
          }, {
              'alias': 'another_key01',
-             'id': 'another_key01$veselin@p2p-id.ru',
+             'key_id': 'another_key01$veselin@p2p-id.ru',
              'creator': 'http://p2p-id.ru/veselin.xml',
              'fingerprint': '43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
              'size': '4096',
@@ -1598,7 +1598,7 @@ def friend_remove(idurl_or_global_id):
 
 #------------------------------------------------------------------------------
 
-def suppliers_list(customer_idurl_or_global_id=None):
+def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
     """
     This method returns a list of suppliers - nodes which stores your encrypted data on own machines.
 
@@ -1636,7 +1636,6 @@ def suppliers_list(customer_idurl_or_global_id=None):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
-        _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
         r = {
             'position': pos,
             'idurl': supplier_idurl,
@@ -1645,17 +1644,20 @@ def suppliers_list(customer_idurl_or_global_id=None):
                 None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
                 else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
             'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
-            'files_count': len(misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl).split('\n')) - 1,
-            'fragments': {
-                'items': _files,
-                'files': _total,
-                'details': _report,
-            },
             'contact_status': contact_status.getStatusLabel(supplier_idurl),
             'contact_state': (
                 None if not contact_status.isKnown(supplier_idurl)
-                else contact_status.getInstance(supplier_idurl).state),
+                else contact_status.getInstance(supplier_idurl).state
+            ),
         }
+        if verbose:
+            _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
+            r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl)
+            r['fragments'] = {
+                'items': _files,
+                'files': _total,
+                'details': _report,
+            }
         results.append(r)
     return RESULT(results)
 
@@ -1740,10 +1742,33 @@ def suppliers_ping():
     propagate.SlowSendSuppliers(0.1)
     return OK('requests to all suppliers was sent')
 
+
+def suppliers_dht_lookup(customer_idurl_or_global_id):
+    """
+    Scans DHT network for key-value pairs related to given customer and
+    returns a list of his "possible" suppliers.
+    """
+    if not driver.is_on('service_supplier_relations'):
+        return ERROR('service_supplier_relations() is not started')
+    from dht import dht_relations
+    from userid import my_id
+    from userid import global_id
+    customer_idurl = customer_idurl_or_global_id
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    else:
+        if global_id.IsValidGlobalUser(customer_idurl):
+            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+    ret = Deferred()
+    d = dht_relations.scan_customer_supplier_relations(customer_idurl)
+    d.addCallback(lambda result_list: ret.callback(RESULT(result_list)))
+    d.addErrback(lambda err: ret.errback(ERROR([err, ])))
+    return ret
+
 #------------------------------------------------------------------------------
 
 
-def customers_list():
+def customers_list(verbose=False):
     """
     List of customers - nodes who stores own data on your machine.
 

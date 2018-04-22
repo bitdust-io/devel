@@ -55,6 +55,7 @@ from main import settings
 from userid import my_id
 
 from dht import dht_service
+from dht import dht_records
 
 #------------------------------------------------------------------------------
 
@@ -184,25 +185,38 @@ class NicknameObserver(automat.Automat):
         """
         self.nickname, self.attempts, self.result_callback = arg
         try:
-            nik, number = self.nickname.rsplit(':', 1)
-            number = int(number)
+            nick, index = self.nickname.rsplit(':', 1)
+            index = int(index)
         except:
-            nik = self.nickname
-            number = 0
-        self.key = nik + ':' + str(number)
+            nick = self.nickname.replace(':', '_')
+            index = 0
+        self.nickname = nick
+        # self.key = nick + ':' + str(number)
+        self.key = dht_records.make_key(
+            key=self.nickname,
+            index=index,
+            prefix='nickname',
+        )
 
     def doNextKey(self, arg):
         """
         Action method.
         """
         try:
-            nik, number = self.key.rsplit(':', 1)
-            number = int(number)
+            key_info = dht_records.split_key(self.key)
+            # nik, number = self.key.rsplit(':', 1)
+            index = int(key_info['index'])
+            # number = int(number)
         except:
             lg.exc()
-            number = 0
-        number += 1
-        self.key = self.nickname + ':' + str(number)
+            index = 0
+        index += 1
+        # self.key = self.nickname + ':' + str(number)
+        self.key = dht_records.make_key(
+            key=self.nickname,
+            index=index,
+            prefix='nickname',
+        )
         self.attempts -= 1
 
     def doDHTReadKey(self, arg):
@@ -213,7 +227,7 @@ class NicknameObserver(automat.Automat):
             self.dht_read_defer.pause()
             self.dht_read_defer.cancel()
             self.dht_read_defer = None
-        d = dht_service.get_value(self.key)
+        d = dht_records.get_nickname(self.key)
         d.addCallback(self._dht_read_result, self.key)
         d.addErrback(self._dht_read_failed)
         self.dht_read_defer = d
@@ -224,9 +238,17 @@ class NicknameObserver(automat.Automat):
         """
         lg.out(8, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, arg))
         if self.result_callback is not None:
-            nik, num = self.key.split(':')
-            num = int(num)
-            self.result_callback('exist', nik, num, arg)
+            try:
+                key_info = dht_records.split_key(self.key)
+                nick = key_info['key']
+                index = key_info['index']
+            except:
+                lg.exc()
+                nick = self.nickname
+                index = 0
+            # nik, num = self.key.split(':')
+            # num = int(num)
+            self.result_callback('exist', nick, index, arg)
 
     def doReportNicknameNotExist(self, arg):
         """
@@ -259,11 +281,8 @@ class NicknameObserver(automat.Automat):
         if self.dht_read_defer is None:
             return
         self.dht_read_defer = None
-        if not isinstance(value, dict):
-            self.automat('dht-read-failed')
-            return
         try:
-            v = value[dht_service.key_to_hash(key)]
+            v = value['idurl']
         except:
             lg.out(14, '%r' % value)
             lg.exc()
