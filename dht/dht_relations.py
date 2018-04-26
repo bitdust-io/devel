@@ -32,7 +32,7 @@
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 20
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -90,21 +90,21 @@ class RelationsLookup(object):
     def do_read(self):
         if self._index >= self._limit_lookups:  # TODO: more smart and fault sensitive method
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_read STOP %s, limit lookups riched' % self.customer_idurl)
+                lg.out(_DebugLevel, 'dht_relations.do_read STOP %s, limit lookups riched' % self.customer_id)
             self.do_report_success()
             return None
         if self._last_missed_index >= 0 and self._index - self._last_missed_index > self._max_misses_in_row:
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_read STOP %s, last missed index is %d' % (
-                    self.customer_idurl, self._last_missed_index))
+                lg.out(_DebugLevel, 'dht_relations.do_read STOP %s, last missed index is %d' % (
+                    self.customer_id, self._last_missed_index))
             self.do_report_success()
             return None
 #         if self._index >= 3 and self._missed >= 3:
 #             if float(self._missed) / float(self._index) > 0.5:
 #                 return None
         if _Debug:
-            lg.out(_DebugLevel + 6, 'dht_relations.do_read %s index:%d missed:%d' % (
-                self.customer_idurl, self._index, self._missed))
+            lg.out(_DebugLevel, 'dht_relations.do_read %s:%d missed:%d' % (
+                self.customer_id, self._index, self._missed))
         target_dht_key = dht_records.make_key(
             key=self.customer_id,
             index=self._index,
@@ -117,7 +117,8 @@ class RelationsLookup(object):
 
     def do_erase(self):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.do_erase %s' % self._index)
+            lg.out(_DebugLevel, 'dht_relations.do_erase %s:%s' % (
+                self.customer_id, self._index, ))
         target_dht_key = dht_records.make_key(
             key=self.customer_id,
             index=self._index,
@@ -130,7 +131,8 @@ class RelationsLookup(object):
 
     def do_write(self):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.do_write %s' % self._index)
+            lg.out(_DebugLevel, 'dht_relations.do_write %s:%s' % (
+                self.customer_id, self._index, ))
         # new_payload = json.dumps(self._new_data)
         new_dht_key = dht_records.make_key(
             key=self.customer_id,
@@ -145,8 +147,8 @@ class RelationsLookup(object):
 
     def do_next(self, verified):
         if _Debug:
-            lg.out(_DebugLevel + 6, 'dht_relations.do_next %s %d, last_missed:%d' % (
-                self.customer_idurl, self._index, self._last_missed_index))
+            lg.out(_DebugLevel, 'dht_relations.do_next %s:%s, last_missed:%d' % (
+                self.customer_id, self._index, self._last_missed_index))
         if verified == -1:
             self._missed += 1
             if self._last_missed_index == -1:
@@ -156,8 +158,8 @@ class RelationsLookup(object):
     def do_verify(self, dht_value):
         if not dht_value:
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
-                    self.customer_idurl, self._index))
+                lg.out(_DebugLevel, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
+                    self.customer_id, self._index))
             # record not exist or invalid
             return self.do_process(None, -1)
 
@@ -173,15 +175,15 @@ class RelationsLookup(object):
 
         if not record:
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_verify MISSED %s: bad record found at pos %s' % (
-                    self.customer_idurl, self._index))
+                lg.out(_DebugLevel, 'dht_relations.do_verify MISSED %s: bad record found at pos %s' % (
+                    self.customer_id, self._index))
             # record not exist or invalid
             return self.do_process(record, -1)
 
         if record['customer_idurl'] != self.customer_idurl:
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_verify ERROR, found invalid record %s at %s' % (
-                    self.customer_idurl, self._index))
+                lg.out(_DebugLevel, 'dht_relations.do_verify ERROR, found invalid record %s at %s' % (
+                    self.customer_id, self._index))
             # record exist but stored for another customer - can be overwritten
             return self.do_process(record, -1)
 
@@ -189,20 +191,20 @@ class RelationsLookup(object):
             # TODO: verify signature
             # TODO: check expiration time
             if _Debug:
-                lg.out(_DebugLevel + 6, 'dht_relations.do_verify SUCCESS, found own data %s at %s' % (
-                    self.customer_idurl, self._index))
+                lg.out(_DebugLevel, 'dht_relations.do_verify SUCCESS, found own data %s at %s' % (
+                    self.customer_id, self._index))
             # record exist and store relation to me
             return self.do_process(record, 1)
 
         if record['supplier_idurl'] in self._result.values():
-            lg.out(_DebugLevel + 6, 'dht_relations.do_verify DUPLICATED %s, found second record for supplier %s at %s' % (
-                self.customer_idurl, record['supplier_idurl'], self._index))
+            lg.out(_DebugLevel, 'dht_relations.do_verify DUPLICATED %s, found second record for supplier %s at %s' % (
+                self.customer_id, record['supplier_idurl'], self._index))
             # this record from another supplier is duplicated - we can overwrite it
             return self.do_process(record, -1)
 
         if _Debug:
-            lg.out(_DebugLevel + 6, 'dht_relations.do_verify NEXT %s, found another supplier record %s at %s' % (
-                record['supplier_idurl'], self.customer_idurl, self._index))
+            lg.out(_DebugLevel, 'dht_relations.do_verify NEXT %s, found another supplier record %s at %s' % (
+                record['supplier_idurl'], self.customer_id, self._index))
         # this is a correct record from another supplier
         return self.do_process(record, 0)
 
@@ -274,6 +276,9 @@ class RelationsLookup(object):
 def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
     if not supplier_idurl:
         supplier_idurl = my_id.getLocalID()
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation: customer:%s supplier:%s' % (
+            customer_idurl, supplier_idurl, ))
     new_data = {
         'customer_idurl': customer_idurl,
         'supplier_idurl': supplier_idurl,
@@ -284,8 +289,14 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
 
 
 def close_customer_supplier_relation(customer_idurl):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_relations.close_customer_supplier_relation: customer:%s' % (
+            customer_idurl, ))
     return RelationsLookup(customer_idurl, new_data=None, publish=True).start()
 
 
 def scan_customer_supplier_relations(customer_idurl):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_relations.scan_customer_supplier_relations: customer:%s' % (
+            customer_idurl, ))
     return RelationsLookup(customer_idurl, new_data=None, publish=False).start()
