@@ -278,7 +278,7 @@ def read_json_response(response, key, result_defer=None):
         except:
             lg.exc()
             if result_defer:
-                result_defer.callback(None)
+                result_defer.errback(Exception('invalid json value'))
             return
     if result_defer:
         result_defer.callback(value)
@@ -301,7 +301,7 @@ def set_json_value(key, json_data, age=0):
     if not node():
         return fail(Exception('DHT service is off'))
     try:
-        value = json.dumps(json_data, indent=0, separators=(',', ':'), encoding='utf-8')
+        value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
@@ -314,7 +314,7 @@ def set_json_value(key, json_data, age=0):
 def validate_data(value, rules, result_defer=None):
     if not isinstance(value, dict):
         if result_defer:
-            result_defer.callback(None)
+            result_defer.errback(Exception('value not found'))
         return None
     passed = True
     for field, field_rules in rules.items():
@@ -332,7 +332,7 @@ def validate_data(value, rules, result_defer=None):
     if not passed:
         lg.warn('invalid data in response, validation rules failed')
         if result_defer:
-            result_defer.callback(None)
+            result_defer.errback(Exception('invalid value in response'))
         return None
     if result_defer:
         result_defer.callback(value)
@@ -423,7 +423,7 @@ def delete_node_data(key):
 class DHTNode(DistributedTupleSpacePeer):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        DistributedTupleSpacePeer.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+        super(DHTNode, self).__init__(udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
 
     @rpcmethod
@@ -431,26 +431,27 @@ class DHTNode(DistributedTupleSpacePeer):
         if _Debug:
             lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
                 base64.b32encode(key), str(value).replace('\n', '')))
+        # TODO: add verification methods for different type of data we store in DHT
+        # TODO: add signature validation to be sure this is the owner of that key:value pair
         self.data[key] = value
         try:
-            # TODO: add verification methods for different type of data we store in DHT
-            # TODO: add signature validation to be sure this is the owner of that key:value pair
-            return DistributedTupleSpacePeer.store(
-                self, key, value,
-                originalPublisherID=originalPublisherID, age=age, **kwargs)
+            return super(DHTNode, self).store(
+                key,
+                value,
+                originalPublisherID=originalPublisherID,
+                age=age,
+                **kwargs
+            )
         except:
             lg.exc()
             return 'OK'
 
     @rpcmethod
     def request(self, key):
-        try:
-            value = str(self.data.get(key, None))
-        except:
-            lg.exc()
-            value = None
+        value = self.data.get(key)
         if value is None and key in self._dataStore:
-            value = {key: self._dataStore[key], }
+            value = self._dataStore[key]
+            self.data[key] = value
         if _Debug:
             lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
                 base64.b32encode(key), str(value)[:20]))
@@ -482,7 +483,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
     def datagramReceived(self, datagram, address):
         if len(self.datagrams_queue) > 10:
             # TODO:
-            # seems like DHT traffic is too huge at that moment
+            # seems like DHT traffic is too high at that moment
             # need to find some solution here probably
             return
         self.datagrams_queue.append((datagram, address))

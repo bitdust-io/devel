@@ -261,7 +261,7 @@ class RelationsLookup(object):
                 self.customer_idurl, result_list))
         self._result_defer.callback(result_list)
         self.do_close()
-        return x
+        return None
 
     def do_report_failed(self, err):
         lg.warn(err)

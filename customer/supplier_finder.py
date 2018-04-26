@@ -223,7 +223,7 @@ class SupplierFinder(automat.Automat):
         """
         sc = supplier_connector.by_idurl(self.target_idurl)
         if not sc:
-            sc = supplier_connector.create(self.target_idurl)
+            sc = supplier_connector.create(self.target_idurl, customer_idurl=my_id.getLocalID())
         sc.automat('connect')
         sc.set_callback('supplier_finder', self._supplier_connector_state)
 

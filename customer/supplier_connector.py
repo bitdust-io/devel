@@ -78,8 +78,6 @@ from p2p import p2p_service
 
 from userid import my_id
 
-from customer import customer_state
-
 #------------------------------------------------------------------------------
 
 _SuppliersConnectors = {}
@@ -97,7 +95,7 @@ def connectors(customer_idurl=None):
     return _SuppliersConnectors[customer_idurl]
 
 
-def create(supplier_idurl, customer_idurl=None, needed_bytes=None):
+def create(supplier_idurl, customer_idurl=None, needed_bytes=None, key_id=None, queue_subscribe=True, ):
     """
     """
     if customer_idurl is None:
@@ -107,6 +105,8 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None):
         supplier_idurl=supplier_idurl,
         customer_idurl=customer_idurl,
         needed_bytes=needed_bytes,
+        key_id=key_id,
+        queue_subscribe=queue_subscribe,
     )
     return connectors(customer_idurl)[supplier_idurl]
 
@@ -145,12 +145,14 @@ class SupplierConnector(automat.Automat):
         'timer-20sec': (20.0, ['REQUEST']),
     }
 
-    def __init__(self, supplier_idurl, customer_idurl, needed_bytes):
+    def __init__(self, supplier_idurl, customer_idurl, needed_bytes, key_id=None, queue_subscribe=True):
         """
         """
         self.supplier_idurl = supplier_idurl
         self.customer_idurl = customer_idurl
         self.needed_bytes = needed_bytes
+        self.key_id = key_id
+        self.queue_subscribe = queue_subscribe
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
             num_suppliers = settings.getSuppliersNumberDesired()
@@ -334,10 +336,12 @@ class SupplierConnector(automat.Automat):
         """
         service_info = {
             'needed_bytes': self.needed_bytes,
+            'customer_id': global_id.UrlToGlobalID(self.customer_idurl),
+            'key_id': self.key_id,
         }
         try:
             service_info['customer_public_key'] = my_keys.get_key_info(
-                key_id=customer_state.customer_key_id(),
+                key_id=my_id.getGlobalID(key_alias='customer'),
                 include_private=False,
             )
         except:
@@ -371,6 +375,9 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
+        if not self.queue_subscribe:
+            self.automat('fail')
+            return
         service_info = {'items': [{
             'scope': 'consumer',
             'action': 'start',
@@ -474,6 +481,7 @@ class SupplierConnector(automat.Automat):
         self.request_packet_id = None
         self.supplier_idurl = None
         self.customer_idurl = None
+        self.queue_subscribe = None
         self.destroy()
 
     def _supplier_acked(self, response, info):

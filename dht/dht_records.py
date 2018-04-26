@@ -37,24 +37,32 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+_ProtocolVersion = 2
+
+#------------------------------------------------------------------------------
+
 from dht import dht_service
+from lib import utime
 
 #------------------------------------------------------------------------------
 
 _Rules = {
     'nickname': {
         'type': [{'op': 'equal', 'arg': 'nickname', }, ],
+        'timestamp': [{'op': 'exist', }, ],
         'idurl': [{'op': 'exist', }, ],
         'nickname': [{'op': 'exist', }, ],
         'position': [{'op': 'exist', }, ],
     },
     'identity': {
         'type': [{'op': 'equal', 'arg': 'identity', }, ],
+        'timestamp': [{'op': 'exist', }, ],
         'idurl': [{'op': 'exist', }, ],
         'identity': [{'op': 'exist', }, ],
     },
     'relation': {
         'type': [{'op': 'equal', 'arg': 'relation', }, ],
+        'timestamp': [{'op': 'exist', }, ],
         'idurl': [{'op': 'exist', }, ],
         'index': [{'op': 'exist', }, ],
         'prefix': [{'op': 'exist', }, ],
@@ -68,7 +76,10 @@ def get_rules(record_type):
 
 #------------------------------------------------------------------------------
 
-def make_key(key, index, prefix, version=1):
+def make_key(key, index, prefix, version=None):
+    global _ProtocolVersion
+    if not version:
+        version = _ProtocolVersion
     return '{}:{}:{}:{}'.format(prefix, key, index, version)
 
 def split_key(key_str):
@@ -91,6 +102,7 @@ def set_nickname(key, idurl):
         key=key,
         json_data={
             'type': 'nickname',
+            'timestamp': utime.get_sec1970(),
             'idurl': idurl,
             'nickname': nickname,
             'position': pos,
@@ -108,6 +120,7 @@ def set_identity(idurl, raw_xml_data):
         key=idurl,
         json_data={
             'type': 'identity',
+            'timestamp': utime.get_sec1970(),
             'idurl': idurl,
             'identity': raw_xml_data,
         },
@@ -132,6 +145,7 @@ def set_relation(key, idurl, data, prefix, index):
         key=key,
         json_data={
             'type': 'relation',
+            'timestamp': utime.get_sec1970(),
             'idurl': idurl,
             'index': index,
             'prefix': prefix,
