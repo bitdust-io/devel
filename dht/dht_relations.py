@@ -102,14 +102,14 @@ class RelationsLookup(object):
 #         if self._index >= 3 and self._missed >= 3:
 #             if float(self._missed) / float(self._index) > 0.5:
 #                 return None
-        if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.do_read %s:%d missed:%d' % (
-                self.customer_id, self._index, self._missed))
         target_dht_key = dht_records.make_key(
             key=self.customer_id,
             index=self._index,
             prefix=self._prefix,
         )
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.do_read %s:%d missed:%d' % (
+                self.customer_id, self._index, self._missed))
         d = dht_records.get_relation(target_dht_key)
         d.addCallback(self.do_verify)
         d.addErrback(self.do_report_success)

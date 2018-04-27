@@ -33,15 +33,18 @@ module:: dht_records
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 6
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-_ProtocolVersion = 2
+_ProtocolVersion = 1
 
 #------------------------------------------------------------------------------
+
+from logs import lg
 
 from dht import dht_service
+
 from lib import utime
 
 #------------------------------------------------------------------------------
@@ -94,9 +97,13 @@ def split_key(key_str):
 #------------------------------------------------------------------------------
 
 def get_nickname(key):
+    if _Debug:
+        lg.args(_DebugLevel, key)
     return dht_service.get_valid_data(key, rules=get_rules('nickname'))
 
 def set_nickname(key, idurl):
+    if _Debug:
+        lg.args(_DebugLevel, key, idurl)
     nickname, _, pos = key.partition(':')
     return dht_service.set_valid_data(
         key=key,
@@ -113,9 +120,13 @@ def set_nickname(key, idurl):
 #------------------------------------------------------------------------------
 
 def get_identity(idurl):
+    if _Debug:
+        lg.args(_DebugLevel, idurl)
     return dht_service.get_valid_data(idurl, rules=get_rules('identity'))
 
 def set_identity(idurl, raw_xml_data):
+    if _Debug:
+        lg.args(_DebugLevel, idurl)
     return dht_service.set_valid_data(
         key=idurl,
         json_data={
@@ -138,9 +149,13 @@ def set_udp_incoming():
 #------------------------------------------------------------------------------
 
 def get_relation(key):
+    if _Debug:
+        lg.args(_DebugLevel, key)
     return dht_service.get_valid_data(key, rules=get_rules('relation'))
 
 def set_relation(key, idurl, data, prefix, index):
+    if _Debug:
+        lg.args(_DebugLevel, key, idurl, prefix, index)
     return dht_service.set_valid_data(
         key=key,
         json_data={
