@@ -365,6 +365,8 @@ class SharedAccessCoordinator(automat.Automat):
                     # we only want to read the data at the moment,
                     # so requesting 0 bytes from that supplier
                     needed_bytes=0,
+                    key_id=self.key_id,
+                    queue_subscribe=False,
                 )
             sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
             sc.automat('connect')

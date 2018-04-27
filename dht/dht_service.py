@@ -33,7 +33,7 @@ module:: dht_service
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 6
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -179,7 +179,7 @@ def disconnect():
 
 def reconnect():
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.reconnect')
+        lg.out(_DebugLevel, 'dht_service.reconnect')
     return node().reconnect()
 
 #------------------------------------------------------------------------------
@@ -219,27 +219,28 @@ def key_to_hash(key):
 
 def on_success(result, method, key, arg=None):
     if isinstance(result, dict):
-        v = str(result.values())
+        sz_bytes = len(str(result))
     else:
-        v = 'None'
+        sz_bytes = 0
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   result=%s' % (
-            method, key, v[:20].replace('\n', '')))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   with %d bytes' % (
+            method, key, sz_bytes))
     return result
 
 
 def on_error(err, method, key):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
+        lg.out(_DebugLevel, 'dht_service.on_error %s(%s) returned an ERROR:\n%s' % (
+            method, key, str(err)))
     return err
 
 #------------------------------------------------------------------------------
 
 def get_value(key):
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.get_value key=[%s]' % key)
     if not node():
         return fail(Exception('DHT service is off'))
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.get_value key=[%s]' % key)
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
@@ -247,11 +248,12 @@ def get_value(key):
 
 
 def set_value(key, value, age=0):
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_value key=[%s] value=[%s]' % (
-            key, str(value).replace('\n', '')))
     if not node():
         return fail(Exception('DHT service is off'))
+    sz_bytes = len(str(value))
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes' % (
+            key, sz_bytes, ))
     d = node().iterativeStore(key_to_hash(key), value, age=age)
     d.addCallback(on_success, 'set_value', key, value)
     d.addErrback(on_error, 'set_value', key)
@@ -259,10 +261,10 @@ def set_value(key, value, age=0):
 
 
 def delete_key(key):
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.delete_key [%s]' % key)
     if not node():
         return fail(Exception('DHT service is off'))
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.delete_key [%s]' % key)
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(on_success, 'delete_value', key)
     d.addErrback(on_error, 'delete_key', key)
@@ -278,7 +280,7 @@ def read_json_response(response, key, result_defer=None):
         except:
             lg.exc()
             if result_defer:
-                result_defer.callback(None)
+                result_defer.errback(Exception('invalid json value'))
             return
     if result_defer:
         result_defer.callback(value)
@@ -289,7 +291,7 @@ def get_json_value(key):
     if not node():
         return fail(Exception('DHT service is off'))
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.get_value key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.get_value key=[%s]' % key)
     ret = Deferred()
     d = get_value(key)
     d.addCallback(read_json_response, key_to_hash(key), ret)
@@ -301,20 +303,21 @@ def set_json_value(key, json_data, age=0):
     if not node():
         return fail(Exception('DHT service is off'))
     try:
-        value = json.dumps(json_data, indent=0, separators=(',', ':'), encoding='utf-8')
+        value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_json_value key=[%s] value=[%s]' % (
-            key, str(value).replace('\n', '')))
+        lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] with %d bytes' % (
+            key, len(str(value))))
     return set_value(key=key, value=value, age=age)
 
 #------------------------------------------------------------------------------
 
-def validate_data(value, rules, result_defer=None):
+def validate_data(value, key, rules, result_defer=None):
     if not isinstance(value, dict):
+        lg.warn('value not found for key %s' % key)
         if result_defer:
-            result_defer.callback(None)
+            result_defer.errback(Exception('value not found'))
         return None
     passed = True
     for field, field_rules in rules.items():
@@ -332,7 +335,7 @@ def validate_data(value, rules, result_defer=None):
     if not passed:
         lg.warn('invalid data in response, validation rules failed')
         if result_defer:
-            result_defer.callback(None)
+            result_defer.errback(Exception('invalid value in response'))
         return None
     if result_defer:
         result_defer.callback(value)
@@ -342,17 +345,17 @@ def validate_data(value, rules, result_defer=None):
 def get_valid_data(key, rules={}):
     if not node():
         return fail(Exception('DHT service is off'))
-    if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.get_valid_data key=%s rules=%s' % (key, rules, ))
+    # if _Debug:
+    #     lg.out(_DebugLevel, 'dht_service.get_valid_data key=%s rules=%s' % (key, rules, ))
     ret = Deferred()
     d = get_json_value(key)
-    d.addCallback(validate_data, rules, ret)
+    d.addCallback(validate_data, key, rules, ret)
     d.addErrback(ret.errback)
     return ret
 
 
 def set_valid_data(key, json_data, age=0, rules={}):
-    if validate_data(json_data, rules) is None:
+    if validate_data(json_data, key, rules) is None:
         return fail(Exception('invalid data, validation failed'))
     return set_json_value(key, json_data=json_data, age=age)
 
@@ -395,7 +398,8 @@ def get_node_data(key):
         return None
     value = node().data[key]
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.get_node_data key=[%s] returning: %s' % (key, str(value)))
+        lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] read %d bytes' % (
+            key, len(str(value))))
     return value
 
 
@@ -404,7 +408,8 @@ def set_node_data(key, value):
         return False
     node().data[key] = value
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)))
+        lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes' % (
+            key, len(str(value))))
     return True
 
 
@@ -415,7 +420,7 @@ def delete_node_data(key):
         return False
     node().data.pop(key)
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.delete_node_data key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s]' % key)
     return True
 
 #------------------------------------------------------------------------------
@@ -423,37 +428,38 @@ def delete_node_data(key):
 class DHTNode(DistributedTupleSpacePeer):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        DistributedTupleSpacePeer.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+        super(DHTNode, self).__init__(udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
 
     @rpcmethod
     def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
+        # TODO: add signature validation to be sure this is the owner of that key:value pair
+        # TODO: add verification methods for different type of data we store in DHT
         if _Debug:
-            lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-                base64.b32encode(key), str(value).replace('\n', '')))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes' % (
+                base64.b32encode(key), len(str(value))))
         self.data[key] = value
         try:
-            # TODO: add verification methods for different type of data we store in DHT
-            # TODO: add signature validation to be sure this is the owner of that key:value pair
-            return DistributedTupleSpacePeer.store(
-                self, key, value,
-                originalPublisherID=originalPublisherID, age=age, **kwargs)
+            return super(DHTNode, self).store(
+                key,
+                value,
+                originalPublisherID=originalPublisherID,
+                age=age,
+                **kwargs
+            )
         except:
             lg.exc()
             return 'OK'
 
     @rpcmethod
     def request(self, key):
-        try:
-            value = str(self.data.get(key, None))
-        except:
-            lg.exc()
-            value = None
+        value = self.data.get(key)
         if value is None and key in self._dataStore:
-            value = {key: self._dataStore[key], }
+            value = self._dataStore[key]
+            self.data[key] = value
         if _Debug:
-            lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
-                base64.b32encode(key), str(value)[:20]))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s] read %d bytes' % (
+                base64.b32encode(key), len(str(value))))
         return {key: value, }
 
     def reconnect(self, knownNodeAddresses=None):
@@ -482,7 +488,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
     def datagramReceived(self, datagram, address):
         if len(self.datagrams_queue) > 10:
             # TODO:
-            # seems like DHT traffic is too huge at that moment
+            # seems like DHT traffic is too high at that moment
             # need to find some solution here probably
             return
         self.datagrams_queue.append((datagram, address))

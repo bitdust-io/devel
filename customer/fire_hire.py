@@ -420,7 +420,7 @@ class FireHire(automat.Automat):
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
-                sc = supplier_connector.create(supplier_idurl)
+                sc = supplier_connector.create(supplier_idurl, customer_idurl=my_id.getLocalID())
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
             sc.automat('connect')

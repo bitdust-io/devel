@@ -67,12 +67,12 @@ def fqn(o):
 
 #------------------------------------------------------------------------------
 
-def out(_DebugLevel, msg, nl='\n'):
+def out(level, msg, nl='\n'):
     """
     The core method, most useful thing in any project :-))) Print a text line
     to the log file or console.
 
-    :param _DebugLevel: lower values is count as more important messages.
+    :param level: lower values is count as more important messages.
                         Usually I am using only even values from 0 to 18.
     :param msg: message string to be printed
     :param nl: this string is added at the end,
@@ -94,7 +94,6 @@ def out(_DebugLevel, msg, nl='\n'):
     if isinstance(s, unicode):
         s = s.encode('utf-8')
     s_ = s
-    level = _DebugLevel
     if level < 0:
         level = 0
     if level % 2:
@@ -141,6 +140,24 @@ def out(_DebugLevel, msg, nl='\n'):
     if _LogLinesCounter % 10000 == 0:
         out(2, '[%s]' % time.asctime())
     return None
+
+
+def args(level, *args, **kwargs):
+    cod = sys._getframe().f_back.f_code
+    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    caller = cod.co_name
+    message = kwargs.pop('message', None)
+    funcargs = []
+    for k, v in enumerate(args):
+        funcargs.append('"%s"' % v)
+    for k, v in kwargs:
+        funcargs.append('%s="%s"' % (k, v))
+    funcname = '%s.%s' % (modul, caller)
+    o = '%s(%s)' % (funcname, ','.join(funcargs), )
+    if message:
+        o += ' : ' + message
+    out(level, o)
+    return o
 
 
 def info(message):
