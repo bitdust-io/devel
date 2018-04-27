@@ -112,7 +112,7 @@ class RelationsLookup(object):
                 self.customer_id, self._index, self._missed))
         d = dht_records.get_relation(target_dht_key)
         d.addCallback(self.do_verify)
-        d.addErrback(self.do_report_success)
+        d.addErrback(self.do_verify)
         return d
 
     def do_erase(self):
@@ -156,13 +156,12 @@ class RelationsLookup(object):
         self._index += 1
 
     def do_verify(self, dht_value):
-        if not dht_value:
-            if _Debug:
-                lg.out(_DebugLevel, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
-                    self.customer_id, self._index))
-            # record not exist or invalid
-            return self.do_process(None, -1)
-
+#         if not dht_value:
+#             if _Debug:
+#                 lg.out(_DebugLevel, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
+#                     self.customer_id, self._index))
+#             # record not exist or invalid
+#             return self.do_process(None, -1)
         try:
             record = dht_value['data']
             record['customer_idurl'] = str(record['customer_idurl'])
@@ -170,12 +169,11 @@ class RelationsLookup(object):
             record['time'] = int(record['time'])
             record['signature'] = str(record['signature'])
         except:
-            lg.exc()
             record = None
 
         if not record:
             if _Debug:
-                lg.out(_DebugLevel, 'dht_relations.do_verify MISSED %s: bad record found at pos %s' % (
+                lg.out(_DebugLevel, 'dht_relations.do_verify MISSED %s: broken/empty record found at pos %s' % (
                     self.customer_id, self._index))
             # record not exist or invalid
             return self.do_process(record, -1)
