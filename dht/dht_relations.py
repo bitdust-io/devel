@@ -156,12 +156,6 @@ class RelationsLookup(object):
         self._index += 1
 
     def do_verify(self, dht_value):
-#         if not dht_value:
-#             if _Debug:
-#                 lg.out(_DebugLevel, 'dht_relations.do_verify MISSED %s: empty record found at pos %s' % (
-#                     self.customer_id, self._index))
-#             # record not exist or invalid
-#             return self.do_process(None, -1)
         try:
             record = dht_value['data']
             record['customer_idurl'] = str(record['customer_idurl'])
@@ -255,7 +249,9 @@ class RelationsLookup(object):
     def do_report_success(self, x=None):
         result_list = []
         for i in xrange(self._last_success_index + 1):
-            result_list.append(self._result.get(i, ''))
+            idurl = self._result.get(i, '')
+            if idurl:
+                result_list.append(self._result.get(i, ''))
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_report_success %s: %s' % (
                 self.customer_idurl, result_list))
