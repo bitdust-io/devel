@@ -278,7 +278,8 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
         'customer_idurl': customer_idurl,
         'supplier_idurl': supplier_idurl,
         'time': utime.utcnow_to_sec1970(),
-        'signature': '',  # TODO: add signature and verification methods
+        'signature': '',
+        # TODO: add signature and verification methods
     }
     return RelationsLookup(customer_idurl, new_data=new_data, publish=True).start()
 
