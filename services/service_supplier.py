@@ -597,14 +597,21 @@ class SupplierService(LocalService):
         from crypt import my_keys
         from userid import global_id
         list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+        if list_files_global_id['key_id']:
+            # customer id and data id can be recognized from packet id
+            # return back list of files according to the request
+            customer_idurl = list_files_global_id['idurl']
+            key_id = list_files_global_id['key_id']
+        else:
+            # packet id format is unknown
+            # by default returning back all files from that recipient if he is a customer
+            customer_idurl = newpacket.OwnerID
+            key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)
         list_files.send(
-            customer_idurl=newpacket.OwnerID,
+            customer_idurl=customer_idurl,
             packet_id=newpacket.PacketID,
             format_type=settings.ListFilesFormat(),
-            key_id=(
-                list_files_global_id['key_id'] or
-                my_keys.make_key_id(alias='customer', creator_idurl=newpacket.OwnerID)
-            ),
+            key_id=key_id,
         )
         return True
 

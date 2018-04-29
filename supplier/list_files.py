@@ -61,7 +61,8 @@ def send(customer_idurl, packet_id, format_type, key_id):
         return p2p_service.SendFailNoRequest(customer_idurl, packet_id)
     customer_name = nameurl.GetName(customer_idurl)
     if _Debug:
-        lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
+        lg.out(_DebugLevel, "list_files.send to %s, format is '%s', key_id=%s" % (
+            customer_name, format_type, key_id, ))
     ownerdir = settings.getCustomerFilesDir(customer_idurl)
     plaintext = ''
     if os.path.isdir(ownerdir):
