@@ -47,8 +47,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -173,12 +173,14 @@ class SupplierConnector(automat.Automat):
             )).strip()
         except:
             st = 'DISCONNECTED'
-        if st == 'CONNECTED':
-            automat.Automat.__init__(self, name, 'CONNECTED', _DebugLevel, _Debug)
-        elif st == 'NO_SERVICE':
-            automat.Automat.__init__(self, name, 'NO_SERVICE', _DebugLevel, _Debug)
-        else:
-            automat.Automat.__init__(self, name, 'DISCONNECTED', _DebugLevel, _Debug)
+        automat.Automat.__init__(
+            self,
+            name,
+            state=st,
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, self.state, self.state)
 

@@ -80,7 +80,7 @@ def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.init SKIP, already created a DHTNode')
+            lg.out(_DebugLevel, 'dht_service.init SKIP, DHTNode already exist')
         return
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.init UDP port is %d' % udp_port)

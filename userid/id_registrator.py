@@ -365,12 +365,17 @@ class IdRegistrator(automat.Automat):
             lg.out(4, '               FAILED: %s' % id_server_host)
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))
+
         for host in self.discovered_servers:
-            webport, tcpport = known_servers.by_host().get(host,
-                                                           (settings.IdentityWebPort(), settings.IdentityServerPort()))
+            webport, tcpport = known_servers.by_host().get(
+                host,
+                (settings.IdentityWebPort(), settings.IdentityServerPort()),
+            )
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', host, webport, '')
+            lg.out(4, '               connecting to %s   known tcp port is %d' % (
+                server_url, tcpport, ))
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_cb, host)
             d.addErrback(_eb, host)
@@ -440,7 +445,15 @@ class IdRegistrator(automat.Automat):
             bpio.WriteFile(settings.ExternalIPFilename(), ip)
             self.automat('stun-success', ip)
 
-        d = stun_client.safe_stun()
+        rnd_udp_port = random.randint(
+            settings.DefaultUDPPort(),
+            settings.DefaultUDPPort() + 500,
+        )
+        rnd_dht_port = random.randint(
+            settings.DefaultDHTPort(),
+            settings.DefaultDHTPort() + 500,
+        )
+        d = stun_client.safe_stun(udp_port=rnd_udp_port, dht_port=rnd_dht_port)
         d.addCallback(save)
         d.addErrback(lambda _: self.automat('stun-failed'))
 

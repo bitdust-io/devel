@@ -554,7 +554,10 @@ class BitDustRESTHTTPServer(APIResource):
 
     @GET('^/network/stun/v1$')
     def network_stun_v1(self, request):
-        return api.network_stun()
+        return api.network_stun(
+            udp_port=int(_request_arg(request, 'udp_port', 0)) or None,
+            dht_port=int(_request_arg(request, 'dht_port', 0)) or None,
+        )
 
     @GET('^/network/connected/v1$')
     def network_connected_v1(self, request):

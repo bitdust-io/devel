@@ -459,11 +459,13 @@ def safe_stun(udp_port=None, dht_port=None, ):
     result = Deferred()
     try:
         settings.init()
-        dht_port = dht_port or settings.getDHTPort()
-        udp_port = udp_port or settings.getUDPPort()
-        dht_service.init(dht_port)
+        dht_port = dht_port  # or settings.getDHTPort()
+        udp_port = udp_port  # or settings.getUDPPort()
+        if dht_port:
+            dht_service.init(dht_port)
         d = dht_service.connect()
-        udp.listen(udp_port)
+        if udp_port:
+            udp.listen(udp_port)
 
         def _cb(cod, typ, ip, details):
             # A('shutdown')
