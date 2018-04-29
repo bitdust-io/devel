@@ -80,7 +80,7 @@ def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.init SKIP, already created a DHTNode')
+            lg.out(_DebugLevel, 'dht_service.init SKIP, DHTNode already exist')
         return
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.init UDP port is %d' % udp_port)
@@ -291,7 +291,7 @@ def get_json_value(key):
     if not node():
         return fail(Exception('DHT service is off'))
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_value key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%s]' % key)
     ret = Deferred()
     d = get_value(key)
     d.addCallback(read_json_response, key_to_hash(key), ret)

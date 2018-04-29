@@ -253,8 +253,9 @@ class RelationsLookup(object):
             if idurl:
                 result_list.append(self._result.get(i, ''))
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.do_report_success %s: %s' % (
-                self.customer_idurl, result_list))
+            lg.out(_DebugLevel, 'dht_relations.do_report_success customer_id=%s:' % (
+                self.customer_id))
+            lg.out(_DebugLevel, '    %s' % result_list)
         self._result_defer.callback(result_list)
         self.do_close()
         return None
