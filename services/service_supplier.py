@@ -112,26 +112,25 @@ class SupplierService(LocalService):
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')
         if target_customer_id and key_id:
+            if not key_id or not my_keys.is_valid_key_id(key_id):
+                lg.warn('missed or invalid key id')
+                return p2p_service.SendFail(newpacket, 'invalid key id')
             # this is a request to access shared data
             target_customer_idurl = global_id.GlobalUserToIDURL(target_customer_id)
             if not contactsdb.is_customer(target_customer_idurl):
                 lg.warn("target user %s is not a customer" % target_customer_id)
                 return p2p_service.SendFail(newpacket, 'not a customer')
-            if contactsdb.is_customer(customer_idurl):
+            if target_customer_idurl == customer_idurl:
                 lg.warn('customer %s requesting shared access to own files' % customer_idurl)
-                return p2p_service.SendFail(newpacket, 'invalid request')
-            if not key_id:
-                lg.warn('missed key id')
-                return p2p_service.SendFail(newpacket, 'invalid request')
-            if not my_keys.is_valid_key_id(key_id):
-                lg.warn('invalid key id: %s' % key_id)
-                p2p_service.SendFail(newpacket, 'invalid key id')
-                return False
+                return p2p_service.SendFail(newpacket, 'invalid case')
+            # if contactsdb.is_customer(customer_idurl):
+            #     lg.warn('customer %s requesting shared access to own files' % customer_idurl)
+            #     return p2p_service.SendFail(newpacket, 'invalid request')
             if not my_keys.is_key_registered(key_id):
                 lg.warn('key not registered: %s' % key_id)
                 p2p_service.SendFail(newpacket, 'key not registered')
                 return False
-            trusted_customer_idurl = my_keys.split_key_id(key_id)[0]
+            trusted_customer_idurl = my_keys.split_key_id(key_id)[0]  # data owner
             if trusted_customer_idurl != target_customer_idurl and trusted_customer_idurl != customer_idurl:
                 # pretty complex scenario:
                 # external customer requesting access to data which belongs not to that customer
