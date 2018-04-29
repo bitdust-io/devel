@@ -192,7 +192,7 @@ class NicknameObserver(automat.Automat):
             index = 0
         self.nickname = nick
         # self.key = nick + ':' + str(number)
-        self.key = dht_records.make_key(
+        self.key = dht_service.make_key(
             key=self.nickname,
             index=index,
             prefix='nickname',
@@ -203,7 +203,7 @@ class NicknameObserver(automat.Automat):
         Action method.
         """
         try:
-            key_info = dht_records.split_key(self.key)
+            key_info = dht_service.split_key(self.key)
             # nik, number = self.key.rsplit(':', 1)
             index = int(key_info['index'])
             # number = int(number)
@@ -212,7 +212,7 @@ class NicknameObserver(automat.Automat):
             index = 0
         index += 1
         # self.key = self.nickname + ':' + str(number)
-        self.key = dht_records.make_key(
+        self.key = dht_service.make_key(
             key=self.nickname,
             index=index,
             prefix='nickname',
@@ -239,7 +239,7 @@ class NicknameObserver(automat.Automat):
         lg.out(8, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, arg))
         if self.result_callback is not None:
             try:
-                key_info = dht_records.split_key(self.key)
+                key_info = dht_service.split_key(self.key)
                 nick = key_info['key']
                 index = key_info['index']
             except:

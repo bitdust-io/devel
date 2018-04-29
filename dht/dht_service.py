@@ -72,6 +72,7 @@ from dht import known_nodes
 
 _MyNode = None
 _ActiveLookup = None
+_ProtocolVersion = 4
 
 #------------------------------------------------------------------------------
 
@@ -214,6 +215,23 @@ def key_to_hash(key):
     h = hashlib.sha1()
     h.update(key)
     return h.digest()
+
+#------------------------------------------------------------------------------
+
+def make_key(key, index, prefix, version=None):
+    global _ProtocolVersion
+    if not version:
+        version = _ProtocolVersion
+    return '{}:{}:{}:{}'.format(prefix, key, index, version)
+
+def split_key(key_str):
+    prefix, key, index, version = key_str.split(':')
+    return dict(
+        key=key,
+        prefix=prefix,
+        index=index,
+        version=version,
+    )
 
 #------------------------------------------------------------------------------
 

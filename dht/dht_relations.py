@@ -102,7 +102,7 @@ class RelationsLookup(object):
 #         if self._index >= 3 and self._missed >= 3:
 #             if float(self._missed) / float(self._index) > 0.5:
 #                 return None
-        target_dht_key = dht_records.make_key(
+        target_dht_key = dht_service.make_key(
             key=self.customer_id,
             index=self._index,
             prefix=self._prefix,
@@ -119,7 +119,7 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_erase %s:%s' % (
                 self.customer_id, self._index, ))
-        target_dht_key = dht_records.make_key(
+        target_dht_key = dht_service.make_key(
             key=self.customer_id,
             index=self._index,
             prefix=self._prefix,
@@ -134,7 +134,7 @@ class RelationsLookup(object):
             lg.out(_DebugLevel, 'dht_relations.do_write %s:%s' % (
                 self.customer_id, self._index, ))
         # new_payload = json.dumps(self._new_data)
-        new_dht_key = dht_records.make_key(
+        new_dht_key = dht_service.make_key(
             key=self.customer_id,
             index=self._index,
             prefix=self._prefix,

@@ -210,7 +210,7 @@ class NicknameHolder(automat.Automat):
         Action method.
         """
         # self.key = self.nickname + ':' + '0'
-        self.key = dht_records.make_key(
+        self.key = dht_service.make_key(
             key=self.nickname,
             index=0,
             prefix='nickname',
@@ -221,7 +221,7 @@ class NicknameHolder(automat.Automat):
         Action method.
         """
         try:
-            key_info = dht_records.split_key(self.key)
+            key_info = dht_service.split_key(self.key)
             # nik, number = self.key.rsplit(':', 1)
             index = int(key_info['index'])
         except:
@@ -229,7 +229,7 @@ class NicknameHolder(automat.Automat):
             index = 0
         index += 1
         # self.key = self.nickname + ':' + str(index)
-        self.key = dht_records.make_key(
+        self.key = dht_service.make_key(
             key=self.nickname,
             index=index,
             prefix='nickname',
