@@ -352,7 +352,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        self.suppliers_list.extend(filter(None, arg))
+        self.suppliers_list = filter(None, arg)
         contactsdb.update_suppliers(self.suppliers_list, customer_idurl=self.customer_idurl)
         contactsdb.save_suppliers(customer_idurl=self.customer_idurl)
 

@@ -105,6 +105,7 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_service
         from transport import packet_out
         if len(newpacket.Payload) > 1024 * 10:
+            lg.warn('too long payload')
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
         try:
@@ -112,6 +113,7 @@ class P2PHookupsService(LocalService):
             json_payload['name']
             json_payload['payload']
         except:
+            lg.warn('json payload invalid')
             p2p_service.SendFail(newpacket, 'json payload invalid')
             return False
         service_name = json_payload['name']

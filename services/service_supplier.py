@@ -107,15 +107,16 @@ class SupplierService(LocalService):
         except:
             customer_public_key = None
             customer_public_key_id = None
-        trusted_customer_idurl = None
+        data_owner_idurl = None
         target_customer_idurl = None
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')
-        if target_customer_id and key_id:
+        if key_id:
+            # this is a request from external user to access shared data stored byone of my customers
+            # this is "second" customer requesting data from "first" customer
             if not key_id or not my_keys.is_valid_key_id(key_id):
                 lg.warn('missed or invalid key id')
                 return p2p_service.SendFail(newpacket, 'invalid key id')
-            # this is a request to access shared data
             target_customer_idurl = global_id.GlobalUserToIDURL(target_customer_id)
             if not contactsdb.is_customer(target_customer_idurl):
                 lg.warn("target user %s is not a customer" % target_customer_id)
@@ -123,24 +124,24 @@ class SupplierService(LocalService):
             if target_customer_idurl == customer_idurl:
                 lg.warn('customer %s requesting shared access to own files' % customer_idurl)
                 return p2p_service.SendFail(newpacket, 'invalid case')
-            # if contactsdb.is_customer(customer_idurl):
-            #     lg.warn('customer %s requesting shared access to own files' % customer_idurl)
-            #     return p2p_service.SendFail(newpacket, 'invalid request')
             if not my_keys.is_key_registered(key_id):
                 lg.warn('key not registered: %s' % key_id)
                 p2p_service.SendFail(newpacket, 'key not registered')
                 return False
-            trusted_customer_idurl = my_keys.split_key_id(key_id)[0]  # data owner
-            if trusted_customer_idurl != target_customer_idurl and trusted_customer_idurl != customer_idurl:
+            data_owner_idurl = my_keys.split_key_id(key_id)[1]
+            if data_owner_idurl != target_customer_idurl and data_owner_idurl != customer_idurl:
                 # pretty complex scenario:
                 # external customer requesting access to data which belongs not to that customer
                 # this is "third" customer accessing data belongs to "second" customer
                 # TODO: for now just stop it
+                lg.warn('under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s' % (
+                    key_id, customer_idurl, target_customer_idurl, ))
                 p2p_service.SendFail(newpacket, 'under construction')
                 return False
             # do not create connection with that customer, only accept the request
             lg.info('external customer %s requested access to shared data at %s' % (customer_id, key_id, ))
             return p2p_service.SendAck(newpacket, 'accepted')
+        # key_id is not present in the request:
         # this is a request to connect new customer (or reconnect existing one) to that supplier
         if not bytes_for_customer or bytes_for_customer < 0:
             lg.warn("wrong payload : %s" % newpacket.Payload)
