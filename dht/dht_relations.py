@@ -31,8 +31,8 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 6
+_Debug = False
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -49,10 +49,6 @@ from twisted.internet.defer import Deferred
 from logs import lg
 
 from lib import utime
-
-from system import bpio
-
-from main import settings
 
 from userid import my_id
 from userid import global_id
@@ -133,7 +129,6 @@ class RelationsLookup(object):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_write %s:%s' % (
                 self.customer_id, self._index, ))
-        # new_payload = json.dumps(self._new_data)
         new_dht_key = dht_service.make_key(
             key=self.customer_id,
             index=self._index,
