@@ -207,6 +207,7 @@ class CustomerAssistant(automat.Automat):
                 packet_id='%s:%s' % (customer_key_id, packetid.UniqueID(), ),
                 format_type=settings.ListFilesFormat(),
                 key_id=customer_key_id,
+                remote_idurl=self.customer_idurl,  # send to the customer
             )
         else:
             lg.warn('key %s is not registered, not able to send his files' % customer_key_id)

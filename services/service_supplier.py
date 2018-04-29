@@ -612,6 +612,7 @@ class SupplierService(LocalService):
             packet_id=newpacket.PacketID,
             format_type=settings.ListFilesFormat(),
             key_id=key_id,
+            remote_idurl=newpacket.OwnerID,  # send back to the requestor
         )
         return True
 
