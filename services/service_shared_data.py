@@ -75,6 +75,7 @@ class SharedDataService(LocalService):
         from userid import global_id
         from storage import backup_matrix
         from supplier import list_files
+        from contacts import contactsdb
         list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
         if not list_files_global_id['idurl']:
             lg.warn('invalid PacketID: %s' % newpacket.PacketID)
@@ -148,13 +149,20 @@ class SharedDataService(LocalService):
         except:
             lg.exc()
             return False
+        # need to detect supplier position from the list of packets
+        # and place that supplier on the correct position in contactsdb
+        supplier_pos = backup_matrix.DetectSupplierPosition(raw_files)
+        if supplier_pos is not None:
+            current_suppliers = contactsdb.suppliers(customer_idurl=trusted_customer_idurl)
+            if supplier_pos >= len(current_suppliers):
+                current_suppliers += ['', ] * (1 + supplier_pos - len(current_suppliers))
+            if current_suppliers[supplier_pos]:
+                lg.warn('replacing known supplier %s at position %d for customer %s' % (
+                    current_suppliers[supplier_pos], supplier_pos, trusted_customer_idurl))
+            current_suppliers[supplier_pos] = external_supplier_idurl
+            contactsdb.update_suppliers(current_suppliers, customer_idurl=trusted_customer_idurl)
+            contactsdb.save_suppliers(customer_idurl=trusted_customer_idurl)
+        # finally send ack packet back
         p2p_service.SendAck(newpacket)
         lg.info('received list of packets from external supplier %s' % external_supplier_idurl)
         return True
-#         from access import shared_access_coordinator
-#         this_share = shared_access_coordinator.get_active_share(key_id)
-#         if not this_share:
-#             lg.warn('share is not opened: %s' % key_id)
-#             p2p_service.SendFail(newpacket, 'share is not opened')
-#             return False
-#         this_share.automat('customer-list-files-received', (newpacket, info, block, ))

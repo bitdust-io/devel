@@ -395,7 +395,7 @@ def ListFiles(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendListFiles(supplierNumORidurl, customer_idurl=None, key_id=None, wide=False, callbacks={}):
+def SendListFiles(target_supplier, customer_idurl=None, key_id=None, wide=False, callbacks={}):
     """
     This is used as a request method from your supplier : if you send him a ListFiles() packet
     he will reply you with a list of stored files in a Files() packet.
@@ -403,12 +403,12 @@ def SendListFiles(supplierNumORidurl, customer_idurl=None, key_id=None, wide=Fal
     MyID = my_id.getLocalID()
     if not customer_idurl:
         customer_idurl = MyID
-    if not str(supplierNumORidurl).isdigit():
-        RemoteID = supplierNumORidurl
+    if not str(target_supplier).isdigit():
+        RemoteID = target_supplier
     else:
-        RemoteID = contactsdb.supplier(supplierNumORidurl, customer_idurl=customer_idurl)
+        RemoteID = contactsdb.supplier(target_supplier, customer_idurl=customer_idurl)
     if not RemoteID:
-        lg.warn("RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
+        lg.warn("RemoteID is empty target_supplier=%s" % str(target_supplier))
         return None
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))

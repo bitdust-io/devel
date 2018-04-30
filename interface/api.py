@@ -791,7 +791,9 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         'remote_path': global_id.MakeGlobalID(
             path=norm_path['path'], customer=norm_path['customer'], key_alias=key_alias,),
         'global_id': global_id.MakeGlobalID(
-            path=norm_path['path_id'], customer=norm_path['customer'], key_alias=key_alias,),
+            path=pathID,
+            customer=norm_path['customer'],
+            key_alias=key_alias, ),
         'customer': norm_path['customer'],
         'path_id': pathID,
         'path': remotePath,

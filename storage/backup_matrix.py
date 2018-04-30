@@ -230,6 +230,7 @@ def SuppliersChangedNumbers(oldSupplierList, customer_idurl=None):
             changedList.append(i)
     return changedList
 
+#------------------------------------------------------------------------------
 
 def SaveLatestRawListFiles(supplier_idurl, raw_data, customer_idurl=None):
     """
@@ -282,15 +283,13 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
         is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
     else:
         is_in_sync = False
-    lg.out(4, 'backup_matrix.ReadRawListFiles, %s : %d bytes, is_in_sync=%s, customer_idurl=%s' % (
-        supplierNum, len(listFileText), is_in_sync, customer_idurl))
+    lg.out(4, 'backup_matrix.ReadRawListFiles, %s : %d bytes, is_in_sync=%s, rev:%d, customer_idurl=%s' % (
+        supplierNum, len(listFileText), is_in_sync, backup_control.revision(), customer_idurl))
     backups2remove = set()
     paths2remove = set()
     missed_backups = set(remote_files().keys())
     oldfiles = ClearSupplierRemoteInfo(supplierNum, global_id.UrlToGlobalID(customer_idurl))
     newfiles = 0
-    lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, is_in_sync=%s' % (
-        len(listFileText), supplierNum, backup_control.revision(), is_in_sync))
     current_key_alias = 'master'
     inpt = cStringIO.StringIO(listFileText)
     while True:
@@ -302,7 +301,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
         line = line.rstrip('\n')
         if line.strip() == '':
             continue
-        # also don't consider the identity a backup,
+        # also don't consider the identity a backup
         if line.find('http://') != -1 or line.find('.xml') != -1:
             continue
         lg.out(8, '    %s:{%s}' % (typ, line))
@@ -562,6 +561,45 @@ def ReadLocalFiles():
             lg.exc()
     if _LocalFilesNotifyCallback is not None:
         _LocalFilesNotifyCallback()
+
+
+def DetectSupplierPosition(raw_list_file_text):
+    """
+    """
+    inpt = cStringIO.StringIO(raw_list_file_text)
+    all_positions = {}
+    while True:
+        line = inpt.readline()
+        if line == '':
+            break
+        typ = line[0]
+        line = line[1:]
+        line = line.rstrip('\n')
+        if line.strip() == '':
+            continue
+        if line.find('http://') != -1 or line.find('.xml') != -1:
+            continue
+        if typ == 'V':
+            # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
+            words = line.split(' ')
+            if len(words) < 4:
+                lg.warn('incorrect line (words count): [%s]' % line)
+                continue
+            try:
+                supplier_pos = int(words[1])
+            except:
+                lg.warn('incorrect line: [%s]' % line)
+                continue
+            if supplier_pos not in all_positions:
+                all_positions[supplier_pos] = 0
+            all_positions[supplier_pos] += 1
+    inpt.close()
+    lg.out(4, 'backup_matrix.DetectSupplierPosition from %d bytes found: %s' % (len(raw_list_file_text), all_positions))
+    if not all_positions:
+        return None
+    all_positions = all_positions.items()
+    all_positions.sort(key=lambda i: i[1], reverse=True)
+    return all_positions[0][0]
 
 #------------------------------------------------------------------------------
 
