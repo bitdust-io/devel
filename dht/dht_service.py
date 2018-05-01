@@ -72,7 +72,7 @@ from dht import known_nodes
 
 _MyNode = None
 _ActiveLookup = None
-_ProtocolVersion = 4
+_ProtocolVersion = 5
 
 #------------------------------------------------------------------------------
 
