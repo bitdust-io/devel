@@ -53,6 +53,8 @@ from lib import utime
 from userid import my_id
 from userid import global_id
 
+from contacts import contactsdb
+
 from dht import dht_service
 from dht import dht_records
 
@@ -76,6 +78,7 @@ class RelationsLookup(object):
         self._misses_in_row = 0
         self._missed = 0
         self._result = {}
+        self._meta = {}
 
     def start(self):
         reactor.callLater(0, self.do_read)
@@ -210,6 +213,7 @@ class RelationsLookup(object):
             # record #N from another supplier
             self._last_success_index = self._index
             self._result[self._index] = record['supplier_idurl']
+            self._meta[self._index] = {'ecc_map': record.get('ecc_map'), }
             self.do_next(verified)
             self.do_read()
             return verified
@@ -218,6 +222,7 @@ class RelationsLookup(object):
             # record #N from me
             self._last_success_index = self._index
             self._result[self._index] = record['supplier_idurl']
+            self._meta[self._index] = {'ecc_map': record.get('ecc_map'), }
             if self._publish:
                 if self._new_data:
                     return self.do_write()
@@ -240,6 +245,7 @@ class RelationsLookup(object):
         self._misses_in_row = 0
         self._missed = 0
         self._result = {}
+        self._meta = {}
 
     def do_report_success(self, x=None):
         result_list = []
@@ -247,6 +253,10 @@ class RelationsLookup(object):
             idurl = self._result.get(i, '')
             if idurl:
                 result_list.append(self._result.get(i, ''))
+                meta_info = self._meta.get(i, {})
+                if meta_info:
+                    contactsdb.add_supplier_meta_info(
+                        idurl, meta_info, customer_idurl=self.customer_idurl)
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.do_report_success customer_id=%s:' % (
                 self.customer_id))
@@ -269,9 +279,11 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
     if _Debug:
         lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation: customer:%s supplier:%s' % (
             customer_idurl, supplier_idurl, ))
+    meta_info = contactsdb.get_customer_meta_info(customer_idurl)
     new_data = {
         'customer_idurl': customer_idurl,
         'supplier_idurl': supplier_idurl,
+        'ecc_map': meta_info.get('ecc_map', None),
         'time': utime.utcnow_to_sec1970(),
         'signature': '',
         # TODO: add signature and verification methods

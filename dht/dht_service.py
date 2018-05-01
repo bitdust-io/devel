@@ -333,28 +333,34 @@ def set_json_value(key, json_data, age=0):
 
 def validate_data(value, key, rules, result_defer=None):
     if not isinstance(value, dict):
-        lg.warn('value not found for key %s' % key)
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
         if result_defer:
             result_defer.errback(Exception('value not found'))
         return None
     passed = True
+    errors = []
     for field, field_rules in rules.items():
         for rule in field_rules:
             if 'op' not in rule:
                 continue
             if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
                 passed = False
+                errors.append((field, rule, ))
                 break
             if rule['op'] == 'exist' and field not in value:
                 passed = False
+                errors.append((field, rule, ))
                 break
         if not passed:
             break
     if not passed:
-        lg.warn('invalid data in response, validation rules failed')
+        lg.warn('invalid data in response, validation rules failed, errors: %s' % errors)
         if result_defer:
             result_defer.errback(Exception('invalid value in response'))
         return None
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] : value is OK' % key)
     if result_defer:
         result_defer.callback(value)
     return value

@@ -1403,7 +1403,7 @@ def GetBackupStatusInfo(backupID, item_info, item_name, parent_path_existed=None
         restoreObj = restore_monitor.GetWorkingRestoreObject(backupID)
         if restoreObj:
             maxBlockNum = backup_matrix.GetKnownMaxBlockNum(backupID)
-            currentBlock = max(0, restoreObj.BlockNumber)
+            currentBlock = max(0, restoreObj.block_number)
             percent = 0.0
             if maxBlockNum > 0:
                 percent = 100.0 * currentBlock / maxBlockNum

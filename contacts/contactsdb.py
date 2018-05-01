@@ -24,10 +24,16 @@
 .. module:: contactsdb.
 
 A low level methods to store list of contacts locally.:
-    - suppliers
-    - customers
-    - correspondents
+    + suppliers
+    + customers
+    + correspondents
 """
+
+#------------------------------------------------------------------------------
+
+import os
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -53,6 +59,10 @@ _SuppliersChangedCallback = None
 _CustomersChangedCallback = None
 _CorrespondentsChangedCallback = None
 _ContactsChangedCallbacks = []
+
+_CustomersMetaInfo = {}
+_SuppliersMetaInfo = {}
+_CorrespondentsMetaInfo = {}
 
 #-------------------------------------------------------------------------------
 
@@ -95,7 +105,6 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-
 def suppliers(customer_idurl=None):
     """
     Return list of suppliers ID's for given customer.
@@ -108,17 +117,14 @@ def suppliers(customer_idurl=None):
     return _SuppliersList[customer_idurl]
 
 
-def known_customers():
-    global _SuppliersList
-    return _SuppliersList.keys()
-
-
-def customers():
+def supplier(index, customer_idurl=None):
     """
-    Return list of customers ID's.
+    Return supplier ID on given position or empty string.
     """
-    global _CustomersList
-    return _CustomersList
+    num = int(index)
+    if num >= 0 and num < len(suppliers(customer_idurl=customer_idurl)):
+        return suppliers(customer_idurl=customer_idurl)[num]
+    return ''
 
 
 def all_suppliers():
@@ -131,6 +137,172 @@ def all_suppliers():
             if supplier_idurl not in result:
                 result.append(supplier_idurl)
     return result
+
+
+def set_suppliers(idlist, customer_idurl=None):
+    """
+    Set suppliers ID's list.
+    """
+    global _SuppliersList
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    if customer_idurl not in _SuppliersList:
+        _SuppliersList[customer_idurl] = []
+    _SuppliersList[customer_idurl] = map(lambda idurl: idurl.strip(), idlist)
+
+
+def update_suppliers(idslist, customer_idurl=None):
+    """
+    High-level method to set suppliers ID's list.
+    Executes required callbacks.
+    """
+    global _SuppliersChangedCallback
+    global _ContactsChangedCallbacks
+    oldsuppliers = suppliers(customer_idurl=customer_idurl)
+    oldcontacts = contacts()
+    set_suppliers(idslist, customer_idurl=customer_idurl)
+    if _SuppliersChangedCallback is not None:
+        _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
+    for cb in _ContactsChangedCallbacks:
+        cb(oldcontacts, contacts())
+
+
+def add_supplier(idurl, position=None, customer_idurl=None):
+    """
+    Add supplier in my list of suppliers or to the list stored for another customer.
+    If parameter `position` is provided, supplier will be inserted instead of added.
+    If position is greater than current list - empty strings will be filled in between.
+    """
+    global _SuppliersList
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    if customer_idurl not in _SuppliersList:
+        _SuppliersList[customer_idurl] = []
+    if position is None:
+        _SuppliersList[customer_idurl].append(idurl)
+        return len(_SuppliersList[customer_idurl]) - 1
+    current_suppliers = _SuppliersList[customer_idurl]
+    if position >= len(current_suppliers):
+        current_suppliers += ['', ] * (1 + position - len(current_suppliers))
+    if current_suppliers[position]:
+        lg.warn('replacing known supplier %s by %s at position %d for customer %s' % (
+            current_suppliers[position], idurl, position, customer_idurl))
+    current_suppliers[position] = idurl
+    _SuppliersList[customer_idurl] = current_suppliers
+    return position
+
+
+def erase_supplier(idurl=None, position=None, customer_idurl=None):
+    """
+    """
+    global _SuppliersList
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    if customer_idurl not in _SuppliersList:
+        return False
+    current_suppliers = _SuppliersList[customer_idurl]
+    if idurl:
+        if idurl not in current_suppliers:
+            return False
+        current_suppliers[current_suppliers.index(idurl)] = ''
+    elif position is not None:
+        if position >= len(current_suppliers):
+            return False
+        current_suppliers[position] = ''
+    else:
+        return False
+    _SuppliersList[customer_idurl] = current_suppliers
+    return True
+
+
+def clear_suppliers(customer_idurl=None):
+    """
+    Remove all suppliers for given customer, if customer_idurl is None will erase all my suppliers.
+    """
+    global _SuppliersList
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    _SuppliersList.pop(customer_idurl)
+
+
+def clear_all_suppliers():
+    """
+    Remove all suppliers.
+    """
+    global _SuppliersList
+    _SuppliersList.clear()
+
+
+#------------------------------------------------------------------------------
+
+def known_customers():
+    """
+    Return list of all known customers : if I need to connect to their suppliers.
+    """
+    global _SuppliersList
+    return _SuppliersList.keys()
+
+
+def customers():
+    """
+    Return list of my customers ID's if I am a supplier.
+    """
+    global _CustomersList
+    return _CustomersList
+
+
+def customer(index):
+    """
+    Return customer IDURL at given position or empty string if I have no customers.
+    """
+    num = int(index)
+    if num >= 0 and num < len(customers()):
+        return customers()[num]
+    return ''
+
+
+def set_customers(idlist):
+    """
+    Set customers list.
+    """
+    global _CustomersList
+    _CustomersList = map(lambda idurl: idurl.strip(), idlist)
+
+
+def update_customers(idslist):
+    """
+    Hight-level method to set customers ID's list.
+    Executes required callbacks.
+    """
+    global _CustomersChangedCallback
+    global _ContactsChangedCallbacks
+    oldcustomers = customers()
+    oldcontacts = contacts()
+    set_customers(idslist)
+    if _CustomersChangedCallback is not None:
+        _CustomersChangedCallback(oldcustomers, customers())
+    for cb in _ContactsChangedCallbacks:
+        cb(oldcontacts, contacts())
+
+
+def add_customer(idurl):
+    """
+    Add customer and return its position in the list.
+    """
+    global _CustomersList
+    _CustomersList.append(idurl)
+    return len(_CustomersList) - 1
+
+
+def clear_customers():
+    """
+    Remove all customers.
+    """
+    global _CustomersList
+    _CustomersList = []
+
+
+#------------------------------------------------------------------------------
 
 def contacts(include_all=False):
     """
@@ -164,109 +336,6 @@ def contacts_remote():
     if my_id.getLocalID() in allcontactslist:
         allcontactslist.remove(my_id.getLocalID())
     return allcontactslist
-
-
-def set_suppliers(idlist, customer_idurl=None):
-    """
-    Set suppliers ID's list.
-    """
-    global _SuppliersList
-    if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
-    if customer_idurl not in _SuppliersList:
-        _SuppliersList[customer_idurl] = []
-    _SuppliersList[customer_idurl] = map(lambda idurl: idurl.strip(), idlist)
-
-
-def set_customers(idlist):
-    """
-    Set customers list.
-    """
-    global _CustomersList
-    _CustomersList = map(lambda idurl: idurl.strip(), idlist)
-
-
-def add_customer(idurl):
-    """
-    Add customer and return its position in the list.
-    """
-    global _CustomersList
-    _CustomersList.append(idurl)
-    return len(_CustomersList) - 1
-
-
-def add_supplier(idurl, position=-1, customer_idurl=None):
-    """
-    Add supplier and return its position in the list.
-    """
-    global _SuppliersList
-    if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
-    if customer_idurl not in _SuppliersList:
-        _SuppliersList[customer_idurl] = []
-    if position >= 0:
-        _SuppliersList[customer_idurl][position] = idurl
-        return position
-    _SuppliersList[customer_idurl].append(idurl)
-    return len(_SuppliersList[customer_idurl]) - 1
-
-
-def clear_suppliers(customer_idurl=None):
-    """
-    Remove all suppliers for given customer, if customer_idurl is None will erase all my suppliers.
-    """
-    global _SuppliersList
-    if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
-    _SuppliersList.pop(customer_idurl)
-
-
-def clear_all_suppliers():
-    """
-    Remove all suppliers.
-    """
-    global _SuppliersList
-    _SuppliersList.clear()
-
-
-def clear_customers():
-    """
-    Remove all customers.
-    """
-    global _CustomersList
-    _CustomersList = []
-
-#------------------------------------------------------------------------------
-
-
-def update_suppliers(idslist, customer_idurl=None):
-    """
-    Set suppliers ID's list, called from fire_hire() machine basically.
-    """
-    global _SuppliersChangedCallback
-    global _ContactsChangedCallbacks
-    oldsuppliers = suppliers(customer_idurl=customer_idurl)
-    oldcontacts = contacts()
-    set_suppliers(idslist, customer_idurl=customer_idurl)
-    if _SuppliersChangedCallback is not None:
-        _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
-    for cb in _ContactsChangedCallbacks:
-        cb(oldcontacts, contacts())
-
-
-def update_customers(idslist):
-    """
-    Set customers ID's list.
-    """
-    global _CustomersChangedCallback
-    global _ContactsChangedCallbacks
-    oldcustomers = customers()
-    oldcontacts = contacts()
-    set_customers(idslist)
-    if _CustomersChangedCallback is not None:
-        _CustomersChangedCallback(oldcustomers, customers())
-    for cb in _ContactsChangedCallbacks:
-        cb(oldcontacts, contacts())
 
 #------------------------------------------------------------------------------
 
@@ -375,6 +444,7 @@ def is_correspondent(idurl):
     """
     return idurl in correspondents_ids()
 
+#------------------------------------------------------------------------------
 
 def num_customers():
     """
@@ -399,26 +469,7 @@ def total_suppliers():
         result.update(set(suppliers_list))
     return len(result)
 
-
-def supplier(index, customer_idurl=None):
-    """
-    Return supplier ID on given position or empty string.
-    """
-    num = int(index)
-    if num >= 0 and num < len(suppliers(customer_idurl=customer_idurl)):
-        return suppliers(customer_idurl=customer_idurl)[num]
-    return ''
-
-
-def customer(index):
-    """
-    Return customer ID on given position or empty string.
-    """
-    num = int(index)
-    if num >= 0 and num < len(customers()):
-        return customers()[num]
-    return ''
-
+#------------------------------------------------------------------------------
 
 def supplier_position(idurl, customer_idurl=None):
     """
@@ -464,36 +515,20 @@ def contact_position(idurl):
 
 #-------------------------------------------------------------------------------
 
-
 def save_suppliers(path=None, customer_idurl=None):
     """
     Write current suppliers list on the disk, ``path`` is a file path to save.
     """
     if path is None:
-        path = settings.SupplierIDsFilename()
-    if customer_idurl is not None:
-        path += ('_%s' % global_id.UrlToGlobalID(customer_idurl))
+        if customer_idurl is None:
+            path = settings.SupplierIDsFilename()
+        else:
+            path = os.path.join(
+                settings.SuppliersDir(),
+                global_id.UrlToGlobalID(customer_idurl),
+                'supplierids',
+            )
     bpio._write_list(path, suppliers(customer_idurl=customer_idurl))
-
-
-def save_customers(path=None):
-    """
-    Write current customers list on the disk, ``path`` is a file path to save.
-    """
-    if path is None:
-        path = settings.CustomerIDsFilename()
-    bpio._write_list(path, customers())
-
-
-def save_correspondents(path=None):
-    """
-    Write current correspondents list on the disk, ``path`` is a file path to
-    save.
-    """
-    if path is None:
-        path = settings.CorrespondentIDsFilename()
-    bpio._write_list(path, map(lambda t: "%s %s" % t, correspondents()))
-
 
 def load_suppliers(path):
     """
@@ -505,6 +540,16 @@ def load_suppliers(path):
     set_suppliers(lst)
     lg.out(4, 'contactsdb.load_suppliers %d items' % len(lst))
 
+#------------------------------------------------------------------------------
+
+def save_customers(path=None):
+    """
+    Write current customers list on the disk, ``path`` is a file path to save.
+    """
+    if path is None:
+        path = settings.CustomerIDsFilename()
+    bpio._write_list(path, customers())
+
 
 def load_customers(path):
     """
@@ -515,6 +560,17 @@ def load_customers(path):
         lst = list()
     set_customers(lst)
     lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
+
+#------------------------------------------------------------------------------
+
+def save_correspondents(path=None):
+    """
+    Write current correspondents list on the disk, ``path`` is a file path to
+    save.
+    """
+    if path is None:
+        path = settings.CorrespondentIDsFilename()
+    bpio._write_list(path, map(lambda t: "%s %s" % t, correspondents()))
 
 
 def load_correspondents(path):
@@ -608,6 +664,74 @@ def find_correspondent_by_nickname(nickname):
 def on_contacts_changed(old_contacts_list, new_contacts_list):
     from main import events
     events.send('contacts-changed', data=dict(old_contacts=old_contacts_list, new_contacts=new_contacts_list))
+
+#------------------------------------------------------------------------------
+
+def add_customer_meta_info(customer_idurl, info):
+    """
+    """
+    global _CustomersMetaInfo
+    if customer_idurl not in _CustomersMetaInfo:
+        _CustomersMetaInfo[customer_idurl] = {}
+    _CustomersMetaInfo[customer_idurl].update(info)
+
+
+def remove_customer_meta_info(customer_idurl):
+    """
+    """
+    global _CustomersMetaInfo
+    if customer_idurl not in _CustomersMetaInfo:
+        return False
+    _CustomersMetaInfo.pop(customer_idurl)
+    return True
+
+
+def get_customer_meta_info(customer_idurl):
+    """
+    """
+    global _CustomersMetaInfo
+    return _CustomersMetaInfo.get(customer_idurl, {})
+
+#------------------------------------------------------------------------------
+
+def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
+    """
+    """
+    global _SuppliersMetaInfo
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    if customer_idurl not in _SuppliersMetaInfo:
+        _SuppliersMetaInfo[customer_idurl] = {}
+    if supplier_idurl not in _SuppliersMetaInfo[customer_idurl]:
+        _SuppliersMetaInfo[customer_idurl][supplier_idurl] = {}
+    _SuppliersMetaInfo[customer_idurl][supplier_idurl].update(info)
+    lg.warn('updated meta info for supplier %s of customer %s: %s' % (
+        supplier_idurl, customer_idurl, _SuppliersMetaInfo[customer_idurl][supplier_idurl]))
+
+
+def remove_supplier_meta_info(supplier_idurl, customer_idurl=None):
+    """
+    """
+    global _SuppliersMetaInfo
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    if customer_idurl not in _SuppliersMetaInfo:
+        return False
+    if supplier_idurl not in _SuppliersMetaInfo[customer_idurl]:
+        return False
+    _SuppliersMetaInfo[customer_idurl].pop(customer_idurl)
+    if len(_SuppliersMetaInfo[customer_idurl]) == 0:
+        _SuppliersMetaInfo.pop(customer_idurl)
+    return True
+
+
+def get_supplier_meta_info(supplier_idurl, customer_idurl=None):
+    """
+    """
+    global _SuppliersMetaInfo
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
+    return _SuppliersMetaInfo.get(customer_idurl, {}).get(supplier_idurl, {})
 
 #------------------------------------------------------------------------------
 

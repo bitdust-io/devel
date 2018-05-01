@@ -353,9 +353,6 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         self.known_suppliers_list = filter(None, arg)
-        # contactsdb.update_suppliers(self.suppliers_list, customer_idurl=self.customer_idurl)
-        # contactsdb.save_suppliers(customer_idurl=self.customer_idurl)
-
         for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:

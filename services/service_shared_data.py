@@ -151,16 +151,20 @@ class SharedDataService(LocalService):
             return False
         # need to detect supplier position from the list of packets
         # and place that supplier on the correct position in contactsdb
-        supplier_pos = backup_matrix.DetectSupplierPosition(raw_files)
-        if supplier_pos is not None:
-            current_suppliers = contactsdb.suppliers(customer_idurl=trusted_customer_idurl)
-            if supplier_pos >= len(current_suppliers):
-                current_suppliers += ['', ] * (1 + supplier_pos - len(current_suppliers))
-            if current_suppliers[supplier_pos]:
-                lg.warn('replacing known supplier %s at position %d for customer %s' % (
-                    current_suppliers[supplier_pos], supplier_pos, trusted_customer_idurl))
-            current_suppliers[supplier_pos] = external_supplier_idurl
-            contactsdb.update_suppliers(current_suppliers, customer_idurl=trusted_customer_idurl)
+        real_supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
+        known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
+        if real_supplier_pos >= 0:
+            if known_supplier_pos >= 0 and known_supplier_pos != real_supplier_pos:
+                lg.warn('external supplier %s position is not matching to list files, rewriting' % external_supplier_idurl)
+                contactsdb.erase_supplier(
+                    idurl=external_supplier_idurl,
+                    customer_idurl=trusted_customer_idurl,
+                )
+            contactsdb.add_supplier(
+                idurl=external_supplier_idurl,
+                position=real_supplier_pos,
+                customer_idurl=trusted_customer_idurl,
+            )
             contactsdb.save_suppliers(customer_idurl=trusted_customer_idurl)
         # finally send ack packet back
         p2p_service.SendAck(newpacket)

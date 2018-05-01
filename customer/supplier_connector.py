@@ -76,6 +76,8 @@ from crypt import my_keys
 from p2p import commands
 from p2p import p2p_service
 
+from raid import eccmap
+
 from userid import my_id
 
 #------------------------------------------------------------------------------
@@ -348,6 +350,8 @@ class SupplierConnector(automat.Automat):
             )
         if self.key_id:
             service_info['key_id'] = self.key_id
+        if self.customer_idurl == my_id.getLocalIDURL():
+            service_info['ecc_map'] = eccmap.Current().name
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',

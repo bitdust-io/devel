@@ -594,9 +594,10 @@ def DetectSupplierPosition(raw_list_file_text):
                 all_positions[supplier_pos] = 0
             all_positions[supplier_pos] += 1
     inpt.close()
-    lg.out(4, 'backup_matrix.DetectSupplierPosition from %d bytes found: %s' % (len(raw_list_file_text), all_positions))
+    lg.out(4, 'backup_matrix.DetectSupplierPosition from %d bytes found: %s' % (
+        len(raw_list_file_text), all_positions))
     if not all_positions:
-        return None
+        return -1
     all_positions = all_positions.items()
     all_positions.sort(key=lambda i: i[1], reverse=True)
     return all_positions[0][0]

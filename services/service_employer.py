@@ -51,6 +51,8 @@ class EmployerService(LocalService):
         from customer import fire_hire
         from main.config import conf
         from services import driver
+        from raid import eccmap
+        eccmap.Update()
         fire_hire.A('init')
         conf().addCallback('services/customer/suppliers-number',
                            self._on_suppliers_number_modified)
@@ -75,6 +77,8 @@ class EmployerService(LocalService):
 
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
         from customer import fire_hire
+        from raid import eccmap
+        eccmap.Update()
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 

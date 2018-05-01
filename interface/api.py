@@ -851,15 +851,15 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
             d = restore_monitor.GetWorkingRestoreObject(backupID)
             if d:
                 downloads.append({
-                    'backup_id': r.BackupID,
-                    'creator_id': r.CreatorID,
-                    'path_id': r.PathID,
-                    'version': r.Version,
-                    'block_number': r.BlockNumber,
-                    'bytes_processed': r.BytesWritten,
+                    'backup_id': r.backup_id,
+                    'creator_id': r.creator_id,
+                    'path_id': r.path_id,
+                    'version': r.version,
+                    'block_number': r.block_number,
+                    'bytes_processed': r.bytes_written,
                     'created': time.asctime(time.localtime(r.Started)),
-                    'aborted': r.AbortState,
-                    'done': r.Done,
+                    'aborted': r.abort_flag,
+                    'done': r.done_flag,
                     'eccmap': '' if not r.EccMap else r.EccMap.name,
                 })
         r['downloads'] = downloads
@@ -1193,16 +1193,16 @@ def files_downloads():
     from storage import restore_monitor
     lg.out(4, 'api.files_downloads %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
     return RESULT([{
-        'backup_id': r.BackupID,
-        'creator_id': r.CreatorID,
-        'path_id': r.PathID,
-        'version': r.Version,
-        'block_number': r.BlockNumber,
-        'bytes_processed': r.BytesWritten,
+        'backup_id': r.backup_id,
+        'creator_id': r.creator_id,
+        'path_id': r.path_id,
+        'version': r.version,
+        'block_number': r.block_number,
+        'bytes_processed': r.bytes_written,
         'created': time.asctime(time.localtime(r.Started)),
-        'aborted': r.AbortState,
-        'done': r.Done,
-        'key_id': r.KeyID,
+        'aborted': r.abort_flag,
+        'done': r.done_flag,
+        'key_id': r.key_id,
         'eccmap': '' if not r.EccMap else r.EccMap.name,
     } for r in restore_monitor.GetWorkingObjects()])
 
@@ -1829,6 +1829,7 @@ def customer_reject(idurl_or_global_id):
     current_customers = contactsdb.customers()
     current_customers.remove(customer_idurl)
     contactsdb.update_customers(current_customers)
+    contactsdb.remove_customer_meta_info(customer_idurl)
     contactsdb.save_customers()
     # remove records for this customers from quotas info
     space_dict = accounting.read_customers_quotas()

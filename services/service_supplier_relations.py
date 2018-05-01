@@ -50,7 +50,6 @@ class SupplierRelationsService(LocalService):
     def start(self):
         from dht import dht_relations
         from contacts import contactsdb
-        from userid import my_id
         from main import events
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')

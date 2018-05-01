@@ -74,7 +74,7 @@ class SupplierService(LocalService):
     def stop(self):
         from transport import callback
         from main import events
-        from contacts import contactsdb
+        # from contacts import contactsdb
         # for customer_idurl in contactsdb.customers():
         #     events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
         events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
@@ -109,6 +109,7 @@ class SupplierService(LocalService):
             customer_public_key_id = None
         data_owner_idurl = None
         target_customer_idurl = None
+        ecc_map = json_payload.get('ecc_map')
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')
         if key_id:
@@ -172,6 +173,7 @@ class SupplierService(LocalService):
         from supplier import local_tester
         if free_bytes <= bytes_for_customer:
             contactsdb.update_customers(current_customers)
+            contactsdb.remove_customer_meta_info(customer_idurl)
             contactsdb.save_customers()
             accounting.write_customers_quotas(space_dict)
             if customer_public_key_id:
@@ -188,6 +190,7 @@ class SupplierService(LocalService):
         current_customers.append(customer_idurl)
         space_dict[customer_idurl] = bytes_for_customer
         contactsdb.update_customers(current_customers)
+        contactsdb.add_customer_meta_info(customer_idurl, {'ecc_map': ecc_map, })
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
         if customer_public_key_id:
@@ -222,7 +225,7 @@ class SupplierService(LocalService):
         from contacts import contactsdb
         from storage import accounting
         from services import driver
-        from userid import global_id
+        # from userid import global_id
         customer_idurl = newpacket.OwnerID
         if not contactsdb.is_customer(customer_idurl):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
@@ -242,14 +245,15 @@ class SupplierService(LocalService):
         new_customers = list(contactsdb.customers())
         new_customers.remove(customer_idurl)
         contactsdb.update_customers(new_customers)
+        contactsdb.remove_customer_meta_info(customer_idurl)
         contactsdb.save_customers()
         space_dict.pop(customer_idurl)
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
-        if driver.is_on('service_supplier_relations'):
-            from dht import dht_relations
-            reactor.callLater(0, dht_relations.close_customer_supplier_relation, customer_idurl)
+        # if driver.is_on('service_supplier_relations'):
+        #     from dht import dht_relations
+        #     reactor.callLater(0, dht_relations.close_customer_supplier_relation, customer_idurl)
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
         events.send('existing-customer-terminated', dict(idurl=customer_idurl))
         return p2p_service.SendAck(newpacket, 'accepted')
