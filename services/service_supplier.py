@@ -113,7 +113,7 @@ class SupplierService(LocalService):
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')
         if key_id:
-            # this is a request from external user to access shared data stored byone of my customers
+            # this is a request from external user to access shared data stored by one of my customers
             # this is "second" customer requesting data from "first" customer
             if not key_id or not my_keys.is_valid_key_id(key_id):
                 lg.warn('missed or invalid key id')

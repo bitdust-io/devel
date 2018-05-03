@@ -31,7 +31,7 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -276,10 +276,10 @@ class RelationsLookup(object):
 def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
     if not supplier_idurl:
         supplier_idurl = my_id.getLocalID()
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation: customer:%s supplier:%s' % (
-            customer_idurl, supplier_idurl, ))
     meta_info = contactsdb.get_customer_meta_info(customer_idurl)
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation: customer:%s supplier:%s meta:%s' % (
+            customer_idurl, supplier_idurl, meta_info, ))
     new_data = {
         'customer_idurl': customer_idurl,
         'supplier_idurl': supplier_idurl,
