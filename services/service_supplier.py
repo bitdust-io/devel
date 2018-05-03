@@ -460,19 +460,23 @@ class SupplierService(LocalService):
             lg.err("got incorrect PacketID")
             p2p_service.SendFail(newpacket, 'incorrect path')
             return False
-        if glob_path['idurl']:
-            if newpacket.CreatorID == glob_path['idurl']:
-                pass  # same customer, based on CreatorID : OK!
-            else:
-                lg.warn('one of customers requesting a Data from another customer!')
-        else:
+        if not glob_path['idurl']:
             lg.warn('no customer global id found in PacketID: %s' % newpacket.PacketID)
+            p2p_service.SendFail(newpacket, 'incorrect retreive request')
+            return False
+        if newpacket.CreatorID != glob_path['idurl']:
+            lg.warn('one of customers requesting a Data from another customer!')
+        else:
+            pass  # same customer, based on CreatorID : OK!
+        recipient_idurl = newpacket.OwnerID
         # TODO: process requests from another customer : glob_path['idurl']
         filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
         if not filename:
             if True:
                 # TODO: settings.getCustomersDataSharingEnabled() and
                 # SECURITY
+                # TODO: add more validations for receiver idurl
+                recipient_idurl = glob_path['idurl']
                 filename = self._do_make_valid_filename(glob_path['idurl'], glob_path)
         if not filename:
             lg.warn("had empty filename")
@@ -507,8 +511,13 @@ class SupplierService(LocalService):
         # that means outpacket.RemoteID=my_id.getLocalID() - it was addressed to that node and stored as it is
         # need to take that in account every time you receive Data() packet
         # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
-        lg.warn('from request %r : sending %r back to %s' % (newpacket, outpacket, outpacket.CreatorID))
-        gateway.outbox(outpacket, target=outpacket.CreatorID)
+        if recipient_idurl != outpacket.OwnerID:
+            lg.warn('from request %r : returning data owned by %s to %s' % (
+                newpacket, outpacket.OwnerID, recipient_idurl))
+        else:
+            lg.info('from request %r : sending %r back to owner: %s' % (
+                newpacket, outpacket, recipient_idurl))
+        gateway.outbox(outpacket, target=recipient_idurl)
         return True
 
     def _on_data(self, newpacket):

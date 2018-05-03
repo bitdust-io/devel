@@ -419,9 +419,14 @@ class BitDustRESTHTTPServer(APIResource):
 
     @DELETE('^/supplier/replace/v1$')
     def supplier_replace_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('index', 'idurl', 'global_id', ), ])
+        data = _request_data(request, mandatory_keys=[('index', 'position', 'idurl', 'global_id', ), ])
         return api.supplier_replace(
-            index_or_idurl_or_global_id=data.get('index') or data.get('global_id') or data.get('idurl'),
+            index_or_idurl_or_global_id=(
+                data.get('index') or
+                data.get('position') or
+                data.get('global_id') or
+                data.get('idurl')
+            ),
         )
 
     @PUT('^/supplier/switch/v1$')
