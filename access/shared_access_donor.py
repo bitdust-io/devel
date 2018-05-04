@@ -310,6 +310,9 @@ class SharedAccessDonor(automat.Automat):
             filter_cb=lambda path_id, path, info: True if info.key_id == self.key_id else False,
         )
         raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
+        if _Debug:
+            lg.out(_DebugLevel, 'shared_access_donor.doSendMyListFiles prepared list of files for %s :\n%s' % (
+                self.remote_idurl, raw_list_files))
         block = encrypted.Block(
             CreatorID=my_id.getLocalID(),
             BackupID=self.key_id,
