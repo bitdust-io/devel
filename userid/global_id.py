@@ -215,6 +215,8 @@ def ParseGlobalID(inp, detect_version=False):
                     result['version'] = versionName
             except:
                 pass
+    if not result['key_alias']:
+        result['key_alias'] = 'master'
     result['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
         key_alias=result['key_alias'],
         user=result['customer'],

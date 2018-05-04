@@ -55,6 +55,9 @@ import os
 import time
 
 from twisted.internet import reactor
+from twisted.internet.defer import succeed, fail
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -66,17 +69,15 @@ from automats import automat
 from system import bpio
 from system import tmpfile
 
-from userid import my_id
-
 from contacts import contactsdb
 from contacts import identitycache
 
 from services import driver
 
-import gateway
-import stats
-import callback
-import packet_out
+from p2p import commands
+
+from transport import stats
+from transport import callback
 
 #------------------------------------------------------------------------------
 
@@ -153,20 +154,18 @@ def history():
 
 
 def process(newpacket, info):
+    from p2p import p2p_service
     if not driver.is_on('service_p2p_hookups'):
         if _Debug:
             lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
-        return
-    handled = False
+        return fail()
     if _Debug:
         lg.out(_DebugLevel, 'packet_in.process %s from %s://%s : %s' % (
             str(newpacket), info.proto, info.host, info.status))
     if info.status != 'finished':
         if _Debug:
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
-        return
-    from p2p import commands
-    from p2p import p2p_service
+        return fail()
     if newpacket.Command == commands.Identity():  # and newpacket.RemoteID == my_id.getLocalID():
         # contact sending us current identity we might not have
         # so we handle it before check that packet is valid
@@ -175,7 +174,22 @@ def process(newpacket, info):
         # than we check the packet to be valid too.
         if not p2p_service.Identity(newpacket):
             lg.warn('non-valid identity received')
-            return
+            return fail()
+    if not identitycache.HasKey(newpacket.CreatorID):
+        lg.warn('will cache remote identity %s before processing incoming packet %s' % (newpacket.CreatorID, newpacket))
+        d = identitycache.immediatelyCaching(newpacket.CreatorID)
+        d.addCallback(lambda _: handle(newpacket, info))
+        d.addErrback(lambda err: lg.err('failed caching remote %s identity: %s' % (newpacket.CreatorID, str(err))))
+        return d
+    result = handle(newpacket, info)
+    if not result:
+        return fail()
+    return succeed(result)
+
+
+def handle(newpacket, info):
+    from transport import packet_out
+    handled = False
     # check that signed by a contact of ours
     if not newpacket.Valid():
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
@@ -202,6 +216,7 @@ def process(newpacket, info):
         })
         if len(history()) > 100:
             history().pop(0)
+    return handled
 
 #------------------------------------------------------------------------------
 
@@ -339,6 +354,7 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
+        from transport import gateway
         t = gateway.transports().get(self.proto, None)
         if t:
             t.call('cancel_file_receiving', self.transfer_id)
@@ -355,6 +371,7 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
+        from transport import gateway
         self.status, self.bytes_received, self.error_message = arg
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)

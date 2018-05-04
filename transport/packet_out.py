@@ -79,9 +79,8 @@ from userid import my_id
 from main import settings
 from main import events
 
-import callback
-import gateway
-import stats
+from transport import callback
+from transport import stats
 
 #------------------------------------------------------------------------------
 
@@ -623,6 +622,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
+        from transport import gateway
         for i in self.items:
             t = gateway.transports().get(i.proto, None)
             if t:
@@ -760,6 +760,7 @@ class PacketOut(automat.Automat):
         return None
 
     def _push(self):
+        from transport import gateway
         if self.route:
             # if this packet is routed - send directly to route host
             gateway.send_file(

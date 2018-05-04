@@ -333,7 +333,7 @@ def scheduleForCaching(idurl, timeout=0):
 
 def immediatelyCaching(idurl, timeout=0):
     """
-    A smart method to start caching some identity and get results in callbacks.
+    A smart method to cache some identity and get results in callbacks.
     """
     global _CachingTasks
     if idurl in _CachingTasks:
