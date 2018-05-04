@@ -179,6 +179,9 @@ class DataSender(automat.Automat):
                 from storage import backup_matrix
                 for backupID in misc.sorted_backup_ids(
                         backup_matrix.local_files().keys(), True):
+                    this_customer_idurl = packetid.CustomerIDURL(backupID)
+                    if this_customer_idurl != customer_idurl:
+                        continue
                     packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
                     if _Debug:
                         log.write('%s\n' % packetsBySupplier)

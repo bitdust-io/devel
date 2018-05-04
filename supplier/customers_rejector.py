@@ -289,6 +289,8 @@ class CustomersRejector(automat.Automat):
         """
         space_dict, spent_bytes, current_customers, removed_customers = arg
         contactsdb.update_customers(current_customers)
+        for customer_idurl in removed_customers:
+            contactsdb.remove_customer_meta_info(customer_idurl)
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
 

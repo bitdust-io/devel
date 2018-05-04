@@ -400,6 +400,8 @@ def DefaultDesiredSuppliers():
 
     Definitely we want to have 64 by default, but we need to have much
     more alive users to do that.
+
+    Must comply with ``DefaultEccMapName()``
     """
     return 4
 

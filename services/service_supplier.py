@@ -74,7 +74,7 @@ class SupplierService(LocalService):
     def stop(self):
         from transport import callback
         from main import events
-        from contacts import contactsdb
+        # from contacts import contactsdb
         # for customer_idurl in contactsdb.customers():
         #     events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
         events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
@@ -107,41 +107,42 @@ class SupplierService(LocalService):
         except:
             customer_public_key = None
             customer_public_key_id = None
-        trusted_customer_idurl = None
+        data_owner_idurl = None
         target_customer_idurl = None
+        ecc_map = json_payload.get('ecc_map')
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')
-        if target_customer_id and key_id:
-            # this is a request to access shared data
+        if key_id:
+            # this is a request from external user to access shared data stored by one of my customers
+            # this is "second" customer requesting data from "first" customer
+            if not key_id or not my_keys.is_valid_key_id(key_id):
+                lg.warn('missed or invalid key id')
+                return p2p_service.SendFail(newpacket, 'invalid key id')
             target_customer_idurl = global_id.GlobalUserToIDURL(target_customer_id)
             if not contactsdb.is_customer(target_customer_idurl):
                 lg.warn("target user %s is not a customer" % target_customer_id)
                 return p2p_service.SendFail(newpacket, 'not a customer')
-            if contactsdb.is_customer(customer_idurl):
+            if target_customer_idurl == customer_idurl:
                 lg.warn('customer %s requesting shared access to own files' % customer_idurl)
-                return p2p_service.SendFail(newpacket, 'invalid request')
-            if not key_id:
-                lg.warn('missed key id')
-                return p2p_service.SendFail(newpacket, 'invalid request')
-            if not my_keys.is_valid_key_id(key_id):
-                lg.warn('invalid key id: %s' % key_id)
-                p2p_service.SendFail(newpacket, 'invalid key id')
-                return False
+                return p2p_service.SendFail(newpacket, 'invalid case')
             if not my_keys.is_key_registered(key_id):
                 lg.warn('key not registered: %s' % key_id)
                 p2p_service.SendFail(newpacket, 'key not registered')
                 return False
-            trusted_customer_idurl = my_keys.split_key_id(key_id)[0]
-            if trusted_customer_idurl != target_customer_idurl and trusted_customer_idurl != customer_idurl:
+            data_owner_idurl = my_keys.split_key_id(key_id)[1]
+            if data_owner_idurl != target_customer_idurl and data_owner_idurl != customer_idurl:
                 # pretty complex scenario:
                 # external customer requesting access to data which belongs not to that customer
                 # this is "third" customer accessing data belongs to "second" customer
                 # TODO: for now just stop it
+                lg.warn('under construction, key_id=%s customer_idurl=%s target_customer_idurl=%s' % (
+                    key_id, customer_idurl, target_customer_idurl, ))
                 p2p_service.SendFail(newpacket, 'under construction')
                 return False
             # do not create connection with that customer, only accept the request
             lg.info('external customer %s requested access to shared data at %s' % (customer_id, key_id, ))
             return p2p_service.SendAck(newpacket, 'accepted')
+        # key_id is not present in the request:
         # this is a request to connect new customer (or reconnect existing one) to that supplier
         if not bytes_for_customer or bytes_for_customer < 0:
             lg.warn("wrong payload : %s" % newpacket.Payload)
@@ -172,6 +173,7 @@ class SupplierService(LocalService):
         from supplier import local_tester
         if free_bytes <= bytes_for_customer:
             contactsdb.update_customers(current_customers)
+            contactsdb.remove_customer_meta_info(customer_idurl)
             contactsdb.save_customers()
             accounting.write_customers_quotas(space_dict)
             if customer_public_key_id:
@@ -188,6 +190,7 @@ class SupplierService(LocalService):
         current_customers.append(customer_idurl)
         space_dict[customer_idurl] = bytes_for_customer
         contactsdb.update_customers(current_customers)
+        contactsdb.add_customer_meta_info(customer_idurl, {'ecc_map': ecc_map, })
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
         if customer_public_key_id:
@@ -222,7 +225,7 @@ class SupplierService(LocalService):
         from contacts import contactsdb
         from storage import accounting
         from services import driver
-        from userid import global_id
+        # from userid import global_id
         customer_idurl = newpacket.OwnerID
         if not contactsdb.is_customer(customer_idurl):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
@@ -242,14 +245,15 @@ class SupplierService(LocalService):
         new_customers = list(contactsdb.customers())
         new_customers.remove(customer_idurl)
         contactsdb.update_customers(new_customers)
+        contactsdb.remove_customer_meta_info(customer_idurl)
         contactsdb.save_customers()
         space_dict.pop(customer_idurl)
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
-        if driver.is_on('service_supplier_relations'):
-            from dht import dht_relations
-            reactor.callLater(0, dht_relations.close_customer_supplier_relation, customer_idurl)
+        # if driver.is_on('service_supplier_relations'):
+        #     from dht import dht_relations
+        #     reactor.callLater(0, dht_relations.close_customer_supplier_relation, customer_idurl)
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
         events.send('existing-customer-terminated', dict(idurl=customer_idurl))
         return p2p_service.SendAck(newpacket, 'accepted')
@@ -456,19 +460,23 @@ class SupplierService(LocalService):
             lg.err("got incorrect PacketID")
             p2p_service.SendFail(newpacket, 'incorrect path')
             return False
-        if glob_path['idurl']:
-            if newpacket.CreatorID == glob_path['idurl']:
-                pass  # same customer, based on CreatorID : OK!
-            else:
-                lg.warn('one of customers requesting a Data from another customer!')
-        else:
+        if not glob_path['idurl']:
             lg.warn('no customer global id found in PacketID: %s' % newpacket.PacketID)
+            p2p_service.SendFail(newpacket, 'incorrect retreive request')
+            return False
+        if newpacket.CreatorID != glob_path['idurl']:
+            lg.warn('one of customers requesting a Data from another customer!')
+        else:
+            pass  # same customer, based on CreatorID : OK!
+        recipient_idurl = newpacket.OwnerID
         # TODO: process requests from another customer : glob_path['idurl']
         filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
         if not filename:
             if True:
                 # TODO: settings.getCustomersDataSharingEnabled() and
                 # SECURITY
+                # TODO: add more validations for receiver idurl
+                recipient_idurl = glob_path['idurl']
                 filename = self._do_make_valid_filename(glob_path['idurl'], glob_path)
         if not filename:
             lg.warn("had empty filename")
@@ -503,8 +511,13 @@ class SupplierService(LocalService):
         # that means outpacket.RemoteID=my_id.getLocalID() - it was addressed to that node and stored as it is
         # need to take that in account every time you receive Data() packet
         # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
-        lg.warn('from request %r : sending %r back to %s' % (newpacket, outpacket, outpacket.CreatorID))
-        gateway.outbox(outpacket, target=outpacket.CreatorID)
+        if recipient_idurl != outpacket.OwnerID:
+            lg.warn('from request %r : returning data owned by %s to %s' % (
+                newpacket, outpacket.OwnerID, recipient_idurl))
+        else:
+            lg.info('from request %r : sending %r back to owner: %s' % (
+                newpacket, outpacket, recipient_idurl))
+        gateway.outbox(outpacket, target=recipient_idurl)
         return True
 
     def _on_data(self, newpacket):
@@ -520,9 +533,10 @@ class SupplierService(LocalService):
         if newpacket.OwnerID == my_id.getLocalID():
             # this Data belong to us, SKIP
             return False
-        if not contactsdb.is_customer(newpacket.OwnerID):  # SECURITY
-            lg.err("%s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
-            p2p_service.SendFail(newpacket, 'not a customer')
+        if not contactsdb.is_customer(newpacket.OwnerID):
+            # SECURITY
+            lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
+            # p2p_service.SendFail(newpacket, 'not a customer')
             return False
         glob_path = global_id.ParseGlobalID(newpacket.PacketID)
         if not glob_path['path']:
@@ -597,14 +611,22 @@ class SupplierService(LocalService):
         from crypt import my_keys
         from userid import global_id
         list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
+        if list_files_global_id['key_id']:
+            # customer id and data id can be recognized from packet id
+            # return back list of files according to the request
+            customer_idurl = list_files_global_id['idurl']
+            key_id = list_files_global_id['key_id']
+        else:
+            # packet id format is unknown
+            # by default returning back all files from that recipient if he is a customer
+            customer_idurl = newpacket.OwnerID
+            key_id = my_keys.make_key_id(alias='customer', creator_idurl=customer_idurl)
         list_files.send(
-            customer_idurl=newpacket.OwnerID,
+            customer_idurl=customer_idurl,
             packet_id=newpacket.PacketID,
             format_type=settings.ListFilesFormat(),
-            key_id=(
-                list_files_global_id['key_id'] or
-                my_keys.make_key_id(alias='customer', creator_idurl=newpacket.OwnerID)
-            ),
+            key_id=key_id,
+            remote_idurl=newpacket.OwnerID,  # send back to the requestor
         )
         return True
 

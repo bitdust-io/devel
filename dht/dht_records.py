@@ -32,12 +32,8 @@ module:: dht_records
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 8
-
-#------------------------------------------------------------------------------
-
-_ProtocolVersion = 1
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -76,23 +72,6 @@ _Rules = {
 def get_rules(record_type):
     global _Rules
     return _Rules.get(record_type, {})
-
-#------------------------------------------------------------------------------
-
-def make_key(key, index, prefix, version=None):
-    global _ProtocolVersion
-    if not version:
-        version = _ProtocolVersion
-    return '{}:{}:{}:{}'.format(prefix, key, index, version)
-
-def split_key(key_str):
-    prefix, key, index, version = key_str.split(':')
-    return dict(
-        key=key,
-        prefix=prefix,
-        index=index,
-        version=version,
-    )
 
 #------------------------------------------------------------------------------
 

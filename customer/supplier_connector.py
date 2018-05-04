@@ -47,8 +47,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -75,6 +75,8 @@ from crypt import my_keys
 
 from p2p import commands
 from p2p import p2p_service
+
+from raid import eccmap
 
 from userid import my_id
 
@@ -173,12 +175,14 @@ class SupplierConnector(automat.Automat):
             )).strip()
         except:
             st = 'DISCONNECTED'
-        if st == 'CONNECTED':
-            automat.Automat.__init__(self, name, 'CONNECTED', _DebugLevel, _Debug)
-        elif st == 'NO_SERVICE':
-            automat.Automat.__init__(self, name, 'NO_SERVICE', _DebugLevel, _Debug)
-        else:
-            automat.Automat.__init__(self, name, 'DISCONNECTED', _DebugLevel, _Debug)
+        automat.Automat.__init__(
+            self,
+            name,
+            state=st,
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, self.state, self.state)
 
@@ -337,15 +341,17 @@ class SupplierConnector(automat.Automat):
         service_info = {
             'needed_bytes': self.needed_bytes,
             'customer_id': global_id.UrlToGlobalID(self.customer_idurl),
-            'key_id': self.key_id,
         }
-        try:
+        my_customer_key_id = my_id.getGlobalID(key_alias='customer')
+        if my_keys.is_key_registered(my_customer_key_id):
             service_info['customer_public_key'] = my_keys.get_key_info(
-                key_id=my_id.getGlobalID(key_alias='customer'),
+                key_id=my_customer_key_id,
                 include_private=False,
             )
-        except:
-            pass
+        if self.key_id:
+            service_info['key_id'] = self.key_id
+        if self.customer_idurl == my_id.getLocalIDURL():
+            service_info['ecc_map'] = eccmap.Current().name
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',

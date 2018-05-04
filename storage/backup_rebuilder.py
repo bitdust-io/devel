@@ -706,10 +706,10 @@ def RemoveAllBackupsToWork():
     Clear the whole working queue.
     """
     global _BackupIDsQueue
+    current_queue_length = len(_BackupIDsQueue)
     _BackupIDsQueue = []
     if _Debug:
-        lg.out(_DebugLevel, '')
-        
+        lg.out(_DebugLevel, 'RemoveAllBackupsToWork %d items cleaned' % current_queue_length)
 
 
 def SetStoppedFlag():

@@ -32,8 +32,8 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 10
+_Debug = False
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -72,6 +72,7 @@ from dht import known_nodes
 
 _MyNode = None
 _ActiveLookup = None
+_ProtocolVersion = 5
 
 #------------------------------------------------------------------------------
 
@@ -80,7 +81,7 @@ def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.init SKIP, already created a DHTNode')
+            lg.out(_DebugLevel, 'dht_service.init SKIP, DHTNode already exist')
         return
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.init UDP port is %d' % udp_port)
@@ -217,6 +218,23 @@ def key_to_hash(key):
 
 #------------------------------------------------------------------------------
 
+def make_key(key, index, prefix, version=None):
+    global _ProtocolVersion
+    if not version:
+        version = _ProtocolVersion
+    return '{}:{}:{}:{}'.format(prefix, key, index, version)
+
+def split_key(key_str):
+    prefix, key, index, version = key_str.split(':')
+    return dict(
+        key=key,
+        prefix=prefix,
+        index=index,
+        version=version,
+    )
+
+#------------------------------------------------------------------------------
+
 def on_success(result, method, key, arg=None):
     if isinstance(result, dict):
         sz_bytes = len(str(result))
@@ -291,7 +309,7 @@ def get_json_value(key):
     if not node():
         return fail(Exception('DHT service is off'))
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_value key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%s]' % key)
     ret = Deferred()
     d = get_value(key)
     d.addCallback(read_json_response, key_to_hash(key), ret)
@@ -315,28 +333,34 @@ def set_json_value(key, json_data, age=0):
 
 def validate_data(value, key, rules, result_defer=None):
     if not isinstance(value, dict):
-        lg.warn('value not found for key %s' % key)
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
         if result_defer:
             result_defer.errback(Exception('value not found'))
         return None
     passed = True
+    errors = []
     for field, field_rules in rules.items():
         for rule in field_rules:
             if 'op' not in rule:
                 continue
             if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
                 passed = False
+                errors.append((field, rule, ))
                 break
             if rule['op'] == 'exist' and field not in value:
                 passed = False
+                errors.append((field, rule, ))
                 break
         if not passed:
             break
     if not passed:
-        lg.warn('invalid data in response, validation rules failed')
+        lg.warn('invalid data in response, validation rules failed, errors: %s' % errors)
         if result_defer:
             result_defer.errback(Exception('invalid value in response'))
         return None
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] : value is OK' % key)
     if result_defer:
         result_defer.callback(value)
     return value

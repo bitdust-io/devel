@@ -74,7 +74,7 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -141,23 +141,24 @@ class RestoreWorker(automat.Automat):
         """
         Builds `restore_worker()` state machine.
         """
-        self.CreatorID = my_id.getLocalID()
-        self.BackupID = BackupID
-        _parts = packetid.SplitBackupID(self.BackupID)
-        self.CustomerGlobalID = _parts[0]
-        self.CustomerIDURL = global_id.GlobalUserToIDURL(self.CustomerGlobalID)
-        self.PathID = _parts[1]
-        self.Version = _parts[2]
-        self.File = OutputFile
-        self.KeyID = KeyID
+        self.creator_id = my_id.getLocalID()
+        self.backup_id = BackupID
+        _parts = packetid.SplitBackupID(self.backup_id)
+        self.customer_id = _parts[0]
+        self.customer_idurl = global_id.GlobalUserToIDURL(self.customer_id)
+        self.known_suppliers = []
+        self.path_id = _parts[1]
+        self.version = _parts[2]
+        self.output_stream = OutputFile
+        self.key_id = KeyID
         # is current active block - so when add 1 we get to first, which is 0
-        self.BlockNumber = -1
-        self.BytesWritten = 0
+        self.block_number = -1
+        self.bytes_written = 0
         self.OnHandData = []
         self.OnHandParity = []
-        self.AbortState = False
-        self.Done = False
-        self.EccMap = eccmap.Current()
+        self.abort_flag = False
+        self.done_flag = False
+        self.EccMap = None
         self.Started = time.time()
         self.LastAction = time.time()
         self.RequestFails = []
@@ -167,7 +168,7 @@ class RestoreWorker(automat.Automat):
         self.blockRestoredCallback = None
 
         super(RestoreWorker, self).__init__(
-            name='restore_worker_%s' % self.Version,
+            name='restore_worker_%s' % self.version,
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -175,7 +176,7 @@ class RestoreWorker(automat.Automat):
             publish_events=publish_events,
             **kwargs
         )
-        events.send('restore-started', dict(backup_id=self.BackupID))
+        events.send('restore-started', dict(backup_id=self.backup_id))
 
     def set_packet_in_callback(self, cb):
         self.packetInCallback = cb
@@ -313,7 +314,7 @@ class RestoreWorker(automat.Automat):
         """
         result = self.EccMap.Fixable(self.OnHandData, self.OnHandParity)
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.isBlockFixable returns %s for block %d' % (result, self.BlockNumber, ))
+            lg.out(_DebugLevel, 'restore_worker.isBlockFixable returns %s for block %d' % (result, self.block_number, ))
             lg.out(_DebugLevel, '    OnHandData: %s' % self.OnHandData)
             lg.out(_DebugLevel, '    OnHandParity: %s' % self.OnHandParity)
         return result
@@ -324,15 +325,34 @@ class RestoreWorker(automat.Automat):
         """
         if data_receiver.A():
             data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
+        self.known_suppliers = contactsdb.suppliers(customer_idurl=self.customer_idurl)
+        known_eccmap_dict = {}
+        for supplier_idurl in self.known_suppliers:
+            known_ecc_map = contactsdb.get_supplier_meta_info(
+                supplier_idurl=supplier_idurl, customer_idurl=self.customer_idurl,
+            ).get('ecc_map', None)
+            if known_ecc_map:
+                if known_ecc_map not in known_eccmap_dict:
+                    known_eccmap_dict[known_ecc_map] = 0
+                known_eccmap_dict[known_ecc_map] += 1
+        if known_eccmap_dict:
+            all_known_eccmaps = known_eccmap_dict.items()
+            all_known_eccmaps.sort(key=lambda i: i[1], reverse=True)
+            self.EccMap = eccmap.eccmap(all_known_eccmaps[0][0])
+            lg.info('eccmap %s recognized from suppliers meta info' % self.EccMap)
+        else:
+            self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(len(self.known_suppliers)))
+            lg.warn('no meta info found, guessed eccmap %s from %d known suppliers' % (
+                self.EccMap, len(self.known_suppliers)))
 
     def doStartNewBlock(self, arg):
         """
         Action method.
         """
         self.LastAction = time.time()
-        self.BlockNumber += 1
+        self.block_number += 1
         if _Debug:
-            lg.out(_DebugLevel, "restore_worker.doStartNewBlock " + str(self.BlockNumber))
+            lg.out(_DebugLevel, "restore_worker.doStartNewBlock " + str(self.block_number))
         self.OnHandData = [False, ] * self.EccMap.datasegments
         self.OnHandParity = [False, ] * self.EccMap.paritysegments
         self.RequestFails = []
@@ -348,12 +368,12 @@ class RestoreWorker(automat.Automat):
         Action method.
         """
         for SupplierNumber in range(self.EccMap.datasegments):
-            PacketID = packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Data')
+            PacketID = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')
             customer, remotePath = packetid.SplitPacketID(PacketID)
             self.OnHandData[SupplierNumber] = os.path.exists(os.path.join(
                 settings.getLocalBackupsDir(), customer, remotePath))
         for SupplierNumber in range(self.EccMap.paritysegments):
-            PacketID = packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')
+            PacketID = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Parity')
             customer, remotePath = packetid.SplitPacketID(PacketID)
             self.OnHandParity[SupplierNumber] = os.path.exists(os.path.join(
                 settings.getLocalBackupsDir(), customer, remotePath))
@@ -372,7 +392,7 @@ class RestoreWorker(automat.Automat):
         try:
             datalength = int(lengthstring)                                        # real length before raidmake/ECC
             blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]     # remove padding from raidmake/ECC
-            newblock = encrypted.Unserialize(blockdata, decrypt_key=self.KeyID)   # convert to object
+            newblock = encrypted.Unserialize(blockdata, decrypt_key=self.key_id)   # convert to object
         except:
             lg.exc()
             self.automat('block-failed')
@@ -384,11 +404,11 @@ class RestoreWorker(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.doRequestPackets for %s at block %d' % (self.BackupID, self.BlockNumber, ))
+            lg.out(_DebugLevel, 'restore_worker.doRequestPackets for %s at block %d' % (self.backup_id, self.block_number, ))
         from customer import io_throttle
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
-            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.CustomerIDURL)
+            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
                 lg.warn('bad supplier at position %s' % SupplierNumber)
                 continue
@@ -399,9 +419,9 @@ class RestoreWorker(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        OnHandData is True for supplier %d' % SupplierNumber)
                 continue
-            packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Data')))
+            packetsToRequest.append((SupplierID, packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')))
         for SupplierNumber in range(self.EccMap.paritysegments):
-            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.CustomerIDURL)
+            SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
                 lg.warn('bad supplier at position %s' % SupplierNumber)
                 continue
@@ -412,7 +432,7 @@ class RestoreWorker(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        OnHandParity is True for supplier %d' % SupplierNumber)
                 continue
-            packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')))
+            packetsToRequest.append((SupplierID, packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Parity')))
         if _Debug:
             lg.out(_DebugLevel, '        packets to request: %s' % packetsToRequest)
         requests_made = 0
@@ -425,23 +445,23 @@ class RestoreWorker(automat.Automat):
                 continue
             io_throttle.QueueRequestFile(
                 self._on_packet_request_result,
-                self.CreatorID,
+                self.creator_id,
                 packetID,
-                self.CreatorID,
+                self.creator_id,
                 SupplierID)
             requests_made += 1
         del packetsToRequest
         if requests_made:
             if _Debug:
                 lg.out(_DebugLevel, "        requested %d packets for block %d" % (
-                    requests_made, self.BlockNumber))
+                    requests_made, self.block_number))
         else:
             if already_requested:
                 if _Debug:
                     lg.out(_DebugLevel, "        found %d already requested packets for block %d" % (
-                        already_requested, self.BlockNumber))
+                        already_requested, self.block_number))
             else:
-                lg.warn('no requests made for block %d' % self.BlockNumber)
+                lg.warn('no requests made for block %d' % self.block_number)
                 self.automat('request-failed', None)
 
     def doSavePacket(self, arg):
@@ -471,7 +491,7 @@ class RestoreWorker(automat.Automat):
                 lg.warn("unable to write to %s" % filename)
                 return
             if self.packetInCallback is not None:
-                self.packetInCallback(self.BackupID, NewPacket)
+                self.packetInCallback(self.backup_id, NewPacket)
             if _Debug:
                 lg.out(_DebugLevel, "restore_worker.doSavePacket %s saved to %s" % (packetID, filename))
         else:
@@ -483,11 +503,11 @@ class RestoreWorker(automat.Automat):
         """
         fd, outfilename = tmpfile.make(
             'restore',
-            prefix=self.BackupID.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.BlockNumber) + '_',
+            prefix=self.backup_id.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.block_number) + '_',
         )
         os.close(fd)
-        inputpath = os.path.join(settings.getLocalBackupsDir(), self.CustomerGlobalID, self.PathID)
-        task_params = (outfilename, eccmap.CurrentName(), self.Version, self.BlockNumber, inputpath)
+        inputpath = os.path.join(settings.getLocalBackupsDir(), self.customer_id, self.path_id)
+        task_params = (outfilename, eccmap.CurrentName(), self.version, self.block_number, inputpath)
         raid_worker.add_task('read', task_params,
                              lambda cmd, params, result: self._on_block_restored(result, outfilename))
 
@@ -506,17 +526,17 @@ class RestoreWorker(automat.Automat):
         import backup_matrix
         if not backup_rebuilder.ReadStoppedFlag():
             if backup_rebuilder.A().currentBackupID is not None:
-                if backup_rebuilder.A().currentBackupID == self.BackupID:
+                if backup_rebuilder.A().currentBackupID == self.backup_id:
                     if _Debug:
                         lg.out(_DebugLevel, 'restore_worker.doRemoveTempFile SKIP because rebuilding in process')
                     return
         count = 0
-        for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=self.CustomerIDURL)):
-            supplierIDURL = contactsdb.supplier(supplierNum, customer_idurl=self.CustomerIDURL)
+        for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=self.customer_idurl)):
+            supplierIDURL = contactsdb.supplier(supplierNum, customer_idurl=self.customer_idurl)
             if not supplierIDURL:
                 continue
             for dataORparity in ['Data', 'Parity', ]:
-                packetID = packetid.MakePacketID(self.BackupID, self.BlockNumber,
+                packetID = packetid.MakePacketID(self.backup_id, self.block_number,
                                                  supplierNum, dataORparity)
                 customer, remotePath = packetid.SplitPacketID(packetID)
                 filename = os.path.join(settings.getLocalBackupsDir(), customer, remotePath)
@@ -527,7 +547,7 @@ class RestoreWorker(automat.Automat):
                         lg.exc()
                         continue
                     count += 1
-        backup_matrix.LocalBlockReport(self.BackupID, self.BlockNumber, arg)
+        backup_matrix.LocalBlockReport(self.backup_id, self.block_number, arg)
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker.doRemoveTempFile %d files were removed' % count)
 
@@ -539,21 +559,21 @@ class RestoreWorker(automat.Automat):
         data = NewBlock.Data()
         # Add to the file where all the data is going
         try:
-            os.write(self.File, data)
-            self.BytesWritten += len(data)
+            os.write(self.output_stream, data)
+            self.bytes_written += len(data)
         except:
             lg.exc()
             # TODO Error handling...
             return
         if self.blockRestoredCallback is not None:
-            self.blockRestoredCallback(self.BackupID, NewBlock)
+            self.blockRestoredCallback(self.backup_id, NewBlock)
 
     def doDeleteAllRequests(self, arg):
         """
         Action method.
         """
         from customer import io_throttle
-        io_throttle.DeleteBackupRequests(self.BackupID)
+        io_throttle.DeleteBackupRequests(self.backup_id)
 
     def doReportDone(self, arg):
         """
@@ -561,9 +581,9 @@ class RestoreWorker(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker.doReportDone')
-        self.Done = True
+        self.done_flag = True
         self.MyDeferred.callback('done')
-        events.send('restore-done', dict(backup_id=self.BackupID))
+        events.send('restore-done', dict(backup_id=self.backup_id))
 
     def doReportFailed(self, arg):
         """
@@ -571,9 +591,9 @@ class RestoreWorker(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker.doReportFailed')
-        self.Done = True
+        self.done_flag = True
         self.MyDeferred.callback('failed')
-        events.send('restore-failed', dict(backup_id=self.BackupID, block_number=self.BlockNumber, reason=arg))
+        events.send('restore-failed', dict(backup_id=self.backup_id, block_number=self.block_number, reason=arg))
 
     def doDestroyMe(self, arg):
         """
@@ -587,7 +607,7 @@ class RestoreWorker(automat.Automat):
         self.LastAction = None
         self.RequestFails = None
         self.MyDeferred = None
-        self.File = None
+        self.output_stream = None
         self.destroy()
 
     def _on_block_restored(self, restored_blocks, filename):

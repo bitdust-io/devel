@@ -212,6 +212,17 @@ def Current():
     return CurrentMap
 
 
+def Update():
+    """
+    Regenerate current map stored in memory from scratch - based on getSuppliersNumberDesired()
+    """
+    global CurrentMap
+    if CurrentMap is not None:
+        del CurrentMap
+        CurrentMap = None
+    CurrentMap = eccmap(CurrentName())
+
+
 def SuppliersNumbers():
     """
     Return a list of valid suppliers numbers.
@@ -330,7 +341,7 @@ class eccmap:
             pass
 
     def __repr__(self):
-        return '%s' % (self.name)
+        return '%s' % self.name
 
     def NumSuppliers(self):
         """

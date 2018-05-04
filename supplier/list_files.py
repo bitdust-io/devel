@@ -54,14 +54,14 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-def send(customer_idurl, packet_id, format_type, key_id):
+def send(customer_idurl, packet_id, format_type, key_id, remote_idurl):
     if not my_keys.is_key_registered(key_id):
         lg.warn('not able to return Files() for customer %s, key %s not registered' % (
             customer_idurl, key_id, ))
         return p2p_service.SendFailNoRequest(customer_idurl, packet_id)
-    customer_name = nameurl.GetName(customer_idurl)
     if _Debug:
-        lg.out(_DebugLevel, "list_files.send to %s, format is '%s'" % (customer_name, format_type))
+        lg.out(_DebugLevel, "list_files.send to %s, customer_idurl=%s, key_id=%s" % (
+            remote_idurl, customer_idurl, key_id, ))
     ownerdir = settings.getCustomerFilesDir(customer_idurl)
     plaintext = ''
     if os.path.isdir(ownerdir):
@@ -84,7 +84,7 @@ def send(customer_idurl, packet_id, format_type, key_id):
     )
     encrypted_list_files = block.Serialize()
     newpacket = p2p_service.SendFiles(
-        idurl=customer_idurl,
+        idurl=remote_idurl,
         raw_list_files_info=encrypted_list_files,
         packet_id=packet_id,
         callbacks={

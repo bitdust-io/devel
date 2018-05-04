@@ -173,7 +173,7 @@ class ListFilesOrator(automat.Automat):
         for idurl in contactsdb.suppliers():
             if idurl:
                 if contact_status.isOnline(idurl):
-                    p2p_service.SendListFiles(idurl)
+                    p2p_service.SendListFiles(target_supplier=idurl)
                     _RequestedListFilesPacketIDs.add(idurl)
                 else:
                     lg.out(6, 'list_files_orator.doRequestRemoteFiles SKIP %s is not online' % idurl)

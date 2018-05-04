@@ -164,7 +164,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.key_id = key_id
         glob_id = global_id.ParseGlobalID(self.key_id)
         self.customer_idurl = glob_id['idurl']
-        self.suppliers_list = []
+        self.known_suppliers_list = []
         super(SharedAccessCoordinator, self).__init__(
             name="shared_%s$%s" % (glob_id['key_alias'], glob_id['user']),
             state='AT_STARTUP',
@@ -180,7 +180,7 @@ class SharedAccessCoordinator(automat.Automat):
             'key_id': self.key_id,
             'idurl': self.customer_idurl,
             'state': self.state,
-            'suppliers': self.suppliers_list,
+            'suppliers': self.known_suppliers_list,
         }
 
     def init(self):
@@ -323,7 +323,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Condition method.
         """
-        for supplier_idurl in self.suppliers_list:
+        for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is not None and sc.state == 'CONNECTED':
                 return True
@@ -352,11 +352,8 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        self.suppliers_list.extend(filter(None, arg))
-        contactsdb.update_suppliers(self.suppliers_list, customer_idurl=self.customer_idurl)
-        contactsdb.save_suppliers(customer_idurl=self.customer_idurl)
-
-        for supplier_idurl in self.suppliers_list:
+        self.known_suppliers_list = filter(None, arg)
+        for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:
                 sc = supplier_connector.create(
@@ -375,7 +372,11 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendListFiles(arg, customer_idurl=self.customer_idurl, key_id=self.key_id)
+        p2p_service.SendListFiles(
+            target_supplier=arg,
+            customer_idurl=self.customer_idurl,
+            key_id=self.key_id,
+        )
 
     def doProcessCustomerListFiles(self, arg):
         """
@@ -386,7 +387,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        for supplier_idurl in self.suppliers_list:
+        for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None or sc.state != 'CONNECTED':
                 return
@@ -429,7 +430,7 @@ class SharedAccessCoordinator(automat.Automat):
 
     def _on_supplier_connector_state_changed(self, idurl, newstate):
         if _Debug:
-            lg.out(_DebugLevel, 'fire_hire._supplier_connector_state_changed %s to %s, own state is %s' % (
+            lg.out(_DebugLevel, 'shared_access_coordinator._supplier_connector_state_changed %s to %s, own state is %s' % (
                 idurl, newstate, self.state))
         sc = supplier_connector.by_idurl(idurl)
         if sc:
