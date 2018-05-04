@@ -36,7 +36,7 @@ A code for all platforms to perform source code updates from official Git repo a
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------

@@ -46,7 +46,7 @@ In future we can use that to do "overlay" communications to hide users.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------

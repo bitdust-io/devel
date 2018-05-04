@@ -79,9 +79,8 @@ from userid import my_id
 from main import settings
 from main import events
 
-import callback
-import gateway
-import stats
+from transport import callback
+from transport import stats
 
 #------------------------------------------------------------------------------
 
@@ -205,6 +204,9 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     if newpacket.OwnerID == my_id.getLocalID():
         target_idurl = newpacket.RemoteID
     elif newpacket.OwnerID != newpacket.CreatorID and newpacket.RemoteID == my_id.getLocalID():
+        target_idurl = newpacket.RemoteID
+    elif newpacket.Command == commands.Data() and newpacket.OwnerID != my_id.getLocalID() and newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
+        # shared data
         target_idurl = newpacket.RemoteID
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
@@ -620,6 +622,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
+        from transport import gateway
         for i in self.items:
             t = gateway.transports().get(i.proto, None)
             if t:
@@ -757,6 +760,7 @@ class PacketOut(automat.Automat):
         return None
 
     def _push(self):
+        from transport import gateway
         if self.route:
             # if this packet is routed - send directly to route host
             gateway.send_file(

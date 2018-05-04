@@ -2599,8 +2599,6 @@ def message_send(recipient, json_data, timeout=5):
     glob_id = global_id.ParseGlobalID(recipient)
     if not glob_id['idurl']:
         return ERROR('wrong recipient')
-    if not glob_id['key_alias']:
-        glob_id['key_alias'] = 'master'
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
