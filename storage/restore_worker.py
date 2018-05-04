@@ -74,7 +74,7 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 

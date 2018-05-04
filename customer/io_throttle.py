@@ -47,7 +47,7 @@ In future we can use that to do "overlay" communications to hide users.
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -852,10 +852,12 @@ class SupplierQueue:
                 del self.fileRequestDict[packetID]
             lg.warn('supplier queue is shutting down')
             return
+        if _Debug:
+            lg.out(_DebugLevel, "io_throttle.OnDataReceived  %s with result=[%s]" % (newpacket, result, ))
         if packetID in self.fileRequestQueue:
             self.fileRequestQueue.remove(packetID)
             if _Debug:
-                lg.out(_DebugLevel, "io_throttle.OnDataReceived removed %s from %s receiving queue, %d more items" % (
+                lg.out(_DebugLevel, "    removed %s from %s receiving queue, %d more items" % (
                     packetID, self.remoteName, len(self.fileRequestQueue)))
         if newpacket.Command == commands.Data():
             if packetID in self.fileRequestDict:

@@ -533,9 +533,10 @@ class SupplierService(LocalService):
         if newpacket.OwnerID == my_id.getLocalID():
             # this Data belong to us, SKIP
             return False
-        if not contactsdb.is_customer(newpacket.OwnerID):  # SECURITY
-            lg.err("%s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
-            p2p_service.SendFail(newpacket, 'not a customer')
+        if not contactsdb.is_customer(newpacket.OwnerID):
+            # SECURITY
+            lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
+            # p2p_service.SendFail(newpacket, 'not a customer')
             return False
         glob_path = global_id.ParseGlobalID(newpacket.PacketID)
         if not glob_path['path']:

@@ -256,7 +256,7 @@ class NicknameObserver(automat.Automat):
         """
         lg.out(8, 'nickname_observer.doReportNicknameNotExist : %s' % self.nickname)
         if self.result_callback is not None:
-            self.result_callback('not exist', self.nickname, -1, arg)
+            self.result_callback('not exist', self.nickname, -1, '')
 
     def doReportFinished(self, arg):
         """
