@@ -542,23 +542,24 @@ def ReadLocalFiles():
         else:
             lg.warn('not a folder: %s' % customer_path)
 
-    lg.out(8, 'backup_matrix.ReadLocalFiles %d files indexed' % _counter[0])
-    if lg.is_debug(8):
-        try:
-            if sys.version_info >= (2, 6):
-                #localSZ = sys.getsizeof(local_files())
-                #remoteSZ = sys.getsizeof(remote_files())
-                import lib.getsizeof
-                localSZ = lib.getsizeof.total_size(local_files())
-                remoteSZ = lib.getsizeof.total_size(remote_files())
-                indexByName = lib.getsizeof.total_size(backup_fs.fs())
-                indexByID = lib.getsizeof.total_size(backup_fs.fsID())
-                lg.out(10, '    all local info uses %d bytes in the memory' % localSZ)
-                lg.out(10, '    all remote info uses %d bytes in the memory' % remoteSZ)
-                lg.out(10, '    index by name takes %d bytes in the memory' % indexByName)
-                lg.out(10, '    index by ID takes %d bytes in the memory' % indexByID)
-        except:
-            lg.exc()
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.ReadLocalFiles %d files indexed' % _counter[0])
+        if lg.is_debug(_DebugLevel + 2):
+            try:
+                if sys.version_info >= (2, 6):
+                    #localSZ = sys.getsizeof(local_files())
+                    #remoteSZ = sys.getsizeof(remote_files())
+                    import lib.getsizeof
+                    localSZ = lib.getsizeof.total_size(local_files())
+                    remoteSZ = lib.getsizeof.total_size(remote_files())
+                    indexByName = lib.getsizeof.total_size(backup_fs.fs())
+                    indexByID = lib.getsizeof.total_size(backup_fs.fsID())
+                    lg.out(_DebugLevel + 2, '    all local info uses %d bytes in the memory' % localSZ)
+                    lg.out(_DebugLevel + 2, '    all remote info uses %d bytes in the memory' % remoteSZ)
+                    lg.out(_DebugLevel + 2, '    index by name takes %d bytes in the memory' % indexByName)
+                    lg.out(_DebugLevel + 2, '    index by ID takes %d bytes in the memory' % indexByID)
+            except:
+                lg.exc()
     if _LocalFilesNotifyCallback is not None:
         _LocalFilesNotifyCallback()
 
