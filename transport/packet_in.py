@@ -46,7 +46,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -184,6 +184,8 @@ def process(newpacket, info):
     for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
         p.automat('inbox-packet', (newpacket, info))
         handled = True
+        if _Debug:
+            lg.out(_DebugLevel, '    processed by %s as response packet' % p)
     handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
     if not handled and newpacket.Command not in [commands.Ack(), commands.Fail(), commands.Identity(), ]:
         lg.warn('incoming %s from [%s://%s] was NOT HANDLED' % (newpacket, info.proto, info.host))

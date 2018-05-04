@@ -448,10 +448,12 @@ class SupplierService(LocalService):
         from transport import gateway
         from p2p import p2p_service
         from p2p import commands
-        if not contactsdb.is_customer(newpacket.OwnerID):
-            lg.err("had unknown customer %s" % newpacket.OwnerID)
-            p2p_service.SendFail(newpacket, 'not a customer')
-            return False
+        # external customer must be able to request
+        # TODO: add validation of public key
+        # if not contactsdb.is_customer(newpacket.OwnerID):
+        #     lg.err("had unknown customer %s" % newpacket.OwnerID)
+        #     p2p_service.SendFail(newpacket, 'not a customer')
+        #     return False
         glob_path = global_id.ParseGlobalID(newpacket.PacketID)
         if not glob_path['path']:
             # backward compatible check

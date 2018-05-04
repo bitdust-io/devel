@@ -52,7 +52,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -205,6 +205,9 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     if newpacket.OwnerID == my_id.getLocalID():
         target_idurl = newpacket.RemoteID
     elif newpacket.OwnerID != newpacket.CreatorID and newpacket.RemoteID == my_id.getLocalID():
+        target_idurl = newpacket.RemoteID
+    elif newpacket.Command == commands.Data() and newpacket.OwnerID != my_id.getLocalID() and newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
+        # shared data
         target_idurl = newpacket.RemoteID
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:

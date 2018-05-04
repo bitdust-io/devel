@@ -66,6 +66,7 @@ from userid import global_id
 from p2p import p2p_service
 
 from contacts import contactsdb
+from contacts import identitycache
 
 from lib import misc
 
@@ -339,6 +340,8 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        # TODO : put in a seprate state in the state machine
+        identitycache.immediatelyCaching(self.customer_idurl)
 
     def doDHTLookupSuppliers(self, arg):
         """
