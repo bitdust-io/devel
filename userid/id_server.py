@@ -350,7 +350,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
             lg.warn('wrong data from %s' % str(self.transport.getPeer()))
             return
         if self.fin is None:
-            self.fin, self.fpath = tmpfile.make('idsrv', '.xml')
+            self.fin, self.fpath = tmpfile.make('idsrv', extension='.xml')
         inp_data = inp.read()
         inp.close()
         os.write(self.fin, inp_data)

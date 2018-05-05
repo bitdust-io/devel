@@ -44,7 +44,7 @@ from system import tmpfile
 from storage import backup_tar
 from storage import backup_fs
 from storage import backup
-from storage import restore
+from storage import restore_worker
 
 from raid import raid_worker
 
@@ -86,8 +86,12 @@ def backup_done(bid, result):
         bpio.AtomicWriteFile(newfilepath, inppacket.Payload)
     # Now do restore from input data
     backupID = bid + '.inp'
-    outfd, tarfilename = tmpfile.make('restore', '.tar.gz', backupID.replace('/', '_') + '_')
-    r = restore.restore(backupID, outfd)
+    outfd, tarfilename = tmpfile.make(
+        'restore',
+        extension='.tar.gz',
+        prefix=backupID.replace('/', '_') + '_',
+    )
+    r = restore_worker.RestoreWorker(backupID, outfd)
     r.MyDeferred.addBoth(restore_done, tarfilename)
     reactor.callLater(1, r.automat, 'init')
 

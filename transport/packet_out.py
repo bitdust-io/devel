@@ -559,7 +559,7 @@ class PacketOut(automat.Automat):
         if self.route:
             a_packet = self.route['packet']
         try:
-            fileno, self.filename = tmpfile.make('outbox')
+            fileno, self.filename = tmpfile.make('outbox', extension='.out')
             self.packetdata = a_packet.Serialize()
             os.write(fileno, self.packetdata)
             os.close(fileno)

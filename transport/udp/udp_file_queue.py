@@ -459,7 +459,7 @@ class InboxFile():
         self.queue = queue
         self.stream_callback = None
         self.stream_id = stream_id
-        self.fd, self.filename = tmpfile.make("udp-in")
+        self.fd, self.filename = tmpfile.make("udp-in", extension='.udp')
         self.size = size
         self.bytes_received = 0
         self.started = time.time()
