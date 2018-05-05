@@ -158,14 +158,14 @@ def process(newpacket, info):
     if not driver.is_on('service_p2p_hookups'):
         if _Debug:
             lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
-        return fail()
+        return None
     if _Debug:
         lg.out(_DebugLevel, 'packet_in.process %s from %s://%s : %s' % (
             str(newpacket), info.proto, info.host, info.status))
     if info.status != 'finished':
         if _Debug:
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
-        return fail()
+        return None
     if newpacket.Command == commands.Identity():  # and newpacket.RemoteID == my_id.getLocalID():
         # contact sending us current identity we might not have
         # so we handle it before check that packet is valid
@@ -174,17 +174,14 @@ def process(newpacket, info):
         # than we check the packet to be valid too.
         if not p2p_service.Identity(newpacket):
             lg.warn('non-valid identity received')
-            return fail()
+            return None
     if not identitycache.HasKey(newpacket.CreatorID):
         lg.warn('will cache remote identity %s before processing incoming packet %s' % (newpacket.CreatorID, newpacket))
         d = identitycache.immediatelyCaching(newpacket.CreatorID)
         d.addCallback(lambda _: handle(newpacket, info))
         d.addErrback(lambda err: lg.err('failed caching remote %s identity: %s' % (newpacket.CreatorID, str(err))))
         return d
-    result = handle(newpacket, info)
-    if not result:
-        return fail()
-    return succeed(result)
+    return handle(newpacket, info)
 
 
 def handle(newpacket, info):
@@ -194,7 +191,7 @@ def handle(newpacket, info):
     if not newpacket.Valid():
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
             info.proto, info.host, newpacket))
-        return
+        return None
     for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
         p.automat('inbox-packet', (newpacket, info))
         handled = True
