@@ -362,7 +362,7 @@ class backup(automat.Automat):
             self.automat('block-raid-done', (newblock.BlockNumber, None))
             lg.out(_DebugLevel, 'backup.doBlockPushAndRaid SKIP, terminating=True')
             return
-        fileno, filename = tmpfile.make('.raid', extension='.raid')
+        fileno, filename = tmpfile.make('raid', extension='.raid')
         serializedblock = newblock.Serialize()
         blocklen = len(serializedblock)
         os.write(fileno, str(blocklen) + ":" + serializedblock)
