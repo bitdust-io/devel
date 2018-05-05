@@ -249,7 +249,7 @@ class Receiver(object):
                     lg.out(14, 'http_node.receive.success ERROR in base64.b64decode()')
                     decrease_receiving_delay(idurl)
                     continue
-                fd, filename = tmpfile.make("http-in")
+                fd, filename = tmpfile.make("http-in", extension='.http')
                 os.write(fd, part)
                 os.close(fd)
                 decrease_receiving_delay(idurl)

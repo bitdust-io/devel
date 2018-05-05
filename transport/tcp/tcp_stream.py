@@ -397,7 +397,7 @@ class InboxFile():
         self.stream = stream
         self.file_id = file_id
         self.size = file_size
-        self.fin, self.filename = tmpfile.make("tcp-in")
+        self.fin, self.filename = tmpfile.make("tcp-in", extension='.tcp')
         self.bytes_received = 0
         self.started = time.time()
         self.last_block_time = time.time()

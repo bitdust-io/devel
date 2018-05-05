@@ -187,7 +187,7 @@ def receive():
                     decrease_receiving_delay(idurl)
                     continue
 #                fd, filename = tempfile.mkstemp(".dhn-http-in")
-                fd, filename = tmpfile.make("http-in")
+                fd, filename = tmpfile.make("http-in", extension='.http')
                 os.write(fd, part)
                 os.close(fd)
                 decrease_receiving_delay(idurl)

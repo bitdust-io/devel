@@ -369,14 +369,14 @@ class RestoreWorker(automat.Automat):
         """
         for SupplierNumber in range(self.EccMap.datasegments):
             PacketID = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Data')
-            customer, remotePath = packetid.SplitPacketID(PacketID)
-            self.OnHandData[SupplierNumber] = os.path.exists(os.path.join(
-                settings.getLocalBackupsDir(), customer, remotePath))
+            customerID, remotePath = packetid.SplitPacketID(PacketID)
+            self.OnHandData[SupplierNumber] = bool(os.path.exists(os.path.join(
+                settings.getLocalBackupsDir(), customerID, remotePath)))
         for SupplierNumber in range(self.EccMap.paritysegments):
             PacketID = packetid.MakePacketID(self.backup_id, self.block_number, SupplierNumber, 'Parity')
-            customer, remotePath = packetid.SplitPacketID(PacketID)
-            self.OnHandParity[SupplierNumber] = os.path.exists(os.path.join(
-                settings.getLocalBackupsDir(), customer, remotePath))
+            customerID, remotePath = packetid.SplitPacketID(PacketID)
+            self.OnHandParity[SupplierNumber] = bool(os.path.exists(os.path.join(
+                settings.getLocalBackupsDir(), customerID, remotePath)))
 
     def doRestoreBlock(self, arg):
         """
@@ -392,7 +392,7 @@ class RestoreWorker(automat.Automat):
         try:
             datalength = int(lengthstring)                                        # real length before raidmake/ECC
             blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]     # remove padding from raidmake/ECC
-            newblock = encrypted.Unserialize(blockdata, decrypt_key=self.key_id)   # convert to object
+            newblock = encrypted.Unserialize(blockdata, decrypt_key=self.key_id)  # convert to object
         except:
             lg.exc()
             self.automat('block-failed')
@@ -503,13 +503,16 @@ class RestoreWorker(automat.Automat):
         """
         fd, outfilename = tmpfile.make(
             'restore',
+            extension='.raid',
             prefix=self.backup_id.replace(':', '_').replace('@', '_').replace('/', '_') + '_' + str(self.block_number) + '_',
         )
         os.close(fd)
         inputpath = os.path.join(settings.getLocalBackupsDir(), self.customer_id, self.path_id)
-        task_params = (outfilename, eccmap.CurrentName(), self.version, self.block_number, inputpath)
-        raid_worker.add_task('read', task_params,
-                             lambda cmd, params, result: self._on_block_restored(result, outfilename))
+        task_params = (outfilename, self.EccMap.name, self.version, self.block_number, inputpath)
+        raid_worker.add_task(
+            'read',
+            task_params,
+            lambda cmd, params, result: self._on_block_restored(result, outfilename))
 
     def doRemoveTempFile(self, arg):
         """
@@ -628,8 +631,12 @@ class RestoreWorker(automat.Automat):
         elif result == 'in queue':
             lg.warn('packet already in the request queue')
         elif result == 'failed':
-            self.RequestFails.append(NewPacketOrPacketID)
-            self.automat('request-failed', NewPacketOrPacketID.PacketID)
+            if isinstance(NewPacketOrPacketID, str):
+                self.RequestFails.append(NewPacketOrPacketID)
+                self.automat('request-failed', NewPacketOrPacketID)
+            else:
+                self.RequestFails.append(getattr(NewPacketOrPacketID, 'PacketID', None))
+                self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
         else:
             lg.warn('packet %s got not recognized result: %s' % (NewPacketOrPacketID, result, ))
             if isinstance(NewPacketOrPacketID, str):
