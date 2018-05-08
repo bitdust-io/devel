@@ -36,6 +36,7 @@ def default_nodes():
         'bitdust.io': (8084, 6661),
         'work.offshore.ai': (8084, 6661),
         'blog.bitdust.io': (8084, 6661),
+        'bitrex.ai': (8084, 6661),
     }
 
 
