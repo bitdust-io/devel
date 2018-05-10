@@ -438,36 +438,61 @@ class FireHire(automat.Automat):
         global _SuppliersToFire
         result = set(_SuppliersToFire)
         _SuppliersToFire = []
+        connected_suppliers = set()
         disconnected_suppliers = set()
+        requested_suppliers = set()
         # if you have some empty suppliers need to get rid of them,
         # but no need to dismiss anyone at the moment.
         if '' in contactsdb.suppliers():
             lg.out(6, 'fire_hire.doDecideToDismiss found empty supplier, SKIP')
             self.automat('made-decision', [])
             return
+        number_desired = settings.getSuppliersNumberDesired()
         for supplier_idurl in contactsdb.suppliers():
             if not supplier_idurl:
+                lg.warn('found empty supplier')
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if not sc:
+                lg.warn('supplier connector for supplier %s not exist' % supplier_idurl)
                 continue
             if sc.state == 'NO_SERVICE':
-                result.add(supplier_idurl)
-            elif sc.state == 'DISCONNECTED':
+                lg.warn('decide to dismiss "unfriendly" supplier %s' % supplier_idurl)
                 disconnected_suppliers.add(supplier_idurl)
+                result.add(supplier_idurl)
+            elif sc.state == 'CONNECTED':
+                connected_suppliers.add(supplier_idurl)
+            elif sc.state in [ 'DISCONNECTED', 'REFUSE', ]:
+                disconnected_suppliers.add(supplier_idurl)
+            elif sc.state in ['QUEUE?', 'REQUEST', ]:
+                requested_suppliers.add(supplier_idurl)
             if contact_status.isOffline(supplier_idurl):
                 disconnected_suppliers.add(supplier_idurl)
-        if contactsdb.num_suppliers() > settings.getSuppliersNumberDesired():
-            for supplier_index in range(
-                    settings.getSuppliersNumberDesired(),
-                    contactsdb.num_suppliers()):
+            elif contact_status.isOnline(supplier_idurl):
+                connected_suppliers.add(supplier_idurl)
+            elif contact_status.isCheckingNow(supplier_idurl):
+                requested_suppliers.add(supplier_idurl)
+        if contactsdb.num_suppliers() > number_desired:
+            for supplier_index in range(number_desired, contactsdb.num_suppliers()):
                 idurl = contactsdb.supplier(supplier_index)
                 if idurl:
+                    lg.warn('decide to dismiss "redundant" supplier %s at position %d' % (
+                        idurl, supplier_index, ))
                     result.add(idurl)
-        if disconnected_suppliers:
+                else:
+                    lg.warn('supplier at position %d not exist' % supplier_index)
+        if connected_suppliers and not requested_suppliers and disconnected_suppliers:
+            if len(disconnected_suppliers) + len(connected_suppliers) != number_desired:
+                lg.warn('connected + disconnected != number desired: %s %s %s' % (
+                    disconnected_suppliers, connected_suppliers, number_desired))
             from raid import eccmap
-            if len(disconnected_suppliers) >= eccmap.GetFireHireErrors(settings.getSuppliersNumberDesired()):
-                result.update(disconnected_suppliers)
+            criticall_offline_suppliers_count = eccmap.GetFireHireErrors(number_desired)
+            if len(connected_suppliers) == number_desired - criticall_offline_suppliers_count:
+                one_dead_supplier = disconnected_suppliers.pop()
+                result.add(one_dead_supplier)
+                disconnected_suppliers.add(one_dead_supplier)
+                lg.warn('decide to dismiss "critical_offline" supplier %s, with max offline %d' % (
+                    one_dead_supplier, criticall_offline_suppliers_count, ))
         result = list(result)
         lg.out(6, 'fire_hire.doDecideToDismiss %s' % result)
         self.automat('made-decision', result)

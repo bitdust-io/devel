@@ -42,6 +42,8 @@ class SupplierService(LocalService):
     service_name = 'service_supplier'
     config_path = 'services/supplier/enabled'
 
+    publish_event_supplier_file_modified = False
+
     def dependent_on(self):
         return [
             'service_p2p_notifications',
@@ -371,11 +373,12 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
-            events.send('supplier-file-modified', data=dict(
-                action='delete',
-                glob_path=glob_path['path'],
-                owner_id=newpacket.OwnerID,
-            ))
+            if self.publish_event_supplier_file_modified:
+                events.send('supplier-file-modified', data=dict(
+                    action='delete',
+                    glob_path=glob_path['path'],
+                    owner_id=newpacket.OwnerID,
+                ))
         lg.out(self.debug_level, "service_supplier._on_delete_file from [%s] with %d IDs, %d files and %d folders were removed" % (
             newpacket.OwnerID, len(ids), filescount, dirscount))
         p2p_service.SendAck(newpacket)
@@ -427,11 +430,12 @@ class SupplierService(LocalService):
                     lg.exc()
             else:
                 lg.warn("path not found %s" % filename)
-            events.send('supplier-file-modified', data=dict(
-                action='delete',
-                glob_path=glob_path['path'],
-                owner_id=newpacket.OwnerID,
-            ))
+            if self.publish_event_supplier_file_modified:
+                events.send('supplier-file-modified', data=dict(
+                    action='delete',
+                    glob_path=glob_path['path'],
+                    owner_id=newpacket.OwnerID,
+                ))
         lg.out(self.debug_level, "supplier_service._on_delete_backup from [%s] with %d IDs, %d were removed" % (
             newpacket.OwnerID, len(ids), count))
         p2p_service.SendAck(newpacket)
@@ -595,13 +599,13 @@ class SupplierService(LocalService):
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)
-        # temporary disabled
-        # from main import events
-        # events.send('supplier-file-modified', data=dict(
-        #     action='write',
-        #     glob_path=glob_path['path'],
-        #     owner_id=newpacket.OwnerID,
-        # ))
+        if self.publish_event_supplier_file_modified:
+            from main import events
+            events.send('supplier-file-modified', data=dict(
+                action='write',
+                glob_path=glob_path['path'],
+                owner_id=newpacket.OwnerID,
+            ))
         return True
 
     def _on_list_files(self, newpacket):
