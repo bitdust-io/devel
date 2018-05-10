@@ -208,6 +208,9 @@ def load_local_keys(keys_folder=None):
                 lg.warn('validation failed for %s' % key_filepath)
                 continue
         key_id = key_filename.replace('.private', '').replace('.public', '')
+        if not is_valid_key_id(key_id):
+            lg.warn('key_id is not valid: %s' % key_id)
+            continue
         known_keys()[key_id] = key_object
         count += 1
     if _Debug:

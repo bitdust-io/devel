@@ -332,7 +332,7 @@ def ToFloat(inpt, default=0.0):
 #------------------------------------------------------------------------------
 
 def ValidKeyAlias(key_alias):
-    if len(key_alias) > settings.MaximumUsernameLength():
+    if len(key_alias) > 50:
         lg.warn("key_alias is too long")
         return False
     if len(key_alias) < settings.MinimumUsernameLength():

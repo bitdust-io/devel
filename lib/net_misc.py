@@ -41,7 +41,8 @@ import urlparse
 import platform
 import mimetypes
 import subprocess
-# fun mountain from python imports :-)))
+# fun mountain from
+# python imports :-)
 
 
 try:
@@ -65,6 +66,7 @@ from zope.interface import implements
 
 from OpenSSL import SSL
 
+#------------------------------------------------------------------------------
 
 _ConnectionDoneCallbackFunc = None
 _ConnectionFailedCallbackFunc = None
@@ -91,7 +93,6 @@ def init():
 
 def shutdown():
     """
-    
     """
 
 

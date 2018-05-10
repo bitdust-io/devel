@@ -174,6 +174,23 @@ def fail_and_stop(err):
 
 #------------------------------------------------------------------------------
 
+def call_rest_http_method(path, method='GET', params=None, data=None, *args, **kwargs):
+    """
+    """
+    from twisted.internet import reactor
+    from twisted.web import client, http_headers
+    from main import settings
+    # TODO: add body and params handling
+    return client.Agent(reactor).request(
+        method=method,
+        uri='http://127.0.0.1:%s/%s' % (settings.getRESTHTTPServerPort(), path),
+        headers=http_headers.Headers({
+            'User-Agent': ['Twisted Web Client Example'],
+            'Content-Type': ['application/json'],
+        }),
+    )
+
+#------------------------------------------------------------------------------
 
 def call_jsonrpc_method(method, *args, **kwargs):
     """
