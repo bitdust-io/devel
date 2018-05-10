@@ -97,7 +97,7 @@ def _request_arg(request, key, default='', mandatory=False):
     return default
 
 
-def _request_data(request, mandatory_keys=[], default_value=None):
+def _request_data(request, mandatory_keys=[], default_value={}):
     """
     Simplify extracting input parameters from request body.
     """
@@ -252,7 +252,7 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=['alias', ])
         return api.key_create(
             key_alias=data['alias'],
-            key_size=int(data.get('size', 4096)),
+            key_size=int(data.get('size', 2048)),
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]), )
 
     @DELETE('^/key/erase/v1$')
@@ -347,16 +347,20 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
-    @GET('^/share/list/v1')
+    @GET('^/share/list/v1$')
     def share_list_v1(self, request):
-        return api.share_list()
+        return api.share_list(
+            only_active=bool(_request_arg(request, 'active', '0') in ['1', 'true', ]),
+            include_mine=bool(_request_arg(request, 'mine', '1') in ['1', 'true', ]),
+            include_granted=bool(_request_arg(request, 'granted', '1') in ['1', 'true', ]),
+        )
 
     @POST('^/share/create/v1$')
     def share_create_v1(self, request):
-        data = _request_data(request, mandatory_keys=['key_alias', ])
+        data = _request_data(request)
         return api.share_create(
-            key_alias=data['key_alias'],
-            remote_path=data.get('remote_path'),
+            owner_id=data.get('owner_id', None),
+            key_size=int(data.get('key_size', '2048')),
         )
 
     @PUT('^/share/grant/v1$')
@@ -499,7 +503,7 @@ class BitDustRESTHTTPServer(APIResource):
     def message_receive_v1(self, request, consumer_id):
         return api.message_receive(consumer_id=consumer_id)
 
-    @POST('^/message/send/v1')
+    @POST('^/message/send/v1$')
     def message_send_v1(self, request):
         data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), 'data', ])
         return api.message_send(
@@ -539,7 +543,7 @@ class BitDustRESTHTTPServer(APIResource):
     @POST('^/service/restart/(?P<service_name>[^/]+)/v1$')
     def service_restart_v1(self, request, service_name):
         return api.service_restart(
-            service_name, wait_timeout=_request_data(request, default_value={}).get('wait_timeout', 10))
+            service_name, wait_timeout=_request_data(request).get('wait_timeout', 10))
 
     #------------------------------------------------------------------------------
 

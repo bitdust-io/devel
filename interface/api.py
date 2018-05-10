@@ -462,7 +462,7 @@ def keys_list(sort=False, include_private=False):
     return RESULT(r)
 
 
-def key_create(key_alias, key_size=4096, include_private=False):
+def key_create(key_alias, key_size=2048, include_private=False):
     """
     Generate new Private Key and add it to the list of known keys with given `key_id`.
 
@@ -485,9 +485,10 @@ def key_create(key_alias, key_size=4096, include_private=False):
     from crypt import my_keys
     from userid import my_id
     key_alias = str(key_alias)
-    # TODO: add validation for key_alias
     key_alias = key_alias.strip().lower()
     key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getLocalID())
+    if not my_keys.is_valid_key_id(key_id):
+        return ERROR('key "%s" is not valid' % key_id)
     if my_keys.is_key_registered(key_id):
         return ERROR('key "%s" already exist' % key_id)
     lg.out(4, 'api.key_create id=%s, size=%s' % (key_id, key_size))
@@ -539,14 +540,14 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
         trusted_global_id_or_idurl = str(trusted_global_id_or_idurl)
         full_key_id = str(key_id)
     except:
-        return succeed(ERROR('error reading input parameters'))
+        return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
-        return succeed(ERROR('service_keys_registry() is not started'))
+        return ERROR('service_keys_registry() is not started')
     glob_id = global_id.ParseGlobalID(full_key_id)
     if glob_id['key_alias'] == 'master':
-        return succeed(ERROR('"master" key can not be shared'))
+        return ERROR('"master" key can not be shared')
     if not glob_id['key_alias'] or not glob_id['idurl']:
-        return succeed(ERROR('icorrect key_id format'))
+        return ERROR('icorrect key_id format')
     idurl = trusted_global_id_or_idurl
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
@@ -576,12 +577,12 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
         untrusted_global_id_or_idurl = str(untrusted_global_id_or_idurl)
         full_key_id = str(key_id)
     except:
-        return succeed(ERROR('error reading input parameters'))
+        return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
-        return succeed(ERROR('service_keys_registry() is not started'))
+        return ERROR('service_keys_registry() is not started')
     glob_id = global_id.ParseGlobalID(full_key_id)
     if not glob_id['key_alias'] or not glob_id['idurl']:
-        return succeed(ERROR('icorrect key_id format'))
+        return ERROR('icorrect key_id format')
     if global_id.IsValidGlobalUser(untrusted_global_id_or_idurl):
         idurl = global_id.GlobalUserToIDURL(untrusted_global_id_or_idurl)
     else:
@@ -1410,20 +1411,87 @@ def file_explore(local_path):
 
 #------------------------------------------------------------------------------
 
-def share_create(key_alias, remote_path=None):
+def share_list(only_active=False, include_mine=True, include_granted=True):
     """
     """
     if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    ret = Deferred()
-    return ret
+        return ERROR('service_shared_data() is not started')
+    from access import shared_access_coordinator
+    from crypt import my_keys
+    from userid import global_id
+    from userid import my_id
+    results = []
+    if only_active:
+        for key_id in shared_access_coordinator.list_active_shares():
+            _glob_id = global_id.ParseGlobalID(key_id)
+            to_be_listed = False
+            if include_mine and _glob_id['idurl'] == my_id.getLocalIDURL():
+                to_be_listed = True
+            if include_granted and _glob_id['idurl'] != my_id.getLocalIDURL():
+                to_be_listed = True
+            if not to_be_listed:
+                continue
+            cur_share = shared_access_coordinator.get_active_share(key_id)
+            if not cur_share:
+                lg.warn('share %s not found' % key_id)
+                continue
+            results.append(cur_share.to_json())
+        return RESULT(results)
+    for key_id in my_keys.known_keys():
+        if not key_id.startswith('share_'):
+            continue
+        _glob_id = global_id.ParseGlobalID(key_id)
+        to_be_listed = False
+        if include_mine and _glob_id['idurl'] == my_id.getLocalIDURL():
+            to_be_listed = True
+        if include_granted and _glob_id['idurl'] != my_id.getLocalIDURL():
+            to_be_listed = True
+        if not to_be_listed:
+            continue
+        results.append({
+            'key_id': key_id,
+            'idurl': _glob_id['idurl'],
+            'state': None,
+            'suppliers': [],
+        })
+    return RESULT(results)
+
+
+def share_create(owner_id=None, key_size=2048):
+    """
+    """
+    if not driver.is_on('service_shared_data'):
+        return ERROR('service_shared_data() is not started')
+    from crypt import key
+    from crypt import my_keys
+    from userid import my_id
+    if not owner_id:
+        owner_id = my_id.getGlobalID()
+    key_id = None
+    while True:
+        random_sample = os.urandom(24)
+        key_alias = 'share_%s' % key.HashMD5(random_sample, hexdigest=True)
+        key_id = my_keys.make_key_id(alias=key_alias, creator_glob_id=owner_id)
+        if my_keys.is_key_registered(key_id):
+            continue
+        break
+    key_object = my_keys.generate_key(key_id, key_size=key_size)
+    if key_object is None:
+        return ERROR('failed to generate private key "%s"' % key_id)
+    return OK(my_keys.make_key_info(
+        key_object,
+        key_id=key_id,
+        include_private=False,
+    ), message='new share "%s" was generated successfully' % key_id, )
 
 
 def share_grant(trusted_remote_user, key_id):
     """
     """
     if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
+        return ERROR('service_shared_data() is not started')
+    if not key_id.startswith('share_'):
+        return ERROR('invlid share name')
     from userid import global_id
     remote_idurl = trusted_remote_user
     if trusted_remote_user.count('@'):
@@ -1445,10 +1513,7 @@ def share_grant(trusted_remote_user, key_id):
     d = Deferred()
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
-    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(
-        log_events=True,
-        publish_events=True,
-    )
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=True, )
     shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
     return ret
 
@@ -1457,49 +1522,41 @@ def share_open(key_id):
     """
     """
     if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
+        return ERROR('service_shared_data() is not started')
+    if not key_id.startswith('share_'):
+        return ERROR('invlid share name')
     from access import shared_access_coordinator
     active_share = shared_access_coordinator.get_active_share(key_id)
-    if active_share:
-        active_share.automat('restart')
-        return OK('share "%s" already opened, refresing' % key_id, extra_fields=active_share.to_json())
+    new_share = False
+    if not active_share:
+        new_share = True
+        active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=True, )
+    ret = Deferred()
 
-#     ret = Deferred()
+    def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, args):
+        active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
+        if newstate == 'CONNECTED':
+            if new_share:
+                ret.callback(OK('share "%s" opened' % key_id, extra_fields=active_share.to_json()))
+            else:
+                ret.callback(OK('share "%s" refreshed' % key_id, extra_fields=active_share.to_json()))
+        else:
+            ret.callback(ERROR('share "%s" was not opened' % key_id, extra_fields=active_share.to_json()))
+        return None
 
-#     def _on_shared_access_coordinator_success(result):
-#         lg.info(result)
-#         if not result:
-#             ret.callback(ERROR('failed opening share "%s"' % key_id))
-#             return None
-#         this_share = shared_access_coordinator.get_active_share(key_id)
-#         if not this_share:
-#             ret.callback(ERROR('share "%s" was not opened' % key_id))
-#             return None
-#         ret.callback(OK('share "%s" opened' % key_id, extra_fields=this_share.to_json()))
-#         return None
-
-#     def _on_shared_access_donor_failed(err):
-#         lg.err(err)
-#         ret.callback(ERROR(err.getErrorMessage()))
-#         return None
-
-#     d = Deferred()
-#     d.addCallback(_on_shared_access_coordinator_success)
-#     d.addErrback(_on_shared_access_donor_failed)
-
-    new_share = shared_access_coordinator.SharedAccessCoordinator(
-        key_id,
-        publish_events=True,
-    )
-    new_share.automat('restart')
-    return OK('new share "%s" opened' % key_id, extra_fields=new_share.to_json())
+    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed, oldstate=None, newstate='CONNECTED')
+    active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed, oldstate=None, newstate='DISCONNECTED')
+    active_share.automat('restart')
+    return ret
 
 
 def share_close(key_id):
     """
     """
     if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
+        return ERROR('service_shared_data() is not started')
+    if not key_id.startswith('share_'):
+        return ERROR('invlid share name')
     from access import shared_access_coordinator
     this_share = shared_access_coordinator.get_active_share(key_id)
     if not this_share:
@@ -1508,40 +1565,11 @@ def share_close(key_id):
     return OK('share "%s" closed' % key_id, extra_fields=this_share.to_json())
 
 
-def share_refresh(key_id):
-    """
-    """
-    if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    from access import shared_access_coordinator
-    this_share = shared_access_coordinator.get_active_share(key_id)
-    if not this_share:
-        return ERROR('this share is not opened')
-    this_share.automat('restart')
-    return OK('share "%s" state machine restarted' % key_id, extra_fields=this_share.to_json())
-
-
-def share_list():
-    """
-    """
-    if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
-    from access import shared_access_coordinator
-    r = []
-    for key_id in shared_access_coordinator.list_active_shares():
-        cur_share = shared_access_coordinator.get_active_share(key_id)
-        if not cur_share:
-            lg.warn('share %s not found' % key_id)
-            continue
-        r.append(cur_share.to_json())
-    return RESULT(r)
-
-
 def share_history():
     """
     """
     if not driver.is_on('service_shared_data'):
-        return succeed(ERROR('service_shared_data() is not started'))
+        return ERROR('service_shared_data() is not started')
     return RESULT([],)
 
 #------------------------------------------------------------------------------
@@ -1764,7 +1792,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     ret = Deferred()
     d = dht_relations.scan_customer_supplier_relations(customer_idurl)
     d.addCallback(lambda result_list: ret.callback(RESULT(result_list)))
-    d.addErrback(lambda err: ret.errback(ERROR([err, ])))
+    d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
 
 #------------------------------------------------------------------------------
@@ -2418,7 +2446,7 @@ def user_ping(idurl_or_global_id, timeout=10):
         {'status': 'OK', 'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
     """
     if not driver.is_on('service_identity_propagate'):
-        return succeed(ERROR('service_identity_propagate() is not started'))
+        return ERROR('service_identity_propagate() is not started')
     from p2p import propagate
     from userid import global_id
     idurl = idurl_or_global_id
@@ -2439,7 +2467,7 @@ def user_status(idurl_or_global_id):
     """
     """
     if not driver.is_on('service_identity_propagate'):
-        return succeed(ERROR('service_identity_propagate() is not started'))
+        return ERROR('service_identity_propagate() is not started')
     from p2p import contact_status
     from userid import global_id
     idurl = idurl_or_global_id
