@@ -65,6 +65,15 @@ class SupplierRelationsService(LocalService):
         events.remove_subscriber(self._on_existing_customer_terminated)
         return True
 
+    def cancel(self, json_payload, newpacket, info):
+        from logs import lg
+        from contacts import contactsdb
+        customer_idurl = newpacket.OwnerID
+        if not contactsdb.is_customer(customer_idurl):
+            lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
+        from dht import dht_relations
+        dht_relations.close_customer_supplier_relation(customer_idurl)
+
     #------------------------------------------------------------------------------
 
     def _on_new_customer_accepted(self, evt):

@@ -116,6 +116,10 @@ class EmployerService(LocalService):
                 remote_idurl=idurl,
                 service_name='service_supplier',
             )
+            p2p_service.SendCancelService(
+                remote_idurl=idurl,
+                service_name='service_supplier_relations',
+            )
         if suppliers_to_be_dismissed:
             lg.info('found %d suppliers to be cleaned and sent CancelService() packets' % len(suppliers_to_be_dismissed))
 
