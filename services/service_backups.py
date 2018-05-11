@@ -97,14 +97,20 @@ class BackupsService(LocalService):
 
     def _on_keep_local_copies_modified(self, path, value, oldvalue, result):
         from storage import backup_monitor
+        from logs import lg
+        lg.warn('restarting backup_monitor() machine')
         backup_monitor.A('restart')
 
     def _on_wait_suppliers_modified(self, path, value, oldvalue, result):
         from storage import backup_monitor
+        from logs import lg
+        lg.warn('restarting backup_monitor() machine')
         backup_monitor.A('restart')
 
     def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, args):
         from storage import backup_monitor
+        from logs import lg
+        lg.warn('restarting backup_monitor() machine becuse p2p_connector state changed')
         backup_monitor.A('restart')
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
