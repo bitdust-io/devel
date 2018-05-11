@@ -35,6 +35,7 @@ import re
 import sys
 import types
 import socket
+import random
 import urllib
 import urllib2
 import urlparse
@@ -645,15 +646,19 @@ def TestInternetConnection(remote_hosts=None, timeout=10):
     """
     if remote_hosts is None:
         remote_hosts = []
-        remote_hosts.append('https://bitdust.io')
+        from userid import known_servers
+        for host, ports in known_servers.by_host().items():
+            remote_hosts.append('http://%s:%d' % (host, ports[0], ))
+        # remote_hosts.append('https://bitdust.io')
         # remote_hosts.append('http://www.google.com')
         # remote_hosts.append('http://www.facebook.com')
         # remote_hosts.append('http://www.youtube.com')
         # remote_hosts.append('www.yahoo.com')
         # remote_hosts.append('www.baidu.com')
+    random.shuffle(remote_hosts)
     dl = []
-    for host in remote_hosts:
-        dl.append(getPageTwisted(host, timeout))
+    for host in remote_hosts[:5]:
+        dl.append(getPageTwisted(host, timeout=timeout))
     return DeferredList(dl, fireOnOneCallback=True, fireOnOneErrback=False, consumeErrors=True)
 
 #------------------------------------------------------------------------------

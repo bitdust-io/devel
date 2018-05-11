@@ -67,6 +67,7 @@ from logs import lg
 from automats import automat
 
 from p2p import commands
+from p2p import p2p_stats
 
 from lib import nameurl
 
@@ -74,13 +75,13 @@ from system import tmpfile
 
 from contacts import contactsdb
 from contacts import identitycache
+
 from userid import my_id
 
 from main import settings
 from main import events
 
 from transport import callback
-from transport import stats
 
 #------------------------------------------------------------------------------
 
@@ -643,7 +644,7 @@ class PacketOut(automat.Automat):
         Action method.
         """
         assert self.popped_item
-        stats.count_outbox(
+        p2p_stats.count_outbox(
             self.remote_idurl, self.popped_item.proto,
             self.popped_item.status, self.popped_item.bytes_sent)
         callback.run_finish_file_sending_callbacks(
@@ -656,7 +657,7 @@ class PacketOut(automat.Automat):
         Action method.
         """
         for item in self.results:
-            stats.count_outbox(self.remote_idurl, item.proto, 'failed', 0)
+            p2p_stats.count_outbox(self.remote_idurl, item.proto, 'failed', 0)
             callback.run_finish_file_sending_callbacks(
                 self, item, 'failed', 0, self.error_message)
 
@@ -816,7 +817,7 @@ class PacketOut(automat.Automat):
         proxy_contact = None
         if settings.enablePROXY() and settings.enablePROXYsending():
             proxy_contact = byproto.get('proxy', None)
-        working_protos = stats.peers_protos().get(self.remote_idurl, set())
+        working_protos = p2p_stats.peers_protos().get(self.remote_idurl, set())
         # tcp seems to be the most stable proto
         # now let's check if we know his local IP and
         # he enabled tcp in his settings to be able to receive packets from others

@@ -75,6 +75,7 @@ from userid import known_servers
 from userid import my_id
 
 from p2p import commands
+from p2p import p2p_stats
 
 from main import settings
 
@@ -83,7 +84,6 @@ from system import tmpfile
 from crypt import signed
 
 from transport import gateway
-from transport import stats
 from transport import packet_out
 
 from dht import dht_service
@@ -389,8 +389,8 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     })
     if wide:
         # this is a ping packet - need to clear old info
-        stats.ErasePeerProtosStates(idurl)
-        stats.EraseMyProtosStates(idurl)
+        p2p_stats.ErasePeerProtosStates(idurl)
+        p2p_stats.EraseMyProtosStates(idurl)
 
 
 def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
@@ -449,8 +449,8 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
             commands.Fail(): ack_handler, })
         if wide:
             # this is a ping packet - need to clear old info
-            stats.ErasePeerProtosStates(contact)
-            stats.EraseMyProtosStates(contact)
+            p2p_stats.ErasePeerProtosStates(contact)
+            p2p_stats.EraseMyProtosStates(contact)
         alreadysent.add(contact)
     del alreadysent
 

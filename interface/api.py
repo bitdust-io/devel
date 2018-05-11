@@ -2223,10 +2223,10 @@ def packets_stats():
     """
     if not driver.is_on('service_gateway'):
         return ERROR('service_gateway() is not started')
-    from transport import stats
+    from p2p import p2p_stats
     return RESULT([{
-        'in': stats.counters_in(),
-        'out': stats.counters_out(),
+        'in': p2p_stats.counters_in(),
+        'out': p2p_stats.counters_out(),
     }])
 
 

@@ -75,8 +75,8 @@ from contacts import identitycache
 from services import driver
 
 from p2p import commands
+from p2p import p2p_stats
 
-from transport import stats
 from transport import callback
 
 #------------------------------------------------------------------------------
@@ -410,7 +410,7 @@ class PacketIn(automat.Automat):
         Action method.
         """
         newpacket = arg
-        stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
+        p2p_stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
         process(newpacket, self)
 
     def doReportFailed(self, arg):
@@ -422,7 +422,7 @@ class PacketIn(automat.Automat):
         except:
             status = 'failed'
             bytes_received = 0
-        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
 
     def doReportCacheFailed(self, arg):
         """
@@ -430,7 +430,7 @@ class PacketIn(automat.Automat):
         """
         if arg:
             status, bytes_received, _ = arg
-            stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+            p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
 
     def doDestroyMe(self, arg):
