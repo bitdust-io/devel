@@ -321,7 +321,8 @@ class BitDustRESTHTTPServer(APIResource):
         return api.file_upload_start(
             local_path=data['local_path'],
             remote_path=data['remote_path'],
-            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]), )
+            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]),
+            open_share=bool(data.get('open_share', '1') in ['1', 'true', ]), )
 
     @POST('^/file/upload/stop/v1$')
     def file_upload_stop_v1(self, request):
@@ -334,7 +335,8 @@ class BitDustRESTHTTPServer(APIResource):
         return api.file_download_start(
             remote_path=data['remote_path'],
             destination_path=data.get('destination_folder', None),
-            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]), )
+            wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]),
+            open_share=bool(data.get('open_share', '1') in ['1', 'true', ]), )
 
     @POST('^/file/download/stop/v1$')
     def file_download_stop_v1(self, request):
