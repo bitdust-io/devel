@@ -1061,7 +1061,7 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path, wait_result=True):
+def file_upload_start(local_path, remote_path, wait_result=False, check_share=True):
     """
     """
     if not driver.is_on('service_backups'):
@@ -1208,7 +1208,7 @@ def files_downloads():
     } for r in restore_monitor.GetWorkingObjects()])
 
 
-def file_download_start(remote_path, destination_path=None, wait_result=False):
+def file_download_start(remote_path, destination_path=None, wait_result=False, check_share=True):
     """
     Download data from remote suppliers to your local machine. You can use
     different methods to select the target data with `remote_path` input:
@@ -1583,12 +1583,22 @@ def friend_list():
     result = []
     for idurl, alias in contactsdb.correspondents():
         glob_id = global_id.ParseIDURL(idurl)
+        contact_status = None
+        contact_state = None
+        if driver.is_on('service_identity_propagate'):
+            from p2p import contact_status
+            state_machine_inst = contact_status.getInstance(idurl)
+            if state_machine_inst:
+                contact_status = contact_status.stateToLabel(state_machine_inst.state)
+                contact_state = state_machine_inst.state
         result.append({
             'idurl': idurl,
             'global_id': glob_id['customer'],
             'idhost': glob_id['idhost'],
             'username': glob_id['user'],
             'alias': alias,
+            'contact_status': contact_status,
+            'contact_state': contact_state,
         })
     return RESULT(result)
 

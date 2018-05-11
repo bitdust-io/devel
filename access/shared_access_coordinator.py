@@ -167,7 +167,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.customer_idurl = glob_id['idurl']
         self.known_suppliers_list = []
         super(SharedAccessCoordinator, self).__init__(
-            name="shared_%s$%s" % (glob_id['key_alias'], glob_id['user']),
+            name="%s$%s" % (glob_id['key_alias'], glob_id['user']),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
