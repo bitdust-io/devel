@@ -36,11 +36,6 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-import time
-import json
-
-#------------------------------------------------------------------------------
-
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
