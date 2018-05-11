@@ -887,6 +887,7 @@ def OnJobDone(backupID, result):
         # will be smarter to restart it once we finish all tasks
         # because user will probably leave BitDust working after starting a long running operations
         from storage import backup_monitor
+        lg.warn('restarting backup_monitor() machine because no tasks left')
         backup_monitor.A('restart')
     reactor.callLater(0, RunTask)
     reactor.callLater(0, FireTaskFinishedCallbacks, remotePath, version, result)

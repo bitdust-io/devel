@@ -67,9 +67,17 @@ EVENTS:
     * :red:`timer-5sec`
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
 
 import sys
 import gc
+
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor
@@ -112,7 +120,12 @@ def A(event=None, arg=None):
     """
     global _BackupMonitor
     if _BackupMonitor is None:
-        _BackupMonitor = BackupMonitor('backup_monitor', 'AT_STARTUP', 6, False)
+        _BackupMonitor = BackupMonitor(
+            'backup_monitor', 'AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=False,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _BackupMonitor.automat(event, arg)
     return _BackupMonitor

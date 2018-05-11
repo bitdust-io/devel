@@ -162,6 +162,7 @@ class RestoreWorker(automat.Automat):
         self.Started = time.time()
         self.LastAction = time.time()
         self.RequestFails = []
+        self.AlreadyRequestedCounts = {}
         # For anyone who wants to know when we finish
         self.MyDeferred = Deferred()
         self.packetInCallback = None
@@ -356,6 +357,7 @@ class RestoreWorker(automat.Automat):
         self.OnHandData = [False, ] * self.EccMap.datasegments
         self.OnHandParity = [False, ] * self.EccMap.paritysegments
         self.RequestFails = []
+        self.AlreadyRequestedCounts = {}
 
     def doPingSuppliers(self, arg):
         """
@@ -410,7 +412,7 @@ class RestoreWorker(automat.Automat):
         for SupplierNumber in range(self.EccMap.datasegments):
             SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
-                lg.warn('bad supplier at position %s' % SupplierNumber)
+                lg.warn('unknown supplier at position %s' % SupplierNumber)
                 continue
             if contact_status.isOffline(SupplierID):
                 lg.warn('offline supplier: %s' % SupplierID)
@@ -423,7 +425,7 @@ class RestoreWorker(automat.Automat):
         for SupplierNumber in range(self.EccMap.paritysegments):
             SupplierID = contactsdb.supplier(SupplierNumber, customer_idurl=self.customer_idurl)
             if not SupplierID:
-                lg.warn('bad supplier at position %s' % SupplierNumber)
+                lg.warn('unknown supplier at position %s' % SupplierNumber)
                 continue
             if contact_status.isOffline(SupplierID):
                 lg.warn('offline supplier: %s' % SupplierID)
@@ -440,6 +442,9 @@ class RestoreWorker(automat.Automat):
         for SupplierID, packetID in packetsToRequest:
             if io_throttle.HasPacketInRequestQueue(SupplierID, packetID):
                 already_requested += 1
+                if packetID not in self.AlreadyRequestedCounts:
+                    self.AlreadyRequestedCounts[packetID] = 0
+                self.AlreadyRequestedCounts[packetID] += 1
                 if _Debug:
                     lg.out(_DebugLevel, '        packet already in request queue: %s %s' % (SupplierID, packetID, ))
                 continue
@@ -456,13 +461,18 @@ class RestoreWorker(automat.Automat):
                 lg.out(_DebugLevel, "        requested %d packets for block %d" % (
                     requests_made, self.block_number))
         else:
-            if already_requested:
+            if not already_requested:
+                lg.warn('no requests made for block %d' % self.block_number)
+                self.automat('request-failed', None)
+            else:
                 if _Debug:
                     lg.out(_DebugLevel, "        found %d already requested packets for block %d" % (
                         already_requested, self.block_number))
-            else:
-                lg.warn('no requests made for block %d' % self.block_number)
-                self.automat('request-failed', None)
+                if self.AlreadyRequestedCounts:
+                    all_counts = sorted(self.AlreadyRequestedCounts.values())
+                    if all_counts[0] > 3:
+                        lg.warn('too much requests made for block %d' % self.block_number)
+                        self.automat('request-failed', None)
 
     def doSavePacket(self, arg):
         """
@@ -608,7 +618,8 @@ class RestoreWorker(automat.Automat):
         self.OnHandParity = None
         self.EccMap = None
         self.LastAction = None
-        self.RequestFails = None
+        self.RequestFails = []
+        self.AlreadyRequestedCounts = {}
         self.MyDeferred = None
         self.output_stream = None
         self.destroy()

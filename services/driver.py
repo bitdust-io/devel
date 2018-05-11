@@ -447,13 +447,7 @@ def on_service_enabled_disabled(path, newvalue, oldvalue, result):
         return
     if not path.endswith('/enabled'):
         return
-    svc_name = path.replace(
-        'services/',
-        'service_').replace(
-        '/enabled',
-        '').replace(
-            '-',
-        '_')
+    svc_name = path.replace('services/', 'service_').replace('/enabled', '').replace('-', '_')
     svc = services().get(svc_name, None)
     if svc:
         if newvalue == 'true':

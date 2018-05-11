@@ -50,7 +50,7 @@ class EmployerService(LocalService):
     def start(self):
         from customer import fire_hire
         from main.config import conf
-        from services import driver
+        from main import events
         from raid import eccmap
         eccmap.Update()
         fire_hire.A('init')
@@ -58,18 +58,15 @@ class EmployerService(LocalService):
                            self._on_suppliers_number_modified)
         conf().addCallback('services/customer/needed-space',
                            self._on_needed_space_modified)
-        # clean up old suppliers
-        if driver.is_on('service_supplier_relations'):
-            from dht import dht_relations
-            from userid import my_id
-            d = dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
-            d.addCallback(self._on_my_dht_relations_discovered)
-            d.addErrback(self._on_my_dht_relations_failed)
+        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
+        self._do_cleanup_dht_suppliers()
         return True
 
     def stop(self):
         from customer import fire_hire
         from main.config import conf
+        from main import events
+        events.remove_subscriber(self._on_supplier_modified)
         conf().removeCallback('services/customer/suppliers-number')
         conf().removeCallback('services/customer/needed-space')
         fire_hire.Destroy()
@@ -87,11 +84,27 @@ class EmployerService(LocalService):
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 
+    def _do_cleanup_dht_suppliers(self):
+        from logs import lg
+        from services import driver
+        if driver.is_on('service_entangled_dht'):
+            from dht import dht_relations
+            from userid import my_id
+            d = dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
+            d.addCallback(self._on_my_dht_relations_discovered)
+            d.addErrback(self._on_my_dht_relations_failed)
+        else:
+            lg.warn('service service_entangled_dht is not ready')
+
+    def _on_supplier_modified(self, evt):
+        self._do_cleanup_dht_suppliers()
+
     def _on_my_dht_relations_discovered(self, discovered_suppliers_list):
         from p2p import p2p_service
         from contacts import contactsdb
         from logs import lg
         suppliers_to_be_dismissed = set()
+        # clean up old suppliers
         for idurl in discovered_suppliers_list:
             if not idurl:
                 continue

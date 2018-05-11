@@ -59,7 +59,7 @@ current local index file and update local copy if required.
 On next step index_synchronizer() sends a latest version of index file to all suppliers to hold.
 
 The backup_monitor() machine should be restarted every one hour
-or every time when your backups is changed.
+or every time when your files were changed.
 It sends "restart" event to index_synchronizer() to synchronize index file.
 
 
