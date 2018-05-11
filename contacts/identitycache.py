@@ -359,7 +359,7 @@ def immediatelyCaching(idurl, timeout=0):
             if result:
                 result.errback(Exception(src))
             if _Debug:
-                lg.out(14, '    [cache error] %s' % idurl)        
+                lg.out(14, '    [cache error] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, 0)
         return src
 
