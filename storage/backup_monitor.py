@@ -74,8 +74,9 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-import sys
 import gc
+import sys
+import time
 
 #------------------------------------------------------------------------------
 
@@ -106,6 +107,8 @@ from storage import backup_control
 
 from userid import global_id
 from userid import my_id
+
+from p2p import contact_status
 
 #------------------------------------------------------------------------------
 
@@ -154,6 +157,8 @@ class BackupMonitor(automat.Automat):
 
     def init(self):
         self.current_suppliers = []
+        self.backups_progress_last_iteration = 0
+        self.last_execution_time = 0
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -250,6 +255,8 @@ class BackupMonitor(automat.Automat):
         Action method.
         """
         self.current_suppliers = list(contactsdb.suppliers())
+        self.backups_progress_last_iteration = 0
+        self.last_execution_time = time.time()
 
     def doDeleteAllBackups(self, arg):
         """
@@ -292,7 +299,7 @@ class BackupMonitor(automat.Automat):
         # backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
 
     def doPrepareListBackups(self, arg):
-        import backup_rebuilder
+        from storage import backup_rebuilder
         if backup_control.HasRunningBackup():
             # if some backups are running right now no need to rebuild something - too much use of CPU
             backup_rebuilder.RemoveAllBackupsToWork()
@@ -317,6 +324,11 @@ class BackupMonitor(automat.Automat):
         # here we check all backups we have and remove the old one
         # user can set how many versions of that file or folder to keep
         # other versions (older) will be removed here
+        from storage import backup_rebuilder
+        try:
+            self.backups_progress_last_iteration = backup_rebuilder.A().backupsWasRebuilt
+        except:
+            self.backups_progress_last_iteration = 0
         versionsToKeep = settings.getBackupsMaxCopies()
         bytesUsed = backup_fs.sizebackups() / contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
@@ -368,6 +380,8 @@ class BackupMonitor(automat.Automat):
             from web import control
             control.request_update()
         collected = gc.collect()
+        if self.backups_progress_last_iteration > 0:
+            reactor.callLater(1, self.automat, 'restart')
         lg.out(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
     def doOverallCheckUp(self, arg):
@@ -375,7 +389,21 @@ class BackupMonitor(automat.Automat):
         Action method.
         """
         if '' in contactsdb.suppliers():
-            lg.out(6, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
+            self.automat('restart')
+            return
+        if contact_status.listOfflineSuppliers():
+            if time.time() - self.last_execution_time > 60:
+                # re-sync every 1 min. if at least on supplier is dead
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp   restart after 1 min, found offline suppliers')
+                self.automat('restart')
+                return
+        if time.time() - self.last_execution_time > 60 * 10:
+            # also re-sync every 10 min.
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp   periodic 10 min. restart')
             self.automat('restart')
             return
         # TODO: more tests here: low rating(), time offline, low ping, etc..
