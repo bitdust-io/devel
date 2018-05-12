@@ -73,6 +73,7 @@ from dht import known_nodes
 _MyNode = None
 _ActiveLookup = None
 _ProtocolVersion = 5
+_ValidatorTask = None
 
 #------------------------------------------------------------------------------
 
@@ -465,8 +466,8 @@ class DHTNode(DistributedTupleSpacePeer):
         self.data[key] = value
         try:
             return super(DHTNode, self).store(
-                key,
-                value,
+                key=key,
+                value=value,
                 originalPublisherID=originalPublisherID,
                 age=age,
                 **kwargs

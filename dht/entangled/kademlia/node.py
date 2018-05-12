@@ -801,7 +801,7 @@ class Node(object):
                     #self.iterativeStore(key=key, value=self._dataStore[key], originalPublisherID=originalPublisherID, age=age)
                     twisted.internet.reactor.callFromThread(self.iterativeStore, key=key, value=self._dataStore[key], originalPublisherID=originalPublisherID, age=age)
         for key in expiredKeys:
-            # print '    expiring key:', key
+            print '    expiring key:', key
             del self._dataStore[key]
         # print 'done with threadedDataRefresh()'
 

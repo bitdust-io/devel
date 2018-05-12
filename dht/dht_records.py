@@ -146,6 +146,7 @@ def set_relation(key, idurl, data, prefix, index):
             'data': data,
         },
         rules=get_rules('relation'),
+        age=86400-60,
     )
 
 #------------------------------------------------------------------------------
