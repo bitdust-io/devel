@@ -164,11 +164,11 @@ class NetworkConnector(automat.Automat):
             p2p_connector.A('network_connector.state', newstate)
             tray_icon.state_changed(self.state, p2p_connector.A().state)
         if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
+            # TODO: redesign the state machine to cover that
             if self.last_bytes_in_counter < p2p_stats.get_total_bytes_in():
                 lg.info('HELLO BITDUST WORLD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             else:
                 lg.warn('SEEMS I AM OFFLINE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                reactor.callLater(0, self.automat, 'reconnect')
             self.last_bytes_in_counter = p2p_stats.get_total_bytes_in()
 
     def A(self, event, arg):

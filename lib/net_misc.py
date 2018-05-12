@@ -640,21 +640,12 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
 
 def TestInternetConnection(remote_hosts=None, timeout=10):
     """
-    Ping google, facebook and youtube to check Internet connection state.
-
-    PREPRO switch to our own stun servers ?
     """
     if remote_hosts is None:
         remote_hosts = []
         from userid import known_servers
         for host, ports in known_servers.by_host().items():
             remote_hosts.append('http://%s:%d' % (host, ports[0], ))
-        # remote_hosts.append('https://bitdust.io')
-        # remote_hosts.append('http://www.google.com')
-        # remote_hosts.append('http://www.facebook.com')
-        # remote_hosts.append('http://www.youtube.com')
-        # remote_hosts.append('www.yahoo.com')
-        # remote_hosts.append('www.baidu.com')
     random.shuffle(remote_hosts)
     dl = []
     for host in remote_hosts[:5]:

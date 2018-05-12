@@ -326,14 +326,15 @@ class BackupMonitor(automat.Automat):
         # other versions (older) will be removed here
         from storage import backup_rebuilder
         try:
-            self.backups_progress_last_iteration = backup_rebuilder.A().backupsWasRebuilt
+            self.backups_progress_last_iteration = len(backup_rebuilder.A().backupsWasRebuilt)
         except:
             self.backups_progress_last_iteration = 0
         versionsToKeep = settings.getBackupsMaxCopies()
         bytesUsed = backup_fs.sizebackups() / contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         customerGlobID = my_id.getGlobalID()
-        lg.out(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
         delete_count = 0
         if versionsToKeep > 0:
             for pathID, localPath, itemInfo in backup_fs.IterateIDs():
@@ -344,8 +345,9 @@ class BackupMonitor(automat.Automat):
                 # TODO: do we need to sort the list? it comes from a set, so must be sorted may be
                 while len(versions) > versionsToKeep:
                     backupID = packetid.MakeBackupID(customerGlobID, pathID, versions.pop(0))
-                    lg.out(6, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (
-                        len(versions), versionsToKeep, localPath, backupID))
+                    if _Debug:
+                        lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (
+                            len(versions), versionsToKeep, localPath, backupID))
                     backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                     delete_count += 1
         # we need also to fit used space into needed space (given from other users)
@@ -365,8 +367,9 @@ class BackupMonitor(automat.Automat):
                     backupID = packetid.MakeBackupID(customerGlobID, pathID, version)
                     versionInfo = itemInfo.get_version_info(version)
                     if versionInfo[1] > 0:
-                        lg.out(6, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
-                            bytesUsed, bytesNeeded, backupID, localPath))
+                        if _Debug:
+                            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
+                                bytesUsed, bytesNeeded, backupID, localPath))
                         backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                         delete_count += 1
                         bytesUsed -= versionInfo[1]
@@ -381,8 +384,12 @@ class BackupMonitor(automat.Automat):
             control.request_update()
         collected = gc.collect()
         if self.backups_progress_last_iteration > 0:
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups  sending "restart", backups_progress_last_iteration=%s' % 
+                    self.backups_progress_last_iteration)
             reactor.callLater(1, self.automat, 'restart')
-        lg.out(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
     def doOverallCheckUp(self, arg):
         """
