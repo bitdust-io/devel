@@ -1,8 +1,0 @@
-#!/bin/bash
-
-git pull dev master
-git pull github master
-git pull gitlab master
-git pull fork master
-git pull upstream master
-git status
