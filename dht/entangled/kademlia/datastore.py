@@ -30,8 +30,9 @@
 import UserDict
 import sqlite3
 import cPickle as pickle
-import time
 import os
+
+import constants
 
 
 class DataStore(UserDict.DictMixin):
@@ -70,7 +71,7 @@ class DataStore(UserDict.DictMixin):
         originally published.
         """
 
-    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID):
+    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         """
         Set the value of the (key, value) pair identified by C{key}; this
         should set the "last published" value for the (key, value) pair to the
@@ -92,6 +93,10 @@ class DataStore(UserDict.DictMixin):
     def __delitem__(self, key):
         """
         Delete the specified key (and its value)
+        """
+
+    def getItem(self, key):
+        """
         """
 
 
@@ -137,7 +142,7 @@ class DictDataStore(DataStore):
         """
         return self._dict[key][2]
 
-    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID):
+    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         """
         Set the value of the (key, value) pair identified by C{key}; this
         should set the "last published" value for the (key, value) pair to the
@@ -156,6 +161,20 @@ class DictDataStore(DataStore):
         Delete the specified key (and its value)
         """
         del self._dict[key]
+
+    def getItem(self, key):
+        try:
+            row = self._dict[key]
+            result = dict(
+                key=row[0],
+                value=str(row[1]),
+                lastPublished=row[2],
+                originallyPublished=row[3],
+                originalPublisherID=row[4],
+            )
+        except:
+            return None
+        return result
 
 
 class SQLiteDataStore(DataStore):
@@ -215,14 +234,16 @@ class SQLiteDataStore(DataStore):
         """
         return int(self._dbQuery(key, 'originallyPublished'))
 
-    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID):
+    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         # Encode the key so that it doesn't corrupt the database
         encodedKey = key.encode('hex')
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
-            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID))
+            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (
+                encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID))
         else:
-            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=? WHERE key=?', (buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, encodedKey))
+            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=? WHERE key=?', (
+                buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, encodedKey))
 
     def _dbQuery(self, key, columnName, unpickle=False):
         try:
@@ -242,3 +263,78 @@ class SQLiteDataStore(DataStore):
 
     def __delitem__(self, key):
         self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+
+    def getItem(self, key):
+        try:
+            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+            row = self._cursor.fetchone()
+            result = dict(
+                key=row[0],
+                value=str(row[1]),
+                lastPublished=row[2],
+                originallyPublished=row[3],
+                originalPublisherID=row[4],
+            )
+        except:
+            return None
+        return result
+
+
+class SQLiteExpiredDataStore(SQLiteDataStore):
+    """
+    Example of a SQLite database-based datastore.
+    """
+
+    def __init__(self, dbFile=':memory:'):
+        """
+        @param dbFile: The name of the file containing the SQLite database; if
+                       unspecified, an in-memory database is used.
+        @type dbFile: str
+        """
+        createDB = not os.path.exists(dbFile)
+        self._db = sqlite3.connect(dbFile)
+        self._db.isolation_level = None
+        self._db.text_factory = str
+        if createDB:
+            self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds)')
+        self._cursor = self._db.cursor()
+
+    def expireSeconds(self, key):
+        """
+        """
+        return int(self._dbQuery(key, 'expireSeconds'))
+
+    def setItem(self,
+                key,
+                value,
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+                expireSeconds=constants.dataExpireSecondsDefaut,
+                **kwargs):
+        # Encode the key so that it doesn't corrupt the database
+        encodedKey = key.encode('hex')
+        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
+        if self._cursor.fetchone() is None:
+            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds) VALUES (?, ?, ?, ?, ?, ?)', (
+                encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, expireSeconds))
+        else:
+            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=? WHERE key=?', (
+                buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, expireSeconds, encodedKey))
+
+    def getItem(self, key):
+        try:
+            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+            row = self._cursor.fetchone()
+            result = dict(
+                key=row[0],
+                value=str(row[1]),
+                lastPublished=row[2],
+                originallyPublished=row[3],
+                originalPublisherID=row[4],
+                expireSeconds=row[5],
+            )
+        except:
+            return None
+        return result
+

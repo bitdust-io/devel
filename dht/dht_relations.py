@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: dht_relations.
+.. module:: dht_relations
 
 """
 
@@ -82,7 +82,8 @@ class RelationsLookup(object):
     #------------------------------------------------------------------------------
 
     def do_read(self):
-        if self._index >= self._limit_lookups:  # TODO: more smart and fault sensitive method
+        # TODO: build more smart and fault sensitive method
+        if self._index >= self._limit_lookups:
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations.do_read STOP %s, limit lookups riched' % self.customer_id)
             self.do_report_success()
@@ -93,9 +94,6 @@ class RelationsLookup(object):
                     self.customer_id, self._last_missed_index))
             self.do_report_success()
             return None
-#         if self._index >= 3 and self._missed >= 3:
-#             if float(self._missed) / float(self._index) > 0.5:
-#                 return None
         target_dht_key = dht_service.make_key(
             key=self.customer_id,
             index=self._index,
@@ -174,7 +172,6 @@ class RelationsLookup(object):
 
         if record['supplier_idurl'] == my_id.getLocalID():
             # TODO: verify signature
-            # TODO: check expiration time
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations.do_verify SUCCESS, found own data %s at %s' % (
                     self.customer_id, self._index))

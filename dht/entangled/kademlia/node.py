@@ -94,9 +94,6 @@ class Node(object):
         # before the node has finished joining the network)
         self._joinDeferred = None
         # Create k-buckets (for storing contacts)
-        #self._buckets = []
-        # for i in range(160):
-        #    self._buckets.append(kbucket.KBucket())
         if routingTable is None:
             self._routingTable = routingtable.OptimizedTreeRoutingTable(self.id)
 
@@ -136,7 +133,6 @@ class Node(object):
         @type knownNodeAddresses: tuple
         """
         # Prepare the underlying Kademlia protocol
-        # l = twisted.internet.reactor.listenUDP(self.port, self._protocol) #IGNORE:E1101
         # Create temporary contact information for the list of addresses of known nodes
         if knownNodeAddresses is not None:
             bootstrapContacts = []
@@ -170,7 +166,8 @@ class Node(object):
         print '=================================='
         #twisted.internet.reactor.callLater(10, self.printContacts)
 
-    def iterativeStore(self, key, value, originalPublisherID=None, age=0):
+    def iterativeStore(self, key, value, originalPublisherID=None,
+                       age=0, expireSeconds=constants.dataExpireSecondsDefaut, **kwargs):
         """
         The Kademlia store operation.
 
@@ -203,11 +200,13 @@ class Node(object):
                 # we should store the value at ourselves as well
                 if self._routingTable.distance(key, self.id) < self._routingTable.distance(key, nodes[-1].id):
                     nodes.pop()
-                    self.store(key, value, originalPublisherID=originalPublisherID, age=age)
+                    self.store(key, value, originalPublisherID=originalPublisherID,
+                               age=age, expireSeconds=expireSeconds, **kwargs)
             else:
-                self.store(key, value, originalPublisherID=originalPublisherID, age=age)
+                self.store(key, value, originalPublisherID=originalPublisherID,
+                           age=age, expireSeconds=expireSeconds, **kwargs)
             for contact in nodes:
-                d = contact.store(key, value, originalPublisherID, age)
+                d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
                 d.addErrback(storeFailed)
             return nodes
         # Find k nodes closest to the key...
@@ -266,7 +265,11 @@ class Node(object):
                 if 'closestNodeNoValue' in result:
                     # ...and store the key/value pair
                     contact = result['closestNodeNoValue']
-                    contact.store(key, result[key]).addErrback(storeFailed)
+                    expireSeconds = constants.dataExpireSecondsDefaut
+                    if 'expireSeconds' in result:
+                        expireSeconds = result['expireSeconds']
+                    print 'republish %s with %d' % (result[key], expireSeconds)
+                    contact.store(key, result[key], None, 0, expireSeconds).addErrback(storeFailed)
                 outerDf.callback(result)
             else:
                 # The value wasn't found, but a list of contacts was returned
@@ -276,10 +279,15 @@ class Node(object):
                 if key in self._dataStore:
                     # Ok, we have the value locally, so use that
                     value = self._dataStore[key]
+                    expireSeconds = constants.dataExpireSecondsDefaut
+                    expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
+                    if expireSecondsCall:
+                        expireSeconds = expireSecondsCall(key)
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        contact.store(key, value).addErrback(storeFailed)
+                        print 'refresh %s with %d' % (value, expireSeconds)
+                        contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
                     outerDf.callback({key: value})
                 else:
                     # Ok, value does not exist in DHT at all
@@ -347,7 +355,8 @@ class Node(object):
         return 'pong'
 
     @rpcmethod
-    def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
+    def store(self, key, value, originalPublisherID=None,
+              age=0, expireSeconds=constants.dataExpireSecondsDefaut, **kwargs):
         """
         Store the received data in this node's local hash table.
 
@@ -384,7 +393,7 @@ class Node(object):
 
         now = int(time.time())
         originallyPublished = now - age
-        self._dataStore.setItem(key, value, now, originallyPublished, originalPublisherID)
+        self._dataStore.setItem(key, value, now, originallyPublished, originalPublisherID, expireSeconds=expireSeconds, **kwargs)
         return 'OK'
 
     @rpcmethod
@@ -427,7 +436,11 @@ class Node(object):
         @rtype: dict or list
         """
         if key in self._dataStore:
-            return {key: self._dataStore[key]}
+            exp = None
+            expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
+            if expireSecondsCall:
+                exp = expireSecondsCall(key)
+            return {key: self._dataStore[key], 'expireSeconds': exp, }
         else:
             return self.findNode(key, **kwargs)
 
@@ -543,6 +556,8 @@ class Node(object):
             if findValue and isinstance(result, dict):
                 # We have found the value
                 findValueResult[key] = result[key]
+                if 'expireSeconds' in result:
+                    findValueResult['expireSeconds'] = result['expireSeconds']
             else:
                 if findValue:
                     # We are looking for a value, and the remote node didn't have it
@@ -777,16 +792,27 @@ class Node(object):
             if key == 'nodeState':
                 continue
             now = int(time.time())
-            originalPublisherID = self._dataStore.originalPublisherID(key)
-            age = now - self._dataStore.originalPublishTime(key)
+            itemData = self._dataStore.getItem(key)
+            originallyPublished = itemData['originallyPublished']
+            originalPublisherID = itemData['originalPublisherID']
+            lastPublished = itemData['lastPublished']
+            expireSeconds = itemData['expireSeconds']
+            age = now - originallyPublished
+            # originalPublisherID = self._dataStore.originalPublisherID(key)
+            # age = now - self._dataStore.originalPublishTime(key)
+            # expireSeconds = self._dataStore.expireSeconds(key)
             # print '  node:',ord(self.id[0]),'key:',ord(key[0]),'orig publishing time:',self._dataStore.originalPublishTime(key),'now:',now,'age:',age,'lastPublished age:',now - self._dataStore.lastPublished(key),'original pubID:', ord(originalPublisherID[0])
             if originalPublisherID == self.id:
                 # This node is the original publisher; it has to republish
                 # the data before it expires (24 hours in basic Kademlia)
                 if age >= constants.dataExpireTimeout:
                     # print '    REPUBLISHING key:', key
-                    #self.iterativeStore(key, self._dataStore[key])
-                    twisted.internet.reactor.callFromThread(self.iterativeStore, key, self._dataStore[key])
+                    twisted.internet.reactor.callFromThread(
+                        self.iterativeStore,
+                        key=key,
+                        value=self._dataStore[key],
+                        expireSeconds=expireSeconds,
+                    )
             else:
                 # This node needs to replicate the data at set intervals,
                 # until it expires, without changing the metadata associated with it
@@ -795,13 +821,19 @@ class Node(object):
                     # This key/value pair has expired (and it has not been republished by the original publishing node
                     # - remove it
                     expiredKeys.append(key)
-                elif now - self._dataStore.lastPublished(key) >= constants.replicateInterval:
+                elif now - lastPublished >= constants.replicateInterval:
                     # ...data has not yet expired, and we need to replicate it
                     # print '    replicating key:', key,'age:',age
-                    #self.iterativeStore(key=key, value=self._dataStore[key], originalPublisherID=originalPublisherID, age=age)
-                    twisted.internet.reactor.callFromThread(self.iterativeStore, key=key, value=self._dataStore[key], originalPublisherID=originalPublisherID, age=age)
+                    twisted.internet.reactor.callFromThread(
+                        self.iterativeStore,
+                        key=key,
+                        value=self._dataStore[key],
+                        originalPublisherID=originalPublisherID,
+                        age=age,
+                        expireSeconds=expireSeconds,
+                    )
         for key in expiredKeys:
-            print '    expiring key:', key
+            # print '    expiring key:', key
             del self._dataStore[key]
         # print 'done with threadedDataRefresh()'
 

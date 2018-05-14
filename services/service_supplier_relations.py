@@ -48,18 +48,19 @@ class SupplierRelationsService(LocalService):
                 ]
 
     def start(self):
-        from dht import dht_relations
-        from contacts import contactsdb
+        from twisted.internet.task import LoopingCall
         from main import events
+        from dht import dht_service
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
-        for customer_idurl in contactsdb.customers():
-            dht_relations.publish_customer_supplier_relation(customer_idurl)
+        self.refresh_task = LoopingCall(self._do_refresh_dht_records)
+        self.refresh_task.start(dht_service.KEY_EXPIRE_MIN_SECONDS * 2, now=False)
         return True
 
     def stop(self):
         from main import events
+        self.refresh_task.stop()
         events.remove_subscriber(self._on_new_customer_accepted)
         events.remove_subscriber(self._on_existing_customer_accepted)
         events.remove_subscriber(self._on_existing_customer_terminated)
@@ -77,6 +78,12 @@ class SupplierRelationsService(LocalService):
         return p2p_service.SendAck(newpacket, 'accepted')
 
     #------------------------------------------------------------------------------
+
+    def _do_refresh_dht_records(self):
+        from dht import dht_relations
+        from contacts import contactsdb
+        for customer_idurl in contactsdb.customers():
+            dht_relations.publish_customer_supplier_relation(customer_idurl)
 
     def _on_new_customer_accepted(self, evt):
         from twisted.internet import reactor
