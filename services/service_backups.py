@@ -51,21 +51,15 @@ class BackupsService(LocalService):
         from storage import backup_control
         from storage import backup_matrix
         from storage import backup_monitor
-        from main import settings
         from main.config import conf
         from transport import callback
         from p2p import p2p_connector
         backup_fs.init()
         backup_control.init()
         backup_matrix.init()
-        if settings.NewWebGUI():
-            from web import control
-            backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
-            backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
-        else:
-            from web import webcontrol
-            backup_matrix.SetBackupStatusNotifyCallback(webcontrol.OnBackupStats)
-            backup_matrix.SetLocalFilesNotifyCallback(webcontrol.OnReadLocalFiles)
+        from web import control
+        backup_matrix.SetBackupStatusNotifyCallback(control.on_backup_stats)
+        backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
         backup_monitor.A('init')
         backup_monitor.A('restart')
         conf().addCallback('services/backups/keep-local-copies-enabled',

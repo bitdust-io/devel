@@ -107,12 +107,8 @@ class InstallWizard(automat.Automat):
             # TODO:
             # here just skip Contacts page!
             # we do not need that now, but can back to that soon when add chat
-        if not settings.NewWebGUI():
-            from web import webcontrol
-            reactor.callLater(0, webcontrol.OnUpdateInstallPage)
-        else:
-            from web import control
-            control.request_update()
+        from web import control
+        control.request_update()
         installer.A('install_wizard.state', newstate)
 
     def A(self, event, arg):

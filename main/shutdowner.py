@@ -112,12 +112,8 @@ def shutdown(x=None):
     git_proc.shutdown()
     events.clear_subscribers()
     tmpfile.shutdown()
-    if settings.NewWebGUI():
-        from web import control
-        dl.append(control.shutdown())
-    else:
-        from web import webcontrol
-        dl.append(webcontrol.shutdown())
+    from web import control
+    dl.append(control.shutdown())
     weblog.shutdown()
     webtraffic.shutdown()
     for a in automat.objects().values():

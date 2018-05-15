@@ -236,12 +236,8 @@ class Initializer(automat.Automat):
         return bpio.isGUIpossible()
 
     def doUpdate(self, arg):
-        if not settings.NewWebGUI():
-            from web import webcontrol
-            reactor.callLater(0, webcontrol.OnUpdateStartingPage)
-        else:
-            from web import control
-            control.request_update()
+        from web import control
+        control.request_update()
 
     def doInitLocal(self, arg):
         """
@@ -280,12 +276,8 @@ class Initializer(automat.Automat):
 
     def doShowGUI(self, arg):
         lg.out(2, 'initializer.doShowGUI')
-        if settings.NewWebGUI():
-            from web import control
-            d = control.init()
-        else:
-            from web import webcontrol
-            d = webcontrol.init()
+        from web import control
+        d = control.init()
         try:
             from system.tray_icon import USE_TRAY_ICON
         except:
@@ -293,21 +285,11 @@ class Initializer(automat.Automat):
             lg.exc()
         if USE_TRAY_ICON:
             from system import tray_icon
-            if settings.NewWebGUI():
-                # tray_icon.SetControlFunc(control.on_tray_icon_command)
-                tray_icon.SetControlFunc(self._on_tray_icon_command)
-            else:
-                tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
-        if not settings.NewWebGUI():
-            webcontrol.ready()
+            tray_icon.SetControlFunc(self._on_tray_icon_command)
         if self.flagGUI or not self.is_installed:
-            if settings.NewWebGUI():
-                def _show_gui(wsgiport):
-                    reactor.callLater(0.1, control.show)
-                d.addCallback(_show_gui)
-                # reactor.callLater(0.1, control.show)
-            else:
-                d.addCallback(webcontrol.show)
+            def _show_gui(wsgiport):
+                reactor.callLater(0.1, control.show)
+            d.addCallback(_show_gui)
 
     def doDestroyMe(self, arg):
         global _Initializer

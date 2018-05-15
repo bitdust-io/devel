@@ -48,13 +48,7 @@ class RestoreMonitorService(LocalService):
 
     def start(self):
         from storage import restore_monitor
-        from web import webcontrol
-        from main import settings
         restore_monitor.init()
-        if not settings.NewWebGUI():
-            restore_monitor.OnRestorePacketFunc = webcontrol.OnRestoreProcess
-            restore_monitor.OnRestoreBlockFunc = webcontrol.OnRestoreSingleBlock
-            restore_monitor.OnRestoreDoneFunc = webcontrol.OnRestoreDone
         return True
 
     def stop(self):
