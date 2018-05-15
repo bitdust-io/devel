@@ -98,6 +98,8 @@ from services import driver
 from main import settings
 from main import shutdowner
 
+from p2p import p2p_stats
+
 #------------------------------------------------------------------------------
 
 _NetworkConnector = None
@@ -150,6 +152,7 @@ class NetworkConnector(automat.Automat):
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'
+        self.last_bytes_in_counter = 0
         net_misc.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
         net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
 
@@ -160,6 +163,13 @@ class NetworkConnector(automat.Automat):
             from system import tray_icon
             p2p_connector.A('network_connector.state', newstate)
             tray_icon.state_changed(self.state, p2p_connector.A().state)
+        if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
+            # TODO: redesign the state machine to cover that
+            if self.last_bytes_in_counter < p2p_stats.get_total_bytes_in():
+                lg.info('HELLO BITDUST WORLD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            else:
+                lg.warn('SEEMS I AM OFFLINE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            self.last_bytes_in_counter = p2p_stats.get_total_bytes_in()
 
     def A(self, event, arg):
         #---AT_STARTUP---

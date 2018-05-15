@@ -585,17 +585,12 @@ class BackupRebuilder(automat.Automat):
     def _start_one_block(self):
         from storage import backup_matrix
         if self.blockIndex < 0:
-            lg.out(
-                10,
-                'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' %
-                self.blockIndex)
+            lg.out(10, 'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' % self.blockIndex)
             reactor.callLater(0, self._finish_rebuilding)
             return
         BlockNumber = self.workingBlocksQueue[self.blockIndex]
-        lg.out(
-            10, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' %
-            ((BlockNumber, self.blockIndex, str(
-                self.workingBlocksQueue))))
+        lg.out(10, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
+            (BlockNumber, self.blockIndex, str(self.workingBlocksQueue))))
         task_params = (
             self.currentBackupID, BlockNumber, eccmap.Current(),
             backup_matrix.GetActiveArray(),
@@ -612,10 +607,7 @@ class BackupRebuilder(automat.Automat):
 
     def _block_finished(self, result, params):
         if not result:
-            lg.out(
-                10,
-                'backup_rebuilder._block_finished FAILED, blockIndex=%d' %
-                self.blockIndex)
+            lg.out(10, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
             reactor.callLater(0, self._finish_rebuilding)
             return
         try:

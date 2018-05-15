@@ -1,3 +1,5 @@
+pull
+push
 *.pyc
 */*.pyc
 *.pyo

@@ -55,6 +55,8 @@ replicateInterval = refreshTimeout
 # The time it takes for data to expire in the network; the original publisher of the data
 # will also republish the data at this time if it is still valid
 dataExpireTimeout = 86400  # 24 hours
+# Default value for all records to be expired
+dataExpireSecondsDefaut = 60 * 60 * 12  # 12 hours
 
 ######## IMPLEMENTATION-SPECIFIC CONSTANTS ###########
 

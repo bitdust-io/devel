@@ -51,7 +51,7 @@ def default_nodes():
 
 def nodes():
     """
-    Here is a well known DHT nodes, this is "genesis" network.
+    Here is a well known DHT nodes, this is "genesys" network.
     Every new node in the network will first connect one or several of those nodes,
     and then will be routed to some other nodes already registered.
 
@@ -61,7 +61,7 @@ def nodes():
     So other nodes will be able to use your machine to connect to DHT network.
 
     The load is not big, but as network will grow we will have more machines listed here,
-    so all traffic, maintanance and ownership will be distributed accross the world.
+    so all traffic, maintanance and ownership will be distributed across the world.
 
     You can override those "genesis" nodes by configuring list of your preferred DHT nodes
     (host or IP address) in the program settings:

@@ -1,10 +1,10 @@
 #!/usr/bin/python
-# stats.py
+# p2p_stats.py
 #
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
-# This file (stats.py) is part of BitDust Software.
+# This file (p2p_stats.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -28,23 +28,32 @@
 """
 ..
 
-module:: stats
+module:: p2p_stats
 """
 
 #------------------------------------------------------------------------------
 
 _PeersProtos = {}
 _MyProtos = {}
-_CountersIn = {'total_bytes': 0,
-               'unknown_bytes': 0,
-               'total_packets': 0,
-               'unknown_packets': 0,
-               'failed_packets': 0, }
-_CountersOut = {'total_bytes': 0,
-                'unknown_bytes': 0,
-                'total_packets': 0,
-                'unknown_packets': 0,
-                'failed_packets': 0, }
+_CountersIn = {
+    'total_bytes': 0,
+    'unknown_bytes': 0,
+    'total_packets': 0,
+    'unknown_packets': 0,
+    'failed_packets': 0,
+    'identity_cache_count': 0,
+    'identity_cache_fails': 0,
+    'identity_cache_bytes': 0,
+    'peers': {},
+}
+_CountersOut = {
+    'total_bytes': 0,
+    'unknown_bytes': 0,
+    'total_packets': 0,
+    'unknown_packets': 0,
+    'failed_packets': 0,
+    'peers': {},
+}
 
 #------------------------------------------------------------------------------
 
@@ -67,6 +76,15 @@ def counters_in():
 def counters_out():
     global _CountersOut
     return _CountersOut
+
+#------------------------------------------------------------------------------
+
+def get_total_bytes_in():
+    return counters_in()['total_bytes']
+
+
+def get_total_bytes_out():
+    return counters_out()['total_bytes']
 
 #------------------------------------------------------------------------------
 
@@ -97,9 +115,9 @@ def count_outbox(remote_idurl, proto, status, size):
 
     counters_out()['total_bytes'] += size
     if remote_idurl and remote_idurl.startswith('http://') and remote_idurl.endswith('.xml'):
-        if remote_idurl not in counters_out():
-            counters_out()[remote_idurl] = 0
-        counters_out()[remote_idurl] += size
+        if remote_idurl not in counters_out()['peers']:
+            counters_out()['peers'][remote_idurl] = 0
+        counters_out()['peers'][remote_idurl] += size
         if status == 'finished':
             counters_out()['total_packets'] += 1
         else:
@@ -124,9 +142,18 @@ def count_inbox(remote_idurl, proto, status, bytes_received):
             counters_in()['total_packets'] += 1
         else:
             counters_in()['failed_packets'] += 1
-        if remote_idurl not in counters_in():
-            counters_in()[remote_idurl] = 0
-        counters_in()[remote_idurl] += bytes_received
+        if remote_idurl not in counters_in()['peers']:
+            counters_in()['peers'][remote_idurl] = 0
+        counters_in()['peers'][remote_idurl] += bytes_received
     else:
         counters_in()['unknown_packets'] += 1
         counters_in()['unknown_bytes'] += bytes_received
+
+
+def count_identity_cache(idurl, bytes_received):
+    if bytes_received > 0:
+        counters_in()['total_bytes'] += bytes_received
+        counters_in()['identity_cache_count'] += 1
+        counters_in()['identity_cache_bytes'] += bytes_received
+    else:
+        counters_in()['identity_cache_fails'] += 1

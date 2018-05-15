@@ -20,9 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 #
-#
-#
-#
 
 """
 ..
@@ -32,25 +29,33 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import os
 import sys
+import time
 import hashlib
 import random
 import base64
 import optparse
 import json
 
+#------------------------------------------------------------------------------
+
 from twisted.internet import reactor
+from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred, fail
 
+#------------------------------------------------------------------------------
+
 from entangled.dtuple import DistributedTupleSpacePeer
-from entangled.kademlia.datastore import SQLiteDataStore
+from entangled.kademlia.datastore import SQLiteExpiredDataStore
 from entangled.kademlia.node import rpcmethod
 from entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
+from entangled.kademlia import constants
 
 #------------------------------------------------------------------------------
 
@@ -68,11 +73,18 @@ from main import settings
 
 from dht import known_nodes
 
+from lib import utime
+
+#------------------------------------------------------------------------------
+
+KEY_EXPIRE_MIN_SECONDS = 60
+KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
+
 #------------------------------------------------------------------------------
 
 _MyNode = None
 _ActiveLookup = None
-_ProtocolVersion = 5
+_ProtocolVersion = 6
 
 #------------------------------------------------------------------------------
 
@@ -83,17 +95,21 @@ def init(udp_port, db_file_path=None):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.init SKIP, DHTNode already exist')
         return
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
-    lg.out(4, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
-    dataStore = SQLiteDataStore(dbFile=dbPath)
+    try:
+        dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
+        dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
+        del dataStore['not_exist_key']
+    except:
+        lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
+        os.remove(dbPath)
+        dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
-    # None, encoding.Bencode(), msgformat.DefaultFormat())
     _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
-    # _MyNode._protocol.node = _MyNode
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
 
 
 def shutdown():
@@ -116,12 +132,10 @@ def node():
     return _MyNode
 
 
-def connect():
+def connect(seed_nodes=[]):
     result = Deferred()
-
     if not node().listener:
         node().listenUDP()
-
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
@@ -147,6 +161,7 @@ def connect():
         node().joinNetwork(live_nodes)
         node()._joinDeferred.addCallback(_on_join_success)
         node()._joinDeferred.addErrback(_on_join_failed)
+        node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)
         return live_nodes
 
     def _on_hosts_resolve_failed(x):
@@ -155,16 +170,15 @@ def connect():
         result.callback(False)
         return x
 
-    _known_nodes = known_nodes.nodes()
+    if not seed_nodes:
+        seed_nodes = known_nodes.nodes()
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(_known_nodes)))
-        for onenode in _known_nodes:
+        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
+        for onenode in seed_nodes:
             lg.out(_DebugLevel, '    %s:%s' % onenode)
-
-    d = resolve_hosts(_known_nodes)
+    d = resolve_hosts(seed_nodes)
     d.addCallback(_on_hosts_resolved)
     d.addErrback(_on_hosts_resolve_failed)
-
     return result
 
 
@@ -172,6 +186,7 @@ def disconnect():
     global _MyNode
     if not node():
         return False
+    node().expire_task.stop()
     if node().refresher and node().refresher.active():
         node().refresher.cancel()
     node().listener.stopListening()
@@ -224,6 +239,7 @@ def make_key(key, index, prefix, version=None):
         version = _ProtocolVersion
     return '{}:{}:{}:{}'.format(prefix, key, index, version)
 
+
 def split_key(key_str):
     prefix, key, index, version = key_str.split(':')
     return dict(
@@ -248,7 +264,7 @@ def on_success(result, method, key, arg=None):
 
 def on_error(err, method, key):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_error %s(%s) returned an ERROR:\n%s' % (
+        lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%s' % (
             method, key, str(err)))
     return err
 
@@ -265,14 +281,18 @@ def get_value(key):
     return d
 
 
-def set_value(key, value, age=0):
+def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
     sz_bytes = len(str(value))
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes' % (
-            key, sz_bytes, ))
-    d = node().iterativeStore(key_to_hash(key), value, age=age)
+        lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds' % (
+            key, sz_bytes, expire, ))
+    if expire < KEY_EXPIRE_MIN_SECONDS:
+        expire = KEY_EXPIRE_MIN_SECONDS
+    if expire > KEY_EXPIRE_MAX_SECONDS:
+        expire = KEY_EXPIRE_MAX_SECONDS
+    d = node().iterativeStore(key_to_hash(key), value, age=age, expireSeconds=expire)
     d.addCallback(on_success, 'set_value', key, value)
     d.addErrback(on_error, 'set_value', key)
     return d
@@ -317,7 +337,7 @@ def get_json_value(key):
     return ret
 
 
-def set_json_value(key, json_data, age=0):
+def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
     try:
@@ -327,7 +347,7 @@ def set_json_value(key, json_data, age=0):
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] with %d bytes' % (
             key, len(str(value))))
-    return set_value(key=key, value=value, age=age)
+    return set_value(key=key, value=value, age=age, expire=expire)
 
 #------------------------------------------------------------------------------
 
@@ -369,8 +389,6 @@ def validate_data(value, key, rules, result_defer=None):
 def get_valid_data(key, rules={}):
     if not node():
         return fail(Exception('DHT service is off'))
-    # if _Debug:
-    #     lg.out(_DebugLevel, 'dht_service.get_valid_data key=%s rules=%s' % (key, rules, ))
     ret = Deferred()
     d = get_json_value(key)
     d.addCallback(validate_data, key, rules, ret)
@@ -378,10 +396,10 @@ def get_valid_data(key, rules={}):
     return ret
 
 
-def set_valid_data(key, json_data, age=0, rules={}):
+def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}):
     if validate_data(json_data, key, rules) is None:
         return fail(Exception('invalid data, validation failed'))
-    return set_json_value(key, json_data=json_data, age=age)
+    return set_json_value(key, json_data=json_data, age=age, expire=expire)
 
 #------------------------------------------------------------------------------
 
@@ -391,11 +409,13 @@ def on_nodes_found(result, node_id64):
         lg.out(_DebugLevel, 'dht_service.on_nodes_found   node_id=[%s], %d nodes found' % (node_id64, len(result)))
     return result
 
+
 def on_lookup_failed(result, node_id64):
     on_error(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_lookup_failed   node_id=[%s], result=%s' % (node_id64, result))
     return result
+
 
 def find_node(node_id):
     global _ActiveLookup
@@ -454,21 +474,41 @@ class DHTNode(DistributedTupleSpacePeer):
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
         super(DHTNode, self).__init__(udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
+        self.expire_task = LoopingCall(self.expire)
+
+    def expire(self):
+        now = utime.get_sec1970()
+        expired_keys = []
+        for key in self._dataStore.keys():
+            if key == 'nodeState':
+                continue
+            item_data = self._dataStore.getItem(key)
+            if item_data:
+                originaly_published = item_data.get('originallyPublished')
+                expireSeconds = item_data.get('expireSeconds')
+                if expireSeconds and originaly_published:
+                    age = now - originaly_published
+                    if age > expireSeconds:
+                        expired_keys.append(key)
+        for key in expired_keys:
+            if _Debug:
+                lg.out(_DebugLevel, 'dht_service.expire   [%s] removed' % base64.b32encode(key))
+            del self._dataStore[key]
 
     @rpcmethod
-    def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
+    def store(self, key, value, originalPublisherID=None,
+              age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
         # TODO: add signature validation to be sure this is the owner of that key:value pair
-        # TODO: add verification methods for different type of data we store in DHT
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes' % (
-                base64.b32encode(key), len(str(value))))
-        self.data[key] = value
+            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds' % (
+                base64.b32encode(key), len(str(value)), expireSeconds, ))
         try:
             return super(DHTNode, self).store(
-                key,
-                value,
+                key=key,
+                value=value,
                 originalPublisherID=originalPublisherID,
                 age=age,
+                expireSeconds=expireSeconds,
                 **kwargs
             )
         except:
@@ -523,8 +563,6 @@ class KademliaProtocolConveyor(KademliaProtocol):
         if len(self.datagrams_queue) == 0:
             self.worker = None
             return
-        # if _Debug:
-        #     print '                dht._process, queue length:', len(self.datagrams_queue)
         datagram, address = self.datagrams_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
         self.worker = reactor.callLater(0.005, self._process)
@@ -538,6 +576,8 @@ def parseCommandLine():
     oparser.set_default('udpport', settings.DefaultDHTPort())
     oparser.add_option("-d", "--dhtdb", dest="dhtdb", help="specify DHT database file location")
     oparser.set_default('dhtdb', settings.DHTDBFile())
+    oparser.add_option("-s", "--seeds", dest="seeds", help="specify list of DHT seed nodes")
+    oparser.set_default('seeds', '')
     (options, args) = oparser.parse_args()
     return options, args
 
@@ -561,15 +601,16 @@ def main():
                 if cmd == 'get':
                     get_value(args[1]).addBoth(_r)
                 elif cmd == 'set':
-                    set_value(args[1], args[2]).addBoth(_r)
+                    set_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
                 if cmd == 'get_json':
                     get_json_value(args[1]).addBoth(_r)
                 elif cmd == 'set_json':
-                    set_json_value(args[1], args[2]).addBoth(_r)
+                    set_json_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
                 if cmd == 'get_valid_data':
                     get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
                 elif cmd == 'set_valid_data':
-                    set_valid_data(args[1], json.loads(args[2]), rules=json.loads(args[3])).addBoth(_r)
+                    set_valid_data(args[1], json.loads(args[2]),
+                                   expire=int(args[3]), rules=json.loads(args[4])).addBoth(_r)
                 elif cmd == 'find':
                     find_node(key_to_hash(args[1])).addBoth(_r)
                 elif cmd == 'discover':
@@ -580,7 +621,18 @@ def main():
         except:
             lg.exc()
 
-    connect().addBoth(_go)
+    seeds = []
+    for dht_node_str in options.seeds.split(','):
+        if dht_node_str.strip():
+            try:
+                dht_node = dht_node_str.strip().split(':')
+                dht_node_host = dht_node[0].strip()
+                dht_node_port = int(dht_node[1].strip())
+            except:
+                continue
+            seeds.append((dht_node_host, dht_node_port, ))
+
+    connect(seeds).addBoth(_go)
     reactor.run()
 
 #------------------------------------------------------------------------------
