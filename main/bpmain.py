@@ -46,15 +46,10 @@ AppDataDir = ''
 
 def show():
     """
-    Just calls ``p2p.webcontrol.show()`` to open the GUI.
+    Just calls ``p2p.web.control.show()`` to open the GUI.
     """
-    from main import settings
-    if settings.NewWebGUI():
-        from web import control
-        control.show()
-    else:
-        from web import webcontrol
-        webcontrol.show()
+    from web import control
+    control.show()
     return 0
 
 
@@ -764,8 +759,7 @@ def main(executable_path=None):
 
     #---show---
     elif cmd == 'show' or cmd == 'open':
-        from main import settings
-        if not bpio.isGUIpossible() and not settings.NewWebGUI():
+        if not bpio.isGUIpossible():
             lg.out(0, 'BitDust GUI is turned OFF\n')
             bpio.shutdown()
             return 0

@@ -140,13 +140,8 @@ def show():
         {'status': 'OK',   'result': '"show" event has been sent to the main process'}
     """
     lg.out(4, 'api.show')
-    from main import settings
-    if settings.NewWebGUI():
-        from web import control
-        control.show()
-    else:
-        from web import webcontrol
-        webcontrol.show()
+    from web import control
+    control.show()
     return OK('"show" event has been sent to the main process')
 
 #------------------------------------------------------------------------------
