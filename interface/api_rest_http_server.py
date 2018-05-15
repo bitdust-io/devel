@@ -225,12 +225,12 @@ class BitDustRESTHTTPServer(APIResource):
 
     @DELETE('^/identity/delete/v1$')
     def identity_delete_v1(self, request):
+        # TODO:
         return api
 
-    @GET('^/identity/find/v1$')
-    def identity_find_v1(self, request):
-        nickname = _request_arg(request, 'nickname', mandatory=True)
-        return api.user_search(nickname=nickname)
+    @GET('^/identity/list/v1$')
+    def identity_list_v1(self, request):
+        return api.identity_list()
 
     #------------------------------------------------------------------------------
 

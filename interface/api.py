@@ -383,6 +383,17 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer.A('start', {'idurl': idurl, 'keysrc': pk_source, })
     return ret
 
+def identity_list():
+    """
+    """
+    from contacts import identitycache
+    results = []
+    for id_obj in identitycache.Items().values():
+        r = id_obj.serialize_json()
+        results.append(r)
+    results.sort(key=lambda r: r['name'])
+    return RESULT(results)
+
 #------------------------------------------------------------------------------
 
 def key_get(key_id, include_private=False):
@@ -1588,13 +1599,13 @@ def friend_list():
     result = []
     for idurl, alias in contactsdb.correspondents():
         glob_id = global_id.ParseIDURL(idurl)
-        contact_status = None
+        contact_status_label = None
         contact_state = None
         if driver.is_on('service_identity_propagate'):
             from p2p import contact_status
             state_machine_inst = contact_status.getInstance(idurl)
             if state_machine_inst:
-                contact_status = contact_status.stateToLabel(state_machine_inst.state)
+                contact_status_label = contact_status.stateToLabel(state_machine_inst.state)
                 contact_state = state_machine_inst.state
         result.append({
             'idurl': idurl,
@@ -1602,7 +1613,7 @@ def friend_list():
             'idhost': glob_id['idhost'],
             'username': glob_id['user'],
             'alias': alias,
-            'contact_status': contact_status,
+            'contact_status': contact_status_label,
             'contact_state': contact_state,
         })
     return RESULT(result)
@@ -1655,13 +1666,15 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
             'idurl': 'http://p2p-id.ru/bitdust_j_vps1014.xml',
             'files_count': 14,
             'position': 0,
-            'contact_status': 'offline'
+            'contact_status': 'offline',
+            'contact_state': 'OFFLINE'
          }, {
             'connected': '05-06-2016 13:04:57',
             'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml',
             'files_count': 14,
             'position': 1,
-            'contact_status': 'offline'
+            'contact_status': 'online'
+            'contact_state': 'CONNECTED'
         }]}
     """
     if not driver.is_on('service_customer'):
@@ -1689,12 +1702,13 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
                 None if not supplier_connector.is_supplier(supplier_idurl, customer_idurl)
                 else supplier_connector.by_idurl(supplier_idurl, customer_idurl).state,
             'connected': misc.readSupplierData(supplier_idurl, 'connected', customer_idurl),
-            'contact_status': contact_status.getStatusLabel(supplier_idurl),
-            'contact_state': (
-                None if not contact_status.isKnown(supplier_idurl)
-                else contact_status.getInstance(supplier_idurl).state
-            ),
+            'contact_status': None,
+            'contact_state': None,
         }
+        if contact_status.isKnown(supplier_idurl):
+            cur_state = contact_status.getInstance(supplier_idurl).state
+            r['contact_status'] = contact_status.stateToLabel(cur_state)
+            r['contact_state'] = cur_state
         if verbose:
             _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
             r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl)
@@ -1830,16 +1844,21 @@ def customers_list(verbose=False):
     from contacts import contactsdb
     from p2p import contact_status
     from userid import global_id
-    return RESULT([{
-        'position': pos,
-        'global_id': global_id.UrlToGlobalID(customer_idurl),
-        'idurl': customer_idurl,
-        'contact_status': contact_status.getStatusLabel(customer_idurl),
-        'contact_state': (
-            None if not contact_status.isKnown(customer_idurl)
-            else contact_status.getInstance(customer_idurl).state),
-    } for (pos, customer_idurl, ) in enumerate(contactsdb.customers())])
-
+    results = []
+    for pos, customer_idurl in enumerate(contactsdb.customers()):
+        r = {
+            'position': pos,
+            'global_id': global_id.UrlToGlobalID(customer_idurl),
+            'idurl': customer_idurl,
+            'contact_status': None,
+            'contact_state': None,
+        }
+        if contact_status.isKnown(customer_idurl):
+            cur_state = contact_status.getInstance(customer_idurl).state
+            r['contact_status'] = contact_status.stateToLabel(cur_state)
+            r['contact_state'] = cur_state
+        results.append(r)
+    return RESULT(results)
 
 def customer_reject(idurl_or_global_id):
     """
