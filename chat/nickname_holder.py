@@ -46,9 +46,9 @@ EVENTS:
     * :red:`timer-5min`
 """
 
-import os
+#------------------------------------------------------------------------------
+
 import sys
-import time
 
 from logs import lg
 

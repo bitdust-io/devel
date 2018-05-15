@@ -256,8 +256,11 @@ class Node(object):
         # Prepare a callback for this operation
         outerDf = defer.Deferred()
 
+        def lookupFailed(x):
+            print 'lookupFailed', x
+
         def storeFailed(x):
-            pass
+            print 'storeFailed', x
 
         def checkResult(result):
             if isinstance(result, dict):
@@ -296,6 +299,7 @@ class Node(object):
         # Execute the search
         df = self._iterativeFind(key, rpc='findValue')
         df.addCallback(checkResult)
+        df.addErrback(lookupFailed)
         return outerDf
 
     def addContact(self, contact):

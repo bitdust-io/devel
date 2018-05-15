@@ -98,9 +98,11 @@ class Bencode(Encoding):
                 encodedDictItems += self.encode(key)
                 encodedDictItems += self.encode(data[key])
             return 'd%se' % encodedDictItems
-        elif type(data == float):
+        elif isinstance(data, float):
             # This (float data type) is a non-standard extension to the original Bencode algorithm
             return 'f%fe' % data
+        elif data is None:
+            return 'i0e'  # return 0
         else:
             raise TypeError("Cannot bencode '%s' object" % type(data))
 
