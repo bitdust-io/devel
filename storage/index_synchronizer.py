@@ -377,7 +377,8 @@ class IndexSynchronizer(automat.Automat):
         packetsToCancel = packet_out.search_by_backup_id(packetID)
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Retrieve():
-                lg.warn('sending "cancel" to %s' % pkt_out)
+                lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
+                    pkt_out, pkt_out.remote_idurl, ))
                 pkt_out.automat('cancel')
 
     def doCheckVersion(self, arg):

@@ -147,14 +147,16 @@ class RelationsLookup(object):
         self._index += 1
 
     def do_verify(self, dht_value):
-        try:
-            record = dht_value['data']
-            record['customer_idurl'] = str(record['customer_idurl'])
-            record['supplier_idurl'] = str(record['supplier_idurl'])
-            record['time'] = int(record['time'])
-            record['signature'] = str(record['signature'])
-        except:
-            record = None
+        record = None
+        if isinstance(dht_value, dict):
+            try:
+                record = dht_value['data']
+                record['customer_idurl'] = str(record['customer_idurl'])
+                record['supplier_idurl'] = str(record['supplier_idurl'])
+                record['time'] = int(record['time'])
+                record['signature'] = str(record['signature'])
+            except:
+                lg.exc()
 
         if not record:
             if _Debug:
@@ -192,7 +194,7 @@ class RelationsLookup(object):
 
     def do_process(self, record, verified):
         if verified == -1:
-            # record #N is not exist, invalid or duplicated
+            # record #N is not exist, might be invalid or duplicated
             if self._publish:
                 if self._new_data:
                     return self.do_write()

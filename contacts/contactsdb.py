@@ -31,6 +31,11 @@ A low level methods to store list of contacts locally.:
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 12
+
+#------------------------------------------------------------------------------
+
 import os
 
 #------------------------------------------------------------------------------
@@ -705,8 +710,9 @@ def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
     if supplier_idurl not in _SuppliersMetaInfo[customer_idurl]:
         _SuppliersMetaInfo[customer_idurl][supplier_idurl] = {}
     _SuppliersMetaInfo[customer_idurl][supplier_idurl].update(info)
-    lg.warn('updated meta info for supplier %s of customer %s: %s' % (
-        supplier_idurl, customer_idurl, _SuppliersMetaInfo[customer_idurl][supplier_idurl]))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.add_supplier_meta_info   for supplier %s of customer %s: %s' % (
+            supplier_idurl, customer_idurl, _SuppliersMetaInfo[customer_idurl][supplier_idurl]))
 
 
 def remove_supplier_meta_info(supplier_idurl, customer_idurl=None):
