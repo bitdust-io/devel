@@ -49,6 +49,7 @@ EVENTS:
     * :red:`file-sent`
     * :red:`inbox-packet`
     * :red:`outbox-packet`
+    * :red:`ping-failed`
     * :red:`sent-done`
     * :red:`sent-failed`
     * :red:`timer-20sec`
@@ -57,7 +58,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -333,8 +334,13 @@ def A(idurl, event=None, arg=None):
         if _ShutdownFlag:
             return None
         _ContactsStatusDict[idurl] = ContactStatus(
-            idurl, 'status_%s' % nameurl.GetName(idurl), 'OFFLINE',
-            debug_level=_DebugLevel, log_events=False, log_transition=_Debug)
+            idurl=idurl,
+            name='status_%s' % nameurl.GetName(idurl),
+            state='OFFLINE',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _ContactsStatusDict[idurl].automat(event, arg)
     return _ContactsStatusDict[idurl]
@@ -351,13 +357,13 @@ class ContactStatus(automat.Automat):
         'timer-20sec': (20.0, ['PING', 'ACK?']),
     }
 
-    def __init__(self, idurl, name, state, debug_level=False, log_events=False, log_transition=False):
+    def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state,
                                  debug_level=debug_level,
                                  log_events=log_events,
-                                 log_transition=log_transition,)
+                                 log_transitions=log_transitions,)
         if _Debug:
             lg.out(_DebugLevel + 2, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
 
@@ -368,51 +374,51 @@ class ContactStatus(automat.Automat):
     def A(self, event, arg):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'sent-failed' and self.Fails >= 3 and self.isDataPacket(arg):
+            if event == 'sent-failed' and self.isDataPacket(arg) and self.Fails<3:
+                self.Fails+=1
+            elif event == 'ping-failed' or ( event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(arg) ):
                 self.state = 'OFFLINE'
                 self.doRepaint(arg)
-            elif event == 'sent-failed' and self.isDataPacket(arg) and self.Fails < 3:
-                self.Fails += 1
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'outbox-packet' and self.isPingPacket(arg):
                 self.state = 'PING'
-                self.AckCounter = 0
+                self.AckCounter=0
                 self.doRepaint(arg)
             elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
-                self.Fails = 0
+                self.Fails=0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
         #---PING---
         elif self.state == 'PING':
             if event == 'sent-done':
                 self.state = 'ACK?'
-                self.AckCounter = 0
+                self.AckCounter=0
             elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
-                self.Fails = 0
+                self.Fails=0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
             elif event == 'file-sent':
-                self.AckCounter += 1
-            elif event == 'sent-failed' and self.AckCounter > 1:
-                self.AckCounter -= 1
-            elif event == 'timer-20sec' or (event == 'sent-failed' and self.AckCounter == 1):
+                self.AckCounter+=1
+            elif event == 'timer-20sec' or ( event == 'sent-failed' and self.AckCounter==1 ):
                 self.state = 'OFFLINE'
                 self.doRepaint(arg)
+            elif event == 'sent-failed' and self.AckCounter>1:
+                self.AckCounter-=1
         #---ACK?---
         elif self.state == 'ACK?':
             if event == 'inbox-packet':
                 self.state = 'CONNECTED'
-                self.Fails = 0
+                self.Fails=0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
             elif event == 'timer-20sec':
                 self.state = 'OFFLINE'
             elif event == 'outbox-packet' and self.isPingPacket(arg):
                 self.state = 'PING'
-                self.AckCounter = 0
+                self.AckCounter=0
                 self.doRepaint(arg)
         return None
 
@@ -427,8 +433,8 @@ class ContactStatus(automat.Automat):
         """
         Condition method.
         """
-        pkt_out, status, error = arg
-        return pkt_out.outpacket.Command not in [ commands.Ack(), ]  # commands.Identity(),
+        pkt_out, _, _ = arg
+        return pkt_out.outpacket.Command not in [ commands.Ack(), ]
 
     def doRememberTime(self, arg):
         """
@@ -456,12 +462,15 @@ def OutboxStatus(pkt_out, status, error=''):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if pkt_out.remote_idurl == my_id.getLocalID():
+    if pkt_out.outpacket.RemoteID == my_id.getLocalID():
         return False
     if pkt_out.outpacket.CreatorID != my_id.getLocalID():
         return False
     if status == 'finished':
-        A(pkt_out.remote_idurl, 'sent-done', (pkt_out, status, error))
+        if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
+            A(pkt_out.outpacket.RemoteID, 'ping-failed', (pkt_out, status, error))
+        else:
+            A(pkt_out.outpacket.RemoteID, 'sent-done', (pkt_out, status, error))
     else:
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.OutboxStatus %s: [%s] with %s' % (status, pkt_out, pkt_out.outpacket))
@@ -470,7 +479,7 @@ def OutboxStatus(pkt_out, status, error=''):
                 lg.out(_DebugLevel, '    skipped')
         else:
             # lg.warn('sending event "sent-failed" to contact status of : %s' % pkt_out.remote_idurl)
-            A(pkt_out.remote_idurl, 'sent-failed', (pkt_out, status, error))
+            A(pkt_out.outpacket.RemoteID, 'sent-failed', (pkt_out, status, error))
     return False
 
 
@@ -515,9 +524,13 @@ def FileSent(workitem, args):
 
     Used to count how many times you PING him.
     """
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return False
     if workitem.remoteid == my_id.getLocalID():
-        return
+        return False
     A(workitem.remoteid, 'file-sent', (workitem, args))
+    return True
 
 
 def PacketSendingTimeout(remoteID, packetID):
@@ -526,6 +539,10 @@ def PacketSendingTimeout(remoteID, packetID):
 
     Right now this do nothing, state machine ignores that event.
     """
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return False
     if remoteID == my_id.getLocalID():
-        return
+        return False
     A(remoteID, 'sent-timeout', packetID)
+    return True

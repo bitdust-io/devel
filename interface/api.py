@@ -1792,8 +1792,11 @@ def suppliers_ping():
     """
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
+    from customer import supplier_connector
     from p2p import propagate
     propagate.SlowSendSuppliers(0.1)
+    for supplier_connector_machine in supplier_connector.connectors().values():
+        supplier_connector_machine.automat('connect')
     return OK('requests to all suppliers was sent')
 
 
@@ -2482,7 +2485,7 @@ def user_ping(idurl_or_global_id, timeout=10):
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
     ret = Deferred()
-    d = propagate.PingContact(idurl, int(timeout))
+    d = propagate.PingContact(idurl, timeout=int(timeout))
     d.addCallback(
         lambda resp: ret.callback(
             OK(str(resp))))

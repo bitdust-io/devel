@@ -49,6 +49,10 @@ from logs import lg
 
 from automats import automat
 
+from services import driver
+
+from main import config
+
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
@@ -59,9 +63,6 @@ from contacts import contactsdb
 from userid import my_id
 
 from transport import callback
-
-import fire_hire
-import supplier_connector
 
 #------------------------------------------------------------------------------
 
@@ -117,6 +118,8 @@ class SupplierFinder(automat.Automat):
         """
 
     def A(self, event, arg):
+        from customer import fire_hire
+
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start' and not self.isSomeCandidatesListed(arg):
@@ -221,6 +224,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
+        from customer import supplier_connector
         sc = supplier_connector.by_idurl(self.target_idurl)
         if not sc:
             sc = supplier_connector.create(self.target_idurl, customer_idurl=my_id.getLocalID())
@@ -239,6 +243,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
+        from customer import supplier_connector
         sc = supplier_connector.by_idurl(self.target_idurl)
         if sc:
             sc.remove_callback('supplier_finder')
@@ -261,6 +266,7 @@ class SupplierFinder(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        from customer import supplier_connector
         global _SupplierFinder
         del _SupplierFinder
         _SupplierFinder = None
@@ -285,6 +291,10 @@ class SupplierFinder(automat.Automat):
         if not idurls:
             self.automat('users-not-found')
             return
+        # if driver.is_on('service_proxy_transport'):
+        #     current_router_idurl = config.conf().getString('services/proxy-transport/current-router', '').strip()
+        #     if current_router_idurl and current_router_idurl in idurls:
+        #         idurls.remove(current_router_idurl)
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())

@@ -457,7 +457,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(14, 'supplier_connector.doReportConnect')
+            lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, 'CONNECTED')
 
@@ -466,7 +466,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(14, 'supplier_connector.doReportNoService')
+            lg.out(14, 'supplier_connector.doReportNoService : %s' % self.supplier_idurl)
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, 'NO_SERVICE')
 
@@ -475,7 +475,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect')
+            lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect : %s' % self.supplier_idurl)
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, 'DISCONNECTED')
 
