@@ -2479,19 +2479,35 @@ def user_ping(idurl_or_global_id, timeout=10):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
-    from p2p import propagate
+    from p2p import contact_status
     from userid import global_id
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
+    peer_status = contact_status.getInstance(idurl)
+    if not peer_status:
+        return ERROR('failed to check peer status')
     ret = Deferred()
-    d = propagate.PingContact(idurl, timeout=int(timeout))
-    d.addCallback(
-        lambda resp: ret.callback(
-            OK(str(resp))))
-    d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+
+    def _on_peer_status_state_changed(oldstate, newstate, event_string, args):
+        if newstate not in ['CONNECTED', 'OFFLINE', ]:
+            return None
+        if newstate == 'OFFLINE' and oldstate == 'OFFLINE':
+            return None
+        if newstate == 'CONNECTED' and not event_string == 'ping-failed':
+            ret.callback(OK(extra_fields=dict(idurl=idurl, state=newstate)))
+        else:
+            ret.callback(ERROR(extra_fields=dict(idurl=idurl, state=newstate)))
+        return None
+
+    def _do_clean(x):
+        peer_status.removeStateChangedCallback(_on_peer_status_state_changed)
+        return x
+
+    ret.addCallback(_do_clean)
+
+    peer_status.addStateChangedCallback(_on_peer_status_state_changed)
+    peer_status.automat('ping', timeout)
     return ret
 
 

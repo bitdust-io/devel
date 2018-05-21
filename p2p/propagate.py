@@ -434,7 +434,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
             continue
         if contact in inqueue and inqueue[contact] > 2:
             # now only 2 protocols is working: tcp and udp
-            lg.out(8, '        skip sending to %s' % contact)
+            lg.out(8, '        skip sending [Identity] to %s, packet already in the queue' % contact)
             continue
 #        found_previous_packets = 0
 #        for transfer_id in gate.transfers_out_by_idurl().get(contact, []):
@@ -479,50 +479,42 @@ def PingContact(idurl, timeout=30):
         lg.out(_DebugLevel, "propagate.PingContact [%s]" % idurl)
     ping_result = Deferred()
 
-    def _cancel_ack_timeout(x, tmcall):
-        lg.out(_DebugLevel, "propagate.PingContact._cancel_ack_timeout")
-        if tmcall.active():
-            tmcall.cancel()
-        return x
+    def _ack_handler(response, info):
+        lg.out(_DebugLevel, "propagate.PingContact._ack_handler: %s via %s" % (response, info))
+        if not ping_result.called:
+            ping_result.callback((response, info))
+        return None
 
-    def _ack_handler(response, info, tmcall, res):
-        lg.out(_DebugLevel, "propagate.PingContact._ack_handler %s" % str((response, info)))
-        if tmcall:
-            _cancel_ack_timeout((response, info), tmcall)
-        if not res.called:
-            res.callback((response, info))
-
-    def _ack_timed_out(tm, cache_request, res):
-        lg.out(_DebugLevel, "propagate.PingContact._ack_timed_out")
-        if not cache_request.called:
-            cache_request.cancel()
-        if not res.called:
-            res.errback(TimeoutError('response was not received within %d seconds' % tm))
-
-    def _response_timed_out(pkt_out, tmcall, res):
+    def _response_timed_out(pkt_out):
         lg.out(_DebugLevel, "propagate.PingContact._response_timed_out : %s" % pkt_out)
-        if tmcall:
-            _cancel_ack_timeout(pkt_out, tmcall)
-        if not res.called:
-            res.errback(TimeoutError('remote user did not responded'))
+        if not ping_result.called:
+            ping_result.errback(TimeoutError('remote user did not responded'))
+        return None
 
-    def _identity_cached(x, idsrc, timeout_call, result):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for [%s]" % (len(idsrc), idurl))
+    def _identity_cached(idsrc, idurl):
+        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for [%s]" % (
+            len(idsrc), idurl))
         # TODO: Verify()
         SendToIDs(
             idlist=[idurl, ],
-            ack_handler=lambda response, info: _ack_handler(response, info, timeout_call, result),
-            timeout_handler=lambda pkt_out: _response_timed_out(pkt_out, timeout_call, result),
+            ack_handler=lambda response, info: _ack_handler(response, info),
+            timeout_handler=lambda pkt_out: _response_timed_out(pkt_out),
             response_timeout=timeout,
             wide=True,
         )
+        return idsrc
+
+    def _identity_cache_failed(err, idurl):
+        lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed [%s]" % idurl)
+        if not ping_result.called:
+            try:
+                msg = err.getErrorMessage()
+            except:
+                msg = str(err)
+            ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg)))
+        return None
 
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout=timeout)
-    # if timeout:
-    #     timeout_call = reactor.callLater(timeout, _ack_timed_out, timeout, idcache_defer, ping_result)
-    #     idcache_defer.addErrback(_cancel_ack_timeout, timeout_call)
-    # else:
-    #     timeout_call = None
-    idcache_defer.addCallback(_identity_cached, idurl, None, ping_result)
-    idcache_defer.addErrback(ping_result.errback)
+    idcache_defer.addCallback(_identity_cached, idurl)
+    idcache_defer.addErrback(_identity_cache_failed, idurl)
     return ping_result

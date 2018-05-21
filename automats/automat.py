@@ -520,12 +520,15 @@ class Automat(object):
         """
         This method fires the timer events.
         """
-        if name in self.timers and self.state in self.timers[name][1]:
-            self.automat(name)
-        else:
-            self.log(
-                max(_DebugLevel, self.debug_level),
-                '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
+        try:
+            if name in self.timers and self.state in self.timers[name][1]:
+                self.automat(name)
+            else:
+                self.log(
+                    max(_DebugLevel, self.debug_level),
+                    '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
+        except Exception as exc:
+            self.exc(str(exc))
 
     def stopTimers(self):
         """
