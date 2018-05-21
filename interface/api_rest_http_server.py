@@ -487,6 +487,13 @@ class BitDustRESTHTTPServer(APIResource):
             idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl')
         )
 
+    @GET('^/user/status/check/v1$')
+    def user_status_check_v1(self, request):
+        return api.user_status_check(
+            idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl'),
+            timeout=_request_arg(request, 'timeout', 5),
+        )
+
     @POST('^/user/ping/v1$')
     def user_ping_v1(self, request):
         data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
