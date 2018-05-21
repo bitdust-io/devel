@@ -1792,11 +1792,8 @@ def suppliers_ping():
     """
     if not driver.is_on('service_customer'):
         return ERROR('service_customer() is not started')
-    from customer import supplier_connector
     from p2p import propagate
     propagate.SlowSendSuppliers(0.1)
-    for supplier_connector_machine in supplier_connector.connectors().values():
-        supplier_connector_machine.automat('connect')
     return OK('requests to all suppliers was sent')
 
 

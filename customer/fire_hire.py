@@ -448,6 +448,7 @@ class FireHire(automat.Automat):
         requested_suppliers = set()
         online_suppliers = set()
         offline_suppliers = set()
+        redundant_suppliers = set()
         # if you have some empty suppliers need to get rid of them,
         # but no need to dismiss anyone at the moment.
         if '' in contactsdb.suppliers() or None in contactsdb.suppliers():
@@ -483,19 +484,25 @@ class FireHire(automat.Automat):
                     lg.warn('found "REDUNDANT" supplier %s at position %d' % (
                         idurl, supplier_index, ))
                     potentialy_fired.add(idurl)
+                    redundant_suppliers.add(idurl)
                 else:
                     lg.warn('supplier at position %d not exist' % supplier_index)
         if not connected_suppliers or not online_suppliers:
             lg.warn('SKIP, no ONLINE suppliers found at the moment')
             self.automat('made-decision', [])
             return
+        if requested_suppliers:
+            lg.warn('SKIP, still waiting response from some of suppliers')
+            self.automat('made-decision', [])
+            return
+        if redundant_suppliers:
+            result = list(redundant_suppliers)
+            lg.info('will replace redundant suppliers: %s' % result)
+            self.automat('made-decision', result)
+            return
         if not disconnected_suppliers:
             lg.warn('SKIP, no OFFLINE suppliers found at the moment')
             # TODO: add more conditions to fire "slow" suppliers
-            self.automat('made-decision', [])
-            return
-        if requested_suppliers:
-            lg.warn('SKIP, still waiting response from some of suppliers')
             self.automat('made-decision', [])
             return
         if len(offline_suppliers) + len(online_suppliers) != number_desired:
