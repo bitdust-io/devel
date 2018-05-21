@@ -589,6 +589,18 @@ class BitDustRESTHTTPServer(APIResource):
             show_cache=bool(_request_arg(request, 'cache', '0') in ['1', 'true', ]),
             show_tcp=bool(_request_arg(request, 'tcp', '0') in ['1', 'true', ]),
             show_udp=bool(_request_arg(request, 'udp', '0') in ['1', 'true', ]),
+            show_proxy=bool(_request_arg(request, 'proxy', '0') in ['1', 'true', ]),
+        )
+
+    @GET('^/network/details/v1$')
+    def network_details_v1(self, request):
+        return api.network_status(
+            show_suppliers=bool(_request_arg(request, 'suppliers', '1') in ['1', 'true', ]),
+            show_customers=bool(_request_arg(request, 'customers', '1') in ['1', 'true', ]),
+            show_cache=bool(_request_arg(request, 'cache', '1') in ['1', 'true', ]),
+            show_tcp=bool(_request_arg(request, 'tcp', '1') in ['1', 'true', ]),
+            show_udp=bool(_request_arg(request, 'udp', '1') in ['1', 'true', ]),
+            show_proxy=bool(_request_arg(request, 'proxy', '1') in ['1', 'true', ]),
         )
 
     #------------------------------------------------------------------------------

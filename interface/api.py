@@ -2879,8 +2879,8 @@ def network_connected(wait_timeout=5):
     """
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
-    from userid import my_id
     from twisted.internet import reactor
+    from userid import my_id
     from automats import automat
     ret = Deferred()
 
@@ -2968,8 +2968,8 @@ def network_connected(wait_timeout=5):
     return ret
 
 
-def network_status(show_suppliers=False, show_customers=False, show_cache=False,
-                   show_tcp=False, show_udp=False, show_proxy=True, ):
+def network_status(show_suppliers=True, show_customers=True, show_cache=True,
+                   show_tcp=True, show_udp=True, show_proxy=True, ):
     """
     """
     if not driver.is_on('service_network'):
@@ -2978,6 +2978,12 @@ def network_status(show_suppliers=False, show_customers=False, show_cache=False,
     from main import settings
     from userid import my_id
     from userid import global_id
+
+    def _tupl_addr_to_str(addr):
+        if not addr:
+            return None
+        return ':'.join(map(str, addr))
+
     r = {
         'p2p_connector_state': None,
         'network_connector_state': None,
@@ -3060,7 +3066,7 @@ def network_status(show_suppliers=False, show_customers=False, show_cache=False,
                     if inst.state == 'CONNECTED':
                         connected += 1
                 items.append(i)
-            r['peers'] = {
+            r['cache'] = {
                 'total': identitycache.CacheLen(),
                 'connected': connected,
                 'peers': items,
@@ -3068,91 +3074,94 @@ def network_status(show_suppliers=False, show_customers=False, show_cache=False,
     if True in [show_tcp, show_udp, show_proxy, ]:
         from transport import gateway
         if show_tcp:
-            if not driver.is_on('service_tcp_transport'):
-                return ERROR('service_tcp_transport() is not started')
-            sessions = []
-            for s in gateway.list_active_sessions('tcp'):
-                i = {
-                    'peer': getattr(s, 'peer', None),
-                    'state': getattr(s, 'state', None),
-                    'id': getattr(s, 'id', None),
-                    'idurl': getattr(s, 'peer_idurl', None),
-                    'address': getattr(s, 'peer_address', None),
-                    'external_address': getattr(s, 'peer_external_address', None),
-                    'connection_address': getattr(s, 'connection_address', None),
-                    'bytes_received': getattr(s, 'total_bytes_received', 0),
-                    'bytes_sent': getattr(s, 'total_bytes_sent', 0),
-                }
-                sessions.append(i)
-            streams = []
-            for s in gateway.list_active_streams('tcp'):
-                i = {
-                    'started': s.started,
-                    'stream_id': s.file_id,
-                    'transfer_id': s.transfer_id,
-                    'size': s.size,
-                    'type': s.typ,
-                }
-                streams.append(i)
             r['tcp'] = {
-                'sessions': sessions,
-                'streams': streams,
+                'sessions': [],
+                'streams': [],
             }
+            if driver.is_on('service_tcp_transport'):
+                sessions = []
+                for s in gateway.list_active_sessions('tcp'):
+                    i = {
+                        'peer': getattr(s, 'peer', None),
+                        'state': getattr(s, 'state', None),
+                        'id': getattr(s, 'id', None),
+                        'idurl': getattr(s, 'peer_idurl', None),
+                        'address': _tupl_addr_to_str(getattr(s, 'peer_address', None)),
+                        'external_address': _tupl_addr_to_str(getattr(s, 'peer_external_address', None)),
+                        'connection_address': _tupl_addr_to_str(getattr(s, 'connection_address', None)),
+                        'bytes_received': getattr(s, 'total_bytes_received', 0),
+                        'bytes_sent': getattr(s, 'total_bytes_sent', 0),
+                    }
+                    sessions.append(i)
+                streams = []
+                for s in gateway.list_active_streams('tcp'):
+                    i = {
+                        'started': s.started,
+                        'stream_id': s.file_id,
+                        'transfer_id': s.transfer_id,
+                        'size': s.size,
+                        'type': s.typ,
+                    }
+                    streams.append(i)
+                r['tcp']['sessions'] = sessions
+                r['tcp']['streams'] = streams
         if show_udp:
-            if not driver.is_on('service_udp_transport'):
-                return ERROR('service_udp_transport() is not started')
-            sessions = []
-            for s in gateway.list_active_sessions('udp'):
-                sessions.append({
-                    'peer': s.peer_id,
-                    'state': s.state,
-                    'id': s.id,
-                    'idurl': s.peer_idurl,
-                    'address': s.peer_address,
-                    'bytes_received': s.bytes_sent,
-                    'bytes_sent': s.bytes_received,
-                    'outgoing': len(s.file_queue.outboxFiles),
-                    'incoming': len(s.file_queue.inboxFiles),
-                    'queue': len(s.file_queue.outboxQueue),
-                    'dead_streams': len(s.file_queue.dead_streams),
-                })
-            streams = []
-            for s in gateway.list_active_streams('udp'):
-                streams.append({
-                    'started': s.started,
-                    'stream_id': s.stream_id,
-                    'transfer_id': s.transfer_id,
-                    'size': s.size,
-                    'type': s.typ,
-                })
             r['udp'] = {
-                'sessions': sessions,
-                'streams': streams,
+                'sessions': [],
+                'streams': [],
             }
+            if driver.is_on('service_udp_transport'):
+                sessions = []
+                for s in gateway.list_active_sessions('udp'):
+                    sessions.append({
+                        'peer': s.peer_id,
+                        'state': s.state,
+                        'id': s.id,
+                        'idurl': s.peer_idurl,
+                        'address': _tupl_addr_to_str(s.peer_address),
+                        'bytes_received': s.bytes_sent,
+                        'bytes_sent': s.bytes_received,
+                        'outgoing': len(s.file_queue.outboxFiles),
+                        'incoming': len(s.file_queue.inboxFiles),
+                        'queue': len(s.file_queue.outboxQueue),
+                        'dead_streams': len(s.file_queue.dead_streams),
+                    })
+                streams = []
+                for s in gateway.list_active_streams('udp'):
+                    streams.append({
+                        'started': s.started,
+                        'stream_id': s.stream_id,
+                        'transfer_id': s.transfer_id,
+                        'size': s.size,
+                        'type': s.typ,
+                    })
+                r['udp']['sessions'] = sessions
+                r['udp']['streams'] = streams
         if show_proxy:
-            if not driver.is_on('service_proxy_transport'):
-                return ERROR('service_proxy_transport() is not started')
-            sessions = []
-            for s in gateway.list_active_sessions('proxy'):
-                i = {
-                    'state': s.state,
-                    'id': s.id,
-                }
-                if getattr(s, 'router_proto_host', None):
-                    i['proto'] = s.router_proto_host[0]
-                    i['peer'] = s.router_proto_host[1]
-                if getattr(s, 'router_idurl', None):
-                    i['idurl'] = s.router_idurl
-                if getattr(s, 'traffic_out', None):
-                    i['bytes_sent'] = s.traffic_out
-                if getattr(s, 'traffic_in', None):
-                    i['bytes_received'] = s.traffic_in
-                if getattr(s, 'pending_packets', None):
-                    i['queue'] = len(s.pending_packets)
-                sessions.append(i)
             r['proxy'] = {
-                'sessions': sessions,
+                'sessions': [],
             }
+            if driver.is_on('service_proxy_transport'):
+                sessions = []
+                for s in gateway.list_active_sessions('proxy'):
+                    i = {
+                        'state': s.state,
+                        'id': s.id,
+                    }
+                    if getattr(s, 'router_proto_host', None):
+                        i['proto'] = s.router_proto_host[0]
+                        i['peer'] = s.router_proto_host[1]
+                    if getattr(s, 'router_idurl', None):
+                        i['idurl'] = s.router_idurl
+                        i['router'] = global_id.UrlToGlobalID(s.router_idurl)
+                    if getattr(s, 'traffic_out', None):
+                        i['bytes_sent'] = s.traffic_out
+                    if getattr(s, 'traffic_in', None):
+                        i['bytes_received'] = s.traffic_in
+                    if getattr(s, 'pending_packets', None):
+                        i['queue'] = len(s.pending_packets)
+                    sessions.append(i)
+                r['proxy']['sessions' ] = sessions
     return RESULT([r, ])
 
 #------------------------------------------------------------------------------
