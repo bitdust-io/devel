@@ -307,6 +307,7 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/f/l$')
     @GET('^/file/v1$')
     @GET('^/file/list/v1$')
     def file_list_v1(self, request):
@@ -477,8 +478,8 @@ class BitDustRESTHTTPServer(APIResource):
             verbose=bool(_request_arg(request, 'verbose', '0') in ['1', 'true', ]),
         )
 
-    @DELETE('^/su/d$')
-    @DELETE('^/supplier/delete/v1$')
+    @DELETE('^/su/r$')
+    @DELETE('^/supplier/rotate/v1$')
     @DELETE('^/supplier/replace/v1$')
     def supplier_replace_v1(self, request):
         data = _request_data(request, mandatory_keys=[('index', 'position', 'idurl', 'global_id', 'id', ), ])
@@ -525,9 +526,9 @@ class BitDustRESTHTTPServer(APIResource):
     @DELETE('^/customer/delete/v1$')
     @DELETE('^/customer/reject/v1$')
     def customer_reject_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
         return api.customer_reject(
-            idurl_or_global_id=data.get('global_id') or data.get('idurl'),
+            idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
         )
 
     @POST('^/cu/png$')
@@ -549,7 +550,7 @@ class BitDustRESTHTTPServer(APIResource):
 
     @GET('^/us/o$')
     @GET('^/user/observe/v1$')
-    def user_observe_arg_v1(self, request, nickname):
+    def user_observe_arg_v1(self, request):
         return api.user_observe(
             nickname=_request_arg(request, 'name', mandatory=True),
             attempts=int(_request_arg(request, 'attempts', 3)),
@@ -573,7 +574,7 @@ class BitDustRESTHTTPServer(APIResource):
     @POST('^/us/png$')
     @POST('^/user/ping/v1$')
     def user_ping_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', ), ])
+        data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
         return api.user_ping(
             idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
             timeout=data.get('timeout', 10),
