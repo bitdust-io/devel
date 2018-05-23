@@ -49,6 +49,7 @@ to do rebuilding of a single block we need start a blocking code.
 
 EVENTS:
     * :red:`backup-ready`
+    * :red:`found-missing`
     * :red:`inbox-data-packet`
     * :red:`init`
     * :red:`instant`
@@ -61,7 +62,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -152,7 +153,6 @@ class BackupRebuilder(automat.Automat):
         self.workingBlocksQueue = []
         self.backupsWasRebuilt = []
         self.missingPackets = 0
-        self.missingSuppliers = set()
         self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -172,13 +172,13 @@ class BackupRebuilder(automat.Automat):
     def A(self, event, arg):
         #---REQUEST---
         if self.state == 'REQUEST':
-            if ( event == 'timer-1sec' or event == 'inbox-data-packet' or event == 'requests-sent' ) and self.isChanceToRebuild(arg) and not self.isStopped(arg):
+            if ( event == 'timer-1sec' or event == 'inbox-data-packet' or event == 'requests-sent' or event == 'found-missing' ) and self.isChanceToRebuild(arg) and not self.isStopped(arg):
                 self.state = 'REBUILDING'
                 self.doAttemptRebuild(arg)
-            elif ( event == 'no-requests' or ( ( event == 'timer-1sec' or event == 'inbox-data-packet' ) and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg) ) ) and not self.isStopped(arg):
+            elif ( ( event == 'found-missing' and not self.isChanceToRebuild(arg) ) or ( event == 'no-requests' or ( ( event == 'timer-1sec' or event == 'inbox-data-packet' ) and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg) ) ) ) and not self.isStopped(arg):
                 self.state = 'DONE'
                 self.doCloseThisBackup(arg)
-            elif ( event == 'instant' or event == 'timer-1sec' or event == 'requests-sent' or event == 'no-requests' ) and self.isStopped(arg):
+            elif ( event == 'instant' or event == 'timer-1sec' or event == 'requests-sent' or event == 'no-requests' or event == 'found-missing' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
         #---STOPPED---
@@ -268,7 +268,6 @@ class BackupRebuilder(automat.Automat):
         Condition method.
         """
         from storage import backup_matrix
-#         return len(self.missingSuppliers) <= eccmap.Current().CorrectableErrors
         # supplierSet = backup_matrix.suppliers_set()
         # start checking in reverse order, see below for explanation
         for blockIndex in range(len(self.workingBlocksQueue) - 1, -1, -1):
@@ -471,10 +470,8 @@ class BackupRebuilder(automat.Automat):
                         self.currentBackupID, blockNum, supplierNum, 'Data')
                     if remoteData[supplierNum] == 1:
                         if availableSuppliers[supplierNum]:
-                            # if supplier is not alive - we can't request from
-                            # him
-                            if not io_throttle.HasPacketInRequestQueue(
-                                    supplierID, PacketID):
+                            # if supplier is not alive - we can't request from him
+                            if not io_throttle.HasPacketInRequestQueue(supplierID, PacketID):
                                 customer, remotePath = packetid.SplitPacketID(PacketID)
                                 filename = os.path.join(
                                     settings.getLocalBackupsDir(),
@@ -493,7 +490,6 @@ class BackupRebuilder(automat.Automat):
                         # count this packet as missing
                         self.missingPackets += 1
                         # also mark this guy as one who dont have any data - nor local nor remote
-                        # self.missingSuppliers.add(supplierNum)
                 else:
                     # but if local Data already exists, but was not sent - do it now
                     if remoteData[supplierNum] != 1:
@@ -514,35 +510,36 @@ class BackupRebuilder(automat.Automat):
                                 )
                                 if not os.path.exists(filename):
                                     if io_throttle.QueueRequestFile(
-                                            self._file_received,
-                                            my_id.getLocalID(),
-                                            PacketID,
-                                            my_id.getLocalID(),
-                                            supplierID):
+                                        self._file_received,
+                                        my_id.getLocalID(),
+                                        PacketID,
+                                        my_id.getLocalID(),
+                                        supplierID,
+                                    ):
                                         requests_count += 1
                     else:
                         self.missingPackets += 1
-                        # self.missingSuppliers.add(supplierNum)
                 else:
                     # but if local Parity already exists, but was not sent - do it now
                     if remoteParity[supplierNum] != 1:
                         data_sender.A('new-data')
             total_requests_count += requests_count
-        lg.out(
-            8, 'backup_rebuilder._request_files : %d chunks requested' %
-            total_requests_count)
         if total_requests_count > 0:
+            lg.out(8, 'backup_rebuilder._request_files : %d chunks requested' % total_requests_count)
             self.automat('requests-sent', total_requests_count)
         else:
-            self.automat('no-requests')
+            if self.missingPackets:
+                lg.out(8, 'backup_rebuilder._request_files : found %d missing packets' % self.missingPackets)
+                self.automat('found-missing')
+            else:
+                lg.out(8, 'backup_rebuilder._request_files : nothing was requested')
+                self.automat('no-requests')
 
     def _file_received(self, newpacket, state):
         if state in ['in queue', 'shutdown', 'exist', 'failed']:
             return
         if state != 'received':
-            lg.warn(
-                "incorrect state [%s] for packet %s" %
-                (str(state), str(newpacket)))
+            lg.warn("incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
             return
         if not newpacket.Valid():
             # TODO: if we didn't get a valid packet ... re-request it or delete
@@ -566,16 +563,10 @@ class BackupRebuilder(automat.Automat):
             try:
                 bpio._dirs_make(dirname)
             except:
-                lg.out(
-                    2,
-                    "backup_rebuilder._file_received ERROR can not create sub dir " +
-                    dirname)
+                lg.out(2, "backup_rebuilder._file_received ERROR can not create sub dir: " + dirname)
                 return
         if not bpio.WriteFile(filename, newpacket.Payload):
-            lg.out(
-                2,
-                "backup_rebuilder._file_received ERROR writing " +
-                filename)
+            lg.out(2, "backup_rebuilder._file_received ERROR writing " + filename)
             return
         from storage import backup_matrix
         backup_matrix.LocalFileReport(packetID)
@@ -601,9 +592,8 @@ class BackupRebuilder(automat.Automat):
             task_params,
             lambda cmd,
             params,
-            result: self._block_finished(
-                result,
-                params))
+            result: self._block_finished(result, params),
+        )
 
     def _block_finished(self, result, params):
         if not result:

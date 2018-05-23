@@ -513,7 +513,7 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
-        return len(self.callbacks) > 0
+        return commands.Ack() in self.callbacks.keys() or commands.Fail() in self.callbacks.keys()
 
     def isMoreItems(self, arg):
         """
@@ -690,7 +690,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        callback.run_queue_item_status_callbacks(self, 'finished', '')
+        callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
 
     def doReportFailed(self, arg):
         """

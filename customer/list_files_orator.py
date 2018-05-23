@@ -47,15 +47,9 @@ EVENTS:
     * :red:`timer-10sec`
 """
 
-import os
-import sys
+#------------------------------------------------------------------------------
 
-try:
-    from twisted.internet import reactor
-except:
-    sys.exit('Error initializing twisted.internet.reactor in list_files_orator.py')
 from twisted.internet.defer import maybeDeferred
-from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
 

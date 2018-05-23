@@ -78,8 +78,13 @@ from twisted.python.failure import Failure
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
+
 _LogEvents = True
+_LogFile = None  # : This is to have a separated Log file for state machines logs
+_LogFilename = None
+_LogsCount = 0  # : If not zero - it will print time since that value, not system time
+_LifeBeginsTime = 0
 
 #------------------------------------------------------------------------------
 
@@ -87,10 +92,6 @@ _Counter = 0  # : Increment by one for every new object, the idea is to keep uni
 _Index = {}  # : Index dictionary, unique id (string) to index (int)
 _Objects = {}  # : Objects dictionary to store all state machines objects
 _StateChangedCallback = None  # : Called when some state were changed
-_LogFile = None  # : This is to have a separated Log file for state machines logs
-_LogFilename = None
-_LogsCount = 0  # : If not zero - it will print time since that value, not system time
-_LifeBeginsTime = 0
 
 #------------------------------------------------------------------------------
 
@@ -519,12 +520,15 @@ class Automat(object):
         """
         This method fires the timer events.
         """
-        if name in self.timers and self.state in self.timers[name][1]:
-            self.automat(name)
-        else:
-            self.log(
-                max(_DebugLevel, self.debug_level),
-                '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
+        try:
+            if name in self.timers and self.state in self.timers[name][1]:
+                self.automat(name)
+            else:
+                self.log(
+                    max(_DebugLevel, self.debug_level),
+                    '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
+        except Exception as exc:
+            self.exc(str(exc))
 
     def stopTimers(self):
         """

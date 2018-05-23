@@ -189,7 +189,7 @@ def remove_outbox_callback(cb):
 
 def add_queue_item_status_callback(cb):
     """
-    pkt_out, status, error_message.
+    callback(pkt_out, status, error_message)
     """
     global _QueueItemStatusCallbacksList
     if cb not in _QueueItemStatusCallbacksList:

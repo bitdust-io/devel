@@ -43,7 +43,7 @@ their server.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -124,7 +124,7 @@ def propagate(selected_contacts, AckHandler=None, wide=False):
 
     def contacts_fetched(x):
         lg.out(6, "propagate.propagate.contacts_fetched")
-        SendToIDs(selected_contacts, AckHandler, wide)
+        SendToIDs(selected_contacts, ack_handler=AckHandler, wide=wide)
         d.callback(list(selected_contacts))
         return x
     fetch(selected_contacts).addBoth(contacts_fetched)
@@ -182,7 +182,7 @@ def single(idurl, ack_handler=None, wide=False, fail_handler=None):
     Do "propagate" for a single contact.
     """
     d = FetchSingle(idurl)
-    d.addCallback(lambda x: SendToIDs([idurl, ], ack_handler, wide))
+    d.addCallback(lambda x: SendToIDs([idurl, ], ack_handler=ack_handler, wide=wide))
     if ack_handler:
         d.addErrback(fail_handler or ack_handler)
     return d
@@ -275,7 +275,7 @@ def SendSuppliers(customer_idurl=None):
     Send my identity file to all my suppliers, calls to ``SendToIDs()`` method.
     """
     lg.out(6, "propagate.SendSuppliers")
-    SendToIDs(contactsdb.suppliers(customer_idurl=customer_idurl), HandleSuppliersAck)
+    SendToIDs(contactsdb.suppliers(customer_idurl=customer_idurl), ack_handler=HandleSuppliersAck, wide=True)
 
 
 def SendCustomers():
@@ -283,7 +283,7 @@ def SendCustomers():
     Calls ``SendToIDs()`` to send identity to all my customers.
     """
     lg.out(8, "propagate.SendCustomers")
-    SendToIDs(contactsdb.customers(), HandleCustomersAck)
+    SendToIDs(contactsdb.customers(), ack_handler=HandleCustomersAck, wide=True)
 
 
 def SlowSendSuppliers(delay=1, customer_idurl=None):
@@ -354,7 +354,11 @@ def HandleCustomersAck(ackpacket, info):
 
 
 def HandleAck(ackpacket, info):
-    lg.out(16, "propagate.HandleAck %r %r" % (ackpacket, info))
+    lg.out(8, "propagate.HandleAck %r %r" % (ackpacket, info))
+
+
+def HandleTimeOut(pkt_out):
+    lg.out(8, "propagate.HandleTimeOut %r" % pkt_out)
 
 
 def OnFileSent(pkt_out, item, status, size, error_message):
@@ -363,7 +367,7 @@ def OnFileSent(pkt_out, item, status, size, error_message):
     return False
 
 
-def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
+def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=None, response_timeout=20, ):
     """
     Create ``packet`` with my Identity file and calls
     ``transport.gateway.outbox()`` to send it.
@@ -371,6 +375,8 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     lg.out(8, "propagate.SendToID [%s] wide=%s" % (nameurl.GetName(idurl), str(wide)))
     if ack_handler is None:
         ack_handler = HandleAck
+    if timeout_handler is None:
+        timeout_handler = HandleTimeOut
     thePayload = Payload
     if thePayload is None:
         thePayload = my_id.getLocalIdentity().serialize()
@@ -383,29 +389,34 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
         idurl,
     )
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
-    gateway.outbox(p, wide, callbacks={
+    result = gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
         commands.Ack(): ack_handler,
         commands.Fail(): ack_handler,
+        None: timeout_handler,
     })
     if wide:
         # this is a ping packet - need to clear old info
         p2p_stats.ErasePeerProtosStates(idurl)
         p2p_stats.EraseMyProtosStates(idurl)
+    return result
 
 
-def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
+def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, response_timeout=20):
     """
     Same, but send to many IDs and also check previous packets to not re-send.
     """
     lg.out(8, "propagate.SendToIDs to %d users, wide=%s" % (len(idlist), wide))
     if ack_handler is None:
         ack_handler = HandleAck
+    if timeout_handler is None:
+        timeout_handler = HandleTimeOut
     # MyID = my_id.getLocalID()
     # PacketID = MyID
     LocalIdentity = my_id.getLocalIdentity()
     Payload = LocalIdentity.serialize()
     # Hash = key.Hash(Payload)
     alreadysent = set()
+    totalsent = 0
     inqueue = {}
     found_previous_packets = 0
     for pkt_out in packet_out.queue():
@@ -423,7 +434,7 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
             continue
         if contact in inqueue and inqueue[contact] > 2:
             # now only 2 protocols is working: tcp and udp
-            lg.out(8, '        skip sending to %s' % contact)
+            lg.out(8, '        skip sending [Identity] to %s, packet already in the queue' % contact)
             continue
 #        found_previous_packets = 0
 #        for transfer_id in gate.transfers_out_by_idurl().get(contact, []):
@@ -444,15 +455,19 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
         )
         lg.out(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
         # callback.register_interest(AckHandler, signed.RemoteID, signed.PacketID)
-        gateway.outbox(p, wide, callbacks={
+        gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
             commands.Ack(): ack_handler,
-            commands.Fail(): ack_handler, })
+            commands.Fail(): ack_handler,
+            None: timeout_handler,
+        })
         if wide:
             # this is a ping packet - need to clear old info
             p2p_stats.ErasePeerProtosStates(contact)
             p2p_stats.EraseMyProtosStates(contact)
         alreadysent.add(contact)
+        totalsent += 1
     del alreadysent
+    return totalsent
 
 
 def PingContact(idurl, timeout=30):
@@ -464,39 +479,42 @@ def PingContact(idurl, timeout=30):
         lg.out(_DebugLevel, "propagate.PingContact [%s]" % idurl)
     ping_result = Deferred()
 
-    def _cancel_ack_timeout(x, tmcall):
-        lg.out(_DebugLevel, "propagate.PingContact._cancel_ack_timeout")
-        if tmcall.active():
-            tmcall.cancel()
-        return x
+    def _ack_handler(response, info):
+        lg.out(_DebugLevel, "propagate.PingContact._ack_handler: %s via %s" % (response, info))
+        if not ping_result.called:
+            ping_result.callback((response, info))
+        return None
 
-    def _ack_handler(response, info, tmcall, res):
-        lg.out(_DebugLevel, "propagate.PingContact._ack_handler %s" % str((response, info)))
-        if tmcall:
-            _cancel_ack_timeout((response, info), tmcall)
-        if not res.called:
-            res.callback((response, info))
+    def _response_timed_out(pkt_out):
+        lg.out(_DebugLevel, "propagate.PingContact._response_timed_out : %s" % pkt_out)
+        if not ping_result.called:
+            ping_result.errback(TimeoutError('remote user did not responded'))
+        return None
 
-    def _ack_timed_out(tm, cache_request):
-        lg.out(_DebugLevel, "propagate.PingContact._ack_timed_out")
-        if not cache_request.called:
-            cache_request.cancel()
-        ping_result.errback(TimeoutError('response was not received within %d seconds' % tm))
-
-    def _identity_cached(x, idsrc, timeout_call, result):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for [%s]" % (len(idsrc), idurl))
-        # TODO Verify()
+    def _identity_cached(idsrc, idurl):
+        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for [%s]" % (
+            len(idsrc), idurl))
+        # TODO: Verify()
         SendToIDs(
             idlist=[idurl, ],
-            ack_handler=lambda response, info: _ack_handler(response, info, timeout_call, result),
+            ack_handler=lambda response, info: _ack_handler(response, info),
+            timeout_handler=lambda pkt_out: _response_timed_out(pkt_out),
+            response_timeout=timeout,
             wide=True,
         )
-    idcache_defer = identitycache.scheduleForCaching(idurl, timeout)
-    if timeout:
-        timeout_call = reactor.callLater(timeout, _ack_timed_out, timeout, idcache_defer)
-        idcache_defer.addErrback(_cancel_ack_timeout, timeout_call)
-    else:
-        timeout_call = None
-    idcache_defer.addCallback(_identity_cached, idurl, timeout_call, ping_result)
-    idcache_defer.addErrback(ping_result.errback)
+        return idsrc
+
+    def _identity_cache_failed(err, idurl):
+        lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed [%s]" % idurl)
+        if not ping_result.called:
+            try:
+                msg = err.getErrorMessage()
+            except:
+                msg = str(err)
+            ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg)))
+        return None
+
+    idcache_defer = identitycache.scheduleForCaching(idurl, timeout=timeout)
+    idcache_defer.addCallback(_identity_cached, idurl)
+    idcache_defer.addErrback(_identity_cache_failed, idurl)
     return ping_result

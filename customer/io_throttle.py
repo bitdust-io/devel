@@ -728,7 +728,8 @@ class SupplierQueue:
         for pkt_out in packetsToCancel:
             if pkt_out.outpacket.Command == commands.Retrieve():
                 if pkt_out.outpacket.PacketID in packetsToRemove:
-                    lg.warn('sending "cancel" to %s' % pkt_out)
+                    lg.warn('sending "cancel" to %s addressed to %s   from io_throttle' % (
+                        pkt_out, pkt_out.remote_idurl, ))
                     pkt_out.automat('cancel')
         if len(self.fileRequestQueue) > 0:
             reactor.callLater(0, self.DoRequest)

@@ -281,7 +281,7 @@ def GetCorrectableErrors(suppliers_number):
 
 def GetFireHireErrors(suppliers_number):
     """
-    For every map we have different amount of "fixable" errors.
+    For every map we have different critical amount of dead suppliers.
     """
     global __fire_hire_errors
     return __fire_hire_errors.get(suppliers_number, 1)

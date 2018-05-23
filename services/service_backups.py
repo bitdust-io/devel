@@ -115,6 +115,7 @@ class BackupsService(LocalService):
         from userid import global_id
         from storage import backup_control
         from p2p import commands
+        from p2p import p2p_service
         if newpacket.Command == commands.Data():
             if newpacket.OwnerID != my_id.getLocalID():
                 # only catch data belongs to me
@@ -127,6 +128,8 @@ class BackupsService(LocalService):
             ):
                 # TODO: move to service_backup_db
                 backup_control.IncomingSupplierBackupIndex(newpacket)
+                # send ack packet back
+                p2p_service.SendAck(newpacket)
                 return True
         if newpacket.Command == commands.Files():
             list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
@@ -142,5 +145,10 @@ class BackupsService(LocalService):
                 return False
             lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s at %s" % (
                 newpacket, newpacket.CreatorID, info))
-            return backup_control.IncomingSupplierListFiles(newpacket, list_files_global_id)
+            if backup_control.IncomingSupplierListFiles(newpacket, list_files_global_id):
+                # send ack packet back
+                p2p_service.SendAck(newpacket)
+            else:
+                p2p_service.SendFail(newpacket)
+            return True
         return False

@@ -47,7 +47,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -75,6 +75,7 @@ from crypt import my_keys
 
 from p2p import commands
 from p2p import p2p_service
+from p2p import contact_status
 
 from raid import eccmap
 
@@ -191,6 +192,9 @@ class SupplierConnector(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
+        contact_peer = contact_status.getInstance(self.supplier_idurl)
+        if contact_peer:
+            contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -457,7 +461,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(14, 'supplier_connector.doReportConnect')
+            lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, 'CONNECTED')
 
@@ -466,7 +470,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(14, 'supplier_connector.doReportNoService')
+            lg.out(14, 'supplier_connector.doReportNoService : %s' % self.supplier_idurl)
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, 'NO_SERVICE')
 
@@ -475,7 +479,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect')
+            lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect : %s' % self.supplier_idurl)
         for cb in self.callbacks.values():
             cb(self.supplier_idurl, 'DISCONNECTED')
 
@@ -483,6 +487,9 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
+        contact_peer = contact_status.getInstance(self.supplier_idurl)
+        if contact_peer:
+            contact_peer.removeStateChangedCallback(self._on_contact_status_state_changed)
         connectors(self.customer_idurl).pop(self.supplier_idurl)
         self.request_packet_id = None
         self.supplier_idurl = None
@@ -502,3 +509,10 @@ class SupplierConnector(automat.Automat):
             self.automat(response.Command.lower(), response)
         else:
             self.automat('fail', None)
+
+    def _on_contact_status_state_changed(self, oldstate, newstate, event_string, args):
+        if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
+            if _Debug:
+                lg.out(12, 'supplier_connector._on_contact_status_state_changed %s : %s->%s, reconnecting now' % (
+                    self.supplier_idurl, oldstate, newstate))
+            self.automat('connect')
