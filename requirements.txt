@@ -1,5 +1,4 @@
-pip
-twisted<17
+twisted
 pyasn1
 pycrypto
 pyOpenSSL
@@ -13,4 +12,3 @@ enum34
 ipaddress
 cffi
 pkgversion
-# django<1.10  # if only you want to have a gui

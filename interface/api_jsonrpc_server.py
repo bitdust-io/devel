@@ -269,9 +269,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_share_close(self, key_id):
         return api.share_close(key_id)
 
-    def jsonrpc_share_refresh(self, key_id):
-        return api.share_refresh(key_id)
-
     def jsonrpc_share_list(self):
         return api.share_list()
 
@@ -310,12 +307,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_space_local(self):
         return api.space_local()
-
-    def jsonrpc_share_history(self):
-        return api.share_history()
-
-    def jsonrpc_share_open(self, remote_user, key_id):
-        return api.share_open(remote_user=remote_user, key_id=key_id)
 
     def jsonrpc_automats_list(self):
         return api.automats_list()
