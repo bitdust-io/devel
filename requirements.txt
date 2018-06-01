@@ -1,4 +1,4 @@
-twisted<17
+twisted<18
 pyasn1
 pycrypto
 pyOpenSSL
