@@ -60,6 +60,7 @@ EVENTS:
     * :red:`network-up`
     * :red:`reconnect`
     * :red:`timer-1hour`
+    * :red:`timer-20sec`
     * :red:`timer-5sec`
     * :red:`upnp-done`
 """
@@ -145,6 +146,7 @@ class NetworkConnector(automat.Automat):
     timers = {
         'timer-1hour': (3600, ['DISCONNECTED']),
         'timer-5sec': (5.0, ['DISCONNECTED', 'CONNECTED']),
+        'timer-20sec': (20.0, ['TRANSPORTS?']),
     }
 
     def init(self):
@@ -176,16 +178,16 @@ class NetworkConnector(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'START_UP'
-                self.Disconnects = 0
-                self.Reset = False
-                self.ColdStart = True
+                self.Disconnects=0
+                self.Reset=False
+                self.ColdStart=True
                 self.doCheckNetworkInterfaces(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
-            if event == 'reconnect' or (event == 'timer-5sec' and (self.Reset or not self.isConnectionAlive(arg))):
+            if event == 'reconnect' or ( event == 'timer-5sec' and ( self.Reset or not self.isConnectionAlive(arg) ) ):
                 self.state = 'DOWN'
-                self.Disconnects = 0
-                self.Reset = False
+                self.Disconnects=0
+                self.Reset=False
                 self.doSetDown(arg)
             elif event == 'check-reconnect':
                 self.state = 'TRANSPORTS?'
@@ -209,11 +211,11 @@ class NetworkConnector(automat.Automat):
                 self.doSetUp(arg)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
-            if event == 'reconnect' or event == 'check-reconnect' or event == 'timer-1hour' or (event == 'timer-5sec' and (self.Disconnects < 3 or self.Reset)) or (event == 'connection-done' and self.isTimePassed(arg)):
+            if event == 'reconnect' or event == 'check-reconnect' or event == 'timer-1hour' or ( event == 'timer-5sec' and ( self.Disconnects < 3 or self.Reset ) ) or ( event == 'connection-done' and self.isTimePassed(arg) ):
                 self.state = 'DOWN'
                 self.doRememberTime(arg)
-                self.Disconnects += 1
-                self.Reset = False
+                self.Disconnects+=1
+                self.Reset=False
                 self.doSetDown(arg)
         #---UP---
         elif self.state == 'UP':
@@ -221,11 +223,11 @@ class NetworkConnector(automat.Automat):
                 self.state = 'TRANSPORTS?'
                 self.doStartNetworkTransports(arg)
             elif event == 'reconnect' or event == 'check-reconnect':
-                self.Reset = True
+                self.Reset=True
             elif self.ColdStart and event == 'network-up':
                 self.state = 'TRANSPORTS?'
                 self.doColdStartNetworkTransports(arg)
-                self.ColdStart = False
+                self.ColdStart=False
             elif not self.ColdStart and event == 'network-up' and self.isNeedUPNP(arg):
                 self.state = 'UPNP'
                 self.doUPNP(arg)
@@ -236,22 +238,22 @@ class NetworkConnector(automat.Automat):
                 self.doCheckNetworkInterfaces(arg)
         #---TRANSPORTS?---
         elif self.state == 'TRANSPORTS?':
-            if event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or (event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg)):
-                self.state = 'DISCONNECTED'
-            elif event == 'reconnect' or event == 'check-reconnect':
-                self.Reset = True
-            elif self.Reset and (event == 'all-network-transports-ready' or event == 'network-transports-verified' or (event == 'network-transport-state-changed' and self.isAllTransportsReady(arg))):
+            if event == 'reconnect' or event == 'check-reconnect':
+                self.Reset=True
+            elif self.Reset and ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or ( event == 'network-transport-state-changed' and self.isAllTransportsReady(arg) ) ):
                 self.state = 'DOWN'
-                self.Reset = False
-                self.Disconnects = 0
+                self.Reset=False
+                self.Disconnects=0
                 self.doSetDown(arg)
-            elif not self.Reset and (event == 'all-network-transports-ready' or event == 'network-transports-verified' or (event == 'network-transport-state-changed' and self.isAllTransportsReady(arg))):
+            elif not self.Reset and ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or ( event == 'network-transport-state-changed' and self.isAllTransportsReady(arg) ) ):
                 self.state = 'CONNECTED'
+            elif event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or ( event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg) ) or event == 'timer-20sec':
+                self.state = 'DISCONNECTED'
         #---START_UP---
         elif self.state == 'START_UP':
             if event == 'got-network-info' and not self.isNetworkActive(arg):
                 self.state = 'DISCONNECTED'
-                self.Disconnects = 3
+                self.Disconnects=3
             elif event == 'reconnect' or event == 'check-reconnect':
                 self.state = 'UP'
                 self.doSetUp(arg)
@@ -261,7 +263,7 @@ class NetworkConnector(automat.Automat):
                 self.state = 'TRANSPORTS?'
                 self.doStartNetworkTransports(arg)
             elif event == 'reconnect' or event == 'check-reconnect':
-                self.Reset = True
+                self.Reset=True
         return None
 
     def isNeedUPNP(self, arg):
