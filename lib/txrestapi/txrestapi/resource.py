@@ -8,6 +8,7 @@ from functools import wraps
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET
 from twisted.internet.defer import Deferred
+from twisted.python import log as twlog
 
 
 def _to_json(output_object):
@@ -47,14 +48,22 @@ class _DelayedJsonResource(_JsonResource):
     def _cb(self, result, request):
         self._setHeaders(request)
         result['execution'] = '%3.6f' % (time.time() - self._executed)
-        request.write(_to_json(result))
-        request.finish()
+        raw = _to_json(result)
+        if request.channel:
+            request.write(raw)
+            request.finish()
+        else:
+            twlog.err('REST API connection channel already closed')
 
     def _eb(self, err, request):
         self._setHeaders(request)
         execution = '%3.6f' % (time.time() - self._executed)
-        request.write(_to_json(dict(status='ERROR', execution=execution, errors=[str(err), ])))
-        request.finish()
+        raw = _to_json(dict(status='ERROR', execution=execution, errors=[str(err), ]))
+        if request.channel:
+            request.write(raw)
+            request.finish()
+        else:
+            twlog.err('REST API connection channel already closed')
 
     def render(self, request):
         self._result.addCallback(self._cb, request)
