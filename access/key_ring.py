@@ -218,8 +218,8 @@ def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_
 
 def audit_public_key(key_id, untrusted_idurl, timeout=10):
     """
-    Be sure remote user posses given public key.
-    I also need to posses that public key in order to do such audit.
+    Be sure remote user stores given public key.
+    I also need to stores that public key in order to do such audit.
     I will send him a random string, he needs to encrypt it and send me back.
     I can compare his encrypted output with mine.
     Returns Deferred object.
