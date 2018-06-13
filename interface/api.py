@@ -668,7 +668,7 @@ def files_sync():
     return OK('the main files sync loop has been restarted')
 
 
-def files_list(remote_path=None, key_id=None, recursive=True):
+def files_list(remote_path=None, key_id=None, recursive=True, all_customers=False):
     """
     Returns list of known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
@@ -720,14 +720,28 @@ def files_list(remote_path=None, key_id=None, recursive=True):
     norm_path = global_id.NormalizeGlobalID(glob_path.copy())
     remotePath = bpio.remotePath(norm_path['path'])
     customer_idurl = norm_path['idurl']
-    if customer_idurl not in backup_fs.known_customers():
+    if not all_customers and customer_idurl not in backup_fs.known_customers():
         return ERROR('customer "%s" not found' % customer_idurl)
-    lookup = backup_fs.ListChildsByPath(
-        path=remotePath,
-        recursive=recursive,
-        iter=backup_fs.fs(customer_idurl),
-        iterID=backup_fs.fsID(customer_idurl),
-    )
+    if all_customers:
+        lookup = []
+        for customer_idurl in backup_fs.known_customers():
+            look = backup_fs.ListChildsByPath(
+                path=remotePath,
+                recursive=recursive,
+                iter=backup_fs.fs(customer_idurl),
+                iterID=backup_fs.fsID(customer_idurl),
+            )
+            if isinstance(look, list):
+                lookup.extend(look)
+            else:
+                lg.warn(look)
+    else:
+        lookup = backup_fs.ListChildsByPath(
+            path=remotePath,
+            recursive=recursive,
+            iter=backup_fs.fs(customer_idurl),
+            iterID=backup_fs.fsID(customer_idurl),
+        )
     if not isinstance(lookup, list):
         return ERROR(lookup)
     for i in lookup:
