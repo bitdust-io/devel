@@ -314,7 +314,8 @@ class BitDustRESTHTTPServer(APIResource):
         return api.files_list(
             remote_path=_request_arg(request, 'remote_path', None),
             key_id=_request_arg(request, 'key_id', None),
-            recursive=bool(_request_arg(request, 'recursive', '0') in ['1', 'true', ]), )
+            recursive=bool(_request_arg(request, 'recursive', '0') in ['1', 'true', ]),
+            all_customers=bool(_request_arg(request, 'all_customers', '0') in ['1', 'true', ]), )
 
     @GET('^/f/i$')
     @GET('^/file/info/v1$')
