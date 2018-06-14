@@ -756,14 +756,20 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
                 continue
         key_alias = 'master'
         if i['item']['k']:
-            key_alias = packetid.KeyAlias(i['item']['k'])
-        full_glob_id = global_id.MakeGlobalID(path=i['path_id'], customer=norm_path['customer'], key_alias=key_alias, )
-        full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=norm_path['customer'], key_alias=key_alias, )
+            real_key_id = i['item']['k']
+            key_alias, real_idurl = my_keys.split_key_id(real_key_id)
+            real_customer_id = global_id.UrlToGlobalID(real_idurl)
+        else:
+            real_key_id = my_keys.make_key_id(alias='master', creator_idurl=customer_idurl)
+            real_idurl = customer_idurl
+            real_customer_id = global_id.UrlToGlobalID(customer_idurl)
+        full_glob_id = global_id.MakeGlobalID(path=i['path_id'], customer=real_customer_id, key_alias=key_alias, )
+        full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=real_customer_id, key_alias=key_alias, )
         result.append({
             'remote_path': full_remote_path,
             'global_id': full_glob_id,
-            'customer': norm_path['customer'],
-            'idurl': customer_idurl,
+            'customer': real_customer_id,
+            'idurl': real_idurl,
             'path_id': i['path_id'],
             'name': i['name'],
             'path': i['path'],
@@ -771,7 +777,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             'size': i['total_size'],
             'local_size': i['item']['s'],
             'latest': i['latest'],
-            'key_id': i['item']['k'],
+            'key_id': real_key_id,
             'key_alias': key_alias,
             'childs': i['childs'],
             'versions': i['versions'],
