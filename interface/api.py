@@ -1813,7 +1813,7 @@ def supplier_replace(index_or_idurl_or_global_id):
         from customer import fire_hire
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
-        return OK('supplier "%s" will be replaced by new peer' % supplier_idurl)
+        return OK('supplier "%s" will be replaced by new random peer' % supplier_idurl)
     return ERROR('supplier not found')
 
 
