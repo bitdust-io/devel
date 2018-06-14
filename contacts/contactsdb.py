@@ -84,13 +84,14 @@ def init():
     global _CustomersChangedCallback
     global _CorrespondentsChangedCallback
     lg.out(4, "contactsdb.init")
-    load_suppliers(settings.SupplierIDsFilename())
+    load_suppliers()
+    load_suppliers(all_customers=True)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback([], suppliers())
-    load_customers(settings.CustomerIDsFilename())
+    load_customers()
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback([], customers())
-    load_correspondents(settings.CorrespondentIDsFilename())
+    load_correspondents()
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback([], correspondents())
     AddContactsChangedCallback(on_contacts_changed)
@@ -534,16 +535,36 @@ def save_suppliers(path=None, customer_idurl=None):
                 'supplierids',
             )
     bpio._write_list(path, suppliers(customer_idurl=customer_idurl))
+    return True
 
-def load_suppliers(path):
+def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     """
     Load suppliers list from disk.
     """
+    if all_customers:
+        for customer_id in os.listdir(settings.SuppliersDir()):
+            if not global_id.IsValidGlobalUser(customer_id):
+                lg.warn('invalid customer record %s found in %s' % (customer_id, settings.SuppliersDir()))
+                continue
+            path = os.path.join(settings.SuppliersDir(), customer_id, 'supplierids')
+            lst = bpio._read_list(path)
+            if lst is None:
+                lst = list()
+            set_suppliers(lst, customer_idurl=global_id.GlobalUserToIDURL(customer_id))
+            lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
+        return True
+    if path is None:
+        if customer_idurl is None:
+            path = settings.SupplierIDsFilename()
+        else:
+            path = os.path.join(settings.SuppliersDir(), global_id.UrlToGlobalID(customer_idurl), 'supplierids')
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
     set_suppliers(lst)
-    lg.out(4, 'contactsdb.load_suppliers %d items' % len(lst))
+    lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
+    return True
+                
 
 #------------------------------------------------------------------------------
 
@@ -556,10 +577,12 @@ def save_customers(path=None):
     bpio._write_list(path, customers())
 
 
-def load_customers(path):
+def load_customers(path=None):
     """
     Load customers list from disk.
     """
+    if path is None:
+        path = settings.CustomerIDsFilename()
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
@@ -578,10 +601,12 @@ def save_correspondents(path=None):
     bpio._write_list(path, map(lambda t: "%s %s" % t, correspondents()))
 
 
-def load_correspondents(path):
+def load_correspondents(path=None):
     """
     Load correspondents list from disk.
     """
+    if path is None:
+        path = settings.CorrespondentIDsFilename()
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()

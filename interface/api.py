@@ -1373,7 +1373,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             lg.out(4, 'api.download_start share %s is CONNECTED, removing callback %s' % (
                 active_share.key_id, callback_id,))
             active_share.removeStateChangedCallback(callback_id=callback_id)
-            _start_restore(),
+            _start_restore()
             return True
         if oldstate != newstate and newstate == 'DISCONNECTED':
             lg.out(4, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
@@ -1409,11 +1409,15 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             )
             active_share.automat('restart')
             lg.out(4, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
+        else:
+            lg.out(4, 'api.download_start existing share %s is currently CONNECTED' % active_share.key_id)
+            _start_restore()
         return True
 
     if open_share and key_alias != 'master':
         _open_share()
     else:
+        lg.out(4, 'api.download_start "open_share" skipped, starting restore')
         _start_restore()
     
     return ret
