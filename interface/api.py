@@ -1320,56 +1320,103 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     if not destination_path:
         destination_path = settings.DefaultRestoreDir()
     key_id = my_keys.make_key_id(alias=glob_path['key_alias'], creator_glob_id=glob_path['customer'])
-    if open_share and key_alias != 'master':
+    ret = Deferred()
+        
+    def _on_result(backupID, result):
+        if result == 'restore done':
+            ret.callback(OK(
+                result,
+                'version "%s" downloaded to "%s"' % (backupID, destination_path),
+                extra_fields={
+                    'backup_id': backupID,
+                    'local_path': destination_path,
+                    'path_id': pathID_target,
+                    'remote_path': knownPath,
+                },
+            ))
+        else:
+            ret.callback(ERROR(
+                'downloading version "%s" failed, result: %s' % (backupID, result),
+                extra_fields={
+                    'backup_id': backupID,
+                    'local_path': destination_path,
+                    'path_id': pathID_target,
+                    'remote_path': knownPath,
+                },
+            ))
+        return True
+    
+    def _start_restore():
+        if wait_result:
+            lg.out(4, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
+            restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
+            control.request_update([('pathID', knownPath), ])
+            return ret
+        lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
+        restore_monitor.Start(backupID, destination_path, keyID=key_id, )
+        control.request_update([('pathID', knownPath), ])
+        ret.callback(OK(
+            'started',
+            'downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
+            extra_fields={
+                'key_id': key_id,
+                'backup_id': backupID,
+                'local_path': destination_path,
+                'path_id': pathID_target,
+                'remote_path': knownPath,
+            },
+        ))
+        return True
+    
+    def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, args):
+        if oldstate != newstate and newstate == 'CONNECTED':
+            lg.out(4, 'api.download_start share %s is CONNECTED, removing callback %s' % (
+                active_share.key_id, callback_id,))
+            active_share.removeStateChangedCallback(callback_id=callback_id)
+            _start_restore(),
+            return True
+        if oldstate != newstate and newstate == 'DISCONNECTED':
+            lg.out(4, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
+                active_share.key_id, callback_id,))
+            active_share.removeStateChangedCallback(callback_id=callback_id)
+            ret.callback(ERROR(
+                'downloading version "%s" failed, result: %s' % (backupID, 'share disconnected'),
+                extra_fields={
+                    'key_id': active_share.key_id,
+                    'backup_id': backupID,
+                    'local_path': destination_path,
+                    'path_id': pathID_target,
+                    'remote_path': knownPath,
+                },
+            ))
+            return True
+        return False
+
+    def _open_share():
         from access import shared_access_coordinator
         active_share = shared_access_coordinator.get_active_share(key_id)
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
                 key_id, log_events=True, publish_events=True, )
-        active_share.automat('restart')
-    if wait_result:
-        d = Deferred()
+            lg.out(4, 'api.download_start opened new share : %s' % active_share.key_id)
+        else:
+            lg.out(4, 'api.download_start found existing share : %s' % active_share.key_id)
+        if active_share.state != 'CONNECTED':
+            cb_id = 'file_download_start_' + str(time.time())
+            active_share.addStateChangedCallback(
+                cb=lambda o, n, e, a: _share_state_changed(cb_id, active_share, o, n, e, a),
+                callback_id=cb_id,
+            )
+            active_share.automat('restart')
+            lg.out(4, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
+        return True
 
-        def _on_result(backupID, result):
-            if result == 'restore done':
-                d.callback(OK(
-                    result,
-                    'version "%s" downloaded to "%s"' % (backupID, destination_path),
-                    extra_fields={
-                        'backup_id': backupID,
-                        'local_path': destination_path,
-                        'path_id': pathID_target,
-                        'remote_path': knownPath,
-                    },
-                ))
-            else:
-                d.callback(ERROR(
-                    'downloading version "%s" failed, result: %s' % (backupID, result),
-                    extra_fields={
-                        'backup_id': backupID,
-                        'local_path': destination_path,
-                        'path_id': pathID_target,
-                        'remote_path': knownPath,
-                    },
-                ))
-            return True
-
-        restore_monitor.Start( backupID, destination_path, keyID=key_id, callback=_on_result)
-        control.request_update([('pathID', knownPath), ])
-        lg.out(4, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
-        return d
-    restore_monitor.Start(backupID, destination_path, keyID=key_id, )
-    control.request_update([('pathID', knownPath), ])
-    lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
-    return OK(
-        'started',
-        'downloading of version "%s" has been started to "%s"' % (backupID, destination_path),
-        extra_fields={
-            'backup_id': backupID,
-            'local_path': destination_path,
-            'path_id': pathID_target,
-            'remote_path': knownPath,
-        },)
+    if open_share and key_alias != 'master':
+        _open_share()
+    else:
+        _start_restore()
+    
+    return ret
 
 
 def file_download_stop(remote_path):
