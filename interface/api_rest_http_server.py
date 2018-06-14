@@ -317,6 +317,11 @@ class BitDustRESTHTTPServer(APIResource):
             recursive=bool(_request_arg(request, 'recursive', '0') in ['1', 'true', ]),
             all_customers=bool(_request_arg(request, 'all_customers', '0') in ['1', 'true', ]), )
 
+    @GET('^/f/l/a$')
+    @GET('^/file/list/all/v1$')
+    def file_list_all_v1(self, request):
+        return api.files_list(all_customers=True)
+
     @GET('^/f/i$')
     @GET('^/file/info/v1$')
     def file_info_v1(self, request):

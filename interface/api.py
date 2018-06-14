@@ -711,7 +711,6 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_fs
-    from lib import packetid
     from system import bpio
     from userid import global_id
     from crypt import my_keys
