@@ -464,11 +464,12 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
         `packet_out.PacketOut` object if packet was sent
     """
     if _Debug:
-        lg.out(_DebugLevel - 8, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
+        lg.out(_DebugLevel - 8, "gateway.outbox [%s] signed by %s|%s to %s (%s), wide=%s" % (
             outpacket.Command,
             nameurl.GetName(outpacket.OwnerID),
             nameurl.GetName(outpacket.CreatorID),
             nameurl.GetName(outpacket.RemoteID),
+            nameurl.GetName(target),
             wide,))
     return callback.run_outbox_filter_callbacks(
         outpacket,
