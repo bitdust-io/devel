@@ -255,7 +255,9 @@ def correct_packet_destination(outpacket):
     if outpacket.Command == commands.Data():
         # Data belongs to remote customers and stored locally
         # must go to CreatorID, because RemoteID pointing to this device
-        return outpacket.CreatorID
+        # return outpacket.CreatorID
+        # this was changed by Veselin... TODO: test and clean up this
+        return outpacket.RemoteID
     lg.warn('sending a packet we did not make, and that is not Data packet')
     return outpacket.RemoteID
 

@@ -492,7 +492,7 @@ def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
         lg.out(_DebugLevel, 'p2p_service.SendData %d bytes in packetID=%s' % (
             len(raw_data), packetID))
         lg.out(_DebugLevel, '  to remoteID=%s  ownerID=%s  creatorID=%s' % (remoteID, ownerID, creatorID))
-    return result
+    return newpacket, result
 
 
 def Retrieve(request):
