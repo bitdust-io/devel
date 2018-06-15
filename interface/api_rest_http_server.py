@@ -365,7 +365,7 @@ class BitDustRESTHTTPServer(APIResource):
             local_path=data['local_path'],
             remote_path=data['remote_path'],
             wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]),
-            open_share=bool(data.get('open_share', '1') in ['1', 'true', ]), )
+            open_share=bool(data.get('open_share', '0') in ['1', 'true', ]), )
 
     @POST('^/f/u/c$')
     @POST('^/file/upload/close/v1$')

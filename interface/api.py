@@ -1086,7 +1086,7 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path, wait_result=False, open_share=True):
+def file_upload_start(local_path, remote_path, wait_result=False, open_share=False):
     """
     """
     if not driver.is_on('service_backups'):
