@@ -522,7 +522,7 @@ class SupplierService(LocalService):
             OwnerID=stored_packet.OwnerID,
             CreatorID=my_id.getLocalIDURL(),
             PacketID=stored_packet.PacketID,
-            Payload=stored_packet.Serizalize(),
+            Payload=stored_packet.Serialize(),
             RemoteID=recipient_idurl,
         )
         if recipient_idurl == stored_packet.OwnerID:
