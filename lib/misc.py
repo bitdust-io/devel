@@ -1297,6 +1297,8 @@ def DoRestart(param='', detach=False):
                 cmdargs.remove('restart')
             if cmdargs.count('detach'):
                 cmdargs.remove('detach')
+            if cmdargs.count('daemon'):
+                cmdargs.remove('daemon')
             if detach:
                 from system import child_process
                 lg.out(0, 'run "%s"' % str(' '.join(cmdargs)))
@@ -1320,6 +1322,8 @@ def DoRestart(param='', detach=False):
             cmdargs.remove('restart')
         if cmdargs.count('detach'):
             cmdargs.remove('detach')
+        if cmdargs.count('daemon'):
+            cmdargs.remove('daemon')
         pid = os.fork()
         if pid != 0:
             lg.out(2, "misc.DoRestart os.fork returned: " + str(pid))

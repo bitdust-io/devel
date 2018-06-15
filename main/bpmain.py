@@ -680,7 +680,7 @@ def main(executable_path=None):
         return ret
 
     #---daemon---
-    elif cmd == 'detach' or cmd == 'daemon' or cmd == 'background':
+    elif cmd == 'detach' or cmd == 'daemon':
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if len(appList) > 0:
             lg.out(0, 'main BitDust process already started: %s\n' % str(appList))
