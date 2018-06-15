@@ -39,7 +39,6 @@ EVENTS:
     * :red:`supplier-connected`
     * :red:`supplier-failed`
     * :red:`timer-10sec`
-    * :red:`timer-15sec`
     * :red:`timer-1min`
     * :red:`timer-3sec`
 """
@@ -145,10 +144,9 @@ class SharedAccessCoordinator(automat.Automat):
     """
 
     timers = {
-        'timer-1min': (60, ['CONNECTED']),
+        'timer-1min': (60, ['CONNECTED', 'DHT_LOOKUP']),
         'timer-3sec': (3.0, ['SUPPLIERS?']),
         'timer-10sec': (10.0, ['SUPPLIERS?', 'LIST_FILES?']),
-        'timer-15sec': (15.0, ['DHT_LOOKUP']),
     }
 
     def __init__(self,
@@ -283,7 +281,7 @@ class SharedAccessCoordinator(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'fail' or event == 'timer-15sec':
+            elif event == 'fail' or event == 'timer-1min':
                 self.state = 'DISCONNECTED'
                 self.doReportDisconnected(arg)
         #---DISCONNECTED---

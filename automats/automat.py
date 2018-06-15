@@ -623,7 +623,7 @@ class Automat(object):
             except:
                 pass
 
-    def addStateChangedCallback(self, cb, oldstate=None, newstate=None):
+    def addStateChangedCallback(self, cb, oldstate=None, newstate=None, callback_id=None):
         """
         You can add a callback function to be executed when state machine
         reaches particular condition, it will be called with such arguments:
@@ -644,18 +644,25 @@ class Automat(object):
         if key not in self._state_callbacks:
             self._state_callbacks[key] = []
         if cb not in self._state_callbacks[key]:
-            self._state_callbacks[key].append(cb)
+            self._state_callbacks[key].append((callback_id, cb))
 
-    def removeStateChangedCallback(self, cb):
+    def removeStateChangedCallback(self, cb=None, callback_id=None):
         """
         Remove given callback from the state machine.
         """
+        removed_count = 0
         for key, cb_list in self._state_callbacks.items():
-            for cb_ in cb_list:
-                if cb == cb_:
-                    self._state_callbacks[key].remove(cb)
-                    if len(self._state_callbacks[key]) == 0:
-                        self._state_callbacks.pop(key)
+            for cb_tupl in cb_list:
+                cb_id_, cb_ = cb_tupl
+                if cb and cb == cb_:
+                    self._state_callbacks[key].remove(cb_tupl)
+                    removed_count += 1
+                if callback_id and callback_id == cb_id_:
+                    self._state_callbacks[key].remove(cb_tupl)
+                    removed_count += 1
+                if len(self._state_callbacks[key]) == 0:
+                    self._state_callbacks.pop(key)
+        return removed_count
 
     def removeStateChangedCallbackByState(self, oldstate=None, newstate=None):
         """
@@ -685,5 +692,6 @@ class Automat(object):
             elif old == oldstate and new == newstate:
                 catched = True
             if catched:
-                for cb in cb_list:
+                for cb_tupl in cb_list:
+                    cb_id, cb = cb_tupl
                     cb(oldstate, newstate, event_string, args)

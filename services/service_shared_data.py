@@ -47,14 +47,34 @@ class SharedDataService(LocalService):
                 ]
 
     def start(self):
+        from main import events
         from transport import callback
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         return True
 
     def stop(self):
+        from main import events
         from transport import callback
+        events.remove_subscriber(self._on_supplier_modified)
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
+
+    def _on_supplier_modified(self, evt):
+        from access import key_ring
+        from crypt import my_keys
+        from userid import global_id
+        from userid import my_id
+        if evt.data['new_idurl']:
+            my_keys_to_be_republished = []
+            for key_id in my_keys.known_keys():
+                if not key_id.startswith('share_'):
+                    continue
+                _glob_id = global_id.ParseGlobalID(key_id)
+                if _glob_id['idurl'] == my_id.getLocalIDURL():
+                    my_keys_to_be_republished.append(key_id)
+            for key_id in my_keys_to_be_republished:
+                key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands

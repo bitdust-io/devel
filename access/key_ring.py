@@ -92,8 +92,9 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
     if not response.Payload.startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return
-    _do_transfer_key(
-        key_id, idurl,
+    transfer_key(
+        key_id,
+        trusted_idurl=idurl,
         include_private=include_private,
         timeout=timeout,
         result=result,
@@ -123,15 +124,15 @@ def _on_transfer_key_response(response, info, key_id, result):
     return None
 
 
-def _do_transfer_key(key_id, idurl, include_private=False, timeout=10, result=None):
+def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, result=None):
     if _Debug:
-        lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, idurl))
+        lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, trusted_idurl))
     if not result:
         result = Deferred()
-    recipient_id_obj = identitycache.FromCache(idurl)
+    recipient_id_obj = identitycache.FromCache(trusted_idurl)
     if not recipient_id_obj:
-        lg.warn('not found "%s" in identity cache' % idurl)
-        result.errback(Exception('not found "%s" in identity cache' % idurl))
+        lg.warn('not found "%s" in identity cache' % trusted_idurl)
+        result.errback(Exception('not found "%s" in identity cache' % trusted_idurl))
         return result
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:

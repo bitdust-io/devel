@@ -724,11 +724,11 @@ def Key(request, info):
 
 
 def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}, timeout=10, ):
-    if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendKey to %s with %d bytes encrypted key data" % (
-            remote_idurl, len(encrypted_key_data)))
     if packet_id is None:
         packet_id = packetid.UniqueID()
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendKey [%s] to %s with %d bytes encrypted key data" % (
+            packet_id, remote_idurl, len(encrypted_key_data)))
     outpacket = signed.Packet(
         Command=commands.Key(),
         OwnerID=my_id.getLocalID(),
