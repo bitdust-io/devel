@@ -305,8 +305,7 @@ class SupplierService(LocalService):
                 lg.warn('invalid file path')
                 return ''
         if not contactsdb.is_customer(customerIDURL):  # SECURITY
-            lg.warn("%s is not a customer" % (customerIDURL))
-            return ''
+            lg.warn("%s is not my customer" % (customerIDURL))
         if customerGlobID:
             if glob_path['idurl'] != customerIDURL:
                 lg.warn('making filename for another customer: %s != %s' % (
@@ -482,7 +481,7 @@ class SupplierService(LocalService):
                 # TODO: settings.getCustomersDataSharingEnabled() and
                 # SECURITY
                 # TODO: add more validations for receiver idurl
-                recipient_idurl = glob_path['idurl']
+                # recipient_idurl = glob_path['idurl']
                 filename = self._do_make_valid_filename(glob_path['idurl'], glob_path)
         if not filename:
             lg.warn("had empty filename")
