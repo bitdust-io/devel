@@ -46,8 +46,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -65,6 +65,8 @@ from main import settings
 from main import events
 
 from automats import automat
+
+from lib import nameurl
 
 from system import bpio
 from system import tmpfile
@@ -160,8 +162,9 @@ def process(newpacket, info):
             lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
         return None
     if _Debug:
-        lg.out(_DebugLevel, 'packet_in.process %s from %s://%s : %s' % (
-            str(newpacket), info.proto, info.host, info.status))
+        lg.out(_DebugLevel, 'packet_in.process [%s/%s/%s]:%s(%s) from %s://%s is "%s"' % (
+            nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), nameurl.GetName(newpacket.RemoteID),
+            newpacket.Command, newpacket.PacketID, info.proto, info.host, info.status, ))
     if info.status != 'finished':
         if _Debug:
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)

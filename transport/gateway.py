@@ -407,6 +407,7 @@ def inbox(info):
     if newpacket is None:
         lg.warn("newpacket from %s://%s is None" % (info.proto, info.host))
         return None
+    # newpacket.Valid() will be called later in the flow in packet_in.handle() method
     try:
         Command = newpacket.Command
         OwnerID = newpacket.OwnerID

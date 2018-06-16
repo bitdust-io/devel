@@ -439,7 +439,7 @@ class ProxyReceiver(automat.Automat):
             return
         inpt.close()
         routed_packet = signed.Unserialize(data)
-        if not routed_packet:
+        if not routed_packet or not routed_packet.Valid():
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
             return
         self.traffic_in += len(data)

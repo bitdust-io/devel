@@ -873,7 +873,10 @@ class SupplierQueue:
                 lg.out(_DebugLevel, "    removed %s from %s receiving queue, %d more items" % (
                     packetID, self.remoteName, len(self.fileRequestQueue)))
         if newpacket.Command == commands.Data():
-            wrapped_packet = newpacket.Unserialize(newpacket.Payload)
+            wrapped_packet = signed.Unserialize(newpacket.Payload)
+            if not wrapped_packet or not wrapped_packet.Valid():
+                lg.err('incoming Data() is not valid')
+                return
             if packetID in self.fileRequestDict:
                 self.fileRequestDict[packetID].fileReceivedTime = time.time()
                 self.fileRequestDict[packetID].result = 'received'

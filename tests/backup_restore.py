@@ -80,6 +80,7 @@ def backup_done(bid, result):
         filepath = os.path.join(settings.getLocalBackupsDir(), bid + '.out', filename)
         data = bpio.ReadBinaryFile(filepath)
         inppacket = signed.Unserialize(data)
+        assert inppacket
         assert inppacket.Valid()
         newfilepath = os.path.join(settings.getLocalBackupsDir(),
                                    bid + '.inp', filename)

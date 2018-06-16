@@ -52,8 +52,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -114,7 +114,9 @@ def create(outpacket, wide, callbacks, target=None, route=None, response_timeout
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
+        lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%s route=%s' % (
+            nameurl.GetName(outpacket.OwnerID), nameurl.GetName(outpacket.CreatorID), nameurl.GetName(outpacket.RemoteID),
+            outpacket.Command, outpacket.PacketID, target, route, ))
     p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     queue().append(p)
     p.automat('run')
@@ -201,37 +203,49 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     #             nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
     #             nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
-    target_idurl = newpacket.CreatorID
-    if newpacket.OwnerID == my_id.getLocalID():
-        target_idurl = newpacket.RemoteID
-    elif newpacket.OwnerID != newpacket.CreatorID and newpacket.RemoteID == my_id.getLocalID():
-        target_idurl = newpacket.RemoteID
-    elif newpacket.Command == commands.Data() and newpacket.OwnerID != my_id.getLocalID() and newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
-        # shared data
-        target_idurl = newpacket.RemoteID
+    incoming_owner_idurl = newpacket.OwnerID
+    incoming_creator_idurl = newpacket.CreatorID
+    incoming_remote_idurl = newpacket.RemoteID
+    if _Debug:
+        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s]' % (
+            nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
+            newpacket.Command, newpacket.PacketID, proto, host, ))
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
+            # PacketID of incoming packet not matching with that outgoing packet
             continue
-        if p.outpacket.RemoteID != p.remote_idurl:
-            if target_idurl != p.remote_idurl:
-                # ????
-                pass
-        if target_idurl != p.outpacket.RemoteID:
-            continue
-        result.append(p)
-        if _Debug:
-            lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s(%s) from [%s://%s] cb:%s' % (
-                nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
-                nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
-                proto, host,
-                p.callbacks.keys()))
+        # outgoing_owner_idurl = p.outpacket.OwnerID
+        # outgoing_creator_idurl = p.outpacket.CreatorID
+        outgoing_remote_idurl = p.outpacket.RemoteID
+        if outgoing_remote_idurl != p.remote_idurl:
+            # outgoing packet was addressed to another node
+            outgoing_remote_idurl = p.remote_idurl
+        matched = False
+        if outgoing_remote_idurl == incoming_owner_idurl:
+            lg.out(_DebugLevel, '    matched outgoing remote_idurl with incoming owner_idurl: %s=%s' % (
+                outgoing_remote_idurl, incoming_owner_idurl))
+            matched = True
+        if outgoing_remote_idurl == incoming_creator_idurl:
+            lg.out(_DebugLevel, '    matched outgoing remote_idurl with incoming creator_idurl %s=%s' % (
+                outgoing_remote_idurl, incoming_creator_idurl))
+            matched = True
+        if incoming_owner_idurl == my_id.getLocalID() and outgoing_remote_idurl == incoming_remote_idurl:
+            lg.out(_DebugLevel, '    matched my own incoming data by incoming remote_idurl %s=%s' % (
+                outgoing_remote_idurl, incoming_remote_idurl))
+            matched = True
+        if matched:
+            result.append(p)
+            if _Debug:
+                lg.out(_DebugLevel, '        found pending outbox [%s/%s/%s]:%s(%s) cb:%s' % (
+                    nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
+                    nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
+                    p.callbacks.keys()))
     if len(result) == 0:
         if _Debug:
-            lg.out(_DebugLevel, 'packet_out.search_by_response_packet NOT FOUND pending packets in outbox queue for')
-            lg.out(_DebugLevel, '        [%s/%s/%s]:%s:%s from [%s://%s]' % (
-                nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
-                nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command,
-                proto, host))
+            lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue for that incoming')
+            # lg.out(_DebugLevel, '        [%s/%s/%s]:%s(%s) from [%s://%s]' % (
+            #     nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
+            #     nameurl.GetName(newpacket.RemoteID), newpacket.Command, newpacket.PacketID, proto, host, ))
     return result
 
 
