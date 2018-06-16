@@ -120,12 +120,12 @@ class BackupsService(LocalService):
             if newpacket.OwnerID != my_id.getLocalID():
                 # only catch data belongs to me
                 return False
-            lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
-                newpacket, newpacket.RemoteID, ))
             if newpacket.PacketID == global_id.MakeGlobalID(
                 idurl=my_id.getLocalID(),
                 path=settings.BackupIndexFileName(),
             ):
+                lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s and processed" % (
+                    newpacket, newpacket.RemoteID, ))
                 # TODO: move to service_backup_db
                 backup_control.IncomingSupplierBackupIndex(newpacket)
                 # send ack packet back

@@ -353,12 +353,23 @@ class IndexSynchronizer(automat.Automat):
                 continue
             if not contact_status.isOnline(supplierId):
                 continue
-            newpacket = signed.Packet(
-                commands.Data(), localID, localID, packetID,
-                Payload, supplierId)
-            pkt_out = gateway.outbox(newpacket, callbacks={
-                commands.Ack(): self._on_supplier_acked,
-                commands.Fail(): self._on_supplier_acked, })
+            newpacket, pkt_out = p2p_service.SendData(
+                raw_data=Payload,
+                ownerID=localID,
+                creatorID=localID,
+                remoteID=supplierId,
+                packetID=packetID,
+                callbacks={
+                    commands.Ack(): self._on_supplier_acked,
+                    commands.Fail(): self._on_supplier_acked,
+                },
+            )
+            # newpacket = signed.Packet(
+            #     commands.Data(), localID, localID, packetID,
+            #     Payload, supplierId)
+            # pkt_out = gateway.outbox(newpacket, callbacks={
+            #     commands.Ack(): self._on_supplier_acked,
+            #     commands.Fail(): self._on_supplier_acked, })
             if pkt_out:
                 self.sending_suppliers.add(supplierId)
                 self.sent_suppliers_number += 1
