@@ -52,7 +52,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -198,10 +198,6 @@ def search_by_transfer_id(transfer_id):
 
 
 def search_by_response_packet(newpacket, proto=None, host=None):
-    #     if _Debug:
-    #         lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
-    #             nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
-    #             nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
     incoming_owner_idurl = newpacket.OwnerID
     incoming_creator_idurl = newpacket.CreatorID
@@ -210,28 +206,30 @@ def search_by_response_packet(newpacket, proto=None, host=None):
         lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s]' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
             newpacket.Command, newpacket.PacketID, proto, host, ))
+        lg.out(_DebugLevel, '    [%s]' % (','.join(map(lambda p: str(p.outpacket), queue()))))
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
             # PacketID of incoming packet not matching with that outgoing packet
             continue
-        # outgoing_owner_idurl = p.outpacket.OwnerID
-        # outgoing_creator_idurl = p.outpacket.CreatorID
-        outgoing_remote_idurl = p.outpacket.RemoteID
-        if outgoing_remote_idurl != p.remote_idurl:
-            # outgoing packet was addressed to another node
-            outgoing_remote_idurl = p.remote_idurl
+        if not commands.IsCommandAck(p.outpacket.Command, newpacket.Command):
+            # this command must not be in the reply
+            continue
+        expected_recipient = [p.outpacket.RemoteID, ]
+        if p.outpacket.RemoteID != p.remote_idurl:
+            # outgoing packet was addressed to another node, so that means we need to expect response from another node also
+            expected_recipient.append(p.remote_idurl)
         matched = False
-        if outgoing_remote_idurl == incoming_owner_idurl:
-            lg.out(_DebugLevel, '    matched outgoing remote_idurl with incoming owner_idurl: %s=%s' % (
-                outgoing_remote_idurl, incoming_owner_idurl))
+        if incoming_owner_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_remote_idurl:
+            if _Debug:
+                lg.out(_DebugLevel, '    matched with incoming owner: %s' % expected_recipient)
             matched = True
-        if outgoing_remote_idurl == incoming_creator_idurl:
-            lg.out(_DebugLevel, '    matched outgoing remote_idurl with incoming creator_idurl %s=%s' % (
-                outgoing_remote_idurl, incoming_creator_idurl))
+        if incoming_creator_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_remote_idurl:
+            if _Debug:
+                lg.out(_DebugLevel, '    matched with incoming creator: %s' % expected_recipient)
             matched = True
-        if incoming_owner_idurl == my_id.getLocalID() and outgoing_remote_idurl == incoming_remote_idurl:
-            lg.out(_DebugLevel, '    matched my own incoming data by incoming remote_idurl %s=%s' % (
-                outgoing_remote_idurl, incoming_remote_idurl))
+        if incoming_remote_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_owner_idurl and commands.Data() == newpacket.Command:
+            if _Debug:
+                lg.out(_DebugLevel, '    matched my own incoming Data with incoming remote: %s' % expected_recipient)
             matched = True
         if matched:
             result.append(p)
@@ -242,10 +240,9 @@ def search_by_response_packet(newpacket, proto=None, host=None):
                     p.callbacks.keys()))
     if len(result) == 0:
         if _Debug:
-            lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue for that incoming')
-            # lg.out(_DebugLevel, '        [%s/%s/%s]:%s(%s) from [%s://%s]' % (
-            #     nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
-            #     nameurl.GetName(newpacket.RemoteID), newpacket.Command, newpacket.PacketID, proto, host, ))
+            lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
+        if newpacket.Command == commands.Ack() and newpacket.PacketID != commands.Identity():
+            lg.warn('received %s was not a "good reply" from %s://%s' % (newpacket, proto, host, ))
     return result
 
 

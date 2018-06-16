@@ -49,7 +49,6 @@ _DebugLevel = 2
 
 #------------------------------------------------------------------------------
 
-import os
 import json
 
 #------------------------------------------------------------------------------
@@ -190,14 +189,16 @@ def Ack(newpacket, info):
             info.proto, info.host, len(newpacket.Payload)))
 
 
-def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
+def SendAck(packettoack, response='', wide=False, callbacks={}, remote_idurl=None):
+    if remote_idurl is None:
+        remote_idurl = packettoack.OwnerID
     result = signed.Packet(
         commands.Ack(),
         my_id.getLocalID(),
         my_id.getLocalID(),
-        packetid or packettoack.PacketID,
+        packettoack.PacketID,
         response,
-        packettoack.OwnerID)
+        remote_idurl, )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAck %s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
@@ -212,7 +213,7 @@ def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
         my_id.getLocalID(),
         packetid,
         response,
-        remoteID)
+        remoteID, )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAckNoRequest packetID=%s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
