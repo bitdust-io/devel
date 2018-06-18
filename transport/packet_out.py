@@ -184,7 +184,7 @@ def search_many(proto=None,
             results.append((p, i))
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) found %d items : ' % (
-            proto, host, filename, remote_idurl), len(results))
+            proto, host, filename, remote_idurl, len(results)))
         lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, results))))
     return results
 
