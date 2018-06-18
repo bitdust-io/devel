@@ -137,7 +137,7 @@ class BackupsService(LocalService):
                 lg.warn('invalid PacketID: %s' % newpacket.PacketID)
                 return False
             if list_files_global_id['idurl'] != my_id.getLocalIDURL():
-                lg.warn('skip %s which is from another customer' % newpacket)
+                # lg.warn('skip %s which is from another customer' % newpacket)
                 return False
             if not contactsdb.is_supplier(newpacket.OwnerID):
                 lg.warn('%s came, but %s is not my supplier' % (newpacket, newpacket.OwnerID, ))
