@@ -51,6 +51,8 @@ _DebugLevel = 2
 
 import json
 
+from twisted.internet import reactor
+
 #------------------------------------------------------------------------------
 
 from logs import lg
