@@ -73,7 +73,7 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -470,7 +470,7 @@ class RestoreWorker(automat.Automat):
                         already_requested, self.block_number))
                 if self.AlreadyRequestedCounts:
                     all_counts = sorted(self.AlreadyRequestedCounts.values())
-                    if all_counts[0] > 3:
+                    if all_counts[0] > 100:
                         lg.warn('too much requests made for block %d' % self.block_number)
                         self.automat('request-failed', None)
 

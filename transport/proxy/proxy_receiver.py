@@ -735,10 +735,10 @@ class ProxyReceiver(automat.Automat):
         #     return True
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
-        if newpacket.Command != commands.Relay():
-            return False
-        self.automat('inbox-packet', (newpacket, info, status, error_message))
-        return True
+        if newpacket.Command == commands.Relay():
+            self.automat('inbox-packet', (newpacket, info, status, error_message))
+            return True
+        return False
 
     def _on_router_contact_status_connected(self, oldstate, newstate, event_string, args):
         pass
