@@ -104,7 +104,7 @@ class BackupsService(LocalService):
     def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, args):
         from storage import backup_monitor
         from logs import lg
-        lg.warn('restarting backup_monitor() machine becuse p2p_connector state changed')
+        lg.warn('restarting backup_monitor() machine because p2p_connector state changed')
         backup_monitor.A('restart')
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
@@ -137,7 +137,7 @@ class BackupsService(LocalService):
                 lg.warn('invalid PacketID: %s' % newpacket.PacketID)
                 return False
             if list_files_global_id['idurl'] != my_id.getLocalIDURL():
-                lg.warn('skip %s which is from another customer' % newpacket)
+                # lg.warn('skip %s which is from another customer' % newpacket)
                 return False
             if not contactsdb.is_supplier(newpacket.OwnerID):
                 lg.warn('%s came, but %s is not my supplier' % (newpacket, newpacket.OwnerID, ))

@@ -927,11 +927,12 @@ class SupplierQueue:
 
 #------------------------------------------------------------------------------
 
-# all of the backup rebuilds will run their data requests through this
-# so it gets throttled, also to reduce duplicate requests
-
 
 class IOThrottle:
+    """
+    All of the backup rebuilds will run their data requests through this
+    So it gets throttled, also to reduce duplicate requests.
+    """
 
     def __init__(self):
         self.creatorID = my_id.getLocalID()

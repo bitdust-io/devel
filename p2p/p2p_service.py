@@ -51,6 +51,8 @@ _DebugLevel = 2
 
 import json
 
+from twisted.internet import reactor
+
 #------------------------------------------------------------------------------
 
 from logs import lg
@@ -293,7 +295,8 @@ def Identity(newpacket):
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity idurl=%s, but packet ownerID=%s  ... also sent WIDE Acks" % (
                 nameurl.GetName(idurl), newpacket.OwnerID, ))
-    SendAck(newpacket, wide=True)
+    reactor.callLater(0, SendAck, newpacket, wide=True)
+    # SendAck(newpacket, wide=True)
     # TODO: after receiving the full identity sources we can call ALL OF them if some are not cached yet.
     # this way we can be sure that even if first source (server holding your public key) is not availabble
     # other sources still can give you required user info: public key, contacts, etc..

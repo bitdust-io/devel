@@ -65,8 +65,9 @@ def init():
     P2PCommandAcks[Retrieve()] = [Data(), Fail(), ]
     # Ack ListFiles with Files
     P2PCommandAcks[ListFiles()] = [Files(), Fail(), ]
-    P2PCommandAcks[Files()] = []
-    # Ack ListContacts with Contacts
+    # Ack Files with Ack or Fail
+    P2PCommandAcks[Files()] = [Ack(), Fail(), ]
+    # Ack ListContacts with Contacts or Fail
     P2PCommandAcks[ListContacts()] = [Contacts(), Fail(), ]
     P2PCommandAcks[Contacts()] = []
     # If identity comes in and no interested party then transport sends an Ack
@@ -75,12 +76,14 @@ def init():
     P2PCommandAcks[DeleteFile()] = [Ack(), Fail(), ]
     # Ack with Ack (maybe should be Files)
     P2PCommandAcks[DeleteBackup()] = [Ack(), Fail(), ]
-    # Ack with Ack
+    # Ack with Ack or Fail
     P2PCommandAcks[Message()] = [Ack(), Fail(), ]
-    # Ack with Ack
+    # Ack with Ack or Fail
     P2PCommandAcks[Receipt()] = [Ack(), Fail(), ]
     P2PCommandAcks[Correspondent()] = [Correspondent(), Fail(), ]
+    # RequestService must receive back Ack or Fail
     P2PCommandAcks[RequestService()] = [Ack(), Fail(), ]
+    # CancelService must receive back Ack or Fail
     P2PCommandAcks[CancelService()] = [Ack(), Fail(), ]
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []

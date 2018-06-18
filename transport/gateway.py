@@ -65,7 +65,7 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
@@ -396,7 +396,7 @@ def inbox(info):
         lg.err("gateway.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
         return None
     if callback.run_finish_file_receiving_callbacks(info, data):
-        lg.warn('incoming data of %d bytes was filtered out in file receiving callback' % len(data))
+        lg.warn('incoming data of %d bytes was filtered out in file receiving callbacks' % len(data))
         return None
     try:
         newpacket = signed.Unserialize(data)

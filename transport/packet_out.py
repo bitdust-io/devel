@@ -52,7 +52,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ def search_many(proto=None,
                 remote_idurl=None,
                 packet_id=None,
                 ):
-    result = []
+    results = []
     for p in queue():
         if remote_idurl and p.remote_idurl != remote_idurl:
             continue
@@ -181,12 +181,12 @@ def search_many(proto=None,
                 continue
             if host and i.host != host:
                 continue
-            result.append((p, i))
+            results.append((p, i))
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) :' % (
-            proto, host, filename, remote_idurl))
-        lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, result))))
-    return result
+        lg.out(_DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) found %d items : ' % (
+            proto, host, filename, remote_idurl, len(results)))
+        lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, results))))
+    return results
 
 
 def search_by_transfer_id(transfer_id):
@@ -324,10 +324,9 @@ class PacketOut(automat.Automat):
             self.description = self.route['description']
             self.remote_idurl = self.route['remoteid']
         if not self.remote_idurl:
-            self.remote_idurl = correct_packet_destination(self.outpacket)
+            self.remote_idurl = self.outpacket.RemoteID  # correct_packet_destination(self.outpacket)
         self.remote_name = nameurl.GetName(self.remote_idurl)
-        self.label = 'out_%d_%s' % (
-            get_packets_counter(), self.remote_name)
+        self.label = 'out_%d_%s' % (get_packets_counter(), self.remote_name)
         self.keep_alive = keep_alive
         automat.Automat.__init__(
             self, self.label, 'AT_STARTUP',
