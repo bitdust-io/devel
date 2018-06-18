@@ -326,7 +326,7 @@ class RestoreWorker(automat.Automat):
         """
         if data_receiver.A():
             data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
-        self.known_suppliers = contactsdb.suppliers(customer_idurl=self.customer_idurl)
+        self.known_suppliers = filter(None, contactsdb.suppliers(customer_idurl=self.customer_idurl))
         known_eccmap_dict = {}
         for supplier_idurl in self.known_suppliers:
             known_ecc_map = contactsdb.get_supplier_meta_info(
