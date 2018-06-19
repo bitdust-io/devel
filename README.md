@@ -103,14 +103,14 @@ Type this command to read more info about BitDust commands:
         bitdust help
 
 
-To run the software type:
+To run the software just type:
 
         bitdust
         
 
 Start as background process:
 
-        bitdust detach
+        bitdust daemon
 
 
 To get some more insights or just to know how to start playing with software
