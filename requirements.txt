@@ -4,7 +4,6 @@ pycrypto
 pyOpenSSL
 pyparsing
 appdirs
-CodernityDB
 cryptography
 service_identity
 psutil

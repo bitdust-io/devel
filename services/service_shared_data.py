@@ -175,7 +175,8 @@ class SharedDataService(LocalService):
         known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
         if real_supplier_pos >= 0:
             if known_supplier_pos >= 0 and known_supplier_pos != real_supplier_pos:
-                lg.warn('external supplier %s position is not matching to list files, rewriting' % external_supplier_idurl)
+                lg.warn('external supplier %s position is not matching to list files, rewriting for customer %s' % (
+                    external_supplier_idurl, trusted_customer_idurl))
                 contactsdb.erase_supplier(
                     idurl=external_supplier_idurl,
                     customer_idurl=trusted_customer_idurl,
@@ -186,7 +187,9 @@ class SharedDataService(LocalService):
                 customer_idurl=trusted_customer_idurl,
             )
             contactsdb.save_suppliers(customer_idurl=trusted_customer_idurl)
+        else:
+            lg.warn('not possible to detect external supplier position for customer %s' % trusted_customer_idurl)
         # finally send ack packet back
         p2p_service.SendAck(newpacket)
-        lg.info('received list of packets from external supplier %s' % external_supplier_idurl)
+        lg.info('received list of packets from external supplier %s for customer %s' % (external_supplier_idurl, trusted_customer_idurl))
         return True
