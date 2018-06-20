@@ -714,18 +714,25 @@ def LocalBlockReport(backupID, blockNumber, result):
     repaint_flag = False
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (blockNumber, backupID, customer, ))
-    for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+    num_suppliers = contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    for supplierNum in xrange(num_suppliers):
+        supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+        if not supplier_idurl:
+            lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%s' % (
+                supplierNum, backupID, customer_idurl))
+            continue
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(remotePath, blockNum, supplierNum, dataORparity)
             local_file = os.path.join(settings.getLocalBackupsDir(), customer, packetID)
             if backupID not in local_files():
                 local_files()[backupID] = {}
                 repaint_flag = True
-                # lg.out(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
+                if _Debug:
+                    lg.out(_DebugLevel, '    new local entry for %s created in the memory' % backupID)
             if blockNum not in local_files()[backupID]:
                 local_files()[backupID][blockNum] = {
-                    'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-                    'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)}
+                    'D': [0, ] * num_suppliers,
+                    'P': [0, ] * num_suppliers}
                 repaint_flag = True
             if not os.path.isfile(local_file):
                 local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
