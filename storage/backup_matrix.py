@@ -208,6 +208,7 @@ def GetActiveArray(customer_idurl=None):
     for i in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
+            activeArray[i] = 0
             continue
         if contact_status.isOnline(suplier_idurl):
             activeArray[i] = 1
@@ -668,7 +669,12 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         lg.warn('Data or Parity? ' + filename)
         return
     if supplierNum >= contactsdb.num_suppliers(customer_idurl=customer_idurl):
-        # lg.warn('supplier number? %d > %d : %s' % (supplierNum, contactsdb.num_suppliers(), filename))
+        lg.warn('supplier position invalid %d > %d for customer %s : %s' % (
+            supplierNum, contactsdb.num_suppliers(), customer_idurl, filename))
+        return
+    supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+    if not supplier_idurl:
+        lg.warn('empty supplier at position %s for customer %s' % (supplierNum, customer_idurl, ))
         return
     localDest = os.path.join(settings.getLocalBackupsDir(), customer, filename)
     if backupID not in local_files():
@@ -904,6 +910,8 @@ def ScanBlocksToSend(backupID):
             localParity = GetLocalParityArray(backupID, blockNum)
             for supplierNum in xrange(len(supplierActiveArray)):
                 if supplierActiveArray[supplierNum] != 1:
+                    continue
+                if supplierNum >= len(localData) or supplierNum >= len(localParity):
                     continue
                 if localData[supplierNum] == 1:
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Data'))
