@@ -2626,6 +2626,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/udp-datagrams/enabled', 'true')
     config.conf().setDefaultValue('services/udp-datagrams/udp-port', DefaultUDPPort())
 
+    # TODO: UDP transport was temporary switched off
     config.conf().setDefaultValue('services/udp-transport/enabled', 'false')
     config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
