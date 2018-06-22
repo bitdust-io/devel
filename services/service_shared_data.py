@@ -159,8 +159,6 @@ class SharedDataService(LocalService):
         external_supplier_idurl = block.CreatorID
         try:
             supplier_raw_list_files = list_files.UnpackListFiles(raw_files, settings.ListFilesFormat())
-            # backups2remove, paths2remove, missed_backups = backup_matrix.ReadRawListFiles(num, src)
-            # list_files_orator.IncomingListFiles(newpacket)
             backup_matrix.SaveLatestRawListFiles(
                 supplier_idurl=external_supplier_idurl,
                 raw_data=supplier_raw_list_files,

@@ -109,28 +109,12 @@ class BackupsService(LocalService):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from logs import lg
-        from main import settings
         from contacts import contactsdb
         from userid import my_id
         from userid import global_id
         from storage import backup_control
         from p2p import commands
         from p2p import p2p_service
-        if newpacket.Command == commands.Data():
-            if newpacket.OwnerID != my_id.getLocalID():
-                # only catch data belongs to me
-                return False
-            if newpacket.PacketID == global_id.MakeGlobalID(
-                idurl=my_id.getLocalID(),
-                path=settings.BackupIndexFileName(),
-            ):
-                lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s and processed" % (
-                    newpacket, newpacket.RemoteID, ))
-                # TODO: move to service_backup_db
-                backup_control.IncomingSupplierBackupIndex(newpacket)
-                # send ack packet back
-                p2p_service.SendAck(newpacket)
-                return True
         if newpacket.Command == commands.Files():
             list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
             if not list_files_global_id['idurl']:

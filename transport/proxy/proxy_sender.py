@@ -261,11 +261,16 @@ class ProxySender(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP, packet addressed to router and must be sent in a usual way')
             return None
+        try:
+            raw_data = outpacket.Serialize()
+        except:
+            lg.exc('failed to Serialize %s' % outpacket)
+            return None
         src = ''
         src += my_id.getLocalID() + '\n'
         src += outpacket.RemoteID + '\n'
         src += 'wide\n' if wide else '\n'
-        src += outpacket.Serialize()
+        src += raw_data
         block = encrypted.Block(
             my_id.getLocalID(),
             'routed outgoing data',

@@ -80,7 +80,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -138,7 +138,13 @@ def A(event=None, arg=None):
     if event is None and arg is None:
         return _IndexSynchronizer
     if _IndexSynchronizer is None:
-        _IndexSynchronizer = IndexSynchronizer('index_synchronizer', 'AT_STARTUP', _DebugLevel, _Debug)
+        _IndexSynchronizer = IndexSynchronizer(
+            name='index_synchronizer',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _IndexSynchronizer.automat(event, arg)
     return _IndexSynchronizer
@@ -411,14 +417,16 @@ class IndexSynchronizer(automat.Automat):
 
     def _on_supplier_response(self, newpacket, pkt_out):
         if newpacket.Command == commands.Data():
-            self.requesting_suppliers.discard(newpacket.RemoteID)
+            wrapped_packet = signed.Unserialize(newpacket.Payload)
+            if not wrapped_packet or not wrapped_packet.Valid():
+                lg.err('incoming Data() is not valid')
+                return
+            from storage import backup_control
+            backup_control.IncomingSupplierBackupIndex(wrapped_packet)
+            # p2p_service.SendAck(newpacket)
+            self.requesting_suppliers.discard(wrapped_packet.RemoteID)
         elif newpacket.Command == commands.Fail():
             self.requesting_suppliers.discard(newpacket.OwnerID)
-#             sc = supplier_connector.by_idurl(newpacket.OwnerID)
-#             if sc:
-#                 sc.automat('fail', newpacket)
-#             else:
-#                 raise Exception('supplier connector was not found')
         else:
             raise Exception('wrong type of response')
         if _Debug:
