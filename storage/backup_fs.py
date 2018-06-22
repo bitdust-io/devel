@@ -316,7 +316,9 @@ class FSItemInfo():
                     sz = long(os.path.getsize(filepath))
                 except:
                     lg.exc()
-                # add some bytes because on remote machines all files are packets
+                    sz = 0
+                # TODO: 
+                # add some bytes because on remote machines all files are stored as signed.Packet()
                 # so they have a header and files size will be bigger than on local machine
                 # we do not know how big head is, so just add an approximate value
                 versionSize += sz + 1024

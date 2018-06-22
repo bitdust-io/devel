@@ -32,7 +32,7 @@ Here is a bunch of methods to interact with BitDust software.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
