@@ -99,7 +99,7 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.ERROR from %s : %s' % (api_method, json.dumps(o, sort_keys=True)[:150]))
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
     return o
 
 #------------------------------------------------------------------------------
