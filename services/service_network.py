@@ -42,15 +42,37 @@ class NetworkService(LocalService):
     service_name = 'service_network'
     config_path = 'services/network/enabled'
 
+    status = None
+
     def dependent_on(self):
         return []
 
     def start(self):
+        from twisted.internet import task
         from p2p import network_connector
+
         network_connector.A('init')
+
+        self.task = task.LoopingCall(self._do_check_network_interfaces)
+
+        self.task.start(10)
+
         return True
 
     def stop(self):
         from p2p import network_connector
         network_connector.Destroy()
+
+        self.task.stop()
+
         return True
+
+    def _do_check_network_interfaces(self):
+        from lib.net_misc import getNetworkInterfaces
+        from p2p import network_connector
+
+        interfaces = getNetworkInterfaces()
+
+        if self.status != interfaces[0]:
+            self.status = interfaces[0]
+            network_connector.A('reconnect')
