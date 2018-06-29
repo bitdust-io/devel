@@ -30,6 +30,7 @@
 
 
 #------------------------------------------------------------------------------
+from crypt.helpers import KeyObjectWrapper
 
 _Debug = False
 _DebugLevel = 4
@@ -318,8 +319,8 @@ def validate_key(key_object):
     """
     data256 = os.urandom(256)
     hash_base = key.Hash(data256)
-    signature256 = key_object.keyObject.sign(hash_base, '')
-    return key_object.keyObject.verify(hash_base, signature256)
+    signature256 = KeyObjectWrapper(key=key_object).keyObject.sign(hash_base, '')
+    return KeyObjectWrapper(key=key_object).keyObject.verify(hash_base, signature256)
 
 #------------------------------------------------------------------------------
 
@@ -332,7 +333,8 @@ def sign(key_id, inp):
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
         return None
-    signature = key_object.keyObject.sign(inp, '')
+
+    signature = KeyObjectWrapper(key=key_object).keyObject.sign(inp, '')
     result = str(signature[0])
     return result
 
@@ -352,7 +354,7 @@ def verify(key_id, hashcode, signature):
         lg.warn('key %s is unknown' % key_id)
         return False
     sig_long = long(signature),
-    result = key_object.keyObject.verify(hashcode, sig_long)
+    result = KeyObjectWrapper(key=key_object).keyObject.verify(hashcode, sig_long)
     return bool(result)
 
 #------------------------------------------------------------------------------
@@ -387,7 +389,7 @@ def encrypt(key_id, inp):
     # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
     # See bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
     # So we add a "1" in front now and in decrypt() we will remove it
-    atuple = key_object.keyObject.encrypt('1' + inp, "")
+    atuple = KeyObjectWrapper(key=key_object).keyObject.encrypt('1' + inp, "")
     return atuple[0]
 
 
@@ -419,7 +421,7 @@ def decrypt(key_id, inp):
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
     atuple = (inp,)
-    padresult = key_object.keyObject.decrypt(atuple)
+    padresult = KeyObjectWrapper(key=key_object).keyObject.decrypt(atuple)
     # remove the "1" added in encrypt() method
     return padresult[1:]
 
