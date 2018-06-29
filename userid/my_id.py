@@ -135,7 +135,7 @@ def getLocalIdentity():
 
 def getLocalID():
     """
-    Return my IDURL.
+    Return my IDURL. Deprecated, use getLocalIDURL().
     """
     global _LocalIDURL
     if _LocalIDURL is None:
@@ -146,6 +146,9 @@ def getLocalID():
 
 
 def getLocalIDURL():
+    """
+    Return my IDURL.
+    """
     # just an alias for now
     # TODO: deprecate getLocalID() in favor of getLocalIDURL()
     return getLocalID()

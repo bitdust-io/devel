@@ -104,40 +104,24 @@ class BackupsService(LocalService):
     def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, args):
         from storage import backup_monitor
         from logs import lg
-        lg.warn('restarting backup_monitor() machine becuse p2p_connector state changed')
+        lg.warn('restarting backup_monitor() machine because p2p_connector state changed')
         backup_monitor.A('restart')
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from logs import lg
-        from main import settings
         from contacts import contactsdb
         from userid import my_id
         from userid import global_id
         from storage import backup_control
         from p2p import commands
         from p2p import p2p_service
-        if newpacket.Command == commands.Data():
-            if newpacket.OwnerID != my_id.getLocalID():
-                # only catch data belongs to me
-                return False
-            lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s" % (
-                newpacket, newpacket.RemoteID, ))
-            if newpacket.PacketID == global_id.MakeGlobalID(
-                idurl=my_id.getLocalID(),
-                path=settings.BackupIndexFileName(),
-            ):
-                # TODO: move to service_backup_db
-                backup_control.IncomingSupplierBackupIndex(newpacket)
-                # send ack packet back
-                p2p_service.SendAck(newpacket)
-                return True
         if newpacket.Command == commands.Files():
             list_files_global_id = global_id.ParseGlobalID(newpacket.PacketID)
             if not list_files_global_id['idurl']:
                 lg.warn('invalid PacketID: %s' % newpacket.PacketID)
                 return False
             if list_files_global_id['idurl'] != my_id.getLocalIDURL():
-                lg.warn('skip %s which is from another customer' % newpacket)
+                # lg.warn('skip %s which is from another customer' % newpacket)
                 return False
             if not contactsdb.is_supplier(newpacket.OwnerID):
                 lg.warn('%s came, but %s is not my supplier' % (newpacket, newpacket.OwnerID, ))

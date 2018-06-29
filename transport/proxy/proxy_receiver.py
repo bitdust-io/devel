@@ -58,7 +58,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -439,7 +439,7 @@ class ProxyReceiver(automat.Automat):
             return
         inpt.close()
         routed_packet = signed.Unserialize(data)
-        if not routed_packet:
+        if not routed_packet or not routed_packet.Valid():
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
             return
         self.traffic_in += len(data)
@@ -727,17 +727,18 @@ class ProxyReceiver(automat.Automat):
             self.automat('router-id-received', (newpacket, info))
             self.latest_packet_received = time.time()
             return True
-        if newpacket.Command == commands.Fail() and \
-                newpacket.CreatorID == self.router_idurl and \
-                newpacket.RemoteID == my_id.getLocalID():
-            self.automat('service-refused', (newpacket, info))
-            return True
+        # TODO: if this is a response from supplier - this must be skipped here
+        # if newpacket.Command == commands.Fail() and \
+        #         newpacket.CreatorID == self.router_idurl and \
+        #         newpacket.RemoteID == my_id.getLocalID():
+        #     self.automat('service-refused', (newpacket, info))
+        #     return True
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
-        if newpacket.Command != commands.Relay():
-            return False
-        self.automat('inbox-packet', (newpacket, info, status, error_message))
-        return True
+        if newpacket.Command == commands.Relay():
+            self.automat('inbox-packet', (newpacket, info, status, error_message))
+            return True
+        return False
 
     def _on_router_contact_status_connected(self, oldstate, newstate, event_string, args):
         pass

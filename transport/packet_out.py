@@ -53,7 +53,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -114,7 +114,9 @@ def create(outpacket, wide, callbacks, target=None, route=None, response_timeout
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
+        lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%s route=%s' % (
+            nameurl.GetName(outpacket.OwnerID), nameurl.GetName(outpacket.CreatorID), nameurl.GetName(outpacket.RemoteID),
+            outpacket.Command, outpacket.PacketID, target, route, ))
     p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     queue().append(p)
     p.automat('run')
@@ -164,7 +166,7 @@ def search_many(proto=None,
                 remote_idurl=None,
                 packet_id=None,
                 ):
-    result = []
+    results = []
     for p in queue():
         if remote_idurl and p.remote_idurl != remote_idurl:
             continue
@@ -179,12 +181,12 @@ def search_many(proto=None,
                 continue
             if host and i.host != host:
                 continue
-            result.append((p, i))
+            results.append((p, i))
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) :' % (
-            proto, host, filename, remote_idurl))
-        lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, result))))
-    return result
+        lg.out(_DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) found %d items : ' % (
+            proto, host, filename, remote_idurl, len(results)))
+        lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, results))))
+    return results
 
 
 def search_by_transfer_id(transfer_id):
@@ -196,42 +198,51 @@ def search_by_transfer_id(transfer_id):
 
 
 def search_by_response_packet(newpacket, proto=None, host=None):
-    #     if _Debug:
-    #         lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
-    #             nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
-    #             nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
-    target_idurl = newpacket.CreatorID
-    if newpacket.OwnerID == my_id.getLocalID():
-        target_idurl = newpacket.RemoteID
-    elif newpacket.OwnerID != newpacket.CreatorID and newpacket.RemoteID == my_id.getLocalID():
-        target_idurl = newpacket.RemoteID
-    elif newpacket.Command == commands.Data() and newpacket.OwnerID != my_id.getLocalID() and newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
-        # shared data
-        target_idurl = newpacket.RemoteID
+    incoming_owner_idurl = newpacket.OwnerID
+    incoming_creator_idurl = newpacket.CreatorID
+    incoming_remote_idurl = newpacket.RemoteID
+    if _Debug:
+        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s]' % (
+            nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
+            newpacket.Command, newpacket.PacketID, proto, host, ))
+        lg.out(_DebugLevel, '    [%s]' % (','.join(map(lambda p: str(p.outpacket), queue()))))
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
+            # PacketID of incoming packet not matching with that outgoing packet
             continue
+        if not commands.IsCommandAck(p.outpacket.Command, newpacket.Command):
+            # this command must not be in the reply
+            continue
+        expected_recipient = [p.outpacket.RemoteID, ]
         if p.outpacket.RemoteID != p.remote_idurl:
-            if target_idurl != p.remote_idurl:
-                # ????
-                pass
-        if target_idurl != p.outpacket.RemoteID:
-            continue
-        result.append(p)
-        if _Debug:
-            lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s(%s) from [%s://%s] cb:%s' % (
-                nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
-                nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
-                proto, host,
-                p.callbacks.keys()))
+            # outgoing packet was addressed to another node, so that means we need to expect response from another node also
+            expected_recipient.append(p.remote_idurl)
+        matched = False
+        if incoming_owner_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_remote_idurl:
+            if _Debug:
+                lg.out(_DebugLevel, '    matched with incoming owner: %s' % expected_recipient)
+            matched = True
+        if incoming_creator_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_remote_idurl:
+            if _Debug:
+                lg.out(_DebugLevel, '    matched with incoming creator: %s' % expected_recipient)
+            matched = True
+        if incoming_remote_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_owner_idurl and commands.Data() == newpacket.Command:
+            if _Debug:
+                lg.out(_DebugLevel, '    matched my own incoming Data with incoming remote: %s' % expected_recipient)
+            matched = True
+        if matched:
+            result.append(p)
+            if _Debug:
+                lg.out(_DebugLevel, '        found pending outbox [%s/%s/%s]:%s(%s) cb:%s' % (
+                    nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
+                    nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
+                    p.callbacks.keys()))
     if len(result) == 0:
         if _Debug:
-            lg.out(_DebugLevel, 'packet_out.search_by_response_packet NOT FOUND pending packets in outbox queue for')
-            lg.out(_DebugLevel, '        [%s/%s/%s]:%s:%s from [%s://%s]' % (
-                nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
-                nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command,
-                proto, host))
+            lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
+        if newpacket.Command == commands.Ack() and newpacket.PacketID != commands.Identity():
+            lg.warn('received %s was not a "good reply" from %s://%s' % (newpacket, proto, host, ))
     return result
 
 
@@ -255,7 +266,9 @@ def correct_packet_destination(outpacket):
     if outpacket.Command == commands.Data():
         # Data belongs to remote customers and stored locally
         # must go to CreatorID, because RemoteID pointing to this device
-        return outpacket.CreatorID
+        # return outpacket.CreatorID
+        # this was changed by Veselin... TODO: test and clean up this
+        return outpacket.RemoteID
     lg.warn('sending a packet we did not make, and that is not Data packet')
     return outpacket.RemoteID
 
@@ -311,10 +324,9 @@ class PacketOut(automat.Automat):
             self.description = self.route['description']
             self.remote_idurl = self.route['remoteid']
         if not self.remote_idurl:
-            self.remote_idurl = correct_packet_destination(self.outpacket)
+            self.remote_idurl = self.outpacket.RemoteID  # correct_packet_destination(self.outpacket)
         self.remote_name = nameurl.GetName(self.remote_idurl)
-        self.label = 'out_%d_%s' % (
-            get_packets_counter(), self.remote_name)
+        self.label = 'out_%d_%s' % (get_packets_counter(), self.remote_name)
         self.keep_alive = keep_alive
         automat.Automat.__init__(
             self, self.label, 'AT_STARTUP',

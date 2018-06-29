@@ -440,6 +440,8 @@ class BackupRebuilder(automat.Automat):
             return
         for supplierNum in range(contactsdb.num_suppliers(customer_idurl=self.currentCustomerIDURL)):
             supplierID = contactsdb.supplier(supplierNum, customer_idurl=self.currentCustomerIDURL)
+            if not supplierID:
+                continue
             requests_count = 0
             # we do requests in reverse order because we start rebuilding from
             # the last block

@@ -396,7 +396,7 @@ def inbox(info):
         lg.err("gateway.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
         return None
     if callback.run_finish_file_receiving_callbacks(info, data):
-        lg.warn('incoming data of %d bytes was filtered out in file receiving callback' % len(data))
+        lg.warn('incoming data of %d bytes was filtered out in file receiving callbacks' % len(data))
         return None
     try:
         newpacket = signed.Unserialize(data)
@@ -407,6 +407,7 @@ def inbox(info):
     if newpacket is None:
         lg.warn("newpacket from %s://%s is None" % (info.proto, info.host))
         return None
+    # newpacket.Valid() will be called later in the flow in packet_in.handle() method
     try:
         Command = newpacket.Command
         OwnerID = newpacket.OwnerID
@@ -464,11 +465,12 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
         `packet_out.PacketOut` object if packet was sent
     """
     if _Debug:
-        lg.out(_DebugLevel - 8, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
+        lg.out(_DebugLevel - 8, "gateway.outbox [%s] signed by %s|%s to %s (%s), wide=%s" % (
             outpacket.Command,
             nameurl.GetName(outpacket.OwnerID),
             nameurl.GetName(outpacket.CreatorID),
             nameurl.GetName(outpacket.RemoteID),
+            nameurl.GetName(target),
             wide,))
     return callback.run_outbox_filter_callbacks(
         outpacket,

@@ -32,14 +32,17 @@ Here is a bunch of methods to interact with BitDust software.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import os
+import sys
 import time
+import json
 
-from twisted.internet.defer import Deferred, succeed
+from twisted.internet.defer import Deferred
 
 from logs import lg
 
@@ -64,6 +67,9 @@ def OK(result='', message=None, status='OK', extra_fields=None):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
+    api_method = sys._getframe().f_back.f_code.co_name
+    if _Debug:
+        lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
     return o
 
 
@@ -77,6 +83,9 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     if errors is not None:
         o['errors'] = errors
     o = on_api_result_prepared(o)
+    api_method = sys._getframe().f_back.f_code.co_name
+    if _Debug:
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
     return o
 
 
@@ -88,6 +97,9 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
+    api_method = sys._getframe().f_back.f_code.co_name
+    if _Debug:
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
     return o
 
 #------------------------------------------------------------------------------
@@ -662,6 +674,8 @@ def files_sync():
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.files_sync')
     from storage import backup_monitor
     backup_monitor.A('restart')
     lg.out(4, 'api.files_sync')
@@ -710,6 +724,9 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s recursive=%s all_customers=%s' % (
+            remote_path, key_id, recursive, all_customers))
     from storage import backup_fs
     from system import bpio
     from userid import global_id
@@ -781,7 +798,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             'childs': i['childs'],
             'versions': i['versions'],
         })
-    lg.out(4, 'api.files_list %d items returned' % len(result))
+    if _Debug:
+        lg.out(_DebugLevel, '    %d items returned' % len(result))
     return RESULT(result)
 
 
@@ -790,6 +808,9 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_info remote_path=%s include_uploads=%s include_downloads=%s' % (
+            remote_path, include_uploads, include_downloads))
     from storage import backup_fs
     from lib import misc
     from lib import packetid
@@ -898,6 +919,9 @@ def file_create(remote_path, as_folder=False):
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_create remote_path=%s as_folder=%s' % (
+            remote_path, as_folder, ))
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
@@ -975,6 +999,8 @@ def file_delete(remote_path):
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_delete remote_path=%s' % remote_path)
     from storage import backup_fs
     from storage import backup_control
     from storage import backup_monitor
@@ -1054,8 +1080,10 @@ def files_uploads(include_running=True, include_pending=True):
         return ERROR('service_backups() is not started')
     from lib import misc
     from storage import backup_control
-    lg.out(4, 'api.files_uploads  %d is running, %d is pending' % (
-        len(backup_control.jobs()), len(backup_control.tasks())))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_uploads include_running=%s include_pending=%s' % (include_running, include_pending, ))
+        lg.out(_DebugLevel, '     %d jobs running, %d tasks pending' % (
+            len(backup_control.jobs()), len(backup_control.tasks())))
     r = {'running': [], 'pending': [], }
     if include_running:
         r['running'].extend([{
@@ -1086,11 +1114,14 @@ def files_uploads(include_running=True, include_pending=True):
     return RESULT(r)
 
 
-def file_upload_start(local_path, remote_path, wait_result=False, open_share=True):
+def file_upload_start(local_path, remote_path, wait_result=False, open_share=False):
     """
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_upload_start local_path=%s remote_path=%s wait_result=%s open_share=%s' % (
+            local_path, remote_path, wait_result, open_share, ))
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
@@ -1170,6 +1201,8 @@ def file_upload_stop(remote_path):
     """
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_upload_stop remote_path=%s' % remote_path)
     from storage import backup_control
     from storage import backup_fs
     from system import bpio
@@ -1224,7 +1257,9 @@ def files_downloads():
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import restore_monitor
-    lg.out(4, 'api.files_downloads %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.files_downloads')
+        lg.out(_DebugLevel, '    %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
     return RESULT([{
         'backup_id': r.backup_id,
         'creator_id': r.creator_id,
@@ -1260,6 +1295,9 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_download_start remote_path=%s destination_path=%s wait_result=%s open_share=%s' % (
+            remote_path, destination_path, wait_result, open_share, ))
     from storage import backup_fs
     from storage import backup_control
     from storage import restore_monitor
@@ -1270,8 +1308,6 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     from userid import my_id
     from userid import global_id
     from crypt import my_keys
-    lg.out(4, 'api.file_download_start %s to %s, wait_result=%s' % (
-        remote_path, destination_path, wait_result))
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if packetid.Valid(glob_path['path']):
         _, pathID, version = packetid.SplitBackupID(remote_path)
@@ -1417,7 +1453,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     if open_share and key_alias != 'master':
         _open_share()
     else:
-        lg.out(4, 'api.download_start "open_share" skipped, starting restore')
+        if _Debug:
+            lg.out(_DebugLevel, '    "open_share" skipped, starting restore')
         _start_restore()
     
     return ret
@@ -1433,6 +1470,8 @@ def file_download_stop(remote_path):
     """
     if not driver.is_on('service_restores'):
         return ERROR('service_restores() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_download_stop remote_path=%s' % remote_path)
     from storage import backup_fs
     from storage import restore_monitor
     from system import bpio
@@ -1475,7 +1514,8 @@ def file_download_stop(remote_path):
     r = []
     for backupID in backupIDs:
         r.append({'backup_id': backupID, 'aborted': restore_monitor.Abort(backupID), })
-    lg.out(4, 'api.file_download_stop %s' % r)
+    if _Debug:
+        lg.out(_DebugLevel, '    stopping %s' % r)
     return RESULT(r)
 
 
@@ -1805,11 +1845,11 @@ def supplier_replace(index_or_idurl_or_global_id):
     customer_idurl = my_id.getLocalID()
     supplier_idurl = index_or_idurl_or_global_id
     if supplier_idurl.isdigit():
-        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl)
+        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
     else:
         if global_id.IsValidGlobalUser(supplier_idurl):
             supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
-    if supplier_idurl and contactsdb.is_supplier(supplier_idurl, customer_idurl):
+    if supplier_idurl and supplier_idurl and contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         from customer import fire_hire
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
@@ -1833,16 +1873,16 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     customer_idurl = my_id.getLocalID()
     supplier_idurl = index_or_idurl_or_global_id
     if supplier_idurl.isdigit():
-        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl)
+        supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
     else:
         if global_id.IsValidGlobalUser(supplier_idurl):
             supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
     new_supplier_idurl = new_supplier_idurl_or_global_id
     if global_id.IsValidGlobalUser(new_supplier_idurl):
         new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl)
-    if not contactsdb.is_supplier(supplier_idurl, customer_idurl):
+    if not supplier_idurl or not contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('supplier not found')
-    if contactsdb.is_supplier(new_supplier_idurl, customer_idurl):
+    if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('peer "%s" is your supplier already' % new_supplier_idurl)
     from customer import fire_hire
     from customer import supplier_finder

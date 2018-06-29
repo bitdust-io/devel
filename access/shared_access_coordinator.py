@@ -45,12 +45,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 6
-
-#------------------------------------------------------------------------------
-
-import json
 
 #------------------------------------------------------------------------------
 
@@ -64,13 +60,9 @@ from userid import global_id
 
 from p2p import p2p_service
 
-from contacts import contactsdb
 from contacts import identitycache
 
-from lib import misc
-
 from storage import backup_fs
-from storage import backup_control
 
 from customer import supplier_connector
 

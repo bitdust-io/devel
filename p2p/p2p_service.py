@@ -49,8 +49,9 @@ _DebugLevel = 2
 
 #------------------------------------------------------------------------------
 
-import os
 import json
+
+from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
 
@@ -190,14 +191,16 @@ def Ack(newpacket, info):
             info.proto, info.host, len(newpacket.Payload)))
 
 
-def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
+def SendAck(packettoack, response='', wide=False, callbacks={}, remote_idurl=None):
+    if remote_idurl is None:
+        remote_idurl = packettoack.OwnerID
     result = signed.Packet(
         commands.Ack(),
         my_id.getLocalID(),
         my_id.getLocalID(),
-        packetid or packettoack.PacketID,
+        packettoack.PacketID,
         response,
-        packettoack.OwnerID)
+        remote_idurl, )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAck %s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
@@ -212,7 +215,7 @@ def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
         my_id.getLocalID(),
         packetid,
         response,
-        remoteID)
+        remoteID, )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAckNoRequest packetID=%s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
@@ -292,7 +295,8 @@ def Identity(newpacket):
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity idurl=%s, but packet ownerID=%s  ... also sent WIDE Acks" % (
                 nameurl.GetName(idurl), newpacket.OwnerID, ))
-    SendAck(newpacket, wide=True)
+    reactor.callLater(0, SendAck, newpacket, wide=True)
+    # SendAck(newpacket, wide=True)
     # TODO: after receiving the full identity sources we can call ALL OF them if some are not cached yet.
     # this way we can be sure that even if first source (server holding your public key) is not availabble
     # other sources still can give you required user info: public key, contacts, etc..
@@ -492,7 +496,7 @@ def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
         lg.out(_DebugLevel, 'p2p_service.SendData %d bytes in packetID=%s' % (
             len(raw_data), packetID))
         lg.out(_DebugLevel, '  to remoteID=%s  ownerID=%s  creatorID=%s' % (remoteID, ownerID, creatorID))
-    return result
+    return newpacket, result
 
 
 def Retrieve(request):

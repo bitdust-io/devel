@@ -208,6 +208,7 @@ def GetActiveArray(customer_idurl=None):
     for i in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
+            activeArray[i] = 0
             continue
         if contact_status.isOnline(suplier_idurl):
             activeArray[i] = 1
@@ -290,6 +291,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     missed_backups = set(remote_files().keys())
     oldfiles = ClearSupplierRemoteInfo(supplierNum, global_id.UrlToGlobalID(customer_idurl))
     newfiles = 0
+    remote_files_changed = False
     current_key_alias = 'master'
     inpt = cStringIO.StringIO(listFileText)
     while True:
@@ -401,6 +403,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 lineSupplierNum = int(words[1])
                 _, maxBlockNum = words[2].split('-')
                 maxBlockNum = int(maxBlockNum)
+                versionSize = int(words[3])
             except:
                 lg.warn('incorrect line (digits format): [%s]' % line)
                 continue
@@ -439,6 +442,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 else:
                     lg.warn('V%s version is not found in the index, but we are not in sync, skip' % backupID)
                 continue
+            item_version_info = item.get_version_info(versionName)
             missingBlocksSet = {'Data': set(), 'Parity': set()}
             if len(words) > 4:
                 # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "434353" "missing" "Data:1,3" "Parity:0,1,2"
@@ -473,11 +477,19 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 remote_max_block_numbers()[backupID] = maxBlockNum
             if len(missingBlocksSet['Data']) == 0 and len(missingBlocksSet['Parity']) == 0:
                 missed_backups.discard(backupID)
+            # if item_version_info[0] != maxBlockNum or item_version_info[1] != versionSize:
+            #     lg.warn('updating version %s info with %s / %s from recent ListFiles()' % (
+            #         backupID, maxBlockNum, versionSize, ))
+            #     item.set_version_info(versionName, maxBlockNum, versionSize)
+            #     remote_files_changed = True
             # mark this backup to be repainted
             RepaintBackup(backupID)
     inpt.close()
-    lg.out(8, '            old:%d, new:%d, backups2remove:%d, paths2remove:%d' % (
-        oldfiles, newfiles, len(backups2remove), len(paths2remove)))
+    lg.out(8, '            remote_files_changed:%s, old:%d, new:%d, backups2remove:%d, paths2remove:%d' % (
+        remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove)))
+    # if remote_files_changed and is_in_sync:
+        # backup_control.commit()
+    #     backup_control.Save()
     # return list of backupID's which is too old but stored on suppliers machines
     return backups2remove, paths2remove, missed_backups
 
@@ -668,7 +680,12 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         lg.warn('Data or Parity? ' + filename)
         return
     if supplierNum >= contactsdb.num_suppliers(customer_idurl=customer_idurl):
-        # lg.warn('supplier number? %d > %d : %s' % (supplierNum, contactsdb.num_suppliers(), filename))
+        lg.warn('supplier position invalid %d > %d for customer %s : %s' % (
+            supplierNum, contactsdb.num_suppliers(), customer_idurl, filename))
+        return
+    supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+    if not supplier_idurl:
+        lg.warn('empty supplier at position %s for customer %s' % (supplierNum, customer_idurl, ))
         return
     localDest = os.path.join(settings.getLocalBackupsDir(), customer, filename)
     if backupID not in local_files():
@@ -714,18 +731,25 @@ def LocalBlockReport(backupID, blockNumber, result):
     repaint_flag = False
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (blockNumber, backupID, customer, ))
-    for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+    num_suppliers = contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    for supplierNum in xrange(num_suppliers):
+        supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+        if not supplier_idurl:
+            lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%s' % (
+                supplierNum, backupID, customer_idurl))
+            continue
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(remotePath, blockNum, supplierNum, dataORparity)
             local_file = os.path.join(settings.getLocalBackupsDir(), customer, packetID)
             if backupID not in local_files():
                 local_files()[backupID] = {}
                 repaint_flag = True
-                # lg.out(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
+                if _Debug:
+                    lg.out(_DebugLevel, '    new local entry for %s created in the memory' % backupID)
             if blockNum not in local_files()[backupID]:
                 local_files()[backupID][blockNum] = {
-                    'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
-                    'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)}
+                    'D': [0, ] * num_suppliers,
+                    'P': [0, ] * num_suppliers}
                 repaint_flag = True
             if not os.path.isfile(local_file):
                 local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
@@ -897,6 +921,8 @@ def ScanBlocksToSend(backupID):
             localParity = GetLocalParityArray(backupID, blockNum)
             for supplierNum in xrange(len(supplierActiveArray)):
                 if supplierActiveArray[supplierNum] != 1:
+                    continue
+                if supplierNum >= len(localData) or supplierNum >= len(localParity):
                     continue
                 if localData[supplierNum] == 1:
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Data'))

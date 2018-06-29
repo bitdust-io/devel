@@ -188,7 +188,7 @@ class DataSender(automat.Automat):
                     for supplierNum in packetsBySupplier.keys():
                         supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
                         if not supplier_idurl:
-                            lg.warn('unkown supplier_idurl supplierNum=%s for %s, customer_idurl=%s' % (
+                            lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%s' % (
                                 supplierNum, backupID, customer_idurl))
                             continue
                         for packetID in packetsBySupplier[supplierNum]:

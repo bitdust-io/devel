@@ -128,8 +128,9 @@ def receive(options):
     global _Listener
     from transport.tcp import tcp_interface
     if _Listener:
-        tcp_interface.interface_receiving_failed('already listening')
-        return None
+        lg.warn('listener already exist')
+        tcp_interface.interface_receiving_started(_MyHost, options)
+        return _Listener
     try:
         _MyIDURL = options['idurl']
         _InternalPort = int(options['tcp_port'])

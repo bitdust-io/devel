@@ -55,7 +55,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 8
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -372,7 +372,7 @@ class ProxyRouter(automat.Automat):
         data = inpt.read()
         inpt.close()
         routed_packet = signed.Unserialize(data)
-        if not routed_packet:
+        if not routed_packet or not routed_packet.Valid():
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
             return
         # send the packet directly to target user_id
@@ -380,7 +380,7 @@ class ProxyRouter(automat.Automat):
         pout = packet_out.create(routed_packet, wide=wide, callbacks={}, target=receiver_idurl,)
         # gateway.outbox(routed_packet, wide=wide)
         if _Debug:
-            lg.out(_DebugLevel, '>>>Relay-OUT %d bytes from %s at %s://%s :' % (
+            lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
                 len(data), nameurl.GetName(sender_idurl), info.proto, info.host,))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         del block
@@ -443,7 +443,7 @@ class ProxyRouter(automat.Automat):
                     nameurl.GetName(receiver_idurl))),
             }, )
         if _Debug:
-            lg.out(_DebugLevel, '<<<Relay-IN %s %s:%s' % (
+            lg.out(_DebugLevel, '<<<Relay-IN-OUT %s %s:%s' % (
                 str(newpacket), info.proto, info.host,))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
                 receiver_proto, receiver_host, len(src), pout))
@@ -620,7 +620,7 @@ class ProxyRouter(automat.Automat):
         # in that case RemoteID of the Data packet is not pointing to the real recipient
         # need to filter this scenario here and do workaround
         if known_creator_id or known_owner_id:
-            # response from node B addressed to node A, after Retreive() from A who owns this Data()
+            # response from node B addressed to node A, after Retrieve() from A who owns this Data()
             # a Data packet sent by node B : a man from outside world
             # addressed to a man behind this proxy_router() - need to route to node A
             # but who is node A? Creator or Owner?

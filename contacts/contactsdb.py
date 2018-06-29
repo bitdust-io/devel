@@ -190,7 +190,7 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
         current_suppliers += ['', ] * (1 + position - len(current_suppliers))
-    if current_suppliers[position]:
+    if current_suppliers[position] and current_suppliers[position] != idurl:
         lg.warn('replacing known supplier %s by %s at position %d for customer %s' % (
             current_suppliers[position], idurl, position, customer_idurl))
     current_suppliers[position] = idurl

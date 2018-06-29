@@ -55,29 +55,43 @@ def init():
     Initialize a list of valid p2p commands.
     """
     global P2PCommandAcks
-    P2PCommandAcks[Ack()] = None                         # No Ack for Ack
-    P2PCommandAcks[Fail()] = None                        # No Ack for Fail
-    P2PCommandAcks[Data()] = Ack()                          # Ack with Ack unless it is our data coming back (would be only after Retrieve)
-    P2PCommandAcks[Retrieve()] = Data()                     # Ack with Data
-    P2PCommandAcks[ListFiles()] = Files()                   # Ack ListFiles with Files
-    P2PCommandAcks[Files()] = None
-    P2PCommandAcks[ListContacts()] = Contacts()             # Ack with Contacts
-    P2PCommandAcks[Contacts()] = None
-    P2PCommandAcks[Identity()] = Ack()                      # If identity comes in and no interested party then transport sends an Ack
-    P2PCommandAcks[DeleteFile()] = Ack()                    # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[DeleteBackup()] = Ack()                  # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[Message()] = Ack()                       # Ack with Ack
-    P2PCommandAcks[Receipt()] = Ack()                       # Ack with Ack
-    P2PCommandAcks[Correspondent()] = Correspondent()
-    P2PCommandAcks[RequestService()] = Ack()
-    P2PCommandAcks[CancelService()] = Ack()
-    P2PCommandAcks[Broadcast()] = None
-    P2PCommandAcks[Relay()] = None
-    P2PCommandAcks[Coin()] = None
-    P2PCommandAcks[RetrieveCoin()] = Coin()
-    P2PCommandAcks[Key()] = Ack()
-    P2PCommandAcks[AuditKey()] = Ack()
-    P2PCommandAcks[Event()] = Ack()
+    # No Ack for Ack
+    P2PCommandAcks[Ack()] = []
+    # No Ack for Fail
+    P2PCommandAcks[Fail()] = []
+    # Ack Data with Ack or Fail unless it is our data coming back (would be only after Retrieve)
+    P2PCommandAcks[Data()] = [Ack(), Fail(), ]
+    # Ack Retrieve with Data or Fail
+    P2PCommandAcks[Retrieve()] = [Data(), Fail(), ]
+    # Ack ListFiles with Files
+    P2PCommandAcks[ListFiles()] = [Files(), Fail(), ]
+    # Ack Files with Ack or Fail
+    P2PCommandAcks[Files()] = [Ack(), Fail(), ]
+    # Ack ListContacts with Contacts or Fail
+    P2PCommandAcks[ListContacts()] = [Contacts(), Fail(), ]
+    P2PCommandAcks[Contacts()] = []
+    # If identity comes in and no interested party then transport sends an Ack
+    P2PCommandAcks[Identity()] = [Ack(), ]
+    # Ack with Ack (maybe should be Files)
+    P2PCommandAcks[DeleteFile()] = [Ack(), Fail(), ]
+    # Ack with Ack (maybe should be Files)
+    P2PCommandAcks[DeleteBackup()] = [Ack(), Fail(), ]
+    # Ack with Ack or Fail
+    P2PCommandAcks[Message()] = [Ack(), Fail(), ]
+    # Ack with Ack or Fail
+    P2PCommandAcks[Receipt()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Correspondent()] = [Correspondent(), Fail(), ]
+    # RequestService must receive back Ack or Fail
+    P2PCommandAcks[RequestService()] = [Ack(), Fail(), ]
+    # CancelService must receive back Ack or Fail
+    P2PCommandAcks[CancelService()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Broadcast()] = []
+    P2PCommandAcks[Relay()] = []
+    P2PCommandAcks[Coin()] = []
+    P2PCommandAcks[RetrieveCoin()] = [Coin(), ]
+    P2PCommandAcks[Key()] = [Ack(), Fail(), ]
+    P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Event()] = [Ack(), Fail(), ]
 
 
 def IsCommand(s):
@@ -88,6 +102,13 @@ def IsCommand(s):
     if len(P2PCommandAcks) == 0:
         init()
     return s in P2PCommandAcks
+
+
+def IsCommandAck(com, ack):
+    global P2PCommandAcks
+    if len(P2PCommandAcks) == 0:
+        init()
+    return ack in P2PCommandAcks.get(com, [])
 
 #------------------------------------------------------------------------------
 

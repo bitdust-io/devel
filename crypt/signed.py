@@ -44,19 +44,16 @@ Packet Fields are all strings (no integers, objects, etc)
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-import os
 import sys
 
 import types
-import datetime
 
 from twisted.internet import threads
-from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -136,7 +133,7 @@ class Packet:
                     nameurl.GetName(self.OwnerID),
                     nameurl.GetName(self.CreatorID),
                     nameurl.GetName(self.RemoteID))
-        return 'signed.Packet[%s]' % args
+        return 'signed{ %s }' % args
 
     def Sign(self):
         """

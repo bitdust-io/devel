@@ -305,8 +305,7 @@ class SupplierService(LocalService):
                 lg.warn('invalid file path')
                 return ''
         if not contactsdb.is_customer(customerIDURL):  # SECURITY
-            lg.warn("%s is not a customer" % (customerIDURL))
-            return ''
+            lg.warn("%s is not my customer" % (customerIDURL))
         if customerGlobID:
             if glob_path['idurl'] != customerIDURL:
                 lg.warn('making filename for another customer: %s != %s' % (
@@ -482,7 +481,7 @@ class SupplierService(LocalService):
                 # TODO: settings.getCustomersDataSharingEnabled() and
                 # SECURITY
                 # TODO: add more validations for receiver idurl
-                recipient_idurl = glob_path['idurl']
+                # recipient_idurl = glob_path['idurl']
                 filename = self._do_make_valid_filename(glob_path['idurl'], glob_path)
         if not filename:
             lg.warn("had empty filename")
@@ -501,29 +500,39 @@ class SupplierService(LocalService):
             lg.warn("empty data on disk %s" % filename)
             p2p_service.SendFail(newpacket, 'empty data on disk')
             return False
-        outpacket = signed.Unserialize(data)
+        stored_packet = signed.Unserialize(data)
         del data
-        if outpacket is None:
-            lg.warn("Unserialize fails, not Valid packet %s" % filename)
-            p2p_service.SendFail(newpacket, 'unserialize fails')
+        if stored_packet is None:
+            lg.warn("Unserialize failed, not Valid packet %s" % filename)
+            p2p_service.SendFail(newpacket, 'unserialize failed')
             return False
-        if not outpacket.Valid():
-            lg.warn("unserialized packet is not Valid %s" % filename)
-            p2p_service.SendFail(newpacket, 'unserialized packet is not Valid')
+        if not stored_packet.Valid():
+            lg.warn("Stored packet is not Valid %s" % filename)
+            p2p_service.SendFail(newpacket, 'stored packet is not valid')
             return False
-        if outpacket.Command != commands.Data():
+        if stored_packet.Command != commands.Data():
             lg.warn('sending back packet which is not a Data')
         # here Data() packet is sent back as it is...
         # that means outpacket.RemoteID=my_id.getLocalID() - it was addressed to that node and stored as it is
         # need to take that in account every time you receive Data() packet
         # it can be not a new Data(), but the old data returning back as a response to Retreive() packet
-        if recipient_idurl != outpacket.OwnerID:
-            lg.warn('from request %r : returning data owned by %s to %s' % (
-                newpacket, outpacket.OwnerID, recipient_idurl))
-        else:
+        # let's create a new Data() packet which will be addressed directly to recipient and "wrap" stored data inside it
+        routed_packet = signed.Packet(
+            Command=commands.Data(),
+            OwnerID=stored_packet.OwnerID,
+            CreatorID=my_id.getLocalIDURL(),
+            PacketID=stored_packet.PacketID,
+            Payload=stored_packet.Serialize(),
+            RemoteID=recipient_idurl,
+        )
+        if recipient_idurl == stored_packet.OwnerID:
             lg.info('from request %r : sending %r back to owner: %s' % (
-                newpacket, outpacket, recipient_idurl))
-        gateway.outbox(outpacket, target=recipient_idurl)
+                newpacket, stored_packet, recipient_idurl))
+            gateway.outbox(routed_packet)  # , target=recipient_idurl)
+            return True
+        lg.info('from request %r : returning data owned by %s to %s' % (
+            newpacket, stored_packet.OwnerID, recipient_idurl))
+        gateway.outbox(routed_packet)
         return True
 
     def _on_data(self, newpacket):
@@ -541,6 +550,7 @@ class SupplierService(LocalService):
             return False
         if not contactsdb.is_customer(newpacket.OwnerID):
             # SECURITY
+            # TODO: process files from another customer : glob_path['idurl']
             lg.warn("skip, %s not a customer, packetID=%s" % (newpacket.OwnerID, newpacket.PacketID))
             # p2p_service.SendFail(newpacket, 'not a customer')
             return False
@@ -552,7 +562,6 @@ class SupplierService(LocalService):
             lg.err("got incorrect PacketID")
             p2p_service.SendFail(newpacket, 'incorrect path')
             return False
-        # TODO: process files from another customer : glob_path['idurl']
         filename = self._do_make_valid_filename(newpacket.OwnerID, glob_path)
         if not filename:
             lg.warn("got empty filename, bad customer or wrong packetID?")
