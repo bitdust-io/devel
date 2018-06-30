@@ -122,7 +122,8 @@ def LoadMyKey(keyfilename=None):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
         _MyKeyObject = keys.Key.fromFile(keyfilename)
-        _MyRsaKey = KeyObjectWrapper(key=_MyKeyObject).keyObject
+        _MyRsaKey = _MyKeyObject.keyObject
+        # _MyRsaKey = KeyObjectWrapper(key=_MyKeyObject).keyObject
         lg.out(4, 'key.InitMyKey loaded private key from %s' % (keyfilename))
         return ValidateKey()
     return False
@@ -218,7 +219,8 @@ def Sign(inp):
     global _MyKeyObject
     InitMyKey()
     # Makes a list but we just want a string
-    Signature = KeyObjectWrapper(key=_MyKeyObject).keyObject.sign(inp, '')
+    Signature = _MyKeyObject.keyObject.sign(inp, '')
+    # Signature = KeyObjectWrapper(key=_MyKeyObject).keyObject.sign(inp, '')
     # so we take first element in list - need str cause was long
     result = str(Signature[0])
     return result
@@ -236,7 +238,8 @@ def VerifySignature(pubkeystring, hashcode, signature):
     Return True if signature is correct, otherwise False.
     """
     # key is public key in string format
-    keyobj = KeyObjectWrapper(key=keys.Key.fromString(pubkeystring)).keyObject
+    keyobj = keys.Key.fromString(pubkeystring).keyObject
+    # keyobj = KeyObjectWrapper(key=keys.Key.fromString(pubkeystring)).keyObject
     # needs to be a long in a list
     sig_long = long(signature),
     Result = bool(keyobj.verify(hashcode, sig_long))
@@ -374,7 +377,8 @@ def DecryptOpenSSHPrivateKey(openssh_string_private, inp):
     Decrypt ``inp`` string with a Private Key provided as string in openssh format.
     """
     key_object = keys.Key.fromString(openssh_string_private)
-    rsa_key = KeyObjectWrapper(key=key_object).keyObject
+    rsa_key = key_object.keyObject
+    # rsa_key = KeyObjectWrapper(key=key_object).keyObject
     atuple = (inp,)
     padresult = rsa_key.decrypt(atuple)
     # remove the "1" added in EncryptBinaryPublicKey
@@ -393,7 +397,8 @@ def EncryptBinaryPublicKey(publickey, inp):
     # Only think we encrypt is produced by NewSessionKey() which takes care not to have leading zero.
     # See   bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
     # So we add a 1 in front.
-    atuple = KeyObjectWrapper(key=publickey).keyObject.encrypt('1' + inp, "")
+    atuple = publickey.keyObject.encrypt('1' + inp, "")
+    # atuple = KeyObjectWrapper(key=publickey).keyObject.encrypt('1' + inp, "")
     return atuple[0]
 
 
