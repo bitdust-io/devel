@@ -50,8 +50,6 @@ import locale
 import textwrap
 import cPickle
 
-from twisted.python.win32 import cmdLineQuote
-
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
@@ -1424,11 +1422,10 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
     if os.path.abspath(current_dir) == os.path.abspath(new_dir):
         return None
 
-    current = cmdLineQuote(current_dir)
-    new = cmdLineQuote(new_dir)
-
     try:
         if bpio.Linux():
+            current = current_dir
+            new = new_dir
             cmdargs = ['cp', '-r', current, new]
             lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
             subprocess.call(cmdargs)
@@ -1439,6 +1436,9 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
             return 'ok'
 
         if bpio.Windows():
+            from twisted.python.win32 import cmdLineQuote
+            current = cmdLineQuote(current_dir)
+            new = cmdLineQuote(new_dir)
             cmdstr0 = 'mkdir %s' % new
             cmdstr1 = 'xcopy %s %s /E /K /R /H /Y' % (cmdLineQuote(os.path.join(current_dir, '*.*')), new)
             cmdstr2 = 'rmdir /S /Q %s' % current
