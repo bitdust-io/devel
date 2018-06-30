@@ -122,6 +122,9 @@ def execute_in_shell(cmdargs, base_dir=None):
 
 
 def run(args_list, base_dir=None, callback=None):
+    # TODO: Currently disabled
+    return None
+    
     global _CurrentProcess
     if _CurrentProcess is not None:
         lg.warn('only one process at once')
