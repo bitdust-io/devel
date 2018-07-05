@@ -65,7 +65,7 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
