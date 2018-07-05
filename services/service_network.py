@@ -52,7 +52,7 @@ class NetworkService(LocalService):
         from p2p import network_connector
         network_connector.A('init')
         self.task = task.LoopingCall(self._do_check_network_interfaces)
-        self.task.start(10)
+        self.task.start(20, now=False)
         return True
 
     def stop(self):
@@ -74,4 +74,4 @@ class NetworkService(LocalService):
                 lg.out(2, 'service_network._do_check_network_interfaces recognized changes: %s -> %s' % (
                     self.current_network_interfaces, known_interfaces))
                 self.current_network_interfaces = known_interfaces
-                network_connector.A('reconnect')
+                network_connector.A('check-reconnect')
