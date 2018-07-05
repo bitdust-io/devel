@@ -51,7 +51,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -87,7 +87,8 @@ class LocalService(automat.Automat):
         if self.service_name in services().keys():
             raise ServiceAlreadyExist(self.service_name)
         self.result_deferred = None
-        automat.Automat.__init__(self, self.service_name, 'OFF', _DebugLevel, _Debug)
+        automat.Automat.__init__(self, name=self.service_name, state='OFF',
+                                 debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
 
     #------------------------------------------------------------------------------
 
@@ -112,6 +113,15 @@ class LocalService(automat.Automat):
 
     def cancel(self, newpacket, info):
         raise RequireSubclass()
+
+    def add_callback(self, cb):
+        if not self.result_deferred:
+            self.result_deferred = Deferred()
+        if isinstance(cb, Deferred):
+            self.result_deferred.addCallback(cb.callback)
+        else:
+            self.result_deferred.addCallback(lambda *a, **kw: cb(*a, **kw))
+        return self.result_deferred
 
     #------------------------------------------------------------------------------
 
@@ -306,10 +316,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if arg:
-            if self.result_deferred:
-                self.result_deferred.addCallback(arg.callback)
-            else:
-                self.result_deferred = arg
+            self.add_callback(arg)
 
     def doStopDependentServices(self, arg):
         """
