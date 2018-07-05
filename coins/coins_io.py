@@ -36,7 +36,7 @@ This is similar to well-known "blockchain" technology where every block is linke
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 

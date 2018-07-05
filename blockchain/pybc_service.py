@@ -58,7 +58,7 @@ Fifth node, this will also start a minining process, but will only solve one blo
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
