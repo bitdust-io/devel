@@ -93,6 +93,9 @@ class NodesLookupService(LocalService):
         from logs import lg
         lg.out(12, 'service_nodes_lookup._process_idurl %s' % idurl)
         result = Deferred()
+        if not idurl:
+            result.errback(Exception(idurl))
+            return result
         d = identitycache.immediatelyCaching(idurl)
         d.addCallback(lambda src: result.callback(idurl))
         d.addErrback(result.errback)
