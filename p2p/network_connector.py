@@ -360,42 +360,52 @@ class NetworkConnector(automat.Automat):
     def doSetUp(self, arg):
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetUp')
+        d = driver.start_later(services_list=driver.affecting('service_network'))
+        d.addCallback(lambda x: self.automat('network-up'))
+        d.addErrback(lg.err)
+        
         # if driver.is_on('service_identity_server'):
         #     if settings.enableIdServer():
         #         from userid import id_server
         #         id_server.A('start', (settings.getIdServerWebPort(),
         #                               settings.getIdServerTCPPort()))
-        if driver.is_on('service_service_entangled_dht'):
-            from dht import dht_service
-            dht_service.reconnect()
-        if driver.is_on('service_ip_port_responder'):
-            from stun import stun_server
-            udp_port = int(settings.getUDPPort())
-            stun_server.A('start', udp_port)
-        if driver.is_on('service_my_ip_port'):
-            from stun import stun_client
-            stun_client.A().dropMyExternalAddress()
-            stun_client.A('start')
-        if driver.is_on('service_private_messages'):
-            from chat import nickname_holder
-            nickname_holder.A('set')
-        self.automat('network-up')
+
+#         if driver.is_on('service_service_entangled_dht'):
+#             from dht import dht_service
+#             dht_service.reconnect()
+#         if driver.is_on('service_ip_port_responder'):
+#             from stun import stun_server
+#             udp_port = int(settings.getUDPPort())
+#             stun_server.A('start', udp_port)
+#         if driver.is_on('service_my_ip_port'):
+#             from stun import stun_client
+#             stun_client.A().dropMyExternalAddress()
+#             stun_client.A('start')
+#         if driver.is_on('service_private_messages'):
+#             from chat import nickname_holder
+#             nickname_holder.A('set')
+
+        # self.automat('network-up')
 
     def doSetDown(self, arg):
         """
         """
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetDown')
-        if driver.is_on('service_service_entangled_dht'):
-            from dht import dht_service
-            dht_service.disconnect()
-        if driver.is_on('service_ip_port_responder'):
-            from stun import stun_server
-            stun_server.A('stop')
-        if driver.is_on('service_gateway'):
-            from transport import gateway
-            gateway.stop()
-        self.automat('network-down')
+        d = driver.stop_later(services_list=driver.affecting('service_network'))
+        d.addCallback(lambda x: self.automat('network-down'))
+        d.addErrback(lg.err)
+        
+#         if driver.is_on('service_gateway'):
+#             from transport import gateway
+#             gateway.stop()
+#         if driver.is_on('service_ip_port_responder'):
+#             from stun import stun_server
+#             stun_server.A('stop')
+#         if driver.is_on('service_service_entangled_dht'):
+#             from dht import dht_service
+#             dht_service.disconnect()
+        # self.automat('network-down')
 
     def doUPNP(self, arg):
         self.last_upnp_time = time.time()
