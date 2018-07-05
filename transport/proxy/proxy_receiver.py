@@ -50,14 +50,15 @@ EVENTS:
     * :red:`start`
     * :red:`stop`
     * :red:`timer-10sec`
-    * :red:`timer-2sec`
+    * :red:`timer-1sec`
+    * :red:`timer-20sec`
+    * :red:`timer-4sec`
     * :red:`timer-5sec`
-    * :red:`timer-7sec`
 """
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -167,7 +168,8 @@ def A(event=None, arg=None):
         return _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
+        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP',
+                                       debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug)
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver
@@ -182,10 +184,11 @@ class ProxyReceiver(automat.Automat):
     """
 
     timers = {
-        'timer-7sec': (7.0, ['ACK?']),
-        'timer-2sec': (2.0, ['ACK?']),
-        'timer-10sec': (10.0, ['LISTEN']),
+        'timer-1sec': (1.0, ['ACK?']),
         'timer-5sec': (5.0, ['SERVICE?']),
+        'timer-10sec': (10.0, ['LISTEN']),
+        'timer-20sec': (20.0, ['FIND_NODE?']),
+        'timer-4sec': (4.0, ['ACK?']),
     }
 
     def init(self):
@@ -239,9 +242,9 @@ class ProxyReceiver(automat.Automat):
             elif event == 'stop':
                 self.state = 'OFFLINE'
                 self.doNotifyFailed(arg)
-            elif event == 'timer-2sec':
+            elif event == 'timer-1sec':
                 self.doSendMyIdentity(arg)
-            elif event == 'timer-7sec' or event == 'fail-received':
+            elif event == 'timer-4sec' or event == 'fail-received':
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(arg)
         #---LISTEN---
@@ -275,7 +278,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'stop' or event == 'nodes-not-found':
+            elif event == 'stop' or event == 'nodes-not-found' or event == 'timer-20sec':
                 self.state = 'OFFLINE'
                 self.doNotifyFailed(arg)
         #---SERVICE?---

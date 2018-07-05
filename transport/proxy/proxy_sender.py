@@ -45,7 +45,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -93,7 +93,8 @@ def A(event=None, arg=None):
         return _ProxySender
     if _ProxySender is None:
         # set automat name and starting state here
-        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
+        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP',
+                                   debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
     if event is not None:
         _ProxySender.automat(event, arg)
     return _ProxySender

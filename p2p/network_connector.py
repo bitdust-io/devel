@@ -60,14 +60,13 @@ EVENTS:
     * :red:`network-up`
     * :red:`reconnect`
     * :red:`timer-1hour`
-    * :red:`timer-20sec`
     * :red:`timer-5sec`
     * :red:`upnp-done`
 """
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -146,7 +145,6 @@ class NetworkConnector(automat.Automat):
     timers = {
         'timer-1hour': (3600, ['DISCONNECTED']),
         'timer-5sec': (5.0, ['DISCONNECTED', 'CONNECTED']),
-        'timer-20sec': (20.0, ['TRANSPORTS?']),
     }
 
     def init(self):
@@ -240,14 +238,14 @@ class NetworkConnector(automat.Automat):
         elif self.state == 'TRANSPORTS?':
             if event == 'reconnect' or event == 'check-reconnect':
                 self.Reset=True
-            elif self.Reset and ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or ( event == 'network-transport-state-changed' and self.isAllTransportsReady(arg) ) ):
+            elif not self.Reset and ( ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or event == 'network-transport-state-changed' ) and ( self.isAllReady(arg) and self.isAllListening(arg) ) ):
+                self.state = 'CONNECTED'
+            elif self.Reset and ( ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or event == 'network-transport-state-changed' ) and self.isAllReady(arg) ):
                 self.state = 'DOWN'
                 self.Reset=False
                 self.Disconnects=0
                 self.doSetDown(arg)
-            elif not self.Reset and ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or ( event == 'network-transport-state-changed' and self.isAllTransportsReady(arg) ) ):
-                self.state = 'CONNECTED'
-            elif event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or ( event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg) ) or event == 'timer-20sec':
+            elif ( event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or event == 'network-transport-state-changed' ) and ( self.isAllReady(arg) and not self.isAllListening(arg) ):
                 self.state = 'DISCONNECTED'
         #---START_UP---
         elif self.state == 'START_UP':
@@ -314,26 +312,32 @@ class NetworkConnector(automat.Automat):
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15
 
-    def isAllTransportsFailed(self, arg):
+    def isAllListening(self, arg):
         """
         Condition method.
         """
         if not driver.is_on('service_gateway'):
-            return True
+            if _Debug:
+                lg.out(_DebugLevel, 'network_connector.isAllListening returning False : service_gateway is OFF')
+            return False
         from transport import gateway
         transports = gateway.transports().values()
         for t in transports:
-            if t.state != 'OFFLINE':
+            if t.state != 'LISTENING':
+                if _Debug:
+                    lg.out(_DebugLevel, 'network_connector.isAllListening returning False : transport %s is not LISTENING' % t)
                 return False
         if _Debug:
-            lg.out(_DebugLevel, 'network_connector.isAllTransportsFailed returning True :  all transports OFFLINE : I AM ALONE HERE :-((((( ')
+            lg.out(_DebugLevel, 'network_connector.isAllListening returning True :  HELLO BITDUST WORLD !!!!!!!!!!!!!!!!!!!!!!')
         return True
 
-    def isAllTransportsReady(self, arg):
+    def isAllReady(self, arg):
         """
         Condition method.
         """
         if not driver.is_on('service_gateway'):
+            if _Debug:
+                lg.out(_DebugLevel, 'network_connector.isAllReady returning False : service_gateway is OFF')
             return False
         LISTENING_count = 0
         OFFLINE_count = 0
@@ -341,13 +345,15 @@ class NetworkConnector(automat.Automat):
         transports = gateway.transports().values()
         for t in transports:
             if t.state != 'OFFLINE' and t.state != 'LISTENING':
+                if _Debug:
+                    lg.out(_DebugLevel, 'network_connector.isAllReady returning False : transport %s is not READY yet' % t)
                 return False
             if t.state == 'OFFLINE':
                 OFFLINE_count += 1
             if t.state == 'LISTENING':
                 LISTENING_count += 1
         if _Debug:
-            lg.out(_DebugLevel, 'network_connector.isAllTransportsReady returning True : all transports READY : HELLO WORLD!!! ')
+            lg.out(_DebugLevel, 'network_connector.isAllReady returning True : all transports READY')
             lg.out(_DebugLevel, '    OFFLINE transports:%d, LISTENING transports: %d' % (OFFLINE_count, LISTENING_count))
         return True
 

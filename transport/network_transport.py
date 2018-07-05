@@ -24,6 +24,7 @@
 #
 #
 #
+from access.key_ring import _DebugLevel
 
 """
 .. module:: network_transport.
@@ -46,7 +47,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -87,7 +89,13 @@ class NetworkTransport(automat.Automat):
         self.state_changed_callback = None
         self.options = {}
         automat.Automat.__init__(
-            self, '%s_transport' % proto, 'AT_STARTUP', 6, _Debug)
+            self,
+            name='%s_transport' % proto,
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
 
     def call(self, method_name, *args):
         method = getattr(self.interface, method_name, None)
