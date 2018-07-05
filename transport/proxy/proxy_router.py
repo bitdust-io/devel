@@ -594,6 +594,10 @@ class ProxyRouter(automat.Automat):
                     lg.out(_DebugLevel, '        sending "unknown-identity-received" event')
                 self.automat('unknown-identity-received', newpacket)
                 return False
+            # it can be a RequestService or CancelService packets...
+#             elif newpacket.Command == commands.RequestService():
+#                 self.automat(event_string, arg)
+#                 'request-route-received'....
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
             # need to skip this packet here and process it as a normal inbox packet

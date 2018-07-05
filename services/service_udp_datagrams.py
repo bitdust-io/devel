@@ -47,6 +47,7 @@ class UDPDatagramsService(LocalService):
                 ]
 
     def start(self):
+        from logs import lg
         from lib import udp
         from main import settings
         from main.config import conf
@@ -57,6 +58,7 @@ class UDPDatagramsService(LocalService):
             try:
                 udp.listen(udp_port)
             except:
+                lg.exc()
                 return False
         return True
 
