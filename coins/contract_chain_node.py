@@ -97,7 +97,7 @@ def send_to_miner(coins):
         coins,
         callbacks={
             commands.Ack(): lambda response, info: result.callback(response),
-            commands.Fail(): lambda response, info: result.errback(response),
+            commands.Fail(): lambda response, info: result.errback(Exception(response)),
         }
     )
     return result
@@ -185,7 +185,7 @@ class Query(object):
             # TODO: find some simple way to establish consensus between accountants
             # if one accountant is cheating or failing, coins from his machine must be filtered out
             # probably here we can trigger a process to replace bad accountants
-            self.result.errback(fails)
+            self.result.errback(Exception(str(fails)))
             self._close()
             return None
         if _Debug:

@@ -532,7 +532,7 @@ class DHTNode(DistributedTupleSpacePeer):
         """
         d = Deferred()
         if not self.listener:
-            d.errback('Listener not started yet')
+            d.errback(Exception('Listener is not started yet'))
             return d
         if self.refresher and self.refresher.active():
             self.refresher.reset(0)

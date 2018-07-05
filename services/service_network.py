@@ -42,7 +42,7 @@ class NetworkService(LocalService):
     service_name = 'service_network'
     config_path = 'services/network/enabled'
 
-    current_network_interface = None
+    current_network_interfaces = None
 
     def dependent_on(self):
         return []
@@ -66,8 +66,12 @@ class NetworkService(LocalService):
         from p2p import network_connector
         from logs import lg
         known_interfaces = getNetworkInterfaces()
-        if self.current_network_interface != known_interfaces[0]:
-            lg.out(2, 'service_network._do_check_network_interfaces recognized changes: %s -> %s' %(
-                self.current_network_interface, known_interfaces[0]))
-            self.current_network_interface = known_interfaces[0]
-            network_connector.A('reconnect')
+        if self.current_network_interfaces is None:
+            self.current_network_interfaces = known_interfaces
+            lg.out(2, 'service_network._do_check_network_interfaces START UP: %s' % self.current_network_interfaces)
+        else:
+            if self.current_network_interfaces != known_interfaces:
+                lg.out(2, 'service_network._do_check_network_interfaces recognized changes: %s -> %s' % (
+                    self.current_network_interfaces, known_interfaces))
+                self.current_network_interfaces = known_interfaces
+                network_connector.A('reconnect')

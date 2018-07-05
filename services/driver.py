@@ -130,6 +130,30 @@ def is_exist(name):
     return name in services()
 
 
+def dependent(name):
+    svc = services().get(name, None)
+    if svc is None:
+        return []
+    return svc.dependent_on()
+
+
+def affecting(name):
+    svc = services().get(name, None)
+    if svc is None:
+        return []
+    results = set()
+    order = list(enabled_services())
+    for position in range(len(order)):
+        child_name = order[position]
+        if child_name == name:
+            continue
+        child = services()[child_name]
+        for depend_name in child.dependent_on():
+            if depend_name == name:
+                results.add(child_name)
+    return list(results)
+
+
 def request(service_name, service_request_payload, request, info):
     svc = services().get(service_name, None)
     if svc is None:
@@ -258,7 +282,7 @@ def start(services_list=[]):
         return _StartingDeferred
     if _StopingDeferred:
         d = Deferred()
-        d.errback('currently another service is stopping')
+        d.errback(Exception('currently another service is stopping'))
         return d
     if not services_list:
         services_list.extend(boot_up_order())
@@ -293,7 +317,7 @@ def stop(services_list=[]):
         return _StopingDeferred
     if _StartingDeferred:
         d = Deferred()
-        d.errback('currently another service is starting')
+        d.errback(Exception('currently another service is starting'))
         return d
     if not services_list:
         services_list.extend(reversed(boot_up_order()))
@@ -320,7 +344,7 @@ def restart(service_name, wait_timeout=None):
     restart_result = Deferred()
 
     def _on_started(start_result, stop_result, dependencies_results):
-        lg.out(4, 'api.service_restart._on_started : %s with %s' % (service_name, start_result))
+        lg.out(4, 'driver.restart._on_started : %s with %s' % (service_name, start_result))
         try:
             stop_resp = {stop_result[0][1]: stop_result[0][0], }
         except:
@@ -333,25 +357,26 @@ def restart(service_name, wait_timeout=None):
         return start_result
 
     def _do_start(stop_result=None, dependencies_results=None):
-        lg.out(4, 'api.service_restart._do_start : %s' % service_name)
+        lg.out(4, 'driver.restart._do_start : %s' % service_name)
         start_defer = start(services_list=[service_name, ])
         start_defer.addCallback(_on_started, stop_result, dependencies_results)
         start_defer.addErrback(restart_result.errback)
         return start_defer
 
     def _on_stopped(stop_result, dependencies_results):
-        lg.out(4, 'api.service_restart._on_stopped : %s with %s' % (service_name, stop_result))
+        lg.out(4, 'driver.restart._on_stopped : %s with %s' % (service_name, stop_result))
         _do_start(stop_result, dependencies_results)
         return stop_result
 
     def _do_stop(dependencies_results=None):
-        lg.out(4, 'api.service_restart._do_stop : %s' % service_name)
+        lg.out(4, 'driver.restart._do_stop : %s' % service_name)
         stop_defer = stop(services_list=[service_name, ])
         stop_defer.addCallback(_on_stopped, dependencies_results)
         stop_defer.addErrback(restart_result.errback)
         return stop_defer
 
     def _on_timeout(err):
+        lg.out(4, 'driver.restart._on_timeout : %s' % service_name)
         all_states = [_svc.state for _svc in services().values()]
         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
             restart_result.errback(failure.Failure(Exception('timeout')))
@@ -373,10 +398,106 @@ def restart(service_name, wait_timeout=None):
     if not dl:
         dl.append(succeed(True))
 
+    lg.out(4, 'driver.restart %s' % service_name)
     dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
     dependencies.addCallback(_do_stop)
     dependencies.addErrback(_on_timeout)
     return restart_result
+
+
+def start_later(services_list, wait_timeout=None):
+    global _StopingDeferred
+    global _StartingDeferred
+    result = Deferred()
+
+    def _on_started(start_result):
+        lg.out(4, 'api.start_later._on_started : %s with %s' % (services_list, start_result))
+        result.callback(start_result)
+        return start_result
+
+    def _do_start(x):
+        lg.out(4, 'driver.start_later._do_start : %s' % services_list)
+        start_defer = start(services_list=services_list)
+        start_defer.addCallback(_on_started)
+        start_defer.addErrback(result.errback)
+        return start_defer
+
+    def _on_timeout(err):
+        lg.out(4, 'driver.start_later._on_timeout : %s' % services_list)
+        all_states = [_svc.state for _svc in services().values()]
+        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+            result.errback(failure.Failure(Exception('timeout')))
+            return err
+        _do_start()
+        return None
+
+    dl = []
+    if _StopingDeferred:
+        dl.append(_StartingDeferred)
+    if _StartingDeferred:
+        dl.append(_StartingDeferred)
+    if wait_timeout:
+        all_states = [_svc.state for _svc in services().values()]
+        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+            wait_timeout_defer = Deferred()
+            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+            dl.append(wait_timeout_defer)
+    if not dl:
+        dl.append(succeed(True))
+
+    lg.out(4, 'driver.start_later %s' % services_list)
+    dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
+    dependencies.addCallback(_do_start)
+    dependencies.addErrback(_on_timeout)
+    return result
+
+
+def stop_later(services_list, wait_timeout=None):
+    global _StopingDeferred
+    global _StartingDeferred
+    result = Deferred()
+
+    def _on_stopped(stop_result):
+        lg.out(4, 'driver.stop_later._on_stopped : %s with %s' % (services_list, stop_result))
+        result.callback(stop_result)
+        return stop_result
+
+    def _do_stop(x):
+        lg.out(4, 'driver.stop_later._do_stop : %s' % services_list)
+        stop_defer = stop(services_list=services_list)
+        stop_defer.addCallback(_on_stopped)
+        stop_defer.addErrback(result.errback)
+        return stop_defer
+
+    def _on_timeout(err):
+        lg.out(4, 'driver.stop_later._on_timeout : %s' % services_list)
+        all_states = [_svc.state for _svc in services().values()]
+        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+            result.errback(failure.Failure(Exception('timeout')))
+            return err
+        _do_stop()
+        return None
+
+    dl = []
+    if _StopingDeferred:
+        dl.append(_StartingDeferred)
+    if _StartingDeferred:
+        dl.append(_StartingDeferred)
+    if wait_timeout:
+        all_states = [_svc.state for _svc in services().values()]
+        if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
+            wait_timeout_defer = Deferred()
+            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+            dl.append(wait_timeout_defer)
+    if not dl:
+        dl.append(succeed(True))
+
+    lg.out(4, 'driver.stop_later %s' % services_list)
+    dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
+    dependencies.addCallback(_do_stop)
+    dependencies.addErrback(_on_timeout)
+    return result
+    
 
 #------------------------------------------------------------------------------
 
@@ -430,7 +551,7 @@ def on_started_all_services(results):
     if _Debug:
         lg.out(_DebugLevel - 6, 'driver.on_started_all_services')
     global _StartingDeferred
-    _StartingDeferred = None
+    # _StartingDeferred = None
     return results
 
 
@@ -438,7 +559,7 @@ def on_stopped_all_services(results):
     if _Debug:
         lg.out(_DebugLevel - 6, 'driver.on_stopped_all_services')
     global _StopingDeferred
-    _StopingDeferred = None
+    # _StopingDeferred = None
     return results
 
 

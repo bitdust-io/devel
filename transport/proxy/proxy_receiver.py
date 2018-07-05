@@ -652,7 +652,7 @@ class ProxyReceiver(automat.Automat):
             self.automat('found-one-node', known_router)
             return
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
+            lg.out(_DebugLevel, 'proxy_receiver._find_random_node will start DHT lookup')
         tsk = lookup.start()
         if tsk:
             tsk.result_defer.addCallback(self._on_nodes_lookup_finished)
