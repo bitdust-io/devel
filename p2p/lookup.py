@@ -378,6 +378,7 @@ class DiscoveryTask(object):
                 lg.out(_DebugLevel, 'lookup._on_node_processed %s, but need more nodes' % idurl)
             else:
                 lg.out(_DebugLevel, 'lookup._on_node_processed %s, have enough nodes now' % idurl)
+        return node
 
     def _on_all_nodes_observed(self, observe_results):
         if self.stopped:
