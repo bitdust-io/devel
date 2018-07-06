@@ -762,8 +762,15 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/shell/v1$')
+    def pdb_shell_v1(self, request):
+        return api.pdb_shell()
+
+    #------------------------------------------------------------------------------
+
     @ALL('^/*')
     def not_found(self, request):
         return api.ERROR('method %s:%s is not found' % (request.method, request.path))
 
     #------------------------------------------------------------------------------
+
