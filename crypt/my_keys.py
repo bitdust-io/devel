@@ -393,7 +393,8 @@ def encrypt(key_id, inp):
     # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
     # See bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
     # So we add a "1" in front now and in decrypt() we will remove it
-    atuple = KeyObjectWrapper(key=key_object).keyObject.encrypt('1' + inp, "")
+    atuple = key_object.keyObject.encrypt('1' + inp, "")
+    # atuple = KeyObjectWrapper(key=key_object).keyObject.encrypt('1' + inp, "")
     return atuple[0]
 
 
