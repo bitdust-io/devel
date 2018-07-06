@@ -849,7 +849,11 @@ def cmd_integrate(opts, args, overDict):
 
     from system import bpio
     if bpio.Windows():
-        print_text('this feature is not yet available in OS Windows.')
+        # TODO: 
+        src = """@echo off
+        C:\Users\veselin\BITDUS~2\venv\Scripts\python.exe C:\Users\veselin\BITDUS~2\src\bitdust.py %*
+        """
+        # print_text('this feature is not yet available in OS Windows.')
         return 0
     curpath = bpio.getExecutableDir()
     # cmdpath = '/usr/local/bin/bitdust'
