@@ -238,7 +238,8 @@ def VerifySignature(pubkeystring, hashcode, signature):
     Return True if signature is correct, otherwise False.
     """
     # key is public key in string format
-    keyobj = keys.Key.fromString(pubkeystring).keyObject
+    # keyobj = keys.Key.fromString(pubkeystring).keyObject
+    keyobj = keys.Key.fromString(pubkeystring)
     # keyobj = KeyObjectWrapper(key=keys.Key.fromString(pubkeystring)).keyObject
     # needs to be a long in a list
     sig_long = long(signature),
