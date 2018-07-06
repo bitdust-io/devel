@@ -31,8 +31,6 @@
 
 #------------------------------------------------------------------------------
 
-from crypt.helpers import KeyObjectWrapper
-
 _Debug = False
 _DebugLevel = 4
 
@@ -62,6 +60,7 @@ from lib import misc
 from main import settings
 
 from crypt import key
+# from crypt.helpers import KeyObjectWrapper
 
 from userid import my_id
 from userid import global_id

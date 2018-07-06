@@ -55,8 +55,6 @@ from Crypto.Cipher import Blowfish
 
 import warnings
 
-from crypt.helpers import KeyObjectWrapper
-
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 #------------------------------------------------------------------------------
@@ -76,6 +74,8 @@ from logs import lg
 from system import bpio
 
 from main import settings
+
+# from crypt.helpers import KeyObjectWrapper
 
 #------------------------------------------------------------------------------
 
@@ -238,8 +238,7 @@ def VerifySignature(pubkeystring, hashcode, signature):
     Return True if signature is correct, otherwise False.
     """
     # key is public key in string format
-    # keyobj = keys.Key.fromString(pubkeystring).keyObject
-    keyobj = keys.Key.fromString(pubkeystring)
+    keyobj = keys.Key.fromString(pubkeystring).keyObject
     # keyobj = KeyObjectWrapper(key=keys.Key.fromString(pubkeystring)).keyObject
     # needs to be a long in a list
     sig_long = long(signature),
