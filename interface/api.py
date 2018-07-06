@@ -3272,3 +3272,10 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
     return RESULT([r, ])
 
 #------------------------------------------------------------------------------
+
+
+def pdb_shell():
+    import pdb; pdb.set_trace()
+    return OK()
+
+#------------------------------------------------------------------------------
