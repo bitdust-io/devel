@@ -354,17 +354,13 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
-            'bitdust.exe',
+            'bitdustnode.exe',
+            'BitDustNode.exe',
             'bpmain.py',
             'bitdust.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
-            'bpgui.exe',
-            'bpgui.py',
-            'bppipe.exe',
             'bppipe.py',
-            'bptester.exe',
             'bptester.py',
-            'bitstarter.exe',
         ])
         if len(appList) > 0:
             found = True
@@ -401,17 +397,13 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = bpio.find_process([
-            'bitdust.exe',
+            'bitdustnode.exe',
+            'BitDustNode.exe',
             'bpmain.py',
             'bitdust.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
-            'bpgui.exe',
-            'bpgui.py',
-            'bppipe.exe',
             'bppipe.py',
-            'bptester.exe',
             'bptester.py',
-            'bitstarter.exe',
         ])
         if len(appList) == 0:
             lg.out(0, 'DONE')
@@ -813,59 +805,6 @@ def main(executable_path=None):
             lg.out(0, 'BitDust is not running at the moment\n')
             bpio.shutdown()
             return 0
-
-    #---uninstall---
-    elif cmd == 'uninstall':
-        def do_spawn(x=None):
-            from main.settings import WindowsStarterFileName
-            starter_filepath = os.path.join(bpio.getExecutableDir(), WindowsStarterFileName())
-            lg.out(0, "bpmain.main bitstarter.exe path: %s " % starter_filepath)
-            if not os.path.isfile(starter_filepath):
-                lg.out(0, "ERROR: %s not found\n" % starter_filepath)
-                bpio.shutdown()
-                return 1
-            cmdargs = [os.path.basename(starter_filepath), 'uninstall']
-            lg.out(0, "bpmain.main os.spawnve cmdargs=" + str(cmdargs))
-            ret = os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
-            bpio.shutdown()
-            return ret
-
-        def do_reactor_stop_and_spawn(x=None):
-            lg.out(0, 'BitDust process finished correctly\n')
-            reactor.stop()
-            ret = do_spawn()
-            bpio.shutdown()
-            return ret
-        lg.out(0, 'bpmain.main UNINSTALL!')
-        if not bpio.Windows():
-            lg.out(0, 'This command can be used only under OS Windows.\n')
-            bpio.shutdown()
-            return 0
-        if not bpio.isFrozen():
-            lg.out(0, 'You are running BitDust from sources, uninstall command is available only for installable version.\n')
-            bpio.shutdown()
-            return 0
-        appList = bpio.find_process(['bitdust.exe', ])
-        if len(appList) > 0:
-            lg.out(0, 'found main BitDust process...   ', '')
-            try:
-                # from twisted.internet import reactor
-                # from interface.command_line import run_url_command
-                # url = '?action=exit'
-                # run_url_command(url).addBoth(do_reactor_stop_and_spawn)
-                # reactor.run()
-                # bpio.shutdown()
-                # from interface import cmd_line
-                # cmd_line.call_xmlrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
-                from interface import cmd_line_json
-                cmd_line_json.call_jsonrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
-                reactor.run()
-                return 0
-            except:
-                lg.exc()
-        ret = do_spawn()
-        bpio.shutdown()
-        return ret
 
     #---command_line---
     # from interface import command_line as cmdln

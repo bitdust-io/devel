@@ -1396,7 +1396,8 @@ def find_main_process(pid_file_path=None):
     """
     """
     appList = find_process([
-        'bitdust.exe',
+        'bitdustnode.exe',
+        'BitDustNode.exe',
         'bpmain.py',
         'bitdust.py',
         'regexp:^/usr/bin/python.*bitdust.*$',

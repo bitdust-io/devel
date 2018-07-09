@@ -1098,27 +1098,27 @@ def ReadRepoLocation():
 #-------------------------------------------------------------------------------
 
 
-def SetAutorunWindows():
-    """
-    Creates a shortcut in Start->Applications->Startup under Windows, so
-    program can be started during system startup.
-    """
-    if os.path.abspath(bpio.getExecutableDir()) != os.path.abspath(settings.WindowsBinDir()):
-        return
-    createWindowsShortcut(
-        'BitDust.lnk',
-        '%s' % settings.getIconLaunchFilename(),
-        bpio.getExecutableDir(),
-        os.path.join(bpio.getExecutableDir(), 'icons', settings.IconFilename()),
-        '',
-        'Startup', )
+# def SetAutorunWindows():
+#     """
+#     Creates a shortcut in Start->Applications->Startup under Windows, so
+#     program can be started during system startup.
+#     """
+#     if os.path.abspath(bpio.getExecutableDir()) != os.path.abspath(settings.WindowsBinDir()):
+#         return
+#     createWindowsShortcut(
+#         'BitDust.lnk',
+#         '%s' % settings.getIconLaunchFilename(),
+#         bpio.getExecutableDir(),
+#         os.path.join(bpio.getExecutableDir(), 'icons', settings.IconFilename()),
+#         '',
+#         'Startup', )
 
 
-def ClearAutorunWindows():
-    """
-    Remove a shortcut from Windows startup menu.
-    """
-    removeWindowsShortcut('BitDust.lnk', folder='Startup')
+# def ClearAutorunWindows():
+#     """
+#     Remove a shortcut from Windows startup menu.
+#     """
+#     removeWindowsShortcut('BitDust.lnk', folder='Startup')
 
 # def SetAutorunWindowsOld(CUorLM='CU', location=settings.getAutorunFilename(), name=settings.ApplicationName()):
 #    cmdexec = r'reg add HK%s\software\microsoft\windows\currentversion\run /v "%s" /t REG_SZ /d "%s" /f' % (CUorLM, name, location)
@@ -1166,38 +1166,38 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
         return ''
 
 
-def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
-    """
-    Creates a shortcut for BitDust on the desktop.
-    """
-    if bpio.Windows():
-        try:
-            from win32com.client import Dispatch
-            shell = Dispatch('WScript.Shell')
-            desktop = shell.SpecialFolders(folder)
-            path = os.path.join(desktop, filename)
-            shortcut = shell.CreateShortCut(path)
-            shortcut.Targetpath = target
-            shortcut.WorkingDirectory = wDir
-            shortcut.Arguments = args
-            if icon != '':
-                shortcut.IconLocation = icon
-            shortcut.save()
-        except:
-            lg.exc()
+# def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
+#     """
+#     Creates a shortcut for BitDust on the desktop.
+#     """
+#     if bpio.Windows():
+#         try:
+#             from win32com.client import Dispatch
+#             shell = Dispatch('WScript.Shell')
+#             desktop = shell.SpecialFolders(folder)
+#             path = os.path.join(desktop, filename)
+#             shortcut = shell.CreateShortCut(path)
+#             shortcut.Targetpath = target
+#             shortcut.WorkingDirectory = wDir
+#             shortcut.Arguments = args
+#             if icon != '':
+#                 shortcut.IconLocation = icon
+#             shortcut.save()
+#         except:
+#             lg.exc()
 
 
-def removeWindowsShortcut(filename, folder='Desktop'):
-    """
-    Removes a BitDust shortcut from the desktop.
-    """
-    if bpio.Windows():
-        path = pathToWindowsShortcut(filename, folder)
-        if os.path.isfile(path) and os.access(path, os.W_OK):
-            try:
-                os.remove(path)
-            except:
-                lg.exc()
+# def removeWindowsShortcut(filename, folder='Desktop'):
+#     """
+#     Removes a BitDust shortcut from the desktop.
+#     """
+#     if bpio.Windows():
+#         path = pathToWindowsShortcut(filename, folder)
+#         if os.path.isfile(path) and os.access(path, os.W_OK):
+#             try:
+#                 os.remove(path)
+#             except:
+#                 lg.exc()
 
 #-------------------------------------------------------------------------------
 
@@ -1269,7 +1269,7 @@ def DoRestart(param='', detach=False):
             starter_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsStarterFileName())
             if not os.path.isfile(starter_filepath):
                 # lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
-                main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScritpFileName())
+                main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScriptFileName())
                 cmdargs = [os.path.basename(main_filepath), ]
                 if param != '':
                     cmdargs.append(param)
@@ -1286,7 +1286,7 @@ def DoRestart(param='', detach=False):
             lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
             lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
             pypath = sys.executable
-            cmdargs = [sys.executable]
+            cmdargs = [sys.executable, ]
             cmdargs.append(sys.argv[0])
             cmdargs += sys.argv[1:]
             if param != '' and not sys.argv.count(param):
@@ -1309,7 +1309,7 @@ def DoRestart(param='', detach=False):
         lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
         lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
         pypyth = sys.executable
-        cmdargs = [sys.executable]
+        cmdargs = [sys.executable, ]
         if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
             cmdargs.append('/usr/bin/bitdust')
         else:
@@ -1506,14 +1506,6 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 #            if os.path.exists(pathToStartMenuShortcut(settings.getIconLinkFilename())):
 #                removeStartMenuShortcut('Data Haven .NET.lnk')
 
-
-def UpdateSettings():
-    """
-    This method is called at startup, during "local initialization" part.
-
-    I used that place sometimes to 'patch' users settings on clients.
-    """
-    lg.out(6, 'misc.UpdateSettings')
 
 #-------------------------------------------------------------------------------
 
