@@ -183,10 +183,16 @@ class BasicProtocol(protocol.DatagramProtocol):
         self.callbacks.insert(index, cb)
 
     def add_callback(self, cb):
-        self.callbacks.append(cb)
+        if cb in self.callbacks:
+            lg.warn('Callback method %s already registered' % cb)
+        else:
+            self.callbacks.append(cb)
 
     def remove_callback(self, cb):
-        self.callbacks.remove(cb)
+        if cb not in self.callbacks:
+            lg.warn('Callback method %s not registered' % cb)
+        else:
+            self.callbacks.remove(cb)
 
     def run_callbacks(self, data, address):
         for cb in self.callbacks:
