@@ -463,8 +463,8 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
             for blockNum in xrange(maxBlockNum + 1):
                 if blockNum not in remote_files()[backupID]:
                     remote_files()[backupID][blockNum] = {
-                        'D': [0] * contactsdb.num_suppliers(),
-                        'P': [0] * contactsdb.num_suppliers(), }
+                        'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+                        'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl), }
                 for dataORparity in ['Data', 'Parity', ]:
                     # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
                     bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
@@ -636,8 +636,8 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
         lg.info('new remote entry for %s created in the memory' % backupID)
     if blockNum not in remote_files()[backupID]:
         remote_files()[backupID][blockNum] = {
-            'D': [0] * contactsdb.num_suppliers(),
-            'P': [0] * contactsdb.num_suppliers(), }
+            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl), }
     # save backed up block info into remote info structure, synchronize on hand info
     flag = 1 if result else 0
     if dataORparity == 'Data':
@@ -692,8 +692,8 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         local_files()[backupID] = {}
     if blockNum not in local_files()[backupID]:
         local_files()[backupID][blockNum] = {
-            'D': [0] * contactsdb.num_suppliers(),
-            'P': [0] * contactsdb.num_suppliers(), }
+            'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
+            'P': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl), }
     if not os.path.isfile(localDest):
         local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
         return
@@ -715,9 +715,6 @@ def LocalBlockReport(backupID, blockNumber, result):
     """
     This updates "local" matrix - a several pieces corresponding to given block of data.
     """
-    # if contactsdb.num_suppliers() != num_suppliers:
-    #     lg.out(6, 'backup_matrix.LocalBlockReport %s skipped, because number of suppliers were changed' % str(newblock))
-    #     return
     if result is None:
         lg.warn('result is None')
         return
@@ -1063,9 +1060,9 @@ def GetBackupStats(backupID):
     Collect needed info from "remote" matrix and create a detailed report about
     given backup.
     """
-    if backupID not in remote_files():
-        return 0, 0, [(0, 0)] * contactsdb.num_suppliers()
     customer_idurl = packetid.CustomerIDURL(backupID)
+    if backupID not in remote_files():
+        return 0, 0, [(0, 0)] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     percentPerSupplier = 100.0 / contactsdb.num_suppliers(customer_idurl=customer_idurl)
     # ??? maxBlockNum = remote_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
