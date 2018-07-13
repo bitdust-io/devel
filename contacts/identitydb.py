@@ -185,9 +185,9 @@ def idset(idurl, id_obj):
     for contact in id_obj.getContacts():
         if contact not in _Contact2IDURL:
             _Contact2IDURL[contact] = set()
-        else:
-            if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[contact]:
-                lg.warn('another user have same contact: ' + str(list(_Contact2IDURL[contact])))
+        # else:
+        #     if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[contact]:
+        #         lg.warn('another user have same contact: ' + str(list(_Contact2IDURL[contact])))
         _Contact2IDURL[contact].add(idurl)
         if idurl not in _IDURL2Contacts:
             _IDURL2Contacts[idurl] = set()

@@ -374,6 +374,11 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_upload_stop(remote_path=data['remote_path'])
 
+    @GET('^/f/d/l$')
+    @GET('^/file/download/v1$')
+    def files_downloads_v1(self, request):
+        return api.files_downloads()
+
     @POST('^/f/d/o$')
     @POST('^/file/download/open/v1$')
     @POST('^/file/download/start/v1$')
