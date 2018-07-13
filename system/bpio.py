@@ -96,11 +96,14 @@ def InstallLocale():
     try:
         import sys
         reload(sys)
-        if hasattr(sys, "setdefaultencoding"):
-            import locale
-            denc = locale.getpreferredencoding()
-            if denc != '':
-                sys.setdefaultencoding(denc)
+        sys.setdefaultencoding('UTF8')
+#         if hasattr(sys, "setdefaultencoding"):
+#             import locale
+#             denc = locale.getpreferredencoding()
+#             if not denc:
+#                 sys.setdefaultencoding('UTF-8')
+#             else:
+#                 sys.setdefaultencoding(denc)
         LocaleInstalled = True
     except:
         pass
