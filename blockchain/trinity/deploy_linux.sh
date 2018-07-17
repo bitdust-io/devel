@@ -5,7 +5,6 @@ TRINITY_DIR="${ROOT_DIR}/trinity"
 TRINITY_VENV="${ROOT_DIR}/trinity/venv"
 
 
-
 if ! [ -x "$(command -v python3.6)" ]; then
     echo ''
     echo '##### DEPLOYMENT FAILED! Python 3.6 development version is required but not installed!'
@@ -22,7 +21,6 @@ else
 fi
 
 
-
 if ! [ -x "$(command -v pip3)" ]; then
     echo ''
     echo '##### DEPLOYMENT FAILED! Pip3 is required but not installed!'
@@ -37,7 +35,6 @@ else
 fi
 
 
-
 if ! [ -x "$(command -v virtualenv)" ]; then
     echo ''
     echo '##### Installing virtualenv'
@@ -48,13 +45,11 @@ else
 fi
 
 
-
 if [ ! -d $TRINITY_DIR ]; then
     mkdir -p $TRINITY_DIR
     echo ''
     echo '##### Created folder for Trinity Blockchain'
 fi
-
 
 
 if [ ! -d $TRINITY_VENV ]; then
@@ -64,7 +59,12 @@ if [ ! -d $TRINITY_VENV ]; then
 fi
 
 
-
+echo ''
+echo '##### Installing/Updating trinity with pip'
+echo ''
 $TRINITY_VENV/bin/pip install -U trinity
 
 
+echo ''
+echo 'DONE!'
+echo ''
