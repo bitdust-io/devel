@@ -42,6 +42,7 @@ if [ ! -d $TRINITY_DIR ]; then
     mkdir $TRINITY_DIR/bin
     mkdir $TRINITY_DIR/data
     mkdir $TRINITY_DIR/data/logs
+    echo '' > $TRINITY_DIR/data/logs/trinity.log
     echo ''
     echo "##### Created folder for Trinity Blockchain in ${TRINITY_DIR}"
 fi
@@ -80,7 +81,7 @@ $TRINITY_VENV/bin/pip install -U trinity
 
 echo ''
 echo 'To start trinity process you can run via command line:'
-echo "${TRINITY_VENV}/bin/trinity --data-dir=${TRINITY_DIR}/data --trinity-root-dir=${TRINITY_DIR}"
+echo "${TRINITY_VENV}/bin/trinity --data-dir=${TRINITY_DIR}/data --trinity-root-dir=${TRINITY_DIR} --port=30345"
 
 
 echo ''
