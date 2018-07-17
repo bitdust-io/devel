@@ -2,7 +2,9 @@
 
 ROOT_DIR="$HOME/.bitdust"
 TRINITY_DIR="${ROOT_DIR}/trinity"
-TRINITY_VENV="${ROOT_DIR}/trinity/venv"
+TRINITY_VENV="${TRINITY_DIR}/venv"
+TRINITY_BIN="${TRINITY_DIR}/bin/"
+TRINITY_VIRTUALENV="${TRINITY_DIR}/bin/virtualenv"
 
 
 if ! [ -x "$(command -v python3.6)" ]; then
@@ -35,27 +37,28 @@ else
 fi
 
 
-if ! [ -x "$(command -v virtualenv)" ]; then
+if [ ! -d $TRINITY_DIR ]; then
+    mkdir -p $TRINITY_DIR
+    mkdir -p $TRINITY_DIR/bin
     echo ''
-    echo '##### Installing virtualenv'
-    pip3 install virtualenv --user
-else
-    echo ''
-    echo '##### Virtualenv already installed'
+    echo '##### Created folder for Trinity Blockchain'
 fi
 
 
-if [ ! -d $TRINITY_DIR ]; then
-    mkdir -p $TRINITY_DIR
+if ! [ -f $TRINITY_VIRTUALENV/bin/virtualenv ]; then
     echo ''
-    echo '##### Created folder for Trinity Blockchain'
+    echo '##### Installing isolated virtualenv'
+    PYTHONUSERBASE=TRINITY_VIRTUALENV pip3 install --ignore-installed --user virtualenv
+else
+    echo ''
+    echo '##### Found isolated virtualenv binaries'
 fi
 
 
 if [ ! -d $TRINITY_VENV ]; then
     echo ''
     echo '##### Building Trinity virtual environment'
-    virtualenv -p python3.6 $TRINITY_VENV
+    $TRINITY_VIRTUALENV/bin/virtualenv -p python3.6 $TRINITY_VENV
 fi
 
 
@@ -63,7 +66,7 @@ if [ ! -f $TRINITY_VENV/bin/pip ]; then
     echo ''
     echo '##### Pip is not found inside virtual environment, rebuilding'
     rm -rf $TRINITY_VENV
-    virtualenv -p python3.6 $TRINITY_VENV
+    $TRINITY_VIRTUALENV/bin/virtualenv -p python3.6 $TRINITY_VENV
 fi
 
 
