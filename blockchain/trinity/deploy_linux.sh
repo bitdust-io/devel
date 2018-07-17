@@ -59,6 +59,14 @@ if [ ! -d $TRINITY_VENV ]; then
 fi
 
 
+if [ ! -f $TRINITY_VENV/bin/pip ]; then
+    echo ''
+    echo '##### Pip is not found inside virtual environment, rebuilding'
+    rm -rf $TRINITY_VENV
+    virtualenv -p python3.6 $TRINITY_VENV
+fi
+
+
 echo ''
 echo '##### Installing/Updating trinity with pip'
 echo ''
