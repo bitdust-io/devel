@@ -39,9 +39,11 @@ fi
 
 if [ ! -d $TRINITY_DIR ]; then
     mkdir -p $TRINITY_DIR
-    mkdir -p $TRINITY_DIR/bin
+    mkdir $TRINITY_DIR/bin
+    mkdir $TRINITY_DIR/data
+    mkdir $TRINITY_DIR/data/logs
     echo ''
-    echo '##### Created folder for Trinity Blockchain'
+    echo "##### Created folder for Trinity Blockchain in ${TRINITY_DIR}"
 fi
 
 
@@ -58,7 +60,7 @@ fi
 if [ ! -d $TRINITY_VENV ]; then
     echo ''
     echo '##### Building Trinity virtual environment'
-    $TRINITY_VIRTUALENV/bin/virtualenv -p python3.6 $TRINITY_VENV
+    PYTHONUSERBASE=$TRINITY_VIRTUALENV $TRINITY_VIRTUALENV/bin/virtualenv -p python3.6 $TRINITY_VENV
 fi
 
 
@@ -66,7 +68,7 @@ if [ ! -f $TRINITY_VENV/bin/pip ]; then
     echo ''
     echo '##### Pip is not found inside virtual environment, rebuilding'
     rm -rf $TRINITY_VENV
-    $TRINITY_VIRTUALENV/bin/virtualenv -p python3.6 $TRINITY_VENV
+    PYTHONUSERBASE=$TRINITY_VIRTUALENV $TRINITY_VIRTUALENV/bin/virtualenv -p python3.6 $TRINITY_VENV
 fi
 
 
@@ -74,6 +76,11 @@ echo ''
 echo '##### Installing/Updating trinity with pip'
 echo ''
 $TRINITY_VENV/bin/pip install -U trinity
+
+
+echo ''
+echo 'To start trinity process you can run via command line:'
+echo "${TRINITY_VENV}/bin/trinity --data-dir=${TRINITY_DIR}/data --trinity-root-dir=${TRINITY_DIR}"
 
 
 echo ''
