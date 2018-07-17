@@ -48,7 +48,7 @@ fi
 if ! [ -f $TRINITY_VIRTUALENV/bin/virtualenv ]; then
     echo ''
     echo '##### Installing isolated virtualenv'
-    PYTHONUSERBASE=TRINITY_VIRTUALENV pip3 install --ignore-installed --user virtualenv
+    PYTHONUSERBASE=$TRINITY_VIRTUALENV pip3 install --ignore-installed --user virtualenv
 else
     echo ''
     echo '##### Found isolated virtualenv binaries'
