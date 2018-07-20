@@ -4,7 +4,7 @@ ROOT_DIR="$HOME/.bitdust"
 BLOCKCHAIN_DIR="${ROOT_DIR}/blockchain"
 BLOCKCHAIN_SRC="${BLOCKCHAIN_DIR}/src"
 BLOCKCHAIN_DATA="${BLOCKCHAIN_DIR}/data"
-BLOCKCHAIN_VENV="${BLOCKCHAIN_SRC}/venv"
+BLOCKCHAIN_VENV="${BLOCKCHAIN_DIR}/venv"
 BLOCKCHAIN_PYTHON="${BLOCKCHAIN_VENV}/bin/python3.6"
 BLOCKCHAIN_VIRTUALENV="${BLOCKCHAIN_DIR}/virtualenv"
 BLOCKCHAIN_VIRTUALENV_BIN="${BLOCKCHAIN_VIRTUALENV}/bin/virtualenv"
@@ -40,9 +40,26 @@ else
 fi
 
 
-if ! [ -f $BLOCKCHAIN_VIRTUALENV/bin/virtualenv ]; then
+if [ ! -d $BLOCKCHAIN_DIR ]; then
+    mkdir -p "${BLOCKCHAIN_DIR}"
+    echo ''
+    echo "##### Created parent folder for Py-EVM Blockchain in ${BLOCKCHAIN_DIR}"
+fi
+
+
+if [ ! -d $BLOCKCHAIN_DATA ]; then
+    mkdir -p "${BLOCKCHAIN_DATA}"
+    mkdir -p "${BLOCKCHAIN_DATA}/logs"
+    echo '' > $BLOCKCHAIN_DATA/logs/trinity.log
+    echo ''
+    echo "##### Created data folder for Py-EVM Blockchain in ${BLOCKCHAIN_DATA}"
+fi
+
+
+if [ ! -f $BLOCKCHAIN_VIRTUALENV/bin/virtualenv ]; then
     echo ''
     echo '##### Installing isolated virtualenv'
+    mkdir -p "${BLOCKCHAIN_VIRTUALENV}"
     PYTHONUSERBASE=$BLOCKCHAIN_VIRTUALENV pip3 install --ignore-installed --user virtualenv
 else
     echo ''
@@ -50,18 +67,7 @@ else
 fi
 
 
-if [ ! -d $BLOCKCHAIN_DIR ]; then
-    mkdir -p $BLOCKCHAIN_DIR
-    mkdir -p $BLOCKCHAIN_DATA
-    mkdir -p $BLOCKCHAIN_DATA/logs
-    mkdir -p $BLOCKCHAIN_VIRTUALENV
-    echo '' > $BLOCKCHAIN_DATA/logs/trinity.log
-    echo ''
-    echo "##### Created required folders for Py-EVM Blockchain in ${BLOCKCHAIN_DIR}"
-fi
-
-
-if ! [ -f $BLOCKCHAIN_SRC/setup.py ]; then
+if [ ! -f $BLOCKCHAIN_SRC/setup.py ]; then
     echo ''
     echo '##### Cloning Py-EVM repository'
     git clone --depth=1 https://github.com/vesellov/py-evm.git $BLOCKCHAIN_SRC
