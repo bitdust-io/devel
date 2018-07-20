@@ -188,7 +188,8 @@ class P2PConnector(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('P2P ' + newstate)
-        # tray_icon.state_changed(network_connector.A().state, self.state)
+        if newstate == 'INCOMMING?':
+            self.automat('instant')
 
     def A(self, event, arg):
         #---AT_STARTUP---
