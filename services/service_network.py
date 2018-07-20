@@ -66,6 +66,8 @@ class NetworkService(LocalService):
         from p2p import network_connector
         from logs import lg
         known_interfaces = getNetworkInterfaces()
+        if '127.0.0.1' in known_interfaces:
+            known_interfaces.remove('127.0.0.1')
         if self.current_network_interfaces is None:
             self.current_network_interfaces = known_interfaces
             lg.out(2, 'service_network._do_check_network_interfaces START UP: %s' % self.current_network_interfaces)

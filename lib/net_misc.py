@@ -1004,9 +1004,11 @@ def getNetworkInterfaces():
 
     elif plat == 'Darwin':
         try:
+            # TODO: try to avoid socket connect to remote host
             return filter(None, [
                 l for l in (
                     [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
+                    # TODO: replace 8.8.8.8 with random seed node
                     [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]],
                 ) if l
             ][0])
