@@ -33,8 +33,8 @@ def default_nodes():
         'p2p-id.ru': (80, 6661),
         'datahaven.net': (80, 6661),
         # 'identity.datahaven.net': (80, 6661),
-        'bitdust.io': (8084, 6661),
-        'work.offshore.ai': (8084, 6661),
+        # 'bitdust.io': (8084, 6661),
+        # 'work.offshore.ai': (8084, 6661),
         'blog.bitdust.io': (8084, 6661),
         'bitdust.ai': (80, 6661),
     }
