@@ -55,6 +55,7 @@ EVENTS:
     * :red:`check-synchronize`
     * :red:`inbox-packet`
     * :red:`init`
+    * :red:`instant`
     * :red:`my-id-propagated`
     * :red:`my-id-updated`
     * :red:`network_connector.state`
@@ -83,6 +84,7 @@ from automats import global_state
 from dht import dht_service
 
 from contacts import identitycache
+from contacts import contactsdb
 
 from transport import callback
 
@@ -209,16 +211,16 @@ class P2PConnector(automat.Automat):
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
                 self.doPopBestProto(arg)
-            elif event == 'inbox-packet' and self.isUsingBestProto(arg):
-                self.state = 'CONNECTED'
-                self.doInitRatings(arg)
-                self.doRestartCustomersRejector(arg)
             elif event == 'timer-20sec' or ( event == 'network_connector.state' and arg == 'DISCONNECTED' ):
                 self.state = 'DISCONNECTED'
                 self.doInitRatings(arg)
             elif event == 'check-synchronize' or ( event == 'network_connector.state' and arg == 'CONNECTED' ):
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
+            elif ( event == 'instant' and not self.isAnyPeersKnown(arg) ) or ( event == 'inbox-packet' and self.isUsingBestProto(arg) ):
+                self.state = 'CONNECTED'
+                self.doInitRatings(arg)
+                self.doRestartCustomersRejector(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'ping-contact':
@@ -280,6 +282,12 @@ class P2PConnector(automat.Automat):
         Condition method.
         """
         return arg[0]
+
+    def isAnyPeersKnown(self, arg):
+        """
+        Condition method.
+        """
+        return len(contactsdb.contacts_remote()) > 0
 
     def doSendMyIdentity(self, arg):
         """
