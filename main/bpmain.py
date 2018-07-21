@@ -48,8 +48,8 @@ def show():
     """
     Just calls ``p2p.web.control.show()`` to open the GUI.
     """
-    from web import control
-    control.show()
+    from main import control
+    # TODO: raise up electron window?
     return 0
 
 
