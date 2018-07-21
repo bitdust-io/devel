@@ -69,8 +69,7 @@ from lib import nameurl
 
 from main import settings
 from main import events
-
-from transport import callback
+from main import control
 
 from raid import eccmap
 
@@ -80,8 +79,6 @@ from crypt import my_keys
 
 from userid import global_id
 from userid import my_id
-
-from web import control
 
 from services import driver
 

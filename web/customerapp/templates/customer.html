@@ -1,8 +1,0 @@
-{% extends "page.html" %}
-{% block page %}
-<h1>customer {{ customer.idurl }}</h1>
-<p><a href="{{ customer.idurl }}" target=_blank>open Identity source</a></p>
-<p><a href="/identity/{{ identity_id }}/">open Identity cache</a></p>
-<p>This user stores his data on your machine.</p>
-<p>Start a <a href="/chat/room/{{ identity_id }}">live chat</a> now.</p>
-{% endblock page %}
