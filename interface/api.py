@@ -1125,7 +1125,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     from storage import backup_fs
     from storage import backup_control
     from lib import packetid
-    from web import control
+    from main import control
     from userid import global_id
     from crypt import my_keys
     if not bpio.pathExist(local_path):
@@ -1300,7 +1300,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     from storage import backup_fs
     from storage import backup_control
     from storage import restore_monitor
-    from web import control
+    from main import control
     from system import bpio
     from lib import packetid
     from main import settings

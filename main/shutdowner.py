@@ -112,7 +112,7 @@ def shutdown(x=None):
     git_proc.shutdown()
     events.clear_subscribers()
     tmpfile.shutdown()
-    from web import control
+    from main import control
     dl.append(control.shutdown())
     weblog.shutdown()
     webtraffic.shutdown()
