@@ -199,14 +199,20 @@ class FileQueue:
     def close_outbox_file(self, stream_id):
         # if _Debug:
         #     lg.out(18, 'close_outbox_file %r' % stream_id)
-        self.outboxFiles[stream_id].close()
-        del self.outboxFiles[stream_id]
+        if self.outboxFiles.get(stream_id):
+            self.outboxFiles[stream_id].close()
+            del self.outboxFiles[stream_id]
+        else:
+            lg.warn('outgoing UDP file %s not exist' % stream_id)
 
     def close_inbox_file(self, stream_id):
         # if _Debug:
         #     lg.out(18, 'close_inbox_file %r' % stream_id)
-        self.inboxFiles[stream_id].close()
-        del self.inboxFiles[stream_id]
+        if self.inboxFiles.get(stream_id):
+            self.inboxFiles[stream_id].close()
+            del self.inboxFiles[stream_id]
+        else:
+            lg.warn('incoming UDP file %s not exist' % stream_id)
 
     def report_outbox_file(self, outfile):
         from transport.udp import udp_interface
