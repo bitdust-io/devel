@@ -46,20 +46,7 @@ http://code.activestate.com/recipes/576980-authenticated-encryption-with-pycrypt
 import os
 import sys
 import random
-import hashlib
-
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import DES3
-from Crypto.Cipher import AES
-from Crypto.Cipher import Blowfish
-
-import warnings
-
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-
-#------------------------------------------------------------------------------
-
-from twisted.conch.ssh import keys
+import gc
 
 #------------------------------------------------------------------------------
 
@@ -75,11 +62,12 @@ from system import bpio
 
 from main import settings
 
-# from crypt.helpers import KeyObjectWrapper
+from crypt import rsa_key
+from crypt import hashes
+from crypt import aes_cbc
 
 #------------------------------------------------------------------------------
 
-_MyRsaKey = None
 _MyKeyObject = None
 
 #------------------------------------------------------------------------------
@@ -101,18 +89,15 @@ def InitMyKey(keyfilename=None):
     If file does not exist - the new key will be generated.
     The size for new key will be taken from settings.
     """
-    global _MyRsaKey
     global _MyKeyObject
-    if _MyKeyObject is not None:
-        return
-    if _MyRsaKey is not None:
-        return
+    if _MyKeyObject is not None and _MyKeyObject.keyObject is not None:
+        return False
     if not LoadMyKey(keyfilename):
         GenerateNewKey(keyfilename)
+    return True
 
 
 def LoadMyKey(keyfilename=None):
-    global _MyRsaKey
     global _MyKeyObject
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
@@ -121,9 +106,8 @@ def LoadMyKey(keyfilename=None):
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
-        _MyKeyObject = keys.Key.fromFile(keyfilename)
-        _MyRsaKey = _MyKeyObject.keyObject
-        # _MyRsaKey = KeyObjectWrapper(key=_MyKeyObject).keyObject
+        _MyKeyObject = rsa_key.RSAKey()
+        _MyKeyObject.fromFile(keyfilename)
         lg.out(4, 'key.InitMyKey loaded private key from %s' % (keyfilename))
         return ValidateKey()
     return False
@@ -131,7 +115,6 @@ def LoadMyKey(keyfilename=None):
 
 def GenerateNewKey(keyfilename=None):
     global _MyKeyObject
-    global _MyRsaKey
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
     if os.path.exists(keyfilename + '_location'):
@@ -139,11 +122,13 @@ def GenerateNewKey(keyfilename=None):
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     lg.out(4, 'key.InitMyKey generate new private key')
-    _MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)
-    _MyKeyObject = keys.Key(_MyRsaKey)
-    keystring = _MyKeyObject.toString('openssh')
+    _MyKeyObject = rsa_key.RSAKey()
+    _MyKeyObject.generate(settings.getPrivateKeySize(), os.urandom)
+    keystring = _MyKeyObject.toString()
     bpio.WriteFile(keyfilename, keystring)
     lg.out(4, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
+    del keystring
+    gc.collect()
 
 
 def ValidateKey():
@@ -158,36 +143,37 @@ def ForgetMyKey():
     Remove Private Key from memory.
     """
     global _MyKeyObject
-    global _MyRsaKey
+    if _MyKeyObject:
+        _MyKeyObject.forget()
     _MyKeyObject = None
-    _MyRsaKey = None
 
 
 def isMyKeyReady():
     """
     Check if the Key is already loaded into memory.
     """
-    global _MyRsaKey
-    return _MyRsaKey is not None
+    global _MyKeyObject
+    return _MyKeyObject is not None and _MyKeyObject.is_ready()
 
 
 def MyPublicKey():
     """
-    Return Public part of the Key as openssh string.
+    Return Public part of the Key as PEM string.
     """
     global _MyKeyObject
     InitMyKey()
-    Result = _MyKeyObject.public().toString('openssh')
+    Result = _MyKeyObject.toPublicString()
     return Result
 
 
 def MyPrivateKey():
     """
-    Return Private part of the Key as openssh string.
+    Return Private part of the Key as PEM string.
     """
     global _MyKeyObject
-    InitMyKey()
-    return _MyKeyObject.toString('openssh')
+    if not _MyKeyObject:
+        InitMyKey()
+    return _MyKeyObject.toString()
 
 
 def MyPublicKeyObject():
@@ -196,7 +182,8 @@ def MyPublicKeyObject():
     formats.
     """
     global _MyKeyObject
-    InitMyKey()
+    if not _MyKeyObject:
+        InitMyKey()
     return _MyKeyObject.public()
 
 
@@ -205,7 +192,8 @@ def MyPrivateKeyObject():
     Return Private part of the Key as object.
     """
     global _MyKeyObject
-    InitMyKey()
+    if not _MyKeyObject:
+        InitMyKey()
     return _MyKeyObject
 
 #------------------------------------------------------------------------------
@@ -217,12 +205,14 @@ def Sign(inp):
     ``Crypto.PublicKey.RSA.sign``.
     """
     global _MyKeyObject
-    InitMyKey()
+    if not _MyKeyObject:
+        InitMyKey()
+    result = _MyKeyObject.sign(inp)
     # Makes a list but we just want a string
-    Signature = _MyKeyObject.keyObject.sign(inp, '')
+    # Signature = _MyKeyObject.keyObject.sign(inp, '')
     # Signature = KeyObjectWrapper(key=_MyKeyObject).keyObject.sign(inp, '')
     # so we take first element in list - need str cause was long
-    result = str(Signature[0])
+    # result = str(Signature[0])
     return result
 
 
@@ -237,13 +227,16 @@ def VerifySignature(pubkeystring, hashcode, signature):
 
     Return True if signature is correct, otherwise False.
     """
+    pub_key = rsa_key.RSAKey()
+    pub_key.fromString(pubkeystring)
+    result = pub_key.verify(signature, hashcode)
     # key is public key in string format
-    keyobj = keys.Key.fromString(pubkeystring).keyObject
+    # keyobj = keys.Key.fromString(pubkeystring).keyObject
     # keyobj = KeyObjectWrapper(key=keys.Key.fromString(pubkeystring)).keyObject
     # needs to be a long in a list
-    sig_long = long(signature),
-    Result = bool(keyobj.verify(hashcode, sig_long))
-    return Result
+    # sig_long = long(signature),
+    # Result = bool(keyobj.verify(hashcode, sig_long))
+    return result
 
 
 def Verify(ConIdentity, hashcode, signature):
@@ -267,35 +260,27 @@ def HashMD5(inp, hexdigest=False):
     http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-
     with-same-md5.html
     """
-    if hexdigest:
-        return hashlib.md5(inp).hexdigest()
-    return hashlib.md5(inp).digest()
+    return hashes.md5(inp, hexdigest=hexdigest)
 
 
 def HashSHA(inp, hexdigest=False):
     """
     Use SHA1 method to calculate the hash of ``inp`` string.
     """
-    if hexdigest:
-        return hashlib.sha1(inp).hexdigest()
-    return hashlib.sha1(inp).digest()
+    return hashes.sha1(inp, hexdigest=hexdigest)
 
 
 def HashSHA512(inp, hexdigest=False):
     """
-    
     """
-    if hexdigest:
-        return hashlib.sha512(inp).hexdigest()
-    return hashlib.sha512(inp).digest()
+    return hashes.sha256(inp, hexdigest=hexdigest)
 
 
 def Hash(inp, hexdigest=False):
     """
-    Core function to calculate hash of ``inp`` string, right now it uses MD5
+    Core function to calculate hash of ``inp`` string, right now it uses SHA1
     method.
     """
-    # return HashMD5(inp)
     return HashSHA(inp, hexdigest=hexdigest)
 
 #------------------------------------------------------------------------------
@@ -305,110 +290,71 @@ def SessionKeyType():
     """
     Which crypto is used for session key.
     """
-    # return "AES"
-    return 'DES3'
+    return 'AES'
 
 
 def NewSessionKey():
     """
-    Return really random string for making equivalent DES3 objects when needed.
+    Return really random string for making AES cipher objects when needed.
     """
-    # to work around bug in rsa.encrypt - do not want leading 0.
-    return chr(random.randint(1, 255)) + os.urandom(23)
+    return aes_cbc.make_key()
 
 #------------------------------------------------------------------------------
 
-
-def DecryptWithSessionKey(rand24, inp, session_key_type=SessionKeyType()):
-    """
-    Decrypt string with given session key.
-
-    :param rand24: a session key comes with the message in encrypted form
-    :param inp: input string to encrypt
-    """
-    if session_key_type == 'DES3':
-        SessionKey = DES3.new(rand24)
-        ret = SessionKey.decrypt(inp)
-    elif session_key_type == 'AES':
-        # TODO: AES is not tested yet
-        SessionKey = AES.new(rand24)
-        ret = SessionKey.decrypt(inp)
-    return ret
-
-
-def EncryptWithSessionKey(session_key, inp, session_key_type=SessionKeyType()):
+def EncryptWithSessionKey(session_key, inp):
     """
     Encrypt input string with Session Key.
 
     :param session_key: randomly generated session key
     :param inp: input string to encrypt
     """
-    if session_key_type == 'DES3':
-        SessionKey = DES3.new(session_key)
-        from lib import misc
-        data = misc.RoundupString(inp, 24)
-        ret = SessionKey.encrypt(data)
-        del data
-    elif session_key_type == 'AES':
-        # TODO: AES is not tested yet
-        SessionKey = AES.new(session_key)
-        from lib import misc
-        data = misc.RoundupString(inp, 24)
-        ret = SessionKey.encrypt(data)
-        del data
-    elif session_key_type == 'Blowfish':
-        # TODO: BlowFish is not done yet!
-        SessionKey = Blowfish.new(session_key)
-        ret = ''
+    ret = aes_cbc.encrypt(inp, session_key)
+    return ret
+
+
+def DecryptWithSessionKey(session_key, inp):
+    """
+    Decrypt string with given session key.
+
+    :param session_key: a session key comes with the message in encrypted form,
+        here it must be already decrypted
+    :param inp: input string to decrypt
+    """
+    ret = aes_cbc.decrypt(inp, session_key)
     return ret
 
 #------------------------------------------------------------------------------
 
-def EncryptOpenSSHPublicKey(openssh_string_public, inp):
+def EncryptOpenSSHPublicKey(pubkeystring, inp):
     """
     Encrypt ``inp`` string with given Public Key.
     """
-    keyobj = keys.Key.fromString(openssh_string_public)
-    return EncryptBinaryPublicKey(keyobj, inp)
+    pub_key = rsa_key.RSAKey()
+    pub_key.fromString(pubkeystring)
+    result = pub_key.encrypt(inp)
+    return result
 
 
-def DecryptOpenSSHPrivateKey(openssh_string_private, inp):
+def DecryptOpenSSHPrivateKey(privkeystring, inp):
     """
-    Decrypt ``inp`` string with a Private Key provided as string in openssh format.
+    Decrypt ``inp`` string with a Private Key provided as string in PEM format.
     """
-    key_object = keys.Key.fromString(openssh_string_private)
-    rsa_key = key_object.keyObject
-    # rsa_key = KeyObjectWrapper(key=key_object).keyObject
-    atuple = (inp,)
-    padresult = rsa_key.decrypt(atuple)
-    # remove the "1" added in EncryptBinaryPublicKey
-    result = padresult[1:]
+    priv_key = rsa_key.RSAKey()
+    priv_key.fromString(privkeystring)
+    result = priv_key.decrypt(inp)
     return result
 
 #------------------------------------------------------------------------------
-
-def EncryptBinaryPublicKey(publickey, inp):
-    """
-    Encrypt ``inp`` string using given Public Key in the ``publickey`` object.
-
-    Return encrypted string.
-    """
-    # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
-    # Only think we encrypt is produced by NewSessionKey() which takes care not to have leading zero.
-    # See   bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
-    # So we add a 1 in front.
-    atuple = publickey.keyObject.encrypt('1' + inp, "")
-    # atuple = KeyObjectWrapper(key=publickey).keyObject.encrypt('1' + inp, "")
-    return atuple[0]
-
 
 def EncryptLocalPublicKey(inp):
     """
     This is just using local key, encrypt ``inp`` string.
     """
     global _MyKeyObject
-    InitMyKey()
-    return EncryptBinaryPublicKey(_MyKeyObject, inp)
+    if not _MyKeyObject:
+        InitMyKey()
+    result = _MyKeyObject.encrypt(inp)
+    return result
 
 
 def DecryptLocalPrivateKey(inp):
@@ -416,12 +362,10 @@ def DecryptLocalPrivateKey(inp):
     Decrypt ``inp`` string with your Private Key.
     Here we decrypt with our local private key - so no argument for that.
     """
-    global _MyRsaKey
-    InitMyKey()
-    atuple = (inp,)
-    padresult = _MyRsaKey.decrypt(atuple)
-    # remove the "1" added in EncryptBinaryPublicKey
-    result = padresult[1:]
+    global _MyKeyObject
+    if not _MyKeyObject:
+        InitMyKey()
+    result = _MyKeyObject.decrypt(inp)
     return result
 
 #------------------------------------------------------------------------------
@@ -451,7 +395,9 @@ def SpeedTest():
 
     dt = time.time()
     print 'decrypt now'
+    i = 0
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
+        i += 1
         SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
         paddedData = DecryptWithSessionKey(SessionKey, EncryptedData)
         newData = paddedData[:Length]
@@ -460,10 +406,10 @@ def SpeedTest():
         if newData != Data:
             raise Exception
         print '.',
+        open(str(i), 'wb').write(EncryptedData)
     print time.time() - dt, 'seconds'
 
 #------------------------------------------------------------------------------
-
 
 if __name__ == '__main__':
     bpio.init()
