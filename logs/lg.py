@@ -70,7 +70,7 @@ def fqn(o):
 
 #------------------------------------------------------------------------------
 
-def out(level, msg, nl='\n'):
+def out(level, msg, nl=b'\n'):
     """
     The core method, most useful thing in any project :-))) Print a text line
     to the log file or console.
@@ -93,9 +93,7 @@ def out(level, msg, nl='\n'):
     global _GlobalDebugLevel
     if not _LogsEnabled:
         return
-    s = '' + msg
-    if isinstance(s, six.text_type):
-        s = s.encode('utf-8')
+    s = msg
     s_ = s
     if level < 0:
         level = 0
@@ -123,22 +121,24 @@ def out(level, msg, nl='\n'):
     if is_debug(30):
         currentThreadName = threading.currentThread().getName()
         s = s + ' {%s}' % currentThreadName.lower()
+    if isinstance(s, six.text_type):
+        s = s.encode('utf-8')
     if is_debug(level):
         if _LogFile is not None:
-            _LogFile.write(s + nl)
+            _LogFile.write((s + nl).decode('utf-8'))
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
             try:
                 s = str(s) + nl
-                sys.stdout.write(s)
+                sys.stdout.write(s.decode('utf-8'))
             except:
                 try:
-                    sys.stdout.write(format_exception() + '\n\n' + s)
+                    sys.stdout.write((format_exception() + b'\n\n' + s).decode('utf-8'))
                 except:
                     pass
 
     if _WebStreamFunc is not None:
-        _WebStreamFunc(level, s_ + nl)
+        _WebStreamFunc(level, (s_ + nl).decode('utf-8'))
     _LogLinesCounter += 1
     if _LogLinesCounter % 10000 == 0:
         out(2, '[%s]' % time.asctime())
@@ -276,6 +276,8 @@ def exception(level, maxTBlevel, exc_info):
     if _StoreExceptionsEnabled:
         import tempfile
         fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
+        if isinstance(s, six.text_type):
+            s = s.encode('utf-8')
         os.write(fd, s)
         os.close(fd)
         out(level, 'saved to: %s' % filename)
@@ -515,13 +517,13 @@ def log_filename():
 
 def stdout_start_redirecting():
     """
-    Replace sys.stdout with PATCHED_stdout so all output get logged.
+    Replace sys.stdout with STDOUT_redirected so all output get logged.
     """
     global _RedirectStdOut
     global _StdOutPrev
     _RedirectStdOut = True
     _StdOutPrev = sys.stdout
-    sys.stdout = PATCHED_stdout()
+    sys.stdout = STDOUT_redirected()
 
 
 def stdout_stop_redirecting():
@@ -573,7 +575,7 @@ def setup_unbuffered_stdout():
     """
     global _OriginalStdOut
     _OriginalStdOut = sys.stdout
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+    sys.stdout = STDUOUT_unbuffered(sys.stdout)
 
 
 def restore_original_stdout():
@@ -591,7 +593,6 @@ def restore_original_stdout():
         _std_out.close()
     except Exception as exc:
         pass
-        # traceback.print_last(file=open('bitdust.error', 'w'))
 
 
 def set_weblog_func(webstreamfunc):
@@ -607,7 +608,7 @@ def set_weblog_func(webstreamfunc):
 #------------------------------------------------------------------------------
 
 
-class PATCHED_stdout:
+class STDOUT_redirected(object):
     """
     Emulate system STDOUT, useful to log any program output.
     """
@@ -623,7 +624,7 @@ class PATCHED_stdout:
     def close(self): pass
 
 
-class STDOUT_black_hole:
+class STDOUT_black_hole(object):
     """
     Useful to disable any output to STDOUT.
     """
@@ -636,3 +637,20 @@ class STDOUT_black_hole:
     def flush(self): pass
 
     def close(self): pass
+
+
+class STDUOUT_unbuffered(object):
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)

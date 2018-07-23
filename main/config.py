@@ -34,13 +34,18 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
-import types
 import re
+
 from io import open
+import six
+
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import os.path as _p
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -141,11 +146,12 @@ class BaseConfig(object):
         return self._set(entryPath, value)
 
     def getInt(self, entryPath, default=None):
-        data = self.getData(entryPath)
-        if data is None:
+        s = self.getData(entryPath)
+        if s is None:
             return default
         try:
-            return int(data.strip().strip('"'))
+            s = s.decode('utf-8').strip().strip('"')
+            return int(s)
         except ValueError:
             return default
 
@@ -283,9 +289,12 @@ class BaseConfig(object):
             dpath = os.path.join(dpath, d)
             self._mkdir(dpath)
         fpath = os.path.join(dpath, elemList[-1])
+        s = data
+        if isinstance(s, six.text_type):
+            s = s.encode('utf-8')
         try:
             f = open(fpath, 'wb')
-            f.write(data)
+            f.write(s)
             f.close()
             return True
         except (OSError, IOError):
