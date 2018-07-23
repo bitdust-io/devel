@@ -39,6 +39,7 @@ from Cryptodome.PublicKey import RSA
 from Cryptodome.Hash import SHA1
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Cipher import PKCS1_OAEP
+from Cryptodome.Util import number
 
 #------------------------------------------------------------------------------
 
@@ -90,7 +91,7 @@ class RSAKey(object):
             raise ValueError('key object is not exist')
         return self.keyObject.exportKey(format=output_format)
 
-    def toPublicString(self, output_format='PEM'):
+    def toPublicString(self, output_format='OpenSSH'):
         if not self.keyObject:
             raise ValueError('key object is not exist')
         return self.keyObject.publickey().exportKey(format=output_format)
@@ -99,13 +100,17 @@ class RSAKey(object):
         if not self.keyObject:
             raise ValueError('key object is not exist')
         h = SHA1.new(message)
-        signature = pkcs1_15.new(self.keyObject).sign(h)
+        signature_bytes = pkcs1_15.new(self.keyObject).sign(h)
+        signature_int = number.bytes_to_long(signature_bytes)
+        signature = str(signature_int)
         return signature
 
     def verify(self, signature, message):
         h = SHA1.new(message)
         try:
-            pkcs1_15.new(self.keyObject).verify(h, signature)
+            signature_int = long(signature)
+            signature_bytes = number.long_to_bytes(signature_int)
+            pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
         except (ValueError, TypeError):
             result = False

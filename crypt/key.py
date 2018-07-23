@@ -27,18 +27,9 @@
 .. module:: key.
 
 Here is a bunch of cryptography methods used in all parts of the software.
-BitDust uses PyCrypto library:
-    https://www.dlitz.net/software/pycrypto/
-For most of BitDust code (outside ssh I think) we will only use ascii encoded string versions of keys.
-Expect to make keys, signatures, and hashes all base64 strings soon.
+BitDust uses PyCryptodome library: https://www.pycryptodome.org/
 Our local key is always on hand.
-Main thing is to be able to use public keys in contacts to verify packets.
-We never want to bother storing bad data, and need localtester to do local scrub.
-
-TODO:
-http://code.activestate.com/recipes/576980-authenticated-encryption-with-pycrypto/
-    * need to add salt in IV
-    * use something more advanced than os.urandom
+Main thing here is to be able to use public keys in contacts to verify packets.
 """
 
 #------------------------------------------------------------------------------
@@ -129,7 +120,7 @@ def GenerateNewKey(keyfilename=None):
     if _Debug:
         lg.out(_DebugLevel, 'key.InitMyKey generate new private key')
     _MyKeyObject = rsa_key.RSAKey()
-    _MyKeyObject.generate(settings.getPrivateKeySize(), os.urandom)
+    _MyKeyObject.generate(settings.getPrivateKeySize())
     keystring = _MyKeyObject.toString()
     bpio.WriteFile(keyfilename, keystring)
     if _Debug:
