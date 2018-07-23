@@ -31,7 +31,7 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -319,8 +319,8 @@ def validate_key(key_object):
     """
     data256 = os.urandom(256)
     hash_base = key.Hash(data256)
-    signature256 = key_object.keyObject.sign(hash_base, '')
-    return key_object.keyObject.verify(hash_base, signature256)
+    signature256 = key_object.sign(hash_base)
+    return key_object.verify(signature256, hash_base)
 
 #------------------------------------------------------------------------------
 

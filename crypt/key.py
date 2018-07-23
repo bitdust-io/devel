@@ -43,9 +43,13 @@ http://code.activestate.com/recipes/576980-authenticated-encryption-with-pycrypt
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 4
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
-import random
 import gc
 
 #------------------------------------------------------------------------------
@@ -90,7 +94,7 @@ def InitMyKey(keyfilename=None):
     The size for new key will be taken from settings.
     """
     global _MyKeyObject
-    if _MyKeyObject is not None and _MyKeyObject.keyObject is not None:
+    if _MyKeyObject is not None and _MyKeyObject.isReady():
         return False
     if not LoadMyKey(keyfilename):
         GenerateNewKey(keyfilename)
@@ -108,7 +112,8 @@ def LoadMyKey(keyfilename=None):
     if os.path.exists(keyfilename):
         _MyKeyObject = rsa_key.RSAKey()
         _MyKeyObject.fromFile(keyfilename)
-        lg.out(4, 'key.InitMyKey loaded private key from %s' % (keyfilename))
+        if _Debug:
+            lg.out(_DebugLevel, 'key.InitMyKey loaded private key from %s' % (keyfilename))
         return ValidateKey()
     return False
 
@@ -121,12 +126,14 @@ def GenerateNewKey(keyfilename=None):
         newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
-    lg.out(4, 'key.InitMyKey generate new private key')
+    if _Debug:
+        lg.out(_DebugLevel, 'key.InitMyKey generate new private key')
     _MyKeyObject = rsa_key.RSAKey()
     _MyKeyObject.generate(settings.getPrivateKeySize(), os.urandom)
     keystring = _MyKeyObject.toString()
     bpio.WriteFile(keyfilename, keystring)
-    lg.out(4, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
+    if _Debug:
+        lg.out(_DebugLevel, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
     del keystring
     gc.collect()
 
@@ -197,11 +204,6 @@ def Sign(inp):
     if not _MyKeyObject:
         InitMyKey()
     result = _MyKeyObject.sign(inp)
-    # Makes a list but we just want a string
-    # Signature = _MyKeyObject.keyObject.sign(inp, '')
-    # Signature = KeyObjectWrapper(key=_MyKeyObject).keyObject.sign(inp, '')
-    # so we take first element in list - need str cause was long
-    # result = str(Signature[0])
     return result
 
 
@@ -219,12 +221,6 @@ def VerifySignature(pubkeystring, hashcode, signature):
     pub_key = rsa_key.RSAKey()
     pub_key.fromString(pubkeystring)
     result = pub_key.verify(signature, hashcode)
-    # key is public key in string format
-    # keyobj = keys.Key.fromString(pubkeystring).keyObject
-    # keyobj = KeyObjectWrapper(key=keys.Key.fromString(pubkeystring)).keyObject
-    # needs to be a long in a list
-    # sig_long = long(signature),
-    # Result = bool(keyobj.verify(hashcode, sig_long))
     return result
 
 
@@ -365,8 +361,6 @@ def SpeedTest():
     Some tests to check the performance.
     """
     import time
-    import string
-    import random
     dataSZ = 1024 * 640
     loops = 10
     packets = []
@@ -395,7 +389,7 @@ def SpeedTest():
         if newData != Data:
             raise Exception
         print '.',
-        open(str(i), 'wb').write(EncryptedData)
+        # open(str(i), 'wb').write(EncryptedData)
     print time.time() - dt, 'seconds'
 
 #------------------------------------------------------------------------------
@@ -404,7 +398,5 @@ if __name__ == '__main__':
     bpio.init()
     lg.set_debug_level(18)
     settings.init()
-    # from twisted.internet import reactor
-    # settings.uconfig().set('backup.private-key-size', '3072')
     InitMyKey()
     SpeedTest()

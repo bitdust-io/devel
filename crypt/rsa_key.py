@@ -46,6 +46,9 @@ class RSAKey(object):
     
     def __init__(self):
         self.keyObject = None
+    
+    def isReady(self):
+        return self.keyObject is not None
 
     def generate(self, bits):
         if self.keyObject:
