@@ -66,6 +66,8 @@ EVENTS:
     * :red:`restore-start`
 """
 
+#------------------------------------------------------------------------------
+
 import sys
 
 try:
@@ -90,7 +92,7 @@ from lib import nameurl
 from userid import id_registrator
 from userid import id_restorer
 
-import initializer
+from main import initializer
 
 #------------------------------------------------------------------------------
 

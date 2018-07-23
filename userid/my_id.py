@@ -496,14 +496,15 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     ident.date = time.strftime('%b %d, %Y')
     ident.postage = "1"
     ident.revision = "0"
+    ident.version = ""  # TODO: put latest git commit hash here
     # update software version number
-    version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
-    repo, location = misc.ReadRepoLocation()
-    ident.version = (version_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+    # version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
+    # repo, location = misc.ReadRepoLocation()
+    # ident.version = (version_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
     # build a version info
-    vernum = bpio.ReadTextFile(settings.VersionNumberFile())
-    repo, location = misc.ReadRepoLocation()
-    ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+    # vernum = bpio.ReadTextFile(settings.VersionNumberFile())
+    # repo, location = misc.ReadRepoLocation()
+    # ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
     # put my public key in my identity
     ident.publickey = key.MyPublicKey()
     # generate signature
