@@ -75,8 +75,8 @@ def init():
     correct encoding.
     """
     InstallLocale()
-    if Linux() or Mac():
-        lg.setup_unbuffered_stdout()
+    # if Linux() or Mac():
+    #     lg.setup_unbuffered_stdout()
     # StartCountingOpenedFiles()
 
 
@@ -91,29 +91,29 @@ def shutdown():
 
 
 def InstallLocale():
-	"""
-	Here is a small trick to refresh current default encoding.
-	"""
-	global LocaleInstalled
-	if LocaleInstalled:
-		return False
-	try:
-		import sys
-		reload(sys)
-		if Windows():
-			if hasattr(sys, "setdefaultencoding"):
-				import locale
-				denc = locale.getpreferredencoding()
-				if not denc:
-					sys.setdefaultencoding('UTF8')
-				else:
-					sys.setdefaultencoding(denc)
-		else:
-			sys.setdefaultencoding('UTF8')
-		LocaleInstalled = True
-	except:
-		pass
-	return LocaleInstalled
+    """
+    Here is a small trick to refresh current default encoding.
+    """
+    global LocaleInstalled
+    if LocaleInstalled:
+        return False
+    try:
+        import sys
+        reload(sys)
+        if Windows():
+            if hasattr(sys, "setdefaultencoding"):
+                import locale
+                denc = locale.getpreferredencoding()
+                if not denc:
+                    sys.setdefaultencoding('UTF8')
+                else:
+                    sys.setdefaultencoding(denc)
+        else:
+            sys.setdefaultencoding('UTF8')
+        LocaleInstalled = True
+    except:
+        pass
+    return LocaleInstalled
 
 
 def ostype():
