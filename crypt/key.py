@@ -380,7 +380,6 @@ def SpeedTest():
     print 'decrypt now'
     i = 0
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
-        i += 1
         SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
         paddedData = DecryptWithSessionKey(SessionKey, EncryptedData)
         newData = paddedData[:Length]
@@ -390,6 +389,7 @@ def SpeedTest():
             raise Exception
         print '.',
         # open(str(i), 'wb').write(EncryptedData)
+        i += 1
     print time.time() - dt, 'seconds'
 
 #------------------------------------------------------------------------------
