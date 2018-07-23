@@ -38,10 +38,7 @@ _DebugLevel = 4
 
 import os
 import sys
-
-from twisted.conch.ssh import keys
-
-from Crypto.PublicKey import RSA
+import gc
 
 #------------------------------------------------------------------------------
 
@@ -60,7 +57,7 @@ from lib import misc
 from main import settings
 
 from crypt import key
-# from crypt.helpers import KeyObjectWrapper
+from crypt import rsa_key
 
 from userid import my_id
 from userid import global_id
@@ -123,7 +120,7 @@ def is_key_private(key_id, include_master=True):
     return not key_obj(key_id).isPublic()
 
 
-def make_key_id(alias, creator_idurl=None, creator_glob_id=None, output_format=None):
+def make_key_id(alias, creator_idurl=None, creator_glob_id=None):
     """
     Every key has a creator, and we include his IDURL in the final key_id string.
     Here is a global unique address to a remote copy of `cat.png` file:
@@ -200,7 +197,8 @@ def load_local_keys(keys_folder=None):
     for key_filename in os.listdir(keys_folder):
         key_filepath = os.path.join(keys_folder, key_filename)
         try:
-            key_object = keys.Key.fromFile(key_filepath)
+            key_object = rsa_key.RSAKey()
+            key_object.fromFile(key_filepath)
         except:
             lg.exc()
             continue
@@ -218,7 +216,7 @@ def load_local_keys(keys_folder=None):
         lg.out(_DebugLevel, '    %d keys loaded' % count)
 
 
-def save_keys_local(keys_folder=None, output_type='openssh'):
+def save_keys_local(keys_folder=None):
     """
     """
     if not keys_folder:
@@ -231,7 +229,7 @@ def save_keys_local(keys_folder=None, output_type='openssh'):
             key_filepath = os.path.join(keys_folder, key_id + '.public')
         else:
             key_filepath = os.path.join(keys_folder, key_id + '.private')
-        key_string = key_object.toString(output_type)
+        key_string = key_object.toString()
         bpio.WriteFile(key_filepath, key_string)
         count += 1
     if _Debug:
@@ -239,19 +237,19 @@ def save_keys_local(keys_folder=None, output_type='openssh'):
 
 #------------------------------------------------------------------------------
 
-def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh'):
+def generate_key(key_id, key_size=4096, keys_folder=None):
     """
     """
     if key_id in known_keys():
         lg.warn('key "%s" already exists' % key_id)
         return None
     lg.out(4, 'my_keys.generate_key "%s" of %d bits' % (key_id, key_size))
-    rsa_key = RSA.generate(key_size, os.urandom)
-    key_object = keys.Key(rsa_key)
+    key_object = rsa_key.RSAKey()
+    key_object.generate(key_size)
     known_keys()[key_id] = key_object
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
-    key_string = key_object.toString(output_type)
+    key_string = key_object.toString()
     if key_object.isPublic():
         key_filepath = os.path.join(keys_folder, key_id + '.public')
     else:
@@ -262,25 +260,26 @@ def generate_key(key_id, key_size=4096, keys_folder=None, output_type='openssh')
     return key_object
 
 
-def register_key(key_id, key_object_or_openssh, keys_folder=None, output_type='openssh'):
+def register_key(key_id, key_object_or_string, keys_folder=None):
     """
     """
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
         return None
-    if isinstance(key_object_or_openssh, str):
-        lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (key_id, len(key_object_or_openssh)))
-        key_object = unserialize_key_to_object(key_object_or_openssh)
+    if isinstance(key_object_or_string, str):
+        lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
+            key_id, len(key_object_or_string)))
+        key_object = unserialize_key_to_object(key_object_or_string)
         if not key_object:
             lg.warn('invalid openssh string, unserialize_key_to_object() failed')
             return None
     else:
         lg.out(4, 'my_keys.register_key %s from object' % key_id)
-        key_object = key_object_or_openssh
+        key_object = key_object_or_string
     known_keys()[key_id] = key_object
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
-    key_string = key_object.toString(output_type)
+    key_string = key_object.toString()
     if key_object.isPublic():
         key_filepath = os.path.join(keys_folder, key_id + '.public')
     else:
@@ -309,6 +308,7 @@ def erase_key(key_id, keys_folder=None):
         lg.exc()
         return False
     known_keys().pop(key_id)
+    gc.collect()
     if _Debug:
         lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
     return True
@@ -321,8 +321,6 @@ def validate_key(key_object):
     hash_base = key.Hash(data256)
     signature256 = key_object.keyObject.sign(hash_base, '')
     return key_object.keyObject.verify(hash_base, signature256)
-    # signature256 = KeyObjectWrapper(key=key_object).keyObject.sign(hash_base, '')
-    # return KeyObjectWrapper(key=key_object).keyObject.verify(hash_base, signature256)
 
 #------------------------------------------------------------------------------
 
@@ -335,9 +333,7 @@ def sign(key_id, inp):
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
         return None
-    signature = key_object.keyObject.sign(inp, '')
-    # signature = KeyObjectWrapper(key=key_object).keyObject.sign(inp, '')
-    result = str(signature[0])
+    result = key_object.sign(inp)
     return result
 
 
@@ -355,10 +351,8 @@ def verify(key_id, hashcode, signature):
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
         return False
-    sig_long = long(signature),
-    result = key_object.keyObject.verify(hashcode, sig_long)
-    # result = KeyObjectWrapper(key=key_object).keyObject.verify(hashcode, sig_long)
-    return bool(result)
+    result = key_object.verify(signature, hashcode)
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -389,12 +383,8 @@ def encrypt(key_id, inp):
         return None
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
-    # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
-    # See bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
-    # So we add a "1" in front now and in decrypt() we will remove it
-    atuple = key_object.keyObject.encrypt('1' + inp, "")
-    # atuple = KeyObjectWrapper(key=key_object).keyObject.encrypt('1' + inp, "")
-    return atuple[0]
+    result = key_object.encrypt(inp)
+    return result
 
 
 def decrypt(key_id, inp):
@@ -424,29 +414,27 @@ def decrypt(key_id, inp):
         return None
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
-    atuple = (inp,)
-    padresult = key_object.keyObject.decrypt(atuple)
-    # padresult = KeyObjectWrapper(key=key_object).keyObject.decrypt(atuple)
-    # remove the "1" added in encrypt() method
-    return padresult[1:]
+    result = key_object.decrypt(inp)
+    return result
 
 #------------------------------------------------------------------------------
 
-def serialize_key(key_id, output_type='openssh'):
+def serialize_key(key_id):
     """
     """
     key_object = known_keys().get(key_id)
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
         return None
-    return key_object.toString(output_type)
+    return key_object.toString()
 
 
-def unserialize_key_to_object(openssh_string):
+def unserialize_key_to_object(raw_string):
     """
     """
     try:
-        key_object = keys.Key.fromString(openssh_string)
+        key_object = rsa_key.RSAKey()
+        key_object.fromString(raw_string)
     except:
         lg.exc()
         return None
@@ -454,18 +442,18 @@ def unserialize_key_to_object(openssh_string):
 
 #------------------------------------------------------------------------------
 
-def get_public_key_raw(key_id, type_format='openssh'):
+def get_public_key_raw(key_id):
     kobj = key_obj(key_id)
     if kobj.isPublic():
-        return kobj.toString(type_format)
-    return kobj.public().toString(type_format)
+        return kobj.toString()
+    return kobj.toPublicString()
 
 
-def get_private_key_raw(key_id, type_format='openssh'):
+def get_private_key_raw(key_id):
     kobj = key_obj(key_id)
     if kobj.isPublic():
         raise Exception('not a private key')
-    return kobj.toString(type_format)
+    return kobj.toString()
 
 #------------------------------------------------------------------------------
 
@@ -475,15 +463,15 @@ def make_master_key_info(include_private=False):
         'alias': 'master',
         'creator': my_id.getLocalID(),
         'is_public': key.MyPrivateKeyObject().isPublic(),
-        'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
-        'type': str(key.MyPrivateKeyObject().type()),
-        'ssh_type': str(key.MyPrivateKeyObject().sshType()),
-        'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
+        # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
+        # 'type': str(key.MyPrivateKeyObject().type()),
+        # 'ssh_type': str(key.MyPrivateKeyObject().sshType()),
+        'public': str(key.MyPrivateKeyObject().toPublicString()),
         'include_private': include_private,
     }
     r['private'] = None
     if include_private:
-        r['private'] = str(key.MyPrivateKeyObject().toString('openssh'))
+        r['private'] = str(key.MyPrivateKeyObject().toString())
     if hasattr(key.MyPrivateKeyObject(), 'size'):
         r['size'] = str(key.MyPrivateKeyObject().size())
     else:
@@ -501,20 +489,20 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
         'alias': key_alias,
         'creator': creator_idurl,
         'is_public': key_object.isPublic(),
-        'fingerprint': str(key_object.fingerprint()),
-        'type': str(key_object.type()),
-        'ssh_type': str(key_object.sshType()),
+        # 'fingerprint': str(key_object.fingerprint()),
+        # 'type': str(key_object.type()),
+        # 'ssh_type': str(key_object.sshType()),
         'include_private': include_private,
     }
     r['private'] = None
     if key_object.isPublic():
-        r['public'] = str(key_object.toString('openssh'))
+        r['public'] = str(key_object.toString())
         if include_private:
             raise Exception('this key contains only public component')
     else:
-        r['public'] = str(key_object.public().toString('openssh'))
+        r['public'] = str(key_object.toPublicString())
         if include_private:
-            r['private'] = str(key_object.toString('openssh'))
+            r['private'] = str(key_object.toString())
     if hasattr(key_object, 'size'):
         r['size'] = str(key_object.size())
     else:
@@ -531,7 +519,7 @@ def get_key_info(key_id, include_private=False):
         return make_master_key_info(include_private=include_private)
     key_alias, creator_idurl = split_key_id(key_id)
     if not key_alias or not creator_idurl:
-        raise Exception('icorrect key_id format')
+        raise Exception('incorrect key_id format')
     key_object = known_keys().get(key_id)
     if not key_object:
         key_id_form_1 = make_key_id(

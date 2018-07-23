@@ -176,17 +176,6 @@ def MyPrivateKey():
     return _MyKeyObject.toString()
 
 
-def MyPublicKeyObject():
-    """
-    Return Public part of the Key as object, useful to convert to different
-    formats.
-    """
-    global _MyKeyObject
-    if not _MyKeyObject:
-        InitMyKey()
-    return _MyKeyObject.public()
-
-
 def MyPrivateKeyObject():
     """
     Return Private part of the Key as object.

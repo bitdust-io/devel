@@ -66,6 +66,8 @@ class RSAKey(object):
         return self.keyObject.publickey()
 
     def fromString(self, key_string):
+        if self.keyObject:
+            raise ValueError('key object already exist')
         self.keyObject = RSA.import_key(key_string)
         return True
 
@@ -119,3 +121,4 @@ class RSAKey(object):
         cipher = PKCS1_OAEP.new(self.keyObject)
         private_message = cipher.decrypt(encrypted_payload)
         return private_message
+
