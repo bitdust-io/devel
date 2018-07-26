@@ -55,6 +55,7 @@ import struct
 import time
 import cStringIO
 import platform
+import six
 from six.moves import range
 from io import open
 
@@ -117,7 +118,7 @@ def ReadBinaryFile(filename):
     if not os.access(filename, os.R_OK):
         return ''
     file = open(filename, "rb")
-    data = file.read()
+    data = file.read().decode('utf-8')
     file.close()
     return data
 
@@ -126,8 +127,11 @@ def WriteFile(filename, data):
     """
     
     """
+    s = data
+    if isinstance(s, six.text_type):
+        s = s.encode('utf-8')
     f = open(filename, "wb")
-    f.write(data)
+    f.write(s)
     f.close()
 
 #------------------------------------------------------------------------------
@@ -160,11 +164,11 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         for i in range(seglength):
             offset = segoffset + i
             if offset < length:
-                f.write(wholefile[offset])
+                f.write(wholefile[offset].encode('utf-8'))
             else:
                 # any padding should go at the end of last seg
                 # and block.Length fixes
-                f.write(" ")
+                f.write(" ".encode('utf-8'))
         f.close()
 
     dfds = {}
@@ -255,11 +259,11 @@ def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
         for i in range(seglength):
             offset = segoffset + i
             if (offset < length):
-                f.write(wholefile[offset])
+                f.write(wholefile[offset].encode('utf-8'))
             else:
                 # any padding should go at the end of last seg
                 # and block.Length fixes
-                f.write(" ")
+                f.write(" ".encode('utf-8'))
         f.close()
     del wholefile
 
@@ -281,7 +285,7 @@ def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
         for PSegNum in range(myeccmap.paritysegments):
             Parities[PSegNum] = 0
         for DSegNum in range(myeccmap.datasegments):
-            bstr = dfds[DSegNum].read(INTSIZE)
+            bstr = dfds[DSegNum].read(INTSIZE).decode('utf-8')
             if len(bstr) == INTSIZE:
                 b, = struct.unpack(">l", bstr)
                 Map = myeccmap.DataToParity[DSegNum]
@@ -299,7 +303,7 @@ def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
 
         for PSegNum in range(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
-            pfds[PSegNum].write(bstr)
+            pfds[PSegNum].write(bstr).encode('utf-8')
 
     dataNum = 0
     parityNum = 0

@@ -76,6 +76,7 @@ from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred, fail
 from twisted.python.failure import Failure
 from io import open
+import six
 
 #------------------------------------------------------------------------------
 
@@ -614,7 +615,8 @@ class Automat(object):
                 s = ('%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100)) + s
             else:
                 s = time.strftime('%H:%M:%S') + s
-
+            if not isinstance(s, six.text_type):
+                s = s.decode('utf-8')
             _LogFile.write(s)
             _LogFile.flush()
             _LogsCount += 1

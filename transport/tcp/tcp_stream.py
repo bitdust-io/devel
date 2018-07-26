@@ -39,6 +39,7 @@ import time
 import cStringIO
 import struct
 import random
+import six
 
 from twisted.internet import reactor
 from twisted.protocols import basic
@@ -549,6 +550,8 @@ class FileSender(basic.FileSender):
         self.parent = None
 
     def transform_data(self, data):
+        if isinstance(data, six.binary_type):
+            data = data.decode('utf-8')
         datalength = len(data)
         datagram = ''
         datagram += struct.pack('i', self.parent.file_id)

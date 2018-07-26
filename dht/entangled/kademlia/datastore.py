@@ -28,7 +28,10 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
-import UserDict
+try:
+    from UserDict import DictMixin
+except ImportError:
+    from collections import MutableMapping as DictMixin
 import sqlite3
 import six.moves.cPickle as pickle
 import os
@@ -36,7 +39,7 @@ import os
 from . import constants
 
 
-class DataStore(UserDict.DictMixin):
+class DataStore(DictMixin):
     """
     Interface for classes implementing physical storage (for data published via
     the "STORE" RPC) for the Kademlia DHT.

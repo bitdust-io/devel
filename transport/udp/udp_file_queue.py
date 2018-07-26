@@ -30,6 +30,7 @@ import time
 import struct
 import cStringIO
 import random
+import six
 
 from twisted.internet import reactor
 
@@ -615,12 +616,15 @@ class OutboxFile():
             if not self.buffer:
                 if not self.fileobj:
                     return False
-                self.buffer = self.fileobj.read(udp_stream.CHUNK_SIZE)
-                if not self.buffer:
+                data = self.fileobj.read(udp_stream.CHUNK_SIZE)
+                if not data:
                     if _Debug:
                         lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state %d' % self.stream_id)
                     self.eof = True
                     break
+                if isinstance(data, six.binary_type):
+                    data = data.decode('utf-8')
+                self.buffer = data
             if not self.stream_callback:
                 break
             try:
