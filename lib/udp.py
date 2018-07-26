@@ -28,7 +28,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import time
-import cStringIO
+from io import StringIO
 
 from twisted.internet import reactor
 from twisted.internet import protocol
@@ -277,7 +277,7 @@ class CommandsProtocol(BasicProtocol):
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
         _LastDatagramReceivedTime = time.time()
-        inp = cStringIO.StringIO(datagram)
+        inp = StringIO.StringIO(datagram)
         try:
             # version = datagram[0]
             # command = datagram[1]
@@ -313,7 +313,7 @@ class CommandsProtocol(BasicProtocol):
 
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
-        outp = cStringIO.StringIO()
+        outp = StringIO.StringIO()
         try:
             outp.write(self.SoftwareVersion)
             outp.write(command)

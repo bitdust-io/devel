@@ -39,6 +39,7 @@ import os
 import sys
 import time
 import calendar
+import six
 from io import open
 
 try:
@@ -240,6 +241,8 @@ def download_and_replace_starter(output_func=None):
         try:
             fin = open(filename, 'rb')
             src = fin.read()
+            if isinstance(src, six.binary_type):
+                src = src.decode('utf-8')
             fin.close()
         except:
             if output_func:

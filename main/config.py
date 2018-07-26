@@ -274,7 +274,7 @@ class BaseConfig(object):
             data = None
             try:
                 f = open(fpath, 'rb')
-                data = f.read()
+                data = f.read().decode('utf-8')
                 f.close()
             except (OSError, IOError):
                 lg.exc('error reading from file: %s' % fpath)

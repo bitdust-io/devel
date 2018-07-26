@@ -376,10 +376,11 @@ def AtomicWriteFile(filename, data):
     """
     try:
         tmpfilename = filename + ".new"
-        if isinstance(data, six.text_type):
-            data = data.encode('utf-8')
         f = open(tmpfilename, "wb")
-        f.write(data)
+        bin_data = data
+        if isinstance(data, six.text_type):
+            bin_data = bin_data.encode('utf-8')
+        f.write(bin_data)
         f.flush()
         # from http://docs.python.org/library/os.html on os.fsync
         os.fsync(f.fileno())
@@ -408,7 +409,13 @@ def AtomicAppendFile(filename, data, mode='a'):
     """
     try:
         f = open(filename, mode)
-        f.write(data)
+        if 'b' in mode:
+            bin_data = data
+            if isinstance(data, six.text_type):
+                bin_data = bin_data.encode('utf-8')
+            f.write(bin_data)
+        else:
+            f.write(data)
         f.flush()
         os.fsync(f.fileno())
         f.close()
@@ -438,7 +445,13 @@ def WriteFileSimple(filename, data, mode="w"):
     """
     try:
         file = open(filename, mode)
-        file.write(data)
+        if 'b' in mode:
+            bin_data = data
+            if isinstance(data, six.text_type):
+                bin_data = bin_data.encode('utf-8')
+            file.write(bin_data)
+        else:
+            file.write(data)
         file.close()
     except:
         lg.exc()
@@ -461,7 +474,7 @@ def ReadBinaryFile(filename):
         return ''
     try:
         infile = open(filename, "rb")
-        data = infile.read()
+        data = infile.read().decode('utf-8')
         infile.close()
         return data
     except:
@@ -525,6 +538,10 @@ def _write_data(path, src):
         except:
             lg.out(1, 'bpio._write_data ERROR removing ' + str(path))
     fout = open(temp_path, 'wb')
+    bin_data = src
+    if isinstance(src, six.text_type):
+        bin_data = bin_data.encode('utf-8')
+    fout.write(bin_data)
     fout.write(src)
     fout.flush()
     os.fsync(fout)

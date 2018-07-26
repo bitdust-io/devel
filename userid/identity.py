@@ -536,55 +536,55 @@ class identity:
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
                             if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(xsource.wholeText.strip().encode())
+                                self.sources.append(xsource.wholeText.strip())
                                 break
                 elif xsection.tagName == 'contacts':
                     for xcontacts in xsection.childNodes:
                         for xcontact in xcontacts.childNodes:
                             if (xcontact.nodeType == Node.TEXT_NODE):
-                                self.contacts.append(xcontact.wholeText.strip().encode())
+                                self.contacts.append(xcontact.wholeText.strip())
                                 break
                 elif xsection.tagName == 'certificates':
                     for xcertificates in xsection.childNodes:
                         for xcertificate in xcertificates.childNodes:
                             if (xcertificate.nodeType == Node.TEXT_NODE):
-                                self.certificates.append(xcertificate.wholeText.strip().encode())
+                                self.certificates.append(xcertificate.wholeText.strip())
                                 break
                 elif xsection.tagName == 'scrubbers':
                     for xscrubbers in xsection.childNodes:
                         for xscrubber in xscrubbers.childNodes:
                             if (xscrubber.nodeType == Node.TEXT_NODE):
-                                self.scrubbers.append(xscrubber.wholeText.strip().encode())
+                                self.scrubbers.append(xscrubber.wholeText.strip())
                                 break
                 elif xsection.tagName == 'postage':
                     for xpostage in xsection.childNodes:
                         if (xpostage.nodeType == Node.TEXT_NODE):
-                            self.postage = xpostage.wholeText.strip().encode()
+                            self.postage = xpostage.wholeText.strip()
                             break
                 elif xsection.tagName == 'date':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.date = xkey.wholeText.strip().encode()
+                            self.date = xkey.wholeText.strip()
                             break
                 elif xsection.tagName == 'version':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.version = xkey.wholeText.strip().encode()
+                            self.version = xkey.wholeText.strip()
                             break
                 elif xsection.tagName == 'revision':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.revision = xkey.wholeText.strip().encode()
+                            self.revision = xkey.wholeText.strip()
                             break
                 elif xsection.tagName == 'publickey':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.publickey = xkey.wholeText.strip().encode()
+                            self.publickey = xkey.wholeText.strip()
                             break
                 elif xsection.tagName == 'signature':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.signature = xkey.wholeText.strip().encode()
+                            self.signature = xkey.wholeText.strip()
                             break
         except:
             lg.exc()
