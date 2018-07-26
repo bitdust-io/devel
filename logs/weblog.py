@@ -150,7 +150,7 @@ def log(level, s):
     global myweblistener
     if not myweblistener:
         return
-    logtext += '%s|%s|%s|%s\n' % (str(lineindex), str(level), strftime('%H:%M:%S'), s.replace('\n', '#nl'))
+    logtext += '%d|%d|%s|%s\n' % (lineindex, level, strftime('%H:%M:%S'), s.replace('\n', '#nl'))
     numlines += 1
     lineindex += 1
     while numlines > maxlines:
