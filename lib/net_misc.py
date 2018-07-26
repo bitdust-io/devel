@@ -379,6 +379,7 @@ def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName,
 
 #-------------------------------------------------------------------------------
 
+
 def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     """
     Another method to download from HTTPS.
@@ -387,17 +388,6 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     from twisted.internet import ssl
     from OpenSSL import SSL
 
-    scheme, host, port, path = parse_url(url)
-    if not isinstance(certificates_filenames, list):
-        certificates_filenames = [certificates_filenames, ]
-    cert_found = False
-    for cert in certificates_filenames:
-        if os.path.isfile(cert) and os.access(cert, os.R_OK):
-            cert_found = True
-            break
-    if not cert_found:
-        return fail(Exception('no one ssl certificate found'))
-        
     class MyClientContextFactory(ssl.ClientContextFactory):
     
         def __init__(self, certificates_filenames):
@@ -415,6 +405,17 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
                     pass
             ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verify)
             return ctx
+    
+    scheme, host, port, path = parse_url(url)
+    if not isinstance(certificates_filenames, list):
+        certificates_filenames = [certificates_filenames, ]
+    cert_found = False
+    for cert in certificates_filenames:
+        if os.path.isfile(cert) and os.access(cert, os.R_OK):
+            cert_found = True
+            break
+    if not cert_found:
+        return fail(Exception('no one ssl certificate found'))
     
     factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
     contextFactory = MyClientContextFactory(certificates_filenames)
@@ -709,9 +710,6 @@ def SendEmail(TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES):
 
 #-------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
-
-
 def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     """
     A smart way to upload a file over HTTP POST method.
@@ -913,7 +911,6 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 size = 0
             self._file_lengths[field] = size
             return self._file_lengths[field]
-    
 
     # producerDeferred = Deferred()
     receiverDeferred = Deferred()

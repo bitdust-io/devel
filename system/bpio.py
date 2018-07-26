@@ -75,8 +75,8 @@ def init():
     correct encoding.
     """
     InstallLocale()
-    # if Linux() or Mac():
-    #     lg.setup_unbuffered_stdout()
+    if Linux() or Mac():
+        lg.setup_unbuffered_stdout()
     # StartCountingOpenedFiles()
 
 
@@ -376,6 +376,8 @@ def AtomicWriteFile(filename, data):
     """
     try:
         tmpfilename = filename + ".new"
+        if isinstance(data, six.text_type):
+            data = data.encode('utf-8')
         f = open(tmpfilename, "wb")
         f.write(data)
         f.flush()

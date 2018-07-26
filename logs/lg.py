@@ -70,7 +70,7 @@ def fqn(o):
 
 #------------------------------------------------------------------------------
 
-def out(level, msg, nl=b'\n'):
+def out(level, msg, nl='\n'):
     """
     The core method, most useful thing in any project :-))) Print a text line
     to the log file or console.
@@ -121,24 +121,22 @@ def out(level, msg, nl=b'\n'):
     if is_debug(30):
         currentThreadName = threading.currentThread().getName()
         s = s + ' {%s}' % currentThreadName.lower()
-    if isinstance(s, six.text_type):
-        s = s.encode('utf-8')
     if is_debug(level):
         if _LogFile is not None:
-            _LogFile.write((s + nl).decode('utf-8'))
+            _LogFile.write(s + nl)
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
             try:
-                s = str(s) + nl
-                sys.stdout.write(s.decode('utf-8'))
+                s = s + nl
+                sys.stdout.write(s)
             except:
                 try:
-                    sys.stdout.write((format_exception() + b'\n\n' + s).decode('utf-8'))
+                    sys.stdout.write(format_exception() + '\n\n' + s)
                 except:
+                    # very bad stuff... we can't write anything to std out
                     pass
-
     if _WebStreamFunc is not None:
-        _WebStreamFunc(level, (s_ + nl).decode('utf-8'))
+        _WebStreamFunc(level, (s_ + nl).encode('utf-8'))
     _LogLinesCounter += 1
     if _LogLinesCounter % 10000 == 0:
         out(2, '[%s]' % time.asctime())
@@ -617,7 +615,7 @@ class STDOUT_redirected(object):
     def read(self): pass
 
     def write(self, s):
-        out(0, six.text_type(s).rstrip())
+        out(0, s.rstrip())
 
     def flush(self): pass
 
