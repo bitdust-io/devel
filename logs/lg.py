@@ -136,7 +136,7 @@ def out(level, msg, nl='\n'):
                     # very bad stuff... we can't write anything to std out
                     pass
     if _WebStreamFunc is not None:
-        _WebStreamFunc(level, (s_ + nl).encode('utf-8'))
+        _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
     if _LogLinesCounter % 10000 == 0:
         out(2, '[%s]' % time.asctime())

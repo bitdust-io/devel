@@ -150,7 +150,7 @@ class BaseConfig(object):
         if s is None:
             return default
         try:
-            s = s.decode('utf-8').strip().strip('"')
+            s = s.strip().strip('"')
             return int(s)
         except ValueError:
             return default
