@@ -155,6 +155,18 @@ def show():
     # TODO: raise up electron window ?
     return OK('"show" event has been sent to the main process')
 
+def health():
+    """
+    Returns true if system is running 
+
+    Return:
+
+        {'status': 'OK' }
+    """
+    lg.out(4, 'api.health')
+
+    return OK()
+
 #------------------------------------------------------------------------------
 
 
