@@ -316,7 +316,7 @@ def identity_get(include_xml_source=False):
     """
     from userid import my_id
     if not my_id.isLocalIdentityReady():
-        return ERROR('local identity is not exist')
+        return ERROR('local identity is not valid or not exist')
     r = my_id.getLocalIdentity().serialize_json()
     if include_xml_source:
         r['xml'] = my_id.getLocalIdentity().serialize()
@@ -3012,8 +3012,8 @@ def network_connected(wait_timeout=5):
             return ret
 
     if not my_id.isLocalIdentityReady():
-        lg.warn('local identity is not exist')
-        return ERROR('local identity is not exist', extra_fields={'reason': 'identity_not_exist'})
+        lg.warn('local identity is not valid or not exist')
+        return ERROR('local identity is not valid or not exist', extra_fields={'reason': 'identity_not_exist'})
     if not driver.is_enabled('service_network'):
         lg.warn('service_network() is disabled')
         return ERROR('service_network() is disabled', extra_fields={'reason': 'service_network_disabled'})
