@@ -86,6 +86,7 @@ class SharedDataService(LocalService):
         import json
         from logs import lg
         from main import settings
+        from main import events
         from p2p import p2p_service
         from storage import backup_fs
         from storage import backup_control
@@ -148,6 +149,10 @@ class SharedDataService(LocalService):
                 from_json=True,
             )
             p2p_service.SendAck(newpacket)
+            events.send('shared-list-files-received', dict(
+                customer_idurl=trusted_customer_idurl,
+                new_items=count,
+            ))
             if count == 0:
                 lg.warn('no files were imported during file sharing')
             else:
