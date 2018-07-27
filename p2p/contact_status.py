@@ -449,7 +449,7 @@ class ContactStatus(automat.Automat):
         """
         Action method.
         """
-        from web import control
+        from main import control
         control.request_update([('contact', self.idurl)])
 
     def _on_ping_success(self, result):

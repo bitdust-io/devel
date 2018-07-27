@@ -41,6 +41,7 @@ _DebugLevel = 12
 #------------------------------------------------------------------------------
 
 import sys
+import time
 
 try:
     from twisted.internet import reactor
@@ -251,3 +252,5 @@ def pop_event():
             if _Debug:
                 lg.out(_DebugLevel, 'events.pop_event %d events consumed by "%s"' % (len(pending_messages), consumer_id))
         consumers_callbacks()[consumer_id] = []
+
+#------------------------------------------------------------------------------

@@ -1,8 +1,13 @@
 #/bin/sh
 
 ROOT_DIR="$HOME/.bitdust"
-TRINITY_DIR="${ROOT_DIR}/trinity"
-TRINITY_VENV="${ROOT_DIR}/trinity/venv"
+BLOCKCHAIN_DIR="${ROOT_DIR}/blockchain"
+BLOCKCHAIN_SRC="${BLOCKCHAIN_DIR}/src"
+BLOCKCHAIN_DATA="${BLOCKCHAIN_DIR}/data"
+BLOCKCHAIN_VENV="${BLOCKCHAIN_DIR}/venv"
+BLOCKCHAIN_PYTHON="${BLOCKCHAIN_VENV}/bin/python3.6"
+BLOCKCHAIN_VIRTUALENV="${BLOCKCHAIN_DIR}/virtualenv"
+BLOCKCHAIN_VIRTUALENV_BIN="${BLOCKCHAIN_VIRTUALENV}/bin/virtualenv"
 
 
 if ! [ -x "$(command -v python3.6)" ]; then
@@ -35,36 +40,75 @@ else
 fi
 
 
-if ! [ -x "$(command -v virtualenv)" ]; then
+if [ ! -d $BLOCKCHAIN_DIR ]; then
+    mkdir -p "${BLOCKCHAIN_DIR}"
     echo ''
-    echo '##### Installing virtualenv'
-    pip3 install virtualenv --user
+    echo "##### Created parent folder for Py-EVM Blockchain in ${BLOCKCHAIN_DIR}"
+fi
+
+
+if [ ! -d $BLOCKCHAIN_DATA ]; then
+    mkdir -p "${BLOCKCHAIN_DATA}"
+    mkdir -p "${BLOCKCHAIN_DATA}/logs"
+    echo '' > $BLOCKCHAIN_DATA/logs/trinity.log
+    echo ''
+    echo "##### Created data folder for Py-EVM Blockchain in ${BLOCKCHAIN_DATA}"
+fi
+
+
+if [ ! -f $BLOCKCHAIN_VIRTUALENV/bin/virtualenv ]; then
+    echo ''
+    echo '##### Installing isolated virtualenv'
+    mkdir -p "${BLOCKCHAIN_VIRTUALENV}"
+    PYTHONUSERBASE=$BLOCKCHAIN_VIRTUALENV pip3 install --ignore-installed --user virtualenv
 else
     echo ''
-    echo '##### Virtualenv already installed'
+    echo '##### Found isolated virtualenv binaries'
 fi
 
 
-if [ ! -d $TRINITY_DIR ]; then
-    mkdir -p $TRINITY_DIR
+if [ ! -f $BLOCKCHAIN_SRC/setup.py ]; then
     echo ''
-    echo '##### Created folder for Trinity Blockchain'
+    echo '##### Cloning Py-EVM repository'
+    git clone --depth=1 https://github.com/vesellov/py-evm.git $BLOCKCHAIN_SRC
+else
+    echo ''
+    echo '##### Updating the source code of Py-EVM'
+    cd $BLOCKCHAIN_SRC
+    git fetch
+    git reset --hard origin/master
+    cd $OLDPWD
 fi
 
 
-if [ ! -d $TRINITY_VENV ]; then
+if [ ! -d $BLOCKCHAIN_VENV ]; then
     echo ''
-    echo '##### Building Trinity virtual environment'
-    virtualenv -p python3.6 $TRINITY_VENV
+    echo '##### Building Py-EVM virtual environment'
+    PYTHONUSERBASE=$BLOCKCHAIN_VIRTUALENV $BLOCKCHAIN_VIRTUALENV_BIN -p python3.6 $BLOCKCHAIN_VENV
+fi
+
+
+if [ ! -f $BLOCKCHAIN_VENV/bin/pip ]; then
+    echo ''
+    echo '##### Pip is not found inside virtual environment, rebuilding'
+    rm -rf $BLOCKCHAIN_VENV
+    PYTHONUSERBASE=$BLOCKCHAIN_VIRTUALENV $BLOCKCHAIN_VIRTUALENV_BIN -p python3.6 $BLOCKCHAIN_VENV
 fi
 
 
 echo ''
 echo '##### Installing/Updating trinity with pip'
+cd $BLOCKCHAIN_SRC
+$BLOCKCHAIN_PYTHON setup.py install
+
+
 echo ''
-$TRINITY_VENV/bin/pip install -U trinity
+echo 'To start trinity process you can run via command line:'
+echo ''
+echo "${BLOCKCHAIN_VENV}/bin/trinity --data-dir=${BLOCKCHAIN_DATA} --port=30345"
 
 
+echo ''
 echo ''
 echo 'DONE!'
 echo ''

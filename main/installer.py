@@ -66,6 +66,8 @@ EVENTS:
     * :red:`restore-start`
 """
 
+#------------------------------------------------------------------------------
+
 import sys
 
 try:
@@ -90,7 +92,7 @@ from lib import nameurl
 from userid import id_registrator
 from userid import id_restorer
 
-import initializer
+from main import initializer
 
 #------------------------------------------------------------------------------
 
@@ -289,7 +291,7 @@ class Installer(automat.Automat):
 
     def doUpdate(self, arg):
         # lg.out(4, 'installer.doUpdate')
-        from web import control
+        from main import control
         control.request_update([{'state': self.state}, ])
 
     def doClearOutput(self, arg):

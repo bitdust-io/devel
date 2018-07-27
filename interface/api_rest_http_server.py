@@ -157,6 +157,10 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/process/show/v1$')
     def process_show_v1(self, request):
         return api.show()
+    
+    @GET('^/process/health/v1$')
+    def process_health_v1(self, request):
+        return api.health()
 
     #------------------------------------------------------------------------------
 

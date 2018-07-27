@@ -100,6 +100,7 @@ from system import bpio
 from system import tmpfile
 
 from main import settings
+from main import control
 
 from crypt import signed
 
@@ -110,8 +111,6 @@ from contacts import identitycache
 from transport import callback
 from transport import packet_in
 from transport import packet_out
-
-from web import control
 
 #------------------------------------------------------------------------------
 
