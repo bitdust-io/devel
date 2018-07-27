@@ -86,9 +86,6 @@ from automats import global_state
 
 from services import driver
 
-import installer
-import shutdowner
-
 #------------------------------------------------------------------------------
 
 _Initializer = None
@@ -139,6 +136,8 @@ class Initializer(automat.Automat):
         global_state.set_global_state('INIT ' + newstate)
 
     def A(self, event, arg):
+        from main import installer
+        from main import shutdowner
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'run':
@@ -401,6 +400,7 @@ class Initializer(automat.Automat):
         if False:
             # TODO: add an option to the settings
             return
+        from main import shutdowner
         shutdowner.A('stop', 'restart')
 
     def _init_modules(self):
@@ -415,6 +415,7 @@ class Initializer(automat.Automat):
     def _on_tray_icon_command(self, cmd):
         lg.out(2, "initializer._on_tray_icon_command : [%s]" % cmd)
         try:
+            from main import shutdowner
             if cmd == 'exit':
                 shutdowner.A('stop', 'exit')
 

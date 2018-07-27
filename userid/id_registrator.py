@@ -27,6 +27,46 @@
 .. role:: red
 
 
+Creates new identities to be able to access BitDust network.
+Another node in the network can start ID server and store a copy of your identity.
+Then third node can access that ID server and download your identity.
+
+Normally, software will do all stuff for you and just pick few random ID servers,
+ping them and register your identity.
+
+But you can decide which ID servers you prefer and modify your "known" ID servers:
+
+    bitdust set services/identity-propagate/known-servers first-server.com:80:6661,second-host.net:8080:6661
+
+
+Your global IDURL is formed based on your nickname and DNS name (or IP address) of the first ID server.
+
+If one of your ID servers is down, you can find a fresh one and "propagate" your identity there
+and then remove dead ID server from the list of your sources: "identity migration" (not implemented yet).
+This process will be automated and network identification will become much more reliable.
+
+To be able to test locally you can start your own local ID server:
+
+    bitdust set services/identity-server/host localhost
+    ~/.bitdust/venv/bin/python userid/id_server.py 8080 6661
+
+
+Modify your "known" ID servers:
+
+    bitdust set services/identity-propagate/known-servers localhost:8080:6661
+
+
+Modify your settings to use only one ID server:
+
+    bitdust set services/identity-propagate/min-servers 1
+    bitdust set services/identity-propagate/max-servers 1
+
+
+Then you can create a "local" identity:
+
+    ~/.bitdust/venv/bin/python userid/id_registrator.py my_nickname_here localhost
+
+
 EVENTS:
     * :red:`id-exist`
     * :red:`id-not-exist`
@@ -45,7 +85,8 @@ EVENTS:
     * :red:`timer-5sec`
 """
 
-import os
+#------------------------------------------------------------------------------
+
 import sys
 import random
 
@@ -53,12 +94,13 @@ from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------
 
-try:
-    from logs import lg
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    from logs import lg
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------
+
+from logs import lg
 
 from automats import automat
 
@@ -69,15 +111,15 @@ from lib import net_misc
 from lib import misc
 
 from main import settings
+from main import config
 
 from stun import stun_client
 
 from crypt import key
 
 from userid import my_id
-
-import identity
-import known_servers
+from userid import identity
+from userid import known_servers
 
 #------------------------------------------------------------------------------
 
@@ -93,7 +135,14 @@ def A(event=None, arg=None):
     global _IdRegistrator
     if _IdRegistrator is None:
         # set automat name and starting state here
-        _IdRegistrator = IdRegistrator('id_registrator', 'AT_STARTUP', 2, log_events=True, publish_events=True)
+        _IdRegistrator = IdRegistrator(
+            name='id_registrator',
+            state='AT_STARTUP',
+            debug_level=2,
+            log_transitions=True,
+            log_events=True,
+            publish_events=True,
+        )
     if event is not None:
         _IdRegistrator.automat(event, arg)
     return _IdRegistrator
@@ -134,8 +183,9 @@ class IdRegistrator(automat.Automat):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0] % {
             'login': bpio.ReadTextFile(settings.UserNameFilename()),
-            'externalip': misc.readExternalIP(),  # bpio.ReadTextFile(settings.ExternalIPFilename()),
-            'localip': bpio.ReadTextFile(settings.LocalIPFilename()), }
+            'externalip': misc.readExternalIP(),
+            'localip': bpio.ReadTextFile(settings.LocalIPFilename()),
+        }
         color = 'black'
         if len(msg) == 2:
             color = msg[1]
@@ -257,16 +307,10 @@ class IdRegistrator(automat.Automat):
         """
         id_from_server = identity.identity(xmlsrc=arg)
         if not id_from_server.isCorrect():
-            # print 'isCorrect - False'
             return False
         if not id_from_server.Valid():
-            # print 'Valid - False'
             return False
         equal = self.new_identity.serialize() == id_from_server.serialize()
-        # if not equal:
-        # print 'not equal'
-        # print self.new_identity.serialize()
-        # print id_from_server.serialize()
         return equal
 
     def isSomeAlive(self, arg):
@@ -307,7 +351,6 @@ class IdRegistrator(automat.Automat):
             self.known_servers = known_servers.by_host()
         if not self.preferred_servers:
             try:
-                from main import config
                 for srv in str(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
                     if srv.strip():
                         self.preferred_servers.append(srv.strip())
@@ -329,8 +372,7 @@ class IdRegistrator(automat.Automat):
     def doSelectRandomServers(self, arg):
         """
         Action method.
-        TODO: we also can search avaliable id servers in DHT network as well
-        if you started your own ID server you can
+        TODO: we also can search available id servers in DHT network as well
         """
         if self.preferred_servers:
             self.discovered_servers.extend(self.preferred_servers)
@@ -435,6 +477,10 @@ class IdRegistrator(automat.Automat):
         Action method.
         """
         lg.out(4, 'id_registrator.doStunExternalIP')
+        if len(self.free_idurls) == 1:
+            if self.free_idurls[0].count('localhost:') or self.free_idurls[0].count('127.0.0.1:'):
+                # if you wish to create a local identity you do not need to stun external IP at all
+                self.automat('stun-success', '127.0.0.1')
 
         def save(result):
             lg.out(4, '            external IP : %s' % result)
@@ -539,7 +585,7 @@ class IdRegistrator(automat.Automat):
         Reads some extra info from config files.
         """
         login = bpio.ReadTextFile(settings.UserNameFilename())
-        externalIP = misc.readExternalIP()  # bpio.ReadTextFile(settings.ExternalIPFilename())
+        externalIP = misc.readExternalIP() or '127.0.0.1'
 
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
 
@@ -596,6 +642,8 @@ def main():
         args = (sys.argv[1], sys.argv[2])
     else:
         args = (sys.argv[1])
+    A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='DONE')
+    A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='FAILED')
     reactor.callWhenRunning(A, 'start', args)
     reactor.run()
 

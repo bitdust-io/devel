@@ -38,7 +38,6 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-
 import os
 import sys
 import cStringIO
@@ -46,16 +45,17 @@ import struct
 
 from twisted.internet import reactor
 from twisted.internet.protocol import ServerFactory
-from twisted.protocols import basic
 from twisted.internet.defer import Deferred, DeferredList
+from twisted.protocols import basic
 from twisted.web import server, resource, static
 
-try:
-    from logs import lg
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+#------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -457,17 +457,24 @@ class WebRoot(resource.Resource):
 def main():
     bpio.init()
     settings.init()
+    if len(sys.argv) > 1:
+        web_port = int(sys.argv[1])
+    else:
+        web_port = settings.getIdServerWebPort()
+    if len(sys.argv) > 2:
+        tcp_port = int(sys.argv[2])
+    else:
+        tcp_port = settings.getIdServerTCPPort()
     lg.set_debug_level(20)
+    lg.out(2, 'starting ID server ...')
     reactor.addSystemEventTrigger('before', 'shutdown',
                                   A().automat, 'shutdown')
-    reactor.callWhenRunning(A, 'init',
-                            (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
+    reactor.callWhenRunning(A, 'init', (web_port, tcp_port))
     reactor.callLater(0, A, 'start')
     reactor.run()
     lg.out(2, 'reactor stopped, EXIT')
 
 #------------------------------------------------------------------------------
-
 
 if __name__ == "__main__":
     main()

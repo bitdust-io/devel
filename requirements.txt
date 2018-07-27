@@ -1,13 +1,14 @@
-twisted<18
-pyasn1
-pycrypto
-pyOpenSSL
+twisted
+pycryptodomex
+# pyasn1
+# pycrypto
+# pyOpenSSL
 pyparsing
 appdirs
-cryptography
-service_identity
+# cryptography
+# service_identity
 psutil
-enum34
-ipaddress
+# enum34
+# ipaddress
 cffi
-pkgversion
+# pkgversion

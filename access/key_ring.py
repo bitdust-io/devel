@@ -376,7 +376,7 @@ def on_key_received(newpacket, info, status, error_message):
                 if my_keys.is_key_private(key_id):
                     # we should not overwrite existing private key
                     raise Exception('private key already registered')
-                if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.toString('openssh'):
+                if my_keys.get_public_key_raw(key_id) != key_object.toString():
                     # and we should not overwrite existing public key as well
                     raise Exception('another key already registered with that ID')
                 p2p_service.SendAck(newpacket)
@@ -395,7 +395,7 @@ def on_key_received(newpacket, info, status, error_message):
             # check if we already have that key
             if my_keys.is_key_private(key_id):
                 # we have already private key with same ID!!!
-                if my_keys.get_private_key_raw(key_id, 'openssh') != key_object.toString('openssh'):
+                if my_keys.get_private_key_raw(key_id) != key_object.toString():
                     # and this is a new private key : we should not overwrite!
                     raise Exception('private key already registered')
                 # this is the same private key
@@ -403,7 +403,7 @@ def on_key_received(newpacket, info, status, error_message):
                 lg.warn('received existing private key: %s, skip' % key_id)
                 return True
             # but we have a public key with same ID
-            if my_keys.get_public_key_raw(key_id, 'openssh') != key_object.public().toString('openssh'):
+            if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
                 # and we should not overwrite existing public key as well
                 raise Exception('another key already registered with that ID')
             lg.info('erasing public key %s' % key_id)

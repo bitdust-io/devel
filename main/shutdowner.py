@@ -85,7 +85,6 @@ def shutdown(x=None):
     """
     lg.out(2, "shutdowner.shutdown " + str(x))
     from services import driver
-    from main import settings
     from main import control
     from main import events
     from logs import weblog
