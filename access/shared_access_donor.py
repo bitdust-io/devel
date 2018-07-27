@@ -59,6 +59,8 @@ from automats import automat
 
 from lib import packetid
 
+from main import events
+
 from contacts import identitycache
 from contacts import contactsdb
 
@@ -70,6 +72,7 @@ from crypt import my_keys
 from crypt import encrypted
 
 from userid import my_id
+from userid import global_id
 
 from access import key_ring
 
@@ -337,6 +340,11 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
+        events.send('private-key-shared', dict(
+            global_id=global_id.UrlToGlobalID(self.remote_idurl),
+            remote_idurl=self.remote_idurl,
+            key_id=self.key_id,
+        ))
         if self.result_defer:
             self.result_defer.callback(True)
 
@@ -346,14 +354,38 @@ class SharedAccessDonor(automat.Automat):
         """
         if self.result_defer:
             if arg:
+                events.send('private-key-share-failed', dict(
+                    global_id=global_id.UrlToGlobalID(self.remote_idurl),
+                    remote_idurl=self.remote_idurl,
+                    key_id=self.key_id,
+                    reason=arg,
+                ))
                 self.result_defer.errback(Exception(arg))
             else:
                 if self.remote_identity is None:
+                    events.send('private-key-share-failed', dict(
+                        global_id=global_id.UrlToGlobalID(self.remote_idurl),
+                        remote_idurl=self.remote_idurl,
+                        key_id=self.key_id,
+                        reason='remote id caching failed',
+                    ))
                     self.result_defer.errback(Exception('remote id caching failed'))
                 else:
                     if self.ping_response is None:
+                        events.send('private-key-share-failed', dict(
+                            global_id=global_id.UrlToGlobalID(self.remote_idurl),
+                            remote_idurl=self.remote_idurl,
+                            key_id=self.key_id,
+                            reason='remote node not responding',
+                        ))
                         self.result_defer.errback(Exception('remote node not responding'))
                     else:
+                        events.send('private-key-share-failed', dict(
+                            global_id=global_id.UrlToGlobalID(self.remote_idurl),
+                            remote_idurl=self.remote_idurl,
+                            key_id=self.key_id,
+                            reason='failed',
+                        ))
                         self.result_defer.errback(Exception('failed'))
 
     def doDestroyMe(self, arg):
