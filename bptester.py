@@ -26,5 +26,5 @@
 
 from __future__ import absolute_import
 if __name__ == "__main__":
-    from . import main.bptester
-    main.bptester.main()
+    from main.bptester import main
+    main()
