@@ -16,10 +16,12 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import re
 import tokenize
 import token
 import uuid
+from six.moves import range
 
 
 class IndexCreatorException(Exception):

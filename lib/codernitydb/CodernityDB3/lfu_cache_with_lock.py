@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import functools
 from heapq import nsmallest
 from operator import itemgetter

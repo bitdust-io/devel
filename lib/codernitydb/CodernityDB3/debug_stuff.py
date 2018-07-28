@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+from __future__ import print_function
 from CodernityDB3.tree_index import TreeBasedIndex
 import struct
 import os
@@ -22,6 +24,8 @@ import os
 import inspect
 from functools import wraps
 import json
+from six.moves import range
+from io import open
 
 
 class DebugTreeBasedIndex(TreeBasedIndex):
@@ -31,7 +35,7 @@ class DebugTreeBasedIndex(TreeBasedIndex):
 
     def print_tree(self):
         print('-----CURRENT TREE-----')
-        print(self.root_flag)
+        print((self.root_flag))
 
         if self.root_flag == 'l':
             print('---ROOT---')
@@ -48,7 +52,7 @@ class DebugTreeBasedIndex(TreeBasedIndex):
                     self.data_start, index)
                 nodes.append(l_pointer)
             nodes.append(r_pointer)
-            print('ROOT NODES', nodes)
+            print(('ROOT NODES', nodes))
             while children_flag == 'n':
                 self._print_level(nodes, 'n')
                 new_nodes = []
@@ -73,7 +77,7 @@ class DebugTreeBasedIndex(TreeBasedIndex):
                 self._print_leaf_data(node)
 
     def _print_leaf_data(self, leaf_start_position):
-        print('printing data of leaf at', leaf_start_position)
+        print(('printing data of leaf at', leaf_start_position))
         nr_of_elements = self._read_leaf_nr_of_elements(leaf_start_position)
         self.buckets.seek(leaf_start_position)
         data = self.buckets.read(self.leaf_heading_size +
@@ -84,7 +88,7 @@ class DebugTreeBasedIndex(TreeBasedIndex):
         print('')
 
     def _print_node_data(self, node_start_position):
-        print('printing data of node at', node_start_position)
+        print(('printing data of node at', node_start_position))
         nr_of_elements = self._read_node_nr_of_elements_and_children_flag(
             node_start_position)[0]
         self.buckets.seek(node_start_position)

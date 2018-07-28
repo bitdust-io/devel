@@ -459,7 +459,7 @@ def WriteFileSimple(filename, data, mode="w"):
     return True
 
 
-def ReadBinaryFile(filename):
+def ReadBinaryFile(filename, decode_encoding=None):
     """
     A smart way to read binary file. Return empty string in case of:
 
@@ -474,7 +474,9 @@ def ReadBinaryFile(filename):
         return ''
     try:
         infile = open(filename, "rb")
-        data = infile.read().decode('utf-8')
+        data = infile.read()
+        if decode_encoding:
+            data = data.decode(decode_encoding)
         infile.close()
         return data
     except:

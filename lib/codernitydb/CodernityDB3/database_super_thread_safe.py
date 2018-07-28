@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 from threading import RLock
 
 from CodernityDB3.env import cdb_environment

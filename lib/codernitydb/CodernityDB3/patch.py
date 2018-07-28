@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 from CodernityDB3.misc import NONE
 
 
