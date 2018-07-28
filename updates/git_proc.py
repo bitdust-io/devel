@@ -39,7 +39,10 @@ A code for all platforms to perform source code updates from official Git repo a
 from __future__ import absolute_import
 from __future__ import print_function
 from io import open
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------

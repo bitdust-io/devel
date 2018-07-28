@@ -76,7 +76,10 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 from __future__ import absolute_import
 import six
 from six.moves import range
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------

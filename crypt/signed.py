@@ -46,6 +46,9 @@ Packet Fields are all strings (no integers, objects, etc)
 
 from __future__ import absolute_import
 from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 10
 

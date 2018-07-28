@@ -59,7 +59,10 @@ Fifth node, this will also start a minining process, but will only solve one blo
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------

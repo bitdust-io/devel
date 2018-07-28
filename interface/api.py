@@ -35,7 +35,10 @@ Here is a bunch of methods to interact with BitDust software.
 from __future__ import absolute_import
 from six.moves import map
 import six
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------

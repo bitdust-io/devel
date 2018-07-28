@@ -45,7 +45,10 @@ Methods to establish a messages queue between two or more nodes.:
 from __future__ import absolute_import
 from __future__ import print_function
 import six
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 20
 
 #------------------------------------------------------------------------------

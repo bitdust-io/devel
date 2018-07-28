@@ -38,7 +38,10 @@ opened to be able to send asap
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -413,32 +416,3 @@ class TCPFactory(protocol.ClientFactory):
     def add_outbox_file(self, filename, description='', result_defer=None, keep_alive=True):
         self.pendingoutboxfiles.append((filename, description, result_defer, keep_alive))
         tcp_stream.process_streams()
-
-#------------------------------------------------------------------------------
-
-
-def parseCommandLine():
-    oparser = optparse.OptionParser()
-    # oparser.add_option("-p", "--tcpport", dest="tcpport", type="int", help="specify port to listen for incoming TCP connections")
-    oparser.add_option("-r", "--rooturl", dest="rooturl", help="specify XMLRPC server URL address in the main process")
-    oparser.add_option("-x", "--xmlrpcport", dest="xmlrpcport", type="int", help="specify port for XMLRPC control")
-    oparser.add_option("-d", "--debug", dest="debug", action="store_true", help="redirect output to stderr")
-    # oparser.set_default('tcpport', 7771)
-    oparser.set_default('rooturl', '')
-    oparser.set_default('xmlrpcport', 0)
-    oparser.set_default('debug', False)
-    (options, args) = oparser.parse_args()
-    options.xmlrpcport = int(options.xmlrpcport)
-    # options.tcpport = int(options.tcpport)
-    return options, args
-
-
-def main():
-    pass
-
-#------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    main()
-    reactor.run()
