@@ -24,6 +24,8 @@ etc. and other JSON-RPC related stuff like constants.
 """
 
 from __future__ import absolute_import
+import six
+
 cjson_loaded = False
 try:
     import cjson
@@ -229,7 +231,7 @@ def verifyMethodCall(request):
             request['id'] = None
 
         if (not 'method' in request or
-                not isinstance(request['method'], (str,))):
+                not isinstance(request['method'], (six.text_type,))):
             raise JSONRPCError('Invalid method type', INVALID_REQUEST)
 
         if ('params' in request and

@@ -37,6 +37,7 @@ _Debug = False
 
 #------------------------------------------------------------------------------
 
+import six
 import os
 import sys
 
@@ -82,7 +83,7 @@ class GateInterface():
             lg.out(4, 'http_interface.init')
         if not proxy():
             global _GateProxy
-            if isinstance(xml_rpc_url_or_object, str):
+            if isinstance(xml_rpc_url_or_object, six.text_type):
                 _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
             else:
                 _GateProxy = xml_rpc_url_or_object

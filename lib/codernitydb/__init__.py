@@ -1,6 +1,7 @@
 
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 import sys
 import os.path as _p
 codernitydb_path_0 = _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..', 'lib', 'codernitydb'))

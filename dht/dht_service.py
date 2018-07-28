@@ -38,7 +38,7 @@ _DebugLevel = 10
 
 import os
 import sys
-import time
+import six
 import hashlib
 import random
 import base64
@@ -203,7 +203,7 @@ def reconnect():
 #------------------------------------------------------------------------------
 
 def on_host_resoled(ip, port, host, result_list, total_hosts, result_defer):
-    if not isinstance(ip, str) or port is None:
+    if not isinstance(ip, six.text_type) or port is None:
         result_list.append(None)
         lg.warn('"%s" failed to resolve' % host)
     else:

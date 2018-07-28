@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-import six
 #!/usr/bin/env python
 # encoding.py
 #
@@ -28,6 +26,10 @@ import six
 #
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
+
+
+from __future__ import absolute_import
+import six
 
 
 class Encoding(object):
@@ -86,7 +88,7 @@ class Bencode(Encoding):
         """
         if type(data) in six.integer_types:
             return 'i%de' % data
-        elif isinstance(data, str):
+        elif isinstance(data, six.text_type):
             return '%d:%s' % (len(data), data)
         elif type(data) in (list, tuple):
             encodedListItems = ''

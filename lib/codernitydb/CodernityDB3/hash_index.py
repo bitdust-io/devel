@@ -17,6 +17,8 @@
 
 
 from __future__ import absolute_import
+import six
+
 from CodernityDB3.index import (Index,
                                IndexException,
                                DocIdNotFound,
@@ -72,9 +74,9 @@ class IU_HashIndex(Index):
         :param key_format: a index key format
         """
         # Fix types
-        if isinstance(db_path, str):
+        if isinstance(db_path, six.text_type):
             db_path = db_path.encode()
-        if isinstance(name, str):
+        if isinstance(name, six.text_type):
             name = name.encode()
 
         if key_format and '{key}' in entry_line_format:
@@ -83,7 +85,7 @@ class IU_HashIndex(Index):
         self.hash_lim = hash_lim
         if not storage_class:
             storage_class = IU_Storage
-        if storage_class and not isinstance(storage_class, str):
+        if storage_class and not isinstance(storage_class, six.text_type):
             storage_class = storage_class.__name__
         self.storage_class = storage_class
         self.storage = None
@@ -161,7 +163,7 @@ class IU_HashIndex(Index):
         :param key: the key to find
         """
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         start_position = self._calculate_position(key)
@@ -185,7 +187,7 @@ class IU_HashIndex(Index):
 
     def _find_key_many(self, key, limit=1, offset=0):
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         location = None
@@ -224,7 +226,7 @@ class IU_HashIndex(Index):
 
     def _calculate_position(self, key):
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         return abs(hash(key) & self.hash_lim) * self.bucket_line_size + self._start_ind
@@ -239,7 +241,7 @@ class IU_HashIndex(Index):
         :param start: position to start from
         """
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         location = start
@@ -273,9 +275,9 @@ class IU_HashIndex(Index):
         :param start: position to start from
         """
         # Fix types
-        if isinstance(doc_id, str):
+        if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         location = start
@@ -318,11 +320,11 @@ class IU_HashIndex(Index):
 
     def update(self, doc_id, key, u_start=0, u_size=0, u_status='o'):
         # Fix types
-        if isinstance(doc_id, str):
+        if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
-        if isinstance(u_status, str):
+        if isinstance(u_status, six.text_type):
             u_status = u_status.encode()
 
         start_position = self._calculate_position(key)
@@ -348,11 +350,11 @@ class IU_HashIndex(Index):
 
     def insert(self, doc_id, key, start, size, status='o'):
         # Fix types
-        if isinstance(doc_id, str):
+        if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
-        if isinstance(status, str):
+        if isinstance(status, six.text_type):
             status = status.encode()
 
         start_position = self._calculate_position(key)
@@ -425,7 +427,7 @@ class IU_HashIndex(Index):
 
     def get(self, key):
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
         return self._find_key(self.make_key(key))
 
@@ -460,7 +462,7 @@ class IU_HashIndex(Index):
 
     def _fix_link(self, key, pos_prev, pos_next):
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         # CHECKIT why I need that hack
@@ -494,9 +496,9 @@ class IU_HashIndex(Index):
 
     def delete(self, doc_id, key, start=0, size=0):
         # Fix types
-        if isinstance(doc_id, str):
+        if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         start_position = self._calculate_position(key)
@@ -560,7 +562,7 @@ class IU_HashIndex(Index):
         return True
 
     def make_key(self, key):
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             return bytes(key, 'utf-8')
         return key
 
@@ -587,9 +589,9 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
     def __init__(self, db_path, name, entry_line_format="<32s8sIIcI", *args, **kwargs):
         # Fix types
-        if isinstance(db_path, str):
+        if isinstance(db_path, six.text_type):
             db_path = db_path.encode()
-        if isinstance(name, str):
+        if isinstance(name, six.text_type):
             name = name.encode()
 
         if 'key' in kwargs:
@@ -608,7 +610,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
         :param key: the key to find
         """
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         start_position = self._calculate_position(key)
@@ -642,7 +644,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
         :param start: position to start from
         """
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         location = start
@@ -669,7 +671,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
         :param start: position to start from
         """
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         location = start
@@ -693,11 +695,11 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
     def update(self, key, rev, u_start=0, u_size=0, u_status='o'):
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
-        if isinstance(rev, str):
+        if isinstance(rev, six.text_type):
             rev = rev.encode()
-        if isinstance(u_status, str):
+        if isinstance(u_status, six.text_type):
             u_status = u_status.encode()
 
         start_position = self._calculate_position(key)
@@ -728,11 +730,11 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
     def insert(self, key, rev, start, size, status='o'):
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
-        if isinstance(rev, str):
+        if isinstance(rev, six.text_type):
             rev = rev.encode()
-        if isinstance(status, str):
+        if isinstance(status, six.text_type):
             status = status.encode()
 
         start_position = self._calculate_position(key)
@@ -830,7 +832,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
     def delete(self, key, start=0, size=0):
         # Fix types
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = key.encode()
 
         self.update(key, '00000000', start, size, b'd')
@@ -857,9 +859,9 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
     def insert_with_storage(self, _id, _rev, value):
         # Fix types
-        if isinstance(_id, str):
+        if isinstance(_id, six.text_type):
             _id = _id.encode()
-        if isinstance(_rev, str):
+        if isinstance(_rev, six.text_type):
             _rev = _rev.encode()
         if value:
             start, size = self.storage.insert(value)
@@ -870,9 +872,9 @@ class IU_UniqueHashIndex(IU_HashIndex):
 
     def update_with_storage(self, _id, _rev, value):
         # Fix types
-        if isinstance(_id, str):
+        if isinstance(_id, six.text_type):
             _id = _id.encode()
-        if isinstance(_rev, str):
+        if isinstance(_rev, six.text_type):
             _rev = _rev.encode()
 
         if value:

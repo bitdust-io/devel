@@ -39,6 +39,7 @@ _Debug = False
 
 #------------------------------------------------------------------------------
 
+import six
 import os
 import sys
 
@@ -91,7 +92,7 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'tcp_interface.init %d' % id(proxy()))
         if not proxy():
-            if isinstance(xml_rpc_url_or_object, str):
+            if isinstance(xml_rpc_url_or_object, six.text_type):
                 proxy(xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True))
             else:
                 proxy(xml_rpc_url_or_object)
@@ -230,7 +231,7 @@ class GateInterface():
         return tcp_node.find_stream(file_id=stream_id, transfer_id=transfer_id)
 
     def _normalize_host(self, host):
-        if isinstance(host, str):
+        if isinstance(host, six.text_type):
             host = (host.split(':')[0], int(host.split(':')[1]), )
         return host
 

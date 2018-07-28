@@ -74,6 +74,7 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import six
 from six.moves import range
 _Debug = False
 _DebugLevel = 8
@@ -644,7 +645,7 @@ class RestoreWorker(automat.Automat):
         elif result == 'in queue':
             lg.warn('packet already in the request queue')
         elif result == 'failed':
-            if isinstance(NewPacketOrPacketID, str):
+            if isinstance(NewPacketOrPacketID, six.text_type):
                 self.RequestFails.append(NewPacketOrPacketID)
                 self.automat('request-failed', NewPacketOrPacketID)
             else:
@@ -652,7 +653,7 @@ class RestoreWorker(automat.Automat):
                 self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
         else:
             lg.warn('packet %s got not recognized result: %s' % (NewPacketOrPacketID, result, ))
-            if isinstance(NewPacketOrPacketID, str):
+            if isinstance(NewPacketOrPacketID, six.text_type):
                 self.RequestFails.append(NewPacketOrPacketID)
                 self.automat('request-failed', NewPacketOrPacketID)
             else:

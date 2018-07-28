@@ -29,6 +29,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 import hashlib
 
 from twisted.internet import defer
@@ -58,7 +59,7 @@ class EntangledNode(Node):
         Call this to find keys in the DHT which contain the specified
         keyword(s).
         """
-        if isinstance(keywords, str):
+        if isinstance(keywords, six.text_type):
             for splitter in self.keywordSplitters:
                 keywords = keywords.replace(splitter, ' ')
             keywords = keywords.lower().split()

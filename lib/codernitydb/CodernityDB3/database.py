@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 import os
 import io
 from inspect import getsource
@@ -778,7 +779,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to destroy
         :type index: :py:class:`CodernityDB3.index.Index`` instance, or string
         """
-        if isinstance(index, str):
+        if isinstance(index, six.text_type):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -804,7 +805,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to destroy
         :type index: :py:class:`CodernityDB3.index.Index`` instance, or string
         """
-        if isinstance(index, str):
+        if isinstance(index, six.text_type):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -841,7 +842,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to reindex
         :type index: :py:class:`CodernityDB3.index.Index`` instance, or string
         """
-        if isinstance(index, str):
+        if isinstance(index, six.text_type):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -943,7 +944,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         # if not self.indexes_names.has_key(index_name):
         #     raise DatabaseException, "Invalid index name"
 
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = bytes(key, 'utf-8')
         try:
             ind = self.indexes_names[index_name]
