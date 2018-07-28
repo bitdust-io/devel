@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 from .index import Index, IndexException, DocIdNotFound, ElemNotFound
 import struct
 import marshal

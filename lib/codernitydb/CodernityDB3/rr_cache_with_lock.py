@@ -16,8 +16,10 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import functools
 from random import choice
+from six.moves import range
 
 
 def create_cache1lvl(lock_obj):

@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import io
 from inspect import getsource
@@ -177,12 +179,12 @@ class Database(object):
         for curr in cls_code:
             classes_code += getsource(curr) + '\n\n'
         with io.FileIO(os.path.join(p, "%.2d%s" % (i, index.name) + '.py'), 'w') as f:
-            f.write(str.encode(header_for_indexes(index.name,
+            f.write(header_for_indexes(index.name,
                                        index.__class__.__name__,
                                        getattr(self, 'custom_header', ''),
                                        getattr(index, 'custom_header', ''),
-                                       classes_code)))
-            f.write(str.encode(code))
+                                       classes_code))
+            f.write(code)
         return True
 
     def _read_index_single(self, p, ind, ind_kwargs={}):
@@ -233,7 +235,7 @@ class Database(object):
                 name = s[0][2:]
                 c = s[1][2:]
                 comented = ['\n\n#SIMPLIFIED CODE']
-                list(map(lambda x: comented.append("#" + x), new_index.splitlines()))
+                list([comented.append("#" + x) for x in new_index.splitlines()])
                 comented.append('#SIMPLIFIED CODE END\n\n')
 
                 s = header_for_indexes(
