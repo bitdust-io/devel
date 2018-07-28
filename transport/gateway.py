@@ -626,7 +626,7 @@ def current_bytes_received():
     res = {}
     # for transfer_id, info in transfers_in().items():
     #     res[transfer_id] = info.size
-    for pkt_in in list(packet_in.items()).values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         res[pkt_in.transfer_id] = pkt_in.size
     return res
 
@@ -647,7 +647,7 @@ def shutdown_all_inbox_packets():
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(list(packet_in.items()).values()))
-    for pkt_in in list(list(packet_in.items()).values()):
+    for pkt_in in list(packet_in.inbox_items().values()):
         pkt_in.event('cancel', 'shutdown')
 
 #------------------------------------------------------------------------------
@@ -660,7 +660,7 @@ def packets_timeout_loop():
     if _Debug:
         delay = 1
     _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)
-    for pkt_in in list(packet_in.items()).values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
             if _Debug:
                 lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_in, pkt_in.timeout))
@@ -686,7 +686,7 @@ def stop_packets_timeout_loop():
 
 def monitoring():
     list_pkt_in = []
-    for pkt_in in list(packet_in.items()).values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         list_pkt_in.append(pkt_in.label)
     list_pkt_out = []
     for pkt_out in packet_out.queue():

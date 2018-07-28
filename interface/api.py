@@ -2411,7 +2411,7 @@ def packets_list():
             'from_to': 'to',
             'target': pkt_out.remote_idurl,
         })
-    for pkt_in in list(packet_in.items()).values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         result.append({
             'name': pkt_in.transfer_id,
             'label': pkt_in.label,
