@@ -67,6 +67,9 @@ EVENTS:
 
 from __future__ import absolute_import
 from six.moves import range
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 12
 

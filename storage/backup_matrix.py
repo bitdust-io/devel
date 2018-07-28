@@ -54,7 +54,10 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 
 from __future__ import absolute_import
 from six.moves import range
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------

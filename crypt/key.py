@@ -37,6 +37,9 @@ Main thing here is to be able to use public keys in contacts to verify packets.
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import range
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 4
 

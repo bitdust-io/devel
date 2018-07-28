@@ -43,11 +43,12 @@ except:
 
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
+
 #------------------------------------------------------------------------------
 
 from logs import lg
 
-from . import automat
+from automats import automat
 
 #------------------------------------------------------------------------------
 

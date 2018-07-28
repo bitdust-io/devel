@@ -45,7 +45,10 @@ EVENTS:
 
 from __future__ import absolute_import
 from __future__ import print_function
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------

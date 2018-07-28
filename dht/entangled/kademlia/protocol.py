@@ -41,7 +41,12 @@ from .contact import Contact
 
 reactor = twisted.internet.reactor
 
+
+#------------------------------------------------------------------------------
+
 _Debug = False
+
+#------------------------------------------------------------------------------
 
 
 class TimeoutError(Exception):
