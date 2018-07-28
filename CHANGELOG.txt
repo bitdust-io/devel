@@ -2,6 +2,127 @@ Change Log
 ==========
 
 
+2018-07-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added more known id servers
+* added smoketestdht in Makefile
+* added event "shared-list-files-received"
+* added events "share-connected", "share-disconnected"
+* added events "private-key-shared" and "private-key-share-failed"
+* add simple health-check method
+* isolated SSL dependecies in old/unused methods in lib.net_misc
+* make possible to register new identity on local ID server
+* store public keys in OpenSSH format and private keys in PEM
+* use pickle instead of base64 to serialize encrypted data
+* backward incompatible !!!!!!!!!!!!!!!! : reimplement encryption, use pycryptodomex instead of pycrypto, bump twisted version in requirements
+* clean up, removed old "UI experiments" based on Django framework
+* installing virtualenv isolated
+* updated blockchain/trinity/deploy_linux.sh
+* pyethapp is dead, testing trinity which is python3.6
+* experiments with pyethapp blockchain tool
+* added file/download/v1 api method
+* encoding fix: always set UTF8 as default locale
+* executable file name fix in few places to make windows electron platform working
+* added api.shell() method to be able to debug in real time
+* added task for tracking network statuses and reconnect network service
+* updated list of seed nodes
+* wraping stored data with extra layer when supplier returning back saved files in order to route it correctly
+* sending pub keys to suppliers when required
+* loading suppliers of other known customers at start up
+* added callback_id in the automat class
+* temporary disabled "CRITICALLY_OFFLINE" supplier dismiss fearure
+* added `all_customers` parameter to api.file_list() API
+* limit twisted<18 in requirements.txt
+* added timer fallback in network_connector()
+* added method API method network/details
+* added api method user_status_check()
+* added api.identity_list() method
+* rebuilt dht service and added key-value expiration flow
+* added cancel() method to service_supplier_relations() to be able to clean up junk dht records
+* updated file_upload/file_download API methods so they will be able to open share before start
+* improving files synchronization logic
+* disabled services/udp-transport by default, services/proxy-transport should be used now by default
+* stop publishing "supplier-file-modified" event, more smart fire_hire()
+* added share_list() and share_create() api mothods, adjusted key_id format validation
+* added id server bitrex.ai:8084
+* shared file download is working !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+* fixed api.message_send(), packet_in.process() to be able to cache input packet creator identity
+* in service_supplier() external customer must be able to request Data()
+* service_supplier() able to send shared data to external customer
+* bump dht protocol version to 5
+* publishing my active eccmap in dht relations
+* added DetectSupplierPosition() to be able to connect to external suppliers
+* bump dht protocol version to 4
+* modified stun client code to use randomized udp and dht port numbers
+* added lg.args() method, testing DHT methods
+* added DHT methods to work with validated json data
+* added clean up in dht_relations()
+* refactored Files() command - must be encrypted now
+* must be able to request 0 bytes from supplier
+* working with file sharing
+
+
+
+2018-04-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* refactoring/improvements/new api methods, building file share methods, supporting new UI based on electron framework
+* switched from restore() to restore_worker()
+* added data_receiver() machine
+* updated packet_out() : use cached copy of the remote identity only if it is fresh - if older than 60 sec then cache again
+* randomized backups fs id
+* added api methods to exchange json messages
+* added api methods to get/set my nickname
+* improved performance of api.user_search()
+* added rest method for adding/removing users from list of contacts
+* save backup index in service_customer()
+* also storing locally a list files from other customers
+* processing ListFiles() command also in service_customer()
+* added service_shared_data(), testing shared_access_donor() machine
+* added api.share_open() and api.share_history() interfaces
+* added Packets field to signed.Packet to store outgoing transfers
+* building shared_access_coordinator()
+* added response timeout callback methods to packet_out and catching that in key_audit() now
+* able to audit master key as well
+* added api.transfers_list() to be able to test/debug file uploads/downloads process
+* destination_folder is not a mandatory in api.file_download_start()
+* added api.key_audit() method
+* added AuditKey() command, working with key_ring, added method to test validate keys on remote machines
+* added access/shared_access_coordinator.py
+* rework event id format in the p2p queue, publish events from the blockchain
+* working with blockchain, registering own identity in the blockchain if possible (mine a block if not enough coins)
+* miners should only generate blocks if some transactions are pending
+* Added service_blockchain() based on PyBC open source project - basic implementation of blockchain technology
+* added file_download_start() and file_download_stop()  to REST HTTP API
+* set normalize_key_alias=True everywhere : force to send key_alias in packetID
+* updated ListFiles()/Files() commands so that they also processing key_alias parameter
+* change storage location for customer's file : also depend on key_alias
+* handling of Event() packets in service_p2p_notifications() only
+* add logging in automat.startTimers()
+* Big change! refactor p2p services requests : use generic json structures instead of plain strings
+* added methods to connect producer with given queue
+* added api.queue_list()
+* added global_id.ParseGlobalQueueID(queue_id) method, fix in my_keys
+* make api.network_connected() workin properly and return valid status based on p2p_connector().state
+* improved api.service_restart() method, added wait_timeout parameter with default value 10 seconds
+* generate events when your contacts got changed
+* added flexibility to crypt.signed.Packet : you can use specific key to sign your data now, not only your master key
+* finilized design of the queue_id: {queue_alias}&{owner_id}&{supplier_id}
+* set service_p2p_notifications enabled by default
+* change dependecy for service_supplier - it must depend on service_p2p_notifications also
+* add CORS to REST HTTP API, work with p2p_queue, fixes
+* added /event/send/<event_id>/v1 API HTTP method
+* added response_timeout argument to packet_out()
+* added Event() to p2p.commands
+* skip command handling in p2p_service, logic distributed to the services
+* added p2p_queue.py, refactoring
+* publish events from id_restorer() and id_registrator()
+* added api.event_listen(), possible to publish event when state machine change state, work on api.service_restart()
+* modified initializer() machine logic: start bitdust process even if local identity is not exist, added API methods to create/recover identity
+* disabled Django WEB UI interface, we are building new UI based on Electron
+* added service_p2p_notifications()
+
+
+
 2018-01-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added id server blog.bitdust.io, removed id server whmcs.whois.ai
