@@ -23,7 +23,6 @@
 #
 #
 #
-from access.key_ring import _Debug
 
 """
 .. module:: fire_hire

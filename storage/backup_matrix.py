@@ -52,7 +52,7 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------

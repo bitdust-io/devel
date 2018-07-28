@@ -428,7 +428,6 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer.A('start', {'idurl': idurl, 'keysrc': pk_source, })
     return ret
 
-
 def identity_list():
     """
     """
