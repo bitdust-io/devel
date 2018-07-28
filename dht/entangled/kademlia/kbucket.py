@@ -158,7 +158,7 @@ class KBucket(object):
                  if not.
         @rtype: bool
         """
-        if isinstance(key, six.text_type):
+        if isinstance(key, six.string_types):
             key = int(key.encode('hex'), 16)
         return self.rangeMin <= key < self.rangeMax
 

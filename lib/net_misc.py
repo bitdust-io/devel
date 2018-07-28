@@ -899,8 +899,8 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             return boundary
     
         def _file_type(self, field):
-            type = mimetypes.guess_type(self._files[field])[0]
-            return type.encode("utf-8") if isinstance(type, six.text_type) else str(type)
+            typ = mimetypes.guess_type(self._files[field])[0]
+            return typ.encode("utf-8") if isinstance(typ, six.text_type) else str(typ)
     
         def _file_size(self, field):
             size = 0

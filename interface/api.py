@@ -254,7 +254,7 @@ def config_set(key, value):
                           config_types.TYPE_UNDEFINED, ]:
         config.conf().setData(key, six.text_type(value))
     elif typ in [config_types.TYPE_BOOLEAN, ]:
-        if (isinstance(value, str) or isinstance(value, six.text_type)):
+        if isinstance(value, six.string_types):
             vl = value.strip().lower() == 'true'
         else:
             vl = bool(value)
@@ -2929,7 +2929,7 @@ def event_send(event_id, json_data=None):
     from main import events
     json_payload = None
     json_length = 0
-    if json_data and (isinstance(json_data, str) or isinstance(json_data, six.text_type)):
+    if json_data and isinstance(json_data, six.string_types):
         json_length = len(json_data)
         try:
             json_payload = json.loads(json_data or '{}')

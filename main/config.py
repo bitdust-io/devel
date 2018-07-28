@@ -290,7 +290,7 @@ class BaseConfig(object):
             self._mkdir(dpath)
         fpath = os.path.join(dpath, elemList[-1])
         s = data
-        if isinstance(s, six.text_type):
+        if not isinstance(s, six.binary_type):
             s = s.encode('utf-8')
         try:
             f = open(fpath, 'wb')

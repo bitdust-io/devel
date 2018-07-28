@@ -49,7 +49,7 @@ class Contact(object):
     def __eq__(self, other):
         if isinstance(other, Contact):
             return self.id == other.id
-        elif isinstance(other, six.text_type):
+        elif isinstance(other, six.string_types):
             return self.id == other
         else:
             return False
@@ -57,7 +57,7 @@ class Contact(object):
     def __ne__(self, other):
         if isinstance(other, Contact):
             return self.id != other.id
-        elif isinstance(other, six.text_type):
+        elif isinstance(other, six.string_types):
             return self.id != other
         else:
             return True

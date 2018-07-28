@@ -143,7 +143,7 @@ def request_update(items=None):
     _UpdateItems['refresh'] = int(time.time())
     if items is not None:
         for item in items:
-            if isinstance(item, six.text_type):
+            if isinstance(item, six.string_types):
                 _UpdateItems[item] = int(time.time())
             elif isinstance(item, tuple) and len(item) == 2:
                 key, value = item

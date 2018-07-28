@@ -378,7 +378,7 @@ def AtomicWriteFile(filename, data):
         tmpfilename = filename + ".new"
         f = open(tmpfilename, "wb")
         bin_data = data
-        if isinstance(data, six.text_type):
+        if not isinstance(data, six.binary_type):
             bin_data = bin_data.encode('utf-8')
         f.write(bin_data)
         f.flush()
@@ -411,7 +411,7 @@ def AtomicAppendFile(filename, data, mode='a'):
         f = open(filename, mode)
         if 'b' in mode:
             bin_data = data
-            if isinstance(data, six.text_type):
+            if not isinstance(data, six.binary_type):
                 bin_data = bin_data.encode('utf-8')
             f.write(bin_data)
         else:
@@ -444,15 +444,15 @@ def WriteFileSimple(filename, data, mode="w"):
     Simple non-atomic method to write data to file, return True if success.
     """
     try:
-        file = open(filename, mode)
+        fil = open(filename, mode)
         if 'b' in mode:
             bin_data = data
-            if isinstance(data, six.text_type):
+            if not isinstance(data, six.binary_type):
                 bin_data = bin_data.encode('utf-8')
-            file.write(bin_data)
+            fil.write(bin_data)
         else:
-            file.write(data)
-        file.close()
+            fil.write(data)
+        fil.close()
     except:
         lg.exc()
         return False
@@ -541,7 +541,7 @@ def _write_data(path, src):
             lg.out(1, 'bpio._write_data ERROR removing ' + str(path))
     fout = open(temp_path, 'wb')
     bin_data = src
-    if isinstance(src, six.text_type):
+    if not isinstance(src, six.binary_type):
         bin_data = bin_data.encode('utf-8')
     fout.write(bin_data)
     fout.write(src)
@@ -841,7 +841,7 @@ def shortPath(path):
     path_ = os.path.abspath(path)
     if not Windows():
         if not isinstance(path_, six.text_type):
-            return six.text_type(path_)
+            return path_.decode('utf-8')
         return path_
     if not os.path.exists(path_):
         if os.path.isdir(os.path.dirname(path_)):
@@ -865,7 +865,7 @@ def longPath(path):
     path_ = os.path.abspath(path)
     if not Windows():
         if not isinstance(path_, six.text_type):
-            return six.text_type(path_)
+            return path_.decode('utf-8')
         return path_
     if not os.path.exists(path_):
         return six.text_type(path_)
@@ -909,7 +909,7 @@ def remotePath(path):
         return path
     p = path.lstrip('/').lstrip('\\')
     if not isinstance(p, six.text_type):
-        p = six.text_type(p)
+        p = p.decode('utf-8')
     if p.endswith('/') and len(p) > 1:
         p = p.rstrip('/')
     return p
@@ -933,8 +933,8 @@ def portablePath(path):
         path = os.path.expanduser(path)
     p = os.path.abspath(path)
     if not isinstance(p, six.text_type):
-        # p = p.encode('utf-8')
-        p = six.text_type(p)
+        p = p.decode('utf-8')
+        # p = six.text_type(p)
     if Windows():
         p = p.replace('\\', '/')  # .replace('\\\\', '/')
         if len(p) >= 2:

@@ -75,7 +75,7 @@ def process(json_request):
     mode = ''
     result = {}
     try:
-        if isinstance(json_request, str) or isinstance(json_request, six.text_type):
+        if isinstance(json_request, six.string_types):
             import json
             json_request = json.loads(json_request)
         mode = json_request['params']['mode']

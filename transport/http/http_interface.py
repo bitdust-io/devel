@@ -83,7 +83,7 @@ class GateInterface():
             lg.out(4, 'http_interface.init')
         if not proxy():
             global _GateProxy
-            if isinstance(xml_rpc_url_or_object, six.text_type):
+            if isinstance(xml_rpc_url_or_object, six.string_types):
                 _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
             else:
                 _GateProxy = xml_rpc_url_or_object

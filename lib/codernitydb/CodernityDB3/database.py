@@ -779,7 +779,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to destroy
         :type index: :py:class:`CodernityDB3.index.Index`` instance, or string
         """
-        if isinstance(index, six.text_type):
+        if isinstance(index, six.string_types):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -805,7 +805,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to destroy
         :type index: :py:class:`CodernityDB3.index.Index`` instance, or string
         """
-        if isinstance(index, six.text_type):
+        if isinstance(index, six.string_types):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -842,7 +842,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to reindex
         :type index: :py:class:`CodernityDB3.index.Index`` instance, or string
         """
-        if isinstance(index, six.text_type):
+        if isinstance(index, six.string_types):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]

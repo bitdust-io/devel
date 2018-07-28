@@ -652,7 +652,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
     ret = Deferred()
 
-    if isinstance(callback_method, str) or isinstance(callback_method, six.text_type):
+    if isinstance(callback_method, six.string_types):
         p2p_service.SendEvent(
             remote_idurl=str(callback_method),
             event_id=event_id,

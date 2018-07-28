@@ -645,7 +645,7 @@ class RestoreWorker(automat.Automat):
         elif result == 'in queue':
             lg.warn('packet already in the request queue')
         elif result == 'failed':
-            if isinstance(NewPacketOrPacketID, six.text_type):
+            if isinstance(NewPacketOrPacketID, six.string_types):
                 self.RequestFails.append(NewPacketOrPacketID)
                 self.automat('request-failed', NewPacketOrPacketID)
             else:
@@ -653,7 +653,7 @@ class RestoreWorker(automat.Automat):
                 self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
         else:
             lg.warn('packet %s got not recognized result: %s' % (NewPacketOrPacketID, result, ))
-            if isinstance(NewPacketOrPacketID, six.text_type):
+            if isinstance(NewPacketOrPacketID, six.string_types):
                 self.RequestFails.append(NewPacketOrPacketID)
                 self.automat('request-failed', NewPacketOrPacketID)
             else:

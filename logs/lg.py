@@ -272,7 +272,7 @@ def exception(level, maxTBlevel, exc_info):
     if _StoreExceptionsEnabled:
         import tempfile
         fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
-        if isinstance(s, six.text_type):
+        if not isinstance(s, six.binary_type):
             s = s.encode('utf-8')
         os.write(fd, s)
         os.close(fd)

@@ -59,7 +59,7 @@ class EntangledNode(Node):
         Call this to find keys in the DHT which contain the specified
         keyword(s).
         """
-        if isinstance(keywords, six.text_type):
+        if isinstance(keywords, six.string_types):
             for splitter in self.keywordSplitters:
                 keywords = keywords.replace(splitter, ' ')
             keywords = keywords.lower().split()
