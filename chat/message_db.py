@@ -383,7 +383,7 @@ def main():
         get_all <index>
         get_many <index> <key>
         get <index> <key>
-        insert "message body"
+        insert "message body" "message id"
         search "json query"
         indexes
         tmpdb <destination folder>
@@ -433,7 +433,7 @@ def main():
 
     if sys.argv[1] == 'insert':
         init()
-        print(insert(build_json_message(sys.argv[2])))
+        print(insert(build_json_message(data=sys.argv[2], message_id=sys.argv[3])))
         shutdown()
 
     if sys.argv[1] == 'search':
