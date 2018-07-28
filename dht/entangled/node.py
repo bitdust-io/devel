@@ -33,11 +33,12 @@ import hashlib
 
 from twisted.internet import defer
 
-from . import kademlia.node
+from .kademlia.node import Node
 from .kademlia.node import rpcmethod
+from io import open
 
 
-class EntangledNode(kademlia.node.Node):
+class EntangledNode(Node):
     """
     Entangled DHT node.
 
@@ -46,7 +47,7 @@ class EntangledNode(kademlia.node.Node):
     """
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        kademlia.node.Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+        Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
         self.invalidKeywords = []
         self.keywordSplitters = ['_', '.', '/']
 

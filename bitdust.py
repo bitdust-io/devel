@@ -33,8 +33,8 @@ def main():
         os.chdir(os.path.dirname(__file__))
     except:
         pass
-    from . import main.bpmain
-    ret = main.bpmain.main(executable_path)
+    from main.bpmain import main
+    ret = main(executable_path)
     os._exit(ret)
 
 
