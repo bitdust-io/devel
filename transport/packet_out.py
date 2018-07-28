@@ -53,6 +53,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import six
 from six.moves import map
 from six.moves import range
 _Debug = False
@@ -722,7 +723,7 @@ class PacketOut(automat.Automat):
         Action method.
         """
         msg = arg
-        if not isinstance(msg, str):
+        if not isinstance(msg, six.text_type):
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
 

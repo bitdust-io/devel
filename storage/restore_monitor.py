@@ -166,7 +166,7 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
 #     try:
 #         if isinstance(x, Exception):
 #             backupID, result = x.getErrorMessage().split(' ')
-#         elif isinstance(x, str):
+#         elif isinstance(x, six.text_type):
 #             backupID, result = x.split(' ')
 #     except:
 #         lg.exc()

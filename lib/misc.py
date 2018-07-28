@@ -737,7 +737,7 @@ def getRealHost(host, port=None):
     """
     Some tricks to get a 'host' from contact method (see ``lib.identity``).
     """
-    if isinstance(host, str):
+    if isinstance(host, six.text_type):
         if port is not None:
             host += ':' + str(port)
     elif isinstance(host, tuple) and len(host) == 2:

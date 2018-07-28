@@ -51,6 +51,7 @@ EVENTS:
 """
 
 from __future__ import absolute_import
+import six
 import os
 import sys
 
@@ -218,7 +219,7 @@ class Shutdowner(automat.Automat):
             param = self.shutdown_param
         if arg is None:
             param = 'exit'
-        elif isinstance(arg, str):
+        elif isinstance(arg, six.text_type):
             param = arg
         if param not in ['exit', 'restart', 'restartnshow']:
             param = 'exit'

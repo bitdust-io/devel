@@ -761,7 +761,7 @@ def SetDir(item, iter=None, iterID=None):
                     found = True
                     break
                 continue
-            if isinstance(iter[name], str):
+            if isinstance(iter[name], six.text_type):
                 if iter[name] == itemname:
                     iter = iter[name]
                     iterID = iterID[id]

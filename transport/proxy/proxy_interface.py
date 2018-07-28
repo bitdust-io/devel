@@ -38,6 +38,8 @@ _Debug = False
 
 #------------------------------------------------------------------------------
 
+import six
+
 from twisted.web import xmlrpc
 from twisted.internet.defer import succeed, fail, Deferred
 from twisted.python.failure import Failure
@@ -72,7 +74,7 @@ class GateInterface():
             lg.out(4, 'proxy_interface.init')
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-        if isinstance(xml_rpc_url_or_object, str):
+        if isinstance(xml_rpc_url_or_object, six.text_type):
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
             _GateProxy = xml_rpc_url_or_object

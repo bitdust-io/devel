@@ -28,6 +28,8 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
+import six
+
 from . import constants
 
 
@@ -156,7 +158,7 @@ class KBucket(object):
                  if not.
         @rtype: bool
         """
-        if isinstance(key, str):
+        if isinstance(key, six.text_type):
             key = int(key.encode('hex'), 16)
         return self.rangeMin <= key < self.rangeMax
 
