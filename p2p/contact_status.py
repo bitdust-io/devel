@@ -83,12 +83,11 @@ from contacts import contactsdb
 
 from automats import automat
 
+from p2p import ratings
 from p2p import commands
 from p2p import propagate
 
 from transport import callback
-
-from . import ratings
 
 from userid import my_id
 
