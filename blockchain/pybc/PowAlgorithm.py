@@ -3,6 +3,7 @@ PowAlgorithm.py: contains the PowAlgorithm class.
 
 """
 
+from __future__ import absolute_import
 import hashlib
 import struct
 

@@ -3,6 +3,7 @@ StateComponent.py: Contains the StateComponent class.
 
 """
 
+from __future__ import absolute_import
 import hashlib
 import pybc.util
 

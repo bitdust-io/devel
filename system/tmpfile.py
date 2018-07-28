@@ -34,6 +34,7 @@ sub folders.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 10
 
@@ -189,7 +190,7 @@ def register(filepath):
     global _FilesDict
     subdir, filename = os.path.split(filepath)
     name = os.path.basename(subdir)
-    if name not in _FilesDict.keys():
+    if name not in list(_FilesDict.keys()):
         name = 'all'
     _FilesDict[name][filepath] = time.time()
 
@@ -209,7 +210,7 @@ def make(name, extension='', prefix=''):
     global _FilesDict
     if _TempDirPath is None:
         init()
-    if name not in _FilesDict.keys():
+    if name not in list(_FilesDict.keys()):
         name = 'all'
     try:
         fd, filename = tempfile.mkstemp(extension, prefix, subdir(name))
@@ -230,7 +231,7 @@ def make_dir(name, extension='', prefix=''):
     global _FilesDict
     if _TempDirPath is None:
         init()
-    if name not in _FilesDict.keys():
+    if name not in list(_FilesDict.keys()):
         name = 'all'
     try:
         dirname = tempfile.mkdtemp(extension, prefix, subdir(name))
@@ -252,7 +253,7 @@ def erase(name, filename, why='no reason'):
     But outside of this module you better use method ``throw_out``.
     """
     global _FilesDict
-    if name in _FilesDict.keys():
+    if name in list(_FilesDict.keys()):
         try:
             _FilesDict[name].pop(filename, '')
         except:
@@ -350,7 +351,7 @@ def startup_clean():
     for name in os.listdir(_TempDirPath):
         # we want to scan only our folders
         # do not want to be responsible of other files
-        if name not in _SubDirs.keys():
+        if name not in list(_SubDirs.keys()):
             continue
 
         # for data and parity files we have special rules

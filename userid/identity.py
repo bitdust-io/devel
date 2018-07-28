@@ -125,11 +125,14 @@ for that identity (in case there is network partition funnyness)
 to help keep all of them updated.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
 from xml.dom import minidom, Node
 from xml.dom.minidom import getDOMImplementation
+from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -776,7 +779,7 @@ class identity:
         """
         """
         if contacts_order is None:
-            contacts_order = contacts_dict.keys()
+            contacts_order = list(contacts_dict.keys())
         for proto in contacts_order:
             self.contacts.append(contacts_dict[proto])
 
@@ -888,27 +891,27 @@ def test1():
     """
     from userid import my_id
     myidentity = my_id.getLocalIdentity()
-    print 'getIP =', myidentity.getIP()
+    print('getIP =', myidentity.getIP())
     if myidentity.Valid():
-        print "myidentity is Valid!!!!"
+        print("myidentity is Valid!!!!")
     else:
-        print "myidentity is not Valid"
+        print("myidentity is not Valid")
         my_id.saveLocalIdentity()            # sign and save
         raise Exception("myidentity is not Valid")
-    print "myidentity.contacts"
-    print myidentity.contacts
-    print "len myidentity.contacts "
-    print len(myidentity.contacts)
-    print "len myidentity.contacts[0] "
-    print myidentity.contacts[0]
+    print("myidentity.contacts")
+    print(myidentity.contacts)
+    print("len myidentity.contacts ")
+    print(len(myidentity.contacts))
+    print("len myidentity.contacts[0] ")
+    print(myidentity.contacts[0])
     con = myidentity.getContact()
-    print "con:", con, type(con)
+    print("con:", con, type(con))
     protocol, machine, port, filename = nameurl.UrlParse(con)
-    print protocol, machine, port, filename
-    print "identity.main serialize:\n", myidentity.serialize()
+    print(protocol, machine, port, filename)
+    print("identity.main serialize:\n", myidentity.serialize())
     for index in range(myidentity.getContactsNumber()):
         proto, host, port, filename = myidentity.getContactParts(index)
-        print '[%s] [%s] [%s] [%s]' % (proto, host, port, filename)
+        print('[%s] [%s] [%s] [%s]' % (proto, host, port, filename))
 
 
 def test2():
@@ -917,7 +920,7 @@ def test2():
     """
     from userid import my_id
     ident = my_id.buildDefaultIdentity()
-    print ident.serialize()
+    print(ident.serialize())
 
 #------------------------------------------------------------------------------
 
@@ -930,13 +933,13 @@ def main():
     my_id.loadLocalIdentity()
     if my_id.isLocalIdentityReady():
         my_id.getLocalIdentity().sign()
-        print my_id.getLocalIdentity().serialize()
-        print 'Valid is: ', my_id.getLocalIdentity().Valid()
+        print(my_id.getLocalIdentity().serialize())
+        print('Valid is: ', my_id.getLocalIdentity().Valid())
     else:
         my_id.setLocalIdentity(my_id.buildDefaultIdentity(sys.argv[1]))
         my_id.saveLocalIdentity()
-        print my_id.getLocalIdentity().serialize()
-        print 'Valid is: ', my_id.getLocalIdentity().Valid()
+        print(my_id.getLocalIdentity().serialize())
+        print('Valid is: ', my_id.getLocalIdentity().Valid())
         my_id._LocalIdentity = None
         my_id.loadLocalIdentity()
 
@@ -952,7 +955,7 @@ def update():
     my_id.setLocalIdentity(identity(xmlsrc=src))
     my_id.getLocalIdentity().sign()
     my_id.saveLocalIdentity()
-    print my_id.getLocalIdentity().serialize()
+    print(my_id.getLocalIdentity().serialize())
 
 #------------------------------------------------------------------------------
 

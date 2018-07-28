@@ -19,6 +19,8 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -40,7 +42,7 @@ def mkinfo(dirpath):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print 'checksum.py [source folder path] [output file]'
+        print('checksum.py [source folder path] [output file]')
     else:
         src = mkinfo(sys.argv[1])
         fout = open(sys.argv[2], 'w')

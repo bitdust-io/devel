@@ -34,6 +34,7 @@ The server side part is placed in the file tcp_node.py.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 
 #------------------------------------------------------------------------------

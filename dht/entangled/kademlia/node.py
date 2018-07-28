@@ -27,19 +27,22 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
+from __future__ import absolute_import
+from __future__ import print_function
 import hashlib
 import random
 import time
 
 from twisted.internet import defer
 
-import constants
-import routingtable
-import datastore
-import protocol
+from . import constants
+from . import routingtable
+from . import datastore
+from . import protocol
 import twisted.internet.reactor
 import twisted.internet.threads
-from contact import Contact
+from .contact import Contact
+from six.moves import range
 
 
 def rpcmethod(func):
@@ -159,11 +162,11 @@ class Node(object):
         # twisted.internet.reactor.run()
 
     def printContacts(self):
-        print '\n\nNODE CONTACTS\n==============='
+        print('\n\nNODE CONTACTS\n===============')
         for i in range(len(self._routingTable._buckets)):
             for contact in self._routingTable._buckets[i]._contacts:
-                print contact
-        print '=================================='
+                print(contact)
+        print('==================================')
         #twisted.internet.reactor.callLater(10, self.printContacts)
 
     def iterativeStore(self, key, value, originalPublisherID=None,
@@ -257,10 +260,10 @@ class Node(object):
         outerDf = defer.Deferred()
 
         def lookupFailed(x):
-            print 'lookupFailed', x
+            print('lookupFailed', x)
 
         def storeFailed(x):
-            print 'storeFailed', x
+            print('storeFailed', x)
 
         def checkResult(result):
             if isinstance(result, dict):
@@ -271,7 +274,7 @@ class Node(object):
                     expireSeconds = constants.dataExpireSecondsDefaut
                     if 'expireSeconds' in result:
                         expireSeconds = result['expireSeconds']
-                    print 'republish %s with %d' % (result[key], expireSeconds)
+                    print('republish %s with %d' % (result[key], expireSeconds))
                     contact.store(key, result[key], None, 0, expireSeconds).addErrback(storeFailed)
                 outerDf.callback(result)
             else:
@@ -289,7 +292,7 @@ class Node(object):
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        print 'refresh %s with %d' % (value, expireSeconds)
+                        print('refresh %s with %d' % (value, expireSeconds))
                         contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
                     outerDf.callback({key: value})
                 else:
@@ -744,8 +747,8 @@ class Node(object):
         self._dataStore.setItem('nodeState', state, now, now, self.id)
 
     def _joinNetworkFailed(self, err):
-        print 'failed joining DHT network'
-        print err
+        print('failed joining DHT network')
+        print(err)
 
     def _refreshNode(self):
         """
@@ -845,17 +848,17 @@ class Node(object):
 if __name__ == '__main__':
     import sys
     if len(sys.argv) < 2:
-        print 'Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0]
-        print 'or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0]
-        print '\nIf a file is specified, it should containg one IP address and UDP port\nper line, seperated by a space.'
+        print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
+        print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])
+        print('\nIf a file is specified, it should containg one IP address and UDP port\nper line, seperated by a space.')
         sys.exit(1)
     try:
         usePort = int(sys.argv[1])
     except ValueError:
-        print '\nUDP_PORT must be an integer value.\n'
-        print 'Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0]
-        print 'or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0]
-        print '\nIf a file is specified, it should contain one IP address and UDP port\nper line, seperated by a space.'
+        print('\nUDP_PORT must be an integer value.\n')
+        print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
+        print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])
+        print('\nIf a file is specified, it should contain one IP address and UDP port\nper line, seperated by a space.')
         sys.exit(1)
 
     if len(sys.argv) == 4:

@@ -27,6 +27,7 @@ leaks. Can start a local HTTP server to keep track of all python objects
 in the memory.
 """
 
+from __future__ import absolute_import
 import cherrypy
 import dowser
 

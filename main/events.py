@@ -35,6 +35,7 @@ TODO: need to store events on the local HDD
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 12
 

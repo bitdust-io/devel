@@ -48,10 +48,13 @@ EVENTS:
     * :red:`timer-1min`
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
 from parallelp import pp
+from six.moves import range
 
 try:
     from twisted.internet import reactor
@@ -66,9 +69,9 @@ from system import bpio
 
 from automats import automat
 
-import read
-import make
-import rebuild
+from . import read
+from . import make
+from . import rebuild
 
 #------------------------------------------------------------------------------
 
@@ -345,7 +348,7 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
-        for i in xrange(len(self.tasks)):
+        for i in range(len(self.tasks)):
             task_id, cmd, params = self.tasks[i]
             cb = self.callbacks.pop(task_id)
             reactor.callLater(0, cb, cmd, params, None)
@@ -365,7 +368,7 @@ class RaidWorker(automat.Automat):
 
     def _job_done(self, task_id, cmd, params, result):
         lg.out(12, 'raid_worker._job_done %r : %r active:%r' % (
-            task_id, result, self.activetasks.keys()))
+            task_id, result, list(self.activetasks.keys())))
         self.automat('task-done', (task_id, cmd, params, result))
 
     def _kill_processor(self):
@@ -379,7 +382,7 @@ class RaidWorker(automat.Automat):
 
 def main():
     def _cb(cmd, taskdata, result):
-        print cmd, taskdata, result
+        print(cmd, taskdata, result)
     bpio.init()
     lg.set_debug_level(20)
     reactor.callWhenRunning(A, 'init')

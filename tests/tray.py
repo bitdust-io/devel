@@ -19,10 +19,13 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
 import wx
 import string
 
 import sys
+from six.moves import map
+from six.moves import range
 
 ID_ICON_TIMER = wx.NewId()
 
@@ -40,10 +43,10 @@ class IconBar:
         self.s_line = "\xff\xff\xff" + "\0" * 45
         self.s_border = "\xff\xff\xff\0\0\0"
         self.s_point = "\0" * 3
-        self.sl_off = string.join(map(chr, l_off), '') * 6
-        self.sl_on = string.join(map(chr, l_on), '') * 6
-        self.sr_off = string.join(map(chr, r_off), '') * 6
-        self.sr_on = string.join(map(chr, r_on), '') * 6
+        self.sl_off = string.join(list(map(chr, l_off)), '') * 6
+        self.sl_on = string.join(list(map(chr, l_on)), '') * 6
+        self.sr_off = string.join(list(map(chr, r_off)), '') * 6
+        self.sr_on = string.join(list(map(chr, r_on)), '') * 6
 
     ##
     # \brief gets a new icon with 0 <= l,r <= 5

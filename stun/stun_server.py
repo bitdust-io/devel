@@ -32,6 +32,7 @@ EVENTS:
     * :red:`stop`
 """
 
+from __future__ import absolute_import
 import os
 import sys
 

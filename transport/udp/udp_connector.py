@@ -37,6 +37,7 @@ EVENTS:
     * :red:`start`
 """
 
+from __future__ import absolute_import
 import time
 
 from logs import lg

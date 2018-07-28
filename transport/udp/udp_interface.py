@@ -33,6 +33,7 @@ module:: udp_interface
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 
 #------------------------------------------------------------------------------
@@ -269,7 +270,7 @@ class GateInterface():
         """
         """
         from transport.udp import udp_session
-        return udp_session.sessions().values()
+        return list(udp_session.sessions().values())
 
     def list_streams(self, sorted_by_time=True):
         """

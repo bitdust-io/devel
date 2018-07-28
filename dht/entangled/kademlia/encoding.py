@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+import six
 #!/usr/bin/env python
 # encoding.py
 #
@@ -82,7 +84,7 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-        if type(data) in (int, long):
+        if type(data) in six.integer_types:
             return 'i%de' % data
         elif isinstance(data, str):
             return '%d:%s' % (len(data), data)

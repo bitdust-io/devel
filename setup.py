@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 from setuptools import setup
 setup(**{'author': 'Veselin Penev',
  'author_email': 'bitdust.io@gmail.com',

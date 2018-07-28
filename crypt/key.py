@@ -34,6 +34,9 @@ Main thing here is to be able to use public keys in contacts to verify packets.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 _Debug = True
 _DebugLevel = 4
 
@@ -356,7 +359,7 @@ def SpeedTest():
     loops = 10
     packets = []
     dt = time.time()
-    print 'encrypt %d pieces of %d bytes' % (loops, dataSZ)
+    print('encrypt %d pieces of %d bytes' % (loops, dataSZ))
     for i in range(loops):
         Data = os.urandom(dataSZ)
         SessionKey = NewSessionKey()
@@ -364,11 +367,11 @@ def SpeedTest():
         EncryptedData = EncryptWithSessionKey(SessionKey, Data)
         Signature = Sign(Hash(EncryptedData))
         packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
-        print '.',
-    print time.time() - dt, 'seconds'
+        print('.', end=' ')
+    print(time.time() - dt, 'seconds')
 
     dt = time.time()
-    print 'decrypt now'
+    print('decrypt now')
     i = 0
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
         SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
@@ -378,10 +381,10 @@ def SpeedTest():
             raise Exception()
         if newData != Data:
             raise Exception
-        print '.',
+        print('.', end=' ')
         # open(str(i), 'wb').write(EncryptedData)
         i += 1
-    print time.time() - dt, 'seconds'
+    print(time.time() - dt, 'seconds')
 
 #------------------------------------------------------------------------------
 

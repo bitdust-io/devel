@@ -33,6 +33,7 @@ This is a client side part of the PROXY transport plug-in.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = True
 
 #------------------------------------------------------------------------------
@@ -198,7 +199,7 @@ class GateInterface():
                     res.callback(False)
                     return False
                 for proto, contact in id_obj.getContactsByProto().items():
-                    if proto not in router_contacts.keys():
+                    if proto not in list(router_contacts.keys()):
                         if _Debug:
                             lg.out(4, '    returning False: [%s] is not present in router contacts' % proto)
                         res.callback(False)

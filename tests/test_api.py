@@ -20,6 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+from __future__ import absolute_import
 from twisted.trial import unittest
 from twisted.internet.defer import Deferred, succeed, fail
 from twisted.internet import reactor

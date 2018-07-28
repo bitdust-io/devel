@@ -20,6 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+from __future__ import absolute_import
 import os
 import sys
 

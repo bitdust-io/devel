@@ -34,6 +34,8 @@ TODO:
 need to move out userconfig stuff from that file
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 
 if __name__ == '__main__':
@@ -2698,19 +2700,19 @@ def main():
     try:
         inp = sys.argv[1].rstrip('/')
     except:
-        print 'wrong input'
+        print('wrong input')
         return
     if not config.conf().exist(inp):
-        print 'not exist'
+        print('not exist')
         return
     if not config.conf().hasChilds(inp):
-        print inp, config.conf().getData(inp)
+        print(inp, config.conf().getData(inp))
         return
     for child in config.conf().listEntries(inp):
         if config.conf().hasChilds(child):
-            print child, config.conf().listEntries(child)
+            print(child, config.conf().listEntries(child))
         else:
-            print child, config.conf().getData(child)
+            print(child, config.conf().getData(child))
 
 #------------------------------------------------------------------------------
 

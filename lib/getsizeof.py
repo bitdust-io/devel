@@ -22,9 +22,12 @@
 # taken from:
 # http://code.activestate.com/recipes/577504/
 
+from __future__ import absolute_import
+from __future__ import print_function
 from sys import getsizeof, stderr
 from itertools import chain
 from collections import deque
+from six.moves import map
 try:
     import reprlib
 except:
@@ -44,7 +47,7 @@ def total_size(o, handlers={}, verbose=False):
         handlers = {SomeContainerClass: iter,
                     OtherContainerClass: OtherContainerClass.get_elements}
     """
-    dict_handler = lambda d: chain.from_iterable(d.items())
+    dict_handler = lambda d: chain.from_iterable(list(d.items()))
     all_handlers = {tuple: iter,
                     list: iter,
                     deque: iter,
@@ -63,7 +66,7 @@ def total_size(o, handlers={}, verbose=False):
         s = getsizeof(o, default_size)
 
         if verbose:
-            print(s, type(o), reprlib.repr(o))  # , file=stderr)
+            print((s, type(o), reprlib.repr(o)))  # , file=stderr)
 
         for typ, handler in all_handlers.items():
             if isinstance(o, typ):
@@ -78,4 +81,4 @@ def total_size(o, handlers={}, verbose=False):
 
 if __name__ == '__main__':
     d = dict(a=1, b=2, c=3, d=[4, 5, 6, 7], e='a string of chars')
-    print(total_size(d, verbose=True))
+    print((total_size(d, verbose=True)))

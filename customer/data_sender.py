@@ -53,6 +53,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 18
 
@@ -80,7 +81,7 @@ from main import settings
 
 from p2p import contact_status
 
-import io_throttle
+from . import io_throttle
 
 #------------------------------------------------------------------------------
 
@@ -178,7 +179,7 @@ class DataSender(automat.Automat):
             if '' not in contactsdb.suppliers(customer_idurl):
                 from storage import backup_matrix
                 for backupID in misc.sorted_backup_ids(
-                        backup_matrix.local_files().keys(), True):
+                        list(backup_matrix.local_files().keys()), True):
                     this_customer_idurl = packetid.CustomerIDURL(backupID)
                     if this_customer_idurl != customer_idurl:
                         continue
@@ -280,7 +281,7 @@ class DataSender(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doRemoveUnusedFiles')
         for backupID in misc.sorted_backup_ids(
-                backup_matrix.local_files().keys()):
+                list(backup_matrix.local_files().keys())):
             if restore_monitor.IsWorking(backupID):
                 if _Debug:
                     lg.out(

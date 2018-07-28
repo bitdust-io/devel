@@ -74,6 +74,7 @@ shelves to disk.
 
 """
 
+from __future__ import absolute_import
 try:
     from UserDict import DictMixin
 except ImportError:
@@ -82,7 +83,7 @@ except ImportError:
 from collections import MutableSet
 
 try:
-    import cPickle as pickle
+    import six.moves.cPickle as pickle
 except ImportError:
     import pickle
 

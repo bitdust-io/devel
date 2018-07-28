@@ -24,6 +24,7 @@
 #
 #
 
+from __future__ import absolute_import
 if __name__ == "__main__":
-    import main.bppipe
+    from . import main.bppipe
     main.bppipe.main()

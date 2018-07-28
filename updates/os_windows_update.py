@@ -33,6 +33,8 @@ A code for Windows platforms to check for updates and download latest
 binaries.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import time
@@ -151,8 +153,8 @@ def UpdatingInProgress():
 
 
 def write2log(txt):
-    out_file = file(settings.UpdateLogFilename(), 'a')
-    print >>out_file, txt
+    out_file = open(settings.UpdateLogFilename(), 'a')
+    print(txt, file=out_file)
     out_file.close()
 
 
@@ -526,7 +528,7 @@ def string_to_shedule(raw_data):
     d['type'] = l[0].strip()
     if d['type'] in ['0', '1', '2', '3', '4', '5']:
         d['type'] = _SheduleTypesDict.get(d['type'], 'none')
-    if d['type'] not in _SheduleTypesDict.values():
+    if d['type'] not in list(_SheduleTypesDict.values()):
         d['type'] = 'daily'
     d['daytime'] = l[1].strip()
     d['interval'] = l[2].strip()

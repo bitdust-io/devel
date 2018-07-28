@@ -33,6 +33,7 @@ module:: known_nodes
 #------------------------------------------------------------------------------
 
 
+from __future__ import absolute_import
 def default_nodes():
     """
     List of DHT nodes currently maintained : (host, UDP port number)

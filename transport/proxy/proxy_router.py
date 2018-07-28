@@ -54,6 +54,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 10
 
@@ -256,7 +257,7 @@ class ProxyRouter(automat.Automat):
                     p2p_service.SendAck(request, 'rejected', wide=True)
                     return
                 oldnew = ''
-                if user_id not in self.routes.keys():
+                if user_id not in list(self.routes.keys()):
                     # accept new route
                     oldnew = 'NEW'
                     self.routes[user_id] = {}
@@ -558,13 +559,13 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s' % newpacket)
             lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
             lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
-            lg.out(_DebugLevel, '    routes=%s' % self.routes.keys())
+            lg.out(_DebugLevel, '    routes=%s' % list(self.routes.keys()))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first
             if newpacket.Command == commands.Relay():
                 # look like this is a routed packet addressed to someone else
-                if newpacket.CreatorID in self.routes.keys():
+                if newpacket.CreatorID in list(self.routes.keys()):
                     # sent by proxy_sender() from node A : a man behind proxy_router()
                     # addressed to some third node B in outside world - need to route
                     # A is my consumer and B is a recipient which A wants to contant
@@ -580,7 +581,7 @@ class ProxyRouter(automat.Automat):
             # and this is not a Relay packet, Identity
             elif newpacket.Command == commands.Identity():
                 # this is a "propagate" packet from node A addressed to this proxy router
-                if newpacket.CreatorID in self.routes.keys():
+                if newpacket.CreatorID in list(self.routes.keys()):
                     # also we need to "reset" overriden identity
                     # return False so that other services also can process that Identity()
                     if _Debug:
@@ -608,9 +609,9 @@ class ProxyRouter(automat.Automat):
         # this packet was addressed to someone else
         # it can be different scenarios, if can not found valid scenario - must skip the packet
         receiver_idurl = None
-        known_remote_id = newpacket.RemoteID in self.routes.keys()
-        known_creator_id = newpacket.CreatorID in self.routes.keys()
-        known_owner_id = newpacket.OwnerID in self.routes.keys()
+        known_remote_id = newpacket.RemoteID in list(self.routes.keys())
+        known_creator_id = newpacket.CreatorID in list(self.routes.keys())
+        known_owner_id = newpacket.OwnerID in list(self.routes.keys())
         if known_remote_id:
             # incoming packet from node B addressed to node A behind that proxy, capture it!
             receiver_idurl = newpacket.RemoteID
@@ -664,7 +665,7 @@ class ProxyRouter(automat.Automat):
             return False
         if Command != commands.Ack():
             return False
-        if RemoteID not in self.routes.keys():
+        if RemoteID not in list(self.routes.keys()):
             return False
         for ack in self.acks:
             if PacketID == ack.PacketID:

@@ -51,6 +51,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 10
 
@@ -64,10 +65,10 @@ from logs import lg
 
 from automats import automat
 
-from driver import services
-from driver import on_service_callback
-from driver import RequireSubclass
-from driver import ServiceAlreadyExist
+from .driver import services
+from .driver import on_service_callback
+from .driver import RequireSubclass
+from .driver import ServiceAlreadyExist
 
 #------------------------------------------------------------------------------
 
@@ -84,7 +85,7 @@ class LocalService(automat.Automat):
     def __init__(self):
         if self.service_name == '':
             raise RequireSubclass()
-        if self.service_name in services().keys():
+        if self.service_name in list(services().keys()):
             raise ServiceAlreadyExist(self.service_name)
         self.result_deferred = None
         automat.Automat.__init__(self, name=self.service_name, state='OFF',

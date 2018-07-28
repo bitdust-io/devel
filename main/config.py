@@ -30,6 +30,8 @@
 module:: config
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import types
@@ -97,12 +99,12 @@ class BaseConfig(object):
     def listEntries(self, entryPath):
         entries = self._get(entryPath)
         t = type(entries)
-        if t is types.StringType:
+        if t is bytes:
             # lg.warn( 'argument to listEntries is a file: %s' % entryPath )
             return []
         if entries is None:
             return []
-        assert t is types.ListType
+        assert t is list
         return entries
 
     def hasChilds(self, entryPath):
@@ -129,7 +131,7 @@ class BaseConfig(object):
         data = self._get(entryPath)
         if data is None:
             return default
-        if isinstance(data, types.ListType):
+        if isinstance(data, list):
             lg.warn('argument to getData is a directory: %s' % entryPath)
             return default
         return data
@@ -264,7 +266,7 @@ class BaseConfig(object):
         elif os.path.isfile(fpath):
             data = None
             try:
-                f = file(fpath, 'rb')
+                f = open(fpath, 'rb')
                 data = f.read()
                 f.close()
             except (OSError, IOError):
@@ -281,7 +283,7 @@ class BaseConfig(object):
             self._mkdir(dpath)
         fpath = os.path.join(dpath, elemList[-1])
         try:
-            f = file(fpath, 'wb')
+            f = open(fpath, 'wb')
             f.write(data)
             f.close()
             return True
@@ -366,7 +368,7 @@ class FixedTypesConfig(NotifiableConfig):
         return
 
     def listKnownTypes(self):
-        return self._types.keys()
+        return list(self._types.keys())
 
     def setType(self, key, typ):
         self._types[key] = typ
@@ -423,7 +425,7 @@ class DetailedConfig(CachedConfig):
     def __init__(self, configDir):
         super(DetailedConfig, self).__init__(configDir)
         try:
-            import config_details
+            from . import config_details
             self._load_details(config_details.raw())
         except:
             pass
@@ -463,23 +465,23 @@ def main():
     from main import settings
     settings.init()
     init(settings.ConfigDir())
-    print conf().listEntries('')
+    print(conf().listEntries(''))
     try:
         inp = sys.argv[1].rstrip('/')
     except:
-        print 'wrong input'
+        print('wrong input')
         return
     if not conf().exist(inp):
-        print 'not exist'
+        print('not exist')
         return
     if not conf().hasChilds(inp):
-        print inp, conf().getData(inp)
+        print(inp, conf().getData(inp))
         return
     for child in conf().listEntries(inp):
         if conf().hasChilds(child):
-            print child, conf().listEntries(child)
+            print(child, conf().listEntries(child))
         else:
-            print child, conf().getData(child)
+            print(child, conf().getData(child))
     return
 
 #    last = ''

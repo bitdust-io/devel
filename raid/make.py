@@ -48,12 +48,14 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import os
 import sys
 import struct
 import time
 import cStringIO
 import platform
+from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -150,11 +152,11 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
 
-    for DSegNum in xrange(myeccmap.datasegments):
+    for DSegNum in range(myeccmap.datasegments):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         f = open(FileName, "wb")
         segoffset = DSegNum * seglength
-        for i in xrange(seglength):
+        for i in range(seglength):
             offset = segoffset + i
             if offset < length:
                 f.write(wholefile[offset])
@@ -165,7 +167,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         f.close()
 
     dfds = {}
-    for DSegNum in xrange(myeccmap.datasegments):
+    for DSegNum in range(myeccmap.datasegments):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         # instead of reading data from opened file
         # we'l put it in memory
@@ -175,7 +177,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         dfds[DSegNum] = cStringIO.StringIO(ReadBinaryFile(FileName))
 
     pfds = {}
-    for PSegNum in xrange(myeccmap.paritysegments):
+    for PSegNum in range(myeccmap.paritysegments):
         # we will keep parirty data in the momory
         # after doing all calculations
         # will write all parts on the disk
@@ -183,10 +185,10 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
 
     #Parities = range(myeccmap.paritysegments)
     Parities = {}
-    for i in xrange(seglength / INTSIZE):
-        for PSegNum in xrange(myeccmap.paritysegments):
+    for i in range(seglength / INTSIZE):
+        for PSegNum in range(myeccmap.paritysegments):
             Parities[PSegNum] = 0
-        for DSegNum in xrange(myeccmap.datasegments):
+        for DSegNum in range(myeccmap.datasegments):
             bstr = dfds[DSegNum].read(INTSIZE)
             #pos = dfds[DSegNum][0]
             #dfds[DSegNum][0] += INTSIZE
@@ -207,7 +209,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
                 #out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
                 #out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
-        for PSegNum in xrange(myeccmap.paritysegments):
+        for PSegNum in range(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
             #pfds[PSegNum] += bstr
             pfds[PSegNum].write(bstr)

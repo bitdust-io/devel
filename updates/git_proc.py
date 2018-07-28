@@ -36,6 +36,8 @@ A code for all platforms to perform source code updates from official Git repo a
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 _Debug = False
 _DebugLevel = 6
 
@@ -77,8 +79,8 @@ _ShedulerTask = None
 #------------------------------------------------------------------------------
 
 def write2log(txt):
-    out_file = file(settings.UpdateLogFilename(), 'a')
-    print >>out_file, txt
+    out_file = open(settings.UpdateLogFilename(), 'a')
+    print(txt, file=out_file)
     out_file.close()
 
 #------------------------------------------------------------------------------
@@ -335,7 +337,7 @@ if __name__ == "__main__":
     lg.set_debug_level(18)
 
     def _result(res):
-        print 'RESULT:', res
+        print('RESULT:', res)
         reactor.stop()
     reactor.callWhenRunning(sync, _result)
     reactor.run()

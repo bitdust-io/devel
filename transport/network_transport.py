@@ -46,6 +46,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 6
 
@@ -68,7 +69,7 @@ from userid import my_id
 
 from main import settings
 
-import gateway
+from . import gateway
 
 #------------------------------------------------------------------------------
 

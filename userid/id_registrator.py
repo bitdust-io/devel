@@ -87,10 +87,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import sys
 import random
 
 from twisted.internet.defer import DeferredList
+from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -346,7 +348,7 @@ class IdRegistrator(automat.Automat):
         except:
             login = arg[0]
             if len(arg) > 1:
-                self.preferred_servers = map(lambda s: s.strip(), arg[1].split(','))
+                self.preferred_servers = [s.strip() for s in arg[1].split(',')]
         if not self.known_servers:
             self.known_servers = known_servers.by_host()
         if not self.preferred_servers:

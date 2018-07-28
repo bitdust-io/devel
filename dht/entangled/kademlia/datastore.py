@@ -27,12 +27,13 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
+from __future__ import absolute_import
 import UserDict
 import sqlite3
-import cPickle as pickle
+import six.moves.cPickle as pickle
 import os
 
-import constants
+from . import constants
 
 
 class DataStore(UserDict.DictMixin):
@@ -114,7 +115,7 @@ class DictDataStore(DataStore):
         """
         Return a list of the keys in this data store.
         """
-        return self._dict.keys()
+        return list(self._dict.keys())
 
     def lastPublished(self, key):
         """

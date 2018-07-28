@@ -4,12 +4,15 @@ BlockchainProtocol.py: contains the BlockchainProtocol class.
 """
 
 
+from __future__ import absolute_import
 import time
 import traceback
 import collections
 import logging
 from twisted.internet import reactor
 from twisted.protocols.basic import LineReceiver
+from six.moves import map
+from six.moves import range
 
 # Say that we can take up to 10 mb at a time
 LineReceiver.MAX_LENGTH = 1024 * 1024 * 10
@@ -469,7 +472,7 @@ class BlockchainProtocol(LineReceiver):
 
         """
 
-        for _ in xrange(100):
+        for _ in range(100):
             # Only ask for 100 blocks at a time.
             if len(self.inv_queue) > 0:
                 # Get the bytestring hash of the next block to ask for
@@ -493,7 +496,7 @@ class BlockchainProtocol(LineReceiver):
 
         """
 
-        for i in xrange(10):
+        for i in range(10):
             if len(self.block_queue) > 0:
                 # Get the Block object we need to check out.
                 block = self.block_queue.popleft()

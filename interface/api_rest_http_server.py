@@ -32,6 +32,7 @@ module:: api_rest_http_server
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import cgi
 import json
 

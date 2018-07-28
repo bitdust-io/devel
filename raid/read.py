@@ -54,6 +54,8 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import struct
@@ -61,6 +63,7 @@ import struct
 #------------------------------------------------------------------------------
 
 import raid.eccmap
+from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -106,7 +109,7 @@ def RebuildOne(inlist, listlen, outfilename):
     # range(listlen)   # just need a list of this size
     raidfiles = [''] * listlen
     raidreads = [''] * listlen  # range(listlen)
-    for filenum in xrange(listlen):
+    for filenum in range(listlen):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
         except:
@@ -118,38 +121,38 @@ def RebuildOne(inlist, listlen, outfilename):
             return False
     rebuildfile = open(outfilename, "wb")
     while True:
-        for k in xrange(listlen):
+        for k in range(listlen):
             raidreads[k] = raidfiles[k].read(2048)
         if not raidreads[0]:
             break
         i = 0
         while i < len(raidreads[0]):
             xor = 0
-            for j in xrange(listlen):
+            for j in range(listlen):
                 b1 = ord(raidreads[j][i])
                 xor = xor ^ b1
             rebuildfile.write(chr(xor))
             i += readsize
-    for filenum in xrange(listlen):
+    for filenum in range(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
     return True
 
 
 def RebuildOne_new(inlist, listlen, outfilename):
-    fds = range(0, listlen)   # just need a list of this size
+    fds = list(range(0, listlen))   # just need a list of this size
     wholefile = ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file
-    for filenum in xrange(listlen):
+    for filenum in range(listlen):
         fds[filenum] = open(inlist[filenum], "r")
     fout = open(outfilename, "w")
-    for i in xrange(seglength):
+    for i in range(seglength):
         xor = 0
-        for j in xrange(listlen):
+        for j in range(listlen):
             b1 = ord(fds[j].read(1))
             xor = xor ^ b1
         fout.write(chr(xor))
-    for filenum in xrange(listlen):
+    for filenum in range(listlen):
         fds[filenum].close
 
 # We XOR list of listlen input files and write result to a file named
@@ -158,7 +161,7 @@ def RebuildOne_new(inlist, listlen, outfilename):
 
 def RebuildOne_orig(inlist, listlen, outfilename):
     INTSIZE = 4
-    fds = range(0, listlen)   # just need a list of this size
+    fds = list(range(0, listlen))   # just need a list of this size
     wholefile = ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file
     for filenum in range(0, listlen):
@@ -191,11 +194,11 @@ def raidread(
         blockNumber,
         data_parity_dir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
-    GoodFiles = range(0, 200)
+    GoodFiles = list(range(0, 200))
     MakingProgress = 1
     while MakingProgress == 1:
         MakingProgress = 0
-        for PSegNum in xrange(myeccmap.paritysegments):
+        for PSegNum in range(myeccmap.paritysegments):
             PFileName = os.path.join(
                 data_parity_dir,
                 version,
@@ -229,7 +232,7 @@ def raidread(
     #  Count up the good segments and combine
     GoodDSegs = 0
     output = open(OutputFileName, "wb")
-    for DSegNum in xrange(myeccmap.datasegments):
+    for DSegNum in range(myeccmap.datasegments):
         FileName = os.path.join(
             data_parity_dir,
             version,
@@ -249,15 +252,15 @@ def raidread(
 
 def main():
     if (len(sys.argv) < 3):
-        print "raidread needs an output filename and eccmap name"
+        print("raidread needs an output filename and eccmap name")
         sys.exit(2)
 
     OutputFileName = sys.argv[1]
     eccmapname = sys.argv[2]
 
-    print "raidread is starting with"
-    print OutputFileName
-    print eccmapname
+    print("raidread is starting with")
+    print(OutputFileName)
+    print(eccmapname)
     raidread(OutputFileName, eccmapname)
 
 

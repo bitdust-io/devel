@@ -42,6 +42,9 @@ Methods to establish a messages queue between two or more nodes.:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
 _Debug = False
 _DebugLevel = 20
 
@@ -465,13 +468,13 @@ def push_message(producer_id, queue_id, data, creation_time=None):
 def pop_message(queue_id, message_id=None):
     if not valid_queue_id(queue_id):
         raise Exception('invalid queue id')
-    if queue_id not in queue().keys():
+    if queue_id not in list(queue().keys()):
         raise Exception('queue id not found')
     if message_id is None:
-        if len(queue(queue_id).keys()) == 0:
+        if len(list(queue(queue_id).keys())) == 0:
             lg.warn('there is no messages in the queue')
             return None
-        message_id = queue(queue_id).keys()[0]
+        message_id = list(queue(queue_id).keys())[0]
     if message_id not in queue(queue_id):
         lg.warn('given message was not found in the queue')
         return None
@@ -492,18 +495,18 @@ def lookup_pending_message(consumer_id, queue_id):
     queue_pos = 0
     while queue_pos < len(queue(queue_id)):
         # loop all messages from the begining
-        if consumer_id not in queue(queue_id).values()[queue_pos].consumers:
+        if consumer_id not in list(queue(queue_id).values())[queue_pos].consumers:
             # only interested consumers needs to be selected
             queue_pos += 1
             continue
-        if consumer_id in queue(queue_id).values()[queue_pos].notifications:
+        if consumer_id in list(queue(queue_id).values())[queue_pos].notifications:
             # only select consumer which was not notified yet
             queue_pos += 1
             continue
         break
     if queue_pos >= len(queue(queue_id)):
         return None
-    return queue(queue_id).values()[queue_pos].message_id
+    return list(queue(queue_id).values())[queue_pos].message_id
 
 #------------------------------------------------------------------------------
 
@@ -649,7 +652,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
     ret = Deferred()
 
-    if isinstance(callback_method, str) or isinstance(callback_method, unicode):
+    if isinstance(callback_method, str) or isinstance(callback_method, six.text_type):
         p2p_service.SendEvent(
             remote_idurl=str(callback_method),
             event_id=event_id,
@@ -681,7 +684,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
 def do_consume(interested_consumers=None):
     if not interested_consumers:
-        interested_consumers = consumer().keys()
+        interested_consumers = list(consumer().keys())
     to_be_consumed = []
     for consumer_id in interested_consumers:
         if len(consumer(consumer_id).commands) == 0:
@@ -847,12 +850,12 @@ class P2PQueueIsOverloaded(Exception):
 
 def _test_callback_bob(message_json):
     # time.sleep(1)
-    print '               !!!!!!!!!!!!! _test_callback_bob:', message_json
+    print('               !!!!!!!!!!!!! _test_callback_bob:', message_json)
     return True
 
 def _test_callback_dave(message_json):
     # time.sleep(1)
-    print '               !!!!!!!!!!!!! _test_callback_dave:', message_json
+    print('               !!!!!!!!!!!!! _test_callback_dave:', message_json)
     return True
 
 

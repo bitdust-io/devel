@@ -55,6 +55,7 @@ Here is:
 See module ``p2p.backup_fs`` to learn how Path ID is generated from file or folder path.
 """
 
+from __future__ import absolute_import
 import time
 import re
 

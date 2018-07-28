@@ -23,6 +23,7 @@
 #
 #
 #
+from __future__ import absolute_import
 from fileinput import fileno
 
 """
@@ -339,7 +340,7 @@ class BitDustFTP(FTP):
             result.append((os.path.basename(itm['path']), [  # name
                 known_size,  # size
                 True if itm['type'] == 'dir' else False,  # folder or file ?
-                filepath.Permissions(07777),  # permissions
+                filepath.Permissions(0o7777),  # permissions
                 0,  # hardlinks
                 time.mktime(time.strptime(itm['latest'], '%Y-%m-%d %H:%M:%S')) if itm['latest'] else None,  # time
                 itm['customer'],  # owner

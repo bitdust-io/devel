@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+from __future__ import print_function
 from CodernityDB.tree_index import TreeBasedIndex
 import struct
 import os
@@ -22,6 +24,7 @@ import os
 import inspect
 from functools import wraps
 import json
+from six.moves import range
 
 
 class DebugTreeBasedIndex(TreeBasedIndex):
@@ -30,15 +33,15 @@ class DebugTreeBasedIndex(TreeBasedIndex):
         super(DebugTreeBasedIndex, self).__init__(*args, **kwargs)
 
     def print_tree(self):
-        print '-----CURRENT TREE-----'
-        print self.root_flag
+        print('-----CURRENT TREE-----')
+        print(self.root_flag)
 
         if self.root_flag == 'l':
-            print '---ROOT---'
+            print('---ROOT---')
             self._print_leaf_data(self.data_start)
             return
         else:
-            print '---ROOT---'
+            print('---ROOT---')
             self._print_node_data(self.data_start)
             nr_of_el, children_flag = self._read_node_nr_of_elements_and_children_flag(
                 self.data_start)
@@ -48,7 +51,7 @@ class DebugTreeBasedIndex(TreeBasedIndex):
                     self.data_start, index)
                 nodes.append(l_pointer)
             nodes.append(r_pointer)
-            print 'ROOT NODES', nodes
+            print('ROOT NODES', nodes)
             while children_flag == 'n':
                 self._print_level(nodes, 'n')
                 new_nodes = []
@@ -64,7 +67,7 @@ class DebugTreeBasedIndex(TreeBasedIndex):
             self._print_level(nodes, 'l')
 
     def _print_level(self, nodes, flag):
-        print '---NEXT LVL---'
+        print('---NEXT LVL---')
         if flag == 'n':
             for node in nodes:
                 self._print_node_data(node)
@@ -73,18 +76,18 @@ class DebugTreeBasedIndex(TreeBasedIndex):
                 self._print_leaf_data(node)
 
     def _print_leaf_data(self, leaf_start_position):
-        print 'printing data of leaf at', leaf_start_position
+        print('printing data of leaf at', leaf_start_position)
         nr_of_elements = self._read_leaf_nr_of_elements(leaf_start_position)
         self.buckets.seek(leaf_start_position)
         data = self.buckets.read(self.leaf_heading_size +
                                  nr_of_elements * self.single_leaf_record_size)
         leaf = struct.unpack('<' + self.leaf_heading_format +
                              nr_of_elements * self.single_leaf_record_format, data)
-        print leaf
-        print
+        print(leaf)
+        print()
 
     def _print_node_data(self, node_start_position):
-        print 'printing data of node at', node_start_position
+        print('printing data of node at', node_start_position)
         nr_of_elements = self._read_node_nr_of_elements_and_children_flag(
             node_start_position)[0]
         self.buckets.seek(node_start_position)
@@ -94,8 +97,8 @@ class DebugTreeBasedIndex(TreeBasedIndex):
                              + nr_of_elements * (
                                  self.key_format + self.pointer_format),
                              data)
-        print node
-        print
+        print(node)
+        print()
 # ------------------>
 
 

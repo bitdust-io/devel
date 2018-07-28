@@ -57,6 +57,8 @@ RAIDREAD:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+import six
 _Debug = False
 _DebugLevel = 12
 
@@ -113,7 +115,7 @@ class Block:
         self.BlockNumber = BlockNumber
         if callable(EncryptKey):
             self.EncryptedSessionKey = EncryptKey(SessionKey)
-        elif isinstance(EncryptKey, basestring):
+        elif isinstance(EncryptKey, six.string_types):
             self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
         else:
             self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
@@ -143,7 +145,7 @@ class Block:
         """
         if callable(self.DecryptKey):
             return self.DecryptKey(self.EncryptedSessionKey)
-        elif isinstance(self.DecryptKey, basestring):
+        elif isinstance(self.DecryptKey, six.string_types):
             return my_keys.decrypt(self.DecryptKey, self.EncryptedSessionKey)
         return key.DecryptLocalPrivateKey(self.EncryptedSessionKey)
 
