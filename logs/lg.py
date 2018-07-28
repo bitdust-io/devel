@@ -123,7 +123,10 @@ def out(level, msg, nl='\n'):
         s = s + ' {%s}' % currentThreadName.lower()
     if is_debug(level):
         if _LogFile is not None:
-            _LogFile.write(s + nl)
+            o = s + nl
+            if not isinstance(o, six.text_type):
+                o = o.decode('utf-8')
+            _LogFile.write(o)
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
             try:
