@@ -59,6 +59,7 @@ import threading
 
 from logs import lg
 from six.moves import range
+from io import open
 
 #------------------------------------------------------------------------------
 

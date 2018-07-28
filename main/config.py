@@ -36,6 +36,7 @@ import os
 import sys
 import types
 import re
+from io import open
 
 if __name__ == "__main__":
     import os.path as _p

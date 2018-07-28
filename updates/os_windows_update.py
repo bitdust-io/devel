@@ -39,6 +39,7 @@ import os
 import sys
 import time
 import calendar
+from io import open
 
 try:
     from twisted.internet import reactor

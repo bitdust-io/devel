@@ -36,6 +36,7 @@ from twisted.internet import defer
 
 from .kademlia.node import rpcmethod
 from .node import EntangledNode
+from io import open
 
 
 class DistributedTupleSpacePeer(EntangledNode):

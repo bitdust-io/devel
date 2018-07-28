@@ -64,6 +64,7 @@ import struct
 
 import raid.eccmap
 from six.moves import range
+from io import open
 
 #------------------------------------------------------------------------------
 

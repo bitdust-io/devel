@@ -38,6 +38,7 @@ import threading
 import traceback
 import platform
 import six
+from io import open
 
 #------------------------------------------------------------------------------
 

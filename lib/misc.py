@@ -53,6 +53,7 @@ import textwrap
 import six.moves.cPickle
 import six
 from six.moves import range
+from io import open
 
 #------------------------------------------------------------------------------
 

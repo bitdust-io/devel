@@ -55,6 +55,7 @@ import re
 from logs import lg
 import six
 from six.moves import range
+from io import open
 
 #------------------------------------------------------------------------------
 

@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
+from io import open
 
 sys.path.append(os.path.join('..', '..'))
 from lib import misc
