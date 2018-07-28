@@ -128,7 +128,7 @@ def WriteFile(filename, data):
     
     """
     s = data
-    if isinstance(s, six.text_type):
+    if not isinstance(s, six.binary_type):
         s = s.encode('utf-8')
     f = open(filename, "wb")
     f.write(s)

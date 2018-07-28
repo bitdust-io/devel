@@ -99,7 +99,7 @@ class GateInterface():
         global _GateProxy
         if _Debug:
             lg.out(4, 'udp_interface.init %s' % xml_rpc_url_or_object)
-        if isinstance(xml_rpc_url_or_object, six.text_type):
+        if isinstance(xml_rpc_url_or_object, six.string_types):
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
             _GateProxy = xml_rpc_url_or_object

@@ -72,7 +72,7 @@ class IU_TreeBasedIndex(Index):
         self._count_props()
         if not storage_class:
             storage_class = IU_Storage
-        if storage_class and not isinstance(storage_class, six.text_type):
+        if storage_class and not isinstance(storage_class, six.string_types):
             storage_class = storage_class.__name__
         self.storage_class = storage_class
         self.storage = None

@@ -231,7 +231,7 @@ def verifyMethodCall(request):
             request['id'] = None
 
         if (not 'method' in request or
-                not isinstance(request['method'], (six.text_type,))):
+                not isinstance(request['method'], (six.string_types,))):
             raise JSONRPCError('Invalid method type', INVALID_REQUEST)
 
         if ('params' in request and

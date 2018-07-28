@@ -161,7 +161,7 @@ class SafeDatabase(Database):
             self.main_lock.release()
 
     def reindex_index(self, index, *args, **kwargs):
-        if isinstance(index, six.text_type):
+        if isinstance(index, six.string_types):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]

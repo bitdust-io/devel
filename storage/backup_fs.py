@@ -248,7 +248,7 @@ class FSItemInfo():
         if isinstance(name, six.text_type):
             self.unicodename = name
         else:
-            self.unicodename = six.text_type(name)
+            self.unicodename = name.decode('utf-8')
         self.path_id = path_id
         self.type = typ
         self.size = -1
@@ -761,7 +761,7 @@ def SetDir(item, iter=None, iterID=None):
                     found = True
                     break
                 continue
-            if isinstance(iter[name], six.text_type):
+            if isinstance(iter[name], six.string_types):
                 if iter[name] == itemname:
                     iter = iter[name]
                     iterID = iterID[id]

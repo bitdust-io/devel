@@ -219,7 +219,7 @@ class Shutdowner(automat.Automat):
             param = self.shutdown_param
         if arg is None:
             param = 'exit'
-        elif isinstance(arg, six.text_type):
+        elif isinstance(arg, six.string_types):
             param = arg
         if param not in ['exit', 'restart', 'restartnshow']:
             param = 'exit'
