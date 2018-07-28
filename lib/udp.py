@@ -277,7 +277,7 @@ class CommandsProtocol(BasicProtocol):
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
         _LastDatagramReceivedTime = time.time()
-        inp = StringIO.StringIO(datagram)
+        inp = StringIO(datagram)
         try:
             # version = datagram[0]
             # command = datagram[1]
@@ -313,7 +313,7 @@ class CommandsProtocol(BasicProtocol):
 
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
-        outp = StringIO.StringIO()
+        outp = StringIO()
         try:
             outp.write(self.SoftwareVersion)
             outp.write(command)
