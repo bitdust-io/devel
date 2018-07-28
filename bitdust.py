@@ -23,6 +23,7 @@
 #
 #
 
+from __future__ import absolute_import
 import os
 
 
@@ -32,7 +33,7 @@ def main():
         os.chdir(os.path.dirname(__file__))
     except:
         pass
-    import main.bpmain
+    from . import main.bpmain
     ret = main.bpmain.main(executable_path)
     os._exit(ret)
 

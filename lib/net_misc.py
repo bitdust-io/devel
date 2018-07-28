@@ -30,17 +30,19 @@
 Some network routines
 """
 
+from __future__ import absolute_import
 import os
 import re
 import sys
 import socket
 import random
-import urllib
-import urllib2
-import urlparse
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+import six.moves.urllib.parse
 import platform
 import mimetypes
 import subprocess
+import six
 # fun mountain from
 # python imports :-)
 
@@ -142,9 +144,9 @@ def parse_url(url, defaultPort=None):
     Split the given URL into the scheme, host, port, and path.
     """
     url = url.strip()
-    parsed = urlparse.urlparse(url)
+    parsed = six.moves.urllib.parse.urlparse(url)
     scheme = parsed[0]
-    path = urlparse.urlunparse(('', '') + parsed[2:])
+    path = six.moves.urllib.parse.urlunparse(('', '') + parsed[2:])
     if defaultPort is None:
         if scheme == 'https':
             defaultPort = 443
@@ -763,7 +765,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                     block += "\r\n"
                 self._send_to_consumer(block)
             if self._files:
-                self._files_iterator = self._files.iterkeys()
+                self._files_iterator = six.iterkeys(self._files)
                 self._files_sent = 0
                 self._files_length = len(self._files)
                 self._current_file_path = None
@@ -797,7 +799,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             done = False
             while not done and not self._paused:
                 if not self._current_file_handle:
-                    field = self._files_iterator.next()
+                    field = next(self._files_iterator)
                     self._current_file_path = self._files[field]
                     self._current_file_sent = 0
                     self._current_file_length = self._file_lengths[field]
@@ -864,7 +866,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     
         def _headers(self, name, is_file=False):
             value = self._files[name] if is_file else self._data[name]
-            _boundary = self.boundary.encode("utf-8") if isinstance(self.boundary, unicode) else urllib.quote_plus(self.boundary)
+            _boundary = self.boundary.encode("utf-8") if isinstance(self.boundary, six.text_type) else six.moves.urllib.parse.quote_plus(self.boundary)
             headers = ["--%s" % _boundary]
             if is_file:
                 disposition = 'form-data; name="%s"; filename="%s"' % (name, os.path.basename(value))
@@ -898,7 +900,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     
         def _file_type(self, field):
             type = mimetypes.guess_type(self._files[field])[0]
-            return type.encode("utf-8") if isinstance(type, unicode) else str(type)
+            return type.encode("utf-8") if isinstance(type, six.text_type) else str(type)
     
         def _file_size(self, field):
             size = 0
@@ -973,7 +975,7 @@ def getNetworkInterfaces():
                 pipe = os.popen(os.path.join(sysdir, 'ipconfig') + ' /all')
             except IOError:
                 return []
-            rawtxt = unicode(pipe.read())
+            rawtxt = six.text_type(pipe.read())
             ips_unicode = re.findall(u'^.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*$', rawtxt, re.U | re.M)
             ips = []
             for ip in ips_unicode:
@@ -987,7 +989,7 @@ def getNetworkInterfaces():
         except IOError:
             return []
         try:
-            rawtxt = unicode(pipe.read())
+            rawtxt = six.text_type(pipe.read())
             lines = rawtxt.splitlines()
         except:
             return []
@@ -1005,14 +1007,14 @@ def getNetworkInterfaces():
     elif plat == 'Darwin':
         try:
             # TODO: try to avoid socket connect to remote host
-            return filter(None, [
+            return [_f for _f in [
                 l for l in (
                     [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
                     # TODO: replace 8.8.8.8 with random seed node
                     [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]],
                 ) if l
-            ][0])
+            ][0] if _f]
         except:
             eth0 = getIfconfig('eth0')
             en0 = getIfconfig('en0')
-            return filter(None, [en0 or eth0, ])
+            return [_f for _f in [en0 or eth0, ] if _f]

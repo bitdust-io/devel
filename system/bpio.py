@@ -40,6 +40,7 @@ Most used method here is ``log`` - prints a log string.
 TODO: need to do some refactoring here
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import time
@@ -52,6 +53,8 @@ import glob
 import re
 
 from logs import lg
+import six
+from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -163,7 +166,7 @@ def osinfofull():
     o += 'os.path.expanduser("~"): ' + os.path.expanduser('~') + '\n'
     o += 'sys.argv: ' + pprint.pformat(sys.argv) + '\n'
     o += 'sys.path:\n' + pprint.pformat(sys.path) + '\n'
-    o += 'os.environ:\n' + pprint.pformat(os.environ.items()) + '\n'
+    o += 'os.environ:\n' + pprint.pformat(list(os.environ.items())) + '\n'
     o += '=====================================================\n'
     o += '=====================================================\n'
     o += '=====================================================\n'
@@ -612,8 +615,8 @@ def _pack_dict(dictionary, sort=False):
     if sort:
         seq = sorted(dictionary.keys())
     else:
-        seq = dictionary.keys()
-    return '\n'.join(map(lambda k: '%s %s' % (k, str(dictionary[k])), seq))
+        seq = list(dictionary.keys())
+    return '\n'.join(['%s %s' % (k, str(dictionary[k])) for k in seq])
 
 
 def _unpack_dict_from_list(lines):
@@ -815,21 +818,21 @@ def shortPath(path):
     """
     path_ = os.path.abspath(path)
     if not Windows():
-        if not isinstance(path_, unicode):
-            return unicode(path_)
+        if not isinstance(path_, six.text_type):
+            return six.text_type(path_)
         return path_
     if not os.path.exists(path_):
         if os.path.isdir(os.path.dirname(path_)):
             res = shortPath(os.path.dirname(path_))
-            return unicode(os.path.join(res, os.path.basename(path_)))
-        return unicode(path_)
+            return six.text_type(os.path.join(res, os.path.basename(path_)))
+        return six.text_type(path_)
     try:
         import win32api
         spath = win32api.GetShortPathName(path_)
-        return unicode(spath)
+        return six.text_type(spath)
     except:
         lg.exc()
-        return unicode(path_)
+        return six.text_type(path_)
 
 
 def longPath(path):
@@ -839,25 +842,25 @@ def longPath(path):
     """
     path_ = os.path.abspath(path)
     if not Windows():
-        if not isinstance(path_, unicode):
-            return unicode(path_)
+        if not isinstance(path_, six.text_type):
+            return six.text_type(path_)
         return path_
     if not os.path.exists(path_):
-        return unicode(path_)
+        return six.text_type(path_)
     try:
         import win32api
         lpath = win32api.GetLongPathName(path_)
-        return unicode(lpath)
+        return six.text_type(lpath)
     except:
         lg.exc()
-    return unicode(path_)
+    return six.text_type(path_)
 
 
 def _encode(s):
     """
     If ``s`` is unicode - encode to utf-8, otherwise return ``s``.
     """
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         return s.encode('utf-8')
     return s
 
@@ -883,8 +886,8 @@ def remotePath(path):
     if path == '' or path == '/':
         return path
     p = path.lstrip('/').lstrip('\\')
-    if not isinstance(p, unicode):
-        p = unicode(p)
+    if not isinstance(p, six.text_type):
+        p = six.text_type(p)
     if p.endswith('/') and len(p) > 1:
         p = p.rstrip('/')
     return p
@@ -907,9 +910,9 @@ def portablePath(path):
     if path.count('~'):
         path = os.path.expanduser(path)
     p = os.path.abspath(path)
-    if not isinstance(p, unicode):
+    if not isinstance(p, six.text_type):
         # p = p.encode('utf-8')
-        p = unicode(p)
+        p = six.text_type(p)
     if Windows():
         p = p.replace('\\', '/')  # .replace('\\\\', '/')
         if len(p) >= 2:
@@ -1065,7 +1068,7 @@ def getExecutableDir():
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         except:
             path = os.path.dirname(os.path.abspath(sys.argv[0]))
-    return unicode(path)
+    return six.text_type(path)
 
 
 def getExecutableFilename():
@@ -1078,7 +1081,7 @@ def getExecutableFilename():
         path = os.path.abspath(sys.argv[0])
 #    if Windows():
 #        return shortPath(path)
-    return unicode(path)
+    return six.text_type(path)
 
 
 def getUserName():
@@ -1100,7 +1103,7 @@ def getUserName():
             return getpass.getuser()
     except:
         pass
-    return os.path.basename(unicode(os.path.expanduser('~')))
+    return os.path.basename(six.text_type(os.path.expanduser('~')))
 
 #------------------------------------------------------------------------------
 
@@ -1169,7 +1172,7 @@ def listRemovableDrivesLinux():
     The same idea with ``listRemovableDrivesWindows``.
     """
     try:
-        return map(lambda x: os.path.join('/media', x), os.listdir('/media'))
+        return [os.path.join('/media', x) for x in os.listdir('/media')]
     except:
         return []
 

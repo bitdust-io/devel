@@ -34,6 +34,8 @@ IDURL. So this is a local cache of user ID's.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 _Debug = False
 
 #------------------------------------------------------------------------------
@@ -432,7 +434,7 @@ def _test():
     init()
 
     def _resp(src):
-        print src
+        print(src)
         reactor.stop()
 
     immediatelyCaching('http://p2p-id.ru/veselin.xml').addBoth(_resp)

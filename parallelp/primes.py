@@ -1,3 +1,4 @@
+from six.moves import range
 #!/usr/bin/env python
 # primes.py
 #
@@ -44,4 +45,4 @@ def sum_primes(n):
     """
     Calculates sum of all primes below given integer n.
     """
-    return sum([x for x in xrange(2, n) if isprime(x)])
+    return sum([x for x in range(2, n) if isprime(x)])

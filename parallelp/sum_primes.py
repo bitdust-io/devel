@@ -23,21 +23,23 @@
 # It calculates the sum of prime numbers below a given integer in parallel
 # Parallel Python Software: http://www.parallelpython.com
 
+from __future__ import absolute_import
+from __future__ import print_function
 import math
 import sys
-import pp
+from . import pp
 
 
 # Let's move the functionality to external module - to avoid "could not get source" error for .pyc only
 # You have to run: "zip -u dist\library.zip primes.py"
 
-from primes import sum_primes, isprime
+from .primes import sum_primes, isprime
 
 # If you don't want to distribute the source code of your function you can move the functionality to another external module and add it to the list of dependent module names in job_server.submit() - last argument.
 
-print """Usage: python sum_primes.py [ncpus]
+print("""Usage: python sum_primes.py [ncpus]
     [ncpus] - the number of workers to run in parallel,
-    if omitted it will be set to the number of processors in the system"""
+    if omitted it will be set to the number of processors in the system""")
 
 # tuple of all parallel python servers to connect with
 ppservers = ()
@@ -51,7 +53,7 @@ else:
     # Creates jobserver with automatically detected number of workers
     job_server = pp.Server(ppservers=ppservers)
 
-print "Starting pp with", job_server.get_ncpus(), "workers"
+print("Starting pp with", job_server.get_ncpus(), "workers")
 
 # Submit a job of calulating sum_primes(100) for execution.
 # sum_primes - the function
@@ -68,7 +70,7 @@ job1 = job_server.submit(sum_primes, (100, ), (isprime, ), ("math", ))
 # wait here until result is available
 result = job1()
 
-print "Sum of primes below 100 is", result
+print("Sum of primes below 100 is", result)
 
 
 # The following submits 8 jobs and then retrieves the results
@@ -77,7 +79,7 @@ jobs = [(input, job_server.submit(sum_primes, (input, ), (isprime, ),
                                   ("math", ))) for input in inputs]
 
 for input, job in jobs:
-    print "Sum of primes below", input, "is", job()
+    print("Sum of primes below", input, "is", job())
 
 job_server.print_stats()
 

@@ -46,6 +46,8 @@ In future we can use that to do "overlay" communications to hide users.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from six.moves import range
 _Debug = False
 _DebugLevel = 12
 
@@ -125,7 +127,7 @@ def shutdown():
     lg.out(4, "io_throttle.shutdown")
     throttle().DeleteBackupRequests('')
     throttle().DeleteBackupSendings('')
-    throttle().DeleteSuppliers(throttle().supplierQueues.keys())
+    throttle().DeleteSuppliers(list(throttle().supplierQueues.keys()))
 
 #------------------------------------------------------------------------------
 
@@ -202,7 +204,7 @@ def DeleteSuppliers(suppliers_IDURLs):
 def DeleteAllSuppliers():
     """
     """
-    return throttle().DeleteSuppliers(throttle().supplierQueues.keys())
+    return throttle().DeleteSuppliers(list(throttle().supplierQueues.keys()))
 
 
 def OutboxStatus(pkt_out, status, error):
@@ -441,7 +443,7 @@ class SupplierQueue:
         packetsToRemove = set()
         packetsSent = 0
         # let's check all packets in the queue
-        for i in xrange(len(self.fileSendQueue)):
+        for i in range(len(self.fileSendQueue)):
             try:
                 packetID = self.fileSendQueue[i]
             except:
@@ -790,7 +792,7 @@ class SupplierQueue:
         if packetID not in self.fileSendQueue:
             lg.warn("packet %s not in sending queue for %s" % (newpacket.PacketID, self.remoteName))
             return
-        if packetID not in self.fileSendDict.keys():
+        if packetID not in list(self.fileSendDict.keys()):
             lg.warn("packet %s not in sending dict for %s" % (newpacket.PacketID, self.remoteName))
             return
         self.fileSendDict[packetID].ackTime = time.time()
@@ -825,7 +827,7 @@ class SupplierQueue:
                 lg.out(_DebugLevel, "io_throttle.OnFileSendFailReceived finishing to %s, shutdown is True" % self.remoteName)
             return
         self.failedCount += 1
-        if PacketID not in self.fileSendDict.keys():
+        if PacketID not in list(self.fileSendDict.keys()):
             lg.warn("packet %s not in send dict" % PacketID)
             return
         self.fileSendDict[PacketID].result = why
@@ -943,7 +945,7 @@ class IOThrottle:
         return self.supplierQueues.get(supplierIDURL)
 
     def ListSupplierQueues(self):
-        return self.supplierQueues.keys()
+        return list(self.supplierQueues.keys())
 
     def SetSupplierQueueCallbackFunc(self, func):
         self.paintFunc = func
@@ -972,7 +974,7 @@ class IOThrottle:
             if callOnFail is not None:
                 reactor.callLater(.01, callOnFail, remoteID, packetID, 'not exist')
             return False
-        if remoteID not in self.supplierQueues.keys():
+        if remoteID not in list(self.supplierQueues.keys()):
             self.supplierQueues[remoteID] = SupplierQueue(remoteID, self.creatorID)
             lg.info("made a new sending queue for %s" % nameurl.GetName(remoteID))
         return self.supplierQueues[remoteID].SupplierSendFile(
@@ -994,7 +996,7 @@ class IOThrottle:
                 if callOnReceived:
                     reactor.callLater(0, callOnReceived, packetID, 'exist')
                 return False
-        if remoteID not in self.supplierQueues.keys():
+        if remoteID not in list(self.supplierQueues.keys()):
             # made a new queue for this man
             self.supplierQueues[remoteID] = SupplierQueue(remoteID, self.creatorID)
             lg.info("made a new receiving queue for %s" % nameurl.GetName(remoteID))

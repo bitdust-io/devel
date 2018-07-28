@@ -38,6 +38,7 @@ EVENTS:
 """
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 12
 
@@ -200,7 +201,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         from transport.tcp import tcp_node
         if self.getConnectionAddress() is not None:
-            if self.getConnectionAddress() in tcp_node.started_connections().keys():
+            if self.getConnectionAddress() in list(tcp_node.started_connections().keys()):
                 return True
         return False
 

@@ -66,6 +66,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from six.moves import range
 _Debug = False
 _DebugLevel = 6
 
@@ -291,7 +293,7 @@ class NetworkConnector(automat.Automat):
             from transport import gateway
             if time.time() - gateway.last_inbox_time() < 60:
                 return True
-            transport_states = map(lambda t: t.state, gateway.transports().values())
+            transport_states = [t.state for t in list(gateway.transports().values())]
             if 'LISTENING' in transport_states:
                 return True
             if 'STARTING' in transport_states:
@@ -323,7 +325,7 @@ class NetworkConnector(automat.Automat):
                 lg.out(_DebugLevel, 'network_connector.isAllListening returning False : service_gateway is OFF')
             return False
         from transport import gateway
-        transports = gateway.transports().values()
+        transports = list(gateway.transports().values())
         for t in transports:
             if t.state != 'LISTENING':
                 if _Debug:
@@ -344,7 +346,7 @@ class NetworkConnector(automat.Automat):
         LISTENING_count = 0
         OFFLINE_count = 0
         from transport import gateway
-        transports = gateway.transports().values()
+        transports = list(gateway.transports().values())
         for t in transports:
             if t.state != 'OFFLINE' and t.state != 'LISTENING':
                 if _Debug:

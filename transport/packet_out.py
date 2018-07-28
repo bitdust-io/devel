@@ -52,6 +52,9 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from six.moves import map
+from six.moves import range
 _Debug = False
 _DebugLevel = 10
 
@@ -142,7 +145,7 @@ def search(proto, host, filename, remote_idurl=None):
         for p in queue():
             if p.filename:
                 lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(p.filename),
-                                                 ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
+                                                 ('|'.join(['%s:%s' % (i.proto, i.host) for i in p.items]))))
             else:
                 lg.warn('%s was not initialized yet' % str(p))
     return None, None
@@ -206,7 +209,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
         lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s]' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
             newpacket.Command, newpacket.PacketID, proto, host, ))
-        lg.out(_DebugLevel, '    [%s]' % (','.join(map(lambda p: str(p.outpacket), queue()))))
+        lg.out(_DebugLevel, '    [%s]' % (','.join([str(p.outpacket) for p in queue()])))
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
             # PacketID of incoming packet not matching with that outgoing packet
@@ -237,7 +240,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
                 lg.out(_DebugLevel, '        found pending outbox [%s/%s/%s]:%s(%s) cb:%s' % (
                     nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
                     nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
-                    p.callbacks.keys()))
+                    list(p.callbacks.keys())))
     if len(result) == 0:
         if _Debug:
             lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
@@ -374,12 +377,12 @@ class PacketOut(automat.Automat):
         return time.time() - self.time > self.timeout
 
     def set_callback(self, command, cb):
-        if command not in self.callbacks.keys():
+        if command not in list(self.callbacks.keys()):
             self.callbacks[command] = []
         self.callbacks[command].append(cb)
         if _Debug:
             lg.out(_DebugLevel, '%s : new callback for [%s] added, expecting: %r' % (
-                self, command, self.callbacks.keys()))
+                self, command, list(self.callbacks.keys())))
 
     def A(self, event, arg):
         #---SENDING---
@@ -525,7 +528,7 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
-        return commands.Ack() in self.callbacks.keys() or commands.Fail() in self.callbacks.keys()
+        return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
 
     def isMoreItems(self, arg):
         """
@@ -538,13 +541,13 @@ class PacketOut(automat.Automat):
         Condition method.
         """
         newpacket, _ = arg
-        return newpacket.Command in self.callbacks.keys()
+        return newpacket.Command in list(self.callbacks.keys())
 
     def isDataExpected(self, arg):
         """
         Condition method.
         """
-        return commands.Data() in self.callbacks.keys()
+        return commands.Data() in list(self.callbacks.keys())
 
     def doInit(self, arg):
         """
@@ -616,7 +619,7 @@ class PacketOut(automat.Automat):
         """
         ok = False
         proto, host, filename, transfer_id = arg
-        for i in xrange(len(self.items)):
+        for i in range(len(self.items)):
             if self.items[i].proto == proto:  # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
                 if _Debug:

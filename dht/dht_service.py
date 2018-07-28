@@ -29,6 +29,8 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 _Debug = False
 _DebugLevel = 10
 
@@ -50,11 +52,11 @@ from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------
 
-from entangled.dtuple import DistributedTupleSpacePeer
-from entangled.kademlia.datastore import SQLiteExpiredDataStore
-from entangled.kademlia.node import rpcmethod
-from entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
-from entangled.kademlia import constants
+from .entangled.dtuple import DistributedTupleSpacePeer
+from .entangled.kademlia.datastore import SQLiteExpiredDataStore
+from .entangled.kademlia.node import rpcmethod
+from .entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
+from .entangled.kademlia import constants
 
 #------------------------------------------------------------------------------
 
@@ -231,7 +233,7 @@ def on_host_resoled(ip, port, host, result_list, total_hosts, result_defer):
         result_list.append((ip, port, ))
     if len(result_list) != total_hosts:
         return None
-    return result_defer.callback(filter(None, result_list))
+    return result_defer.callback([_f for _f in result_list if _f])
 
 
 def resolve_hosts(nodes_list):
@@ -646,10 +648,10 @@ def main():
     def _go(nodes):
         try:
             if len(args) == 0:
-                print 'STARTED'
+                print('STARTED')
             elif len(args) > 0:
                 def _r(x):
-                    print x
+                    print(x)
                     reactor.stop()
                 cmd = args[0]
                 if cmd == 'get':
@@ -671,7 +673,7 @@ def main():
                     find_node(random_key()).addBoth(_r)
                 elif cmd == 'discover':
                     def _l(x):
-                        print x
+                        print(x)
                         find_node(random_key()).addBoth(_l)
                     _l('')
         except:

@@ -50,6 +50,7 @@ Parallel Python Software, PP Transport.
 http://www.parallelpython.com - updates, documentation, examples and support
 forums
 """
+from __future__ import absolute_import
 import os
 import struct
 import socket

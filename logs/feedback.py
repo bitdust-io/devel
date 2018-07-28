@@ -24,6 +24,8 @@
 #
 #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import cgi
 import cgitb
 cgitb.enable(0, '/tmp', 10, 'text')
@@ -90,8 +92,8 @@ def SendEmail(args_9_tuple):
 
 
 def print_html_response(txt):
-    print "content-type: text/html\n"
-    print "<html>%s</html>" % txt
+    print("content-type: text/html\n")
+    print("<html>%s</html>" % txt)
 
 
 def save_uploaded_file():
@@ -106,7 +108,7 @@ def save_uploaded_file():
     files = []
     if fileitem is not None:
         sz = 0
-        fout = file(os.path.join('/tmp', fileitem.filename), 'wb')
+        fout = open(os.path.join('/tmp', fileitem.filename), 'wb')
         while True:
             chunk = fileitem.file.read(100000)
             if not chunk:

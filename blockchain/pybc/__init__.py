@@ -1,6 +1,7 @@
 # __init__.py: Make pybc a module.
 
 # Present all our external interface classes
+from __future__ import absolute_import
 from pybc.BlockchainProtocol import *
 from pybc.Blockchain import *
 from pybc.Block import *

@@ -47,6 +47,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 10
 
@@ -218,7 +219,7 @@ class SupplierConnector(automat.Automat):
         self.callbacks[name] = cb
 
     def remove_callback(self, name):
-        if name in self.callbacks.keys():
+        if name in list(self.callbacks.keys()):
             self.callbacks.pop(name)
 
     def A(self, event, arg):

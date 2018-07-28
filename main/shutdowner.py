@@ -50,6 +50,7 @@ EVENTS:
     * :red:`unblock`
 """
 
+from __future__ import absolute_import
 import os
 import sys
 
@@ -67,7 +68,7 @@ from logs import lg
 from automats import automat
 from automats import global_state
 
-import initializer
+from . import initializer
 
 #------------------------------------------------------------------------------
 

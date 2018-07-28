@@ -1,6 +1,11 @@
 #!/usr/bin/env python2.7
 # coin.py: a coin implemented on top of pybc
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
+from six.moves import zip
 if __name__ == '__main__':
     import os.path as _p, sys
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
@@ -17,17 +22,17 @@ import sys
 try:
     import pyelliptic
 except BaseException:    # pyelliptic didn't load. Either it's not installed or it can't find OpenSSL
-    import emergency_crypto_munitions as pyelliptic
+    from . import emergency_crypto_munitions as pyelliptic
 
-import util
-import sqliteshelf
-from AuthenticatedDictionary import AuthenticatedDictionary
-from AuthenticatedDictionary import AuthenticatedDictionaryStateComponent
-from State import State
-from StateMachine import StateMachine
-from TransactionalBlockchain import TransactionalBlockchain
-from PowAlgorithm import PowAlgorithm
-from transactions import pack_transactions, unpack_transactions
+from . import util
+from . import sqliteshelf
+from .AuthenticatedDictionary import AuthenticatedDictionary
+from .AuthenticatedDictionary import AuthenticatedDictionaryStateComponent
+from .State import State
+from .StateMachine import StateMachine
+from .TransactionalBlockchain import TransactionalBlockchain
+from .PowAlgorithm import PowAlgorithm
+from .transactions import pack_transactions, unpack_transactions
 
 
 class Transaction(object):
@@ -236,7 +241,7 @@ class Transaction(object):
         # Where are we in the string
         index = 4
 
-        for _ in xrange(input_count):
+        for _ in range(input_count):
             # Unpack that many 108-byte records of 64-byte transaction hashes,
             # 4-byte output indices, 8-byte amounts, and 32-byte destination
             # public key hashes.
@@ -270,7 +275,7 @@ class Transaction(object):
         # Where are we in the string
         index = 4
 
-        for _ in xrange(output_count):
+        for _ in range(output_count):
             # Unpack that many 40-byte records of 8-byte amounts and 32-byte
             # destination public key hashes.
             self.outputs.append(struct.unpack(">Q32s",
@@ -317,7 +322,7 @@ class Transaction(object):
         # Where are we in the string
         index = 4
 
-        for _ in xrange(authorization_count):
+        for _ in range(authorization_count):
             # Get the length of the authorization's public key
             (length,) = struct.unpack(">I", bytestring[index:index + 4])
             index += 4
@@ -667,7 +672,7 @@ class CoinState(State):
 
         """
 
-        for key in self.unused_outputs.iterkeys():
+        for key in six.iterkeys(self.unused_outputs):
             yield self.bytes2output(key)
 
     def has_unused_output(self, output):
@@ -736,7 +741,7 @@ class CoinState(State):
         # Go get a StateComponent for the appropriate node.
         component = self.unused_outputs.node_to_state_component(pointer)
 
-        for child_pointer, child_hash in itertools.izip(
+        for child_pointer, child_hash in zip(
                 self.unused_outputs.get_node_children(pointer),
                 component.get_child_list()):
 
@@ -1350,7 +1355,7 @@ class Wallet(object):
                 self.generate_address()
 
             # Just use the first address we have
-            return self.keystore.keys()[0]
+            return list(self.keystore.keys())[0]
 
     def get_balance(self):
         """
@@ -1500,23 +1505,23 @@ if __name__ == "__main__":
         block = blockchain.make_block(destination, min_fee=min_fee)
 
         # Now unpack and dump the block for debugging.
-        print "Block will be:\n{}".format(block)
+        print("Block will be:\n{}".format(block))
 
         for transaction in unpack_transactions(block.payload):
             # Print all the transactions
-            print "Transaction: {}".format(Transaction.from_bytes(transaction))
+            print("Transaction: {}".format(Transaction.from_bytes(transaction)))
 
         # Do proof of work on the block to mine it.
         block.do_work(blockchain.algorithm)
 
-        print "Successful nonce: {}".format(block.nonce)
+        print("Successful nonce: {}".format(block.nonce))
 
         # See if the work really is enough
-        print "Work is acceptable: {}".format(block.verify_work(
-            blockchain.algorithm))
+        print("Work is acceptable: {}".format(block.verify_work(
+            blockchain.algorithm)))
 
         # See if the block is good according to the blockchain
-        print "Block is acceptable: {}".format(blockchain.verify_block(block))
+        print("Block is acceptable: {}".format(blockchain.verify_block(block)))
 
         # Add it to the blockchain through the complicated queueing mechanism
         blockchain.queue_block(block)
@@ -1527,16 +1532,16 @@ if __name__ == "__main__":
     # Make a wallet that hits against it
     wallet = Wallet(blockchain, "coin.wallet")
 
-    print "Receiving address: {}".format(util.bytes2string(
-        wallet.get_address()))
+    print("Receiving address: {}".format(util.bytes2string(
+        wallet.get_address())))
 
     # Make a block that gives us coins.
     generate_block(blockchain, wallet.get_address())
 
     # Send some coins to ourselves
-    print "Sending ourselves 10 coins..."
+    print("Sending ourselves 10 coins...")
     transaction = wallet.make_simple_transaction(10, wallet.get_address())
-    print transaction
+    print(transaction)
     blockchain.add_transaction(transaction.to_bytes())
 
     # Make a block that confirms that transaction.

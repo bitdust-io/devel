@@ -16,8 +16,10 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import functools
 from random import choice
+from six.moves import range
 
 
 def create_cache1lvl(lock_obj):
@@ -33,8 +35,8 @@ def create_cache1lvl(lock_obj):
                 except KeyError:
                     with lock:
                         if len(cache) == maxsize:
-                            for i in xrange(maxsize // 10 or 1):
-                                del cache[choice(cache.keys())]
+                            for i in range(maxsize // 10 or 1):
+                                del cache[choice(list(cache.keys()))]
                         cache[key] = user_function(key, *args, **kwargs)
                         result = cache[key]
                 return result
@@ -71,9 +73,9 @@ def create_cache2lvl(lock_obj):
                     with lock:
                         if wrapper.cache_size == maxsize:
                             to_delete = maxsize // 10 or 1
-                            for i in xrange(to_delete):
-                                key1 = choice(cache.keys())
-                                key2 = choice(cache[key1].keys())
+                            for i in range(to_delete):
+                                key1 = choice(list(cache.keys()))
+                                key2 = choice(list(cache[key1].keys()))
                                 del cache[key1][key2]
                                 if not cache[key1]:
                                     del cache[key1]

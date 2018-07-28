@@ -3,6 +3,7 @@ Peer.py: contains the Peer class.
 
 """
 
+from __future__ import absolute_import
 import random
 import time
 import threading
@@ -16,7 +17,9 @@ from pybc.ServerFactory import ServerFactory
 from pybc.util import time2string, bytes2string
 import pybc.science
 
-import sqliteshelf
+from . import sqliteshelf
+import six
+from six.moves import range
 
 
 class Peer(object):
@@ -221,7 +224,7 @@ class Peer(object):
 
         with self.lock:
             return [(host, host_data[0], host_data[1]) for host, host_data in
-                    self.known_peers.iteritems()]
+                    six.iteritems(self.known_peers)]
 
     def peer_seen(self, host, port, time_seen):
         """
@@ -350,11 +353,11 @@ class Peer(object):
                 # We don't have enough outgoing connections, but we do know some
                 # peers.
 
-                for i in xrange(min(self.connections_per_batch,
+                for i in range(min(self.connections_per_batch,
                                     self.optimal_connections - len(self.outgoing_hosts))):
                     # Try several connections in a batch.
 
-                    for _ in xrange(self.optimal_connections -
+                    for _ in range(self.optimal_connections -
                                     len(self.outgoing_hosts)):
 
                         # For each connection we want but don't have
@@ -402,7 +405,7 @@ class Peer(object):
             # hostnames.
             too_old = []
 
-            for key, (port, last_seen) in self.known_peers.iteritems():
+            for key, (port, last_seen) in six.iteritems(self.known_peers):
                 if last_seen is None:
                     # This is a bootstrap peer. Don't remove it.
                     continue
@@ -417,7 +420,7 @@ class Peer(object):
 
             # Broadcast all our hosts.
             logging.info("{} known peers".format(len(self.known_peers)))
-            for key, (port, last_seen) in self.known_peers.iteritems():
+            for key, (port, last_seen) in six.iteritems(self.known_peers):
                 if last_seen is None:
                     # This is a bootstrap peer, so don't announce it.
                     continue

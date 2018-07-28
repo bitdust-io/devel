@@ -32,7 +32,10 @@ module:: message_db
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import map
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -364,18 +367,18 @@ def build_json_message(data, message_id, sender=None, recipient=None):
 #------------------------------------------------------------------------------
 
 def _test_query(inp):
-    print 'Query:'
-    print inp
-    print '==================================='
+    print('Query:')
+    print(inp)
+    print('===================================')
     lst = _to_list(query_json(inp))
-    print '\n'.join(map(str, lst))
-    print 'total:', len(lst)
+    print('\n'.join(map(str, lst)))
+    print('total:', len(lst))
     return lst
 
 
 def main():
     if len(sys.argv) < 2:
-        print """
+        print("""
         commands:
         get_all <index>
         get_many <index> <key>
@@ -384,7 +387,7 @@ def main():
         search "json query"
         indexes
         tmpdb <destination folder>
-        """
+        """)
         return
 
     if sys.argv[1] == 'get_all':
@@ -415,8 +418,8 @@ def main():
 
     if sys.argv[1] == 'indexes':
         init()
-        print 'Indexes in %s are:' % db().path
-        print '  ' + ('\n  '.join(db().indexes_names))
+        print('Indexes in %s are:' % db().path)
+        print('  ' + ('\n  '.join(db().indexes_names)))
         shutdown()
 
     if sys.argv[1] == 'refresh':
@@ -430,12 +433,12 @@ def main():
 
     if sys.argv[1] == 'insert':
         init()
-        print insert(build_json_message(sys.argv[2]))
+        print(insert(build_json_message(sys.argv[2])))
         shutdown()
 
     if sys.argv[1] == 'search':
         init()
-        print '\n'.join(map(str, [m for m in search(json.loads(sys.argv[2]))]))
+        print('\n'.join(map(str, [m for m in search(json.loads(sys.argv[2]))])))
         shutdown()
 
 

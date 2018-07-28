@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 from CodernityDB.hash_index import UniqueHashIndex, HashIndex
 from CodernityDB.sharded_index import ShardedIndex
 from CodernityDB.index import IndexPreconditionsException

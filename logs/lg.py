@@ -30,12 +30,14 @@
 module:: lg
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import time
 import threading
 import traceback
 import platform
+import six
 
 #------------------------------------------------------------------------------
 
@@ -91,7 +93,7 @@ def out(level, msg, nl='\n'):
     if not _LogsEnabled:
         return
     s = '' + msg
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         s = s.encode('utf-8')
     s_ = s
     if level < 0:
@@ -311,7 +313,7 @@ def exception_name(value):
     Some tricks to extract the correct exception name from traceback string.
     """
     try:
-        excStr = unicode(value)
+        excStr = six.text_type(value)
     except:
         try:
             excStr = repr(value)
@@ -613,7 +615,7 @@ class PATCHED_stdout:
     def read(self): pass
 
     def write(self, s):
-        out(0, unicode(s).rstrip())
+        out(0, six.text_type(s).rstrip())
 
     def flush(self): pass
 

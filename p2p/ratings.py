@@ -25,6 +25,7 @@
 #
 #
 
+from __future__ import absolute_import
 import os
 import sys
 import time
@@ -47,7 +48,7 @@ from lib import nameurl
 from main import settings
 from contacts import contactsdb
 
-import contact_status
+from . import contact_status
 
 #-------------------------------------------------------------------------------
 

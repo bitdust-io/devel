@@ -32,6 +32,7 @@ This module is to keep track of changing states of State Machines.
 It also remember the current ``global`` state of the program - this a stats of a several most important automats.
 """
 
+from __future__ import absolute_import
 import os
 import sys
 
@@ -46,7 +47,7 @@ from twisted.internet.task import LoopingCall
 
 from logs import lg
 
-import automat
+from . import automat
 
 #------------------------------------------------------------------------------
 

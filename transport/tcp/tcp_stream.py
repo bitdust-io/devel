@@ -27,6 +27,7 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 12
 
@@ -113,7 +114,7 @@ def list_input_streams(sorted_by_time=True):
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
             if connection.stream:
-                streams.extend(connection.stream.inboxFiles.values())
+                streams.extend(list(connection.stream.inboxFiles.values()))
     if sorted_by_time:
         streams.sort(key=lambda stream: stream.started)
     return streams
@@ -125,7 +126,7 @@ def list_output_streams(sorted_by_time=True):
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
             if connection.stream:
-                streams.extend(connection.stream.outboxFiles.values())
+                streams.extend(list(connection.stream.outboxFiles.values()))
     if sorted_by_time:
         streams.sort(key=lambda stream: stream.started)
     return streams
@@ -189,11 +190,11 @@ class TCPFileStream():
 
     def abort_files(self, reason='connection closed'):
         from transport.tcp import tcp_connection
-        file_ids_to_remove = self.inboxFiles.keys()
+        file_ids_to_remove = list(self.inboxFiles.keys())
         for file_id in file_ids_to_remove:
             # self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id)+' '+reason)
             self.inbox_file_done(file_id, 'failed', reason)
-        file_ids_to_remove = self.outboxFiles.keys()
+        file_ids_to_remove = list(self.outboxFiles.keys())
         for file_id in file_ids_to_remove:
             self.send_data(
                 tcp_connection.CMD_ABORT, struct.pack(

@@ -36,6 +36,7 @@ This is similar to well-known "blockchain" technology where every block is linke
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 
 #------------------------------------------------------------------------------

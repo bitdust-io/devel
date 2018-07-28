@@ -36,6 +36,7 @@ In case some of customers do not play fair - need to stop this.:
     * check all packets to be valid
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import time
@@ -167,7 +168,7 @@ def SpaceTime():
             okekeydir = os.path.join(onecustdir, key_alias)
             bpio.traverse_dir_recursive(cb, okekeydir)
             currentV = 0
-            for path in sorted(timedict.keys(), key=lambda x: timedict[x], reverse=True):
+            for path in sorted(list(timedict.keys()), key=lambda x: timedict[x], reverse=True):
                 filesize = sizedict.get(path, 0)
                 currentV += filesize
                 if currentV < maxspaceV:

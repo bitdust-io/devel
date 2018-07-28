@@ -44,7 +44,9 @@ Packet Fields are all strings (no integers, objects, etc)
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -351,4 +353,4 @@ if __name__ == '__main__':
     settings.init()
     key.InitMyKey()
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
-    print p
+    print(p)

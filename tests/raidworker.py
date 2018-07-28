@@ -20,6 +20,8 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -41,12 +43,12 @@ def main():
     tasks = {}
 
     def _cb(cmd, taskdata, result):
-        print 'DONE!', cmd, taskdata, result
+        print('DONE!', cmd, taskdata, result)
         tasks.pop(taskdata[3])
         if len(tasks) == 0:
             reactor.stop()
         else:
-            print len(tasks), 'more'
+            print(len(tasks), 'more')
 
     def _add(blocknum):
         tasks[blocknum] = (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5])

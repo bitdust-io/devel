@@ -27,7 +27,8 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-import constants
+from __future__ import absolute_import
+from . import constants
 
 
 class BucketFull(Exception):
@@ -156,7 +157,7 @@ class KBucket(object):
         @rtype: bool
         """
         if isinstance(key, str):
-            key = long(key.encode('hex'), 16)
+            key = int(key.encode('hex'), 16)
         return self.rangeMin <= key < self.rangeMax
 
     def __len__(self):

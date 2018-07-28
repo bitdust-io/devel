@@ -32,6 +32,7 @@ some extended functionality. Can read/write from pipe without blocking
 the main thread.
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import errno

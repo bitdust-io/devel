@@ -66,6 +66,7 @@ of Information Technologies, Mechanics and Optics, Programming Technologies Depa
 `Page <http://is.ifmo.ru/english>`_.
 """
 
+from __future__ import absolute_import
 import sys
 import time
 import traceback

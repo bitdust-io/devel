@@ -35,6 +35,7 @@ So I decide to use standard pickle module and upgrade that in future.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 SERIALIZATION_METHOD = 'pickle'
 
 #------------------------------------------------------------------------------
@@ -57,17 +58,17 @@ if SERIALIZATION_METHOD == 'pickle':
 
 elif SERIALIZATION_METHOD == 'cPickle':
 
-    import cPickle
+    import six.moves.cPickle
 
     def ObjectToString(obj):
         """
         """
-        return cPickle.dumps(obj, protocol=0)
+        return six.moves.cPickle.dumps(obj, protocol=0)
 
     def StringToObject(inp):
         """
         """
-        return cPickle.loads(inp)
+        return six.moves.cPickle.loads(inp)
 
 
 elif SERIALIZATION_METHOD == 'msgpack':

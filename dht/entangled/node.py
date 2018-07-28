@@ -27,12 +27,14 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
+from __future__ import absolute_import
+from __future__ import print_function
 import hashlib
 
 from twisted.internet import defer
 
-import kademlia.node
-from kademlia.node import rpcmethod
+from . import kademlia.node
+from .kademlia.node import rpcmethod
 
 
 class EntangledNode(kademlia.node.Node):
@@ -306,21 +308,21 @@ class EntangledNode(kademlia.node.Node):
 
 if __name__ == '__main__':
     import twisted.internet.reactor
-    from kademlia.datastore import SQLiteDataStore
+    from .kademlia.datastore import SQLiteDataStore
     import sys
     import os
     if len(sys.argv) < 2:
-        print 'Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0]
-        print 'or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0]
-        print '\nIf a file is specified, it should containg one IP address and UDP port\nper line, seperated by a space.'
+        print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
+        print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])
+        print('\nIf a file is specified, it should containg one IP address and UDP port\nper line, seperated by a space.')
         sys.exit(1)
     try:
         int(sys.argv[1])
     except ValueError:
-        print '\nUDP_PORT must be an integer value.\n'
-        print 'Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0]
-        print 'or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0]
-        print '\nIf a file is specified, it should contain one IP address and UDP port\nper line, seperated by a space.'
+        print('\nUDP_PORT must be an integer value.\n')
+        print('Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0])
+        print('or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0])
+        print('\nIf a file is specified, it should contain one IP address and UDP port\nper line, seperated by a space.')
         sys.exit(1)
 
     if len(sys.argv) == 4:

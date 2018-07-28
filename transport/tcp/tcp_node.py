@@ -37,6 +37,7 @@ opened to be able to send asap
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 8
 

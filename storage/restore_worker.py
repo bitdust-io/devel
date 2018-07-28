@@ -73,6 +73,8 @@ The other thing we need is the backupIDs which we can get from our suppliers wit
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from six.moves import range
 _Debug = False
 _DebugLevel = 8
 
@@ -326,7 +328,7 @@ class RestoreWorker(automat.Automat):
         """
         if data_receiver.A():
             data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
-        self.known_suppliers = filter(None, contactsdb.suppliers(customer_idurl=self.customer_idurl))
+        self.known_suppliers = [_f for _f in contactsdb.suppliers(customer_idurl=self.customer_idurl) if _f]
         known_eccmap_dict = {}
         for supplier_idurl in self.known_suppliers:
             known_ecc_map = contactsdb.get_supplier_meta_info(
@@ -337,7 +339,7 @@ class RestoreWorker(automat.Automat):
                     known_eccmap_dict[known_ecc_map] = 0
                 known_eccmap_dict[known_ecc_map] += 1
         if known_eccmap_dict:
-            all_known_eccmaps = known_eccmap_dict.items()
+            all_known_eccmaps = list(known_eccmap_dict.items())
             all_known_eccmaps.sort(key=lambda i: i[1], reverse=True)
             self.EccMap = eccmap.eccmap(all_known_eccmaps[0][0])
             lg.info('eccmap %s recognized from suppliers meta info' % self.EccMap)
@@ -535,8 +537,8 @@ class RestoreWorker(automat.Automat):
         tmpfile.throw_out(filename, 'block restored')
         if settings.getBackupsKeepLocalCopies():
             return
-        import backup_rebuilder
-        import backup_matrix
+        from . import backup_rebuilder
+        from . import backup_matrix
         if not backup_rebuilder.ReadStoppedFlag():
             if backup_rebuilder.A().currentBackupID is not None:
                 if backup_rebuilder.A().currentBackupID == self.backup_id:
@@ -544,7 +546,7 @@ class RestoreWorker(automat.Automat):
                         lg.out(_DebugLevel, 'restore_worker.doRemoveTempFile SKIP because rebuilding in process')
                     return
         count = 0
-        for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=self.customer_idurl)):
+        for supplierNum in range(contactsdb.num_suppliers(customer_idurl=self.customer_idurl)):
             supplierIDURL = contactsdb.supplier(supplierNum, customer_idurl=self.customer_idurl)
             if not supplierIDURL:
                 continue
