@@ -43,6 +43,7 @@ import twisted.internet.reactor
 import twisted.internet.threads
 from .contact import Contact
 from six.moves import range
+from io import open
 
 
 def rpcmethod(func):

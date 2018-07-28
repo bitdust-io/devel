@@ -44,6 +44,7 @@ import platform
 import mimetypes
 import subprocess
 import six
+from io import open
 # fun mountain from
 # python imports :-)
 

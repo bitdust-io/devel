@@ -38,6 +38,7 @@ from logs import lg
 from lib import udp
 from system import tmpfile
 from contacts import contactsdb
+from io import open
 
 #------------------------------------------------------------------------------
 

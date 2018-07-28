@@ -27,6 +27,7 @@ import socket
 import time
 import threading
 import os
+from io import open
 
 try:
     import resource

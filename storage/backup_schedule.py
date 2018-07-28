@@ -39,6 +39,7 @@ many things was changed since that moment, so need to put some work here
 from __future__ import absolute_import
 from logs import lg
 import six
+from io import open
 
 #------------------------------------------------------------------------------
 

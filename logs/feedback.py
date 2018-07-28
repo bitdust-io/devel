@@ -28,6 +28,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import cgi
 import cgitb
+from io import open
 cgitb.enable(0, '/tmp', 10, 'text')
 
 import os

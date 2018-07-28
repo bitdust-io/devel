@@ -25,6 +25,7 @@ import inspect
 from functools import wraps
 import json
 from six.moves import range
+from io import open
 
 
 class DebugTreeBasedIndex(TreeBasedIndex):

@@ -28,6 +28,7 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import open
 _Debug = False
 _DebugLevel = 12
 

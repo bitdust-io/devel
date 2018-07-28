@@ -56,6 +56,7 @@ import time
 import cStringIO
 import platform
 from six.moves import range
+from io import open
 
 #------------------------------------------------------------------------------
 

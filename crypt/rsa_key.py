@@ -41,6 +41,7 @@ from Cryptodome.Hash import SHA1
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.Util import number
+from io import open
 
 #------------------------------------------------------------------------------
 

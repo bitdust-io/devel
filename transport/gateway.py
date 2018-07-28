@@ -66,6 +66,7 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import open
 _Debug = False
 _DebugLevel = 16
 

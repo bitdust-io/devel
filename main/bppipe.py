@@ -55,6 +55,7 @@ import tarfile
 import traceback
 import locale
 import six
+from io import open
 
 #------------------------------------------------------------------------------
 
