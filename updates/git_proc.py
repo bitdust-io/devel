@@ -44,6 +44,7 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+import six
 import os
 import sys
 import time
@@ -81,7 +82,9 @@ _ShedulerTask = None
 
 def write2log(txt):
     out_file = open(settings.UpdateLogFilename(), 'a')
-    print(txt, file=out_file)
+    if not isinstance(txt, six.text_type):
+        txt = txt.decode('utf-8')
+    out_file.write(txt)
     out_file.close()
 
 #------------------------------------------------------------------------------
