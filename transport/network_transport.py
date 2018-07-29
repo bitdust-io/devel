@@ -72,7 +72,7 @@ from userid import my_id
 
 from main import settings
 
-from . import gateway
+from transport import gateway
 
 #------------------------------------------------------------------------------
 

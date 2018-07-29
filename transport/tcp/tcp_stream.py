@@ -553,8 +553,8 @@ class FileSender(basic.FileSender):
         self.parent = None
 
     def transform_data(self, data):
-        if isinstance(data, six.binary_type):
-            data = data.decode('utf-8')
+        # if isinstance(data, six.binary_type):
+        #     data = data.decode('utf-8')
         datalength = len(data)
         datagram = ''
         datagram += struct.pack('i', self.parent.file_id)
