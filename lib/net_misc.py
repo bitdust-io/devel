@@ -95,6 +95,7 @@ def shutdown():
     """
     """
 
+#------------------------------------------------------------------------------
 
 def SetConnectionDoneCallbackFunc(f):
     """
@@ -139,6 +140,26 @@ def ConnectionFailed(param=None, proto=None, info=None):
 
 #------------------------------------------------------------------------------
 
+def normalize_address(host_port):
+    """
+    Input argument `host` can be string: "123.45.67.89:8080" or tuple: ("123.45.67.89", 8080)
+    Method always return tuple and make sure host is string/bytes but not unicode.
+    """
+    if isinstance(host_port, six.string_types):
+        host_port = (host_port.split(':')[0], int(host_port.split(':')[1]), )
+    if isinstance(host_port[0], six.text_type):
+        host_port = (host_port[0].encode('utf-8'), host_port[1], )
+    return host_port
+
+
+def pack_address(host_port):
+    """
+    Same as `normalize_address()`, but always return address as string/bytes: "123.45.67.89:8080"
+    """
+    norm = normalize_address(host_port)
+    return '{}:{}'.format(norm[0], norm[1])
+
+#------------------------------------------------------------------------------
 
 def parse_url(url, defaultPort=None):
     """

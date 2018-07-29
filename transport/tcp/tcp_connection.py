@@ -43,12 +43,13 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import os
 import time
+import six
 
 from twisted.protocols import basic
 
@@ -392,8 +393,11 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
     def sendData(self, command, payload):
         try:
             data = self.SoftwareVersion + str(command.lower())[0] + payload
+            if not isinstance(data, six.binary_type):
+                data = data.encode('utf-8')
             self.sendString(data)
         except:
+            lg.exc()
             return False
         self.automat('data-sent', data)
         return True

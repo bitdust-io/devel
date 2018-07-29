@@ -57,6 +57,7 @@ from twisted.python.failure import Failure
 from logs import lg
 
 from lib import nameurl
+from lib import net_misc
 
 #------------------------------------------------------------------------------
 

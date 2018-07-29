@@ -54,6 +54,8 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import six
+
 from twisted.internet.defer import Deferred
 from twisted.internet import reactor
 
@@ -62,7 +64,6 @@ from twisted.internet import reactor
 from automats import automat
 
 from logs import lg
-
 
 from lib import nameurl
 
@@ -275,6 +276,9 @@ class ProxySender(automat.Automat):
         src += my_id.getLocalID() + '\n'
         src += outpacket.RemoteID + '\n'
         src += 'wide\n' if wide else '\n'
+here
+        # if isinstance(raw_data, six.binary_type):
+        #     raw_data = raw_data.encode('utf-8')
         src += raw_data
         block = encrypted.Block(
             my_id.getLocalID(),
