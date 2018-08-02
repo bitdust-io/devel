@@ -276,7 +276,7 @@ class ProxySender(automat.Automat):
         src += my_id.getLocalID() + '\n'
         src += outpacket.RemoteID + '\n'
         src += 'wide\n' if wide else '\n'
-here
+# here
         # if isinstance(raw_data, six.binary_type):
         #     raw_data = raw_data.encode('utf-8')
         src += raw_data
