@@ -54,6 +54,8 @@ from logs import lg
 
 from automats import automat
 
+from main import events
+
 from dht import dht_relations
 
 from userid import global_id
@@ -153,11 +155,11 @@ class SharedAccessCoordinator(automat.Automat):
         Use this method if you need to call Automat.__init__() in a special way.
         """
         self.key_id = key_id
-        glob_id = global_id.ParseGlobalID(self.key_id)
-        self.customer_idurl = glob_id['idurl']
+        self.glob_id = global_id.ParseGlobalID(self.key_id)
+        self.customer_idurl = self.glob_id['idurl']
         self.known_suppliers_list = []
         super(SharedAccessCoordinator, self).__init__(
-            name="%s$%s" % (glob_id['key_alias'], glob_id['user']),
+            name="%s$%s" % (self.glob_id['key_alias'], self.glob_id['user']),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,
@@ -169,6 +171,7 @@ class SharedAccessCoordinator(automat.Automat):
     def to_json(self):
         return {
             'key_id': self.key_id,
+            'global_id': self.glob_id,
             'idurl': self.customer_idurl,
             'state': self.state,
             'suppliers': self.known_suppliers_list,
@@ -404,6 +407,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        events.send('share-connected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
 
@@ -411,6 +415,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        events.send('share-disconnected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
 

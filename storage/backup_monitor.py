@@ -330,7 +330,10 @@ class BackupMonitor(automat.Automat):
         except:
             self.backups_progress_last_iteration = 0
         versionsToKeep = settings.getBackupsMaxCopies()
-        bytesUsed = backup_fs.sizebackups() / contactsdb.num_suppliers()
+        if not contactsdb.num_suppliers():
+            bytesUsed = 0
+        else:
+            bytesUsed = backup_fs.sizebackups() / contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         customerGlobID = my_id.getGlobalID()
         if _Debug:
@@ -380,7 +383,7 @@ class BackupMonitor(automat.Automat):
             backup_fs.Scan()
             backup_fs.Calculate()
             backup_control.Save()
-            from web import control
+            from main import control
             control.request_update()
         collected = gc.collect()
         if self.backups_progress_last_iteration > 0:

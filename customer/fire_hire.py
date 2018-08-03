@@ -571,7 +571,7 @@ class FireHire(automat.Automat):
             time.strftime('%d-%m-%Y %H:%M:%S'),
             my_id.getLocalID(),
         )
-        from web import control
+        from main import control
         control.on_suppliers_changed(current_suppliers)
         if position < 0:
             lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % (new_idurl))
@@ -618,7 +618,7 @@ class FireHire(automat.Automat):
         current_suppliers = current_suppliers[:desired_suppliers]
         contactsdb.update_suppliers(current_suppliers)
         contactsdb.save_suppliers()
-        from web import control
+        from main import control
         control.on_suppliers_changed(current_suppliers)
         for position, supplier_idurl in removed_suppliers:
             events.send('supplier-modified', dict(

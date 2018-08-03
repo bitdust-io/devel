@@ -320,7 +320,6 @@ class identity:
         including label, so future versions could have same signatures as older
         which had fewer fields - can just do this for fields after these, so
         maybe don't need to change anything for now.
-
         Don't include certificate - so identity server can just add it.
         """
         sep = "-"
@@ -334,24 +333,6 @@ class identity:
         hsh += sep + self.version
         hsh += sep + self.revision
         hashcode = key.Hash(hsh)
-        return hashcode
-
-    def makehash_old(self):
-        """
-        
-        """
-        sep = "-"
-        c = ''
-        for i in self.contacts:
-            c += i
-        s = ''
-        for i in self.scrubbers:
-            s += i
-        sr = ''
-        for i in self.sources:
-            sr += i
-        stufftohash = c + sep + s + sep + sr + sep + self.version + sep + self.postage + sep + self.date.replace(' ', '_')
-        hashcode = key.Hash(stufftohash)
         return hashcode
 
     def sign(self):
@@ -376,13 +357,6 @@ class identity:
             self.publickey,
             hashcode,
             str(self.signature))
-        if not result:
-            # TODO: old code still has old identity format - but it is valid
-            hashcode = self.makehash_old()
-            result = key.VerifySignature(
-                self.publickey,
-                hashcode,
-                str(self.signature))
         return result
 
     #------------------------------------------------------------------------------

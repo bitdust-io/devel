@@ -319,12 +319,18 @@ class TCPFileStream():
         self.connection.automat('disconnect')
 
     def close_outbox_file(self, file_id):
-        self.outboxFiles[file_id].close()
-        del self.outboxFiles[file_id]
+        if self.outboxFiles.get(file_id):
+            self.outboxFiles[file_id].close()
+            del self.outboxFiles[file_id]
+        else:
+            lg.warn('outgoing TCP file %s not exist' % file_id)
 
     def close_inbox_file(self, file_id):
-        self.inboxFiles[file_id].close()
-        del self.inboxFiles[file_id]
+        if self.inboxFiles.get(file_id):
+            self.inboxFiles[file_id].close()
+            del self.inboxFiles[file_id]
+        else:
+            lg.warn('incoming TCP file %s not exist' % file_id)
 
     def report_outbox_file(
             self,

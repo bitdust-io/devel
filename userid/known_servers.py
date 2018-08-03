@@ -34,9 +34,11 @@ def default_nodes():
         'datahaven.net': (80, 6661),
         # 'identity.datahaven.net': (80, 6661),
         'bitdust.io': (8084, 6661),
-        'work.offshore.ai': (8084, 6661),
+        # 'work.offshore.ai': (8084, 6661),
         'blog.bitdust.io': (8084, 6661),
         'bitdust.ai': (80, 6661),
+        'veselin-p2p.ru': (80, 6661),
+        'test.zenaida.ai': (8084, 6661),
     }
 
 

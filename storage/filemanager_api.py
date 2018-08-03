@@ -45,6 +45,7 @@ from lib import packetid
 from lib import misc
 
 from main import settings
+from main import control
 
 from services import driver
 
@@ -58,8 +59,6 @@ from storage import restore_monitor
 
 from userid import my_id
 from userid import global_id
-
-from web import control
 
 #------------------------------------------------------------------------------
 

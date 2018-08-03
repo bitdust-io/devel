@@ -254,17 +254,13 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
-            'bitdust.exe',
+            'bitdustnode.exe',
+            'BitDustNode.exe',
             'bpmain.py',
             'bitdust.py',
             'regexp:^/usr/bin/python.*bitdust.*$',
-            'bpgui.exe',
-            'bpgui.py',
-            'bppipe.exe',
             'bppipe.py',
-            'bptester.exe',
             'bptester.py',
-            'bitstarter.exe',
         ])
         if len(appList) > 0:
             found = True
@@ -302,17 +298,13 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = bpio.find_process([
-            'bitdust.exe',
+            'bitdustnode.exe',
+            'BitDustNode.exe',
             'bpmain.py',
             'bitdust.py',
             'regexp:^/usr/bin/python.*bitdust.*$',
-            'bpgui.exe',
-            'bpgui.py',
-            'bppipe.exe',
             'bppipe.py',
-            'bptester.exe',
             'bptester.py',
-            'bitstarter.exe',
         ])
         if len(appList) == 0:
             print_text('DONE')
@@ -443,21 +435,21 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         if my_id.isLocalIdentityReady():
             print_text(my_id.getLocalID())
         else:
-            print_text('local identity is not exist')
+            print_text('local identity is not valid or not exist')
         return 0
 
     if args[0] in ['globid', 'globalid', 'gid', 'glid', ] or (args[0] == 'id' and len(args) <= 1):
         if my_id.isLocalIdentityReady():
             print_text(my_id.getGlobalID())
         else:
-            print_text('local identity is not exist')
+            print_text('local identity is not valid or not exist')
         return 0
 
     if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print', ]:
         if my_id.isLocalIdentityReady():
             print_text(my_id.getLocalIdentity().serialize())
         else:
-            print_text('local identity is not exist')
+            print_text('local identity is not valid or not exist')
         return 0
 
     from twisted.internet import reactor

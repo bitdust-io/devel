@@ -152,9 +152,20 @@ def show():
         {'status': 'OK',   'result': '"show" event has been sent to the main process'}
     """
     lg.out(4, 'api.show')
-    from web import control
-    control.show()
+    # TODO: raise up electron window ?
     return OK('"show" event has been sent to the main process')
+
+def health():
+    """
+    Returns true if system is running 
+
+    Return:
+
+        {'status': 'OK' }
+    """
+    lg.out(4, 'api.health')
+
+    return OK()
 
 #------------------------------------------------------------------------------
 
@@ -305,7 +316,7 @@ def identity_get(include_xml_source=False):
     """
     from userid import my_id
     if not my_id.isLocalIdentityReady():
-        return ERROR('local identity is not exist')
+        return ERROR('local identity is not valid or not exist')
     r = my_id.getLocalIdentity().serialize_json()
     if include_xml_source:
         r['xml'] = my_id.getLocalIdentity().serialize()
@@ -925,7 +936,7 @@ def file_create(remote_path, as_folder=False):
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
-    from web import control
+    from main import control
     from userid import global_id
     from crypt import my_keys
     parts = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
@@ -1005,7 +1016,7 @@ def file_delete(remote_path):
     from storage import backup_control
     from storage import backup_monitor
     from main import settings
-    from web import control
+    from main import control
     from lib import packetid
     from system import bpio
     from userid import global_id
@@ -1126,7 +1137,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     from storage import backup_fs
     from storage import backup_control
     from lib import packetid
-    from web import control
+    from main import control
     from userid import global_id
     from crypt import my_keys
     if not bpio.pathExist(local_path):
@@ -1301,7 +1312,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     from storage import backup_fs
     from storage import backup_control
     from storage import restore_monitor
-    from web import control
+    from main import control
     from system import bpio
     from lib import packetid
     from main import settings
@@ -3001,8 +3012,8 @@ def network_connected(wait_timeout=5):
             return ret
 
     if not my_id.isLocalIdentityReady():
-        lg.warn('local identity is not exist')
-        return ERROR('local identity is not exist', extra_fields={'reason': 'identity_not_exist'})
+        lg.warn('local identity is not valid or not exist')
+        return ERROR('local identity is not valid or not exist', extra_fields={'reason': 'identity_not_exist'})
     if not driver.is_enabled('service_network'):
         lg.warn('service_network() is disabled')
         return ERROR('service_network() is disabled', extra_fields={'reason': 'service_network_disabled'})
@@ -3026,7 +3037,7 @@ def network_connected(wait_timeout=5):
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
                 return None
             if p2p_connector_machine.state != 'CONNECTED':
-                lg.warn('disconnected, reason is "p2p_connector_not_found", sending "check-synchronize" event to p2p_connector()')
+                lg.warn('disconnected, reason is "p2p_connector_disconnected", sending "check-synchronize" event to p2p_connector()')
                 p2p_connector_machine.automat('check-synchronize')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
                 return None

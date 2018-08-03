@@ -100,8 +100,8 @@ def init(udp_port, db_file_path=None):
     dbPath = bpio.portablePath(db_file_path)
     try:
         dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
-        dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
-        del dataStore['not_exist_key']
+        # dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
+        # del dataStore['not_exist_key']
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
         os.remove(dbPath)
@@ -592,7 +592,7 @@ def main():
     def _go(nodes):
         try:
             if len(args) == 0:
-                pass
+                print 'STARTED'
             elif len(args) > 0:
                 def _r(x):
                     print x
@@ -613,6 +613,8 @@ def main():
                                    expire=int(args[3]), rules=json.loads(args[4])).addBoth(_r)
                 elif cmd == 'find':
                     find_node(key_to_hash(args[1])).addBoth(_r)
+                elif cmd == 'ping':
+                    find_node(random_key()).addBoth(_r)
                 elif cmd == 'discover':
                     def _l(x):
                         print x
@@ -639,4 +641,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # _Debug = True
     main()

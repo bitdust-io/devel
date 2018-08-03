@@ -86,9 +86,6 @@ from automats import global_state
 
 from services import driver
 
-import installer
-import shutdowner
-
 #------------------------------------------------------------------------------
 
 _Initializer = None
@@ -139,6 +136,8 @@ class Initializer(automat.Automat):
         global_state.set_global_state('INIT ' + newstate)
 
     def A(self, event, arg):
+        from main import installer
+        from main import shutdowner
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'run':
@@ -236,7 +235,7 @@ class Initializer(automat.Automat):
         return bpio.isGUIpossible()
 
     def doUpdate(self, arg):
-        from web import control
+        from main import control
         control.request_update()
 
     def doInitLocal(self, arg):
@@ -276,8 +275,8 @@ class Initializer(automat.Automat):
 
     def doShowGUI(self, arg):
         lg.out(2, 'initializer.doShowGUI')
-        from web import control
-        d = control.init()
+        from main import control
+        control.init()
         try:
             from system.tray_icon import USE_TRAY_ICON
         except:
@@ -286,10 +285,7 @@ class Initializer(automat.Automat):
         if USE_TRAY_ICON:
             from system import tray_icon
             tray_icon.SetControlFunc(self._on_tray_icon_command)
-        if self.flagGUI or not self.is_installed:
-            def _show_gui(wsgiport):
-                reactor.callLater(0.1, control.show)
-            d.addCallback(_show_gui)
+        # TODO: raise up electron window ?
 
     def doDestroyMe(self, arg):
         global _Initializer
@@ -404,6 +400,7 @@ class Initializer(automat.Automat):
         if False:
             # TODO: add an option to the settings
             return
+        from main import shutdowner
         shutdowner.A('stop', 'restart')
 
     def _init_modules(self):
@@ -418,6 +415,7 @@ class Initializer(automat.Automat):
     def _on_tray_icon_command(self, cmd):
         lg.out(2, "initializer._on_tray_icon_command : [%s]" % cmd)
         try:
+            from main import shutdowner
             if cmd == 'exit':
                 shutdowner.A('stop', 'exit')
 
@@ -430,8 +428,8 @@ class Initializer(automat.Automat):
                     network_connector.A('reconnect')
 
             elif cmd == 'show':
-                from web import control
-                control.show()
+                # TODO: raise up electron window ?
+                pass
 
             elif cmd == 'sync':
                 try:

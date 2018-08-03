@@ -206,7 +206,7 @@ class Block:
 
     def Data(self):
         """
-        Return an original data, decrypt using ``EnctryptedData`` and
+        Return an original data, decrypt using ``EncryptedData`` and
         ``EncryptedSessionKey``.
         """
         SessionKey = self.SessionKey()

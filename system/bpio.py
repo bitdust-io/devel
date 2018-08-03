@@ -87,24 +87,29 @@ def shutdown():
 
 
 def InstallLocale():
-    """
-    Here is a small trick to refresh current default encoding.
-    """
-    global LocaleInstalled
-    if LocaleInstalled:
-        return False
-    try:
-        import sys
-        reload(sys)
-        if hasattr(sys, "setdefaultencoding"):
-            import locale
-            denc = locale.getpreferredencoding()
-            if denc != '':
-                sys.setdefaultencoding(denc)
-        LocaleInstalled = True
-    except:
-        pass
-    return LocaleInstalled
+	"""
+	Here is a small trick to refresh current default encoding.
+	"""
+	global LocaleInstalled
+	if LocaleInstalled:
+		return False
+	try:
+		import sys
+		reload(sys)
+		if Windows():
+			if hasattr(sys, "setdefaultencoding"):
+				import locale
+				denc = locale.getpreferredencoding()
+				if not denc:
+					sys.setdefaultencoding('UTF8')
+				else:
+					sys.setdefaultencoding(denc)
+		else:
+			sys.setdefaultencoding('UTF8')
+		LocaleInstalled = True
+	except:
+		pass
+	return LocaleInstalled
 
 
 def ostype():
@@ -1396,7 +1401,8 @@ def find_main_process(pid_file_path=None):
     """
     """
     appList = find_process([
-        'bitdust.exe',
+        'bitdustnode.exe',
+        'BitDustNode.exe',
         'bpmain.py',
         'bitdust.py',
         'regexp:^/usr/bin/python.*bitdust.*$',
