@@ -37,8 +37,8 @@ def default_nodes():
         # 'work.offshore.ai': (8084, 6661),
         'blog.bitdust.io': (8084, 6661),
         'bitdust.ai': (80, 6661),
-        'veselin-p2p.ru': (80, 6661),
-        'test.zenaida.ai': (8084, 6661),
+        # 'veselin-p2p.ru': (80, 6661),
+        # 'test.zenaida.ai': (8084, 6661),
         
         # by Renato Cardoso:
         'bitrex.ai': (8084, 6661),
