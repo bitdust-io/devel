@@ -1336,18 +1336,21 @@ def FontImageFile():
 
 def DefaultXMLRPCPort():
     """
+    Obsolete. To be removed.
     """
     return 8082
 
 
 def DefaultJsonRPCPort():
     """
+    Only Local! Never expose to outside of localhost.
     """
     return 8083
 
 
 def DefaultRESTHTTPPort():
     """
+    Only Local! Never expose to outside of localhost.
     """
     return 8180
 
