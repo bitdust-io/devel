@@ -47,8 +47,8 @@ def default_nodes():
         # ('whmcs.whois.ai', 14441),
         ('blog.bitdust.io', 14441, ),
         ('bitdust.ai', 14441, ),
-        ('veselin-p2p.ru', 14441, ),
-        ('test.zenaida.ai', 14441, ),
+        # ('veselin-p2p.ru', 14441, ),
+        # ('test.zenaida.ai', 14441, ),
     ]
 
 
