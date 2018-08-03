@@ -404,7 +404,7 @@ class IdRegistrator(automat.Automat):
             self.automat('id-server-response', (id_server_host, htmlsrc))
 
         def _eb(err, id_server_host):
-            lg.out(4, '               FAILED: %s' % id_server_host)
+            lg.out(4, '               FAILED: %s : %s' % (id_server_host, err))
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))
 
@@ -416,8 +416,8 @@ class IdRegistrator(automat.Automat):
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', host, webport, '')
-            lg.out(4, '               connecting to %s   known tcp port is %d' % (
-                server_url, tcpport, ))
+            lg.out(4, '               connecting to %s:%s   known tcp port is %d' % (
+                server_url, webport, tcpport, ))
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_cb, host)
             d.addErrback(_eb, host)
