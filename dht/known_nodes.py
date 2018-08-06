@@ -49,6 +49,9 @@ def default_nodes():
         ('bitdust.ai', 14441, ),
         # ('veselin-p2p.ru', 14441, ),
         # ('test.zenaida.ai', 14441, ),
+        
+        # by Renato Cardoso:
+        ('bitrex.ai', 14441, ),
     ]
 
 
