@@ -1520,7 +1520,6 @@ def SendDevReportOld(subject, body, includelogs):
         filesList = []
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
-            filesList.append(settings.UserConfigFilename())
             filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.exe.log'))
             filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.log'))
             for filename in os.listdir(settings.LogsDir()):
@@ -1569,7 +1568,6 @@ def SendDevReport(subject, body, includelogs, progress=None):
         filesList = []
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
-            filesList.append(settings.UserConfigFilename())
             filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.exe.log'))
             filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.log'))
             lst = os.listdir(settings.LogsDir())

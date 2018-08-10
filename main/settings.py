@@ -899,15 +899,6 @@ def KeyFileNameLocation():
     return KeyFileName() + '_location'
 
 
-def SupplierIDsFilename():
-    """
-    IDs for places that store data for us.
-
-    Keeps a list of IDURLs of our suppliers.
-    """
-    return os.path.join(MetaDataDir(), "supplierids")
-
-
 def CustomerIDsFilename():
     """
     IDs for places we store data for, keeps a list of IDURLs of our customers.
@@ -967,15 +958,6 @@ def UserNameFilename():
     File contains something like "guesthouse" - user account name.
     """
     return os.path.join(MetaDataDir(), "username")
-
-
-def UserConfigFilename():
-    """
-    File to keep a configurable user settings in XML format.
-
-    See ``lib.userconfig`` module.
-    """
-    return os.path.join(MetaDataDir(), "userconfig")
 
 
 def GUIOptionsFilename():
@@ -2387,20 +2369,6 @@ def _initBaseDir(base_dir=None):
 
     # if we did not found our identity - use default path, new copy of BitDust
     if not os.access(LocalIdentityFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our config - use default path, new copy of BitDust
-    if not os.access(UserConfigFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our suppliers - use default path, new copy of BitDust
-    if not os.access(SupplierIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)

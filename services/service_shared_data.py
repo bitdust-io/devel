@@ -65,6 +65,7 @@ class SharedDataService(LocalService):
         from crypt import my_keys
         from userid import global_id
         from userid import my_id
+        from logs import lg
         if evt.data['new_idurl']:
             my_keys_to_be_republished = []
             for key_id in my_keys.known_keys():
@@ -74,7 +75,8 @@ class SharedDataService(LocalService):
                 if _glob_id['idurl'] == my_id.getLocalIDURL():
                     my_keys_to_be_republished.append(key_id)
             for key_id in my_keys_to_be_republished:
-                key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)
+                d = key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)
+                d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
