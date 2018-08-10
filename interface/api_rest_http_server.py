@@ -239,8 +239,8 @@ class BitDustRESTHTTPServer(APIResource):
     @POST('^/i/b')
     @POST('^/identity/backup/v1$')
     def identity_backup_v1(self, request):
-        data = _request_data(request, mandatory_keys=['destination_filepath', ])
-        return api.identity_backup(destination_filepath=data['destination_filepath'])
+        data = _request_data(request, mandatory_keys=['destination_path', ])
+        return api.identity_backup(destination_filepath=data['destination_path'])
 
     @POST('^/i/r$')
     @POST('^/identity/recover/v1$')
