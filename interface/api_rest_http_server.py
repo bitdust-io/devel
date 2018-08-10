@@ -32,6 +32,7 @@ module:: api_rest_http_server
 
 #------------------------------------------------------------------------------
 
+import os
 import cgi
 import json
 
@@ -132,7 +133,9 @@ class BitDustAPISite(Site):
         Only accepting connections from local machine!
         """
         if addr.host != '127.0.0.1':
-            return None
+            if 'BITDUST_API_PASS_EXTERNAL_CONNECTIONS' not in os.environ.keys():
+                return None
+
         return Site.buildProtocol(self, addr)
 
 
