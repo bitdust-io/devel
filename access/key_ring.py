@@ -92,13 +92,14 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
     if not response.Payload.startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return
-    transfer_key(
+    d = transfer_key(
         key_id,
         trusted_idurl=idurl,
         include_private=include_private,
         timeout=timeout,
         result=result,
     )
+    d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
 
 
 def _on_transfer_key_response(response, info, key_id, result):

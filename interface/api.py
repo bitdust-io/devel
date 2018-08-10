@@ -41,8 +41,11 @@ import os
 import sys
 import time
 import json
+import gc
 
 from twisted.internet.defer import Deferred
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -354,6 +357,21 @@ def identity_create(username):
     my_id_registrator.A('start', (username, ))
     return ret
 
+
+def identity_backup(destination_filepath):
+    from userid import my_id
+    from crypt import key
+    from system import bpio
+    TextToSave = my_id.getLocalIDURL() + "\n" + key.MyPrivateKey()
+    if not bpio.AtomicWriteFile(destination_filepath, TextToSave):
+        del TextToSave
+        gc.collect()
+        return ERROR('error writing to %s\n' % destination_filepath)
+    del TextToSave
+    gc.collect()
+    return OK(message='WARNING! keep your master key in a safe place and never ever publish it anywhere!')
+
+
 def identity_recover(private_key_source, known_idurl=None):
     from lib import nameurl
     from userid import my_id
@@ -379,7 +397,7 @@ def identity_recover(private_key_source, known_idurl=None):
     if not idurl and known_idurl:
         idurl = known_idurl
     if not idurl:
-        return ERROR('you must specify the global  IDURL address where your identity file was last located')
+        return ERROR('you must specify the global IDURL address where your identity file was last located')
 
     ret = Deferred()
     my_id_restorer = id_restorer.A()
@@ -400,6 +418,7 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
     my_id_restorer.A('start', {'idurl': idurl, 'keysrc': pk_source, })
     return ret
+
 
 def identity_list():
     """
