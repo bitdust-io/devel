@@ -131,8 +131,8 @@ class BitDustAPISite(Site):
         """
         Only accepting connections from local machine!
         """
-        # if addr.host != '127.0.0.1':
-        #     return None
+        if addr.host != '127.0.0.1':
+            return None
         return Site.buildProtocol(self, addr)
 
 
