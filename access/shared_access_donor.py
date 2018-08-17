@@ -43,7 +43,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ class SharedAccessDonor(automat.Automat):
             name="shared_access_donor",
             state='AT_STARTUP',
             debug_level=debug_level or _DebugLevel,
-            log_events=log_events,
+            log_events=log_events or _Debug,
             publish_events=publish_events,
             **kwargs
         )
@@ -413,15 +413,15 @@ class SharedAccessDonor(automat.Automat):
             self.automat('user-identity-cached')
 
     def _on_supplier_pub_key_shared(self, response, supplier_idurl):
-        self.suppliers_responses.pop(supplier_idurl)
+        self.suppliers_responses.pop(supplier_idurl, None)
         self.suppliers_acks += 1
         self.automat('ack', response)
         lg.warn('suppliers_acks=%d, suppliers_responses=%d' % (self.suppliers_acks, len(self.suppliers_responses)))
         return None
 
     def _on_supplier_pub_key_failed(self, err, supplier_idurl):
-        self.suppliers_responses.pop(supplier_idurl)
         lg.warn(err)
+        self.suppliers_responses.pop(supplier_idurl, None)
         return None
 
     def _on_user_priv_key_shared(self, response):
