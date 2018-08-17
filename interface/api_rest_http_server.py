@@ -490,6 +490,23 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/sp/d$')
+    @GET('^/space/donated/v1$')
+    def space_donated_v1(self, request):
+        return api.space_donated()
+
+    @GET('^/sp/c$')
+    @GET('^/space/consumed/v1$')
+    def space_consumed_v1(self, request):
+        return api.space_consumed()
+
+    @GET('^/sp/l$')
+    @GET('^/space/local/v1$')
+    def space_local_v1(self, request):
+        return api.space_local()
+
+    #------------------------------------------------------------------------------
+
     @GET('^/su/l$')
     @GET('^/supplier/v1$')
     @GET('^/supplier/list/v1$')
