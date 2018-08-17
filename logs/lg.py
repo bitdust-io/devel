@@ -224,6 +224,11 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
     return exception(level, maxTBlevel, exc_info)
 
 
+def errback(*args, **kwargs):
+    err(0, 'Error occurred during deferred operation:\n%s' % traceback.format_exc())  #  args: %s   kwargs: %s' % (str(*args), str(**kwargs)))
+    return None
+
+
 def exception(level, maxTBlevel, exc_info):
     """
     This is second most common method in good error handling Python project :-)
