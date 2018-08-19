@@ -146,21 +146,25 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/p/st$')
     @GET('^/process/stop/v1$')
     def process_stop_v1(self, request):
-        return api.stop()
+        return api.process_stop()
 
     @GET('^/p/rst$')
     @GET('^/process/restart/v1$')
     def process_restart_v1(self, request):
-        return api.restart(showgui=bool(request.args.get('showgui')))
+        return api.process_restart(showgui=bool(request.args.get('showgui')))
 
     @GET('^/p/s$')
     @GET('^/process/show/v1$')
     def process_show_v1(self, request):
-        return api.show()
+        return api.process_show()
     
     @GET('^/process/health/v1$')
     def process_health_v1(self, request):
-        return api.health()
+        return api.process_health()
+
+    @GET('^/process/debug/v1$')
+    def process_shell_v1(self, request):
+        return api.process_debug()
 
     #------------------------------------------------------------------------------
 
@@ -791,12 +795,6 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/queue/list/v1$')
     def queue_list_v1(self, request):
         return api.queue_list()
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/shell/v1$')
-    def pdb_shell_v1(self, request):
-        return api.pdb_shell()
 
     #------------------------------------------------------------------------------
 

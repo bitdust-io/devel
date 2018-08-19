@@ -397,7 +397,7 @@ def on_key_received(newpacket, info, status, error_message):
             # check if we already have that key
             if my_keys.is_key_private(key_id):
                 # we have already private key with same ID!!!
-                if my_keys.get_private_key_raw(key_id) != key_object.toString():
+                if my_keys.get_private_key_raw(key_id) != key_object.toPrivateString():
                     # and this is a new private key : we should not overwrite!
                     raise Exception('private key already registered and it is not matching')
                 # this is the same private key
