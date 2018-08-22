@@ -108,7 +108,7 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
 #------------------------------------------------------------------------------
 
 
-def stop():
+def process_stop():
     """
     Stop the main process immediately.
 
@@ -116,7 +116,7 @@ def stop():
 
         {'status': 'OK', 'result': 'stopped'}
     """
-    lg.out(4, 'api.stop sending event "stop" to the shutdowner() machine')
+    lg.out(4, 'api.process_stop sending event "stop" to the shutdowner() machine')
     from twisted.internet import reactor
     from main import shutdowner
     reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')
@@ -124,7 +124,7 @@ def stop():
     return OK('stopped')
 
 
-def restart(showgui=False):
+def process_restart(showgui=False):
     """
     Restart the main process, if flag show=True the GUI will be opened after
     restart.
@@ -136,29 +136,31 @@ def restart(showgui=False):
     from twisted.internet import reactor
     from main import shutdowner
     if showgui:
-        lg.out(4, 'api.restart forced for GUI, added param "show", sending event "stop" to the shutdowner() machine')
+        lg.out(4, 'api.process_restart sending event "stop" to the shutdowner() machine')
         reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')
         # shutdowner.A('stop', 'restartnshow')
         return OK('restarted with GUI')
-    lg.out(4, 'api.restart did not found bpgui process nor forced for GUI, just do the restart, sending event "stop" to the shutdowner() machine')
+    lg.out(4, 'api.process_restart sending event "stop" to the shutdowner() machine')
     # shutdowner.A('stop', 'restart')
     reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')
     return OK('restarted')
 
 
-def show():
+def process_show():
     """
+    Deprecated.
     Opens a default web browser to show the BitDust GUI.
 
     Return:
 
         {'status': 'OK',   'result': '"show" event has been sent to the main process'}
     """
-    lg.out(4, 'api.show')
+    lg.out(4, 'api.process_show')
     # TODO: raise up electron window ?
     return OK('"show" event has been sent to the main process')
 
-def health():
+
+def process_health():
     """
     Returns true if system is running 
 
@@ -166,12 +168,19 @@ def health():
 
         {'status': 'OK' }
     """
-    lg.out(4, 'api.health')
+    lg.out(4, 'api.process_health')
+    return OK()
 
+
+def process_debug():
+    """
+    Execute a breakpoint inside main thread and start Python shell using standard `pdb.set_trace()` debugger.
+    """
+    import pdb
+    pdb.set_trace()
     return OK()
 
 #------------------------------------------------------------------------------
-
 
 def config_get(key):
     """
@@ -3300,12 +3309,5 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     sessions.append(i)
                 r['proxy']['sessions' ] = sessions
     return RESULT([r, ])
-
-#------------------------------------------------------------------------------
-
-
-def pdb_shell():
-    import pdb; pdb.set_trace()
-    return OK()
 
 #------------------------------------------------------------------------------
