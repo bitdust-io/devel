@@ -19,6 +19,7 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from p2p.propagate import propagate
 
 
 """
@@ -86,6 +87,7 @@ from crypt import encrypted
 from p2p import commands
 from p2p import lookup
 from p2p import contact_status
+from p2p import propagate
 
 from contacts import identitycache
 
@@ -649,7 +651,10 @@ class ProxyReceiver(automat.Automat):
             known_router = random.choice(preferred_routers)
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
-            self.automat('found-one-node', known_router)
+            d = propagate.PingContact(known_router, timeout=5)
+            d.addCallback(lambda resp_tuple: self.automat('found-one-node', known_router))
+            d.addErrback(lg.errback)
+            # self.automat('found-one-node', known_router)
             return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node will start DHT lookup')
