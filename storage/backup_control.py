@@ -179,7 +179,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
             encoding=encoding,
         )
     src = '%d\n' % revision()
-    src += json.dumps(json_data, indent=2, encoding=encoding)
+    src += json.dumps(json_data, indent=1, separators=(',', ':'), encoding=encoding)
     if _Debug:
         import pprint
         lg.out(_DebugLevel, pprint.pformat(json_data))

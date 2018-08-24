@@ -331,7 +331,7 @@ class FSItemInfo():
         self.versions[version] = [-1, -1]
 
     def set_version_info(self, version, maxblocknum, sizebytes):
-        self.versions[version] = [maxblocknum, sizebytes]
+        self.versions[version] = [maxblocknum, sizebytes, ]
 
     def get_version_info(self, version):
         return self.versions.get(version, [-1, -1])
