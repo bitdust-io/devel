@@ -349,12 +349,32 @@ def get_debug_level():
     return _GlobalDebugLevel
 
 
-def get_loging_level():
+def get_loging_level(level):
     """
+    Find corresponding logging level related to BitDust log level:
 
+        0 : CRITICAL
+        1-2 : FATAL
+        3-4 : ERROR
+        5-6 : WARNING
+        7-8 : INFO
+        9-10 : DEBUG
+        11... : NOTSET
     """
-    global _GlobalDebugLevel
-    return max(0, (30 - _GlobalDebugLevel) * 2)
+    import logging
+    if level == 0:
+        return logging.CRITICAL
+    if level <= 2:
+        return logging.FATAL
+    if level <= 4:
+        return logging.ERROR
+    if level <= 6:
+        return logging.WARNING
+    if level <= 8:
+        return logging.INFO
+    if level <= 10:
+        return logging.DEBUG
+    return logging.NOTSET
 
 
 def life_begins():

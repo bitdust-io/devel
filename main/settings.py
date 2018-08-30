@@ -204,6 +204,55 @@ def convert_key(key):
 Below is a set of global constants.
 """
 
+
+#------------------------------------------------------------------------------
+#--- LOGS --------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+
+def MainLogFilename():
+    """
+    A prefix for file names to store main process logs.
+    """
+    # return os.path.join(LogsDir(), 'bitdust')
+    return os.path.join(LogsDir(), 'main.log')
+
+
+def UpdateLogFilename():
+    """
+    A place to store logs from update porcess.
+    """
+    return os.path.join(LogsDir(), 'software_update.log')
+
+
+def AutomatsLog():
+    """
+    All state machines logs in the main process is written here.
+    """
+    return os.path.join(LogsDir(), 'automats.log')
+
+
+def TransportLog():
+    """
+    Every x seconds will log stats about current transfers.
+    """
+    return os.path.join(LogsDir(), 'transport.log')
+
+
+def ParallelPLogFilename():
+    """
+    Log from parallelp workers goes here, raid code is executed inside child processes.
+    """
+    return os.path.join(LogsDir(), 'parallelp.log')
+
+
+def LocalTesterLogFilename():
+    """
+    A file name path where bptester.py will write its logs.
+    """
+    return os.path.join(LogsDir(), 'bptester.log')
+
+
 #------------------------------------------------------------------------------
 #--- CONSTANTS (NUMBERS) ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1106,42 +1155,6 @@ def SupplierServiceFilename(supplier_idurl, customer_idurl):
     Return a "service" file location for given supplier.
     """
     return os.path.join(SupplierPath(supplier_idurl, customer_idurl), 'service')
-
-
-def LocalTesterLogFilename():
-    """
-    A file name path where bptester.py will write its logs.
-    """
-    return os.path.join(LogsDir(), 'bptester.log')
-
-
-def MainLogFilename():
-    """
-    A prefix for file names to store main process logs.
-    """
-    # return os.path.join(LogsDir(), 'bitdust')
-    return os.path.join(LogsDir(), 'main.log')
-
-
-def UpdateLogFilename():
-    """
-    A place to store logs from update porcess.
-    """
-    return os.path.join(LogsDir(), 'software_update.log')
-
-
-def AutomatsLog():
-    """
-    All state machines logs in the main process is written here.
-    """
-    return os.path.join(LogsDir(), 'automats.log')
-
-
-def TransportLog():
-    """
-    Every x seconds will log stats about current transfers.
-    """
-    return os.path.join(LogsDir(), 'transport.log')
 
 
 def RepoFile():

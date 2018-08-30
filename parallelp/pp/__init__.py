@@ -91,12 +91,13 @@ def is_frozen():
 
     http://www.py2exe.org/index.cgi/HowToDetermineIfRunningFromExe
     """
-    if hasattr(sys, "frozen") or hasattr(sys, "importers"):
-        return True
-    import imp
-    if imp.is_frozen("__main__"):
-        return True
     return False
+    # if hasattr(sys, "frozen") or hasattr(sys, "importers"):
+    #     return True
+    # import imp
+    # if imp.is_frozen("__main__"):
+    #     return True
+    # return False
 
 
 class _Task(object):
@@ -224,11 +225,13 @@ class _Worker(object):
         self.pid = int(self.t.receive())
         self.t.send(str(self.pickle_proto))
         self.is_free = True
+        logging.info('Started new worker: %s with %s', self.pid, self.t)
 
     def stop(self):
         """
         Stops local worker.
         """
+        logging.info('Stop worker: %s with %s', self.pid, self.t)
         self.is_free = False
         self.t.close()
 
@@ -368,7 +371,7 @@ class Server(object):
     default_secret = "epo20pdosl;dksldkmm"
 
     def __init__(self, ncpus="autodetect", ppservers=(), secret=None,
-                 loglevel=logging.WARNING, logstream=sys.stderr,
+                 loglevel=logging.WARNING, logstream=sys.stderr, logfile=None,
                  restart=False, proto=0):
         """
         Creates Server instance.
@@ -383,6 +386,7 @@ class Server(object):
                 custom passphrase for all network connections.
         loglevel - logging level
         logstream - log stream destination
+        logfile - if not None, will log to file instead of logstream
         restart - wheather to restart worker process after each task completion
         proto - protocol number for pickle module
 
@@ -394,7 +398,7 @@ class Server(object):
         if not isinstance(ppservers, tuple):
             raise TypeError("ppservers argument must be a tuple")
 
-        self.__initlog(loglevel, logstream)
+        self.__initlog(loglevel, logstream=logstream, logfile=logfile)
         logging.info("Creating server instance (pp-" + version + ")")
         self.__tid = 0
         self.__active_tasks = 0
@@ -789,11 +793,14 @@ class Server(object):
         # return the default value
         return 1
 
-    def __initlog(self, loglevel, logstream):
+    def __initlog(self, loglevel, logstream=None, logfile=None):
         """
         Initializes logging facility.
         """
-        log_handler = logging.StreamHandler(logstream)
+        if logfile:
+            log_handler = logging.FileHandler(logfile)
+        else:
+            log_handler = logging.StreamHandler(logstream)
         log_handler.setLevel(loglevel)
         LOG_FORMAT = '        %(levelname)s %(message)s'
         log_handler.setFormatter(logging.Formatter(LOG_FORMAT))
