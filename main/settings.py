@@ -501,27 +501,27 @@ def MaximumUsernameLength():
 
 def DefaultDonatedBytes():
     """
-    Default donated space value - user can set this at any moment in the settings.
+    Default donated space value. User can set this at any moment in the settings.
     """
     return 8 * 1024 * 1024 * 1024  # 8 GB
 
 
 def DefaultNeededBytes():
     """
-    Default needed space value.
+    Default needed space value. User can set this at any moment in the settings.
     """
-    return 1 * 1024 * 1024 * 1024  # 1 GB
+    return 256 * 1024 * 1024  # 256 MB
 
 
 def MinimumDonatedBytes():
     """
     Minimum donated space amount in Megabytes - need to donate at least 2 Mb right now.
     """
-    return 64 * 1024 * 1024  # 64 Mb
+    return 64 * 1024 * 1024  # 64 MB
 
 
 def MinimumNeededBytes():
-    return 32 * 1024 * 1024  # 32 Mb - minimum 1 Mb will be taken from every supplier
+    return 32 * 1024 * 1024  # 32 MB - minimum 1 MB will be taken from every supplier
 
 
 def DefaultBackupBlockSize():
