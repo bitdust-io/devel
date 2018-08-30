@@ -172,13 +172,13 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return result
 
     def jsonrpc_stop(self):
-        return api.stop()
+        return api.process_stop()
 
     def jsonrpc_restart(self, show=False):
-        return api.restart(show)
+        return api.process_restart(show)
 
     def jsonrpc_show(self):
-        return api.show()
+        return api.process_show()
 
     def jsonrpc_filemanager(self, json_request):
         return api.filemanager(json_request)
