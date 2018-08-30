@@ -59,7 +59,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -87,7 +87,6 @@ from crypt import encrypted
 from p2p import commands
 from p2p import lookup
 from p2p import contact_status
-from p2p import propagate
 
 from contacts import identitycache
 
@@ -171,7 +170,9 @@ def A(event=None, arg=None):
     if _ProxyReceiver is None:
         # set automat name and starting state here
         _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP',
-                                       debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug)
+                                       debug_level=_DebugLevel,
+                                       log_events=(_Debug and _DebugLevel>12),
+                                       log_transitions=_Debug, )
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver

@@ -33,7 +33,6 @@ Some network routines
 import os
 import re
 import sys
-import types
 import socket
 import random
 import urllib
