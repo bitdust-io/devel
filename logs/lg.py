@@ -225,7 +225,7 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
 
 
 def errback(*args, **kwargs):
-    err(0, 'Error occurred during deferred operation:\n%s' % traceback.format_exc())  #  args: %s   kwargs: %s' % (str(*args), str(**kwargs)))
+    err('Error occurred during deferred operation:\n%s' % traceback.format_exc())  #  args: %s   kwargs: %s' % (str(*args), str(**kwargs)))
     return None
 
 
