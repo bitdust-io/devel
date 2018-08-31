@@ -6,6 +6,7 @@ before_install:
   # Use the env config
   - mkdir -p tests_e2e/src/bitdust
   - rsync -rR . tests_e2e/src/bitdust
+  - cd tests_e2e
   # Stop the postgres instance travis sets up automatically
   #- sudo /etc/init.d/postgresql stop
   #- sudo service mysql stop
