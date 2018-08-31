@@ -19,8 +19,6 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-from p2p.propagate import propagate
-
 
 """
 .. module:: proxy_receiver.
@@ -59,7 +57,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -87,6 +85,7 @@ from crypt import encrypted
 from p2p import commands
 from p2p import lookup
 from p2p import contact_status
+from p2p import propagate
 
 from contacts import identitycache
 
