@@ -60,9 +60,16 @@ class RSAKey(object):
     def isPublic(self):
         if not self.keyObject:
             raise ValueError('key object is not exist')
+        if self.keyObject.has_private():
+            return False
+        return True
+
+    def isPrivate(self):
+        if not self.keyObject:
+            raise ValueError('key object is not exist')
         if not self.keyObject.has_private():
-            return True
-        return False
+            return False
+        return True
 
     def public(self):
         if self.isPublic():
@@ -86,9 +93,11 @@ class RSAKey(object):
         gc.collect()
         return True
 
-    def toString(self, output_format='PEM'):
+    def toPrivateString(self, output_format='PEM'):
         if not self.keyObject:
             raise ValueError('key object is not exist')
+        if not self.keyObject.has_private():
+            raise ValueError('this key contains only public component')
         return self.keyObject.exportKey(format=output_format)
 
     def toPublicString(self, output_format='OpenSSH'):

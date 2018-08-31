@@ -31,7 +31,7 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -229,7 +229,7 @@ def save_keys_local(keys_folder=None):
             key_filepath = os.path.join(keys_folder, key_id + '.public')
         else:
             key_filepath = os.path.join(keys_folder, key_id + '.private')
-        key_string = key_object.toString()
+        key_string = key_object.toPrivateString()
         bpio.WriteFile(key_filepath, key_string)
         count += 1
     if _Debug:
@@ -249,11 +249,8 @@ def generate_key(key_id, key_size=4096, keys_folder=None):
     known_keys()[key_id] = key_object
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
-    key_string = key_object.toString()
-    if key_object.isPublic():
-        key_filepath = os.path.join(keys_folder, key_id + '.public')
-    else:
-        key_filepath = os.path.join(keys_folder, key_id + '.private')
+    key_string = key_object.toPrivateString()
+    key_filepath = os.path.join(keys_folder, key_id + '.private')
     bpio.WriteFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s generated, saved to %s' % (key_id, key_filepath))
@@ -279,12 +276,14 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
     known_keys()[key_id] = key_object
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
-    key_string = key_object.toString()
     if key_object.isPublic():
+        key_string = key_object.toPublicString()
         key_filepath = os.path.join(keys_folder, key_id + '.public')
+        bpio.WriteFile(key_filepath, key_string)
     else:
+        key_string = key_object.toPrivateString()
         key_filepath = os.path.join(keys_folder, key_id + '.private')
-    bpio.WriteFile(key_filepath, key_string)
+        bpio.WriteFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s added, saved to %s' % (key_id, key_filepath))
     return key_filepath
@@ -426,7 +425,7 @@ def serialize_key(key_id):
     if not key_object:
         lg.warn('key %s is unknown' % key_id)
         return None
-    return key_object.toString()
+    return key_object.toPrivateString()
 
 
 def unserialize_key_to_object(raw_string):
@@ -444,16 +443,18 @@ def unserialize_key_to_object(raw_string):
 
 def get_public_key_raw(key_id):
     kobj = key_obj(key_id)
-    if kobj.isPublic():
-        return kobj.toString()
+    if not kobj:
+        raise ValueError('key not exist')
     return kobj.toPublicString()
 
 
 def get_private_key_raw(key_id):
     kobj = key_obj(key_id)
+    if not kobj:
+        raise ValueError('key not exist')
     if kobj.isPublic():
-        raise Exception('not a private key')
-    return kobj.toString()
+        raise ValueError('not a private key')
+    return kobj.toPrivateString()
 
 #------------------------------------------------------------------------------
 
@@ -471,7 +472,7 @@ def make_master_key_info(include_private=False):
     }
     r['private'] = None
     if include_private:
-        r['private'] = str(key.MyPrivateKeyObject().toString())
+        r['private'] = str(key.MyPrivateKeyObject().toPrivateString())
     if hasattr(key.MyPrivateKeyObject(), 'size'):
         r['size'] = str(key.MyPrivateKeyObject().size())
     else:
@@ -496,13 +497,13 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     }
     r['private'] = None
     if key_object.isPublic():
-        r['public'] = str(key_object.toString())
+        r['public'] = str(key_object.toPublicString())
         if include_private:
             raise Exception('this key contains only public component')
     else:
         r['public'] = str(key_object.toPublicString())
         if include_private:
-            r['private'] = str(key_object.toString())
+            r['private'] = str(key_object.toPrivateString())
     if hasattr(key_object, 'size'):
         r['size'] = str(key_object.size())
     else:

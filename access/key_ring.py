@@ -92,13 +92,14 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
     if not response.Payload.startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return
-    transfer_key(
+    d = transfer_key(
         key_id,
         trusted_idurl=idurl,
         include_private=include_private,
         timeout=timeout,
         result=result,
     )
+    d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
 
 
 def _on_transfer_key_response(response, info, key_id, result):
@@ -181,9 +182,10 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     """
     result = Deferred()
     d = propagate.PingContact(trusted_idurl, timeout=timeout)
-    d.addCallback(lambda resp: _do_request_service_keys_registry(
+    d.addCallback(lambda response_tuple: _do_request_service_keys_registry(
         key_id, trusted_idurl, include_private, timeout, result,
     ))
+    d.addErrback(lg.errback)
     d.addErrback(result.errback)
     return result
 
@@ -376,9 +378,9 @@ def on_key_received(newpacket, info, status, error_message):
                 if my_keys.is_key_private(key_id):
                     # we should not overwrite existing private key
                     raise Exception('private key already registered')
-                if my_keys.get_public_key_raw(key_id) != key_object.toString():
+                if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
                     # and we should not overwrite existing public key as well
-                    raise Exception('another key already registered with that ID')
+                    raise Exception('another public key already registered with that ID and it is not matching')
                 p2p_service.SendAck(newpacket)
                 lg.warn('received existing public key: %s, skip' % key_id)
                 return True
@@ -395,17 +397,17 @@ def on_key_received(newpacket, info, status, error_message):
             # check if we already have that key
             if my_keys.is_key_private(key_id):
                 # we have already private key with same ID!!!
-                if my_keys.get_private_key_raw(key_id) != key_object.toString():
+                if my_keys.get_private_key_raw(key_id) != key_object.toPrivateString():
                     # and this is a new private key : we should not overwrite!
-                    raise Exception('private key already registered')
+                    raise Exception('private key already registered and it is not matching')
                 # this is the same private key
                 p2p_service.SendAck(newpacket)
                 lg.warn('received existing private key: %s, skip' % key_id)
                 return True
-            # but we have a public key with same ID
+            # but we have a public key with same ID already
             if my_keys.get_public_key_raw(key_id) != key_object.toPublicString():
                 # and we should not overwrite existing public key as well
-                raise Exception('another key already registered with that ID')
+                raise Exception('another public key already registered with that ID and it is not matching with private key')
             lg.info('erasing public key %s' % key_id)
             my_keys.erase_key(key_id)
             if not my_keys.register_key(key_id, key_object):

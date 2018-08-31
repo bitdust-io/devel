@@ -56,7 +56,7 @@ from contacts import identitycache
 #-------------------------------------------------------------------------------
 
 _CustomersList = []      # comes from settings.CustomerIDsFilename()
-_SuppliersList = {}      # comes from settings.SupplierIDsFilename()
+_SuppliersList = {}      # comes from settings.SuppliersDir()
 _CorrespondentsList = []   # comes from settings.CorrespondentIDsFilename()
 _CorrespondentsDict = {}
 
@@ -525,15 +525,14 @@ def save_suppliers(path=None, customer_idurl=None):
     """
     Write current suppliers list on the disk, ``path`` is a file path to save.
     """
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
     if path is None:
-        if customer_idurl is None:
-            path = settings.SupplierIDsFilename()
-        else:
-            path = os.path.join(
-                settings.SuppliersDir(),
-                global_id.UrlToGlobalID(customer_idurl),
-                'supplierids',
-            )
+        path = os.path.join(
+            settings.SuppliersDir(),
+            global_id.UrlToGlobalID(customer_idurl),
+            'supplierids',
+        )
     bpio._write_list(path, suppliers(customer_idurl=customer_idurl))
     return True
 
@@ -549,15 +548,15 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
             path = os.path.join(settings.SuppliersDir(), customer_id, 'supplierids')
             lst = bpio._read_list(path)
             if lst is None:
-                lst = list()
+                lg.warn('did not found suppliers ids at %s' % path)
+                continue
             set_suppliers(lst, customer_idurl=global_id.GlobalUserToIDURL(customer_id))
             lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
         return True
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
     if path is None:
-        if customer_idurl is None:
-            path = settings.SupplierIDsFilename()
-        else:
-            path = os.path.join(settings.SuppliersDir(), global_id.UrlToGlobalID(customer_idurl), 'supplierids')
+        path = os.path.join(settings.SuppliersDir(), global_id.UrlToGlobalID(customer_idurl), 'supplierids')
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()

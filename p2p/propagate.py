@@ -497,8 +497,8 @@ def PingContact(idurl, timeout=30):
         # TODO: Verify()
         SendToIDs(
             idlist=[idurl, ],
-            ack_handler=lambda response, info: _ack_handler(response, info),
-            timeout_handler=lambda pkt_out: _response_timed_out(pkt_out),
+            ack_handler=_ack_handler,
+            timeout_handler=_response_timed_out,
             response_timeout=timeout,
             wide=True,
         )
@@ -517,4 +517,5 @@ def PingContact(idurl, timeout=30):
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout=timeout)
     idcache_defer.addCallback(_identity_cached, idurl)
     idcache_defer.addErrback(_identity_cache_failed, idurl)
+    ping_result.addErrback(lg.errback)
     return ping_result

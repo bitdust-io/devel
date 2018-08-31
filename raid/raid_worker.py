@@ -24,7 +24,6 @@
 #
 #
 
-
 """
 .. module:: raid_worker.
 
@@ -48,6 +47,13 @@ EVENTS:
     * :red:`timer-1min`
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
@@ -65,6 +71,8 @@ from logs import lg
 from system import bpio
 
 from automats import automat
+
+from main import settings
 
 import read
 import make
@@ -279,8 +287,12 @@ class RaidWorker(automat.Automat):
             # even decided to use only half of CPUs at the moment
             # TODO: make an option in the software settings
             ncpus = int(ncpus / 2.0)
-        self.processor = pp.Server(secret='bitdust', ncpus=ncpus,
-                                   loglevel=lg.get_loging_level())
+        self.processor = pp.Server(
+            secret='bitdust',
+            ncpus=ncpus,
+            loglevel=lg.get_loging_level(_DebugLevel),
+            logfile=settings.ParallelPLogFilename(),
+        )
         self.automat('process-started')
 
     def doKillProcess(self, arg):

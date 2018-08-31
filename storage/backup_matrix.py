@@ -680,8 +680,9 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         lg.warn('Data or Parity? ' + filename)
         return
     if supplierNum >= contactsdb.num_suppliers(customer_idurl=customer_idurl):
-        lg.warn('supplier position invalid %d > %d for customer %s : %s' % (
-            supplierNum, contactsdb.num_suppliers(), customer_idurl, filename))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_matrix.LocalFileReport SKIP supplier position is invalid %d > %d for customer %s : %s' % (
+                supplierNum, contactsdb.num_suppliers(), customer_idurl, filename))
         return
     supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
     if not supplier_idurl:

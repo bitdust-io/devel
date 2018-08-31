@@ -278,6 +278,8 @@ def Identity(newpacket):
     # old public key matches new one
     # this is done in `UpdateAfterChecking()`
     idurl = newidentity.getIDURL()
+    if not identitycache.HasKey(idurl):
+        lg.warn('received new identity: %s' % idurl)
     if not identitycache.UpdateAfterChecking(idurl, newxml):
         lg.warn("ERROR has non-Valid identity")
         return False

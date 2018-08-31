@@ -224,6 +224,11 @@ def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs
     return exception(level, maxTBlevel, exc_info)
 
 
+def errback(*args, **kwargs):
+    err('Error occurred during deferred operation:\n%s' % traceback.format_exc())  #  args: %s   kwargs: %s' % (str(*args), str(**kwargs)))
+    return None
+
+
 def exception(level, maxTBlevel, exc_info):
     """
     This is second most common method in good error handling Python project :-)
@@ -344,12 +349,32 @@ def get_debug_level():
     return _GlobalDebugLevel
 
 
-def get_loging_level():
+def get_loging_level(level):
     """
+    Find corresponding logging level related to BitDust log level:
 
+        0 : CRITICAL
+        1-2 : FATAL
+        3-4 : ERROR
+        5-6 : WARNING
+        7-8 : INFO
+        9-10 : DEBUG
+        11... : NOTSET
     """
-    global _GlobalDebugLevel
-    return max(0, (30 - _GlobalDebugLevel) * 2)
+    import logging
+    if level == 0:
+        return logging.CRITICAL
+    if level <= 2:
+        return logging.FATAL
+    if level <= 4:
+        return logging.ERROR
+    if level <= 6:
+        return logging.WARNING
+    if level <= 8:
+        return logging.INFO
+    if level <= 10:
+        return logging.DEBUG
+    return logging.NOTSET
 
 
 def life_begins():

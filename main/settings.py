@@ -34,12 +34,19 @@ TODO:
 need to move out userconfig stuff from that file
 """
 
+#------------------------------------------------------------------------------
+
 import os
+import random
+
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -103,6 +110,7 @@ def _init(base_dir=None):
     #     bpio._dir_make(ConfigDir())
     #     convert_configs()
     _setUpDefaultSettings()
+    _checkRandomizePortNumbers()
     _createNotExisingSettings()
     _checkStaticDirectories()
     _checkCustomDirectories()
@@ -195,6 +203,55 @@ def convert_key(key):
 """
 Below is a set of global constants.
 """
+
+
+#------------------------------------------------------------------------------
+#--- LOGS --------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+
+def MainLogFilename():
+    """
+    A prefix for file names to store main process logs.
+    """
+    # return os.path.join(LogsDir(), 'bitdust')
+    return os.path.join(LogsDir(), 'main.log')
+
+
+def UpdateLogFilename():
+    """
+    A place to store logs from update porcess.
+    """
+    return os.path.join(LogsDir(), 'software_update.log')
+
+
+def AutomatsLog():
+    """
+    All state machines logs in the main process is written here.
+    """
+    return os.path.join(LogsDir(), 'automats.log')
+
+
+def TransportLog():
+    """
+    Every x seconds will log stats about current transfers.
+    """
+    return os.path.join(LogsDir(), 'transport.log')
+
+
+def ParallelPLogFilename():
+    """
+    Log from parallelp workers goes here, raid code is executed inside child processes.
+    """
+    return os.path.join(LogsDir(), 'parallelp.log')
+
+
+def LocalTesterLogFilename():
+    """
+    A file name path where bptester.py will write its logs.
+    """
+    return os.path.join(LogsDir(), 'bptester.log')
+
 
 #------------------------------------------------------------------------------
 #--- CONSTANTS (NUMBERS) ------------------------------------------------------
@@ -444,27 +501,27 @@ def MaximumUsernameLength():
 
 def DefaultDonatedBytes():
     """
-    Default donated space value - user can set this at any moment in the settings.
+    Default donated space value. User can set this at any moment in the settings.
     """
     return 8 * 1024 * 1024 * 1024  # 8 GB
 
 
 def DefaultNeededBytes():
     """
-    Default needed space value.
+    Default needed space value. User can set this at any moment in the settings.
     """
-    return 1 * 1024 * 1024 * 1024  # 1 GB
+    return 256 * 1024 * 1024  # 256 MB
 
 
 def MinimumDonatedBytes():
     """
     Minimum donated space amount in Megabytes - need to donate at least 2 Mb right now.
     """
-    return 64 * 1024 * 1024  # 64 Mb
+    return 64 * 1024 * 1024  # 64 MB
 
 
 def MinimumNeededBytes():
-    return 32 * 1024 * 1024  # 32 Mb - minimum 1 Mb will be taken from every supplier
+    return 32 * 1024 * 1024  # 32 MB - minimum 1 MB will be taken from every supplier
 
 
 def DefaultBackupBlockSize():
@@ -891,15 +948,6 @@ def KeyFileNameLocation():
     return KeyFileName() + '_location'
 
 
-def SupplierIDsFilename():
-    """
-    IDs for places that store data for us.
-
-    Keeps a list of IDURLs of our suppliers.
-    """
-    return os.path.join(MetaDataDir(), "supplierids")
-
-
 def CustomerIDsFilename():
     """
     IDs for places we store data for, keeps a list of IDURLs of our customers.
@@ -959,15 +1007,6 @@ def UserNameFilename():
     File contains something like "guesthouse" - user account name.
     """
     return os.path.join(MetaDataDir(), "username")
-
-
-def UserConfigFilename():
-    """
-    File to keep a configurable user settings in XML format.
-
-    See ``lib.userconfig`` module.
-    """
-    return os.path.join(MetaDataDir(), "userconfig")
 
 
 def GUIOptionsFilename():
@@ -1116,42 +1155,6 @@ def SupplierServiceFilename(supplier_idurl, customer_idurl):
     Return a "service" file location for given supplier.
     """
     return os.path.join(SupplierPath(supplier_idurl, customer_idurl), 'service')
-
-
-def LocalTesterLogFilename():
-    """
-    A file name path where bptester.py will write its logs.
-    """
-    return os.path.join(LogsDir(), 'bptester.log')
-
-
-def MainLogFilename():
-    """
-    A prefix for file names to store main process logs.
-    """
-    # return os.path.join(LogsDir(), 'bitdust')
-    return os.path.join(LogsDir(), 'main.log')
-
-
-def UpdateLogFilename():
-    """
-    A place to store logs from update porcess.
-    """
-    return os.path.join(LogsDir(), 'software_update.log')
-
-
-def AutomatsLog():
-    """
-    All state machines logs in the main process is written here.
-    """
-    return os.path.join(LogsDir(), 'automats.log')
-
-
-def TransportLog():
-    """
-    Every x seconds will log stats about current transfers.
-    """
-    return os.path.join(LogsDir(), 'transport.log')
 
 
 def RepoFile():
@@ -2384,20 +2387,6 @@ def _initBaseDir(base_dir=None):
             bpio._dirs_make(_BaseDirPath)
         return
 
-    # if we did not found our config - use default path, new copy of BitDust
-    if not os.access(UserConfigFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our suppliers - use default path, new copy of BitDust
-    if not os.access(SupplierIDsFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
     # if we did not found our customers - use default path, new copy of BitDust
     if not os.access(CustomerIDsFilename(), os.R_OK):
         _BaseDirPath = path2
@@ -2615,6 +2604,29 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/priority', 20)
+
+
+def _checkRandomizePortNumbers():
+    """
+    To avoid conflicts between two nodes inside same sub-network they both need to use
+    different port numbers. So this method will first check if port number already set or not.
+    If it is not it will set random value in the range.
+    """
+    # 7000-8000 for tcp transport
+    if not config.conf().getOriginalData('services/tcp-connections/tcp-port'):
+        config.conf().setData('services/tcp-connections/tcp-port', str(random.randint(7001, 8000) - 1))
+    # 8000-9000 for udp transport
+    if not config.conf().getOriginalData('services/udp-datagrams/udp-port'):
+        config.conf().setData('services/udp-datagrams/udp-port', str(random.randint(8001, 9000) - 1))
+    # 9000-10000 for http transport
+    if not config.conf().getOriginalData('services/http-connections/http-port'):
+        config.conf().setData('services/http-connections/http-port', str(random.randint(9001, 10000) - 1))
+    # 10000-11000 for entangled dht
+    if not config.conf().getOriginalData('services/entangled-dht/udp-port'):
+        config.conf().setData('services/entangled-dht/udp-port', str(random.randint(10001, 11000) - 1))
+    # 11000-12000 for blockchain
+    if not config.conf().getOriginalData('services/blockchain/port'):
+        config.conf().setData('services/blockchain/port', str(random.randint(11001, 12000) - 1))
 
 
 def _createNotExisingSettings():

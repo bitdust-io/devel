@@ -23,6 +23,7 @@
 #
 #
 #
+from access.key_ring import _Debug
 
 """
 .. module:: fire_hire
@@ -320,7 +321,8 @@ class FireHire(automat.Automat):
         # contactsdb.num_suppliers(), len(self.dismiss_list),
         # settings.getSuppliersNumberDesired()))
         if '' in contactsdb.suppliers():
-            lg.out(4, 'fire_hire.isMoreNeeded found empty suppliers!!!')
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty suppliers!!!')
             return True
         if isinstance(arg, list):
             dismissed = arg
@@ -329,9 +331,10 @@ class FireHire(automat.Automat):
         s = set(contactsdb.suppliers())
         s.difference_update(set(dismissed))
         result = len(s) < settings.getSuppliersNumberDesired()
-        lg.out(14, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
-            contactsdb.num_suppliers(), len(dismissed), len(s),
-            settings.getSuppliersNumberDesired(), result))
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
+                contactsdb.num_suppliers(), len(dismissed), len(s),
+                settings.getSuppliersNumberDesired(), result))
         return result
 
     def isAllReady(self, arg):

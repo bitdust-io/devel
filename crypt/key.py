@@ -34,7 +34,7 @@ Main thing here is to be able to use public keys in contacts to verify packets.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ def GenerateNewKey(keyfilename=None):
         lg.out(_DebugLevel, 'key.InitMyKey generate new private key')
     _MyKeyObject = rsa_key.RSAKey()
     _MyKeyObject.generate(settings.getPrivateKeySize())
-    keystring = _MyKeyObject.toString()
+    keystring = _MyKeyObject.toPrivateString()
     bpio.WriteFile(keyfilename, keystring)
     if _Debug:
         lg.out(_DebugLevel, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
@@ -171,7 +171,7 @@ def MyPrivateKey():
     global _MyKeyObject
     if not _MyKeyObject:
         InitMyKey()
-    return _MyKeyObject.toString()
+    return _MyKeyObject.toPrivateString()
 
 
 def MyPrivateKeyObject():

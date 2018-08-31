@@ -85,6 +85,8 @@ def write2log(txt):
 
 def init():
     lg.out(4, 'git_proc.init')
+    if os.environ.get('BITDUST_GIT_SYNC_SKIP', '0') == '1':
+        return
     reactor.callLater(0, loop, True)
 
 
