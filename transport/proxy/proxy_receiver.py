@@ -444,8 +444,19 @@ class ProxyReceiver(automat.Automat):
             return
         inpt.close()
         routed_packet = signed.Unserialize(data)
-        if not routed_packet or not routed_packet.Valid():
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
+        if not routed_packet:
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet failed from %s' % newpacket.CreatorID)
+            return
+        if routed_packet.Command == commands.Identity():
+            newidentity = identity.identity(xmlsrc=routed_packet.Payload)
+            idurl = newidentity.getIDURL()
+            if not identitycache.HasKey(idurl):
+                lg.warn('received new identity: %s' % idurl)
+            if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
+                lg.warn("ERROR has non-Valid identity")
+                return
+        if not routed_packet.Valid():
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet from %s' % newpacket.CreatorID)
             return
         self.traffic_in += len(data)
         if _Debug:
