@@ -84,6 +84,7 @@ KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
 
 _MyNode = None
 _ActiveLookup = None
+_Counters = {}
 _ProtocolVersion = 6
 
 #------------------------------------------------------------------------------
@@ -200,6 +201,27 @@ def reconnect():
 
 #------------------------------------------------------------------------------
 
+def count(name):
+    global _Counters
+    if name not in _Counters:
+        _Counters[name] = 0
+    _Counters[name] += 1
+    return True
+
+
+def counter(name):
+    global _Counters
+    return _Counters.get(name, 0)
+
+
+def drop_counters():
+    global _Counters
+    ret = _Counters.copy()
+    _Counters.clear()
+    return ret
+
+#------------------------------------------------------------------------------
+
 def on_host_resoled(ip, port, host, result_list, total_hosts, result_defer):
     if not isinstance(ip, str) or port is None:
         result_list.append(None)
@@ -273,8 +295,9 @@ def on_error(err, method, key):
 def get_value(key):
     if not node():
         return fail(Exception('DHT service is off'))
+    count('get_value')
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_value key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value')))
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
@@ -284,10 +307,11 @@ def get_value(key):
 def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
+    count('set_value')
     sz_bytes = len(str(value))
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds' % (
-            key, sz_bytes, expire, ))
+        lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds, counter=%d' % (
+            key, sz_bytes, expire, counter('set_value')))
     if expire < KEY_EXPIRE_MIN_SECONDS:
         expire = KEY_EXPIRE_MIN_SECONDS
     if expire > KEY_EXPIRE_MAX_SECONDS:
@@ -301,8 +325,9 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
 def delete_key(key):
     if not node():
         return fail(Exception('DHT service is off'))
+    count('delete_key')
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.delete_key [%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.delete_key [%s], counter=%d' % (key, counter('delete_key')))
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(on_success, 'delete_value', key)
     d.addErrback(on_error, 'delete_key', key)
@@ -423,9 +448,10 @@ def find_node(node_id):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.find_node SKIP, already started')
         return _ActiveLookup
+    count('find_node')
     node_id64 = base64.b64encode(node_id)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]' % node_id64)
+        lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]  counter=%d' % (node_id64, counter('find_node')))
     if not node():
         return fail(Exception('DHT service is off'))
     _ActiveLookup = node().iterativeFindNode(node_id)
@@ -438,33 +464,36 @@ def find_node(node_id):
 def get_node_data(key):
     if not node():
         return None
+    count('get_node_data')
     if key not in node().data:
         return None
     value = node().data[key]
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] read %d bytes' % (
-            key, len(str(value))))
+        lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] read %d bytes, counter=%d' % (
+            key, len(str(value)), counter('get_node_data')))
     return value
 
 
 def set_node_data(key, value):
     if not node():
         return False
+    count('set_node_data')
     node().data[key] = value
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes' % (
-            key, len(str(value))))
+        lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes, counter=%d' % (
+            key, len(str(value)), counter('set_node_data')))
     return True
 
 
 def delete_node_data(key):
     if not node():
         return False
+    count('delete_node_data')
     if key not in node().data:
         return False
     node().data.pop(key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s], counter=%d' % (key, counter('delete_node_data')))
     return True
 
 #------------------------------------------------------------------------------
@@ -494,14 +523,17 @@ class DHTNode(DistributedTupleSpacePeer):
             if _Debug:
                 lg.out(_DebugLevel, 'dht_service.expire   [%s] removed' % base64.b32encode(key))
             del self._dataStore[key]
+        if _DebugLevel <= 10:
+            lg.out(_DebugLevel, 'DHT counters last %d sec: %s' % (int(KEY_EXPIRE_MIN_SECONDS / 2), drop_counters()))
 
     @rpcmethod
     def store(self, key, value, originalPublisherID=None,
               age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
         # TODO: add signature validation to be sure this is the owner of that key:value pair
+        count('store')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds' % (
-                base64.b32encode(key), len(str(value)), expireSeconds, ))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
+                base64.b32encode(key), len(str(value)), expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
@@ -517,13 +549,14 @@ class DHTNode(DistributedTupleSpacePeer):
 
     @rpcmethod
     def request(self, key):
+        count('request')
         value = self.data.get(key)
         if value is None and key in self._dataStore:
             value = self._dataStore[key]
             self.data[key] = value
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s] read %d bytes' % (
-                base64.b32encode(key), len(str(value))))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s] read %d bytes, counter=%d' % (
+                base64.b32encode(key), len(str(value)), counter('request')))
         return {key: value, }
 
     def reconnect(self, knownNodeAddresses=None):
@@ -550,11 +583,14 @@ class KademliaProtocolConveyor(KademliaProtocol):
         self.worker = None
 
     def datagramReceived(self, datagram, address):
+        count('datagramReceived')
         if len(self.datagrams_queue) > 10:
+            lg.warn('DHT traffic too high')
             # TODO:
             # seems like DHT traffic is too high at that moment
             # need to find some solution here probably
             return
+        count('datagramQueued')
         self.datagrams_queue.append((datagram, address))
         if self.worker is None:
             self.worker = reactor.callLater(0, self._process)

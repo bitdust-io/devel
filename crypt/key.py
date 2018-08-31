@@ -34,7 +34,7 @@ Main thing here is to be able to use public keys in contacts to verify packets.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
