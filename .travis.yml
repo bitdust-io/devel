@@ -2,9 +2,9 @@ services: docker
 
 before_install:
   - docker -v
-  - git clone https://github.com/bitdust-io/tests.git tests
+  - git clone https://github.com/bitdust-io/tests.git tests_e2e
   # Use the env config
-  - cp . tests/src/bitdust
+  - cp . tests_e2e/src/bitdust
   # Stop the postgres instance travis sets up automatically
   #- sudo /etc/init.d/postgresql stop
   #- sudo service mysql stop
