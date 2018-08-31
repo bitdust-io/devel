@@ -20,7 +20,7 @@ install:
  # - docker-compose exec web sh -c "composer install --no-interaction --prefer-dist"
 script:
   # Seed database
-  - docker-compose exec devel_testing_test_1 sh -c "pytest tests/ -v -s"
+  - docker-compose exec test sh -c "pytest tests/ -v -s"
   # Run tests
   #- docker-compose exec web sh -c "composer test"
   # Build cli container
