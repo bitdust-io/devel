@@ -29,7 +29,7 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -581,6 +581,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
         KademliaProtocol.__init__(self, node, msgEncoder, msgTranslator)
         self.datagrams_queue = []
         self.worker = None
+        self._counter = count
 
     def datagramReceived(self, datagram, address):
         count('datagramReceived')
@@ -589,7 +590,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
             # TODO:
             # seems like DHT traffic is too high at that moment
             # need to find some solution here probably
-            return
+            # return
         count('datagramQueued')
         self.datagrams_queue.append((datagram, address))
         if self.worker is None:
