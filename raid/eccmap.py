@@ -300,9 +300,9 @@ def ReadTextFile(filename):
     if not os.access(filename, os.R_OK):
         return ''
     try:
-        file = open(filename, "r")
-        data = file.read()
-        file.close()
+        fil = open(filename, "r")
+        data = fil.read()
+        fil.close()
         # Windows/Linux trouble with text files
         return data.replace('\r\n', '\n')
     except:
