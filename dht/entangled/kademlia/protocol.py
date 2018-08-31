@@ -60,6 +60,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._node = node
         self._encoder = msgEncoder
         self._translator = msgTranslator
+        self._counter = None
         self._sentMessages = {}
         self._partialMessages = {}
         self._partialMessagesProgress = {}
@@ -105,6 +106,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Transmit the data
         if _Debug:
             print '                sendRPC', (method, contact.address, contact.port)
+        if self._counter:
+            self._counter('sendRPC')
         self._send(encodedMsg, msg.id, (contact.address, contact.port))
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
         return df
@@ -236,6 +239,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
     def _write(self, data, address):
         if _Debug:
             print '                dht._write %d bytes to %s' % (len(data), str(address))
+        if self._counter:
+            self._counter('_write')
         try:
             self.transport.write(data, address)
         except:
@@ -252,6 +257,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         encodedMsg = self._encoder.encode(msgPrimitive)
         if _Debug:
             print '                sendResponse', (contact.address, contact.port)
+        if self._counter:
+            self._counter('_sendResponse')
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _sendError(self, contact, rpcID, exceptionType, exceptionMessage):
@@ -263,6 +270,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         encodedMsg = self._encoder.encode(msgPrimitive)
         if _Debug:
             print '                sendError', (contact.address, contact.port)
+        if self._counter:
+            self._counter('_sendError')
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _handleRPC(self, senderContact, rpcID, method, args):
@@ -283,6 +292,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         if _Debug:
             import base64
             print '                    _handleRPC', base64.b64encode(rpcID), method, args
+
+        if self._counter:
+            self._counter('_handleRPC')
 
         # Execute the RPC
         func = getattr(self._node, method, None)
@@ -307,6 +319,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         Called when an RPC request message times out.
         """
+        if self._counter:
+            self._counter('_msgTimeout')
+
         # Find the message that timed out
         if messageID in self._sentMessages:
             remoteContactID, df = self._sentMessages[messageID][0:2]
