@@ -114,6 +114,7 @@ class Node(object):
                 for contactTriple in state['closestNodes']:
                     contact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
                     self._routingTable.addContact(contact)
+        self._counter = None
 
     def __del__(self):
         self._persistState()
@@ -132,6 +133,8 @@ class Node(object):
                                    C{(<ip address>, (udp port>)}
         @type knownNodeAddresses: tuple
         """
+        if self._counter:
+            self._counter('joinNetwork')
         # Prepare the underlying Kademlia protocol
         # Create temporary contact information for the list of addresses of known nodes
         if knownNodeAddresses is not None:
@@ -186,6 +189,8 @@ class Node(object):
                     different nodes.
         @type age: int
         """
+        if self._counter:
+            self._counter('iterativeStore')
         if originalPublisherID is None:
             originalPublisherID = self.id
 
@@ -310,6 +315,8 @@ class Node(object):
         @param contact: The contact to add to this node's k-buckets
         @type contact: kademlia.contact.Contact
         """
+        if self._counter:
+            self._counter('addContact')
         self._routingTable.addContact(contact)
 
     def removeContact(self, contactID):
@@ -321,6 +328,8 @@ class Node(object):
         @param contactID: The node ID of the contact to remove
         @type contactID: str
         """
+        if self._counter:
+            self._counter('removeContact')
         self._routingTable.removeContact(contactID)
 
     def findContact(self, contactID):
@@ -334,6 +343,8 @@ class Node(object):
         @return: Contact object of remote node with the specified node ID
         @rtype: twisted.internet.defer.Deferred
         """
+        if self._counter:
+            self._counter('findContact')
         try:
             contact = self._routingTable.getContact(contactID)
             df = defer.Deferred()
@@ -356,6 +367,8 @@ class Node(object):
 
         @rtype: str
         """
+        if self._counter:
+            self._counter('rpc_node_ping')
         return 'pong'
 
     @rpcmethod
@@ -383,6 +396,8 @@ class Node(object):
                (which is the case currently) might not be a good idea... will have
                to fix this (perhaps use a stream from the Protocol class?)
         """
+        if self._counter:
+            self._counter('rpc_node_store')
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -415,6 +430,8 @@ class Node(object):
                  node is returning all of the contacts that it knows of.
         @rtype: list
         """
+        if self._counter:
+            self._counter('rpc_node_findNode')
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -439,6 +456,8 @@ class Node(object):
                  or a list of contact triples closest to the requested key.
         @rtype: dict or list
         """
+        if self._counter:
+            self._counter('rpc_node_findValue')
         if key in self._dataStore:
             exp = None
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
@@ -498,6 +517,8 @@ class Node(object):
                  return a list of the k closest nodes to the specified key
         @rtype: twisted.internet.defer.Deferred
         """
+        if self._counter:
+            self._counter('_iterativeFind')
         if rpc != 'findNode':
             findValue = True
         else:
@@ -753,6 +774,8 @@ class Node(object):
         replication/republishing as necessary.
         """
         # print 'refreshNode called'
+        if self._counter:
+            self._counter('_refreshNode')
         df = self._refreshRoutingTable()
         df.addCallback(self._republishData)
         df.addCallback(self._scheduleNextNodeRefresh)

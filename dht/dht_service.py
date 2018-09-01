@@ -36,7 +36,6 @@ _DebugLevel = 10
 
 import os
 import sys
-import time
 import hashlib
 import random
 import base64
@@ -295,9 +294,9 @@ def on_error(err, method, key):
 def get_value(key):
     if not node():
         return fail(Exception('DHT service is off'))
-    count('get_value')
+    count('get_value_%s' % key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value')))
+        lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value_%s' % key)))
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
@@ -307,11 +306,11 @@ def get_value(key):
 def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
-    count('set_value')
+    count('set_value_%s' % key)
     sz_bytes = len(str(value))
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds, counter=%d' % (
-            key, sz_bytes, expire, counter('set_value')))
+            key, sz_bytes, expire, counter('set_value_%s' % key)))
     if expire < KEY_EXPIRE_MIN_SECONDS:
         expire = KEY_EXPIRE_MIN_SECONDS
     if expire > KEY_EXPIRE_MAX_SECONDS:
@@ -325,9 +324,9 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
 def delete_key(key):
     if not node():
         return fail(Exception('DHT service is off'))
-    count('delete_key')
+    count('delete_key_%s' % key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.delete_key [%s], counter=%d' % (key, counter('delete_key')))
+        lg.out(_DebugLevel, 'dht_service.delete_key [%s], counter=%d' % (key, counter('delete_key_%s' % key)))
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(on_success, 'delete_value', key)
     d.addErrback(on_error, 'delete_key', key)
@@ -504,6 +503,7 @@ class DHTNode(DistributedTupleSpacePeer):
         super(DHTNode, self).__init__(udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
         self.expire_task = LoopingCall(self.expire)
+        self._counter = count
 
     def expire(self):
         now = utime.get_sec1970()
@@ -530,7 +530,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def store(self, key, value, originalPublisherID=None,
               age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
         # TODO: add signature validation to be sure this is the owner of that key:value pair
-        count('store')
+        count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
                 base64.b32encode(key), len(str(value)), expireSeconds, counter('store')))
