@@ -614,7 +614,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
         self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)
 
     def _process_incoming(self):
-        if len(self.receiving_queue) == 0:
+        if len(self.receiving_queue) > 10:
             self.receiving_worker = None
             return
         datagram, address = self.receiving_queue.pop(0)
