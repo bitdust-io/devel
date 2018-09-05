@@ -396,7 +396,7 @@ class StunClient(automat.Automat):
         self.destroy()
 
     def _datagram_received(self, datagram, address):
-        self.automat('datagram-received', (datagram, address))
+        self.automat('datagram-received', (datagram, address, ))
         return False
 
     def _find_random_nodes(self, tries, result_list, prev_key=None):
