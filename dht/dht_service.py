@@ -29,7 +29,7 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -606,7 +606,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
             # self.receiving_worker = reactor.callLater(0, self._process_incoming)
 
     def _process_outgoing(self):
-        if len(self.sending_queue) == 0:
+        if len(self.sending_queue) > 10:
             self.sending_worker = None
             return
         data, rpcID, address = self.sending_queue.pop(0)
