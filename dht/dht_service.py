@@ -29,7 +29,7 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -76,8 +76,10 @@ from lib import utime
 
 #------------------------------------------------------------------------------
 
-KEY_EXPIRE_MIN_SECONDS = 60
+KEY_EXPIRE_MIN_SECONDS = 60 * 2
 KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
+RECEIVING_FREQUENCY_SEC = 0.01
+SENDING_FREQUENCY_SEC = 0.02  # must be always slower than receiving frequency!
 
 #------------------------------------------------------------------------------
 
@@ -579,30 +581,45 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.DefaultFormat()):
         KademliaProtocol.__init__(self, node, msgEncoder, msgTranslator)
-        self.datagrams_queue = []
-        self.worker = None
+        self.receiving_queue = []
+        self.receiving_worker = None
+        self.sending_queue = []
+        self.sending_worker = None
         self._counter = count
 
-    def datagramReceived(self, datagram, address):
-        count('datagramReceived')
-        if len(self.datagrams_queue) > 10:
-            lg.warn('DHT traffic too high, total items in queue: %d' % len(self.datagrams_queue))
-            # TODO:
-            # seems like DHT traffic is too high at that moment
-            # need to find some solution here probably
-            # return
-        count('datagramQueued')
-        self.datagrams_queue.append((datagram, address))
-        if self.worker is None:
-            self.worker = reactor.callLater(0, self._process)
+    def _send(self, data, rpcID, address):
+        count('dht_send')
+        if len(self.sending_queue) > 10:
+            lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.receiving_queue))
+        self.sending_queue.append((data, rpcID, address, ))
+        if self.receiving_worker is None:
+            self._process_outgoing()
+            # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
 
-    def _process(self):
-        if len(self.datagrams_queue) == 0:
-            self.worker = None
+    def datagramReceived(self, datagram, address):
+        count('dht_datagramReceived')
+        if len(self.receiving_queue) > 10:
+            lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
+        self.receiving_queue.append((datagram, address, ))
+        if self.receiving_worker is None:
+            self._process_incoming()
+            # self.receiving_worker = reactor.callLater(0, self._process_incoming)
+
+    def _process_outgoing(self):
+        if len(self.sending_queue) == 0:
+            self.sending_worker = None
             return
-        datagram, address = self.datagrams_queue.pop(0)
+        data, rpcID, address = self.sending_queue.pop(0)
+        KademliaProtocol._send(self, data, rpcID, address)
+        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)
+
+    def _process_incoming(self):
+        if len(self.receiving_queue) == 0:
+            self.receiving_worker = None
+            return
+        datagram, address = self.receiving_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
-        self.worker = reactor.callLater(0.005, self._process)
+        self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)
 
 #------------------------------------------------------------------------------
 
