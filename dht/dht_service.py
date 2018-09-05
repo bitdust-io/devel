@@ -586,7 +586,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
     def datagramReceived(self, datagram, address):
         count('datagramReceived')
         if len(self.datagrams_queue) > 10:
-            lg.warn('DHT traffic too high')
+            lg.warn('DHT traffic too high, total items in queue: %d' % len(self.datagrams_queue))
             # TODO:
             # seems like DHT traffic is too high at that moment
             # need to find some solution here probably
