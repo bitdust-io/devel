@@ -587,15 +587,6 @@ class KademliaProtocolConveyor(KademliaProtocol):
         self.sending_worker = None
         self._counter = count
 
-    def _send(self, data, rpcID, address):
-        count('dht_send')
-        if len(self.sending_queue) > 10:
-            lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.receiving_queue))
-        self.sending_queue.append((data, rpcID, address, ))
-        if self.receiving_worker is None:
-            self._process_outgoing()
-            # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
-
     def datagramReceived(self, datagram, address):
         count('dht_datagramReceived')
         if len(self.receiving_queue) > 10:
@@ -605,14 +596,6 @@ class KademliaProtocolConveyor(KademliaProtocol):
             self._process_incoming()
             # self.receiving_worker = reactor.callLater(0, self._process_incoming)
 
-    def _process_outgoing(self):
-        if len(self.sending_queue) > 10:
-            self.sending_worker = None
-            return
-        data, rpcID, address = self.sending_queue.pop(0)
-        KademliaProtocol._send(self, data, rpcID, address)
-        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)
-
     def _process_incoming(self):
         if len(self.receiving_queue) > 10:
             self.receiving_worker = None
@@ -620,6 +603,23 @@ class KademliaProtocolConveyor(KademliaProtocol):
         datagram, address = self.receiving_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
         self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)
+
+    def _send(self, data, rpcID, address):
+        count('dht_send')
+        if len(self.sending_queue) > 10:
+            lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.receiving_queue))
+        self.sending_queue.append((data, rpcID, address, ))
+        if self.receiving_worker is None:
+            self._process_outgoing()
+            # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
+
+    def _process_outgoing(self):
+        if len(self.sending_queue) > 10:
+            self.sending_worker = None
+            return
+        data, rpcID, address = self.sending_queue.pop(0)
+        KademliaProtocol._send(self, data, rpcID, address)
+        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)
 
 #------------------------------------------------------------------------------
 
