@@ -47,9 +47,10 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from logs import lg
+from CodernityDB.hash_index import HashIndex
+from CodernityDB.tree_index import TreeBasedIndex, MultiTreeBasedIndex
 
-from lib import codernitydb
+from logs import lg
 
 #------------------------------------------------------------------------------
 
@@ -57,6 +58,7 @@ def definitions():
     return [
         ('sender_glob_id', SenderGlobID, ),
         ('recipient_glob_id', RecipientGlobID, ),
+        ('sender_recipient_glob_id', SenderRecipientGlobID, ),
         ('payload_type', PayloadType, ),
         ('payload_time', PayloadTime, ),
         ('payload_message_id', PayloadMessageID, ),
@@ -70,11 +72,12 @@ def make_custom_header():
     src += 'from chat.message_index import BaseHashIndex\n'
     src += 'from chat.message_index import BaseMD5Index\n'
     src += 'from chat.message_index import BaseTimeIndex\n'
+    src += 'from chat.message_index import BaseMD5DoubleKeyIndex\n'
     return src
 
 #------------------------------------------------------------------------------
 
-class BaseHashIndex(codernitydb.HashIndex):
+class BaseHashIndex(HashIndex):
     role = None
     field = None
     key_format = '16s'
@@ -106,7 +109,7 @@ class BaseMD5Index(BaseHashIndex):
 
 #------------------------------------------------------------------------------
 
-class BaseTimeIndex(codernitydb.TreeBasedIndex):
+class BaseTimeIndex(TreeBasedIndex):
     role = None
 
     def __init__(self, *args, **kwargs):
@@ -127,6 +130,40 @@ class BaseTimeIndex(codernitydb.TreeBasedIndex):
 
 #------------------------------------------------------------------------------
 
+class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
+    role_a = None
+    field_a = None
+    role_b = None
+    field_b = None
+    key_format = '16s'
+
+    def __init__(self, *args, **kwargs):
+        kwargs['key_format'] = self.key_format
+        super(BaseMD5DoubleKeyIndex, self).__init__(*args, **kwargs)
+
+    def transform_key(self, key):
+        return md5(key).digest()
+
+    def make_key_value(self, data):
+        try:
+            key_a = data[self.role_a][self.field_a]
+            key_b = data[self.role_b][self.field_b]
+            version_1 = '{}:{}'.format(key_a, key_b)
+            version_2 = '{}:{}'.format(key_b, key_a)
+            out = set()
+            out.add(self.transform_key(version_1))
+            out.add(self.transform_key(version_2))
+            return out, None
+        except (AttributeError, ValueError, KeyError, IndexError, ):
+            return None
+        except Exception:
+            lg.exc()
+
+    def make_key(self, key):
+        return self.transform_key(key)
+
+#------------------------------------------------------------------------------
+
 class SenderGlobID(BaseMD5Index):
     role = 'sender'
     field = 'glob_id'
@@ -136,6 +173,14 @@ class SenderGlobID(BaseMD5Index):
 class RecipientGlobID(BaseMD5Index):
     role = 'recipient'
     field = 'glob_id'
+
+#------------------------------------------------------------------------------
+
+class SenderRecipientGlobID(BaseMD5DoubleKeyIndex):
+    role_a = 'sender'
+    field_a = 'glob_id'
+    role_b = 'recipient'
+    field_b = 'glob_id'
 
 #------------------------------------------------------------------------------
 
