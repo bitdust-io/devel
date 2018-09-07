@@ -36,7 +36,6 @@ _DebugLevel = 10
 
 import os
 import sys
-import time
 import hashlib
 import random
 import base64
@@ -77,8 +76,10 @@ from lib import utime
 
 #------------------------------------------------------------------------------
 
-KEY_EXPIRE_MIN_SECONDS = 60
+KEY_EXPIRE_MIN_SECONDS = 60 * 2
 KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
+RECEIVING_FREQUENCY_SEC = 0.01
+SENDING_FREQUENCY_SEC = 0.02  # must be always slower than receiving frequency!
 
 #------------------------------------------------------------------------------
 
@@ -295,9 +296,9 @@ def on_error(err, method, key):
 def get_value(key):
     if not node():
         return fail(Exception('DHT service is off'))
-    count('get_value')
+    count('get_value_%s' % key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value')))
+        lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value_%s' % key)))
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
@@ -307,11 +308,11 @@ def get_value(key):
 def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
-    count('set_value')
+    count('set_value_%s' % key)
     sz_bytes = len(str(value))
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds, counter=%d' % (
-            key, sz_bytes, expire, counter('set_value')))
+            key, sz_bytes, expire, counter('set_value_%s' % key)))
     if expire < KEY_EXPIRE_MIN_SECONDS:
         expire = KEY_EXPIRE_MIN_SECONDS
     if expire > KEY_EXPIRE_MAX_SECONDS:
@@ -325,9 +326,9 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
 def delete_key(key):
     if not node():
         return fail(Exception('DHT service is off'))
-    count('delete_key')
+    count('delete_key_%s' % key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.delete_key [%s], counter=%d' % (key, counter('delete_key')))
+        lg.out(_DebugLevel, 'dht_service.delete_key [%s], counter=%d' % (key, counter('delete_key_%s' % key)))
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(on_success, 'delete_value', key)
     d.addErrback(on_error, 'delete_key', key)
@@ -504,6 +505,7 @@ class DHTNode(DistributedTupleSpacePeer):
         super(DHTNode, self).__init__(udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
         self.expire_task = LoopingCall(self.expire)
+        self._counter = count
 
     def expire(self):
         now = utime.get_sec1970()
@@ -530,7 +532,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def store(self, key, value, originalPublisherID=None,
               age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
         # TODO: add signature validation to be sure this is the owner of that key:value pair
-        count('store')
+        count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
                 base64.b32encode(key), len(str(value)), expireSeconds, counter('store')))
@@ -579,29 +581,45 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.DefaultFormat()):
         KademliaProtocol.__init__(self, node, msgEncoder, msgTranslator)
-        self.datagrams_queue = []
-        self.worker = None
+        self.receiving_queue = []
+        self.receiving_worker = None
+        self.sending_queue = []
+        self.sending_worker = None
+        self._counter = count
 
     def datagramReceived(self, datagram, address):
-        count('datagramReceived')
-        if len(self.datagrams_queue) > 10:
-            lg.warn('DHT traffic too high')
-            # TODO:
-            # seems like DHT traffic is too high at that moment
-            # need to find some solution here probably
-            return
-        count('datagramQueued')
-        self.datagrams_queue.append((datagram, address))
-        if self.worker is None:
-            self.worker = reactor.callLater(0, self._process)
+        count('dht_datagramReceived')
+        if len(self.receiving_queue) > 10:
+            lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
+        self.receiving_queue.append((datagram, address, ))
+        if self.receiving_worker is None:
+            self._process_incoming()
+            # self.receiving_worker = reactor.callLater(0, self._process_incoming)
 
-    def _process(self):
-        if len(self.datagrams_queue) == 0:
-            self.worker = None
+    def _process_incoming(self):
+        if len(self.receiving_queue) == 0:
+            self.receiving_worker = None
             return
-        datagram, address = self.datagrams_queue.pop(0)
+        datagram, address = self.receiving_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
-        self.worker = reactor.callLater(0.005, self._process)
+        self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)
+
+    def _send(self, data, rpcID, address):
+        count('dht_send')
+        if len(self.sending_queue) > 10:
+            lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
+        self.sending_queue.append((data, rpcID, address, ))
+        if self.receiving_worker is None:
+            self._process_outgoing()
+            # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
+
+    def _process_outgoing(self):
+        if len(self.sending_queue) == 0:
+            self.sending_worker = None
+            return
+        data, rpcID, address = self.sending_queue.pop(0)
+        KademliaProtocol._send(self, data, rpcID, address)
+        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)
 
 #------------------------------------------------------------------------------
 
