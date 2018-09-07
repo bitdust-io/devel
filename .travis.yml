@@ -2,26 +2,13 @@ services: docker
 
 before_install:
   - docker -v
-  - git clone https://github.com/bitdust-io/tests.git tests
-  # Use the env config
-  - cp . tests/src/bitdust
-  # Stop the postgres instance travis sets up automatically
-  #- sudo /etc/init.d/postgresql stop
-  #- sudo service mysql stop
-  # set env vars in the build settings to interact with repositories
-  # see https://docs.travis-ci.com/user/environment-variables/#Defining-Variables-in-Repository-Settings
-  #- docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+  - git clone https://github.com/bitdust-io/tests.git tests_e2e
+
+  - mkdir -p tests_e2e/src/bitdust
+  - rsync -rR . tests_e2e/src/bitdust
+  - cd tests_e2e
+
 install:
-  # Start the docker stuff
   - docker-compose up -d
-  - sleep 20
-  # Install dev php dependencies
-  #- docker-compose exec devel_testing_test_1 sh -c "pytest tests/ -v -s"
- # - docker-compose exec web sh -c "composer install --no-interaction --prefer-dist"
 script:
-  # Seed database
-  - docker-compose exec devel_testing_test_1 sh -c "pytest tests/ -v -s"
-  # Run tests
-  #- docker-compose exec web sh -c "composer test"
-  # Build cli container
-  #- docker build -t "bkuhl/laravel-starter:cli" -f infrastructure/cli/Dockerfile .
+  - docker-compose exec test sh -c "pytest tests/test_ss/ -v -s"

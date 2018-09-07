@@ -2,6 +2,8 @@
 
 [bitdust.io](https://bitdust.io)
 
+[![Build Status](https://travis-ci.com/StasEvseev/devel.svg?branch=master)](https://travis-ci.com/StasEvseev/devel)
+
 
 ## About
 
