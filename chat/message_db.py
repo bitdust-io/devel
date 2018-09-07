@@ -32,7 +32,7 @@ module:: message_db
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -54,7 +54,6 @@ from logs import lg
 from system import bpio
 
 from lib import utime
-from lib import codernitydb
 
 from crypt import key
 
@@ -63,6 +62,12 @@ from main import settings
 from chat import message_index
 
 from userid import my_id
+
+from CodernityDB.database import (
+    Database, RecordNotFound, RecordDeleted,
+    IndexNotFoundException, DatabaseIsNotOpened,
+    PreconditionsException,
+)
 
 #------------------------------------------------------------------------------
 
@@ -76,7 +81,7 @@ def init():
         lg.warn('local storage already initialized')
         return
     chat_history_dir = os.path.join(settings.ChatHistoryDir(), 'current')
-    _LocalStorage = codernitydb.Database(chat_history_dir)
+    _LocalStorage = Database(chat_history_dir)
     _LocalStorage.custom_header = message_index.make_custom_header()
     if _Debug:
         lg.out(_DebugLevel, 'message_db.init in %s' % chat_history_dir)
@@ -190,7 +195,7 @@ def refresh_indexes(db_instance):
 def regenerate_indexes(temp_dir):
     """
     """
-    tmpdb = codernitydb.Database(temp_dir)
+    tmpdb = Database(temp_dir)
     tmpdb.custom_header = message_index.make_custom_header()
     tmpdb.create()
     refresh_indexes(tmpdb)
@@ -221,9 +226,9 @@ def get(index_name, key, with_doc=True, with_storage=True):
     # TODO: here and bellow need to add input validation
     try:
         res = db().get(index_name, key, with_doc, with_storage)
-    except (codernitydb.RecordNotFound, codernitydb.RecordDeleted, ):
+    except (RecordNotFound, RecordDeleted, ):
         return iter(())
-    except (codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened, ):
+    except (IndexNotFoundException, DatabaseIsNotOpened, ):
         return iter(())
     return (r for r in [res, ])
 
@@ -236,7 +241,7 @@ def get_many(index_name, key=None, limit=-1, offset=0,
                                with_doc, with_storage,
                                start, end, **kwargs):
             yield r
-    except (codernitydb.PreconditionsException, codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened, ):
+    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened, ):
         pass
 
 
@@ -244,7 +249,7 @@ def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
     try:
         for r in db().all(index_name, limit, offset, with_doc, with_storage):
             yield r
-    except (codernitydb.PreconditionsException, codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened):
+    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened):
         pass
 
 #------------------------------------------------------------------------------
@@ -277,7 +282,7 @@ def search(query_json):
             if 'body' in query_json:
                 if r['payload']['body'].count(query_json['body']):
                     yield r
-    except (codernitydb.PreconditionsException, codernitydb.IndexNotFoundException, codernitydb.DatabaseIsNotOpened):
+    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened, ):
         pass
 
 #------------------------------------------------------------------------------
@@ -412,6 +417,12 @@ def main():
         init()
         print 'Indexes in %s are:' % db().path
         print '  ' + ('\n  '.join(db().indexes_names))
+        shutdown()
+
+    if sys.argv[1] == 'refresh':
+        print 'ReIndexing'
+        init()
+        refresh_indexes(db())
         shutdown()
 
     if sys.argv[1] == 'tmpdb':
