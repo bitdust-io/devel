@@ -33,6 +33,8 @@ Need to be sure user have enough free space on the disk and able to
 donate previously specified amount of space.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import time
 import glob
@@ -43,7 +45,7 @@ from lib import diskspace
 
 from main import settings
 
-import bpio
+from . import bpio
 
 #------------------------------------------------------------------------------
 
@@ -63,10 +65,10 @@ def GetWinDriveSpace(drive):
     """
     try:
         sectorsPerCluster, bytesPerSector, numFreeClusters, totalNumClusters = win32file.GetDiskFreeSpace(drive + ":\\")
-        sectorsPerCluster = long(sectorsPerCluster)
-        bytesPerSector = long(bytesPerSector)
-        numFreeClusters = long(numFreeClusters)
-        totalNumClusters = long(totalNumClusters)
+        sectorsPerCluster = int(sectorsPerCluster)
+        bytesPerSector = int(bytesPerSector)
+        numFreeClusters = int(numFreeClusters)
+        totalNumClusters = int(totalNumClusters)
     except:
         return None, None
     return float(numFreeClusters * sectorsPerCluster * bytesPerSector), float(totalNumClusters * sectorsPerCluster * bytesPerSector)
@@ -183,25 +185,25 @@ def main():
     dataDriveFreeSpace, dataDriveTotalSpace = GetDriveSpace(dataDir)
     tempDriveFreeSpace, tempDriveTotalSpace = GetDriveSpace(tempDir)
 
-    print "data dir =", dataDir
-    print "tep dir =", tempDir
-    print "data dir: " + str(dataDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(dataDriveTotalSpace / (1024 * 1024)) + "MB total"
-    print "temp dir: " + str(tempDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(tempDriveTotalSpace / (1024 * 1024)) + "MB total"
+    print("data dir =", dataDir)
+    print("tep dir =", tempDir)
+    print("data dir: " + str(dataDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(dataDriveTotalSpace / (1024 * 1024)) + "MB total")
+    print("temp dir: " + str(tempDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(tempDriveTotalSpace / (1024 * 1024)) + "MB total")
 
-    print time.time()
-    print "our temp files: " + str(GetOurTempFileSizeTotal(tempDir) / (1024 * 1024)) + "MB"
-    print time.time()
+    print(time.time())
+    print("our temp files: " + str(GetOurTempFileSizeTotal(tempDir) / (1024 * 1024)) + "MB")
+    print(time.time())
 
     GetDirectorySize(dataDir)
 
     ds = diskspace.DiskSpace()
-    print ds.getValueBest(dataDriveFreeSpace)
+    print(ds.getValueBest(dataDriveFreeSpace))
 
-    print "at OkToShareSpace ..."
-    print "ok to share 100MB - should be true"
-    print OkToShareSpace(100)
-    print "ok to share 12345678MB - should be false"
-    print OkToShareSpace(12345678)
+    print("at OkToShareSpace ...")
+    print("ok to share 100MB - should be true")
+    print(OkToShareSpace(100))
+    print("ok to share 12345678MB - should be false")
+    print(OkToShareSpace(12345678))
 
 
 if __name__ == '__main__':

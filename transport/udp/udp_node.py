@@ -45,7 +45,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 18
 
 #------------------------------------------------------------------------------
@@ -244,7 +248,7 @@ class UDPNode(automat.Automat):
             return True
         if _Debug:
             lg.out(_DebugLevel, 'udp_node.isKnownUser %s not found in %s' % (
-                user_id, udp_session.sessions_by_peer_id().keys()))
+                user_id, list(udp_session.sessions_by_peer_id().keys())))
         return False
 
     def isKnowMyAddress(self, arg):
@@ -423,8 +427,8 @@ class UDPNode(automat.Automat):
         lg.out(
             12, 'udp_node.doDisconnect going to close %d sessions and %d connectors' %
             (len(
-                udp_session.sessions().values()), len(
-                udp_connector.connectors().values())))
+                list(udp_session.sessions().values())), len(
+                list(udp_connector.connectors().values()))))
         udp_stream.stop_process_streams()
         udp_session.stop_process_sessions()
         for s in udp_session.sessions().values():

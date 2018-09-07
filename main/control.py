@@ -32,11 +32,16 @@ module:: control
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
+import six
 import os
 import sys
 import time
@@ -141,7 +146,7 @@ def request_update(items=None):
     _UpdateItems['refresh'] = int(time.time())
     if items is not None:
         for item in items:
-            if isinstance(item, str):
+            if isinstance(item, six.string_types):
                 _UpdateItems[item] = int(time.time())
             elif isinstance(item, tuple) and len(item) == 2:
                 key, value = item

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 USERS={'admin': 'admin', 
         'user': 'user',
         'test': 'eW91IGFyZSBjcmF6eQo='}

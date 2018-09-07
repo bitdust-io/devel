@@ -30,6 +30,7 @@ Manages currently restoring backups.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import os
 import sys
 import time
@@ -83,7 +84,7 @@ def packet_in_callback(backupID, newpacket):
     lg.out(12, 'restore_monitor.packet_in_callback %s from suppier %s' % (backupID, SupplierNumber))
 
     # want to count the data we restoring
-    if SupplierNumber not in _WorkingRestoreProgress[backupID].keys():
+    if SupplierNumber not in list(_WorkingRestoreProgress[backupID].keys()):
         _WorkingRestoreProgress[backupID][SupplierNumber] = 0
     _WorkingRestoreProgress[backupID][SupplierNumber] += len(newpacket.Payload)
 
@@ -165,7 +166,7 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
 #     try:
 #         if isinstance(x, Exception):
 #             backupID, result = x.getErrorMessage().split(' ')
-#         elif isinstance(x, str):
+#         elif isinstance(x, six.text_type):
 #             backupID, result = x.split(' ')
 #     except:
 #         lg.exc()
@@ -186,7 +187,7 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
     lg.out(8, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
-    if backupID in _WorkingBackupIDs.keys():
+    if backupID in list(_WorkingBackupIDs.keys()):
         return _WorkingBackupIDs[backupID]
     outfd, outfilename = tmpfile.make(
         'restore',
@@ -208,7 +209,7 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
 def Abort(backupID):
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
-    if backupID not in _WorkingBackupIDs.keys():
+    if backupID not in list(_WorkingBackupIDs.keys()):
         lg.warn('%s not found in working list' % backupID)
         return False
     r = _WorkingBackupIDs[backupID]
@@ -221,17 +222,17 @@ def Abort(backupID):
 
 def GetWorkingIDs():
     global _WorkingBackupIDs
-    return _WorkingBackupIDs.keys()
+    return list(_WorkingBackupIDs.keys())
 
 
 def GetWorkingObjects():
     global _WorkingBackupIDs
-    return _WorkingBackupIDs.values()
+    return list(_WorkingBackupIDs.values())
 
 
 def IsWorking(backupID):
     global _WorkingBackupIDs
-    return backupID in _WorkingBackupIDs.keys()
+    return backupID in list(_WorkingBackupIDs.keys())
 
 
 def GetProgress(backupID):

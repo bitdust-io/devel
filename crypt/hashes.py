@@ -31,28 +31,39 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 from Cryptodome.Hash import MD5
 from Cryptodome.Hash import SHA1
 from Cryptodome.Hash import SHA256
+import six
 
 #------------------------------------------------------------------------------
 
 def md5(inp, hexdigest=False):
-    h = MD5.new(inp)
+    s = inp
+    if isinstance(s, six.text_type):
+        s = s.encode('utf-8')
+    h = MD5.new(s)
     if hexdigest:
         return h.hexdigest()
     return h.digest()
 
 
 def sha1(inp, hexdigest=False):
-    h = SHA1.new(inp)
+    s = inp
+    if isinstance(s, six.text_type):
+        s = s.encode('utf-8')
+    h = SHA1.new(s)
     if hexdigest:
         return h.hexdigest()
     return h.digest()
 
 
 def sha256(inp, hexdigest=False):
-    h = SHA256.new(inp)
+    s = inp
+    if isinstance(s, six.text_type):
+        s = s.encode('utf-8')
+    h = SHA256.new(s)
     if hexdigest:
         return h.hexdigest()
     return h.digest()

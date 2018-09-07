@@ -10,7 +10,9 @@ licensed.
 
 """
 
-print "Attempting to load emergency backup crypto munitions."
+from __future__ import absolute_import
+from __future__ import print_function
+print("Attempting to load emergency backup crypto munitions.")
 
 #  Copyright (C) 2011 Yann GUIBET <yannguibet@gmail.com>
 
@@ -53,7 +55,7 @@ class _OpenSSL:
         """
         Build the wrapper
         """
-        print "Loading {}".format(library)
+        print("Loading {}".format(library))
         self._lib = ctypes.CDLL(library)
 
         self.pointer = ctypes.pointer
@@ -426,17 +428,17 @@ for lib_to_try in openssl_lib_candidates:
         pass
 
 if OpenSSL is None:
-    print ("Could not load a working OpenSSL from: {}".format(
-        openssl_lib_candidates))
-    print "You probably need to do this:"
-    print ""
-    print "\t# wget http://www.openssl.org/source/openssl-1.0.1e.tar.gz"
-    print "\t# tar -xvzf openssl-1.0.1e.tar.gz"
-    print "\t# cd openssl-1.0.1e"
-    print "\t# ./config --prefix=/ --openssldir=/etc/ssl --libdir=lib shared"
-    print "\t# make"
-    print "\t# make install"
-    print ""
+    print(("Could not load a working OpenSSL from: {}".format(
+        openssl_lib_candidates)))
+    print("You probably need to do this:")
+    print("")
+    print("\t# wget http://www.openssl.org/source/openssl-1.0.1e.tar.gz")
+    print("\t# tar -xvzf openssl-1.0.1e.tar.gz")
+    print("\t# cd openssl-1.0.1e")
+    print("\t# ./config --prefix=/ --openssldir=/etc/ssl --libdir=lib shared")
+    print("\t# make")
+    print("\t# make install")
+    print("")
     print ("Or otherwise ensure that either the system OpenSSL has all the "
            "functions we need, or OpenSSL 1.0 is installed aslibcrypto.so.1.0.0 "
            "in LD_LIBRARY_PATH")
@@ -444,8 +446,8 @@ if OpenSSL is None:
     sys.exit(1)
 
 else:
-    print "Successfully loaded emergency backup crypto munitions!"
-    print "You really should install pyelliptic instead though."
+    print("Successfully loaded emergency backup crypto munitions!")
+    print("You really should install pyelliptic instead though.")
 
 # Stuff from cypher.py
 
@@ -484,7 +486,7 @@ class Cipher:
         """
         static method, returns all ciphers available
         """
-        return OpenSSL.cipher_algo.keys()
+        return list(OpenSSL.cipher_algo.keys())
 
     @staticmethod
     def get_blocksize(ciphername):
@@ -615,7 +617,7 @@ class ECC:
         """
         static method, returns the list of all the curves available
         """
-        return OpenSSL.curves.keys()
+        return list(OpenSSL.curves.keys())
 
     def get_curve(self):
         return OpenSSL.get_curve_by_id(self.curve)

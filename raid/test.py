@@ -19,8 +19,11 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
+from six.moves import range
 
 
 try:
@@ -37,10 +40,10 @@ from twisted.internet import reactor
 
 import pp
 
-import make
+from . import make
 
 js = pp.Server()
-tsks = range(20)
+tsks = list(range(20))
 active = []
 
 
@@ -54,7 +57,7 @@ def _func(filename, eccmapname, backupId, blockNumber, targetDir):
 
 def _cb(result, bnum):
     global active
-    print 'cb', result, bnum, active
+    print('cb', result, bnum, active)
     active.remove(bnum)
     if len(tsks) == 0 and len(active) == 0:
         _print()
@@ -77,7 +80,7 @@ def _more():
         args = tuple(l)
         js.submit(_func, args, modules=('make',),
                   callback=lambda result: _cb(result, blockNumber), )  # callbackargs=(sys.argv[2],),)
-        print 'more', tsks, active
+        print('more', tsks, active)
         break
     reactor.callLater(0.01, _more)
 

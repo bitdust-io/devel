@@ -28,6 +28,9 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 
+import six
+
+
 class Contact(object):
     """
     Encapsulation for remote contact.
@@ -46,7 +49,7 @@ class Contact(object):
     def __eq__(self, other):
         if isinstance(other, Contact):
             return self.id == other.id
-        elif isinstance(other, str):
+        elif isinstance(other, six.string_types):
             return self.id == other
         else:
             return False
@@ -54,7 +57,7 @@ class Contact(object):
     def __ne__(self, other):
         if isinstance(other, Contact):
             return self.id != other.id
-        elif isinstance(other, str):
+        elif isinstance(other, six.string_types):
             return self.id != other
         else:
             return True

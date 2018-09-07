@@ -16,17 +16,19 @@
 # limitations under the License.
 
 
-from index import Index, IndexException, DocIdNotFound, ElemNotFound
+from __future__ import absolute_import
+from .index import Index, IndexException, DocIdNotFound, ElemNotFound
 import struct
 import marshal
 import os
 import io
 import shutil
-from storage import IU_Storage
+from .storage import IU_Storage
 # from ipdb import set_trace
 
 from CodernityDB.env import cdb_environment
 from CodernityDB.index import TryReindexException
+import six
 
 if cdb_environment.get('rlock_obj'):
     from CodernityDB import patch
@@ -69,7 +71,7 @@ class IU_TreeBasedIndex(Index):
         self._count_props()
         if not storage_class:
             storage_class = IU_Storage
-        if storage_class and not isinstance(storage_class, basestring):
+        if storage_class and not isinstance(storage_class, six.string_types):
             storage_class = storage_class.__name__
         self.storage_class = storage_class
         self.storage = None
@@ -1939,7 +1941,7 @@ class IU_TreeBasedIndex(Index):
         gen = self.all()
         while True:
             try:
-                doc_id, key, start, size, status = gen.next()
+                doc_id, key, start, size, status = next(gen)
             except StopIteration:
                 break
             self.storage._f.seek(start)

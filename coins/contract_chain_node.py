@@ -24,7 +24,11 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -119,7 +123,7 @@ class Query(object):
             })
             assert outpacket.PacketID not in self.out_packets
             self.out_packets[outpacket.PacketID] = single_accountant
-        DeferredList(self.out_packets.values()).addBoth(self._on_results_collected)
+        DeferredList(list(self.out_packets.values())).addBoth(self._on_results_collected)
         if _Debug:
             lg.out(_DebugLevel, 'contract_chain_node.Query created to request from %d accountants' % len(self.out_packets))
 
@@ -190,5 +194,5 @@ class Query(object):
             return None
         if _Debug:
             lg.out(_DebugLevel, 'contract_chain_node._on_results_collected : %d COINS FOUND' % len(unique_coins))
-        self.result.callback(unique_coins.values())
+        self.result.callback(list(unique_coins.values()))
         return None

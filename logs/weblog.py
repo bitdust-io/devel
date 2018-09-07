@@ -33,10 +33,12 @@ A useful code to monitor program logs in the Web browser using local
 HTML server.
 """
 
+from __future__ import absolute_import
 import sys
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import base64
 from time import strftime
+from six.moves import range
 
 try:
     from twisted.internet import reactor
@@ -148,7 +150,7 @@ def log(level, s):
     global myweblistener
     if not myweblistener:
         return
-    logtext += '%s|%s|%s|%s\n' % (str(lineindex), str(level), strftime('%H:%M:%S'), s.replace('\n', '#nl'))
+    logtext += '%d|%d|%s|%s\n' % (lineindex, level, strftime('%H:%M:%S'), s.replace('\n', '#nl'))
     numlines += 1
     lineindex += 1
     while numlines > maxlines:
@@ -254,7 +256,7 @@ class LogPage(resource.Resource):
                 out += a % str(s)
             except:
                 try:
-                    out += a % str(urllib.quote(s))
+                    out += a % str(six.moves.urllib.parse.quote(s))
                 except:
                     out += a % str(base64.encodestring(s))
 

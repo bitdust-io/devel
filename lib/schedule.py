@@ -33,10 +33,12 @@ be able to set a schedule to run backups at given moments. At the moment
 all this code is disabled.
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import time
 import calendar
+from six.moves import range
 
 if __name__ == '__main__':
     sys.path.append(os.path.abspath('..'))
@@ -146,7 +148,7 @@ class Schedule:
         typ = l[0].strip()
         if typ in ['0', '1', '2', '3', '4', '5']:
             typ = self.types.get(typ, 'none')
-        if typ not in self.types.values():
+        if typ not in list(self.types.values()):
             typ = 'none'
         if len(l) < 3:
             return self.blank_dict(typ)
@@ -260,7 +262,7 @@ class Schedule:
             d['details'] = ''
         if 'lasttime' not in d:
             d['lasttime'] = ''
-        if d['type'] not in self.types.values():
+        if d['type'] not in list(self.types.values()):
             d['type'] = self.types['0']
         try:
             d['interval'] = str(int(d['interval']))
@@ -437,9 +439,9 @@ def from_compact_string(s):
         lg.warn('incorrect schedule string: ' + s)
         lg.exc()
         return None
-    if sh_type in all_labels.keys():
+    if sh_type in list(all_labels.keys()):
         sh_type = all_labels[sh_type]
-    if sh_type not in all_labels.values():
+    if sh_type not in list(all_labels.values()):
         lg.warn('incorrect schedule type: ' + s)
         return None
     sh_details_new = ''

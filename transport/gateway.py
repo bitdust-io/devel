@@ -65,7 +65,12 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from io import open
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
@@ -232,7 +237,7 @@ def cold_start():
         lg.out(4, 'gateway.cold_start : sending "start" only to one transport - most preferable')
     callback.append_outbox_filter_callback(on_outbox_packet)
     callback.add_finish_file_receiving_callback(on_file_received)
-    ordered_list = transports().keys()
+    ordered_list = list(transports().keys())
     ordered_list.sort(key=settings.getTransportPriority, reverse=True)
     result = []
     for proto in ordered_list:
@@ -278,7 +283,7 @@ def stop():
 def verify():
     """
     """
-    ordered_list = transports().keys()
+    ordered_list = list(transports().keys())
     ordered_list.sort(key=settings.getTransportPriority, reverse=True)
     if _Debug:
         lg.out(4, 'gateway.verify sorted list : %r' % ordered_list)
@@ -348,10 +353,10 @@ def detach(transport_instance):
     """
     global _TransportsDict
     global _AvailableTransports
-    if transport_instance.proto not in _AvailableTransports.keys():
+    if transport_instance.proto not in list(_AvailableTransports.keys()):
         lg.warn('transport [%s] not available' % transport_instance.proto)
         return
-    if transport_instance.proto not in _TransportsDict.keys():
+    if transport_instance.proto not in list(_TransportsDict.keys()):
         lg.warn('transport [%s] not attached' % transport_instance.proto)
         return
     _AvailableTransports.pop(transport_instance.proto)
@@ -624,7 +629,7 @@ def current_bytes_received():
     res = {}
     # for transfer_id, info in transfers_in().items():
     #     res[transfer_id] = info.size
-    for pkt_in in packet_in.items().values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         res[pkt_in.transfer_id] = pkt_in.size
     return res
 
@@ -644,8 +649,8 @@ def shutdown_all_inbox_packets():
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(packet_in.items().values()))
-    for pkt_in in list(packet_in.items().values()):
+        lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(list(packet_in.items()).values()))
+    for pkt_in in list(packet_in.inbox_items().values()):
         pkt_in.event('cancel', 'shutdown')
 
 #------------------------------------------------------------------------------
@@ -658,7 +663,7 @@ def packets_timeout_loop():
     if _Debug:
         delay = 1
     _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)
-    for pkt_in in packet_in.items().values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
             if _Debug:
                 lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_in, pkt_in.timeout))
@@ -684,7 +689,7 @@ def stop_packets_timeout_loop():
 
 def monitoring():
     list_pkt_in = []
-    for pkt_in in packet_in.items().values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         list_pkt_in.append(pkt_in.label)
     list_pkt_out = []
     for pkt_out in packet_out.queue():
@@ -1025,7 +1030,7 @@ class TransportGateXMLRPCServer(xmlrpc.XMLRPC):
                                         "procedure %s not found: %s" % (procedurePath, e))
 
     def listProcedures(self):
-        return self.methods.keys()
+        return list(self.methods.keys())
 
 #------------------------------------------------------------------------------
 

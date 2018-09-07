@@ -30,6 +30,7 @@
 module:: my_id
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import string
@@ -396,7 +397,7 @@ def buildProtoContacts(id_obj, skip_transports=[]):
                     new_order.append(cproto)
         new_order_correct = list(new_order)
         for nproto in new_order:
-            if nproto not in new_contacts.keys():
+            if nproto not in list(new_contacts.keys()):
                 new_order_correct.remove(nproto)
 
 #            cset = set(corder)

@@ -3,6 +3,8 @@
 
 # Save this in to a file sum_client.py
 
+from __future__ import absolute_import
+from __future__ import print_function
 from twisted.internet import reactor
 from twisted.internet.protocol import ClientCreator
 from twisted.protocols import amp
@@ -18,7 +20,7 @@ def connected(protocol):
         ).addCallback(gotResult)
 
 def gotResult(result):
-    print('total: %d' % (result['total'],))
+    print(('total: %d' % (result['total'],)))
     reactor.stop()
 
 def error(reason):

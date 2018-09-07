@@ -52,8 +52,13 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -204,7 +209,7 @@ def GetActiveArray(customer_idurl=None):
     """
     from p2p import contact_status
     activeArray = [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
-    for i in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+    for i in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
             activeArray[i] = 0
@@ -222,7 +227,7 @@ def SuppliersChangedNumbers(oldSupplierList, customer_idurl=None):
     were changed it should return [1,3].
     """
     changedList = []
-    for i in xrange(len(oldSupplierList)):
+    for i in range(len(oldSupplierList)):
         suplier_idurl = oldSupplierList[i]
         if not suplier_idurl:
             continue
@@ -459,7 +464,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 remote_files()[backupID] = {}
                 # lg.out(6, 'backup_matrix.ReadRawListFiles new remote entry for %s created in the memory' % backupID)
             # +1 because range(2) give us [0,1] but we want [0,1,2]
-            for blockNum in xrange(maxBlockNum + 1):
+            for blockNum in range(maxBlockNum + 1):
                 if blockNum not in remote_files()[backupID]:
                     remote_files()[backupID][blockNum] = {
                         'D': [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl),
@@ -609,7 +614,7 @@ def DetectSupplierPosition(raw_list_file_text):
         len(raw_list_file_text), all_positions))
     if not all_positions:
         return -1
-    all_positions = all_positions.items()
+    all_positions = list(all_positions.items())
     all_positions.sort(key=lambda i: i[1], reverse=True)
     return all_positions[0][0]
 
@@ -728,7 +733,7 @@ def LocalBlockReport(backupID, blockNumber, result):
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.LocalFileReport  in block %d at %s for %s' % (blockNumber, backupID, customer, ))
     num_suppliers = contactsdb.num_suppliers(customer_idurl=customer_idurl)
-    for supplierNum in xrange(num_suppliers):
+    for supplierNum in range(num_suppliers):
         supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
         if not supplier_idurl:
             lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%s' % (
@@ -802,11 +807,11 @@ def ScanMissingBlocks(backupID):
             # need to scan all block numbers
             if _Debug:
                 lg.out(_DebugLevel, '    no remote info but found local info, maxBlockNum=%d' % localMaxBlockNum)
-            for blockNum in xrange(localMaxBlockNum + 1):
+            for blockNum in range(localMaxBlockNum + 1):
                 # we check for Data and Parity packets
                 localData = GetLocalDataArray(backupID, blockNum)
                 localParity = GetLocalParityArray(backupID, blockNum)
-                for supplierNum in xrange(len(supplierActiveArray)):
+                for supplierNum in range(len(supplierActiveArray)):
                     # if supplier is not alive we can not send to him
                     # so no need to scan for missing blocks
                     if supplierActiveArray[supplierNum] != 1:
@@ -822,7 +827,7 @@ def ScanMissingBlocks(backupID):
         if _Debug:
             lg.out(_DebugLevel, '    found remote info, maxBlockNum=%d' % maxBlockNum)
         # and increase by one because range(3) give us [0, 1, 2], but we want [0, 1, 2, 3]
-        for blockNum in xrange(maxBlockNum + 1):
+        for blockNum in range(maxBlockNum + 1):
             # if we have few remote files, but many locals - we want to send all missed
             if blockNum not in remote_files()[backupID]:
                 missingBlocks.add(blockNum)
@@ -831,7 +836,7 @@ def ScanMissingBlocks(backupID):
             remoteData = GetRemoteDataArray(backupID, blockNum)
             remoteParity = GetRemoteParityArray(backupID, blockNum)
             # now check every our supplier for every block
-            for supplierNum in xrange(len(supplierActiveArray)):
+            for supplierNum in range(len(supplierActiveArray)):
                 # if supplier is not alive we can not send to him
                 # so no need to scan for missing blocks
                 if supplierActiveArray[supplierNum] != 1:
@@ -865,7 +870,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
     if backupID not in remote_files() or backupID not in local_files():
         # no info about this backup yet - skip
         return packets
-    for blockNum in xrange(localMaxBlockNum + 1):
+    for blockNum in range(localMaxBlockNum + 1):
         localArray = {'Data': GetLocalDataArray(backupID, blockNum),
                       'Parity': GetLocalParityArray(backupID, blockNum)}
         remoteArray = {'Data': GetRemoteDataArray(backupID, blockNum),
@@ -877,7 +882,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
         if (-1 in remoteArray['Data']) or (-1 in remoteArray['Parity']):
             # also if we do not have any info about this block for some supplier do not remove other local pieces
             continue
-        for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+        for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
             supplierIDURL = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
             if not supplierIDURL:
                 # supplier is unknown - skip
@@ -909,13 +914,13 @@ def ScanBlocksToSend(backupID):
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
     supplierActiveArray = GetActiveArray(customer_idurl=customer_idurl)
     bySupplier = {}
-    for supplierNum in xrange(len(supplierActiveArray)):
+    for supplierNum in range(len(supplierActiveArray)):
         bySupplier[supplierNum] = set()
     if backupID not in remote_files():
-        for blockNum in xrange(localMaxBlockNum + 1):
+        for blockNum in range(localMaxBlockNum + 1):
             localData = GetLocalDataArray(backupID, blockNum)
             localParity = GetLocalParityArray(backupID, blockNum)
-            for supplierNum in xrange(len(supplierActiveArray)):
+            for supplierNum in range(len(supplierActiveArray)):
                 if supplierActiveArray[supplierNum] != 1:
                     continue
                 if supplierNum >= len(localData) or supplierNum >= len(localParity):
@@ -925,12 +930,12 @@ def ScanBlocksToSend(backupID):
                 if localParity[supplierNum] == 1:
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Parity'))
     else:
-        for blockNum in xrange(localMaxBlockNum + 1):
+        for blockNum in range(localMaxBlockNum + 1):
             remoteData = GetRemoteDataArray(backupID, blockNum)
             remoteParity = GetRemoteParityArray(backupID, blockNum)
             localData = GetLocalDataArray(backupID, blockNum)
             localParity = GetLocalParityArray(backupID, blockNum)
-            for supplierNum in xrange(len(supplierActiveArray)):
+            for supplierNum in range(len(supplierActiveArray)):
                 if supplierActiveArray[supplierNum] != 1:
                     continue
                 if supplierNum >= len(remoteData) or supplierNum >= len(remoteParity):
@@ -1068,7 +1073,7 @@ def GetBackupStats(backupID):
     fileNumbers = [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     totalNumberOfFiles = 0
     for blockNum in remote_files()[backupID].keys():
-        for supplierNum in xrange(len(fileNumbers)):
+        for supplierNum in range(len(fileNumbers)):
             if supplierNum < contactsdb.num_suppliers(customer_idurl=customer_idurl):
                 if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
                     fileNumbers[supplierNum] += 1
@@ -1077,7 +1082,7 @@ def GetBackupStats(backupID):
                     fileNumbers[supplierNum] += 1
                     totalNumberOfFiles += 1
     statsArray = []
-    for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+    for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
             percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / (maxBlockNum + 1)
@@ -1103,11 +1108,11 @@ def GetBackupLocalStats(backupID):
     percentPerSupplier = 100.0 / contactsdb.num_suppliers(customer_idurl=customer_idurl)
     totalNumberOfFiles = 0
     fileNumbers = [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
-    for blockNum in xrange(maxBlockNum + 1):
-        if blockNum not in local_files()[backupID].keys():
+    for blockNum in range(maxBlockNum + 1):
+        if blockNum not in list(local_files()[backupID].keys()):
             continue
 #    for blockNum in local_files()[backupID].keys():
-        for supplierNum in xrange(len(fileNumbers)):
+        for supplierNum in range(len(fileNumbers)):
             if supplierNum < contactsdb.num_suppliers(customer_idurl=customer_idurl):
                 if local_files()[backupID][blockNum]['D'][supplierNum] == 1:
                     fileNumbers[supplierNum] += 1
@@ -1116,7 +1121,7 @@ def GetBackupLocalStats(backupID):
                     fileNumbers[supplierNum] += 1
                     totalNumberOfFiles += 1
     statsArray = []
-    for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+    for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
             percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / (maxBlockNum + 1)
@@ -1143,7 +1148,7 @@ def GetBackupBlocksAndPercent(backupID):
     # we count all remote files for this backup
     fileCounter = 0
     for blockNum in remote_files()[backupID].keys():
-        for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+        for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
             if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
                 fileCounter += 1
             if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
@@ -1179,13 +1184,13 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
     lessSuppliers = supplierCount
     activeArray = GetActiveArray(customer_idurl=customer_idurl)
     # we count all remote files for this backup - scan all blocks
-    for blockNum in xrange(maxBlockNum + 1):
-        if blockNum not in remote_files()[backupID].keys():
+    for blockNum in range(maxBlockNum + 1):
+        if blockNum not in list(remote_files()[backupID].keys()):
             lessSuppliers = 0
             weakBlockNum = blockNum
             continue
         goodSuppliers = supplierCount
-        for supplierNum in xrange(supplierCount):
+        for supplierNum in range(supplierCount):
             if activeArray[supplierNum] != 1 and only_available_files:
                 goodSuppliers -= 1
                 continue
@@ -1245,9 +1250,9 @@ def GetBackupIDs(remote=True, local=False, sorted_ids=False):
     """
     s = set()
     if remote:
-        s.update(remote_files().keys())
+        s.update(list(remote_files().keys()))
     if local:
-        s.update(local_files().keys())
+        s.update(list(local_files().keys()))
     if sorted_ids:
         return misc.sorted_backup_ids(list(s))
     return list(s)
@@ -1372,11 +1377,11 @@ def GetWeakLocalBlock(backupID):
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     weakBlockNum = -1
     lessSuppliers = supplierCount
-    for blockNum in xrange(maxBlockNum + 1):
-        if blockNum not in local_files()[backupID].keys():
+    for blockNum in range(maxBlockNum + 1):
+        if blockNum not in list(local_files()[backupID].keys()):
             return blockNum, 0, supplierCount
         goodSuppliers = supplierCount
-        for supplierNum in xrange(supplierCount):
+        for supplierNum in range(supplierCount):
             if local_files()[backupID][blockNum]['D'][supplierNum] != 1 or local_files()[backupID][blockNum]['P'][supplierNum] != 1:
                 goodSuppliers -= 1
         if goodSuppliers < lessSuppliers:
@@ -1398,11 +1403,11 @@ def GetWeakRemoteBlock(backupID):
     weakBlockNum = -1
     lessSuppliers = supplierCount
     activeArray = GetActiveArray(customer_idurl=customer_idurl)
-    for blockNum in xrange(maxBlockNum + 1):
-        if blockNum not in remote_files()[backupID].keys():
+    for blockNum in range(maxBlockNum + 1):
+        if blockNum not in list(remote_files()[backupID].keys()):
             return blockNum, 0, supplierCount
         goodSuppliers = supplierCount
-        for supplierNum in xrange(supplierCount):
+        for supplierNum in range(supplierCount):
             if activeArray[supplierNum] != 1:
                 goodSuppliers -= 1
                 continue

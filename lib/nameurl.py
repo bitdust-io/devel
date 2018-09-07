@@ -40,9 +40,12 @@ argument if you have "http" vs "ssh" or "tcp".
 This seems like trouble.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import re
-import urllib
-import urlparse
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.parse
+from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -59,7 +62,7 @@ def UrlParse(url):
         nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
         ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
-    o = urlparse.urlparse(url)
+    o = six.moves.urllib.parse.urlparse(url)
     proto = o.scheme.strip()
     base = o.netloc.lstrip(' /')
     filename = o.path.lstrip(' /')
@@ -197,14 +200,14 @@ def Quote(s):
     """
     A wrapper for built-in method ``urllib.quote()``.
     """
-    return urllib.quote(s, '')
+    return six.moves.urllib.parse.quote(s, '')
 
 
 def UnQuote(s):
     """
     A wrapper for built-in method ``urllib.unquote()``.
     """
-    return urllib.unquote(s)
+    return six.moves.urllib.parse.unquote(s)
 
 
 #------------------------------------------------------------------------------
@@ -273,7 +276,7 @@ def main():
 # print filenameurl2
 # print FilenameUrl(filenameurl2)
 # print UrlParse('q2q://d5wJMQRBYD72V6Zb5aZ1@work.offshore.ai')
-    print GetName(str(None))
+    print(GetName(str(None)))
 
 if __name__ == '__main__':
     main()

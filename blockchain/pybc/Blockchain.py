@@ -3,6 +3,7 @@ Blockchain.py: contains the Blockchain class.
 
 """
 
+from __future__ import absolute_import
 import hashlib
 import struct
 import time
@@ -16,7 +17,9 @@ from pybc.State import State
 from pybc.StateMachine import StateMachine
 import pybc.util
 import pybc.science
-import sqliteshelf
+from . import sqliteshelf
+import six
+from six.moves import range
 
 
 class Blockchain(object):
@@ -599,7 +602,7 @@ class Blockchain(object):
 
             # Go get the time of the block retaregt_preiod blocks ago
             block = previous_block
-            for _ in xrange(self.retarget_period):
+            for _ in range(self.retarget_period):
                 # Go back a block retarget_period times.
                 # We always have all the blocks, so this will work.
                 block = self.blockstore[block.previous_hash]
@@ -674,7 +677,7 @@ class Blockchain(object):
 
                     # Go get the time of the block retaregt_preiod blocks ago
                     block = previous_block
-                    for _ in xrange(self.retarget_period):
+                    for _ in range(self.retarget_period):
                         # Go back a block retarget_period times.
                         # We always have all the blocks, so this will work.
                         block = self.blockstore[block.previous_hash]
@@ -722,7 +725,7 @@ class Blockchain(object):
                         pybc.util.bytes2hex(previous_block.target)))
 
                     # Multiply it
-                    new_target = long(old_target * factor)
+                    new_target = int(old_target * factor)
 
                     logging.debug("new / old = {}".format(new_target /
                                                           old_target))
@@ -978,7 +981,7 @@ class Blockchain(object):
                 logging.debug("{} waiters were waiting on {}".format(
                     len(waiters), pybc.util.bytes2string(hash_added)))
 
-                for waiter_hash, waiter in waiters.iteritems():
+                for waiter_hash, waiter in six.iteritems(waiters):
                     # We ought to be able to verify and add each waiter.
 
                     # Get the callback
@@ -1521,7 +1524,7 @@ class Blockchain(object):
                         # order.
                         invalid_transaction_hashes = []
 
-                        for tr_hash, transaction in self.transactions.iteritems():
+                        for tr_hash, transaction in six.iteritems(self.transactions):
                             if not self.verify_transaction(transaction,
                                                            self.highest_block, self.transaction_state,
                                                            advance=True):
@@ -1693,7 +1696,7 @@ class Blockchain(object):
         """
 
         with self.lock:
-            for transaction_hash, transaction in self.transactions.iteritems():
+            for transaction_hash, transaction in six.iteritems(self.transactions):
                 yield transaction_hash, transaction
 
     def has_transaction(self, transaction_hash):

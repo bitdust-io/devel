@@ -31,7 +31,12 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -180,7 +185,7 @@ class RelationsLookup(object):
             # record exist and store relation to me
             return self.do_process(record, 1)
 
-        if record['supplier_idurl'] in self._result.values():
+        if record['supplier_idurl'] in list(self._result.values()):
             lg.out(_DebugLevel, 'dht_relations.do_verify DUPLICATED %s, found second record for supplier %s at %s' % (
                 self.customer_id, record['supplier_idurl'], self._index))
             # this record from another supplier is duplicated - we can overwrite it
@@ -243,7 +248,7 @@ class RelationsLookup(object):
 
     def do_report_success(self, x=None):
         result_list = []
-        for i in xrange(self._last_success_index + 1):
+        for i in range(self._last_success_index + 1):
             idurl = self._result.get(i, '')
             if idurl:
                 result_list.append(self._result.get(i, ''))

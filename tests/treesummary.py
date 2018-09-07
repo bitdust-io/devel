@@ -19,6 +19,8 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import os.path as _p
@@ -32,4 +34,4 @@ from lib import nameurl
 custdir = settings.getCustomersFilesDir()
 ownerdir = os.path.join(custdir, nameurl.UrlFilename('http://megafaq.ru/e_vps1004.xml'))
 plaintext = p2p_service.TreeSummary(ownerdir)
-print plaintext
+print(plaintext)

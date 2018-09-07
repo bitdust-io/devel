@@ -42,6 +42,8 @@ EVENTS:
     * :red:`stop`
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 
 #------------------------------------------------------------------------------
@@ -301,7 +303,7 @@ class NicknameObserver(automat.Automat):
 
 def main():
     if len(sys.argv) < 3:
-        print 'usage: nickname_observer.py <"many"|"one"> <nickname> <attempts>'
+        print('usage: nickname_observer.py <"many"|"one"> <nickname> <attempts>')
         return
     from twisted.internet import reactor
     lg.set_debug_level(24)
@@ -310,7 +312,7 @@ def main():
     dht_service.init(settings.getDHTPort())
 
     def _result(result, nickname):
-        print result, nickname
+        print(result, nickname)
         if result == 'finished':
             reactor.stop()
     if sys.argv[1] == 'many':

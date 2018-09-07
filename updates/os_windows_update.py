@@ -33,10 +33,14 @@ A code for Windows platforms to check for updates and download latest
 binaries.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import time
 import calendar
+import six
+from io import open
 
 try:
     from twisted.internet import reactor
@@ -44,6 +48,8 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in os_windows_update.py')
 
 from twisted.internet.defer import Deferred
+
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
@@ -151,8 +157,8 @@ def UpdatingInProgress():
 
 
 def write2log(txt):
-    out_file = file(settings.UpdateLogFilename(), 'a')
-    print >>out_file, txt
+    out_file = open(settings.UpdateLogFilename(), 'a')
+    print(txt, file=out_file)
     out_file.close()
 
 
@@ -237,6 +243,8 @@ def download_and_replace_starter(output_func=None):
         try:
             fin = open(filename, 'rb')
             src = fin.read()
+            if not isinstance(src, six.text_type):
+                src = src.decode('utf-8')
             fin.close()
         except:
             if output_func:
@@ -526,7 +534,7 @@ def string_to_shedule(raw_data):
     d['type'] = l[0].strip()
     if d['type'] in ['0', '1', '2', '3', '4', '5']:
         d['type'] = _SheduleTypesDict.get(d['type'], 'none')
-    if d['type'] not in _SheduleTypesDict.values():
+    if d['type'] not in list(_SheduleTypesDict.values()):
         d['type'] = 'daily'
     d['daytime'] = l[1].strip()
     d['interval'] = l[2].strip()

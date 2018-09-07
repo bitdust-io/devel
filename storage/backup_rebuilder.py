@@ -62,7 +62,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -615,7 +620,7 @@ class BackupRebuilder(automat.Automat):
             from customer import data_sender
             count = 0
             customer_idurl = packetid.CustomerIDURL(_backupID)
-            for supplierNum in xrange(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
+            for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
                 if localData[supplierNum] == 1 and reconstructedData[
                         supplierNum] == 1:
                     backup_matrix.LocalFileReport(

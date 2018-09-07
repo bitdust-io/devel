@@ -31,6 +31,7 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import gc
 
 #------------------------------------------------------------------------------
@@ -40,6 +41,7 @@ from Cryptodome.Hash import SHA1
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.Util import number
+from io import open
 
 #------------------------------------------------------------------------------
 
@@ -117,7 +119,7 @@ class RSAKey(object):
     def verify(self, signature, message):
         h = SHA1.new(message)
         try:
-            signature_int = long(signature)
+            signature_int = int(signature)
             signature_bytes = number.long_to_bytes(signature_int)
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True

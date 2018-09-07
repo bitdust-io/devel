@@ -51,11 +51,15 @@ So we can reconstruct those signatures.
 Numbering is from 0 to 63 for range of 64.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import re
 import threading
 
 from logs import lg
+from six.moves import range
+from io import open
 
 #------------------------------------------------------------------------------
 
@@ -81,7 +85,7 @@ __eccmap2suppliers = {
     'ecc/64x64': 64,
 }
 
-__eccmap_names = __eccmap2suppliers.keys()
+__eccmap_names = list(__eccmap2suppliers.keys())
 __eccmap_names.sort()
 
 __eccmaps = {
@@ -595,17 +599,17 @@ def main():
     Tests.
     """
     myecc = eccmap("ecc/4x4")
-    print myecc.ParityToData
-    print myecc.DataToParity
+    print(myecc.ParityToData)
+    print(myecc.DataToParity)
     myecc.check()
 
-    print "Do some checks for rebuilding a block"
+    print("Do some checks for rebuilding a block")
     dataSegments = [1, 0, 1, 1]
     paritySegments = [1, 1, 1, 0]
     parityNum, parityMap = myecc.GetDataFixPath(dataSegments, paritySegments, 1)
-    print parityNum       # as of the writing, the best parity was 7
-    print parityMap
-    print myecc.Fixable(dataSegments, paritySegments)
+    print(parityNum)       # as of the writing, the best parity was 7
+    print(parityMap)
+    print(myecc.Fixable(dataSegments, paritySegments))
 
 
 def main2():
@@ -613,21 +617,21 @@ def main2():
     Another tests.
     """
     myecc = eccmap("ecc/64x64")
-    print myecc.ParityToData
-    print myecc.DataToParity
+    print(myecc.ParityToData)
+    print(myecc.DataToParity)
     myecc.check()
 
-    print "Do some checks for rebuilding a block"
+    print("Do some checks for rebuilding a block")
     dataSegments = [1] * 64
     paritySegments = [1] * 64
     dataSegments[2] = 0   # making it so we're missing data segment 2
     parityNum, parityMap = myecc.GetDataFixPath(dataSegments, paritySegments, 2)
-    print parityNum       # as of the writing, the best parity was 7
-    print parityMap
+    print(parityNum)       # as of the writing, the best parity was 7
+    print(parityMap)
     paritySegments[7] = 0  # remove parity 7 and then try it again.
     parityNum, parityMap = myecc.GetDataFixPath(dataSegments, paritySegments, 2)
-    print parityNum       # should be 11
-    print parityMap
+    print(parityNum)       # should be 11
+    print(parityMap)
 
 #------------------------------------------------------------------------------
 

@@ -36,6 +36,8 @@ need to move out userconfig stuff from that file
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import random
 
@@ -203,7 +205,6 @@ def convert_key(key):
 """
 Below is a set of global constants.
 """
-
 
 #------------------------------------------------------------------------------
 #--- LOGS --------------------------------------------------------------------
@@ -1337,18 +1338,21 @@ def FontImageFile():
 
 def DefaultXMLRPCPort():
     """
+    Obsolete. To be removed.
     """
     return 8082
 
 
 def DefaultJsonRPCPort():
     """
+    Only Local! Never expose to outside of localhost.
     """
     return 8083
 
 
 def DefaultRESTHTTPPort():
     """
+    Only Local! Never expose to outside of localhost.
     """
     return 8180
 
@@ -2710,19 +2714,19 @@ def main():
     try:
         inp = sys.argv[1].rstrip('/')
     except:
-        print 'wrong input'
+        print('wrong input')
         return
     if not config.conf().exist(inp):
-        print 'not exist'
+        print('not exist')
         return
     if not config.conf().hasChilds(inp):
-        print inp, config.conf().getData(inp)
+        print(inp, config.conf().getData(inp))
         return
     for child in config.conf().listEntries(inp):
         if config.conf().hasChilds(child):
-            print child, config.conf().listEntries(child)
+            print(child, config.conf().listEntries(child))
         else:
-            print child, config.conf().getData(child)
+            print(child, config.conf().getData(child))
 
 #------------------------------------------------------------------------------
 

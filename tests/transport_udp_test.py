@@ -20,6 +20,8 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -104,14 +106,14 @@ def main():
                 reconnect = False
                 if not sess:
                     reconnect = True
-                    print 'sessions', udp_session.sessions_by_peer_id().keys()
-                    print map(lambda s: s.peer_id, udp_session.sessions().values())
+                    print('sessions', list(udp_session.sessions_by_peer_id().keys()))
+                    print([s.peer_id for s in list(udp_session.sessions().values())])
                 else:
                     if sess.state != 'CONNECTED':
-                        print 'state: ', sess.state
+                        print('state: ', sess.state)
                         reconnect = True
                 if reconnect:
-                    print 'reconnect', sess
+                    print('reconnect', sess)
                     udp_session.add_pending_outbox_file(
                         sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
                     udp_node.A('connect', sys.argv[2])
@@ -119,7 +121,7 @@ def main():
 
             def _try_connect():
                 if udp_node.A().state == 'LISTEN':
-                    print 'connect'
+                    print('connect')
                     gateway.stop_packets_timeout_loop()
                     udp_session.add_pending_outbox_file(
                         sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
@@ -132,7 +134,7 @@ def main():
             def _send(c):
                 from transport.udp import udp_stream
                 for idurl in sys.argv[2:]:
-                    print '_send', udp_stream.streams().keys()
+                    print('_send', list(udp_stream.streams().keys()))
                     p = signed.Packet(commands.Data(),
                                       my_id.getLocalID(),
                                       my_id.getLocalID(),

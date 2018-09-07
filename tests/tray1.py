@@ -19,10 +19,12 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
 import wx
 from wx import ImageFromStream, BitmapFromImage, EmptyIcon
 import cStringIO
 import zlib
+from six.moves import range
 
 # ================================ ICON ======================================
 

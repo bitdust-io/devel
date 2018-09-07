@@ -43,7 +43,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -313,7 +318,7 @@ class StunClient(automat.Automat):
         for address in self.stun_servers:
             if address is None:
                 continue
-            if address in self.stun_results.keys():
+            if address in list(self.stun_results.keys()):
                 continue
             udp.send_command(self.listen_port, udp.CMD_STUN, '', address)
 
@@ -347,9 +352,9 @@ class StunClient(automat.Automat):
         Action method.
         """
         try:
-            min_port = min(map(lambda addr: addr[1], self.stun_results.values()))
-            max_port = max(map(lambda addr: addr[1], self.stun_results.values()))
-            my_ip = self.stun_results.values()[0][0]
+            min_port = min([addr[1] for addr in list(self.stun_results.values())])
+            max_port = max([addr[1] for addr in list(self.stun_results.values())])
+            my_ip = list(self.stun_results.values())[0][0]
             if min_port == max_port:
                 result = ('stun-success', 'non-symmetric', my_ip, min_port)
             else:
@@ -494,11 +499,11 @@ def test_safe_stun():
     from twisted.internet import reactor
 
     def _cb(res):
-        print res
+        print(res)
         reactor.stop()
 
     def _eb(err):
-        print err
+        print(err)
         reactor.stop()
 
     lg.set_debug_level(30)
@@ -522,7 +527,7 @@ def main():
     udp.listen(udp_port)
 
     def _cb(result, typ, ip, details):
-        print result, typ, ip, details
+        print(result, typ, ip, details)
         A('shutdown')
         reactor.stop()
 

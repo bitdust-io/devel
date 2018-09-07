@@ -2,6 +2,7 @@
 ClientFactory.py: contains the ClientFactory class.
 
 """
+from __future__ import absolute_import
 import logging
 from twisted.internet import protocol
 
