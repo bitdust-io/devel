@@ -11,4 +11,4 @@ before_install:
 install:
   - docker-compose up -d
 script:
-  - docker-compose exec test sh -c "pytest tests/ -v -s"
+  - docker-compose exec test sh -c "pytest tests/test_ss/ -v -s"
