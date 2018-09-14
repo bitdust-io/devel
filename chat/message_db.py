@@ -426,7 +426,7 @@ def main():
         shutdown()
 
     if sys.argv[1] == 'refresh':
-        print 'ReIndexing'
+        print('ReIndexing')
         init()
         refresh_indexes(db())
         shutdown()
