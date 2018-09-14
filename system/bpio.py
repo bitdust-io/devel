@@ -451,7 +451,10 @@ def WriteFileSimple(filename, data, mode="w"):
                 bin_data = bin_data.encode('utf-8')
             fil.write(bin_data)
         else:
-            fil.write(data)
+            text_data = data
+            if not isinstance(text_data, six.text_type):
+                text_data = text_data.decode('utf-8')
+            fil.write(text_data)
         fil.close()
     except:
         lg.exc()
