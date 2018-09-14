@@ -38,7 +38,6 @@ import os
 import sys
 import time
 import threading
-from six.moves import range
 
 #-------------------------------------------------------------------------------
 
@@ -477,6 +476,7 @@ def monitorDelayedCalls(r):
     """
     Print out all delayed calls.
     """
+    from six.moves import range
     global _DelayedCallsIndex
     from logs import lg
     keys = list(_DelayedCallsIndex.keys())
