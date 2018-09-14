@@ -170,7 +170,7 @@ class DataSender(automat.Automat):
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
         if _Debug:
             log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
-            log.write('doScanAndQueue %s\n' % time.asctime())
+            log.write('doScanAndQueue %s\n' % time.asctime().decode('utf-8'))
         if _ShutdownFlag:
             if _Debug:
                 log.write('doScanAndQueue _ShutdownFlag is True\n')
