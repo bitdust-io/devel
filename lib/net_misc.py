@@ -30,23 +30,29 @@
 Some network routines
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
-import os
-import re
-import sys
-import socket
-import random
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 import six.moves.urllib.parse
+from io import open
+
+#------------------------------------------------------------------------------
+
+import os
+import re
+import sys
+import six
+import socket
+import random
 import platform
 import mimetypes
 import subprocess
-import six
-from io import open
 # fun mountain from
 # python imports :-)
 
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor
@@ -55,14 +61,14 @@ except:
 
 from twisted.internet.defer import Deferred, DeferredList, succeed, fail
 from twisted.internet import protocol
-from twisted.python.failure import Failure
 # from twisted.internet.utils import getProcessOutput
 from twisted.web import iweb
 from twisted.web import client
 from twisted.web import http_headers
-from twisted.web.client import getPage
 from twisted.web.client import downloadPage
 from twisted.web.client import HTTPDownloader
+from twisted.web.client import Agent
+from twisted.web.http_headers import Headers
 
 from zope.interface import implements
 
@@ -467,6 +473,9 @@ def getPageTwisted(url, timeout=0):
 #         return x
     global _UserAgentString
 
+    if not isinstance(url, six.binary_type):
+        url = url.encode('utf-8')
+
     if proxy_is_on():
         factory = ProxyClientFactory(url, agent=_UserAgentString, timeout=timeout)
         tcp_call = reactor.connectTCP(get_proxy_host(), get_proxy_port(), factory)
@@ -476,7 +485,16 @@ def getPageTwisted(url, timeout=0):
         factory.deferred.addCallback(ConnectionDone, 'http', 'getPageTwisted proxy %s' % (url))
         factory.deferred.addErrback(ConnectionFailed, 'http', 'getPageTwisted proxy %s' % (url))
         return factory.deferred
-    d = getPage(url, agent=_UserAgentString, timeout=timeout)
+    
+    
+    agent = Agent(reactor, connectTimeout=timeout)
+    
+    d = agent.request(
+        method=b'GET',
+        uri=url,
+        headers=Headers({'User-Agent': [_UserAgentString, ]}),
+    )
+#     d = getPage(url, agent=_UserAgentString, timeout=timeout)
 #     if timeout:
 #         timeout_call = reactor.callLater(timeout, getPageTwistedTimeout, d)
 #         d.addBoth(getPageTwistedCancelTimeout, timeout_call)
