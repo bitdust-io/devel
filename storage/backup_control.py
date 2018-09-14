@@ -35,6 +35,11 @@ gets finished.
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 12
 
@@ -438,7 +443,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         lg.out(8, 'backup_control.DeleteBackup %s is in process, stopping' % backupID)
         return True
     from customer import io_throttle
-    import backup_rebuilder
+    from . import backup_rebuilder
     lg.out(8, 'backup_control.DeleteBackup ' + backupID)
     # if we requested for files for this backup - we do not need it anymore
     io_throttle.DeleteBackupRequests(backupID)
@@ -474,7 +479,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     This removes all backups of given path ID
     Doing same operations as ``DeleteBackup()``.
     """
-    import backup_rebuilder
+    from . import backup_rebuilder
     from customer import io_throttle
     pathID = global_id.CanonicalID(pathID)
     # get the working item
@@ -846,7 +851,7 @@ def OnJobDone(backupID, result):
 
     Here we need to save the index data base.
     """
-    import backup_rebuilder
+    from . import backup_rebuilder
     from customer import io_throttle
     lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     lg.out(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
@@ -1083,7 +1088,7 @@ def ListRunningBackups():
     """
     List backup IDs of currently running jobs.
     """
-    return jobs().keys()
+    return list(jobs().keys())
 
 
 def GetRunningBackupObject(backupID):
@@ -1111,7 +1116,7 @@ def test():
     import pprint
     pprint.pprint(backup_fs.fsID())
     pprint.pprint(backup_fs.fs())
-    print backup_fs.GetByID('0')
+    print(backup_fs.GetByID('0'))
     # pprint.pprint(backup_fs.WalkByID('0/0/2/19/F20140106100849AM'))
     # for pathID, localPath, item in backup_fs.IterateIDs():
     #     print pathID, misc.unicode_to_str_safe(localPath)

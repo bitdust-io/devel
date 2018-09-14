@@ -21,12 +21,15 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import random
 
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
+from six.moves import range
 
 if __name__ == '__main__':
     import os.path as _p
@@ -75,25 +78,25 @@ def datagram_received(datagram, address, local_port):
         udp.send_command(local_port, udp.CMD_PING, 'stun %s:%d' % address, address)
     elif sys.argv[1] == 'listen':
         if payload.startswith('stun'):
-            print payload
+            print(payload)
         elif payload.startswith('ping'):
             udp.send_command(local_port, udp.CMD_PING, 'ok', address)
     elif sys.argv[1] == 'connect':
         if payload.startswith('stun'):
-            print payload
+            print(payload)
         elif payload.startswith('ping'):
             udp.send_command(local_port, udp.CMD_PING, 'ok', address)
             if address[0] == sys.argv[3]:
-                print 'OKAY!!!!!!!!!!!!!!', address
+                print('OKAY!!!!!!!!!!!!!!', address)
                 reactor.stop()
 
 
 def main():
     if len(sys.argv) <= 1:
-        print 'usage:'
-        print '    natpunch.py server [min port] [max port]'
-        print '    natpunch.py listen [local port] [servers list filename] [incoming connections filename]'
-        print '    natpunch.py connect [local port] [remote IP] [servers list file] [min port] [max port]'
+        print('usage:')
+        print('    natpunch.py server [min port] [max port]')
+        print('    natpunch.py listen [local port] [servers list filename] [incoming connections filename]')
+        print('    natpunch.py connect [local port] [remote IP] [servers list file] [min port] [max port]')
         return
 
     lg.set_debug_level(24)

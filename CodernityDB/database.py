@@ -14,6 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import absolute_import
 import os
 import io
 from inspect import getsource
@@ -42,6 +43,8 @@ from CodernityDB.env import cdb_environment
 from random import randrange
 
 import warnings
+import six
+from six.moves import map
 
 
 def header_for_indexes(index_name, index_class, db_custom="", ind_custom="", classes_code=""):
@@ -199,7 +202,7 @@ class Database(object):
             code = f.read()
         try:
             obj = compile(code, '<Index: %s' % os.path.join(p, ind), 'exec')
-            exec obj in globals()
+            exec(obj, globals())
             ind_obj = globals()[_class](self.path, name, **ind_kwargs)
             ind_obj._order = int(ind[:2])
         except:
@@ -221,16 +224,16 @@ class Database(object):
         if ind_kwargs is None:
             ind_kwargs = {}
         p = os.path.join(self.path, '_indexes')
-        if isinstance(new_index, basestring) and not new_index.startswith("path:"):
+        if isinstance(new_index, six.string_types) and not new_index.startswith("path:"):
             if len(new_index.splitlines()) < 4 or new_index.splitlines()[3] != '# inserted automatically':
-                from indexcreator import Parser
+                from .indexcreator import Parser
                 par = Parser()
                 custom_imports, s = par.parse(new_index)
                 s = s.splitlines()
                 name = s[0][2:]
                 c = s[1][2:]
                 comented = ['\n\n#SIMPLIFIED CODE']
-                map(lambda x: comented.append("#" + x), new_index.splitlines())
+                list(map(lambda x: comented.append("#" + x), new_index.splitlines()))
                 comented.append('#SIMPLIFIED CODE END\n\n')
 
                 s = header_for_indexes(
@@ -243,8 +246,8 @@ class Database(object):
             if name in self.indexes_names and not edit:
                 raise IndexConflict("Already exists")
             if edit:
-                previous_index = filter(lambda x: x.endswith(
-                    '.py') and x[2:-3] == name, os.listdir(p))
+                previous_index = [x for x in os.listdir(p) if x.endswith(
+                    '.py') and x[2:-3] == name]
                 if not previous_index:
                     raise PreconditionsException(
                         "Can't edit index that's not yet in database")
@@ -264,7 +267,7 @@ class Database(object):
 
             ind_obj = self._read_index_single(p, ind_path + '.py')
 
-        elif isinstance(new_index, basestring) and new_index.startswith("path:"):
+        elif isinstance(new_index, six.string_types) and new_index.startswith("path:"):
             path = new_index[5:]
             if not path.endswith('.py'):
                 path += '.py'
@@ -276,7 +279,7 @@ class Database(object):
             # it will first save index as a string, and then compile it
             # it will allow to control the index object on the DB side
             ind = new_index
-            init_arguments = new_index.__class__.__init__.im_func.func_code.co_varnames[
+            init_arguments = new_index.__class__.__init__.__func__.__code__.co_varnames[
                 3:]  # ignore self, path and name
             for curr in init_arguments:
                 if curr not in ('args', 'kwargs'):
@@ -285,8 +288,8 @@ class Database(object):
                         ind_kwargs[curr] = v
             if edit:
                 # code duplication...
-                previous_index = filter(lambda x: x.endswith(
-                    '.py') and x[2:-3] == ind.name, os.listdir(p))
+                previous_index = [x for x in os.listdir(p) if x.endswith(
+                    '.py') and x[2:-3] == ind.name]
                 if not previous_index:
                     raise PreconditionsException(
                         "Can't edit index that's not yet in database")
@@ -322,7 +325,7 @@ class Database(object):
         p = os.path.join(self.path, '_indexes')
         if not os.path.exists(p):
             self.initialize()
-        current = sorted(filter(lambda x: x.endswith('.py'), os.listdir(p)))
+        current = sorted([x for x in os.listdir(p) if x.endswith('.py')])
         if current:
             last = int(current[-1][:2])  # may crash... ignore
             _next = last + 1
@@ -415,7 +418,7 @@ class Database(object):
                 else:
                     s = co[ind:]
                     l = s.splitlines()[1:-2]
-                    ll = map(lambda x: x[1:], l)
+                    ll = [x[1:] for x in l]
                     return '\n'.join(ll)
             if code_switch == 'P':
                 try:
@@ -509,7 +512,7 @@ class Database(object):
             warnings.warn("Your database is using old rev mechanizm \
 for ID index. You should update that index \
 (CodernityDB.migrate.migrate).")
-            from misc import random_hex_4
+            from .misc import random_hex_4
             self.create_new_rev = random_hex_4
 
     def create(self, path=None, **kwargs):
@@ -770,7 +773,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to destroy
         :type index: :py:class:`CodernityDB.index.Index`` instance, or string
         """
-        if isinstance(index, basestring):
+        if isinstance(index, six.string_types):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -796,7 +799,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to destroy
         :type index: :py:class:`CodernityDB.index.Index`` instance, or string
         """
-        if isinstance(index, basestring):
+        if isinstance(index, six.string_types):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -832,7 +835,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         :param index: the index to reindex
         :type index: :py:class:`CodernityDB.index.Index`` instance, or string
         """
-        if isinstance(index, basestring):
+        if isinstance(index, six.string_types):
             if not index in self.indexes_names:
                 raise PreconditionsException("No index named %s" % index)
             index = self.indexes_names[index]
@@ -853,7 +856,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
 
         while True:
             try:
-                curr = all_iter.next()
+                curr = next(all_iter)
             except StopIteration:
                 break
             else:
@@ -997,7 +1000,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         while True:
             try:
 #                l_key, start, size, status = gen.next()
-                ind_data = gen.next()
+                ind_data = next(gen)
             except StopIteration:
                 break
             else:
@@ -1037,7 +1040,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         gen = ind.all(limit, offset)
         while True:
             try:
-                doc_id, unk, start, size, status = gen.next()
+                doc_id, unk, start, size, status = next(gen)
             except StopIteration:
                 break
             else:
@@ -1105,7 +1108,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         i = 0
         while True:
             try:
-                iter_.next()
+                next(iter_)
                 i += 1
             except StopIteration:
                 break
@@ -1194,7 +1197,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
             raise IndexNotFoundException("Index doesn't exist")
 
         props = {}
-        for key, value in db_index.__dict__.iteritems():
+        for key, value in six.iteritems(db_index.__dict__):
             if not callable(value):  # not using inspect etc...
                 props[key] = value
 
@@ -1209,6 +1212,6 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         props = {}
         props['path'] = self.path
         props['size'] = self.__get_size()
-        props['indexes'] = self.indexes_names.keys()
+        props['indexes'] = list(self.indexes_names.keys())
         props['cdb_environment'] = cdb_environment
         return props

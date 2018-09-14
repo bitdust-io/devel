@@ -35,6 +35,7 @@ BitDust executes periodically several slaves:
 They are started as a separated processes and managed from the main process: bpmain
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import subprocess
@@ -50,8 +51,8 @@ from twisted.internet import protocol
 
 from logs import lg
 
-import bpio
-import nonblocking
+from . import bpio
+from . import nonblocking
 
 #------------------------------------------------------------------------------
 

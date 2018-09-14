@@ -32,7 +32,12 @@ module:: run_upnpc
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -275,19 +280,19 @@ def update(requested_port, attempt=0, new_port=-1):
 
     if _Debug:
         lg.out(_DebugLevel, 'run_upnpc.update requested_port_busy=%s local_ports=%s' % (
-            requested_port_busy, str(local_ports.keys())))
+            requested_port_busy, str(list(local_ports.keys()))))
 
-    if int(port) in local_ports.keys():
+    if int(port) in list(local_ports.keys()):
         _MyPortMapping[str(port)] = 'TCP'
         if _Debug:
-            lg.out(_DebugLevel, 'run_upnpc.update PORT %s mapped SUCCESSFULLY!!! all port maps: %s' % (str(port), str(_MyPortMapping.keys())))
+            lg.out(_DebugLevel, 'run_upnpc.update PORT %s mapped SUCCESSFULLY!!! all port maps: %s' % (str(port), str(list(_MyPortMapping.keys()))))
         _LastUpdateResultDict[port] = 'upnp-done'
         return 'upnp-done', port
 
-    if int(new_port) > 0 and int(new_port) in local_ports.keys():
+    if int(new_port) > 0 and int(new_port) in list(local_ports.keys()):
         _MyPortMapping[str(new_port)] = 'TCP'
         if _Debug:
-            lg.out(_DebugLevel, 'run_upnpc.update NEW PORT %s mapped SUCCESSFULLY!!! all port maps: %s' % (str(port), str(_MyPortMapping.keys())))
+            lg.out(_DebugLevel, 'run_upnpc.update NEW PORT %s mapped SUCCESSFULLY!!! all port maps: %s' % (str(port), str(list(_MyPortMapping.keys()))))
         _LastUpdateResultDict[new_port] = 'upnp-done'
         return 'upnp-done', new_port
 
@@ -349,24 +354,24 @@ def main():
         for itm in maps:
             pprint.pprint(itm)
     elif sys.argv.count('add'):
-        print add(sys.argv[2], 'TCP')
+        print(add(sys.argv[2], 'TCP'))
     elif sys.argv.count('del'):
-        print dlt(sys.argv[2], 'TCP')
+        print(dlt(sys.argv[2], 'TCP'))
     elif sys.argv.count('update'):
         bpio.init()
         settings.init()
         init()
         pprint.pprint(update(sys.argv[2]))
     elif sys.argv.count('clear'):
-        print clear()
+        print(clear())
     else:
-        print 'usage:'
-        print 'run_upnpc.py info'
-        print 'run_upnpc.py list'
-        print 'run_upnpc.py add [port]'
-        print 'run_upnpc.py del [port]'
-        print 'run_upnpc.py update [port]'
-        print 'run_upnpc.py clear'
+        print('usage:')
+        print('run_upnpc.py info')
+        print('run_upnpc.py list')
+        print('run_upnpc.py add [port]')
+        print('run_upnpc.py del [port]')
+        print('run_upnpc.py update [port]')
+        print('run_upnpc.py clear')
 
 
 if __name__ == "__main__":

@@ -30,17 +30,20 @@
 Some network routines
 """
 
+from __future__ import absolute_import
 import os
 import re
 import sys
 import socket
 import random
-import urllib
-import urllib2
-import urlparse
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+import six.moves.urllib.parse
 import platform
 import mimetypes
 import subprocess
+import six
+from io import open
 # fun mountain from
 # python imports :-)
 
@@ -92,6 +95,7 @@ def shutdown():
     """
     """
 
+#------------------------------------------------------------------------------
 
 def SetConnectionDoneCallbackFunc(f):
     """
@@ -136,15 +140,35 @@ def ConnectionFailed(param=None, proto=None, info=None):
 
 #------------------------------------------------------------------------------
 
+def normalize_address(host_port):
+    """
+    Input argument `host` can be string: "123.45.67.89:8080" or tuple: ("123.45.67.89", 8080)
+    Method always return tuple and make sure host is string/bytes but not unicode.
+    """
+    if isinstance(host_port, six.string_types):
+        host_port = (host_port.split(':')[0], int(host_port.split(':')[1]), )
+    if isinstance(host_port[0], six.text_type):
+        host_port = (host_port[0].encode('utf-8'), host_port[1], )
+    return host_port
+
+
+def pack_address(host_port):
+    """
+    Same as `normalize_address()`, but always return address as string/bytes: "123.45.67.89:8080"
+    """
+    norm = normalize_address(host_port)
+    return '{}:{}'.format(norm[0], norm[1])
+
+#------------------------------------------------------------------------------
 
 def parse_url(url, defaultPort=None):
     """
     Split the given URL into the scheme, host, port, and path.
     """
     url = url.strip()
-    parsed = urlparse.urlparse(url)
+    parsed = six.moves.urllib.parse.urlparse(url)
     scheme = parsed[0]
-    path = urlparse.urlunparse(('', '') + parsed[2:])
+    path = six.moves.urllib.parse.urlunparse(('', '') + parsed[2:])
     if defaultPort is None:
         if scheme == 'https':
             defaultPort = 443
@@ -376,6 +400,7 @@ def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName,
 
 #-------------------------------------------------------------------------------
 
+
 def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     """
     Another method to download from HTTPS.
@@ -384,17 +409,6 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     from twisted.internet import ssl
     from OpenSSL import SSL
 
-    scheme, host, port, path = parse_url(url)
-    if not isinstance(certificates_filenames, list):
-        certificates_filenames = [certificates_filenames, ]
-    cert_found = False
-    for cert in certificates_filenames:
-        if os.path.isfile(cert) and os.access(cert, os.R_OK):
-            cert_found = True
-            break
-    if not cert_found:
-        return fail(Exception('no one ssl certificate found'))
-        
     class MyClientContextFactory(ssl.ClientContextFactory):
     
         def __init__(self, certificates_filenames):
@@ -412,6 +426,17 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
                     pass
             ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verify)
             return ctx
+    
+    scheme, host, port, path = parse_url(url)
+    if not isinstance(certificates_filenames, list):
+        certificates_filenames = [certificates_filenames, ]
+    cert_found = False
+    for cert in certificates_filenames:
+        if os.path.isfile(cert) and os.access(cert, os.R_OK):
+            cert_found = True
+            break
+    if not cert_found:
+        return fail(Exception('no one ssl certificate found'))
     
     factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
     contextFactory = MyClientContextFactory(certificates_filenames)
@@ -706,9 +731,6 @@ def SendEmail(TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES):
 
 #-------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
-
-
 def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     """
     A smart way to upload a file over HTTP POST method.
@@ -763,7 +785,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                     block += "\r\n"
                 self._send_to_consumer(block)
             if self._files:
-                self._files_iterator = self._files.iterkeys()
+                self._files_iterator = six.iterkeys(self._files)
                 self._files_sent = 0
                 self._files_length = len(self._files)
                 self._current_file_path = None
@@ -797,7 +819,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             done = False
             while not done and not self._paused:
                 if not self._current_file_handle:
-                    field = self._files_iterator.next()
+                    field = next(self._files_iterator)
                     self._current_file_path = self._files[field]
                     self._current_file_sent = 0
                     self._current_file_length = self._file_lengths[field]
@@ -864,7 +886,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     
         def _headers(self, name, is_file=False):
             value = self._files[name] if is_file else self._data[name]
-            _boundary = self.boundary.encode("utf-8") if isinstance(self.boundary, unicode) else urllib.quote_plus(self.boundary)
+            _boundary = self.boundary.encode("utf-8") if isinstance(self.boundary, six.text_type) else six.moves.urllib.parse.quote_plus(self.boundary)
             headers = ["--%s" % _boundary]
             if is_file:
                 disposition = 'form-data; name="%s"; filename="%s"' % (name, os.path.basename(value))
@@ -897,8 +919,8 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
             return boundary
     
         def _file_type(self, field):
-            type = mimetypes.guess_type(self._files[field])[0]
-            return type.encode("utf-8") if isinstance(type, unicode) else str(type)
+            typ = mimetypes.guess_type(self._files[field])[0]
+            return typ.encode("utf-8") if isinstance(typ, six.text_type) else str(typ)
     
         def _file_size(self, field):
             size = 0
@@ -910,7 +932,6 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 size = 0
             self._file_lengths[field] = size
             return self._file_lengths[field]
-    
 
     # producerDeferred = Deferred()
     receiverDeferred = Deferred()
@@ -973,7 +994,7 @@ def getNetworkInterfaces():
                 pipe = os.popen(os.path.join(sysdir, 'ipconfig') + ' /all')
             except IOError:
                 return []
-            rawtxt = unicode(pipe.read())
+            rawtxt = six.text_type(pipe.read())
             ips_unicode = re.findall(u'^.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*$', rawtxt, re.U | re.M)
             ips = []
             for ip in ips_unicode:
@@ -987,7 +1008,7 @@ def getNetworkInterfaces():
         except IOError:
             return []
         try:
-            rawtxt = unicode(pipe.read())
+            rawtxt = six.text_type(pipe.read())
             lines = rawtxt.splitlines()
         except:
             return []
@@ -1005,14 +1026,14 @@ def getNetworkInterfaces():
     elif plat == 'Darwin':
         try:
             # TODO: try to avoid socket connect to remote host
-            return filter(None, [
+            return [_f for _f in [
                 l for l in (
                     [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1],
                     # TODO: replace 8.8.8.8 with random seed node
                     [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]],
                 ) if l
-            ][0])
+            ][0] if _f]
         except:
             eth0 = getIfconfig('eth0')
             en0 = getIfconfig('en0')
-            return filter(None, [en0 or eth0, ])
+            return [_f for _f in [en0 or eth0, ] if _f]

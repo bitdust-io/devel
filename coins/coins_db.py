@@ -32,7 +32,13 @@ module:: coins_db
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import map
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -331,8 +337,8 @@ def _test_coin_worker(customer_idurl, duration, amount, price=1.0, trustee=None)
 def _test_coin_mined(coin_json, customer_idurl, duration, amount, price, trustee):
     global _prev_hash
     import json
-    print 'COIN MINED!!!'
-    print json.dumps(coin_json, indent=2)
+    print('COIN MINED!!!')
+    print(json.dumps(coin_json, indent=2))
     insert(coin_json)
     _prev_hash = coin_json['miner']['hash']
     reactor.callLater(1, _test_coin_worker, customer_idurl, duration, amount, price, trustee)
@@ -340,18 +346,18 @@ def _test_coin_mined(coin_json, customer_idurl, duration, amount, price, trustee
 
 
 def _test_query(inp):
-    print 'Query:'
-    print inp
-    print '==================================='
+    print('Query:')
+    print(inp)
+    print('===================================')
     lst = to_list(query_json(inp))
-    print '\n'.join(map(str, lst))
-    print 'total:', len(lst)
+    print('\n'.join(map(str, lst)))
+    print('total:', len(lst))
     return lst
 
 
 def _test():
     if len(sys.argv) < 2:
-        print """
+        print("""
         commands:
         work <idurl> <duration> <amount>
         get_all <index>
@@ -359,7 +365,7 @@ def _test():
         get <index> <key>
         indexes
         tmpdb <destination folder>
-        """
+        """)
         return
 
     if sys.argv[1] == 'work':
@@ -396,8 +402,8 @@ def _test():
 
     if sys.argv[1] == 'indexes':
         init()
-        print 'Indexes in %s are:' % db().path
-        print '  ' + ('\n  '.join(db().indexes_names))
+        print('Indexes in %s are:' % db().path)
+        print('  ' + ('\n  '.join(db().indexes_names)))
         shutdown()
 
     if sys.argv[1] == 'tmpdb':

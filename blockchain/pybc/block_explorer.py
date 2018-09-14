@@ -1,12 +1,13 @@
+from __future__ import absolute_import
 import time
 
 from twisted.web import server, resource
 from twisted.internet import reactor
 from twisted.internet import protocol
 
-import json_coin
-import transactions
-import util
+from . import json_coin
+from . import transactions
+from . import util
 
 #------------------------------------------------------------------------------
 

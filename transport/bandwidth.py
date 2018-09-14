@@ -36,6 +36,7 @@ folders /bandin and /bandout in the BitDust local data dir.
 This is a daily stats - a single file for every day.
 """
 
+from __future__ import absolute_import
 import os
 import time
 

@@ -31,7 +31,11 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -39,6 +43,7 @@ _DebugLevel = 4
 import os
 import sys
 import gc
+import six
 
 #------------------------------------------------------------------------------
 
@@ -263,7 +268,7 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
         return None
-    if isinstance(key_object_or_string, str):
+    if isinstance(key_object_or_string, six.string_types):
         lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
             key_id, len(key_object_or_string)))
         key_object = unserialize_key_to_object(key_object_or_string)

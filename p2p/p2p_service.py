@@ -44,6 +44,10 @@ TODO: need to move logic from this monolitic file into a services
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 2
 

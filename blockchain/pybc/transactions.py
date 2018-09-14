@@ -4,9 +4,11 @@ level are not real objects. Transactions are represented as bytestrings.
 
 """
 
+from __future__ import absolute_import
 import traceback
 import struct
 import logging
+from six.moves import range
 
 
 class InvalidPayloadError(Exception):
@@ -36,7 +38,7 @@ def unpack_transactions(block_payload):
         # Where should we start the next record from?
         location = 4
 
-        for _ in xrange(transaction_count):
+        for _ in range(transaction_count):
             # How many bytes is the transaction?
             (transaction_length,) = struct.unpack(">I",
                                                   block_payload[location:location + 4])

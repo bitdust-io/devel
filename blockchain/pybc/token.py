@@ -4,13 +4,14 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import logging
 
 #------------------------------------------------------------------------------
 
-import json_coin
-import transactions
-import util
+from . import json_coin
+from . import transactions
+from . import util
 
 #------------------------------------------------------------------------------
 

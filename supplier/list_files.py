@@ -22,7 +22,13 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import map
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -187,13 +193,13 @@ def TreeSummary(ownerdir, key_alias):
             dataMissing[supplierNum] = set(range(maxBlock + 1))
             parityMissing[supplierNum] = set(range(maxBlock + 1))
             for blockNum in range(maxBlock + 1):
-                if blockNum in dataBlocks[supplierNum].keys():
+                if blockNum in list(dataBlocks[supplierNum].keys()):
                     versionSize[supplierNum] += dataBlocks[supplierNum][blockNum]
                     dataMissing[supplierNum].discard(blockNum)
-                if blockNum in parityBlocks[supplierNum].keys():
+                if blockNum in list(parityBlocks[supplierNum].keys()):
                     versionSize[supplierNum] += parityBlocks[supplierNum][blockNum]
                     parityMissing[supplierNum].discard(blockNum)
-        suppliers = set(dataBlocks.keys() + parityBlocks.keys())
+        suppliers = set(list(dataBlocks.keys()) + list(parityBlocks.keys()))
         for supplierNum in suppliers:
             versionString = '%s %d 0-%d %d' % (
                 subpath, supplierNum, maxBlock, versionSize[supplierNum])

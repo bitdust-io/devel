@@ -30,6 +30,7 @@
 module:: service_supplier
 """
 
+from __future__ import absolute_import
 from services.local_service import LocalService
 
 
@@ -158,10 +159,10 @@ class SupplierService(LocalService):
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
-        if (customer_idurl not in current_customers and customer_idurl in space_dict.keys()):
+        if (customer_idurl not in current_customers and customer_idurl in list(space_dict.keys())):
             lg.warn("broken space file")
             return p2p_service.SendFail(newpacket, 'broken space file')
-        if (customer_idurl in current_customers and customer_idurl not in space_dict.keys()):
+        if (customer_idurl in current_customers and customer_idurl not in list(space_dict.keys())):
             lg.warn("broken customers file")
             return p2p_service.SendFail(newpacket, 'broken customers file')
         if customer_idurl in current_customers:
@@ -235,7 +236,7 @@ class SupplierService(LocalService):
         if accounting.check_create_customers_quotas():
             lg.out(6, 'service_supplier.cancel created a new space file')
         space_dict = accounting.read_customers_quotas()
-        if customer_idurl not in space_dict.keys():
+        if customer_idurl not in list(space_dict.keys()):
             lg.warn("got packet from %s, but not found him in space dictionary" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
         try:
@@ -581,12 +582,12 @@ class SupplierService(LocalService):
             bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes, })
             lg.warn('created a new space file: %s' % settings.CustomersSpaceFile())
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
-        if newpacket.OwnerID not in space_dict.keys():
+        if newpacket.OwnerID not in list(space_dict.keys()):
             lg.err("no info about donated space for %s" % newpacket.OwnerID)
             p2p_service.SendFail(newpacket, 'no info about donated space')
             return False
         used_space_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
-        if newpacket.OwnerID in used_space_dict.keys():
+        if newpacket.OwnerID in list(used_space_dict.keys()):
             try:
                 bytes_used_by_customer = int(used_space_dict[newpacket.OwnerID])
                 bytes_donated_to_customer = int(space_dict[newpacket.OwnerID])

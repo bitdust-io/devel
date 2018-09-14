@@ -34,10 +34,15 @@ The server side part is placed in the file tcp_node.py.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+
+#------------------------------------------------------------------------------
+
+import six
 import os
 import sys
 
@@ -52,11 +57,19 @@ from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
+if __name__ == '__main__':
+    import sys
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..', '..')))
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from main import settings
 
 from lib import misc
+from lib import net_misc
 
 from transport.tcp import tcp_node
 
@@ -90,7 +103,7 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'tcp_interface.init %d' % id(proxy()))
         if not proxy():
-            if isinstance(xml_rpc_url_or_object, str):
+            if isinstance(xml_rpc_url_or_object, six.string_types):
                 proxy(xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True))
             else:
                 proxy(xml_rpc_url_or_object)
@@ -158,31 +171,27 @@ class GateInterface():
     def send_file(self, remote_idurl, filename, host, description=''):
         """
         """
-        host = host.split(':')
-        host = (host[0], int(host[1]))
-        return tcp_node.send(filename, host, description, keep_alive=True)
+        return tcp_node.send(filename, net_misc.normalize_address(host), description, keep_alive=True)
 
     def send_file_single(self, remote_idurl, filename, host, description=''):
         """
         """
-        host = host.split(':')
-        host = (host[0], int(host[1]))
-        return tcp_node.send(filename, host, description, keep_alive=False)
+        return tcp_node.send(filename, net_misc.normalize_address(host), description, keep_alive=False)
 
     def send_keep_alive(self, host):
         """
         """
-        return tcp_node.send_keep_alive(self._normalize_host(host))
+        return tcp_node.send_keep_alive(net_misc.normalize_address(host))
 
     def connect_to(self, host):
         """
         """
-        return tcp_node.connect_to(self._normalize_host(host))
+        return tcp_node.connect_to(net_misc.normalize_address(host))
 
     def disconnect_from(self, host):
         """
         """
-        return tcp_node.disconnect_from(self._normalize_host(host))
+        return tcp_node.disconnect_from(net_misc.normalize_address(host))
 
     def cancel_file_sending(self, transferID):
         """
@@ -197,7 +206,7 @@ class GateInterface():
     def cancel_outbox_file(self, host, filename):
         """
         """
-        return tcp_node.cancel_outbox_file(self._normalize_host(host), filename)
+        return tcp_node.cancel_outbox_file(net_misc.normalize_address(host), filename)
 
     def list_sessions(self):
         """
@@ -221,17 +230,12 @@ class GateInterface():
     def find_session(self, host):
         """
         """
-        return tcp_node.opened_connections().get(self._normalize_host(host), [])
+        return tcp_node.opened_connections().get(net_misc.normalize_address(host), [])
 
     def find_stream(self, stream_id=None, transfer_id=None):
         """
         """
         return tcp_node.find_stream(file_id=stream_id, transfer_id=transfer_id)
-
-    def _normalize_host(self, host):
-        if isinstance(host, str):
-            host = (host.split(':')[0], int(host.split(':')[1]), )
-        return host
 
 #------------------------------------------------------------------------------
 
@@ -339,3 +343,30 @@ def interface_cancelled_file_receiving(host, filename, size, error_message=None)
             'cancelled_file_receiving', 'tcp', host, filename, size, error_message).addErrback(proxy_errback)
     lg.warn('transport_tcp is not ready')
     return fail(Exception('transport_tcp is not ready')).addErrback(proxy_errback)
+
+
+#------------------------------------------------------------------------------
+
+def main():
+    lg.set_debug_level(24)
+
+    if len(sys.argv) >= 4 and sys.argv[1] == 'connect':
+        tcp_node.connect_to(net_misc.normalize_address((sys.argv[2], int(sys.argv[3]))))
+        reactor.run()
+        return
+
+    if len(sys.argv) >= 5 and sys.argv[1] == 'send':
+        tcp_node.send(sys.argv[2], net_misc.normalize_address((sys.argv[3], int(sys.argv[4]))))
+        reactor.run()
+        return
+
+    print('Usage:')
+    print('tcp_node.py <command> <arguments>')
+    print('')
+    print('Commands:')
+    print('    connect host port')
+    print('    send filename host port')
+    print('')
+
+if __name__ == '__main__':
+    main()

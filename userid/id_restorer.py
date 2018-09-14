@@ -51,6 +51,7 @@ Needed for restoration of the user account information using its Private key and
     * do verification and restoration of his locally identity to be able to start the software
 """
 
+from __future__ import absolute_import
 import os
 import sys
 

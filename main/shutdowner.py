@@ -50,6 +50,8 @@ EVENTS:
     * :red:`unblock`
 """
 
+from __future__ import absolute_import
+import six
 import os
 import sys
 
@@ -67,7 +69,7 @@ from logs import lg
 from automats import automat
 from automats import global_state
 
-import initializer
+from . import initializer
 
 #------------------------------------------------------------------------------
 
@@ -217,7 +219,7 @@ class Shutdowner(automat.Automat):
             param = self.shutdown_param
         if arg is None:
             param = 'exit'
-        elif isinstance(arg, str):
+        elif isinstance(arg, six.string_types):
             param = arg
         if param not in ['exit', 'restart', 'restartnshow']:
             param = 'exit'

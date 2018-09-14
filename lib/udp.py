@@ -24,9 +24,11 @@
 #
 #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import time
-import cStringIO
+from io import StringIO
 
 from twisted.internet import reactor
 from twisted.internet import protocol
@@ -41,7 +43,10 @@ from system import bpio
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 24
 
 #------------------------------------------------------------------------------
@@ -77,9 +82,9 @@ CMD_MYIPPORT = 'm'
 
 
 def listen(port, proto=None):
-    if port in listeners().keys():
+    if port in list(listeners().keys()):
         lg.warn('already started on port %d' % port)
-        lg.out(6, '            %s' % str(listeners().keys()))
+        lg.out(6, '            %s' % str(list(listeners().keys())))
         return listeners()[port]
     if proto is None:
         listeners()[port] = reactor.listenUDP(port, CommandsProtocol())
@@ -275,7 +280,7 @@ class CommandsProtocol(BasicProtocol):
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
         _LastDatagramReceivedTime = time.time()
-        inp = cStringIO.StringIO(datagram)
+        inp = StringIO(datagram)
         try:
             # version = datagram[0]
             # command = datagram[1]
@@ -311,7 +316,7 @@ class CommandsProtocol(BasicProtocol):
 
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
-        outp = cStringIO.StringIO()
+        outp = StringIO()
         try:
             outp.write(self.SoftwareVersion)
             outp.write(command)
@@ -344,19 +349,19 @@ def main():
         send_command(listnport, CMD_ALIVE, 'ok', addr)
 
     def go(x, port):
-        print 'go', x
+        print('go', x)
         l = listen(port)
         l.protocol.add_callback(received)
 
     def restart(port):
-        print 'restart'
+        print('restart')
         if listener(port):
             close(port).addCallback(go, port)
         else:
             go(None, port)
 
     def ping(fromport, toaddr):
-        print 'ping'
+        print('ping')
         send_command(fromport, CMD_PING, 'ping', toaddr)
     if len(sys.argv) > 2:
         addr = sys.argv[2].split(':')

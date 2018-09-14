@@ -32,7 +32,13 @@ Here is a bunch of methods to interact with BitDust software.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import map
+import six
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -261,9 +267,9 @@ def config_set(key, value):
     if not typ or typ in [config_types.TYPE_STRING,
                           config_types.TYPE_TEXT,
                           config_types.TYPE_UNDEFINED, ]:
-        config.conf().setData(key, unicode(value))
+        config.conf().setData(key, six.text_type(value))
     elif typ in [config_types.TYPE_BOOLEAN, ]:
-        if (isinstance(value, str) or isinstance(value, unicode)):
+        if isinstance(value, six.string_types):
             vl = value.strip().lower() == 'true'
         else:
             vl = bool(value)
@@ -278,7 +284,7 @@ def config_set(key, value):
                  config_types.TYPE_PASSWORD, ]:
         config.conf().setString(key, value)
     else:
-        config.conf().setData(key, unicode(value))
+        config.conf().setData(key, six.text_type(value))
     v.update({'key': key,
               'value': config.conf().getData(key),
               'type': config.conf().getTypeLabel(key)
@@ -313,10 +319,10 @@ def config_list(sort=False):
     lg.out(4, 'api.config_list')
     from main import config
     r = config.conf().cache()
-    r = map(lambda key: {
+    r = [{
         'key': key,
         'value': str(r[key]).replace('\n', '\\n'),
-        'type': config.conf().getTypeLabel(key)}, r.keys())
+        'type': config.conf().getTypeLabel(key)} for key in list(r.keys())]
     if sort:
         r = sorted(r, key=lambda i: i['key'])
     return RESULT(r)
@@ -427,7 +433,6 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
     my_id_restorer.A('start', {'idurl': idurl, 'keysrc': pk_source, })
     return ret
-
 
 def identity_list():
     """
@@ -2185,7 +2190,7 @@ def automats_list():
         'index': a.index,
         'name': a.name,
         'state': a.state,
-        'timers': (','.join(a.getTimers().keys())),
+        'timers': (','.join(list(a.getTimers().keys()))),
     } for a in automat.objects().values()]
     lg.out(4, 'api.automats_list responded with %d items' % len(result))
     return RESULT(result)
@@ -2226,7 +2231,7 @@ def services_list():
         'installed': svc.installed(),
         'config_path': svc.config_path,
         'depends': svc.dependent_on()
-    } for name, svc in sorted(driver.services().items(), key=lambda i: i[0])]
+    } for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0])]
     lg.out(4, 'api.services_list responded with %d items' % len(result))
     return RESULT(result)
 
@@ -2409,7 +2414,7 @@ def packets_list():
             'from_to': 'to',
             'target': pkt_out.remote_idurl,
         })
-    for pkt_in in packet_in.items().values():
+    for pkt_in in list(packet_in.inbox_items().values()):
         result.append({
             'name': pkt_in.transfer_id,
             'label': pkt_in.label,
@@ -2954,7 +2959,7 @@ def event_send(event_id, json_data=None):
     from main import events
     json_payload = None
     json_length = 0
-    if json_data and (isinstance(json_data, str) or isinstance(json_data, unicode)):
+    if json_data and isinstance(json_data, six.string_types):
         json_length = len(json_data)
         try:
             json_payload = json.loads(json_data or '{}')
@@ -3088,7 +3093,7 @@ def network_connected(wait_timeout=5):
         d = service_restart(service_name, wait_timeout=wait_timeout)
         d.addCallback(_on_service_restarted, service_name)
         d.addErrback(lambda err: ret.callback(dict(
-            ERROR(err.getErrorMessage()).items() + {'reason': '{}_restart_error'.format(service_name)}.items())))
+            list(ERROR(err.getErrorMessage()).items()) + list({'reason': '{}_restart_error'.format(service_name)}.items()))))
         return None
 
     def _do_service_test(service_name):

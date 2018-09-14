@@ -40,7 +40,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -200,7 +204,7 @@ def process_sessions(sessions_to_process=None):
     global _ProcessSessionsDelay
     has_activity = False
     if not sessions_to_process:
-        sessions_to_process = sessions().values()
+        sessions_to_process = list(sessions().values())
     for s in sessions_to_process:
         if not s.peer_id:
             continue
@@ -695,7 +699,7 @@ class UDPSession(automat.Automat):
         sessions_by_peer_address()[self.peer_address].remove(self)
         if len(sessions_by_peer_address()[self.peer_address]) == 0:
             sessions_by_peer_address().pop(self.peer_address)
-        if self.peer_id in sessions_by_peer_id().keys():
+        if self.peer_id in list(sessions_by_peer_id().keys()):
             sessions_by_peer_id()[self.peer_id].remove(self)
             if len(sessions_by_peer_id()[self.peer_id]) == 0:
                 sessions_by_peer_id().pop(self.peer_id)
@@ -714,7 +718,7 @@ class UDPSession(automat.Automat):
 
     def _rtt_start(self, name):
         i = 0
-        while name + str(i) in self.rtts.keys():
+        while name + str(i) in list(self.rtts.keys()):
             i += 1
         new_rtt_id = name + str(i)
         self.rtts[new_rtt_id] = [time.time(), -1]

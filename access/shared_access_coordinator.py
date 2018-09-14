@@ -45,7 +45,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -105,7 +109,7 @@ def list_active_shares():
     """
     """
     global _ActiveShares
-    return _ActiveShares.keys()
+    return list(_ActiveShares.keys())
 
 def get_active_share(key_id):
     """
@@ -348,7 +352,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        self.known_suppliers_list = filter(None, arg)
+        self.known_suppliers_list = [_f for _f in arg if _f]
         for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:

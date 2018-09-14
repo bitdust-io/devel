@@ -36,11 +36,18 @@ A code for all platforms to perform source code updates from official Git repo a
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+from io import open
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+import six
 import os
 import sys
 import time
@@ -77,8 +84,10 @@ _ShedulerTask = None
 #------------------------------------------------------------------------------
 
 def write2log(txt):
-    out_file = file(settings.UpdateLogFilename(), 'a')
-    print >>out_file, txt
+    out_file = open(settings.UpdateLogFilename(), 'a')
+    if not isinstance(txt, six.text_type):
+        txt = txt.decode('utf-8')
+    out_file.write(txt)
     out_file.close()
 
 #------------------------------------------------------------------------------
@@ -337,7 +346,7 @@ if __name__ == "__main__":
     lg.set_debug_level(18)
 
     def _result(res):
-        print 'RESULT:', res
+        print('RESULT:', res)
         reactor.stop()
     reactor.callWhenRunning(sync, _result)
     reactor.run()

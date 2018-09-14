@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import txrestapi
 __package__="txrestapi"
 import re
