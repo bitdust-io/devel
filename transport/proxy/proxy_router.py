@@ -83,6 +83,7 @@ except:
 from automats import automat
 
 from lib import nameurl
+from lib import serialization
 
 from main import config
 
@@ -355,10 +356,12 @@ class ProxyRouter(automat.Automat):
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
             inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
-            sender_idurl = inpt.readline().rstrip('\n')
-            receiver_idurl = inpt.readline().rstrip('\n')
-            wide = inpt.readline().rstrip('\n')
-            wide = wide == 'wide'
+            payload = serialization.StringToObject(inpt.read())
+            inpt.close()
+            sender_idurl = payload['f']         # from
+            receiver_idurl = payload['t']       # to
+            wide = payload['w']                 # wide
+            routed_data = payload['p']                 # payload
         except:
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
             lg.exc()
@@ -373,9 +376,7 @@ class ProxyRouter(automat.Automat):
             lg.warn('route with %s not found' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return
-        data = inpt.read()
-        inpt.close()
-        routed_packet = signed.Unserialize(data)
+        routed_packet = signed.Unserialize(routed_data)
         if not routed_packet or not routed_packet.Valid():
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
             return
@@ -385,10 +386,10 @@ class ProxyRouter(automat.Automat):
         # gateway.outbox(routed_packet, wide=wide)
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
-                len(data), nameurl.GetName(sender_idurl), info.proto, info.host,))
+                len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         del block
-        del data
+        del routed_data
         del padded_data
         del route
         del inpt
@@ -414,17 +415,16 @@ class ProxyRouter(automat.Automat):
             return
         receiver_proto, receiver_host = hosts[0]
         publickey = route_info['publickey']
-        src = ''
-        src += newpacket.Serialize()
         block = encrypted.Block(
-            my_id.getLocalID(),
-            'routed incoming data',
-            0,
-            key.NewSessionKey(),
-            key.SessionKeyType(),
-            True,
-            src,
-            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp))
+            CreatorID=my_id.getLocalID(),
+            BackupID='routed incoming data',
+            BlockNumber=0,
+            SessionKey=key.NewSessionKey(),
+            SessionKeyType=key.SessionKeyType(),
+            LastBlock=True,
+            Data=newpacket.Serialize(),
+            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp),
+        )
         routed_packet = signed.Packet(
             commands.Relay(),
             newpacket.OwnerID,
@@ -445,13 +445,13 @@ class ProxyRouter(automat.Automat):
                 'description': ('Relay_%s[%s]_%s' % (
                     newpacket.Command, newpacket.PacketID,
                     nameurl.GetName(receiver_idurl))),
-            }, )
+            },
+        )
         if _Debug:
             lg.out(_DebugLevel, '<<<Relay-IN-OUT %s %s:%s' % (
                 str(newpacket), info.proto, info.host,))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
                 receiver_proto, receiver_host, len(src), pout))
-        del src
         del block
         del newpacket
         del routed_packet

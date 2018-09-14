@@ -66,6 +66,7 @@ from automats import automat
 from logs import lg
 
 from lib import nameurl
+from lib import serialization
 
 from crypt import encrypted
 from crypt import key
@@ -272,23 +273,23 @@ class ProxySender(automat.Automat):
         except:
             lg.exc('failed to Serialize %s' % outpacket)
             return None
-        src = ''
-        src += my_id.getLocalID() + '\n'
-        src += outpacket.RemoteID + '\n'
-        src += 'wide\n' if wide else '\n'
-# here
-        # if isinstance(raw_data, six.binary_type):
-        #     raw_data = raw_data.encode('utf-8')
-        src += raw_data
+        payload = {
+            'f': my_id.getLocalID(),  # from
+            't': outpacket.RemoteID,  # to
+            'w': wide,                # wide
+            'p': raw_data,            # payload
+        }
+        raw_bytes = serialization.ObjectToString(payload)
         block = encrypted.Block(
-            my_id.getLocalID(),
-            'routed outgoing data',
-            0,
-            key.NewSessionKey(),
-            key.SessionKeyType(),
-            True,
-            src,
-            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp))
+            CreatorID=my_id.getLocalID(),
+            BackupID='routed outgoing data',
+            BlockNumber=0,
+            SessionKey=key.NewSessionKey(),
+            SessionKeyType=key.SessionKeyType(),
+            LastBlock=True,
+            Data=raw_bytes,
+            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp),
+        )
         block_encrypted = block.Serialize()
         newpacket = signed.Packet(
             commands.Relay(),
