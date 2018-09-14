@@ -878,14 +878,6 @@ def longPath(path):
     return six.text_type(path_)
 
 
-def _encode(s):
-    """
-    If ``s`` is unicode - encode to utf-8, otherwise return ``s``.
-    """
-    if isinstance(s, six.text_type):
-        return s.encode('utf-8')
-    return s
-
 # def portablePath(path):
 #    """
 #    For Windows changes all separators to Linux format:

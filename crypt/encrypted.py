@@ -157,15 +157,16 @@ class Block:
         Generate a single string with all data fields, used to create a hash
         for that ``encrypted_block``.
         """
-        sep = "::::"
-        StringToHash = self.CreatorID
-        StringToHash += sep + self.BackupID
-        StringToHash += sep + str(self.BlockNumber)
-        StringToHash += sep + self.SessionKeyType
-        StringToHash += sep + self.EncryptedSessionKey
-        StringToHash += sep + str(self.Length)
-        StringToHash += sep + str(self.LastBlock)
-        StringToHash += sep + self.EncryptedData
+        sep = b'::::'
+        StringToHash = b''
+        StringToHash += misc.to_bin(self.CreatorID)
+        StringToHash += sep + misc.to_bin(self.BackupID)
+        StringToHash += sep + misc.to_bin(str(self.BlockNumber))
+        StringToHash += sep + misc.to_bin(self.SessionKeyType)
+        StringToHash += sep + misc.to_bin(self.EncryptedSessionKey)
+        StringToHash += sep + misc.to_bin(str(self.Length))
+        StringToHash += sep + misc.to_bin(str(self.LastBlock))
+        StringToHash += sep + misc.to_bin(self.EncryptedData)
         return StringToHash
 
     def GenerateHash(self):

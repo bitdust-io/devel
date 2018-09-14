@@ -32,10 +32,11 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import six
+
 from Cryptodome.Hash import MD5
 from Cryptodome.Hash import SHA1
 from Cryptodome.Hash import SHA256
-import six
 
 #------------------------------------------------------------------------------
 

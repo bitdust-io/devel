@@ -33,8 +33,20 @@ TODO:
     Really need to do some refactoring here - too many things in one place.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import locale
+import textwrap
+import six.moves.cPickle
+import six
+from six.moves import range
+from io import open
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import random
@@ -47,13 +59,6 @@ import string
 import subprocess
 import re
 import tempfile
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
-import locale
-import textwrap
-import six.moves.cPickle
-import six
-from six.moves import range
-from io import open
 
 #------------------------------------------------------------------------------
 
@@ -591,6 +596,24 @@ def AsciiToObject(input):
 
 #------------------------------------------------------------------------------
 
+def to_bin(s, encoding='utf-8'):
+    """
+    If ``s`` is unicode ("text" type in Python3 terms) - encode it to utf-8, otherwise return ``s``.
+    """
+    if not isinstance(s, six.binary_type):
+        return s.encode(encoding)
+    return s
+
+
+def to_str(b, encoding='utf-8'):
+    """
+    if ``b`` is binary type decode it to unicode - "text" type in Python3 terms, otherwise return ``b``.
+    """
+    if isinstance(b, six.binary_type):
+        return b.decode(encoding)
+    return b
+
+#------------------------------------------------------------------------------
 
 def pack_url_param(s):
     """
@@ -620,6 +643,7 @@ def unpack_url_param(s, default=None):
         lg.exc()
         return default
 
+#------------------------------------------------------------------------------
 
 def rndstr(length):
     """
