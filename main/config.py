@@ -37,7 +37,6 @@ import sys
 import re
 
 from io import open
-import six
 
 #------------------------------------------------------------------------------
 
@@ -282,6 +281,7 @@ class BaseConfig(object):
         return None
 
     def _set(self, entryPath, data):
+        import six
         elemList = self._parseEntryPath(entryPath)
         assert elemList
         dpath = self.configDir

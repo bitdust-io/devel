@@ -53,6 +53,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from system import bpio
+from system import deploy
 
 from lib import diskspace
 
@@ -60,11 +61,6 @@ from main import config
 
 #------------------------------------------------------------------------------
 
-_BaseDirPath = ''   # location for ".bitdust" folder, lets keep all program DB in one place
-# however you can setup your donated location in another place, second disk ...
-# Linux: /home/$USER/.bitdust
-# WindowsXP: c:\\Document and Settings\\[user]\\.bitdust
-# Windows7: c:\\Users\\[user]\\.bitdust
 _UserConfig = None  # user settings read from file .bitdust/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings
 _InitDone = False
@@ -103,7 +99,7 @@ def _init(base_dir=None):
     - Check custom folders
     """
     lg.out(2, 'settings.init')
-    _initBaseDir(base_dir)
+    deploy.init_base_dir(base_dir)
     lg.out(2, 'settings.init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     _checkConfigDirectory()
@@ -685,57 +681,13 @@ def LegalNickNameChars():
 #--- FOLDERS ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 
-def BaseDirDefault():
-    """
-    A default location for BitDust data folder.
-
-    All of the paths below should be under some base directory.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirLinux():
-    """
-    Default data folder location for Linux users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirWindows():
-    """
-    Default data folder location for Windows users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirMac():
-    """
-    Default data folder location for MacOS users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def GetBaseDir():
-    """
-    A portable method to get the default data folder location.
-    """
-    if bpio.Windows():
-        return BaseDirWindows()
-    elif bpio.Linux():
-        return BaseDirLinux()
-    elif bpio.Mac():
-        return BaseDirMac()
-    return BaseDirDefault()
-
-
 def BaseDir():
     """
     Return current data folder location, also call ``init()`` to be sure all
     things were configured.
     """
-    global _BaseDirPath
     init()
-    return _BaseDirPath
+    return deploy.current_base_dir()
 
 
 def BaseDirPathFileName():
@@ -2324,79 +2276,6 @@ def RenameBaseDir(newdir):
         lg.exc()
     lg.open_log_file(logfilename, True)
     return True
-
-
-def _initBaseDir(base_dir=None):
-    """
-    Do some validation and create needed data folders if they are not exist
-    yet.
-
-    You can specify another location for data files.
-    """
-    global _BaseDirPath
-
-    # if we already know the place - we are done
-    if base_dir:
-        _BaseDirPath = base_dir
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we have a file "appdata" in current folder - take the place from there
-    if os.path.isfile(BaseDirPathFileName()):
-        path = bpio.ReadBinaryFile(BaseDirPathFileName()).strip()
-        if path:
-            path = os.path.abspath(path)
-            if not os.path.isdir(path):
-                bpio._dirs_make(path)
-            _BaseDirPath = path
-            return
-
-    # get the default place for thet machine
-    default_path = GetBaseDir()
-
-    # we can use folder ".bitdust" placed on the same level with binary folder:
-    # /..
-    #   /.bitdust - data files
-    #   /bitdust  - binary files
-    path1 = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), '..', '.bitdust')))
-    # and default path will have lower priority
-    path2 = default_path
-
-    # if default path exists - use it
-    if os.path.isdir(path2):
-        _BaseDirPath = path2
-    # but .bitdust on same level will have bigger priority
-    if os.path.isdir(path1):
-        _BaseDirPath = path1
-
-    # if we did not found "metadata" subfolder - use default path, new copy of BitDust
-    if not os.path.isdir(MetaDataDir()):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our key - use default path, new copy of BitDust
-    if not os.access(KeyFileName(), os.R_OK) or not os.access(KeyFileNameLocation(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our identity - use default path, new copy of BitDust
-    if not os.access(LocalIdentityFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our customers - use default path, new copy of BitDust
-    if not os.access(CustomerIDsFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
 
 #------------------------------------------------------------------------------
 #--- USER SETTINGS VALIDATION -------------------------------------------------

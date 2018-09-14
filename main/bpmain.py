@@ -540,8 +540,17 @@ def main(executable_path=None):
     """
     global AppDataDir
 
-    import warnings
-    warnings.filterwarnings("ignore", message="You do not have a working installation of the service_identity module")
+    pars = parser()
+    (opts, args) = pars.parse_args()
+    overDict = override_options(opts, args)
+
+    cmd = ''
+    if len(args) > 0:
+        cmd = args[0].lower()
+    #---install---
+    if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
+        from system import deploy
+        return deploy.run(args)
 
     try:
         from logs import lg
@@ -573,9 +582,6 @@ def main(executable_path=None):
         except:
             lg.warn('python-twisted is not installed')
 
-    pars = parser()
-    (opts, args) = pars.parse_args()
-
     if opts.appdir:
         appdata = opts.appdir
         AppDataDir = appdata
@@ -593,10 +599,6 @@ def main(executable_path=None):
             if not os.path.isdir(appdata):
                 appdata = defaultappdata
         AppDataDir = appdata
-
-    cmd = ''
-    if len(args) > 0:
-        cmd = args[0].lower()
 
     # ask to count time for each log line from that moment, not absolute time
     lg.life_begins()
@@ -650,9 +652,6 @@ def main(executable_path=None):
         copyright_text()
 
     lg.out(2, 'bpmain.main started ' + time.asctime())
-
-    overDict = override_options(opts, args)
-
     lg.out(2, 'bpmain.main args=%s' % str(args))
 
     #---start---
@@ -810,8 +809,6 @@ def main(executable_path=None):
             return 0
 
     #---command_line---
-    # from interface import command_line as cmdln
-    # from interface import cmd_line as cmdln
     from interface import cmd_line_json as cmdln
     ret = cmdln.run(opts, args, pars, overDict, executable_path)
     if ret == 2:

@@ -40,29 +40,26 @@ Most used method here is ``log`` - prints a log string.
 TODO: need to do some refactoring here
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 import os
 import sys
-import time
 import imp
-import string
 import platform
-import traceback
-import locale
 import glob
 import re
+from io import open
+
+#------------------------------------------------------------------------------
 
 from logs import lg
-import six
-from six.moves import range
-from io import open
 
 #------------------------------------------------------------------------------
 
 LocaleInstalled = False
 PlatformInfo = None
 X11isRunning = None
-#Original_isdir = None
 
 #------------------------------------------------------------------------------
 
@@ -374,6 +371,7 @@ def AtomicWriteFile(filename, data):
 
     This should be atomic operation - data is written to another temporary file and than renamed.
     """
+    import six
     try:
         tmpfilename = filename + ".new"
         f = open(tmpfilename, "wb")
@@ -407,6 +405,7 @@ def AtomicAppendFile(filename, data, mode='a'):
 
     TODO: this is not atomic right now
     """
+    import six
     try:
         f = open(filename, mode)
         if 'b' in mode:
@@ -443,6 +442,7 @@ def WriteFileSimple(filename, data, mode="w"):
     """
     Simple non-atomic method to write data to file, return True if success.
     """
+    import six
     try:
         fil = open(filename, mode)
         if 'b' in mode:
@@ -531,6 +531,7 @@ def _write_data(path, src):
 
     Very close to ``AtomicWriteFile`` but do some checking before write.
     """
+    import six
     temp_path = path + '.tmp'
     if os.path.exists(temp_path):
         if not os.access(temp_path, os.W_OK):
@@ -841,6 +842,7 @@ def shortPath(path):
     """
     Get absolute 'short' path in Unicode, converts to 8.3 windows filenames.
     """
+    import six
     path_ = os.path.abspath(path)
     if not Windows():
         if not isinstance(path_, six.text_type):
@@ -865,6 +867,7 @@ def longPath(path):
     Get absolute 'long' path in Unicode, convert to full path, even if it was
     in 8.3 format.
     """
+    import six
     path_ = os.path.abspath(path)
     if not Windows():
         if not isinstance(path_, six.text_type):
@@ -900,6 +903,7 @@ def remotePath(path):
     """
     Simplify and clean "remote" path value.
     """
+    import six
     if path == '' or path == '/':
         return path
     p = path.lstrip('/').lstrip('\\')
@@ -920,6 +924,7 @@ def portablePath(path):
         - convert disk letter to lower case
     - convert to unicode
     """
+    import six
     if path == '' or path == '/':
         return path
     if Windows() and len(path) == 2 and path[1] == ':':
@@ -929,7 +934,6 @@ def portablePath(path):
     p = os.path.abspath(path)
     if not isinstance(p, six.text_type):
         p = p.decode('utf-8')
-        # p = six.text_type(p)
     if Windows():
         p = p.replace('\\', '/')  # .replace('\\\\', '/')
         if len(p) >= 2:
@@ -1078,6 +1082,7 @@ def getExecutableDir():
     """
     A smart way to detect the path of executable folder.
     """
+    import six
     if main_is_frozen():
         path = os.path.dirname(os.path.abspath(sys.executable))
     else:
@@ -1092,12 +1097,11 @@ def getExecutableFilename():
     """
     A smart way to detect executable file name.
     """
+    import six
     if main_is_frozen():
         path = os.path.abspath(sys.executable)
     else:
         path = os.path.abspath(sys.argv[0])
-#    if Windows():
-#        return shortPath(path)
     return six.text_type(path)
 
 
@@ -1105,6 +1109,7 @@ def getUserName():
     """
     Return current user name in unicode string.
     """
+    import six
     try:
         import pwd
     except ImportError:
@@ -1165,6 +1170,7 @@ def listRemovableDrivesWindows():
     """
     Return a list of "removable" drives under Windows.
     """
+    from six.moves import range
     l = []
     try:
         import win32file

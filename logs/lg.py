@@ -37,7 +37,6 @@ import time
 import threading
 import traceback
 import platform
-import six
 from io import open
 
 #------------------------------------------------------------------------------
@@ -92,6 +91,10 @@ def out(level, msg, nl='\n'):
     global _UseColors
     global _GlobalDebugLevel
     if not _LogsEnabled:
+        return
+    try:
+        import six
+    except:
         return
     s = msg
     s_ = s
@@ -241,6 +244,10 @@ def exception(level, maxTBlevel, exc_info):
     global _LogFileName
     global _StoreExceptionsEnabled
     global _UseColors
+    try:
+        import six
+    except:
+        return
     if exc_info is None:
         _, value, trbk = sys.exc_info()
     else:
@@ -316,6 +323,10 @@ def exception_name(value):
     """
     Some tricks to extract the correct exception name from traceback string.
     """
+    try:
+        import six
+    except:
+        return
     try:
         excStr = six.text_type(value)
     except:
