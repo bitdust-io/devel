@@ -469,9 +469,9 @@ def ReadBinaryFile(filename, decode_encoding=None):
     - file is really empty
     """
     if not os.path.isfile(filename):
-        return ''
+        return b''
     if not os.access(filename, os.R_OK):
-        return ''
+        return b''
     try:
         infile = open(filename, "rb")
         data = infile.read()
@@ -481,7 +481,7 @@ def ReadBinaryFile(filename, decode_encoding=None):
         return data
     except:
         lg.exc()
-        return ''
+        return b''
 
 
 def ReadTextFile(filename):

@@ -348,6 +348,7 @@ class IndexSynchronizer(automat.Automat):
         self.sent_suppliers_number = 0
         src = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
         localID = my_id.getLocalID()
+        # import pdb; pdb.set_trace()
         b = encrypted.Block(
             localID,
             packetID,
