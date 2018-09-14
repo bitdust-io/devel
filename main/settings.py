@@ -2253,19 +2253,17 @@ def RenameBaseDir(newdir):
 
     Not used.
     """
-    global _BaseDirPath
-    olddir = _BaseDirPath
+    olddir = deploy.current_base_dir()
     try:
-        #        os.renames(_BaseDirPath, newdir) # - this not fit for us.
         import shutil
         shutil.copytree(olddir, newdir)
     except:
         lg.exc()
         return False
-    _BaseDirPath = newdir
+    deploy.set_base_dir(newdir)
     lg.out(2, 'settings.RenameBaseDir  directory was copied,  BaseDir=' + BaseDir())
     pathfilename = BaseDirPathFileName()
-    bpio.WriteFile(pathfilename, _BaseDirPath)
+    bpio.WriteFile(pathfilename, deploy.current_base_dir())
     lg.out(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
     logfilename = lg.log_filename()
     lg.close_log_file()

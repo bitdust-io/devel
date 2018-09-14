@@ -90,6 +90,14 @@ def current_base_dir():
     return _BaseDirPath
 
 
+def set_base_dir(new_path):
+    """
+    Rewrite currently known location of base dir with new path.
+    """
+    global _BaseDirPath
+    _BaseDirPath = new_path
+
+
 def BaseDirDefault():
     """
     A default location for BitDust data folder.
@@ -147,6 +155,10 @@ def init_base_dir(base_dir=None):
             os.makedirs(_BaseDirPath, 0o777)
         return _BaseDirPath
 
+    # if location was already known - no need to check again
+    if _BaseDirPath is not None:
+        return _BaseDirPath
+
     # if we have a file "appdata" in current folder - read location path from there
     appdata_path = appdata_location_file_path()
     if os.path.isfile(appdata_path):
@@ -178,6 +190,9 @@ def init_base_dir(base_dir=None):
     # but ".bitdust" folder on same level will have higher priority
     if os.path.isdir(path1):
         _BaseDirPath = path1
+    # use default path if nothing existing yet
+    if not _BaseDirPath:
+        _BaseDirPath = default_path
 
     # if we did not found "metadata" subfolder - use default path, new copy of BitDust
     if not os.path.isdir(os.path.join(current_base_dir(), "metadata")):
@@ -212,8 +227,8 @@ def run(args):
     status = 1
     on_windows = platform.uname()[0] == "Windows"
     source_dir = get_executable_location()
+    init_base_dir()
     base_dir = current_base_dir()
-
     if on_windows and os.path.isfile(os.path.join(base_dir, 'shortpath.txt')):
         base_dir = open(os.path.join(base_dir, 'shortpath.txt')).read().strip()
     venv_path = os.path.join(base_dir, 'venv')
