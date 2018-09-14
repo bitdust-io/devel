@@ -2823,6 +2823,31 @@ def nickname_set(nickname):
 
 #------------------------------------------------------------------------------
 
+def message_history(user):
+    from chat import message_db
+    from userid import my_id, global_id
+    from crypt import my_keys
+    if user is None:
+        return ERROR('User id is required')
+    if not user.count('@'):
+        from contacts import contactsdb
+        user_idurl = contactsdb.find_correspondent_by_nickname(user)
+        if not user_idurl:
+            return ERROR('user not found')
+        user = global_id.UrlToGlobalID(user_idurl)
+    glob_id = global_id.ParseGlobalID(user)
+    if not glob_id['idurl']:
+        return ERROR('wrong user')
+    target_glob_id = global_id.MakeGlobalID(**glob_id)
+    if not my_keys.is_valid_key_id(target_glob_id):
+        return ERROR('invalid key_id: %s' % target_glob_id)
+    lg.out(4, 'api.message_history with "%s"' % target_glob_id)
+    key = '{}:{}'.format(my_id.getGlobalID(key_alias='master'), target_glob_id)
+    messages = [m for m in message_db.get_many(index_name='sender_recipient_glob_id', key=key)]
+    messages.reverse()
+    return RESULT(messages)
+
+
 def message_send(recipient, json_data, timeout=5):
     """
     Sends a text message to remote peer, `recipient` is a string with nickname or global_id.

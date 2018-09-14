@@ -13,7 +13,7 @@ before_install:
 
 script:
   - docker-compose -f docker-compose.yml up -d
-  - docker-compose exec test sh -c "pytest tests/ -v -s"
+  - docker-compose exec test sh -c "pytest tests/test_ss/ -v -s"
 
   - docker-compose -f docker-compose-upload_file.yml up -d --build --force-recreate
   - docker-compose exec test sh -c "pytest tests/test_upload_file/ -v -s"
