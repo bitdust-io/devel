@@ -125,14 +125,19 @@ for that identity (in case there is network partition funnyness)
 to help keep all of them updated.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
 from xml.dom import minidom, Node
 from xml.dom.minidom import getDOMImplementation
-from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -149,6 +154,7 @@ from main import settings
 
 from system import bpio
 
+from lib import strng
 from lib import nameurl
 
 from crypt import key
@@ -325,16 +331,16 @@ class identity:
         maybe don't need to change anything for now.
         Don't include certificate - so identity server can just add it.
         """
-        sep = "-"
-        hsh = ''
-        hsh += sep + sep.join(self.sources)
-        hsh += sep + sep.join(self.contacts)
+        sep = b"-"
+        hsh = b''
+        hsh += sep + strng.to_bin(sep.join(self.sources))
+        hsh += sep + strng.to_bin(sep.join(self.contacts))
         # hsh += sep + sep.join(self.certificates)
-        hsh += sep + sep.join(self.scrubbers)
-        hsh += sep + self.postage
-        hsh += sep + self.date.replace(' ', '_')
-        hsh += sep + self.version
-        hsh += sep + self.revision
+        hsh += sep + strng.to_bin(sep.join(self.scrubbers))
+        hsh += sep + strng.to_bin(self.postage)
+        hsh += sep + strng.to_bin(self.date.replace(' ', '_'))
+        hsh += sep + strng.to_bin(self.version)
+        hsh += sep + strng.to_bin(self.revision)
         hashcode = key.Hash(hsh)
         return hashcode
 
