@@ -200,25 +200,25 @@ class identity:
     contacts = []       # list of ways to contact this identity
     certificates = []   # signatures by identity servers
     scrubbers = []      # list of URLs for people allowed to scrub
-    postage = "1"       # a price for message delivery if not on correspondents list
-    date = ""           # date
-    version = ""        # version string
-    revision = "0"      # revision number, every time my id were modified this value will be increased by 1
-    publickey = ""      # string in twisted.conch.ssh format
-    signature = ""      # digital signature
+    postage = u"1"      # a price for message delivery if not on correspondents list
+    date = u""          # date
+    version = u""       # version string
+    revision = u"0"     # revision number, every time my id were modified this value will be increased by 1
+    publickey = u""     # string in twisted.conch.ssh format
+    signature = u""     # digital signature
 
     def __init__(self,
                  sources=[],
                  contacts=[],
                  certificates=[],
                  scrubbers=[],
-                 postage="1",
-                 date="",
-                 version="",
-                 revision="0",
-                 publickey='',
+                 postage=u"1",
+                 date=u"",
+                 version=u"",
+                 revision=u"0",
+                 publickey=u'',
                  xmlsrc=None,
-                 filename=''):
+                 filename=u''):
 
         self.sources = sources
         self.contacts = contacts
@@ -230,35 +230,35 @@ class identity:
         self.revision = revision
         self.publickey = publickey
 
-        if publickey != '':
+        if publickey:
             self.sign()
         else:
-            self.signature = ''
+            self.signature = u''
             # no point in signing if no public key listed, probably about to unserialize something
 
         if xmlsrc is not None:
             self.unserialize(xmlsrc)
 
-        if filename != '':
+        if filename:
             self.unserialize(bpio.ReadTextFile(filename))
 
-        if xmlsrc is None and filename == '':
+        if not xmlsrc and not filename:
             self.default()
 
     def clear_data(self):
         """
         Erase all fields data, clear identity.
         """
-        self.sources = []      # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
+        self.sources = []       # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
         self.certificates = []  # identity servers each sign the source they are with - hash just (IDURL + publickey)
-        self.publickey = ''    # string
-        self.contacts = []     # list of ways to contact this identity
-        self.scrubbers = []    # list of URLs for people allowed to scrub
-        self.date = ''         # date
-        self.postage = '1'     # postage price for message delivery if not on correspondents list
-        self.version = ''      # version string
-        self.signature = ''    # digital signature
-        self.revision = '0'    # revision number
+        self.publickey = u''    # string
+        self.contacts = []      # list of ways to contact this identity
+        self.scrubbers = []     # list of URLs for people allowed to scrub
+        self.date = u''         # date
+        self.postage = u'1'     # postage price for message delivery if not on correspondents list
+        self.version = u''      # version string
+        self.signature = u''    # digital signature
+        self.revision = u'0'    # revision number
 
     def default(self):
         """
@@ -277,11 +277,11 @@ class identity:
             return False
         if len(self.sources) == 0:
             return False
-        if self.publickey == '':
+        if not self.publickey:
             return False
-        if self.signature == '':
+        if not self.signature:
             return False
-        if self.revision == '':
+        if not self.revision:
             return False
         if len(self.sources) > settings.MaximumIdentitySources():
             lg.warn('too much sources')
@@ -298,26 +298,26 @@ class identity:
         for source in self.sources:
             proto, host, port, filename = nameurl.UrlParse(source)
             if filename.count('/'):
-                lg.warn("identity name: %s" % filename)
+                lg.warn("incorrect identity name: %s" % filename)
                 return False
             name, justxml = filename.split('.')
             names.add(name)
             # SECURITY check that name is simple
             if justxml != "xml":
-                lg.warn("identity name: %s" % filename)
+                lg.warn("incorrect identity name: %s" % filename)
                 return False
             if len(name) > settings.MaximumUsernameLength():
-                lg.warn("identity name: %s" % filename)
+                lg.warn("incorrect identity name: %s" % filename)
                 return False
             if len(name) < settings.MinimumUsernameLength():
-                lg.warn("identity name: %s" % filename)
+                lg.warn("incorrect identity name: %s" % filename)
                 return False
             for c in name:
                 if c not in settings.LegalUsernameChars():
-                    lg.warn("identity name: %s" % filename)
+                    lg.warn("incorrect identity name: %s" % filename)
                     return False
         if len(names) > 1:
-            lg.warn('names are not consistant: %s' % str(names))
+            lg.warn('names are not consistent: %s' % str(names))
             return False
         return True
 

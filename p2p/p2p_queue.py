@@ -237,7 +237,7 @@ def add_consumer(consumer_id):
         raise Exception('consumer already exist')
     _Consumers[consumer_id] = ConsumerInfo(consumer_id)
     new_consumer = consumer(consumer_id)
-    lg.warn('new consumer added: %s' % consumer_id)
+    lg.info('new consumer added: %s' % consumer_id)
     return True
 
 
@@ -246,7 +246,7 @@ def remove_consumer(consumer_id):
     if consumer_id not in consumer():
         raise Exception('consumer not exist')
     _Consumers.pop(consumer_id)
-    lg.warn('existing consumer removed: %s' % str(consumer_id))
+    lg.info('existing consumer removed: %s' % str(consumer_id))
     return True
 
 #------------------------------------------------------------------------------
@@ -279,7 +279,7 @@ def add_producer(producer_id):
     if is_producer_exist(producer_id):
         raise Exception('producer already exist')
     _Producers[producer_id] = ProducerInfo(producer_id)
-    lg.warn('new producer added: %s' % producer_id)
+    lg.info('new producer added: %s' % producer_id)
     return True
 
 
@@ -288,7 +288,7 @@ def remove_producer(producer_id):
     if not is_producer_exist(producer_id):
         raise Exception('producer not exist')
     _Producers.pop(producer_id)
-    lg.warn('existing producer removed: %s' % str(producer_id))
+    lg.info('existing producer removed: %s' % str(producer_id))
     return True
 
 #------------------------------------------------------------------------------
@@ -305,7 +305,7 @@ def connect_producer(producer_id, queue_id):
     if not is_queue_exist(queue_id):
         raise Exception('queue not exist')
     producer(producer_id).queues.append(queue_id)
-    lg.warn('producer %s connected to queue %s' % (producer_id, queue_id, ))
+    lg.info('producer %s connected to queue %s' % (producer_id, queue_id, ))
     return True
 
 
@@ -316,12 +316,12 @@ def disconnect_producer(producer_id, queue_id=None):
         raise Exception('queue not exist')
     if queue_id is None:
         producer(producer_id).queues = []
-        lg.warn('producer %s disconnected from all queues' % (producer_id, ))
+        lg.info('producer %s disconnected from all queues' % (producer_id, ))
         return True
     if queue_id not in producer(producer_id).queues:
         raise Exception('producer is not connected to that queue')
     producer(producer_id).queues.remove(queue_id)
-    lg.warn('producer %s disconnected from queue %s' % (producer_id, queue_id, ))
+    lg.info('producer %s disconnected from queue %s' % (producer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -360,7 +360,7 @@ def open_queue(queue_id):
     if not my_keys.is_key_registered(customer_key_id):
         raise Exception('customer key for given queue not found')
     _ActiveQueues[queue_id] = OrderedDict()
-    lg.warn('new queue opened %s based on key %s' % (queue_id, customer_key_id))
+    lg.info('new queue opened %s based on key %s' % (queue_id, customer_key_id))
     return True
 
 
@@ -385,7 +385,7 @@ def subscribe_consumer(consumer_id, queue_id):
     if queue_id in consumer(consumer_id).queues:
         raise Exception('already subscribed')
     consumer(consumer_id).queues.append(queue_id)
-    lg.warn('conumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
+    lg.info('conumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
     return True
 
 
@@ -396,12 +396,12 @@ def unsubscribe_consumer(consumer_id, queue_id=None):
         raise Exception('consumer not found')
     if queue_id is None:
         consumer(consumer_id).queues = []
-        lg.warn('conumer %s unsubscribed from all queues' % (consumer_id, ))
+        lg.info('conumer %s unsubscribed from all queues' % (consumer_id, ))
         return True
     if queue_id not in consumer(consumer_id).queues:
         raise Exception('consumer is not subscribed for that queue')
     consumer(consumer_id).queues.remove(queue_id)
-    lg.warn('conumer %s unsubscribed from queue %s' % (consumer_id, queue_id, ))
+    lg.info('conumer %s unsubscribed from queue %s' % (consumer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------
@@ -445,7 +445,7 @@ def finish_notification(consumer_id, queue_id, message_id, success):
         queue(queue_id)[message_id].failed_notifications += 1
         consumer(consumer_id).failed_notifications += 1
     if not defer_result.called:
-        lg.warn('cancelling not-finished notification')
+        lg.info('cancelling not-finished notification')
         defer_result.cancel()
     del defer_result
     return True
@@ -475,11 +475,11 @@ def pop_message(queue_id, message_id=None):
         raise Exception('queue id not found')
     if message_id is None:
         if len(list(queue(queue_id).keys())) == 0:
-            lg.warn('there is no messages in the queue')
+            lg.info('there is no messages in the queue %s' % queue_id)
             return None
         message_id = list(queue(queue_id).keys())[0]
     if message_id not in queue(queue_id):
-        lg.warn('given message was not found in the queue')
+        lg.info('given message was not found in the queue %s' % queue_id)
         return None
     existing_message = queue(queue_id).pop(message_id)
     existing_message.state = 'PULLED'
@@ -593,7 +593,7 @@ def on_event_packet_received(newpacket, info, status, error_message):
         # this message have an ID and producer so it came from a queue and needs to be consumed
         # also add more info comming from the queue
         if _Debug:
-            lg.warn('received event from the queue at %s' % queue_id)
+            lg.info('received new event %s from the queue at %s' % (event_id, queue_id, ))
         payload.update(dict(
             queue_id=queue_id,
             producer_id=producer_id,
@@ -614,7 +614,7 @@ def on_event_packet_received(newpacket, info, status, error_message):
         # such queue is not found locally, that means message is
         # probably addressed to that node and needs to be consumed directly
         if _Debug:
-            lg.warn('received event was not delivered to any queue, consume now and send an Ack')
+            lg.warn('received event %s was not delivered to any queue, consume now and send an Ack' % event_id)
         # also add more info comming from the queue
         payload.update(dict(
             queue_id=queue_id,
@@ -628,7 +628,7 @@ def on_event_packet_received(newpacket, info, status, error_message):
     # found a queue for that message, pushing there
     # TODO: add verification of producer's identity and signature
     if _Debug:
-        lg.warn('pushing event to the queue %s on behalf of producer %s' % (queue_id, producer_id))
+        lg.info('pushing event %s to the queue %s on behalf of producer %s' % (event_id, queue_id, producer_id))
     try:
         push_message(
             producer_id=producer_id,
@@ -696,7 +696,7 @@ def do_consume(interested_consumers=None):
         interested_queues = set()
         for queue_id in consumer(consumer_id).queues:
             if queue_id not in queue():
-                lg.warn('consumer queue not found')
+                lg.warn('consumer queue %s was not found' % queue_id)
                 continue
             if len(queue(queue_id)) == 0:
                 # no messages in the queue
