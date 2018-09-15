@@ -293,10 +293,9 @@ class StunClient(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doRequestStunPortNumbers')
-        nodes = arg
-        for node in nodes:
+        for node in self.stun_nodes:
             if _Debug:
-                lg.out(_DebugLevel + 10, '    %s' % node)
+                lg.out(_DebugLevel + 10, '    from %s' % node)
             d = node.request('stun_port')
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node] = d

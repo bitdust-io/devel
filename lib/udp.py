@@ -28,12 +28,12 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
 import sys
 import time
-from io import StringIO
 
 from twisted.internet import reactor
 from twisted.internet import protocol
@@ -284,7 +284,7 @@ class CommandsProtocol(BasicProtocol):
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
         _LastDatagramReceivedTime = time.time()
-        inp = StringIO(datagram)
+        inp = BytesIO(datagram)
         try:
             # version = datagram[0]
             # command = datagram[1]
@@ -299,7 +299,7 @@ class CommandsProtocol(BasicProtocol):
             return
         if version != self.SoftwareVersion:
             inp.close()
-            lg.warn('- different software version: %s' % version)
+            lg.warn('different software version: %s' % version)
             return
         if _Debug:
             lg.out(_DebugLevel, '<<< [%s] (%d bytes) from %s, total %d bytes received' % (
@@ -320,7 +320,7 @@ class CommandsProtocol(BasicProtocol):
 
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
-        outp = StringIO()
+        outp = BytesIO()
         try:
             outp.write(self.SoftwareVersion)
             outp.write(strng.to_bin(command))
@@ -335,6 +335,7 @@ class CommandsProtocol(BasicProtocol):
             result = self.sendDatagram(outp.getvalue(), address)
         except:
             outp.close()
+            lg.exc()
             return None
         outp.close()
         self.bytes_out += payloadsz + 2
