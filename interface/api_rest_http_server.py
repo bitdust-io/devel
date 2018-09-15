@@ -638,10 +638,10 @@ class BitDustRESTHTTPServer(APIResource):
         )
 
     #------------------------------------------------------------------------------
-    @GET('^/msg/l?')
+    @GET('^/msg/h?')
     @GET('^/message/history/v1$')
-    def message_list_v1(self, request):
-        user_identity = _request_arg(request, 'id', None)
+    def message_history_v1(self, request):
+        user_identity = _request_arg(request, 'id', None, True)
         return api.message_history(user=user_identity)
 
     @GET('^/msg/r/(?P<consumer_id>[^/]+)/$')
