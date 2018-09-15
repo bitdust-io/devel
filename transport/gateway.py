@@ -649,7 +649,8 @@ def shutdown_all_inbox_packets():
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(list(packet_in.items()).values()))
+        lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % (
+            len(list(packet_in.inbox_items().values())), ))
     for pkt_in in list(packet_in.inbox_items().values()):
         pkt_in.event('cancel', 'shutdown')
 
