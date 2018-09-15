@@ -259,7 +259,7 @@ class StunClient(automat.Automat):
         """
         self.listen_port = arg
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doInit on port %s' % self.listen_port)
+            lg.out(_DebugLevel, 'stun_client.doInit on port %d' % self.listen_port)
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).add_callback(self._datagram_received)
         else:
@@ -438,7 +438,7 @@ class StunClient(automat.Automat):
 
     def _some_nodes_found(self, nodes):
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client._some_nodes_found : %d' % len(nodes))
+            lg.out(_DebugLevel + 4, 'stun_client._some_nodes_found : %d' % len(nodes))
         if len(nodes) > 0:
             self.automat('found-some-nodes', nodes)
         else:
@@ -446,7 +446,7 @@ class StunClient(automat.Automat):
 
     def _nodes_not_found(self, err):
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client._nodes_not_found err=%s' % str(err))
+            lg.out(_DebugLevel, 'stun_client._nodes_not_found err=%s' % str(err))
         self.automat('dht-nodes-not-found')
 
     def _stun_port_received(self, result, node):
@@ -461,6 +461,8 @@ class StunClient(automat.Automat):
                 lg.out(_DebugLevel, 'stun_client._stun_port_received ERROR result=%s from node: %s' % (
                     str(result), node))
             return
+        if _Debug:
+            lg.out(_DebugLevel, 'stun_client._stun_port_received  %s at %s' % (address, port, ))
         self.automat('port-number-received', (address, port))
 
 #------------------------------------------------------------------------------
@@ -488,7 +490,7 @@ def safe_stun(udp_port=None, dht_port=None, ):
             })
 
         def _go(live_nodes):
-            A('init', (udp_port))
+            A('init', udp_port)
             A('start', _cb)
 
         d.addCallback(_go)
