@@ -30,7 +30,7 @@ _MessagesCache = {}
 
 def store(idurl, msg):
     global _MessagesCache
-    if idurl not in _MessagesCache.keys():
+    if idurl not in list(_MessagesCache.keys()):
         _MessagesCache[idurl] = {}
     _MessagesCache[idurl]
 

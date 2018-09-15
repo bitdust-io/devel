@@ -3,8 +3,9 @@ State.py: contains the base State class.
 
 """
 
-from StateComponent import StateComponent
-from StateMachine import StateMachine
+from __future__ import absolute_import
+from .StateComponent import StateComponent
+from .StateMachine import StateMachine
 
 
 class State(object):

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from zope.interface.advice import addClassAdvisor
 
 def method_factory_factory(method):
@@ -13,7 +14,7 @@ def method_factory_factory(method):
                     for func_name in _f:
                         orig = _f[func_name]
                         func = getattr(self, func_name)
-                    if func.im_func==orig:
+                    if func.__func__==orig:
                         self.register(method, regex, func)
                 return __init__
             cls.__init__ = wrapped(cls.__init__)

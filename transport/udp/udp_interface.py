@@ -33,10 +33,11 @@ module:: udp_interface
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
+import six
 import os
 import sys
 
@@ -47,11 +48,14 @@ except:
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import Deferred, succeed, fail
-from twisted.python.failure import Failure
 
 from logs import lg
 
 from lib import nameurl
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -97,7 +101,7 @@ class GateInterface():
         global _GateProxy
         if _Debug:
             lg.out(4, 'udp_interface.init %s' % xml_rpc_url_or_object)
-        if isinstance(xml_rpc_url_or_object, str):
+        if isinstance(xml_rpc_url_or_object, six.string_types):
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
             _GateProxy = xml_rpc_url_or_object
@@ -269,7 +273,7 @@ class GateInterface():
         """
         """
         from transport.udp import udp_session
-        return udp_session.sessions().values()
+        return list(udp_session.sessions().values())
 
     def list_streams(self, sorted_by_time=True):
         """

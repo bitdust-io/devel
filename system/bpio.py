@@ -40,16 +40,23 @@ Most used method here is ``log`` - prints a log string.
 TODO: need to do some refactoring here
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+from io import open
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
-import time
 import imp
-import string
 import platform
-import traceback
-import locale
 import glob
 import re
+
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -58,7 +65,6 @@ from logs import lg
 LocaleInstalled = False
 PlatformInfo = None
 X11isRunning = None
-#Original_isdir = None
 
 #------------------------------------------------------------------------------
 
@@ -87,29 +93,29 @@ def shutdown():
 
 
 def InstallLocale():
-	"""
-	Here is a small trick to refresh current default encoding.
-	"""
-	global LocaleInstalled
-	if LocaleInstalled:
-		return False
-	try:
-		import sys
-		reload(sys)
-		if Windows():
-			if hasattr(sys, "setdefaultencoding"):
-				import locale
-				denc = locale.getpreferredencoding()
-				if not denc:
-					sys.setdefaultencoding('UTF8')
-				else:
-					sys.setdefaultencoding(denc)
-		else:
-			sys.setdefaultencoding('UTF8')
-		LocaleInstalled = True
-	except:
-		pass
-	return LocaleInstalled
+    """
+    Here is a small trick to refresh current default encoding.
+    """
+    global LocaleInstalled
+    if LocaleInstalled:
+        return False
+    try:
+        import sys
+        reload(sys)
+        if Windows():
+            if hasattr(sys, "setdefaultencoding"):
+                import locale
+                denc = locale.getpreferredencoding()
+                if not denc:
+                    sys.setdefaultencoding('UTF8')
+                else:
+                    sys.setdefaultencoding(denc)
+        else:
+            sys.setdefaultencoding('UTF8')
+        LocaleInstalled = True
+    except:
+        pass
+    return LocaleInstalled
 
 
 def ostype():
@@ -163,7 +169,7 @@ def osinfofull():
     o += 'os.path.expanduser("~"): ' + os.path.expanduser('~') + '\n'
     o += 'sys.argv: ' + pprint.pformat(sys.argv) + '\n'
     o += 'sys.path:\n' + pprint.pformat(sys.path) + '\n'
-    o += 'os.environ:\n' + pprint.pformat(os.environ.items()) + '\n'
+    o += 'os.environ:\n' + pprint.pformat(list(os.environ.items())) + '\n'
     o += '=====================================================\n'
     o += '=====================================================\n'
     o += '=====================================================\n'
@@ -373,7 +379,8 @@ def AtomicWriteFile(filename, data):
     try:
         tmpfilename = filename + ".new"
         f = open(tmpfilename, "wb")
-        f.write(data)
+        bin_data = strng.to_bin(data)
+        f.write(bin_data)
         f.flush()
         # from http://docs.python.org/library/os.html on os.fsync
         os.fsync(f.fileno())
@@ -402,7 +409,11 @@ def AtomicAppendFile(filename, data, mode='a'):
     """
     try:
         f = open(filename, mode)
-        f.write(data)
+        if 'b' in mode:
+            bin_data = strng.to_bin(data)
+            f.write(bin_data)
+        else:
+            f.write(data)
         f.flush()
         os.fsync(f.fileno())
         f.close()
@@ -431,16 +442,19 @@ def WriteFileSimple(filename, data, mode="w"):
     Simple non-atomic method to write data to file, return True if success.
     """
     try:
-        file = open(filename, mode)
-        file.write(data)
-        file.close()
+        fil = open(filename, mode)
+        if 'b' in mode:
+            fil.write(strng.to_bin(data))
+        else:
+            fil.write(strng.to_text(data))
+        fil.close()
     except:
         lg.exc()
         return False
     return True
 
 
-def ReadBinaryFile(filename):
+def ReadBinaryFile(filename, decode_encoding=None):
     """
     A smart way to read binary file. Return empty string in case of:
 
@@ -450,17 +464,19 @@ def ReadBinaryFile(filename):
     - file is really empty
     """
     if not os.path.isfile(filename):
-        return ''
+        return b''
     if not os.access(filename, os.R_OK):
-        return ''
+        return b''
     try:
         infile = open(filename, "rb")
         data = infile.read()
+        if decode_encoding:
+            data = data.decode(decode_encoding)
         infile.close()
         return data
     except:
         lg.exc()
-        return ''
+        return b''
 
 
 def ReadTextFile(filename):
@@ -519,6 +535,7 @@ def _write_data(path, src):
         except:
             lg.out(1, 'bpio._write_data ERROR removing ' + str(path))
     fout = open(temp_path, 'wb')
+    fout.write(strng.to_bin(src))
     fout.write(src)
     fout.flush()
     os.fsync(fout)
@@ -612,8 +629,8 @@ def _pack_dict(dictionary, sort=False):
     if sort:
         seq = sorted(dictionary.keys())
     else:
-        seq = dictionary.keys()
-    return '\n'.join(map(lambda k: '%s %s' % (k, str(dictionary[k])), seq))
+        seq = list(dictionary.keys())
+    return '\n'.join(['%s %s' % (k, str(dictionary[k])) for k in seq])
 
 
 def _unpack_dict_from_list(lines):
@@ -815,21 +832,19 @@ def shortPath(path):
     """
     path_ = os.path.abspath(path)
     if not Windows():
-        if not isinstance(path_, unicode):
-            return unicode(path_)
-        return path_
+        return strng.to_text(path_)
     if not os.path.exists(path_):
         if os.path.isdir(os.path.dirname(path_)):
             res = shortPath(os.path.dirname(path_))
-            return unicode(os.path.join(res, os.path.basename(path_)))
-        return unicode(path_)
+            return strng.to_text(os.path.join(res, os.path.basename(path_)))
+        return strng.to_text(path_)
     try:
         import win32api
         spath = win32api.GetShortPathName(path_)
-        return unicode(spath)
+        return strng.to_text(spath)
     except:
         lg.exc()
-        return unicode(path_)
+        return strng.to_text(path_)
 
 
 def longPath(path):
@@ -839,27 +854,17 @@ def longPath(path):
     """
     path_ = os.path.abspath(path)
     if not Windows():
-        if not isinstance(path_, unicode):
-            return unicode(path_)
-        return path_
+        return strng.to_text(path_)
     if not os.path.exists(path_):
-        return unicode(path_)
+        return strng.to_text(path_)
     try:
         import win32api
         lpath = win32api.GetLongPathName(path_)
-        return unicode(lpath)
+        return strng.to_text(lpath)
     except:
         lg.exc()
-    return unicode(path_)
+    return strng.to_text(path_)
 
-
-def _encode(s):
-    """
-    If ``s`` is unicode - encode to utf-8, otherwise return ``s``.
-    """
-    if isinstance(s, unicode):
-        return s.encode('utf-8')
-    return s
 
 # def portablePath(path):
 #    """
@@ -880,13 +885,12 @@ def remotePath(path):
     """
     Simplify and clean "remote" path value.
     """
-    if path == '' or path == '/':
-        return path
-    p = path.lstrip('/').lstrip('\\')
-    if not isinstance(p, unicode):
-        p = unicode(p)
-    if p.endswith('/') and len(p) > 1:
-        p = p.rstrip('/')
+    p = strng.to_text(path)
+    if p == u'' or p == u'/':
+        return p
+    p = p.lstrip(u'/').lstrip(u'\\')
+    if p.endswith(u'/') and len(p) > 1:
+        p = p.rstrip(u'/')
     return p
 
 
@@ -900,26 +904,25 @@ def portablePath(path):
         - convert disk letter to lower case
     - convert to unicode
     """
-    if path == '' or path == '/':
+    path = strng.to_text(path)
+    if path == u'' or path == u'/':
         return path
-    if Windows() and len(path) == 2 and path[1] == ':':
-        path += '/'  # "C:" -> "C:/"
-    if path.count('~'):
+    if Windows() and len(path) == 2 and path[1] == u':':
+        # "C:" -> "C:/"
+        path += u'/'
+    if path.count(u'~'):
         path = os.path.expanduser(path)
     p = os.path.abspath(path)
-    if not isinstance(p, unicode):
-        # p = p.encode('utf-8')
-        p = unicode(p)
     if Windows():
-        p = p.replace('\\', '/')  # .replace('\\\\', '/')
+        p = p.replace(u'\\', u'/')
         if len(p) >= 2:
-            if p[1] == ':':
+            if p[1] == u':':
                 p = p[0].lower() + p[1:]
-            elif p[:2] == '//':
-                p = '\\\\' + p[2:]
-    if p.endswith('/') and len(p) > 1:
-        p = p.rstrip('/')
-    return p  # unicode(p) #.encode('utf-8')
+            elif p[:2] == u'//':
+                p = u'\\\\' + p[2:]
+    if p.endswith(u'/') and len(p) > 1:
+        p = p.rstrip(u'/')
+    return p
 
 
 def pathExist(localpath):
@@ -1065,7 +1068,7 @@ def getExecutableDir():
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         except:
             path = os.path.dirname(os.path.abspath(sys.argv[0]))
-    return unicode(path)
+    return strng.to_text(path)
 
 
 def getExecutableFilename():
@@ -1076,9 +1079,7 @@ def getExecutableFilename():
         path = os.path.abspath(sys.executable)
     else:
         path = os.path.abspath(sys.argv[0])
-#    if Windows():
-#        return shortPath(path)
-    return unicode(path)
+    return strng.to_text(path)
 
 
 def getUserName():
@@ -1100,7 +1101,7 @@ def getUserName():
             return getpass.getuser()
     except:
         pass
-    return os.path.basename(unicode(os.path.expanduser('~')))
+    return os.path.basename(strng.to_text(os.path.expanduser('~')))
 
 #------------------------------------------------------------------------------
 
@@ -1169,7 +1170,7 @@ def listRemovableDrivesLinux():
     The same idea with ``listRemovableDrivesWindows``.
     """
     try:
-        return map(lambda x: os.path.join('/media', x), os.listdir('/media'))
+        return [os.path.join('/media', x) for x in os.listdir('/media')]
     except:
         return []
 

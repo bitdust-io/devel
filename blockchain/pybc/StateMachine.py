@@ -3,11 +3,12 @@ StateMachine.py: contains the StateMachine class.
 
 """
 
+from __future__ import absolute_import
 import logging
 
 
-import util
-import science
+from . import util
+from . import science
 
 
 class StateMachine(object):

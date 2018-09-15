@@ -30,6 +30,7 @@
 module:: service_identity_server
 """
 
+from __future__ import absolute_import
 from services.local_service import LocalService
 
 

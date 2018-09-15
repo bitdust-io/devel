@@ -32,7 +32,13 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -150,7 +156,7 @@ def on_incoming_broadcast_message(json_msg):
 
 def _test():
     from coins import mine
-    print prepare_broadcast_message(my_id.getLocalID(), {'test': 'okidoki'})
+    print(prepare_broadcast_message(my_id.getLocalID(), {'test': 'okidoki'}))
 
 #------------------------------------------------------------------------------
 

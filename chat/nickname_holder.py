@@ -48,6 +48,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import sys
 
 from logs import lg

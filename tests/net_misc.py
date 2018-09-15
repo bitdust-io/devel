@@ -19,6 +19,8 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -38,11 +40,11 @@ if __name__ == '__main__':
 
 def main():
     def _ok(x):
-        print 'ok', x
+        print('ok', x)
         reactor.stop()
 
     def _fail(x):
-        print 'fail', x
+        print('fail', x)
         reactor.stop()
     from lib import net_misc
     from main import settings

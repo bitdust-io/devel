@@ -31,7 +31,12 @@ A low level methods to store list of contacts locally.:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -154,7 +159,7 @@ def set_suppliers(idlist, customer_idurl=None):
         customer_idurl = my_id.getLocalID()
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
-    _SuppliersList[customer_idurl] = map(lambda idurl: idurl.strip(), idlist)
+    _SuppliersList[customer_idurl] = [idurl.strip() for idurl in idlist]
 
 
 def update_suppliers(idslist, customer_idurl=None):
@@ -246,7 +251,7 @@ def known_customers():
     Return list of all known customers : if I need to connect to their suppliers.
     """
     global _SuppliersList
-    return _SuppliersList.keys()
+    return list(_SuppliersList.keys())
 
 
 def customers():
@@ -272,7 +277,7 @@ def set_customers(idlist):
     Set customers list.
     """
     global _CustomersList
-    _CustomersList = map(lambda idurl: idurl.strip(), idlist)
+    _CustomersList = [idurl.strip() for idurl in idlist]
 
 
 def update_customers(idslist):
@@ -359,7 +364,7 @@ def correspondents_ids():
     Return list of correspondents IDURLs.
     """
     global _CorrespondentsList
-    return map(lambda tupl: tupl[0], _CorrespondentsList)
+    return [tupl[0] for tupl in _CorrespondentsList]
 
 
 def correspondents_dict():
@@ -597,7 +602,7 @@ def save_correspondents(path=None):
     """
     if path is None:
         path = settings.CorrespondentIDsFilename()
-    bpio._write_list(path, map(lambda t: "%s %s" % t, correspondents()))
+    bpio._write_list(path, ["%s %s" % t for t in correspondents()])
 
 
 def load_correspondents(path=None):
@@ -609,7 +614,7 @@ def load_correspondents(path=None):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
-    for i in xrange(len(lst)):
+    for i in range(len(lst)):
         lst[i] = tuple(lst[i].strip().split(' ', 1))
         if len(lst[i]) < 2:
             lst[i] = (lst[i][0], '')

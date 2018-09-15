@@ -32,7 +32,11 @@ module:: api_jsonrpc_server
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 24
 
 #------------------------------------------------------------------------------
@@ -131,7 +135,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
             fm_request = {}
             params = [] if 'params' not in request_dict else request_dict['params']
             fm_request['params'] = {
-                i[0]: i[1] for i in map(lambda p: p.split("=", 1), params)}
+                i[0]: i[1] for i in [p.split("=", 1) for p in params]}
             fm_request['params']['mode'] = fm_method
             request_dict = {'_executed': time.time(), }
         except Exception as exc:

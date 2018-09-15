@@ -41,6 +41,7 @@ C{DistributedTupleSpacePeer} class, accessible via the main C{entangled}
 package or its C{dtuple} module.
 """
 
-from kademlia.node import Node as KademliaNode
-from node import EntangledNode
-from dtuple import DistributedTupleSpacePeer
+from __future__ import absolute_import
+from .kademlia.node import Node as KademliaNode
+from .node import EntangledNode
+from .dtuple import DistributedTupleSpacePeer

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from six.moves import range
 def print_format_table():
     """
     prints table of formatted text format options

@@ -11,15 +11,19 @@ method that must be called when you want to commit your changes to disk.
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import hashlib
 import collections
 import struct
 import logging
 
 from collections import MutableMapping
-from sqliteshelf import SQLiteShelf
-from StateComponent import StateComponent
-import util
+from .sqliteshelf import SQLiteShelf
+from .StateComponent import StateComponent
+from . import util
+import six
+from six.moves import range
 
 # How many children should each MerkleTrieNode be able to have? As many as
 # there are hex digits.
@@ -138,7 +142,7 @@ class AuthenticatedDictionaryStateComponent(StateComponent):
             # Don't have absurd numbers of children
             raise Exception("Too many children: {}".format(child_count))
 
-        for i in xrange(child_count):
+        for i in range(child_count):
             # Unpack the next 65-byte record
             child_index, child_hash = struct.unpack_from(">B64s", self.data,
                                                          offset=1 + 65 * i)
@@ -169,7 +173,7 @@ class AuthenticatedDictionaryStateComponent(StateComponent):
             # Don't have absurd numbers of children
             raise Exception("Too many children: {}".format(child_count))
 
-        for i in xrange(child_count):
+        for i in range(child_count):
             # Unpack the next 65-byte record
             child_index, child_hash = struct.unpack_from(">B64s", self.data,
                                                          offset=1 + 65 * i)
@@ -1271,7 +1275,7 @@ l3yNr1m9i9inTKl+pWhOQC0rRg==
         """
 
         # Audit the adds and deletes
-        for key in self.updates.iterkeys():
+        for key in six.iterkeys(self.updates):
             if key in self.deletes:
                 raise Exception("Deleting and updating the same key: {}".format(
                     util.bytes2string(key)))
@@ -1281,7 +1285,7 @@ l3yNr1m9i9inTKl+pWhOQC0rRg==
                 raise Exception("Deleting and updating the same key: {}".format(
                     key))
 
-        for key in self.hashmap_updates.iterkeys():
+        for key in six.iterkeys(self.hashmap_updates):
             if key in self.hashmap_deletes:
                 raise Exception("Deleting and updating the same key: {}".format(
                     util.bytes2string(key)))
@@ -1292,14 +1296,14 @@ l3yNr1m9i9inTKl+pWhOQC0rRg==
                     util.bytes2string(key)))
 
         # First, check up on all our updated nodes
-        updated_nodes = self.updates.keys()
+        updated_nodes = list(self.updates.keys())
         for node in updated_nodes:
             if self.get_node_by_hash(self.get_node_hash(node)) != node:
 
-                print self.updates
-                print self.deletes
-                print {util.bytes2string(key): value for key, value in self.hashmap_updates.iteritems()}
-                print set(util.bytes2string(item) for item in self.hashmap_deletes)
+                print(self.updates)
+                print(self.deletes)
+                print({util.bytes2string(key): value for key, value in six.iteritems(self.hashmap_updates)})
+                print(set(util.bytes2string(item) for item in self.hashmap_deletes))
 
                 raise Exception("Node {} with hash {}, key {} not retrievable".format(
                     node, util.bytes2string(self.get_node_hash(node)),
@@ -1310,7 +1314,7 @@ l3yNr1m9i9inTKl+pWhOQC0rRg==
             # initialized it.
             self.store["next_pointer"] = self.next_pointer
 
-        for node, node_struct in self.updates.iteritems():
+        for node, node_struct in six.iteritems(self.updates):
             # Update all the updated nodes, pickling them in the process.
             self.store[node] = node_struct
 
@@ -1320,7 +1324,7 @@ l3yNr1m9i9inTKl+pWhOQC0rRg==
                 # not, for example, added and deleted since the last commit.
                 del self.store[node]
 
-        for node_hash, node_pointer in self.hashmap_updates.iteritems():
+        for node_hash, node_pointer in six.iteritems(self.hashmap_updates):
             # Record all updated Merkle hash to pointer mappings. These are
             # almost certainly all additions.
             self.hashmap[node_hash] = node_pointer

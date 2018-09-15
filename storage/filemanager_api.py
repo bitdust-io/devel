@@ -32,10 +32,18 @@ module:: filemanager_api
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import time
 import pprint
+
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -73,7 +81,7 @@ def process(json_request):
     mode = ''
     result = {}
     try:
-        if isinstance(json_request, str) or isinstance(json_request, unicode):
+        if strng.is_string(json_request):
             import json
             json_request = json.loads(json_request)
         mode = json_request['params']['mode']
@@ -246,7 +254,7 @@ def _upload(params):
     path = params['path']
     if bpio.Linux() or bpio.Mac():
         path = '/' + (path.lstrip('/'))
-    localPath = unicode(path)
+    localPath = strng.to_text(path)
     if not bpio.pathExist(localPath):
         return {'result': {"success": False, "error": 'local path %s was not found' % path}}
     result = []
@@ -380,7 +388,7 @@ def _list_in_out_packets(params):
             'from_to': 'to',
             'target': pkt_out.remote_idurl,
         })
-    for pkt_in in packet_in.items().values():
+    for pkt_in in list(packet_in.inbox_items()).values():
         result.append({
             'name': pkt_in.transfer_id,
             'label': pkt_in.label,

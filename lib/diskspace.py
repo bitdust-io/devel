@@ -167,7 +167,7 @@ def SuffixIsCorrect(suffix):
     See global variable ``_Suffixes``.
     """
     global _Suffixes
-    return suffix in _Suffixes.keys()
+    return suffix in list(_Suffixes.keys())
 
 
 def SuffixLabels():

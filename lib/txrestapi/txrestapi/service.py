@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from twisted.web.server import Site
 from .resource import APIResource
 

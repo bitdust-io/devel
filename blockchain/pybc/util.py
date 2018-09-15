@@ -9,6 +9,7 @@ Also contains a useful function for setting up logging.
 
 """
 
+from __future__ import absolute_import
 import base64
 import binascii
 import time
@@ -55,7 +56,7 @@ def bytes2long(s):
     See http://bugs.python.org/issue923643
 
     """
-    return long(binascii.hexlify(s), 16)
+    return int(binascii.hexlify(s), 16)
 
 
 def long2bytes(n):

@@ -20,9 +20,12 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import time
+from six.moves import range
 # import timeit
 # import platform
 
@@ -72,11 +75,11 @@ else:
     # On most other platforms the best timer is time.time()
     _time = time.time
 
-print '%f' % (time.time() - _time())
+print('%f' % (time.time() - _time()))
 
 for j in range(10):
     c = 0
     for i in range(9999999):
         c = i / float(i + 1)
         if str(i).count('0') == 6 and int(str(i)[0]) % 5:
-            print '%f' % (time.time() - _time())
+            print('%f' % (time.time() - _time()))

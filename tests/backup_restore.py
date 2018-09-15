@@ -19,6 +19,8 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -99,8 +101,8 @@ def backup_done(bid, result):
 
 def restore_done(x, tarfilename):
     backupID, result = x.split(' ')
-    print backupID, result
-    print tarfilename
+    print(backupID, result)
+    print(tarfilename)
     reactor.stop()
 
 

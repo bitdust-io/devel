@@ -43,8 +43,13 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 4
 
 #------------------------------------------------------------------------------
 
@@ -84,7 +89,13 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8)
+        _StunClient = StunClient(
+            name='stun_client',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient
@@ -248,7 +259,7 @@ class StunClient(automat.Automat):
         """
         self.listen_port = arg
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doInit on port %d' % self.listen_port)
+            lg.out(_DebugLevel, 'stun_client.doInit on port %s' % self.listen_port)
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).add_callback(self._datagram_received)
         else:
@@ -305,7 +316,7 @@ class StunClient(automat.Automat):
         if arg is not None:
             if _Debug:
                 lg.out(_DebugLevel + 10, 'stun_client.doStun to one stun_server: %s' % str(arg))
-            udp.send_command(self.listen_port, udp.CMD_STUN, '', arg)
+            udp.send_command(self.listen_port, udp.CMD_STUN, b'', arg)
             return
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doStun to %d stun_servers' % (
@@ -313,9 +324,9 @@ class StunClient(automat.Automat):
         for address in self.stun_servers:
             if address is None:
                 continue
-            if address in self.stun_results.keys():
+            if address in list(self.stun_results.keys()):
                 continue
-            udp.send_command(self.listen_port, udp.CMD_STUN, '', address)
+            udp.send_command(self.listen_port, udp.CMD_STUN, b'', address)
 
     def doRecordResult(self, arg):
         """
@@ -347,9 +358,9 @@ class StunClient(automat.Automat):
         Action method.
         """
         try:
-            min_port = min(map(lambda addr: addr[1], self.stun_results.values()))
-            max_port = max(map(lambda addr: addr[1], self.stun_results.values()))
-            my_ip = self.stun_results.values()[0][0]
+            min_port = min([addr[1] for addr in list(self.stun_results.values())])
+            max_port = max([addr[1] for addr in list(self.stun_results.values())])
+            my_ip = list(self.stun_results.values())[0][0]
             if min_port == max_port:
                 result = ('stun-success', 'non-symmetric', my_ip, min_port)
             else:
@@ -459,8 +470,8 @@ def safe_stun(udp_port=None, dht_port=None, ):
     result = Deferred()
     try:
         settings.init()
-        dht_port = dht_port  # or settings.getDHTPort()
-        udp_port = udp_port  # or settings.getUDPPort()
+        dht_port = dht_port or settings.getDHTPort()
+        udp_port = udp_port or settings.getUDPPort()
         if dht_port:
             dht_service.init(dht_port)
         d = dht_service.connect()
@@ -494,11 +505,11 @@ def test_safe_stun():
     from twisted.internet import reactor
 
     def _cb(res):
-        print res
+        print(res)
         reactor.stop()
 
     def _eb(err):
-        print err
+        print(err)
         reactor.stop()
 
     lg.set_debug_level(30)
@@ -522,7 +533,7 @@ def main():
     udp.listen(udp_port)
 
     def _cb(result, typ, ip, details):
-        print result, typ, ip, details
+        print(result, typ, ip, details)
         A('shutdown')
         reactor.stop()
 
