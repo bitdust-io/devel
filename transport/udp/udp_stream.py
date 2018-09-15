@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-
-from __future__ import absolute_import
-
 # udp_stream.py
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
@@ -47,9 +44,9 @@ EVENTS:
     * :red:`resume`
     * :red:`set-limits`
     * :red:`timeout`
-"""
 
-"""
+
+
 TODO: Need to put small explanation here.
 
 Datagrams format:
@@ -82,6 +79,7 @@ Datagrams format:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 from six.moves import map
 
 #------------------------------------------------------------------------------

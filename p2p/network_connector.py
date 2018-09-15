@@ -389,6 +389,14 @@ class NetworkConnector(automat.Automat):
 #         d.addErrback(_fail)
         
         # First Solution
+        if driver.is_on('service_udp_datagrams'):
+            from lib import udp
+            udp_port = settings.getUDPPort()
+            if not udp.proto(udp_port):
+                try:
+                    udp.listen(udp_port)
+                except:
+                    lg.exc()
         if driver.is_on('service_service_entangled_dht'):
             from dht import dht_service
             dht_service.reconnect()
@@ -403,14 +411,6 @@ class NetworkConnector(automat.Automat):
         if driver.is_on('service_private_messages'):
             from chat import nickname_holder
             nickname_holder.A('set')
-        if driver.is_on('service_udp_datagrams'):
-            from lib import udp
-            udp_port = settings.getUDPPort()
-            if not udp.proto(udp_port):
-                try:
-                    udp.listen(udp_port)
-                except:
-                    lg.exc()
         self.automat('network-up')
 
     def doSetDown(self, arg):

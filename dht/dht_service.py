@@ -620,8 +620,9 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def _send(self, data, rpcID, address):
         count('dht_send')
-        if len(self.sending_queue) > 10:
-            lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
+        if _Debug:
+            if len(self.sending_queue) > 10:
+                lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
         self.sending_queue.append((data, rpcID, address, ))
         if self.receiving_worker is None:
             self._process_outgoing()
