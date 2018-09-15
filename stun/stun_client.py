@@ -89,7 +89,13 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8)
+        _StunClient = StunClient(
+            name='stun_client',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient
@@ -253,7 +259,7 @@ class StunClient(automat.Automat):
         """
         self.listen_port = arg
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doInit on port %d' % self.listen_port)
+            lg.out(_DebugLevel, 'stun_client.doInit on port %s' % self.listen_port)
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).add_callback(self._datagram_received)
         else:
@@ -310,7 +316,7 @@ class StunClient(automat.Automat):
         if arg is not None:
             if _Debug:
                 lg.out(_DebugLevel + 10, 'stun_client.doStun to one stun_server: %s' % str(arg))
-            udp.send_command(self.listen_port, udp.CMD_STUN, '', arg)
+            udp.send_command(self.listen_port, udp.CMD_STUN, b'', arg)
             return
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doStun to %d stun_servers' % (
@@ -320,7 +326,7 @@ class StunClient(automat.Automat):
                 continue
             if address in list(self.stun_results.keys()):
                 continue
-            udp.send_command(self.listen_port, udp.CMD_STUN, '', address)
+            udp.send_command(self.listen_port, udp.CMD_STUN, b'', address)
 
     def doRecordResult(self, arg):
         """
@@ -464,8 +470,8 @@ def safe_stun(udp_port=None, dht_port=None, ):
     result = Deferred()
     try:
         settings.init()
-        dht_port = dht_port  # or settings.getDHTPort()
-        udp_port = udp_port  # or settings.getUDPPort()
+        dht_port = dht_port or settings.getDHTPort()
+        udp_port = udp_port or settings.getUDPPort()
         if dht_port:
             dht_service.init(dht_port)
         d = dht_service.connect()

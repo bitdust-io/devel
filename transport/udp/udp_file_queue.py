@@ -24,25 +24,32 @@
 ..module:: udp_file_queue.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
+import six
+
+#------------------------------------------------------------------------------
+
 import os
 import time
 import struct
 import cStringIO
 import random
-import six
+from io import open
 
 from twisted.internet import reactor
 
-from logs import lg
-
-from lib import udp
-from system import tmpfile
-from contacts import contactsdb
-from io import open
-
 #------------------------------------------------------------------------------
 
+from logs import lg
+
+from lib import strng
+from lib import udp
+
+from system import tmpfile
+
+from contacts import contactsdb
 
 #------------------------------------------------------------------------------
 
@@ -106,7 +113,7 @@ class FileQueue:
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
             output))
-        return self.session.send_packet(udp.CMD_DATA, newoutput)
+        return self.session.send_packet(udp.CMD_DATA, strng.to_bin(newoutput))
 
     def do_send_ack(self, stream_id, infile, ack_data):
         #         if _Debug:
@@ -116,7 +123,7 @@ class FileQueue:
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))
-        return self.session.send_packet(udp.CMD_ACK, newoutput)
+        return self.session.send_packet(udp.CMD_ACK, strng.to_bin(newoutput))
 
     def append_outbox_file(self, filename, description='', result_defer=None, keep_alive=True):
         from transport.udp import udp_session

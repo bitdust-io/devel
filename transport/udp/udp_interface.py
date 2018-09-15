@@ -37,10 +37,6 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-
-#------------------------------------------------------------------------------
-
 import six
 import os
 import sys
@@ -52,12 +48,14 @@ except:
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import Deferred, succeed, fail
-from twisted.python.failure import Failure
 
 from logs import lg
 
 from lib import nameurl
-from lib import net_misc
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 
 #------------------------------------------------------------------------------
 

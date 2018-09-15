@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+from __future__ import absolute_import
+
 # udp_stream.py
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
@@ -79,13 +82,7 @@ Datagrams format:
 
 #------------------------------------------------------------------------------
 
-from __future__ import absolute_import
 from six.moves import map
-
-#------------------------------------------------------------------------------
-
-_Debug = True
-_DebugLevel = 16
 
 #------------------------------------------------------------------------------
 
@@ -96,9 +93,16 @@ import bisect
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 16
 
 #------------------------------------------------------------------------------
 

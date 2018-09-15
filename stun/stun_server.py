@@ -32,19 +32,33 @@ EVENTS:
     * :red:`stop`
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
+
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
+#------------------------------------------------------------------------------
+
+from lib import strng
+
 from logs import lg
 
 from system import bpio
+
 from main import settings
+
 from automats import automat
+
 from lib import udp
 
 from dht import dht_service
@@ -158,7 +172,7 @@ class StunServer(automat.Automat):
         except:
             return False
         youripport = '%s:%d' % (address[0], address[1])
-        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
+        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, strng.to_bin(youripport), address)
         lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
             youripport, address))
 

@@ -44,22 +44,26 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 14
-
-#------------------------------------------------------------------------------
-
 import os
 import sys
 import time
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------
+
 from logs import lg
 
+from lib import strng
 from lib import misc
-from automats import automat
 from lib import udp
+
+from automats import automat
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -436,8 +440,12 @@ class UDPSession(automat.Automat):
 #            if not (self.peer_address.count('37.18.255.42') or self.peer_address.count('37.18.255.38')):
 #                return
         # rtt_id_out = self._rtt_start('PING')
-        udp.send_command(self.node.listen_port, udp.CMD_PING,
-                         self.my_rtt_id, self.peer_address)
+        udp.send_command(
+            self.node.listen_port,
+            udp.CMD_PING,
+            strng.to_bin(self.my_rtt_id),
+            self.peer_address,
+        )
         # # print 'doPing', self.my_rtt_id
         self.my_rtt_id = '0'
 
@@ -452,7 +460,7 @@ class UDPSession(automat.Automat):
         udp.send_command(
             self.node.listen_port,
             udp.CMD_GREETING,
-            payload,
+            strng.to_bin(payload),
             self.peer_address)
         # print 'doGreeting', self.peer_rtt_id, self.my_rtt_id
         self.peer_rtt_id = '0'
@@ -465,7 +473,7 @@ class UDPSession(automat.Automat):
         udp.send_command(
             self.node.listen_port,
             udp.CMD_ALIVE,
-            self.peer_rtt_id,
+            strng.to_bin(self.peer_rtt_id),
             self.peer_address)
         # print 'doAlive', self.peer_rtt_id
         self.peer_rtt_id = '0'

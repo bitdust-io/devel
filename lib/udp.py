@@ -24,8 +24,13 @@
 #
 #
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
 import sys
 import time
 from io import StringIO
@@ -36,6 +41,8 @@ from twisted.internet import task
 from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -57,13 +64,13 @@ _LastDatagramReceivedTime = 0
 
 #------------------------------------------------------------------------------
 
-CMD_PING = 'p'
-CMD_GREETING = 'g'
-CMD_DATA = 'd'
-CMD_ACK = 'k'
-CMD_ALIVE = 'a'
-CMD_STUN = 's'
-CMD_MYIPPORT = 'm'
+CMD_PING = b'p'
+CMD_GREETING = b'g'
+CMD_DATA = b'd'
+CMD_ACK = b'k'
+CMD_ALIVE = b'a'
+CMD_STUN = b's'
+CMD_MYIPPORT = b'm'
 
 #------------------------------------------------------------------------------
 
@@ -268,7 +275,7 @@ class CommandsProtocol(BasicProtocol):
         * 'm' = ``MYIPPORT``    response to ``STUN`` packet, payload will contain IP:PORT of remote peer
     """
 
-    SoftwareVersion = '1'
+    SoftwareVersion = b'1'
 
     def __init__(self):
         self.command_filter_callback = None
@@ -319,8 +326,8 @@ class CommandsProtocol(BasicProtocol):
         outp = StringIO()
         try:
             outp.write(self.SoftwareVersion)
-            outp.write(command)
-            outp.write(data)
+            outp.write(strng.to_bin(command))
+            outp.write(strng.to_bin(data))
             # datagram = ''.join((
             #     self.SoftwareVersion,
             #     command,
@@ -362,7 +369,7 @@ def main():
 
     def ping(fromport, toaddr):
         print('ping')
-        send_command(fromport, CMD_PING, 'ping', toaddr)
+        send_command(fromport, CMD_PING, b'ping', toaddr)
     if len(sys.argv) > 2:
         addr = sys.argv[2].split(':')
         addr = (addr[0], int(addr[1]))
