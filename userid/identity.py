@@ -338,7 +338,7 @@ class identity:
         # hsh += sep + sep.join(self.certificates)
         hsh += sep + strng.to_bin(sep.join(self.scrubbers))
         hsh += sep + strng.to_bin(self.postage)
-        hsh += sep + strng.to_bin(self.date.replace(' ', '_'))
+        hsh += sep + strng.to_bin(self.date.replace(u' ', u'_'))
         hsh += sep + strng.to_bin(self.version)
         hsh += sep + strng.to_bin(self.revision)
         hashcode = key.Hash(hsh)
@@ -525,7 +525,6 @@ class identity:
         signature.appendChild(doc.createTextNode(self.signature))
         root.appendChild(signature)
 
-        # return doc.toprettyxml(indent="  ", newl="\n", encoding="ISO-8859-1"), root, doc
         return doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8"), root, doc
 
     def from_xmlobj(self, root_node):
@@ -542,55 +541,55 @@ class identity:
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
                             if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(xsource.wholeText.strip())
+                                self.sources.append(strng.to_text(xsource.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'contacts':
                     for xcontacts in xsection.childNodes:
                         for xcontact in xcontacts.childNodes:
                             if (xcontact.nodeType == Node.TEXT_NODE):
-                                self.contacts.append(xcontact.wholeText.strip())
+                                self.contacts.append(strng.to_text(xcontact.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'certificates':
                     for xcertificates in xsection.childNodes:
                         for xcertificate in xcertificates.childNodes:
                             if (xcertificate.nodeType == Node.TEXT_NODE):
-                                self.certificates.append(xcertificate.wholeText.strip())
+                                self.certificates.append(strng.to_text(xcertificate.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'scrubbers':
                     for xscrubbers in xsection.childNodes:
                         for xscrubber in xscrubbers.childNodes:
                             if (xscrubber.nodeType == Node.TEXT_NODE):
-                                self.scrubbers.append(xscrubber.wholeText.strip())
+                                self.scrubbers.append(strng.to_text(xscrubber.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'postage':
                     for xpostage in xsection.childNodes:
                         if (xpostage.nodeType == Node.TEXT_NODE):
-                            self.postage = xpostage.wholeText.strip()
+                            self.postage = strng.to_text(xpostage.wholeText.strip())
                             break
                 elif xsection.tagName == 'date':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.date = xkey.wholeText.strip()
+                            self.date = strng.to_text(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'version':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.version = xkey.wholeText.strip()
+                            self.version = strng.to_text(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'revision':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.revision = xkey.wholeText.strip()
+                            self.revision = strng.to_text(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'publickey':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.publickey = xkey.wholeText.strip()
+                            self.publickey = strng.to_text(xkey.wholeText.strip())
                             break
                 elif xsection.tagName == 'signature':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.signature = xkey.wholeText.strip()
+                            self.signature = strng.to_text(xkey.wholeText.strip())
                             break
         except:
             lg.exc()
@@ -693,20 +692,20 @@ class identity:
             return default
         return host
 
-    def getContactIndex(self, proto='', host='', contact=''):
+    def getContactIndex(self, proto=u'', host=u'', contact=u''):
         """
         Search a first contact with given conditions.
         """
         for i in range(0, len(self.contacts)):
             c = self.contacts[i]
             if proto:
-                if c.find(proto + "://") == 0:
+                if c.find(strng.to_text(proto) + u"://") == 0:
                     return i
             if host:
-                if c.find('://' + host) == 0:
+                if c.find(u'://' + strng.to_text(host)) == 0:
                     return i
             if contact:
-                if c == contact:
+                if c == strng.to_text(contact):
                     return i
         return -1
 
@@ -717,7 +716,7 @@ class identity:
         Return None if not found a contact.
         """
         for contact in self.contacts:
-            if contact.startswith(proto + "://"):
+            if contact.startswith(strng.to_text(proto) + u"://"):
                 return contact
         return None
 
@@ -739,7 +738,7 @@ class identity:
         """
         result = []
         for c in self.contacts:
-            proto, host = c.split('://')
+            proto, host = c.split(u'://')
             result.append((proto, host))
         return result
 
@@ -772,7 +771,7 @@ class identity:
             host = self.getProtoHost(proto)
             if host:
                 return host
-        return self.getProtoHost('tcp')
+        return self.getProtoHost(u'tcp')
 
     #------------------------------------------------------------------------------
 
@@ -787,14 +786,14 @@ class identity:
         if contacts_order is None:
             contacts_order = list(contacts_dict.keys())
         for proto in contacts_order:
-            self.contacts.append(contacts_dict[proto])
+            self.contacts.append(strng.to_text(contacts_dict[proto]))
 
     def setContact(self, contact, index):
         """
         Set a string value ``contact`` at given ``index`` position in the list.
         """
         try:
-            self.contacts[index] = contact
+            self.contacts[index] = strng.to_text(contact)
         except:
             lg.exc()
 
@@ -805,17 +804,17 @@ class identity:
         """
         for i in range(0, len(self.contacts)):
             proto_, host, port, filename = nameurl.UrlParse(self.contacts[i])
-            if proto_.strip() == proto.strip():
-                self.contacts[i] = contact
+            if proto_.strip() == strng.to_text(proto).strip():
+                self.contacts[i] = strng.to_text(contact)
                 return
-        self.contacts.append(contact)
+        self.contacts.append(strng.to_text(contact))
 
     def setContactParts(self, index, protocol, host, port, filename):
         """
         Set a contact at given position by its 4 parts.
         """
         url = nameurl.UrlMake(protocol, host, port, filename)
-        self.contacts[index] = url.encode("ascii").strip()
+        self.contacts[index] = strng.to_text(url).strip()
 
     def setContactHost(self, host, index):
         """
@@ -823,7 +822,7 @@ class identity:
         """
         protocol, host_, port, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, port, filename)
-        self.contacts[index] = url.encode("ascii").strip()
+        self.contacts[index] = strng.to_text(url).strip()
 
     def setContactPort(self, index, newport):
         """
@@ -831,7 +830,7 @@ class identity:
         """
         protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, newport, filename)
-        self.contacts[index] = url.encode("ascii").strip()
+        self.contacts[index] = strng.to_text(url).strip()
 
     #------------------------------------------------------------------------------
 
@@ -846,7 +845,7 @@ class identity:
         Remove all contacts with given ``proto``.
         """
         for contact in self.contacts:
-            if contact.find(proto + "://") == 0:
+            if contact.find(strng.to_text(proto) + u"://") == 0:
                 self.contacts.remove(contact)
 
     def pushProtoContact(self, proto):
@@ -886,7 +885,7 @@ class identity:
 
         TODO. Need to ask Vince for more details about id certificates.
         """
-        self.certificates.append(certificate)
+        self.certificates.append(strng.to_text(certificate))
         self.sign()
 
 #-------------------------------------------------------------------------------
@@ -929,7 +928,6 @@ def test2():
     print(ident.serialize())
 
 #------------------------------------------------------------------------------
-
 
 def main():
     """
