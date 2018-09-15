@@ -318,7 +318,7 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
             lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
-        del src
+        del raw_bytes
         del block
         del newpacket
         del outpacket
