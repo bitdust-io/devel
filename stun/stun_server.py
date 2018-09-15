@@ -49,6 +49,11 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 8
+
+#------------------------------------------------------------------------------
+
 from lib import strng
 
 from logs import lg
@@ -77,7 +82,13 @@ def A(event=None, arg=None):
     global _StunServer
     if _StunServer is None:
         # set automat name and starting state here
-        _StunServer = StunServer('stun_server', 'AT_STARTUP', 6)
+        _StunServer = StunServer(
+            name='stun_server',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _StunServer.automat(event, arg)
     return _StunServer
