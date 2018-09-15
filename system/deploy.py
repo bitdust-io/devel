@@ -238,57 +238,49 @@ def run(args):
     script_path = os.path.join(base_dir, 'bitdust')
 
     if os.path.exists(venv_path):
-        print_text('Clean up existing Python virtual environment in "%s"' % venv_path)
+        print_text('\n##### Clean up existing Python virtual environment in "%s"' % venv_path)
         status = os.system('rm -rf {}'.format(venv_path))
         if status != 0:
-            print_text('\nClean up of existing virtual environment files failed!\n')
+            print_text('\n##### Clean up of existing virtual environment files failed!\n')
             return status
 
-    print_text('Create new Python virtual environment in "%s"' % venv_path)
+    print_text('\n##### Create new Python virtual environment in "%s"' % venv_path)
     make_venv_cmd = 'virtualenv -p python2.7 {}'.format(venv_path)
     if on_windows:
         virtualenv_bin = '"%s"' % os.path.join(base_dir, 'python', 'Scripts', 'virtualenv.exe')
         make_venv_cmd = "{} --system-site-packages {}".format(virtualenv_bin, venv_path)
 
-    print_text('Executing "{}"'.format(make_venv_cmd))
+    print_text('\n##### Executing "{}"'.format(make_venv_cmd))
     status = os.system(make_venv_cmd)
     if status != 0:
-        print_text('\nFailed to create virtual environment, please check/install virtualenv package\n')
+        print_text('\n##### Failed to create virtual environment, please check/install virtualenv package\n')
         return status
     if on_windows:
         pass
     else:
-        print_text('Install/Upgrade pip in "%s"' % venv_path)
+        print_text('\n##### Install/Upgrade pip in "%s"' % venv_path)
         status = os.system('{} install --index-url=https://pypi.python.org/simple/ -U pip'.format(pip_bin))
         if status != 0:
-            print_text('\nFailed to install latest pip version, please check/install latest pip version manually\n')
+            print_text('\n##### Failed to install latest pip version, please check/install latest pip version manually\n')
             return status
 
     requirements_txt = os.path.join(source_dir, 'requirements.txt')
-    print_text('Install BitDust requirements from "%s"' % (requirements_txt))
+    print_text('\n##### Install BitDust requirements from "%s"' % (requirements_txt))
     requirements_cmd = '{} install --index-url=https://pypi.python.org/simple/ -r "{}"'.format(pip_bin, requirements_txt)
     if on_windows:
         venv_python_path = os.path.join(base_dir, 'venv', 'Scripts', 'python.exe')
         requirements_cmd = '{} -m pip install --index-url=https://pypi.python.org/simple/ --trusted-host=pypi.python.org --trusted-host=files.pythonhosted.org -r "{}"'.format(venv_python_path, requirements_txt)
 
-    print_text('Executing "{}"'.format(requirements_cmd))
+    print_text('\n##### Executing "{}"'.format(requirements_cmd))
     status = os.system(requirements_cmd)
     if status != 0:
         depends = [
             'git',
+            'gcc',
             'python-dev',
-            'python-setuptools',
-            'python-pip',
             'python-virtualenv',
-            'python-twisted',
-            'python-django',
-            'python-crypto',
-            'python-pyasn1',
-            'python-psutil',
-            'libffi-dev',
-            'libssl-dev',
         ]
-        print_text('\nFound an error. Please try to install all binary package dependencies manually:\n')
+        print_text('\n##### Please install those binary packages manually and try again:\n')
         # TODO: try to detect package manager on target OS: debian/mandrake/OSX
         print_text('    sudo apt-get install %s\n\n' % (' '.join(depends)))
         return status
@@ -302,8 +294,9 @@ def run(args):
     fil.close()
     os.chmod(script_path, 0o775)
 
-    print_text('\nBitDust application files created successfully in {}'.format(base_dir))
-    print_text('To run the programm use this executable script:\n\n    {}\n'.format(script_path))
+    print_text('\n##### BitDust application files created successfully in {}\n'.format(base_dir))
+    print_text('To run the programm use this executable script:\n\n    {}\n\n'.format(script_path))
     print_text('To create system-wide shell command, add /Users/veselin/.bitdust/bitdust to your PATH, or create a symlink:\n')
     print_text('    sudo ln -s -f {} /usr/local/bin/bitdust\n\n'.format(script_path))
+    print_text('Welcome to BitDust!\n\n')
     return 0
