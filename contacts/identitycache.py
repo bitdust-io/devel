@@ -440,7 +440,7 @@ def _test():
         print(src)
         reactor.stop()
 
-    immediatelyCaching('http://p2p-id.ru/veselin.xml').addBoth(_resp)
+    immediatelyCaching('http://bitdust.io:8084/veselin_penev.xml').addBoth(_resp)
     reactor.run()
     shutdown()
 

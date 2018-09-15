@@ -30,13 +30,17 @@
 module:: config
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
+from io import open
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import re
-
-from io import open
 
 #------------------------------------------------------------------------------
 
@@ -45,6 +49,8 @@ if __name__ == "__main__":
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -281,7 +287,6 @@ class BaseConfig(object):
         return None
 
     def _set(self, entryPath, data):
-        import six
         elemList = self._parseEntryPath(entryPath)
         assert elemList
         dpath = self.configDir
@@ -289,9 +294,7 @@ class BaseConfig(object):
             dpath = os.path.join(dpath, d)
             self._mkdir(dpath)
         fpath = os.path.join(dpath, elemList[-1])
-        s = data
-        if not isinstance(s, six.binary_type):
-            s = s.encode('utf-8')
+        s = strng.to_bin(data)
         try:
             f = open(fpath, 'wb')
             f.write(s)

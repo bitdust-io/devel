@@ -49,15 +49,16 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import os
-import sys
-import struct
-import time
-import cStringIO
-import platform
 import six
 from six.moves import range
 from io import open
+
+#------------------------------------------------------------------------------
+
+import os
+import sys
+import struct
+import cStringIO
 
 #------------------------------------------------------------------------------
 
