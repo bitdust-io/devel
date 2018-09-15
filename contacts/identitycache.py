@@ -340,7 +340,7 @@ def scheduleForCaching(idurl, timeout=0):
 #------------------------------------------------------------------------------
 
 
-def immediatelyCaching(idurl, timeout=0):
+def immediatelyCaching(idurl, timeout=10):
     """
     A smart method to cache some identity and get results in callbacks.
     """
@@ -364,7 +364,7 @@ def immediatelyCaching(idurl, timeout=0):
             if result:
                 result.errback(Exception(src))
             if _Debug:
-                lg.out(14, '    [cache error] %s' % idurl)
+                lg.out(14, '    [cache error] %s is not valid' % idurl)
             p2p_stats.count_identity_cache(idurl, 0)
         return src
 
@@ -377,7 +377,7 @@ def immediatelyCaching(idurl, timeout=0):
             lg.warn('caching task for %s was not found' % idurl)
         p2p_stats.count_identity_cache(idurl, 0)
         if _Debug:
-            lg.out(14, '    [cache failed] %s' % idurl)
+            lg.out(14, '    [cache failed] %s : %s' % (idurl, x, ))
         return None
 
     _CachingTasks[idurl] = Deferred()
