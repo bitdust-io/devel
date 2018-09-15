@@ -137,8 +137,7 @@ class UDPNode(automat.Automat):
     def A(self, event, arg):
         #---LISTEN---
         if self.state == 'LISTEN':
-            if event == 'datagram-received' and self.isPacketValid(
-                    arg) and not self.isStun(arg) and not self.isKnownPeer(arg):
+            if event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg):
                 self.doStartNewSession(arg)
             elif event == 'go-offline':
                 self.state = 'DISCONNECTING'

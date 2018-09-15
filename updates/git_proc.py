@@ -78,7 +78,7 @@ from main import events
 #------------------------------------------------------------------------------
 
 _CurrentProcess = None
-_FirstRunDelay = 30
+_FirstRunDelay = 1200
 _LoopInterval = 3600 * 6
 _ShedulerTask = None
 
@@ -95,7 +95,7 @@ def init():
     lg.out(4, 'git_proc.init')
     if os.environ.get('BITDUST_GIT_SYNC_SKIP', '0') == '1':
         return
-    reactor.callLater(0, loop, True)
+    reactor.callLater(0, loop, first_start=True)
 
 
 def shutdown():

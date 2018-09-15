@@ -331,17 +331,17 @@ class identity:
         maybe don't need to change anything for now.
         Don't include certificate - so identity server can just add it.
         """
-        sep = b"-"
-        hsh = b''
-        hsh += sep + strng.to_bin(sep.join(self.sources))
-        hsh += sep + strng.to_bin(sep.join(self.contacts))
+        sep = u"-"
+        hsh = u''
+        hsh += sep + sep.join(self.sources)
+        hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
-        hsh += sep + strng.to_bin(sep.join(self.scrubbers))
-        hsh += sep + strng.to_bin(self.postage)
-        hsh += sep + strng.to_bin(self.date.replace(u' ', u'_'))
-        hsh += sep + strng.to_bin(self.version)
-        hsh += sep + strng.to_bin(self.revision)
-        hashcode = key.Hash(hsh)
+        hsh += sep + sep.join(self.scrubbers)
+        hsh += sep + self.postage
+        hsh += sep + self.date.replace(u' ', u'_')
+        hsh += sep + self.version
+        hsh += sep + self.revision
+        hashcode = key.Hash(strng.to_bin(hsh))
         return hashcode
 
     def sign(self):
@@ -365,7 +365,8 @@ class identity:
         result = key.VerifySignature(
             self.publickey,
             hashcode,
-            str(self.signature))
+            self.signature,
+        )
         return result
 
     #------------------------------------------------------------------------------

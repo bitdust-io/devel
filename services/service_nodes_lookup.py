@@ -79,11 +79,12 @@ class NodesLookupService(LocalService):
 
     def _observe_dht_node(self, node):
         from twisted.internet.defer import Deferred
+        from lib import strng
         from logs import lg
         lg.out(12, 'service_nodes_lookup._observe_dht_node %s' % node)
         result = Deferred()
         d = node.request('idurl')
-        d.addCallback(lambda response: result.callback(response.get('idurl')))
+        d.addCallback(lambda response: result.callback(strng.to_text(response.get('idurl'))))
         d.addErrback(result.errback)
         result.addCallback(self._on_node_observed)
         return result

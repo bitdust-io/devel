@@ -320,7 +320,7 @@ class DiscoveryTask(object):
         for node in nodes:
             d = self.observe_method(node)
             d.addCallback(self._on_node_observed, node)
-            d.addErrback(self._on_node_failed, node)
+            d.addErrback(self._on_node_observe_failed, node)
             observe_list.append(d)
         dl = DeferredList(observe_list, consumeErrors=False)
         dl.addCallback(self._on_all_nodes_observed)
@@ -354,7 +354,13 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup._on_succeed %s info: %s' % (node, info))
         return node
 
-    def _on_node_failed(self, err, arg=None):
+    def _on_node_proces_failed(self, err, arg=None):
+        self.failed += 1
+        if _Debug:
+            lg.warn('%r : %r' % (arg, err))
+        return None
+
+    def _on_node_observe_failed(self, err, arg=None):
         self.failed += 1
         if _Debug:
             lg.warn('%r : %r' % (arg, err))
@@ -372,7 +378,7 @@ class DiscoveryTask(object):
         if _Debug:
             lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (node, idurl))
         d = self.process_method(idurl, node)
-        d.addErrback(self._on_node_failed, node)
+        d.addErrback(self._on_node_proces_failed, node)
         d.addCallback(self._on_identity_cached, node)
         return d
 

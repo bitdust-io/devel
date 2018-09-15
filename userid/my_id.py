@@ -195,7 +195,7 @@ def loadLocalIdentity():
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     if os.path.exists(filename):
         xmlid = bpio.ReadTextFile(filename)
-        lg.out(6, 'my_id.loadLocalIdentity %d bytes read from\n        %s' % (len(xmlid), filename))
+        lg.out(6, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), filename))
     if xmlid == '':
         lg.out(2, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % filename)
         return
