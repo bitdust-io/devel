@@ -277,7 +277,7 @@ def report_local_storage():
     r['temp_str'] = diskspace.MakeStringFromBytes(r['temp'])
     r['customers'] = bpio.getDirectorySize(settings.getCustomersFilesDir())
     r['customers_str'] = diskspace.MakeStringFromBytes(r['customers'])
-    r['total'] = bpio.getDirectorySize(settings.GetBaseDir())
+    r['total'] = bpio.getDirectorySize(settings.BaseDir())
     r['total_str'] = diskspace.MakeStringFromBytes(r['total'])
     dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(settings.getCustomersFilesDir())
     if dataDriveFreeSpace is None:

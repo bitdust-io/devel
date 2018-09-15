@@ -98,45 +98,24 @@ def set_base_dir(new_path):
     _BaseDirPath = new_path
 
 
-def BaseDirDefault():
-    """
-    A default location for BitDust data folder.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirLinux():
-    """
-    Default data folder location for Linux users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirWindows():
-    """
-    Default data folder location for Windows users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirMac():
-    """
-    Default data folder location for MacOS users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def GetBaseDir():
+def base_dir_portable():
     """
     A portable method to get the default data folder location.
     """
     if platform.uname()[0] == "Windows":
-        return BaseDirWindows()
+        # TODO: move somewhere on Win10 ...
+        return os.path.join(os.path.expanduser('~'), '.bitdust')
+
     elif platform.uname()[0] == "Linux":
-        return BaseDirLinux()
+        # This should be okay : /home/veselin/.bitdust/
+        return os.path.join(os.path.expanduser('~'), '.bitdust')
+
     elif platform.uname()[0] == "Darwin":
-        return BaseDirMac()
-    return BaseDirDefault()
+        #  This should be okay : /Users/veselin/.bitdust/
+        return os.path.join(os.path.expanduser('~'), '.bitdust')
+
+    # otherwise just default : ".bitdust/" in user root folder
+    return os.path.join(os.path.expanduser('~'), '.bitdust')
 
 
 def init_base_dir(base_dir=None):
@@ -173,8 +152,8 @@ def init_base_dir(base_dir=None):
                 _BaseDirPath = path
                 return _BaseDirPath
 
-    # get the default place for thet machine
-    default_path = GetBaseDir()
+    # get the default place for that machine
+    default_path = base_dir_portable()
 
     # we can use folder ".bitdust" placed on the same level with binary folder:
     # /..
@@ -219,6 +198,7 @@ def init_base_dir(base_dir=None):
     # seems we found needed files in a path1 - lets use this as a base dir
     return _BaseDirPath
 
+#------------------------------------------------------------------------------
 
 def run(args):
     """
