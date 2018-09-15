@@ -27,7 +27,7 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
+from io import open
 
 #------------------------------------------------------------------------------
 
@@ -36,7 +36,6 @@ import time
 import struct
 import cStringIO
 import random
-from io import open
 
 from twisted.internet import reactor
 
@@ -554,7 +553,7 @@ class OutboxFile():
         self.keep_alive = keep_alive
         self.bytes_sent = 0
         self.bytes_delivered = 0
-        self.buffer = ''
+        self.buffer = b''
         self.eof = False
         self.cancelled = False
         self.timeout = False
@@ -586,7 +585,7 @@ class OutboxFile():
         self.close_file()
         self.queue = None
         self.stream_callback = None
-        self.buffer = ''
+        self.buffer = b''
         self.description = None
         self.result_defer = None
 
@@ -632,8 +631,6 @@ class OutboxFile():
                         lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state %d' % self.stream_id)
                     self.eof = True
                     break
-                if isinstance(data, six.binary_type):
-                    data = data.decode('utf-8')
                 self.buffer = data
             if not self.stream_callback:
                 break
@@ -642,7 +639,7 @@ class OutboxFile():
             except udp_stream.BufferOverflow:
                 break
             self.bytes_sent += len(self.buffer)
-            self.buffer = ''
+            self.buffer = b''
             has_sends = True
         return has_sends
 
