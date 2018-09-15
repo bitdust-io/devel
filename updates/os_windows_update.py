@@ -39,7 +39,6 @@ import os
 import sys
 import time
 import calendar
-import six
 from io import open
 
 try:
@@ -56,6 +55,8 @@ if __name__ == '__main__':
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -242,9 +243,7 @@ def download_and_replace_starter(output_func=None):
     def _done(x, filename):
         try:
             fin = open(filename, 'rb')
-            src = fin.read()
-            if not isinstance(src, six.text_type):
-                src = src.decode('utf-8')
+            src = strng.to_text(fin.read())
             fin.close()
         except:
             if output_func:

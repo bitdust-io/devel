@@ -30,17 +30,24 @@
 module:: cmd_line_json
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 from lib import jsontemplate
 
 from interface import cmd_line_json_templates as templ
-import six
-from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -856,7 +863,7 @@ def cmd_set(opts, args, overDict):
     if path != '':
         if len(args) > 2:
             value = ' '.join(args[2:])
-            result = api.config_set(path, six.text_type(value))
+            result = api.config_set(path, strng.text_type(value))
         else:
             result = api.config_get(path)
         tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
@@ -1083,9 +1090,9 @@ def cmd_friend(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_jsonrpc_method_template_and_stop('list_correspondents', tpl)
     elif len(args) > 2 and args[1] in ['check', 'nick', 'nickname', 'test', ]:
-        return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, six.text_type(args[2]))
+        return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, strng.text_type(args[2]))
     elif len(args) > 2 and args[1] in ['add', 'append', ]:
-        inp = six.text_type(args[2])
+        inp = strng.text_type(args[2])
         if inp.startswith('http://'):
             return call_jsonrpc_method_template_and_stop('add_correspondent', tpl_add, inp)
 

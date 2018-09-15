@@ -47,7 +47,6 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-import six
 import os
 import sys
 import time
@@ -67,6 +66,8 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
+from lib import strng
+
 from logs import lg
 
 from system import bpio
@@ -85,9 +86,7 @@ _ShedulerTask = None
 
 def write2log(txt):
     out_file = open(settings.UpdateLogFilename(), 'a')
-    if not isinstance(txt, six.text_type):
-        txt = txt.decode('utf-8')
-    out_file.write(txt)
+    out_file.write(strng.to_text(txt))
     out_file.close()
 
 #------------------------------------------------------------------------------

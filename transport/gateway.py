@@ -698,7 +698,7 @@ def monitoring():
         dt = time.time() - lg.when_life_begins()
         mn = dt // 60
         sc = dt - mn * 60
-        transport_log().write('%02d:%02d    in: %s   out: %s\n' % (
+        transport_log().write(u'%02d:%02d    in: %s   out: %s\n' % (
             mn, sc, list_pkt_in, list_pkt_out))
         transport_log().flush()
 

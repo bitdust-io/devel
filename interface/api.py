@@ -34,7 +34,6 @@ Here is a bunch of methods to interact with BitDust software.
 
 from __future__ import absolute_import
 from six.moves import map
-import six
 
 #------------------------------------------------------------------------------
 
@@ -52,6 +51,8 @@ import gc
 from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -267,9 +268,9 @@ def config_set(key, value):
     if not typ or typ in [config_types.TYPE_STRING,
                           config_types.TYPE_TEXT,
                           config_types.TYPE_UNDEFINED, ]:
-        config.conf().setData(key, six.text_type(value))
+        config.conf().setData(key, strng.text_type(value))
     elif typ in [config_types.TYPE_BOOLEAN, ]:
-        if isinstance(value, six.string_types):
+        if isinstance(value, strng.string_types):
             vl = value.strip().lower() == 'true'
         else:
             vl = bool(value)
@@ -284,7 +285,7 @@ def config_set(key, value):
                  config_types.TYPE_PASSWORD, ]:
         config.conf().setString(key, value)
     else:
-        config.conf().setData(key, six.text_type(value))
+        config.conf().setData(key, strng.text_type(value))
     v.update({'key': key,
               'value': config.conf().getData(key),
               'type': config.conf().getTypeLabel(key)
@@ -2980,11 +2981,10 @@ def broadcast_send_message(payload):
 #------------------------------------------------------------------------------
 
 def event_send(event_id, json_data=None):
-    import json
     from main import events
     json_payload = None
     json_length = 0
-    if json_data and isinstance(json_data, six.string_types):
+    if json_data and isinstance(json_data, strng.string_types):
         json_length = len(json_data)
         try:
             json_payload = json.loads(json_data or '{}')

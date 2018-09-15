@@ -52,7 +52,6 @@ import sys
 import random
 import time
 import math
-import hmac
 import hashlib
 import base64
 import string
@@ -593,25 +592,6 @@ def AsciiToObject(input):
     Not used.
     """
     return StringToObject(AsciiToBinary(input))              # works for 384 bit RSA keys
-
-#------------------------------------------------------------------------------
-
-def to_bin(s, encoding='utf-8'):
-    """
-    If ``s`` is unicode ("text" type in Python3 terms) - encode it to utf-8, otherwise return ``s``.
-    """
-    if not isinstance(s, six.binary_type):
-        return s.encode(encoding)
-    return s
-
-
-def to_str(b, encoding='utf-8'):
-    """
-    if ``b`` is binary type decode it to unicode - "text" type in Python3 terms, otherwise return ``b``.
-    """
-    if isinstance(b, six.binary_type):
-        return b.decode(encoding)
-    return b
 
 #------------------------------------------------------------------------------
 

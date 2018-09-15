@@ -30,6 +30,8 @@
 module:: lg
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 import os
 import sys
@@ -92,10 +94,6 @@ def out(level, msg, nl='\n'):
     global _GlobalDebugLevel
     if not _LogsEnabled:
         return
-    try:
-        import six
-    except:
-        return
     s = msg
     s_ = s
     if level < 0:
@@ -127,8 +125,12 @@ def out(level, msg, nl='\n'):
     if is_debug(level):
         if _LogFile is not None:
             o = s + nl
-            if not isinstance(o, six.text_type):
-                o = o.decode('utf-8')
+            if sys.version_info[0] == 3:
+                if not isinstance(o, str):
+                    o = o.decode('utf-8')
+            else:
+                if not isinstance(o, unicode):
+                    o = o.decode('utf-8')
             _LogFile.write(o)
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
@@ -244,10 +246,6 @@ def exception(level, maxTBlevel, exc_info):
     global _LogFileName
     global _StoreExceptionsEnabled
     global _UseColors
-    try:
-        import six
-    except:
-        return
     if exc_info is None:
         _, value, trbk = sys.exc_info()
     else:
@@ -284,8 +282,13 @@ def exception(level, maxTBlevel, exc_info):
     if _StoreExceptionsEnabled:
         import tempfile
         fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
-        if not isinstance(s, six.binary_type):
-            s = s.encode('utf-8')
+        
+        if sys.version_info[0] == 3:
+            if not isinstance(s, bytes):
+                s = s.encode('utf-8')
+        else:
+            if not isinstance(s, str):
+                s = s.encode('utf-8')
         os.write(fd, s)
         os.close(fd)
         out(level, 'saved to: %s' % filename)
@@ -324,11 +327,10 @@ def exception_name(value):
     Some tricks to extract the correct exception name from traceback string.
     """
     try:
-        import six
-    except:
-        return
-    try:
-        excStr = six.text_type(value)
+        if sys.version_info[0] == 3:
+            excStr = str(value)
+        else:
+            excStr = unicode(value)
     except:
         try:
             excStr = repr(value)

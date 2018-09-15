@@ -657,7 +657,8 @@ class ProxyReceiver(automat.Automat):
         # self.automat('found-one-node', 'http://p2p-id.ru/seed0_cb67.xml')
         # self.automat('found-one-node', 'https://bitdust.io:8084/seed2_b17a.xml')
         # self.automat('found-one-node', 'http://datahaven.net/seed2_916e.xml')
-        # return
+        self.automat('found-one-node', 'http://bitdust.ai/seed1_c2c2.xml')
+        return
         preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         preferred_routers = []
         if preferred_routers_raw:

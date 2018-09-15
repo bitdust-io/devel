@@ -32,18 +32,17 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
 
 from Cryptodome.Hash import MD5
 from Cryptodome.Hash import SHA1
 from Cryptodome.Hash import SHA256
 
+from lib import strng
+
 #------------------------------------------------------------------------------
 
 def md5(inp, hexdigest=False):
-    s = inp
-    if isinstance(s, six.text_type):
-        s = s.encode('utf-8')
+    s = strng.to_bin(inp)
     h = MD5.new(s)
     if hexdigest:
         return h.hexdigest()
@@ -51,9 +50,7 @@ def md5(inp, hexdigest=False):
 
 
 def sha1(inp, hexdigest=False):
-    s = inp
-    if isinstance(s, six.text_type):
-        s = s.encode('utf-8')
+    s = strng.to_bin(inp)
     h = SHA1.new(s)
     if hexdigest:
         return h.hexdigest()
@@ -61,9 +58,7 @@ def sha1(inp, hexdigest=False):
 
 
 def sha256(inp, hexdigest=False):
-    s = inp
-    if isinstance(s, six.text_type):
-        s = s.encode('utf-8')
+    s = strng.to_bin(inp)
     h = SHA256.new(s)
     if hexdigest:
         return h.hexdigest()

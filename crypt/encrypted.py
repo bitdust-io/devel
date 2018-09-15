@@ -70,6 +70,7 @@ _DebugLevel = 12
 from logs import lg
 
 from lib import misc
+from lib import strng
 
 from contacts import contactsdb
 
@@ -159,14 +160,14 @@ class Block:
         """
         sep = b'::::'
         StringToHash = b''
-        StringToHash += misc.to_bin(self.CreatorID)
-        StringToHash += sep + misc.to_bin(self.BackupID)
-        StringToHash += sep + misc.to_bin(str(self.BlockNumber))
-        StringToHash += sep + misc.to_bin(self.SessionKeyType)
-        StringToHash += sep + misc.to_bin(self.EncryptedSessionKey)
-        StringToHash += sep + misc.to_bin(str(self.Length))
-        StringToHash += sep + misc.to_bin(str(self.LastBlock))
-        StringToHash += sep + misc.to_bin(self.EncryptedData)
+        StringToHash += strng.to_bin(self.CreatorID)
+        StringToHash += sep + strng.to_bin(self.BackupID)
+        StringToHash += sep + strng.to_bin(str(self.BlockNumber))
+        StringToHash += sep + strng.to_bin(self.SessionKeyType)
+        StringToHash += sep + strng.to_bin(self.EncryptedSessionKey)
+        StringToHash += sep + strng.to_bin(str(self.Length))
+        StringToHash += sep + strng.to_bin(str(self.LastBlock))
+        StringToHash += sep + strng.to_bin(self.EncryptedData)
         return StringToHash
 
     def GenerateHash(self):

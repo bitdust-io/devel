@@ -40,11 +40,15 @@ This module execute a sub process "bppipe" - pretty simple TAR compressor,
 see ``p2p.bppipe`` module.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
-import six
 from io import open
 
 #------------------------------------------------------------------------------
@@ -54,6 +58,8 @@ if __name__ == "__main__":
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -79,7 +85,7 @@ def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compres
     if compress is None:
         compress = 'none'
     if arcname is None:
-        arcname = six.text_type(os.path.basename(directorypath))
+        arcname = strng.to_text(os.path.basename(directorypath))
     # lg.out(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
     if bpio.Windows():
         if bpio.isFrozen():
@@ -111,7 +117,7 @@ def backuptarfile(filepath, arcname=None, compress=None):
     if compress is None:
         compress = 'none'
     if arcname is None:
-        arcname = six.text_type(os.path.basename(filepath))
+        arcname = strng.to_text(os.path.basename(filepath))
     # lg.out(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
     if bpio.Windows():
         if bpio.isFrozen():

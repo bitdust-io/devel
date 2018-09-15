@@ -33,10 +33,17 @@ module:: filemanager_api
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import time
 import pprint
+
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -60,7 +67,6 @@ from storage import restore_monitor
 
 from userid import my_id
 from userid import global_id
-import six
 
 #------------------------------------------------------------------------------
 
@@ -75,7 +81,7 @@ def process(json_request):
     mode = ''
     result = {}
     try:
-        if isinstance(json_request, six.string_types):
+        if strng.is_string(json_request):
             import json
             json_request = json.loads(json_request)
         mode = json_request['params']['mode']
@@ -248,7 +254,7 @@ def _upload(params):
     path = params['path']
     if bpio.Linux() or bpio.Mac():
         path = '/' + (path.lstrip('/'))
-    localPath = six.text_type(path)
+    localPath = strng.to_text(path)
     if not bpio.pathExist(localPath):
         return {'result': {"success": False, "error": 'local path %s was not found' % path}}
     result = []

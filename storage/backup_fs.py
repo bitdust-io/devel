@@ -56,16 +56,20 @@ The software keeps 2 index dictionaries in the memory:
 Those dictionaries are trees - replicates the file system structure.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import cStringIO
 import time
 import json
 import random
-import six
-from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -74,6 +78,8 @@ if __name__ == '__main__':
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -245,10 +251,7 @@ class FSItemInfo():
     """
 
     def __init__(self, name='', path_id='', typ=UNKNOWN, key_id=None):
-        if isinstance(name, six.text_type):
-            self.unicodename = name
-        else:
-            self.unicodename = name.decode('utf-8')
+        self.unicodename = strng.to_text(name)
         self.path_id = path_id
         self.type = typ
         self.size = -1
@@ -631,7 +634,7 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
             return c
         for localname in bpio.list_dir_safe(path):
             p = os.path.join(path, localname)  # .encode("utf-8")
-            name = six.text_type(localname)
+            name = strng.to_text(localname)
             if bpio.pathIsDir(p):
                 if name not in iter:
                     id = MakeID(iter, lastID)
@@ -761,7 +764,7 @@ def SetDir(item, iter=None, iterID=None):
                     found = True
                     break
                 continue
-            if isinstance(iter[name], six.string_types):
+            if isinstance(iter[name], strng.string_types):
                 if iter[name] == itemname:
                     iter = iter[name]
                     iterID = iterID[id]
