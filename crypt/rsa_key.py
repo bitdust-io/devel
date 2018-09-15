@@ -85,7 +85,7 @@ class RSAKey(object):
     def fromString(self, key_string):
         if self.keyObject:
             raise ValueError('key object already exist')
-        self.keyObject = RSA.import_key(key_string)
+        self.keyObject = RSA.import_key(strng.to_bin(key_string))
         return True
 
     def fromFile(self, keyfilename):
@@ -94,7 +94,7 @@ class RSAKey(object):
         fin = open(keyfilename, 'r')
         key_src = fin.read()
         fin.close()
-        self.keyObject = RSA.import_key(key_src)
+        self.keyObject = RSA.import_key(strng.to_bin(key_src))
         del key_src
         gc.collect()
         return True
@@ -117,7 +117,7 @@ class RSAKey(object):
         h = SHA1.new(strng.to_bin(message))
         signature_bytes = pkcs1_15.new(self.keyObject).sign(h)
         signature_int = number.bytes_to_long(signature_bytes)
-        signature = str(signature_int)
+        signature = strng.to_text(str(signature_int))
         return signature
 
     def verify(self, signature, message):
@@ -128,6 +128,8 @@ class RSAKey(object):
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
         except (ValueError, TypeError):
+            from logs import lg
+            lg.exc()
             result = False
         return result
 
