@@ -30,9 +30,20 @@
 module:: cmd_line_json
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 from lib import jsontemplate
 
@@ -169,7 +180,7 @@ def fail_and_stop(err):
     try:
         print_text(err.getErrorMessage())
     except:
-        print err
+        print(err)
     reactor.stop()
 
 #------------------------------------------------------------------------------
@@ -340,80 +351,8 @@ def run_now(opts, args):
 
 
 def cmd_deploy(opts, args, overDict):
-    from main import settings
-    from system import bpio
-    status = 1
-    source_dir = bpio.getExecutableDir()
-    base_dir = settings.BaseDir()
-    if bpio.Windows() and os.path.isfile(os.path.join(settings.BaseDir(), 'shortpath.txt')):
-        base_dir = open(os.path.join(settings.BaseDir(), 'shortpath.txt')).read().strip()
-    venv_path = os.path.join(base_dir, 'venv')
-    pip_bin = '{}/bin/pip'.format(venv_path)
-    if len(args) > 1 and not os.path.exists(args[1]) and os.path.isdir(os.path.dirname(args[1])):
-        venv_path = args[1]
-    script_path = os.path.join(base_dir, 'bitdust')
-    if os.path.exists(venv_path):
-        print_text('Clean up existing Python virtual environment in "%s"' % venv_path)
-        status = os.system('rm -rf {}'.format(venv_path))
-        if status != 0:
-            print_text('\nClean up of existing virtual environment files failed!\n')
-            return status
-    print_text('Create new Python virtual environment in "%s"' % venv_path)
-    make_venv_cmd = 'virtualenv -p python2.7 {}'.format(venv_path)
-    if bpio.Windows():
-        virtualenv_bin = '"%s"' % os.path.join(base_dir, 'python', 'Scripts', 'virtualenv.exe')
-        make_venv_cmd = "{} --system-site-packages {}".format(virtualenv_bin, venv_path)
-    print_text('Executing "{}"'.format(make_venv_cmd))
-    status = os.system(make_venv_cmd)
-    if status != 0:
-        print_text('\nFailed to create virtual environment, please check/install virtualenv package\n')
-        return status
-    if bpio.Windows():
-        pass
-    else:
-        print_text('Install/Upgrade pip in "%s"' % venv_path)
-        status = os.system('{} install --index-url=https://pypi.python.org/simple/ -U pip'.format(pip_bin))
-        if status != 0:
-            print_text('\nFailed to install latest pip version, please check/install latest pip version manually\n')
-            return status
-    requirements_txt = os.path.join(source_dir, 'requirements.txt')
-    print_text('Install BitDust requirements from "%s"' % (requirements_txt))
-    requirements_cmd = '{} install --index-url=https://pypi.python.org/simple/ -r "{}"'.format(pip_bin, requirements_txt)
-    if bpio.Windows():
-        venv_python_path = os.path.join(base_dir, 'venv', 'Scripts', 'python.exe')
-        requirements_cmd = '{} -m pip install --index-url=https://pypi.python.org/simple/ --trusted-host=pypi.python.org --trusted-host=files.pythonhosted.org -r "{}"'.format(venv_python_path, requirements_txt)
-    print_text('Executing "{}"'.format(requirements_cmd))
-    status = os.system(requirements_cmd)
-    if status != 0:
-        depends = [
-            'git',
-            'python-dev',
-            'python-setuptools',
-            'python-pip',
-            'python-virtualenv',
-            'python-twisted',
-            'python-django',
-            'python-crypto',
-            'python-pyasn1',
-            'python-psutil',
-            'libffi-dev',
-            'libssl-dev',
-        ]
-        print_text('\nFound an error. Please try to install all binary package dependencies manually:\n')
-        # TODO: try to detect package manager on target OS: debian/mandrake/OSX
-        print_text('    sudo apt-get install %s\n\n' % (' '.join(depends)))
-        return status
-    script = "#!/bin/sh\n"
-    script += '# This is a short shell script to create an alias in OS for BitDust software.\n'
-    script += '# NOTICE: BitDust software do not require root permissions to run, please start as normal user.\n\n'
-    script += '{}/bin/python {}/bitdust.py "$@"\n\n'.format(venv_path, source_dir)
-    bpio.WriteFileSimple(script_path, script)
-    os.chmod(script_path, 0775)
-    print_text('\nBitDust application files created successfully in {}'.format(settings.BaseDir()))
-    print_text('To run the programm use this executable script:\n\n    {}\n'.format(script_path))
-    print_text('To create system-wide shell command, add /Users/veselin/.bitdust/bitdust to your PATH, or create a symlink:\n')
-    print_text('    sudo ln -s -f {} /usr/local/bin/bitdust\n\n'.format(script_path))
-    return 0
+    from system import deploy
+    return deploy.run(args)
 
 #------------------------------------------------------------------------------
 
@@ -842,9 +781,9 @@ def cmd_integrate(opts, args, overDict):
     from system import bpio
     if bpio.Windows():
         # TODO: 
-        src = """@echo off
-        C:\Users\veselin\BITDUS~2\venv\Scripts\python.exe C:\Users\veselin\BITDUS~2\src\bitdust.py %*
-        """
+        # src = u"""@echo off
+        # C:\Users\veselin\BITDUS~2\venv\Scripts\python.exe C:\Users\veselin\BITDUS~2\src\bitdust.py %*
+        # """
         # print_text('this feature is not yet available in OS Windows.')
         return 0
     curpath = bpio.getExecutableDir()
@@ -914,7 +853,7 @@ def cmd_set(opts, args, overDict):
         # sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         sort = True
         result = api.config_list(sort=sort)
-        for i in xrange(len(result['result'])):
+        for i in range(len(result['result'])):
             result['result'][i]['value'] = result['result'][i]['value'][:60]
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
@@ -924,7 +863,7 @@ def cmd_set(opts, args, overDict):
     if path != '':
         if len(args) > 2:
             value = ' '.join(args[2:])
-            result = api.config_set(path, unicode(value))
+            result = api.config_set(path, strng.text_type(value))
         else:
             result = api.config_get(path)
         tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
@@ -942,7 +881,7 @@ def cmd_set_request(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
 
         def _limit_length(result):
-            for i in xrange(len(result['result'])):
+            for i in range(len(result['result'])):
                 result['result'][i]['value'] = result['result'][i]['value'][:60]
             return result
 
@@ -1052,7 +991,7 @@ def cmd_services(opts, args, overDict):
     if len(args) < 2 or args[1] in ['list', 'ls', ]:
 
         def _services_update(result):
-            for i in xrange(len(result['result'])):
+            for i in range(len(result['result'])):
                 r = result['result'][i]
                 r['enabled_label'] = 'ENABLED' if r['enabled'] else 'DISABLED'
                 r['num_depends'] = len(r['depends'])
@@ -1136,7 +1075,7 @@ def cmd_message(opts, args, overDict):
         reactor.run()
         terminal_chat.shutdown()
         if len(errors):
-            print '\n'.join(errors)
+            print('\n'.join(errors))
         return 0
 
     return 2
@@ -1151,9 +1090,9 @@ def cmd_friend(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_jsonrpc_method_template_and_stop('list_correspondents', tpl)
     elif len(args) > 2 and args[1] in ['check', 'nick', 'nickname', 'test', ]:
-        return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, unicode(args[2]))
+        return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, strng.text_type(args[2]))
     elif len(args) > 2 and args[1] in ['add', 'append', ]:
-        inp = unicode(args[2])
+        inp = strng.text_type(args[2])
         if inp.startswith('http://'):
             return call_jsonrpc_method_template_and_stop('add_correspondent', tpl_add, inp)
 
@@ -1310,7 +1249,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             # settings.uconfig().print_all()
             from main import config
             for k in config.conf().listAllEntries():
-                print k, config.conf().getData(k)
+                print(k, config.conf().getData(k))
         else:
             print_text(help.help_text())
             print_text(pars.format_option_help())

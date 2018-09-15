@@ -38,13 +38,18 @@ EVENTS:
 """
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import os
 import time
+import six
 
 from twisted.protocols import basic
 
@@ -200,7 +205,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         from transport.tcp import tcp_node
         if self.getConnectionAddress() is not None:
-            if self.getConnectionAddress() in tcp_node.started_connections().keys():
+            if self.getConnectionAddress() in list(tcp_node.started_connections().keys()):
                 return True
         return False
 
@@ -388,8 +393,11 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
     def sendData(self, command, payload):
         try:
             data = self.SoftwareVersion + str(command.lower())[0] + payload
+            if not isinstance(data, six.binary_type):
+                data = data.encode('utf-8')
             self.sendString(data)
         except:
+            lg.exc()
             return False
         self.automat('data-sent', data)
         return True

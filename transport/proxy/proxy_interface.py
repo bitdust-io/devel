@@ -33,9 +33,15 @@ This is a client side part of the PROXY transport plug-in.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
+
+_Debug = True
+
+#------------------------------------------------------------------------------
+
+import six
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import succeed, fail, Deferred
@@ -71,7 +77,7 @@ class GateInterface():
             lg.out(4, 'proxy_interface.init')
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-        if isinstance(xml_rpc_url_or_object, str):
+        if isinstance(xml_rpc_url_or_object, six.string_types):
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
             _GateProxy = xml_rpc_url_or_object
@@ -198,7 +204,7 @@ class GateInterface():
                     res.callback(False)
                     return False
                 for proto, contact in id_obj.getContactsByProto().items():
-                    if proto not in router_contacts.keys():
+                    if proto not in list(router_contacts.keys()):
                         if _Debug:
                             lg.out(4, '    returning False: [%s] is not present in router contacts' % proto)
                         res.callback(False)

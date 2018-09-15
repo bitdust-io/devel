@@ -77,7 +77,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -498,8 +502,8 @@ class backup(automat.Automat):
 
 def main():
     from system import bpio
-    import backup_tar
-    import backup_fs
+    from . import backup_tar
+    from . import backup_fs
     lg.set_debug_level(24)
     sourcePath = sys.argv[1]
     compress_mode = 'none'  # 'gz'

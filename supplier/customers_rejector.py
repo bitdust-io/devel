@@ -41,6 +41,7 @@ EVENTS:
     * :red:`space-overflow`
 """
 
+from __future__ import absolute_import
 import os
 
 #------------------------------------------------------------------------------
@@ -61,6 +62,7 @@ from lib import packetid
 from p2p import p2p_service
 
 from storage import accounting
+from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -226,7 +228,7 @@ class CustomersRejector(automat.Automat):
             self.automat('space-enough')
             return
         used_space_ratio_dict = {}
-        for customer_pos in xrange(contactsdb.num_customers()):
+        for customer_pos in range(contactsdb.num_customers()):
             customer_idurl = contactsdb.customer(customer_pos)
             try:
                 allocated_bytes = int(space_dict[customer_idurl])

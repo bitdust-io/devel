@@ -28,6 +28,10 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 
+from __future__ import absolute_import
+import six
+
+
 class Encoding(object):
     """
     Interface for RPC message encoders/decoders.
@@ -82,9 +86,9 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-        if type(data) in (int, long):
+        if type(data) in six.integer_types:
             return 'i%de' % data
-        elif isinstance(data, str):
+        elif isinstance(data, six.string_types):
             return '%d:%s' % (len(data), data)
         elif type(data) in (list, tuple):
             encodedListItems = ''
@@ -95,8 +99,10 @@ class Bencode(Encoding):
             encodedDictItems = ''
             keys = sorted(data.keys())
             for key in keys:
-                encodedDictItems += self.encode(key)
-                encodedDictItems += self.encode(data[key])
+                e_key = self.encode(key)
+                e_data = self.encode(data[key])
+                encodedDictItems += e_key
+                encodedDictItems += e_data
             return 'd%se' % encodedDictItems
         elif isinstance(data, float):
             # This (float data type) is a non-standard extension to the original Bencode algorithm

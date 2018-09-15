@@ -33,22 +33,31 @@ TODO:
     Really need to do some refactoring here - too many things in one place.
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+from __future__ import print_function
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import locale
+import textwrap
+import six.moves.cPickle
+import six
+from six.moves import range
+from io import open
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import random
 import time
 import math
-import hmac
 import hashlib
 import base64
 import string
 import subprocess
 import re
 import tempfile
-import urllib
-import locale
-import textwrap
-import cPickle
 
 #------------------------------------------------------------------------------
 
@@ -548,26 +557,26 @@ def AsciiToBinary(inpt):
 def ObjectToString_old(obj):
     """
     """
-    return cPickle.dumps(obj, protocol=cPickle.HIGHEST_PROTOCOL)
+    return six.moves.cPickle.dumps(obj, protocol=six.moves.cPickle.HIGHEST_PROTOCOL)
 
 
 def StringToObject_old(inp):
     """
     """
-    return cPickle.loads(inp)
+    return six.moves.cPickle.loads(inp)
 
 
 def ObjectToString(obj):
     """
     """
-    import serialization
+    from . import serialization
     return serialization.ObjectToString(obj)
 
 
 def StringToObject(inp):
     """
     """
-    import serialization
+    from . import serialization
     return serialization.StringToObject(inp)
 
 
@@ -586,16 +595,15 @@ def AsciiToObject(input):
 
 #------------------------------------------------------------------------------
 
-
 def pack_url_param(s):
     """
     A wrapper for built-in ``urllib.quote`` method.
     """
     try:
-        return urllib.quote(s)
+        return six.moves.urllib.parse.quote(s)
     except:
         try:
-            return str(urllib.quote(str(s)))
+            return str(six.moves.urllib.parse.quote(str(s)))
         except:
             lg.exc()
     return s
@@ -610,11 +618,12 @@ def unpack_url_param(s, default=None):
             return default
         return s
     try:
-        return urllib.unquote(str(s))
+        return six.moves.urllib.parse.unquote(str(s))
     except:
         lg.exc()
         return default
 
+#------------------------------------------------------------------------------
 
 def rndstr(length):
     """
@@ -627,7 +636,7 @@ def stringToLong(s):
     """
     Not used.
     """
-    return long('\0' + s, 256)
+    return int('\0' + s, 256)
 
 
 def longToString(n):
@@ -732,7 +741,7 @@ def getRealHost(host, port=None):
     """
     Some tricks to get a 'host' from contact method (see ``lib.identity``).
     """
-    if isinstance(host, str):
+    if isinstance(host, six.string_types):
         if port is not None:
             host += ':' + str(port)
     elif isinstance(host, tuple) and len(host) == 2:
@@ -866,13 +875,13 @@ def unicode_to_str_safe(unicode_string, encodings=None):
         return str(unicode_string)  # .decode('utf-8')
     except:
         try:
-            return unicode(unicode_string).encode(locale.getpreferredencoding(), errors='ignore')
+            return six.text_type(unicode_string).encode(locale.getpreferredencoding(), errors='ignore')
         except:
             pass
     if encodings is None:
         encodings = [locale.getpreferredencoding(), ]  # 'utf-8'
     output = ''
-    for i in xrange(len(unicode_string)):
+    for i in range(len(unicode_string)):
         unicode_char = unicode_string[i]
         char = '?'
         try:
@@ -1652,7 +1661,7 @@ def UpdateRegistryUninstall(uninstall=False):
     inside it.
     """
     try:
-        import _winreg
+        import six.moves.winreg
     except:
         return False
     unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
@@ -1668,10 +1677,10 @@ def UpdateRegistryUninstall(uninstall=False):
         'URLInfoAbout': 'https://bitdust.io', }
     # open
     try:
-        reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, regpath, 0, _winreg.KEY_ALL_ACCESS)
+        reg = six.moves.winreg.OpenKey(six.moves.winreg.HKEY_LOCAL_MACHINE, regpath, 0, six.moves.winreg.KEY_ALL_ACCESS)
     except:
         try:
-            reg = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, regpath)
+            reg = six.moves.winreg.CreateKey(six.moves.winreg.HKEY_LOCAL_MACHINE, regpath)
         except:
             lg.exc()
             return False
@@ -1679,45 +1688,45 @@ def UpdateRegistryUninstall(uninstall=False):
     i = 0
     while True:
         try:
-            name, value, typ = _winreg.EnumValue(reg, i)
+            name, value, typ = six.moves.winreg.EnumValue(reg, i)
         except:
             break
         i += 1
         if uninstall:
             try:
-                _winreg.DeleteKey(reg, name)
+                six.moves.winreg.DeleteKey(reg, name)
             except:
                 try:
-                    _winreg.DeleteValue(reg, name)
+                    six.moves.winreg.DeleteValue(reg, name)
                 except:
                     lg.exc()
         else:
             if name == 'DisplayName' and value == 'BitDust':
-                _winreg.CloseKey(reg)
+                six.moves.winreg.CloseKey(reg)
                 return True
     # delete
     if uninstall:
-        _winreg.CloseKey(reg)
+        six.moves.winreg.CloseKey(reg)
         try:
-            reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, unistallpath, 0, _winreg.KEY_ALL_ACCESS)
+            reg = six.moves.winreg.OpenKey(six.moves.winreg.HKEY_LOCAL_MACHINE, unistallpath, 0, six.moves.winreg.KEY_ALL_ACCESS)
         except:
             lg.exc()
             return False
         try:
-            _winreg.DeleteKey(reg, 'BitDust')
+            six.moves.winreg.DeleteKey(reg, 'BitDust')
         except:
             lg.exc()
-            _winreg.CloseKey(reg)
+            six.moves.winreg.CloseKey(reg)
             return False
-        _winreg.CloseKey(reg)
+        six.moves.winreg.CloseKey(reg)
         return True
     # write
     for key, value in values.items():
-        typ = _winreg.REG_SZ
+        typ = six.moves.winreg.REG_SZ
         if isinstance(value, int):
-            typ = _winreg.REG_DWORD
-        _winreg.SetValueEx(reg, key, 0, typ, value)
-    _winreg.CloseKey(reg)
+            typ = six.moves.winreg.REG_DWORD
+        six.moves.winreg.SetValueEx(reg, key, 0, typ, value)
+    six.moves.winreg.CloseKey(reg)
     return True
 
 
@@ -1784,15 +1793,15 @@ if __name__ == '__main__':
         from twisted.internet.defer import Deferred
 
         def _progress(x, y):
-            print '%d/%d' % (x, y)
+            print('%d/%d' % (x, y))
 
         def _done(x):
-            print 'DONE', x
+            print('DONE', x)
             reactor.stop()
             return x
 
         def _fail(x):
-            print 'FAIL', x
+            print('FAIL', x)
             reactor.stop()
             return x
         d = SendDevReport('subject ', 'some body112', True, _progress)

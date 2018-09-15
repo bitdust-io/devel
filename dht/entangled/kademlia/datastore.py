@@ -27,15 +27,19 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-import UserDict
+from __future__ import absolute_import
+try:
+    from UserDict import DictMixin
+except ImportError:
+    from collections import MutableMapping as DictMixin
 import sqlite3
-import cPickle as pickle
+import six.moves.cPickle as pickle
 import os
 
-import constants
+from . import constants
 
 
-class DataStore(UserDict.DictMixin):
+class DataStore(DictMixin):
     """
     Interface for classes implementing physical storage (for data published via
     the "STORE" RPC) for the Kademlia DHT.
@@ -114,7 +118,7 @@ class DictDataStore(DataStore):
         """
         Return a list of the keys in this data store.
         """
-        return self._dict.keys()
+        return list(self._dict.keys())
 
     def lastPublished(self, key):
         """

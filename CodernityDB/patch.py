@@ -16,6 +16,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 from CodernityDB.misc import NONE
 
 
@@ -38,8 +39,8 @@ def patch_cache_lfu(lock_obj):
        It's internal CodernityDB mechanizm, it will be called when needed
 
     """
-    import lfu_cache
-    import lfu_cache_with_lock
+    from . import lfu_cache
+    from . import lfu_cache_with_lock
     lfu_lock1lvl = lfu_cache_with_lock.create_cache1lvl(lock_obj)
     lfu_lock2lvl = lfu_cache_with_lock.create_cache2lvl(lock_obj)
     __patch(lfu_cache, 'cache1lvl', lfu_lock1lvl)
@@ -55,8 +56,8 @@ def patch_cache_rr(lock_obj):
        It's internal CodernityDB mechanizm, it will be called when needed
 
     """
-    import rr_cache
-    import rr_cache_with_lock
+    from . import rr_cache
+    from . import rr_cache_with_lock
     rr_lock1lvl = rr_cache_with_lock.create_cache1lvl(lock_obj)
     rr_lock2lvl = rr_cache_with_lock.create_cache2lvl(lock_obj)
     __patch(rr_cache, 'cache1lvl', rr_lock1lvl)

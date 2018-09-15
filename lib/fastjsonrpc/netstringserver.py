@@ -22,11 +22,12 @@ JSONRPC Server
 Provides JSONRPCServer class, which can be used to expose methods via RPC.
 """
 
+from __future__ import absolute_import
 from twisted.protocols import basic
 from twisted.internet.defer import succeed, DeferredList, maybeDeferred
 from twisted.python import log
 
-import jsonrpc
+from . import jsonrpc
 
 
 class JSONRPCServer(basic.NetstringReceiver):

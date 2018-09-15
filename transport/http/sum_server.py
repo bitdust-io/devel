@@ -1,5 +1,6 @@
 
 # Server implementation for a "Sum" command which adds two integers
+from __future__ import absolute_import
 from twisted.protocols import amp
 from twisted.internet import reactor
 from twisted.internet.protocol import Factory

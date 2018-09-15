@@ -26,12 +26,14 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
 import random
 
-import constants
-import kbucket
-from protocol import TimeoutError
+from . import constants
+from . import kbucket
+from .protocol import TimeoutError
 
 
 class RoutingTable(object):
@@ -66,8 +68,8 @@ class RoutingTable(object):
         @return: XOR result of two long variables
         @rtype: long
         """
-        valKeyOne = long(keyOne.encode('hex'), 16)
-        valKeyTwo = long(keyTwo.encode('hex'), 16)
+        valKeyOne = int(keyOne.encode('hex'), 16)
+        valKeyTwo = int(keyTwo.encode('hex'), 16)
         return valKeyOne ^ valKeyTwo
 
     def findCloseNodes(self, key, count, _rpcNodeID=None):
@@ -207,7 +209,7 @@ class TreeRoutingTable(RoutingTable):
                     @type failure: twisted.python.failure.Failure
                     """
                     failure.trap(TimeoutError)
-                    print '==replacing contact=='
+                    print('==replacing contact==')
                     # Remove the old contact...
                     deadContactID = failure.getErrorMessage()
                     try:
@@ -349,7 +351,7 @@ class TreeRoutingTable(RoutingTable):
         @return: The index of the k-bucket responsible for the specified key
         @rtype: int
         """
-        valKey = long(key.encode('hex'), 16)
+        valKey = int(key.encode('hex'), 16)
         i = 0
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):

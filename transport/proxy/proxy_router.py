@@ -54,7 +54,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -79,6 +83,7 @@ except:
 from automats import automat
 
 from lib import nameurl
+from lib import serialization
 
 from main import config
 
@@ -256,7 +261,7 @@ class ProxyRouter(automat.Automat):
                     p2p_service.SendAck(request, 'rejected', wide=True)
                     return
                 oldnew = ''
-                if user_id not in self.routes.keys():
+                if user_id not in list(self.routes.keys()):
                     # accept new route
                     oldnew = 'NEW'
                     self.routes[user_id] = {}
@@ -295,8 +300,8 @@ class ProxyRouter(automat.Automat):
                     else:
                         lg.err('not found session state machine: %s' % user_connection_info['index'])
                 else:
-                    lg.err('active connection with user at %s:%s was not found' % (info.proto, info.host, ))
-                    lg.err('active sessions: %s' % gateway.list_active_sessions(info.proto))
+                    lg.warn('active connection with user at %s:%s was not found' % (info.proto, info.host, ))
+                    lg.warn('current active sessions:\n        %s' % ('\n        '.join(gateway.list_active_sessions(info.proto))))
                 self.acks.append(
                     p2p_service.SendAck(request, 'accepted', wide=True))
                 if _Debug:
@@ -351,10 +356,12 @@ class ProxyRouter(automat.Automat):
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
             inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
-            sender_idurl = inpt.readline().rstrip('\n')
-            receiver_idurl = inpt.readline().rstrip('\n')
-            wide = inpt.readline().rstrip('\n')
-            wide = wide == 'wide'
+            payload = serialization.StringToObject(inpt.read())
+            inpt.close()
+            sender_idurl = payload['f']         # from
+            receiver_idurl = payload['t']       # to
+            wide = payload['w']                 # wide
+            routed_data = payload['p']                 # payload
         except:
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
             lg.exc()
@@ -369,9 +376,7 @@ class ProxyRouter(automat.Automat):
             lg.warn('route with %s not found' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return
-        data = inpt.read()
-        inpt.close()
-        routed_packet = signed.Unserialize(data)
+        routed_packet = signed.Unserialize(routed_data)
         if not routed_packet or not routed_packet.Valid():
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
             return
@@ -381,10 +386,10 @@ class ProxyRouter(automat.Automat):
         # gateway.outbox(routed_packet, wide=wide)
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
-                len(data), nameurl.GetName(sender_idurl), info.proto, info.host,))
+                len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         del block
-        del data
+        del routed_data
         del padded_data
         del route
         del inpt
@@ -410,17 +415,16 @@ class ProxyRouter(automat.Automat):
             return
         receiver_proto, receiver_host = hosts[0]
         publickey = route_info['publickey']
-        src = ''
-        src += newpacket.Serialize()
         block = encrypted.Block(
-            my_id.getLocalID(),
-            'routed incoming data',
-            0,
-            key.NewSessionKey(),
-            key.SessionKeyType(),
-            True,
-            src,
-            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp))
+            CreatorID=my_id.getLocalID(),
+            BackupID='routed incoming data',
+            BlockNumber=0,
+            SessionKey=key.NewSessionKey(),
+            SessionKeyType=key.SessionKeyType(),
+            LastBlock=True,
+            Data=newpacket.Serialize(),
+            EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp),
+        )
         routed_packet = signed.Packet(
             commands.Relay(),
             newpacket.OwnerID,
@@ -441,13 +445,13 @@ class ProxyRouter(automat.Automat):
                 'description': ('Relay_%s[%s]_%s' % (
                     newpacket.Command, newpacket.PacketID,
                     nameurl.GetName(receiver_idurl))),
-            }, )
+            },
+        )
         if _Debug:
             lg.out(_DebugLevel, '<<<Relay-IN-OUT %s %s:%s' % (
                 str(newpacket), info.proto, info.host,))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
                 receiver_proto, receiver_host, len(src), pout))
-        del src
         del block
         del newpacket
         del routed_packet
@@ -558,13 +562,13 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s' % newpacket)
             lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
             lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
-            lg.out(_DebugLevel, '    routes=%s' % self.routes.keys())
+            lg.out(_DebugLevel, '    routes=%s' % list(self.routes.keys()))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first
             if newpacket.Command == commands.Relay():
                 # look like this is a routed packet addressed to someone else
-                if newpacket.CreatorID in self.routes.keys():
+                if newpacket.CreatorID in list(self.routes.keys()):
                     # sent by proxy_sender() from node A : a man behind proxy_router()
                     # addressed to some third node B in outside world - need to route
                     # A is my consumer and B is a recipient which A wants to contant
@@ -580,7 +584,7 @@ class ProxyRouter(automat.Automat):
             # and this is not a Relay packet, Identity
             elif newpacket.Command == commands.Identity():
                 # this is a "propagate" packet from node A addressed to this proxy router
-                if newpacket.CreatorID in self.routes.keys():
+                if newpacket.CreatorID in list(self.routes.keys()):
                     # also we need to "reset" overriden identity
                     # return False so that other services also can process that Identity()
                     if _Debug:
@@ -608,9 +612,9 @@ class ProxyRouter(automat.Automat):
         # this packet was addressed to someone else
         # it can be different scenarios, if can not found valid scenario - must skip the packet
         receiver_idurl = None
-        known_remote_id = newpacket.RemoteID in self.routes.keys()
-        known_creator_id = newpacket.CreatorID in self.routes.keys()
-        known_owner_id = newpacket.OwnerID in self.routes.keys()
+        known_remote_id = newpacket.RemoteID in list(self.routes.keys())
+        known_creator_id = newpacket.CreatorID in list(self.routes.keys())
+        known_owner_id = newpacket.OwnerID in list(self.routes.keys())
         if known_remote_id:
             # incoming packet from node B addressed to node A behind that proxy, capture it!
             receiver_idurl = newpacket.RemoteID
@@ -664,7 +668,7 @@ class ProxyRouter(automat.Automat):
             return False
         if Command != commands.Ack():
             return False
-        if RemoteID not in self.routes.keys():
+        if RemoteID not in list(self.routes.keys()):
             return False
         for ack in self.acks:
             if PacketID == ack.PacketID:

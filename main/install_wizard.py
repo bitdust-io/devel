@@ -49,6 +49,7 @@ EVENTS:
     * :red:`skip`
 """
 
+from __future__ import absolute_import
 import sys
 try:
     from twisted.internet import reactor
@@ -62,7 +63,7 @@ from main import settings
 from main import config
 from automats import automat
 
-import installer
+from . import installer
 
 #------------------------------------------------------------------------------
 

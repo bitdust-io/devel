@@ -51,6 +51,7 @@ failures at the same time is less.
 Right now this is an interface between ``bpmain`` and ``bptester`` child process.
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import time

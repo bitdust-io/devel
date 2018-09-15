@@ -32,6 +32,10 @@ module:: api_rest_http_server
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import cgi
 import json
@@ -634,11 +638,11 @@ class BitDustRESTHTTPServer(APIResource):
         )
 
     #------------------------------------------------------------------------------
-
-    @GET('^/msg/l?')
-    @GET('^/message/list/v1?')
-    def message_list_v1(self):
-        return
+    @GET('^/msg/h?')
+    @GET('^/message/history/v1$')
+    def message_history_v1(self, request):
+        user_identity = _request_arg(request, 'id', None, True)
+        return api.message_history(user=user_identity)
 
     @GET('^/msg/r/(?P<consumer_id>[^/]+)/$')
     @GET('^/message/receive/(?P<consumer_id>[^/]+)/v1$')

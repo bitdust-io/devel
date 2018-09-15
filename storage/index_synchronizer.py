@@ -80,7 +80,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -297,7 +301,7 @@ class IndexSynchronizer(automat.Automat):
             path=settings.BackupIndexFileName(),
         )
         # packetID = settings.BackupIndexFileName()
-        localID = my_id.getLocalID()
+        localID = my_id.getLocalIDURL()
         for supplierId in contactsdb.suppliers():
             if not supplierId:
                 continue
@@ -343,15 +347,15 @@ class IndexSynchronizer(automat.Automat):
         self.sending_suppliers.clear()
         self.sent_suppliers_number = 0
         src = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
-        localID = my_id.getLocalID()
+        localID = my_id.getLocalIDURL()
         b = encrypted.Block(
-            localID,
-            packetID,
-            0,
-            key.NewSessionKey(),
-            key.SessionKeyType(),
-            True,
-            src,
+            CreatorID=localID,
+            BackupID=packetID,
+            BlockNumber=0,
+            SessionKey=key.NewSessionKey(),
+            SessionKeyType=key.SessionKeyType(),
+            LastBlock=True,
+            Data=src,
         )
         Payload = b.Serialize()
         for supplierId in contactsdb.suppliers():

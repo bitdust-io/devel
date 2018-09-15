@@ -33,6 +33,7 @@ A useful code to monitor program packets traffic in the Web browser
 using local HTML server.
 """
 
+from __future__ import absolute_import
 import sys
 
 try:

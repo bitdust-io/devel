@@ -31,6 +31,8 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from io import open
 import gc
 
 #------------------------------------------------------------------------------
@@ -40,6 +42,10 @@ from Cryptodome.Hash import SHA1
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.Util import number
+
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 #------------------------------------------------------------------------------
 
@@ -108,16 +114,16 @@ class RSAKey(object):
     def sign(self, message):
         if not self.keyObject:
             raise ValueError('key object is not exist')
-        h = SHA1.new(message)
+        h = SHA1.new(strng.to_bin(message))
         signature_bytes = pkcs1_15.new(self.keyObject).sign(h)
         signature_int = number.bytes_to_long(signature_bytes)
         signature = str(signature_int)
         return signature
 
     def verify(self, signature, message):
-        h = SHA1.new(message)
+        h = SHA1.new(strng.to_bin(message))
         try:
-            signature_int = long(signature)
+            signature_int = int(signature)
             signature_bytes = number.long_to_bytes(signature_int)
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True

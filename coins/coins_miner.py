@@ -45,7 +45,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -406,7 +411,7 @@ class CoinsMiner(automat.Automat):
     def _build_starter(self, length):
         return (''.join(
             [random.choice(string.uppercase + string.lowercase + string.digits)
-                for _ in xrange(length)])) + '_'
+                for _ in range(length)])) + '_'
 
     def _build_hash(self, payload):
         return hashlib.sha1(payload).hexdigest()
@@ -424,7 +429,7 @@ class CoinsMiner(automat.Automat):
         difficulty = 0
         while True:
             ok = False
-            for simpl in xrange(simplification):
+            for simpl in range(simplification):
                 if hexdigest.startswith(str(simpl) * difficulty):
                     ok = True
                     break
