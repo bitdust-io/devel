@@ -534,8 +534,8 @@ def _write_data(path, src):
             os.remove(path)
         except:
             lg.out(1, 'bpio._write_data ERROR removing ' + str(path))
-    fout = open(temp_path, 'wb')
-    fout.write(strng.to_bin(src))
+    fout = open(temp_path, 'w')
+    fout.write(strng.to_text(src))
     fout.write(src)
     fout.flush()
     os.fsync(fout)
@@ -573,7 +573,7 @@ def _pack_list(lst):
     strings and not contain "\n".\ This is useful to store a list of
     users IDs in the local file.
     """
-    return str(len(lst)) + '\n' + '\n'.join(lst)
+    return str(len(lst)) + u'\n' + u'\n'.join(lst)
 
 
 def _unpack_list(src):
@@ -630,7 +630,7 @@ def _pack_dict(dictionary, sort=False):
         seq = sorted(dictionary.keys())
     else:
         seq = list(dictionary.keys())
-    return '\n'.join(['%s %s' % (k, str(dictionary[k])) for k in seq])
+    return u'\n'.join([u'%s %s' % (k, strng.to_text(str(dictionary[k]))) for k in seq])
 
 
 def _unpack_dict_from_list(lines):
@@ -640,10 +640,10 @@ def _unpack_dict_from_list(lines):
     """
     dct = {}
     for line in lines:
-        words = line.split(' ')
+        words = line.split(u' ')
         if len(words) < 2:
             continue
-        dct[words[0]] = ' '.join(words[1:])
+        dct[words[0]] = u' '.join(words[1:])
     return dct
 
 
@@ -651,7 +651,7 @@ def _unpack_dict(src):
     """
     The core method, creates dictionary from string.
     """
-    lines = src.split('\n')
+    lines = strng.to_text(src).split(u'\n')
     return _unpack_dict_from_list(lines)
 
 

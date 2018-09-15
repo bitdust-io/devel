@@ -66,7 +66,7 @@ def UrlParse(url):
     proto = o.scheme.strip()
     base = o.netloc.lstrip(' /')
     filename = o.path.lstrip(' /')
-    if base == '':
+    if not base:
         base = o.path.lstrip(' /')
         filename = ''
 
@@ -83,7 +83,7 @@ def UrlParse(url):
         else:
             host, port = host.split(':', 1)
 
-        if filename == '':
+        if not filename:
             filename = tail
 
     return proto.strip(), host.strip(), port.strip(), filename.strip()

@@ -618,7 +618,7 @@ def load_correspondents(path=None):
         lst[i] = tuple(lst[i].strip().split(' ', 1))
         if len(lst[i]) < 2:
             lst[i] = (lst[i][0], '')
-        if lst[i][1].strip() == '':
+        if not lst[i][1].strip():
             lst[i] = (lst[i][0], nameurl.GetName(lst[i][0]))
     set_correspondents(lst)
     lg.out(4, 'contactsdb.load_correspondents %d items' % len(lst))

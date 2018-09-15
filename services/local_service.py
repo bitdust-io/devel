@@ -86,7 +86,7 @@ class LocalService(automat.Automat):
     config_path = ''
 
     def __init__(self):
-        if self.service_name == '':
+        if not self.service_name:
             raise RequireSubclass()
         if self.service_name in list(services().keys()):
             raise ServiceAlreadyExist(self.service_name)
