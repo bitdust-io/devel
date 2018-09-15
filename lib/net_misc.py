@@ -465,6 +465,9 @@ def readResponse(response):
 #     print('Response phrase:', response.phrase)
 #     print('Response headers:')
 #     print(list(response.headers.getAllRawHeaders()))
+    if response.code != 200:
+        return fail(Exception('Bad response from the server: [%d] %s' % (
+            response.code, response.phrase.strip(),)))
     d = readBody(response)
     return d
 

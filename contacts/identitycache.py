@@ -358,13 +358,13 @@ def immediatelyCaching(idurl, timeout=10):
             if result:
                 result.callback(src)
             if _Debug:
-                lg.out(14, '    [cached] %s' % idurl)
+                lg.out(14, '[cached] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, len(src))
         else:
             if result:
                 result.errback(Exception(src))
             if _Debug:
-                lg.out(14, '    [cache error] %s is not valid' % idurl)
+                lg.warn('[cache error] %s is not valid' % idurl)
             p2p_stats.count_identity_cache(idurl, 0)
         return src
 
@@ -377,7 +377,7 @@ def immediatelyCaching(idurl, timeout=10):
             lg.warn('caching task for %s was not found' % idurl)
         p2p_stats.count_identity_cache(idurl, 0)
         if _Debug:
-            lg.out(14, '    [cache failed] %s : %s' % (idurl, x, ))
+            lg.warn('[cache failed] %s : %s' % (idurl, x.getErrorMessage(), ))
         return None
 
     _CachingTasks[idurl] = Deferred()
@@ -437,10 +437,10 @@ def _test():
     init()
 
     def _resp(src):
-        print(src)
+        # print(src)
         reactor.stop()
 
-    immediatelyCaching('http://bitdust.io:8084/veselin_penev.xml').addBoth(_resp)
+    immediatelyCaching('http://p2p-id.ru/severino.xml').addBoth(_resp)
     reactor.run()
     shutdown()
 
