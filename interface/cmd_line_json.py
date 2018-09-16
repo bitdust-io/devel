@@ -472,9 +472,9 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         except:
             idurl = ''
             txt = src
-        if idurl == '' and len(args) > 3:
+        if not idurl and len(args) > 3:
             idurl = args[3]
-        if idurl == '':
+        if not idurl:
             print_text('BitDust need to know your IDURL to recover your account\n')
             return 2
         from automats import automat
@@ -1134,7 +1134,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_deploy(opts, args, overDict)
 
     #---start---
-    if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'run':
+    if not cmd or cmd == 'start' or cmd == 'go' or cmd == 'run':
         appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('BitDust already started, found another process: %s' % str(appList))

@@ -213,12 +213,13 @@ def remember_connected_time(idurl):
 
 
 def connected_time(idurl):
-    s = bpio._read_data(os.path.join(rating_dir(idurl), 'connected'))
-    if s == '':
+    s = bpio.ReadTextFile(os.path.join(rating_dir(idurl), 'connected'))
+    if not s:
         return 0
     try:
         return time.mktime(time.strptime(s, '%d%m%y %H:%M:%S'))
     except:
+        lg.exc()
         return 0
 
 
