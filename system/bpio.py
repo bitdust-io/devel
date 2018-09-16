@@ -360,20 +360,9 @@ def getDirectorySize(directory, include_subfolders=True):
 
 #-------------------------------------------------------------------------------
 
-# AtomicSave:  Save either all of data to file, or don't make file
-# def AtomicSave(filename, data):
-##    tmp = '%s.tmp' % filename
-##    f = file(tmp, 'wb')
-# f.write(data)
-# os.fsync(f)
-# f.close()
-##    os.rename(tmp, filename)
-
-
 def AtomicWriteFile(filename, data):
     """
     A smart way to write data to binary file. Return True if success.
-
     This should be atomic operation - data is written to another temporary file and than renamed.
     """
     try:
@@ -394,7 +383,8 @@ def AtomicWriteFile(filename, data):
         lg.out(1, 'bpio.AtomicWriteFile ERROR ' + str(filename))
         lg.exc()
         try:
-            f.close()  # make sure file gets closed
+            # make sure file gets closed
+            f.close()
         except:
             pass
         return False
@@ -505,7 +495,7 @@ def ReadTextFile(filename):
 def _read_data(path):
     """
     Another way to read text file, return None if path not exist or have no
-    read access to the file.
+    read access to the file. Returns text string.
     """
     if not os.path.exists(path):
         return None
@@ -519,8 +509,7 @@ def _read_data(path):
 
 def _write_data(path, src):
     """
-    Write data to binary file.
-
+    Write data to text file.
     Very close to ``AtomicWriteFile`` but do some checking before write.
     """
     temp_path = path + '.tmp'
@@ -536,7 +525,6 @@ def _write_data(path, src):
             lg.out(1, 'bpio._write_data ERROR removing ' + str(path))
     fout = open(temp_path, 'w')
     fout.write(strng.to_text(src))
-    fout.write(src)
     fout.flush()
     os.fsync(fout)
     fout.close()
@@ -555,7 +543,7 @@ def _append_data(path, src):
         if not os.access(path, os.W_OK):
             return False
     fout = open(path, 'a')
-    fout.write(src)
+    fout.write(strng.to_text(src))
     fout.flush()
     os.fsync(fout)
     fout.close()
@@ -567,7 +555,6 @@ def _append_data(path, src):
 def _pack_list(lst):
     """
     The core method, convert list of strings to one big string.
-
     Every line in the string will store a single item from list. First
     line will keep a number of items. So items in the list should be a
     strings and not contain "\n".\ This is useful to store a list of
@@ -579,11 +566,10 @@ def _pack_list(lst):
 def _unpack_list(src):
     """
     The core method, read a list from string.
-
     Return a tuple : (resulted list, list with lines from rest string or None).
     First line of the ``src`` should contain a number of items in the list.
     """
-    if src.strip() == '':
+    if not src.strip():
         return list(), None
     words = src.splitlines()
     if len(words) == 0:
@@ -594,7 +580,7 @@ def _unpack_list(src):
         return words, None
     res = words[1:]
     if len(res) < length:
-        res += [''] * (length - len(res))
+        res += [u''] * (length - len(res))
     elif len(res) > length:
         return res[:length], res[length:]
     return res, None
@@ -1414,7 +1400,7 @@ def find_main_process(pid_file_path=None):
         if not pid_file_path:
             from main import settings
             pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
-        processid = int(_read_data(pid_file_path))
+        processid = int(ReadTextFile(pid_file_path))
     except:
         processid = None
     if not processid:

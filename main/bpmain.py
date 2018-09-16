@@ -606,7 +606,7 @@ def main(executable_path=None):
     try:
         if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':
             lg.set_debug_level(int(
-                bpio._read_data(
+                bpio.ReadTextFile(
                     os.path.abspath(
                         os.path.join(appdata, 'config', 'logs', 'debug-level')))))
     except:

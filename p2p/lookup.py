@@ -37,7 +37,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -53,7 +53,13 @@ from twisted.internet.defer import DeferredList, Deferred
 
 #------------------------------------------------------------------------------
 
+from lib import strng
+
 from logs import lg
+
+from dht import dht_service
+
+from contacts import identitycache
 
 #------------------------------------------------------------------------------
 
@@ -238,6 +244,60 @@ def work():
 
 #------------------------------------------------------------------------------
 
+def lookup_in_dht():
+    """
+    Pick random node from Distributed Hash Table.
+    Generates
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'lookup.lookup_in_dht')
+    return dht_service.find_node(dht_service.random_key())
+
+
+def on_idurl_response(response, result):
+    try:
+        responded_idurl = strng.to_text(response.get('idurl'))
+    except:
+        lg.exc()
+    if _Debug:
+        lg.out(_DebugLevel, 'lookup.on_idurl_response : %s' % responded_idurl)
+    result.callback(responded_idurl)
+    return response
+
+
+def observe_dht_node(node):
+    if _Debug:
+        lg.out(_DebugLevel, 'lookup.observe_dht_node %s' % node)
+    result = Deferred()
+    d = node.request('idurl')
+    d.addCallback(on_idurl_response, result)
+    # d.addCallback(lambda response: result.callback(strng.to_text(response.get('idurl'))))
+    d.addErrback(result.errback)
+    return result
+
+
+def on_identity_cached(src, idurl, result):
+    if _Debug:
+        lg.out(_DebugLevel, 'lookup.on_identity_cached %s with %d bytes' % (idurl, len(src)))
+    result.callback(idurl)
+    return src
+
+
+def process_idurl(idurl, node):
+    if _Debug:
+        lg.out(_DebugLevel, 'lookup.process_idurl %s from %r' % (idurl, node, ))
+    result = Deferred()
+    if not idurl:
+        result.errback(Exception(idurl))
+        return result
+    d = identitycache.immediatelyCaching(idurl)
+    # d.addCallback(lambda src: result.callback(idurl))
+    d.addCallback(on_identity_cached, idurl, result)
+    d.addErrback(result.errback)
+    return result
+
+#------------------------------------------------------------------------------
+
 class DiscoveryTask(object):
 
     def __init__(self,
@@ -261,7 +321,6 @@ class DiscoveryTask(object):
         self.stopped = False
         self.lookup_task = None
         self.result_defer = Deferred(canceller=lambda d: self._close())
-        # self.result_defer = Deferred(canceller=lambda d: setattr(self, 'stopped', True))
 
     def __del__(self):
         if _Debug:
@@ -370,6 +429,8 @@ class DiscoveryTask(object):
         if self.stopped:
             lg.warn('node observed, but discovery process already stopped')
             return None
+        if _Debug:
+            lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (idurl, node))
         cached_time = known_idurls().get(idurl)
         if cached_time and time.time() - cached_time < 30.0:
             if _Debug:
