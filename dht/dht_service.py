@@ -56,17 +56,17 @@ from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------
 
-from .entangled.dtuple import DistributedTupleSpacePeer
-from .entangled.kademlia.datastore import SQLiteExpiredDataStore
-from .entangled.kademlia.node import rpcmethod
-from .entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
-from .entangled.kademlia import constants
-
-#------------------------------------------------------------------------------
-
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------
+
+from dht.entangled.dtuple import DistributedTupleSpacePeer
+from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore
+from dht.entangled.kademlia.node import rpcmethod
+from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
+from dht.entangled.kademlia import constants
 
 #------------------------------------------------------------------------------
 
