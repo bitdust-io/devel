@@ -155,7 +155,7 @@ def NewBackupID(time_st=None):
     if time_st is None:
         time_st = time.localtime()
     ampm = time.strftime("%p", time_st)
-    if ampm == '':
+    if not ampm:
         lg.warn('time.strftime("%p") returns empty string')
         ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
     result = "F" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
@@ -613,7 +613,7 @@ def unpack_url_param(s, default=None):
     """
     A wrapper for built-in ``urllib.unquote`` method.
     """
-    if s is None or s == '':
+    if s is None or not s:
         if default is not None:
             return default
         return s
@@ -1097,7 +1097,7 @@ def ReadRepoLocation():
                     lg.exc()
         return 'sources', 'https://bitdust.io/download/'
     src = bpio.ReadTextFile(settings.RepoFile()).strip()
-    if src == '':
+    if not src:
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     l = src.split('\n')
     if len(l) < 2:

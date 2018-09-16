@@ -187,7 +187,7 @@ def parse_url(url, defaultPort=None):
             port = int(port)
         except ValueError:
             port = defaultPort
-    if path == '':
+    if not path:
         path = '/'
     return scheme, host, port, path
 
@@ -539,7 +539,7 @@ def IpIsLocal(ip):
     """
     A set of "classic" patterns for local networks.
     """
-    if ip == '':
+    if not ip:
         return True
     if ip == '0.0.0.0':
         return True

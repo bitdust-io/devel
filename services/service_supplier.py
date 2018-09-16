@@ -333,7 +333,7 @@ class SupplierService(LocalService):
         from userid import global_id
         from p2p import p2p_service
         from main import events
-        if newpacket.Payload == '':
+        if not newpacket.Payload:
             ids = [newpacket.PacketID, ]
         else:
             ids = newpacket.Payload.split('\n')
@@ -391,7 +391,7 @@ class SupplierService(LocalService):
         from userid import global_id
         from p2p import p2p_service
         from main import events
-        if newpacket.Payload == '':
+        if not newpacket.Payload:
             ids = [newpacket.PacketID, ]
         else:
             ids = newpacket.Payload.split('\n')
