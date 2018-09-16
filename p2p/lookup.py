@@ -255,13 +255,19 @@ def lookup_in_dht():
 
 
 def on_idurl_response(response, result):
+    if _Debug:
+        lg.out(_DebugLevel, 'lookup.on_idurl_response : %r' % response)
+    responded_idurl = response.get('idurl')
+    if not responded_idurl:
+        result.errback(Exception('idurl observe failed'))
+        return response
     try:
-        responded_idurl = strng.to_text(response.get('idurl'))
+        idurl = strng.to_text(responded_idurl)
     except:
         lg.exc()
-    if _Debug:
-        lg.out(_DebugLevel, 'lookup.on_idurl_response : %s' % responded_idurl)
-    result.callback(responded_idurl)
+        result.errback(Exception('idurl observe failed'))
+        return response
+    result.callback(idurl)
     return response
 
 
