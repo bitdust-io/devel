@@ -426,28 +426,37 @@ class DiscoveryTask(object):
         return None
 
     def _on_node_observe_failed(self, err, arg=None):
-        self.failed += 1
-        if _Debug:
-            lg.warn('%r : %r' % (arg, err))
+        try:
+            self.failed += 1
+            if _Debug:
+                lg.warn('%r : %r' % (arg, err))
+        except:
+            lg.exc()
         return None
 
     def _on_node_observed(self, idurl, node):
         if self.stopped:
             lg.warn('node observed, but discovery process already stopped')
             return None
-        if _Debug:
-            lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (idurl, node))
-        cached_time = known_idurls().get(idurl)
-        if cached_time and time.time() - cached_time < 30.0:
+        try:
             if _Debug:
-                lg.out(_DebugLevel + 4, 'lookup._on_node_observed SKIP node %r already observed recently' % idurl)
-            return None
-        if _Debug:
-            lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (node, idurl))
-        d = self.process_method(idurl, node)
-        d.addErrback(self._on_node_proces_failed, node)
-        d.addCallback(self._on_identity_cached, node)
-        return d
+                lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (idurl, node))
+            cached_time = known_idurls().get(idurl)
+            if cached_time and time.time() - cached_time < 30.0:
+                if _Debug:
+                    lg.out(_DebugLevel + 4, 'lookup._on_node_observed SKIP node %r already observed recently' % idurl)
+                return None
+            if _Debug:
+                lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (node, idurl))
+            d = self.process_method(idurl, node)
+            d.addErrback(self._on_node_proces_failed, node)
+            d.addCallback(self._on_identity_cached, node)
+            return d
+        except:
+            import pdb; pdb.set_trace()
+            lg.exc()
+            return idurl
+        
 
     def _on_node_processed(self, node, idurl):
         if _Debug:
