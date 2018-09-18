@@ -35,11 +35,14 @@ module:: udp_interface
 
 from __future__ import absolute_import
 
+import six
+
 #------------------------------------------------------------------------------
 
-import six
 import os
 import sys
+
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor
@@ -48,6 +51,8 @@ except:
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import Deferred, succeed, fail
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 

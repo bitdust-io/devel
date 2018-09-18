@@ -40,12 +40,20 @@ argument if you have "http" vs "ssh" or "tcp".
 This seems like trouble.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 from __future__ import print_function
-import re
+
+#------------------------------------------------------------------------------
+
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import six.moves.urllib.parse
 from six.moves import range
+
+#------------------------------------------------------------------------------
+
+import re
 
 #------------------------------------------------------------------------------
 

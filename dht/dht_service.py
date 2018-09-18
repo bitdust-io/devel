@@ -324,7 +324,7 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
     count('set_value_%s' % key)
-    sz_bytes = len(str(value))
+    sz_bytes = len(value)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds, counter=%d' % (
             key, sz_bytes, expire, counter('set_value_%s' % key)))
@@ -550,7 +550,7 @@ class DHTNode(DistributedTupleSpacePeer):
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
-                strng.to_text(key, errors='ignore')[:10], len(str(value)), expireSeconds, counter('store')))
+                strng.to_text(key, errors='ignore')[:6], len(str(value)), expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
@@ -568,7 +568,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def request(self, key):
         count('request')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:6])
         internal_value = self.data.get(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]

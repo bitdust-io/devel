@@ -85,3 +85,14 @@ def to_bin(s, encoding='utf-8', errors='strict'):
     if is_bin(s):
         return s
     return s.encode(encoding=encoding, errors=errors)
+
+
+def to_string(v, encoding='utf-8', errors='strict'):
+    """
+    Something like `str(obj)`, but to "text" type.
+    """
+    if not is_string(v):
+        return text_type(v)
+    if is_text(v):
+        return v
+    return to_text(v, encoding=encoding, errors=errors)

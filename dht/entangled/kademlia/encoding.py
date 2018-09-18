@@ -88,7 +88,9 @@ class Bencode(Encoding):
         """
         if type(data) in six.integer_types:
             return 'i%de' % data
-        elif isinstance(data, six.string_types):
+        elif isinstance(data, six.text_type):
+            return '%d:%s' % (len(data.encode('utf-8')), data.encode('utf-8'))
+        elif isinstance(data, six.binary_type):
             return '%d:%s' % (len(data), data)
         elif type(data) in (list, tuple):
             encodedListItems = ''
@@ -161,5 +163,5 @@ class Bencode(Encoding):
             length = int(data[startIndex:splitPos])
             startIndex = splitPos + 1
             endPos = startIndex + length
-            bytes = data[startIndex:endPos]
-            return (bytes, endPos)
+            byts = data[startIndex:endPos]
+            return (byts, endPos)
