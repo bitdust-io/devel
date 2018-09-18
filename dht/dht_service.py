@@ -78,6 +78,7 @@ from main import settings
 
 from dht import known_nodes
 
+from lib import strng
 from lib import utime
 
 #------------------------------------------------------------------------------
@@ -549,7 +550,7 @@ class DHTNode(DistributedTupleSpacePeer):
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
-                base64.b32encode(key), len(str(value)), expireSeconds, counter('store')))
+                strng.to_text(key)[:10], len(str(value)), expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
@@ -567,7 +568,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def request(self, key):
         count('request')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % key)
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key)[:10])
         internal_value = self.data.get(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
