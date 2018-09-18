@@ -213,7 +213,7 @@ def call_jsonrpc_method(method, *args, **kwargs):
     from main import settings
     from lib.fastjsonrpc.client import Proxy as jsonProxy
     try:
-        local_port = int(bpio.ReadBinaryFile(settings.LocalJsonRPCPortFilename()))
+        local_port = int(bpio.ReadTextFile(settings.LocalJsonRPCPortFilename()))
     except:
         local_port = settings.DefaultJsonRPCPort()
     proxy = jsonProxy('http://127.0.0.1:' + str(local_port))
@@ -458,19 +458,19 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         from lib import nameurl
         if len(args) < 3:
             return 2
-        src = bpio.ReadBinaryFile(args[2])
+        src = bpio.ReadTextFile(args[2])
         if len(src) > 1024 * 10:
             print_text('file is too big for private key')
             return 0
         try:
-            lines = src.split('\n')
+            lines = src.split(u'\n')
             idurl = lines[0]
-            txt = '\n'.join(lines[1:])
+            txt = u'\n'.join(lines[1:])
             if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-                idurl = ''
+                idurl = u''
                 txt = src
         except:
-            idurl = ''
+            idurl = u''
             txt = src
         if not idurl and len(args) > 3:
             idurl = args[3]
@@ -482,7 +482,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         from logs import lg
         automat.LifeBegins(lg.when_life_begins())
         automat.OpenLogFile(settings.AutomatsLog())
-        initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
+        initializer.A('run-cmd-line-recover', {u'idurl': idurl, u'keysrc': txt})
         reactor.run()
         automat.objects().clear()
         my_id.loadLocalIdentity()
@@ -508,7 +508,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         if key_json['status'] != 'OK':
             print_text('\n'.join(key_json['errors']))
             return 1
-        TextToSave = key_json['result'][0]['creator'] + "\n" + key_json['result'][0]['private']
+        TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
         if args[1] in ['bk', 'backup', 'save', ]:
             from system import bpio
             curpath = os.getcwd()
@@ -520,7 +520,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
                 filenameto = bpio.portablePath(os.path.join(os.path.expanduser('~'), key_file_name))
                 # filenameto = bpio.portablePath(os.path.join(executablePath, key_json['result'][0]['key_id'] + '.key'))
             os.chdir(curpath)
-            if not bpio.AtomicWriteFile(filenameto, TextToSave):
+            if not bpio.WriteTextFile(filenameto, TextToSave):
                 del TextToSave
                 print_text('error writing to %s\n' % filenameto)
                 return 1
@@ -571,14 +571,14 @@ def cmd_key(opts, args, overDict, running, executablePath):
         from twisted.internet import reactor
 
         def _on_key(key_json):
-            TextToSave = key_json['result'][0]['creator'] + "\n" + key_json['result'][0]['private']
+            TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
             if len(args) >= 4 and args[1] in ['bk', 'backup', 'save', ]:
                 from system import bpio
                 curpath = os.getcwd()
                 os.chdir(executablePath)
                 filenameto = bpio.portablePath(args[3])
                 os.chdir(curpath)
-                if not bpio.AtomicWriteFile(filenameto, TextToSave):
+                if not bpio.WriteTextFile(filenameto, TextToSave):
                     del TextToSave
                     print_text('error writing to %s\n' % filenameto)
                     reactor.stop()

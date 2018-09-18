@@ -258,7 +258,7 @@ def SendServers():
     sendfile, sendfilename = tmpfile.make("propagate")
     os.close(sendfile)
     LocalIdentity = my_id.getLocalIdentity()
-    bpio.WriteFile(sendfilename, LocalIdentity.serialize())
+    bpio.WriteTextFile(sendfilename, LocalIdentity.serialize())
     dlist = []
     for idurl in LocalIdentity.sources:
         # sources for out identity are servers we need to send to

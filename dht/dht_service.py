@@ -56,17 +56,17 @@ from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------
 
-from .entangled.dtuple import DistributedTupleSpacePeer
-from .entangled.kademlia.datastore import SQLiteExpiredDataStore
-from .entangled.kademlia.node import rpcmethod
-from .entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
-from .entangled.kademlia import constants
-
-#------------------------------------------------------------------------------
-
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------
+
+from dht.entangled.dtuple import DistributedTupleSpacePeer
+from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore
+from dht.entangled.kademlia.node import rpcmethod
+from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
+from dht.entangled.kademlia import constants
 
 #------------------------------------------------------------------------------
 
@@ -566,13 +566,18 @@ class DHTNode(DistributedTupleSpacePeer):
     @rpcmethod
     def request(self, key):
         count('request')
-        value = self.data.get(key)
-        if value is None and key in self._dataStore:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % key)
+        internal_value = self.data.get(key)
+        if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
             self.data[key] = value
+            if _Debug:
+                lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
+        else:
+            value = internal_value
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s] read %d bytes, counter=%d' % (
-                base64.b32encode(key), len(str(value)), counter('request')))
+            lg.out(_DebugLevel, '    read %d bytes, counter=%d' % (len(str(value)), counter('request')))
         return {key: value, }
 
     def reconnect(self, knownNodeAddresses=None):

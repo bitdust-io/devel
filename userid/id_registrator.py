@@ -369,7 +369,7 @@ class IdRegistrator(automat.Automat):
         lg.out(4, '    preferred_servers=%s' % self.preferred_servers)
         lg.out(4, '    min_servers=%s' % self.min_servers)
         lg.out(4, '    max_servers=%s' % self.max_servers)
-        bpio.WriteFile(settings.UserNameFilename(), login)
+        bpio.WriteTextFile(settings.UserNameFilename(), login)
 
     def doSelectRandomServers(self, arg):
         """
@@ -470,7 +470,7 @@ class IdRegistrator(automat.Automat):
         Action method.
         """
         localip = net_misc.getLocalIp()
-        bpio.WriteFile(settings.LocalIPFilename(), localip)
+        bpio.WriteTextFile(settings.LocalIPFilename(), localip)
         lg.out(4, 'id_registrator.doDetectLocalIP [%s]' % localip)
         self.automat('local-ip-detected')
 
@@ -490,7 +490,7 @@ class IdRegistrator(automat.Automat):
                 self.automat('stun-failed')
                 return
             ip = result['ip']
-            bpio.WriteFile(settings.ExternalIPFilename(), ip)
+            bpio.WriteTextFile(settings.ExternalIPFilename(), ip)
             self.automat('stun-success', ip)
 
         rnd_udp_port = random.randint(
@@ -600,7 +600,7 @@ class IdRegistrator(automat.Automat):
         # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
         my_identity_xmlsrc = ident.serialize()
         newfilename = settings.LocalIdentityFilename() + '.new'
-        bpio.WriteFile(newfilename, my_identity_xmlsrc)
+        bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
         self.new_identity = ident
         lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
 

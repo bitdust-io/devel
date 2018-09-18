@@ -388,7 +388,7 @@ class PacketIn(automat.Automat):
                 fd, _ = tmpfile.make('error', extension='.inbox')
                 data = bpio.ReadBinaryFile(self.filename)
                 os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
-                os.write(fd, str(data))
+                os.write(fd, data)
                 os.close(fd)
             except:
                 lg.exc()

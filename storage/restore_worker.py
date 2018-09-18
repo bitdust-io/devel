@@ -395,7 +395,7 @@ class RestoreWorker(automat.Automat):
         if not blockbits:
             self.automat('block-failed')
             return
-        splitindex = blockbits.index(":")
+        splitindex = blockbits.index(b":")
         lengthstring = blockbits[0:splitindex]
         try:
             datalength = int(lengthstring)                                        # real length before raidmake/ECC
@@ -503,7 +503,7 @@ class RestoreWorker(automat.Automat):
                 except:
                     lg.exc()
             # either way the payload of packet is saved
-            if not bpio.WriteFile(filename, NewPacket.Payload):
+            if not bpio.WriteBinaryFile(filename, NewPacket.Payload):
                 lg.warn("unable to write to %s" % filename)
                 return
             if self.packetInCallback is not None:

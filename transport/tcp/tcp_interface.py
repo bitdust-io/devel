@@ -140,7 +140,7 @@ class GateInterface():
         """
         result = []
         nowip = misc.readExternalIP()
-        result.append('tcp://%s:%s' % (nowip, str(settings.getTCPPort())))
+        result.append(u'tcp://%s:%d' % (nowip, settings.getTCPPort(), ))
         # TODO:
         #    # if IP is not external and upnp configuration was failed for some reasons
         #    # we may want to use another contact methods, NOT tcp
@@ -155,7 +155,7 @@ class GateInterface():
         """
         """
         nowip = misc.readExternalIP()
-        tcp_contact = 'tcp://%s:%s' % (nowip, str(settings.getTCPPort()))
+        tcp_contact = u'tcp://%s:%d' % (nowip, settings.getTCPPort(), )
         if id_obj.getContactIndex(contact=tcp_contact) < 0:
             if _Debug:
                 lg.out(4, 'tcp_interface.verify_contacts returning False: tcp contact not found or changed')

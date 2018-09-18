@@ -128,7 +128,7 @@ def GenerateNewKey(keyfilename=None):
     _MyKeyObject = rsa_key.RSAKey()
     _MyKeyObject.generate(settings.getPrivateKeySize())
     keystring = _MyKeyObject.toPrivateString()
-    bpio.WriteFile(keyfilename, keystring)
+    bpio.WriteTextFile(keyfilename, keystring)
     if _Debug:
         lg.out(_DebugLevel, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
     del keystring

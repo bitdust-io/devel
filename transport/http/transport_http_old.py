@@ -91,7 +91,7 @@ class SenderServer(resource.Resource):
             if not os.access(filename, os.R_OK):
                 continue
             src = dhnio.ReadBinaryFile(filename)
-            if src == '':
+            if not src:
                 continue
             src64 = base64.b64encode(src)
             r += src64 + '\n'

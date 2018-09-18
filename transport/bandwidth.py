@@ -77,9 +77,9 @@ def init():
     fin = filenameIN()
     fout = filenameOUT()
     if not os.path.isfile(fin):
-        bpio.WriteFile(fin, '')
+        bpio.WriteTextFile(fin, '')
     if not os.path.isfile(fout):
-        bpio.WriteFile(fout, '')
+        bpio.WriteTextFile(fout, '')
     read_bandwidthIN()
     read_bandwidthOUT()
     CountTimeIn = time.time()
