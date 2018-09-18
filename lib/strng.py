@@ -69,19 +69,19 @@ def is_bin(s):
 
 #------------------------------------------------------------------------------
 
-def to_text(s, encoding='utf-8'):
+def to_text(s, encoding='utf-8', errors='strict'):
     """
     if ``s`` is binary type - decode it to unicode - "text" type in Python3 terms, otherwise return ``s``.
     """
     if is_text(s):
         return s
-    return s.decode(encoding)
+    return s.decode(encoding=encoding, errors=errors)
 
 
-def to_bin(s, encoding='utf-8'):
+def to_bin(s, encoding='utf-8', errors='strict'):
     """
     If ``s`` is unicode ("text" type in Python3 terms) - encode it to utf-8, otherwise return ``s``.
     """
     if is_bin(s):
         return s
-    return s.encode(encoding)
+    return s.encode(encoding=encoding, errors=errors)
