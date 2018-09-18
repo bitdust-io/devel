@@ -47,6 +47,8 @@ from Cryptodome.Util import number
 
 from lib import strng
 
+from system import local_fs
+
 #------------------------------------------------------------------------------
 
 class RSAKey(object):
@@ -91,9 +93,7 @@ class RSAKey(object):
     def fromFile(self, keyfilename):
         if self.keyObject:
             raise ValueError('key object already exist')
-        fin = open(keyfilename, 'r')
-        key_src = fin.read()
-        fin.close()
+        key_src = local_fs.ReadTextFile(keyfilename)
         self.keyObject = RSA.import_key(strng.to_bin(key_src))
         del key_src
         gc.collect()
@@ -104,12 +104,12 @@ class RSAKey(object):
             raise ValueError('key object is not exist')
         if not self.keyObject.has_private():
             raise ValueError('this key contains only public component')
-        return self.keyObject.exportKey(format=output_format)
+        return strng.to_text(self.keyObject.exportKey(format=output_format))
 
     def toPublicString(self, output_format='OpenSSH'):
         if not self.keyObject:
             raise ValueError('key object is not exist')
-        return self.keyObject.publickey().exportKey(format=output_format)
+        return strng.to_text(self.keyObject.publickey().exportKey(format=output_format))
 
     def sign(self, message):
         if not self.keyObject:

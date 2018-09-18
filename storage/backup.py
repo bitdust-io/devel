@@ -525,7 +525,7 @@ def main():
             pass
         for filename in os.listdir(os.path.join(settings.getLocalBackupsDir(), customer, remotePath)):
             filepath = os.path.join(settings.getLocalBackupsDir(), customer, remotePath, filename)
-            payld = str(bpio.ReadBinaryFile(filepath))
+            payld = bpio.ReadBinaryFile(filepath)
             newpacket = signed.Packet(
                 'Data',
                 my_id.getLocalID(),
@@ -534,7 +534,7 @@ def main():
                 payld,
                 'http://megafaq.ru/cvps1010.xml')
             newfilepath = os.path.join(settings.getLocalBackupsDir(), customer, remotePath + '.out', filename)
-            bpio.AtomicWriteFile(newfilepath, newpacket.Serialize())
+            bpio.WriteBinaryFile(newfilepath, newpacket.Serialize())
         reactor.stop()
     job = backup(backupID, backupPipe, _bk_done)
     reactor.callLater(1, job.automat, 'start')

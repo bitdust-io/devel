@@ -41,7 +41,6 @@ import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import locale
 import textwrap
 import six.moves.cPickle
-import six
 from six.moves import range
 from io import open
 
@@ -70,6 +69,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from system import bpio
+from system import local_fs
 
 from main import settings
 
@@ -109,14 +109,14 @@ def readLocalIP():
     """
     Read local IP stored in the file [BitDust data dir]/metadata/localip.
     """
-    return bpio.ReadBinaryFile(settings.LocalIPFilename())
+    return bpio.ReadTextFile(settings.LocalIPFilename())
 
 
 def readExternalIP():
     """
     Read external IP stored in the file [BitDust data dir]/metadata/externalip.
     """
-    return bpio.ReadBinaryFile(settings.ExternalIPFilename())
+    return bpio.ReadTextFile(settings.ExternalIPFilename())
 
 
 def readSupplierData(supplier_idurl, filename, customer_idurl):
@@ -140,7 +140,7 @@ def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
     if not os.path.isdir(dirPath):
         os.makedirs(dirPath)
     path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
-    return bpio.WriteFile(path, data)
+    return bpio.WriteTextFile(path, data)
 
 #-------------------------------------------------------------------------------
 
@@ -484,23 +484,7 @@ def ValidateBitCoinAddress(strAddr):
 
 
 def RoundupFile(filename, stepsize):
-    """
-    For some things we need to have files which are round sizes, for example
-    some encryption needs files that are multiples of 8 bytes.
-
-    This function rounds file up to the next multiple of step size.
-    """
-    try:
-        size = os.path.getsize(filename)
-    except:
-        return
-    mod = size % stepsize
-    increase = 0
-    if mod > 0:
-        increase = stepsize - mod
-        fil = open(filename, 'a')
-        fil.write(' ' * increase)
-        fil.close()
+    return local_fs.RoundupFile(filename=filename, stepsize=stepsize)
 
 
 def RoundupString(data, stepsize):

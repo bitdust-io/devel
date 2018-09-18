@@ -2263,7 +2263,7 @@ def RenameBaseDir(newdir):
     deploy.set_base_dir(newdir)
     lg.out(2, 'settings.RenameBaseDir  directory was copied,  BaseDir=' + BaseDir())
     pathfilename = BaseDirPathFileName()
-    bpio.WriteFile(pathfilename, deploy.current_base_dir())
+    bpio.WriteTextFile(pathfilename, deploy.current_base_dir())
     lg.out(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
     logfilename = lg.log_filename()
     lg.close_log_file()

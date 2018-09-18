@@ -307,7 +307,7 @@ def step0():
     repo, locationURL = misc.ReadRepoLocation()
     src = bpio.ReadTextFile(settings.RepoFile())
     if src == '':
-        bpio.WriteFile(settings.RepoFile(), '%s\n%s' % (repo, locationURL))
+        bpio.WriteTextFile(settings.RepoFile(), u'%s\n%s' % (repo, locationURL))
 
     _UpdatingInProgress = True
     d = download_version()

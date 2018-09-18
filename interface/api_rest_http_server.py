@@ -263,7 +263,7 @@ class BitDustRESTHTTPServer(APIResource):
             private_key_local_file = data.get('private_key_local_file')
             if private_key_local_file:
                 from system import bpio
-                private_key_source = bpio.ReadBinaryFile(bpio.portablePath(private_key_local_file))
+                private_key_source = bpio.ReadTextFile(bpio.portablePath(private_key_local_file))
         return api.identity_recover(
             private_key_source=private_key_source,
             known_idurl=data.get('known_idurl'))

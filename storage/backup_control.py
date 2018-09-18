@@ -188,7 +188,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
     if _Debug:
         import pprint
         lg.out(_DebugLevel, pprint.pformat(json_data))
-    return bpio.AtomicWriteFile(filepath, src)
+    return bpio.WriteTextFile(filepath, src)
 
 
 def ReadIndex(raw_data, encoding='utf-8'):
@@ -253,7 +253,6 @@ def Load(filepath=None):
     if not os.path.isfile(filepath):
         lg.warn('file %s not exist' % filepath)
         WriteIndex(filepath)
-        # return False
     src = bpio.ReadTextFile(filepath)
     if not src:
         lg.out(2, 'backup_control.Load ERROR reading file %s' % filepath)

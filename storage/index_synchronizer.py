@@ -346,7 +346,6 @@ class IndexSynchronizer(automat.Automat):
         )
         self.sending_suppliers.clear()
         self.sent_suppliers_number = 0
-        src = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
         localID = my_id.getLocalIDURL()
         b = encrypted.Block(
             CreatorID=localID,
@@ -355,7 +354,7 @@ class IndexSynchronizer(automat.Automat):
             SessionKey=key.NewSessionKey(),
             SessionKeyType=key.SessionKeyType(),
             LastBlock=True,
-            Data=src,
+            Data=bpio.ReadBinaryFile(settings.BackupIndexFilePath()),
         )
         Payload = b.Serialize()
         for supplierId in contactsdb.suppliers():

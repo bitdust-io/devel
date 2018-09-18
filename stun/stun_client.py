@@ -69,6 +69,7 @@ from system import bpio
 
 from automats import automat
 
+from lib import strng
 from lib import udp
 
 from main import settings
@@ -359,7 +360,7 @@ class StunClient(automat.Automat):
         try:
             min_port = min([addr[1] for addr in list(self.stun_results.values())])
             max_port = max([addr[1] for addr in list(self.stun_results.values())])
-            my_ip = list(self.stun_results.values())[0][0]
+            my_ip = strng.to_text(list(self.stun_results.values())[0][0])
             if min_port == max_port:
                 result = ('stun-success', 'non-symmetric', my_ip, min_port)
             else:
@@ -370,8 +371,8 @@ class StunClient(automat.Automat):
             result = ('stun-failed', None, None, [])
             self.my_address = None
         if self.my_address:
-            bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
-            bpio.WriteFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
+            bpio.WriteTextFile(settings.ExternalIPFilename(), self.my_address[0])
+            bpio.WriteTextFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
         if _Debug:
             lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %s' % (
                 len(self.stun_results), str(self.my_address)))

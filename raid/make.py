@@ -126,7 +126,6 @@ def ReadBinaryFile(filename):
 
 def WriteFile(filename, data):
     """
-    
     """
     s = data
     if not isinstance(s, six.binary_type):

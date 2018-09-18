@@ -230,7 +230,7 @@ def saveLocalIdentity():
     _LocalIdentity.sign()
     xmlid = _LocalIdentity.serialize()
     filename = bpio.portablePath(settings.LocalIdentityFilename())
-    bpio.WriteFile(filename, xmlid)
+    bpio.WriteTextFile(filename, xmlid)
     lg.out(6, "my_id.saveLocalIdentity %d bytes wrote to %s" % (len(xmlid), filename))
 
 
@@ -315,7 +315,7 @@ def setTransportOrder(orderL):
     orderL = validateTransports(orderL)
     orderTxt = string.join(orderl, ' ')
     lg.out(8, 'my_id.setTransportOrder: ' + str(orderTxt))
-    bpio.WriteFile(settings.DefaultTransportOrderFilename(), orderTxt)
+    bpio.WriteTextFile(settings.DefaultTransportOrderFilename(), orderTxt)
 
 
 def getTransportOrder():

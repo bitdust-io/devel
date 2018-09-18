@@ -572,7 +572,7 @@ class BackupRebuilder(automat.Automat):
             except:
                 lg.out(2, "backup_rebuilder._file_received ERROR can not create sub dir: " + dirname)
                 return
-        if not bpio.WriteFile(filename, newpacket.Payload):
+        if not bpio.WriteBinaryFile(filename, newpacket.Payload):
             lg.out(2, "backup_rebuilder._file_received ERROR writing " + filename)
             return
         from storage import backup_matrix
