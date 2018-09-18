@@ -378,8 +378,8 @@ def identity_backup(destination_filepath):
     from userid import my_id
     from crypt import key
     from system import bpio
-    TextToSave = my_id.getLocalIDURL() + "\n" + key.MyPrivateKey()
-    if not bpio.AtomicWriteFile(destination_filepath, TextToSave):
+    TextToSave = my_id.getLocalIDURL() + u"\n" + key.MyPrivateKey()
+    if not bpio.WriteTextFile(destination_filepath, TextToSave):
         del TextToSave
         gc.collect()
         return ERROR('error writing to %s\n' % destination_filepath)

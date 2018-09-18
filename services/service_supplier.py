@@ -597,7 +597,7 @@ class SupplierService(LocalService):
                     return False
             except:
                 lg.exc()
-        if not bpio.WriteFile(filename, data):
+        if not bpio.WriteBinaryFile(filename, data):
             lg.err("can not write to %s" % str(filename))
             p2p_service.SendFail(newpacket, 'write error')
             return False

@@ -209,7 +209,7 @@ def rate_all_users():
 def remember_connected_time(idurl):
     if not exist_rating_dir(idurl):
         make_rating_dir(idurl)
-    bpio._write_data(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
+    bpio.WriteTextFile(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
 
 
 def connected_time(idurl):

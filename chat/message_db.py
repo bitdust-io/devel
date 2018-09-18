@@ -160,17 +160,17 @@ def rewrite_indexes(db_instance, source_db_instance):
             index_name = source_index_file[2:source_index_file.index('.')]
             destination_index_path = os.path.join(existing_location, source_index_file)
             source_index_path = os.path.join(source_location, source_index_file)
-            if not bpio.AtomicWriteFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
+            if not bpio.WriteTextFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
                 lg.warn('failed writing index to %s' % destination_index_path)
                 continue
             destination_buck_path = os.path.join(db_instance.path, index_name + '_buck')
             source_buck_path = os.path.join(source_db_instance.path, index_name + '_buck')
-            if not bpio.AtomicWriteFile(destination_buck_path, bpio.ReadBinaryFile(source_buck_path)):
+            if not bpio.WriteBinaryFile(destination_buck_path, bpio.ReadBinaryFile(source_buck_path)):
                 lg.warn('failed writing index bucket to %s' % destination_buck_path)
                 continue
             destination_stor_path = os.path.join(db_instance.path, index_name + '_stor')
             source_stor_path = os.path.join(source_db_instance.path, index_name + '_stor')
-            if not bpio.AtomicWriteFile(destination_stor_path, bpio.ReadBinaryFile(source_stor_path)):
+            if not bpio.WriteBinaryFile(destination_stor_path, bpio.ReadBinaryFile(source_stor_path)):
                 lg.warn('failed writing index storage to %s' % destination_stor_path)
                 continue
             if _Debug:

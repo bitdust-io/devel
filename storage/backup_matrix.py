@@ -251,7 +251,7 @@ def SaveLatestRawListFiles(supplier_idurl, raw_data, customer_idurl=None):
         except:
             lg.exc()
             return
-    bpio.WriteFile(settings.SupplierListFilesFilename(supplier_idurl, customer_idurl), raw_data)
+    bpio.WriteTextFile(settings.SupplierListFilesFilename(supplier_idurl, customer_idurl), raw_data)
 
 
 def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):

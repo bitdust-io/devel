@@ -493,7 +493,7 @@ class SupplierQueue:
                     continue
             # prepare the packet
             # dt = time.time()
-            Payload = str(bpio.ReadBinaryFile(fileToSend.fileName))
+            Payload = bpio.ReadBinaryFile(fileToSend.fileName)
             # newpacket = signed.Packet(
             #     commands.Data(),
             #     fileToSend.ownerID,

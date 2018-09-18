@@ -213,7 +213,7 @@ class SupplierConnector(automat.Automat):
                 except:
                     lg.exc()
                     return
-            bpio.WriteFile(
+            bpio.WriteTextFile(
                 settings.SupplierServiceFilename(self.supplier_idurl, customer_idurl=self.customer_idurl),
                 newstate,
             )

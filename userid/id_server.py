@@ -297,7 +297,7 @@ class IdServer(automat.Automat):
         if newxml != oldxml:
             if not os.path.exists(localfilename):
                 lg.out(6, "id_server._save_identity will save NEW Identity: " + filename)
-            bpio.WriteFile(localfilename, newxml)
+            bpio.WriteTextFile(localfilename, newxml)
 
 #------------------------------------------------------------------------------
 

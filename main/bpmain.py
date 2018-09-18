@@ -155,7 +155,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     try:
         pid = os.getpid()
         pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
-        bpio.WriteFile(pid_file_path, str(pid))
+        bpio.WriteTextFile(pid_file_path, str(pid))
         lg.out(2, 'bpmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
     except:
         lg.exc()

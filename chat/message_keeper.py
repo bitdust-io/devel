@@ -122,7 +122,7 @@ def backup_incoming_message(private_message_object, message_id):
     if not bpio._dir_exist(local_msg_folder):
         bpio._dirs_make(local_msg_folder)
     local_msg_filename = os.path.join(local_msg_folder, message_id)
-    if not bpio.WriteFile(local_msg_filename, serialized_message):
+    if not bpio.WriteBinaryFile(local_msg_filename, serialized_message):
         lg.warn('failed writing incoming message locally')
         return False
     remote_path_for_message = os.path.join('.messages', 'in', private_message_object.recipient, message_id)
@@ -150,7 +150,7 @@ def backup_outgoing_message(private_message_object, message_id):
     if not bpio._dir_exist(local_msg_folder):
         bpio._dirs_make(local_msg_folder)
     local_msg_filename = os.path.join(local_msg_folder, message_id)
-    if not bpio.WriteFile(local_msg_filename, serialized_message):
+    if not bpio.WriteBinaryFile(local_msg_filename, serialized_message):
         lg.warn('failed writing outgoing message locally')
         return False
     remote_path_for_message = os.path.join('.messages', 'out', private_message_object.recipient, message_id)

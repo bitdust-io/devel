@@ -60,6 +60,8 @@ from lib import strng
 
 from logs import lg
 
+from system import local_fs
+
 #------------------------------------------------------------------------------
 
 LocaleInstalled = False
@@ -79,7 +81,6 @@ def init():
     InstallLocale()
     if Linux() or Mac():
         lg.setup_unbuffered_stdout()
-    # StartCountingOpenedFiles()
 
 
 def shutdown():
@@ -360,194 +361,20 @@ def getDirectorySize(directory, include_subfolders=True):
 
 #-------------------------------------------------------------------------------
 
-def AtomicWriteFile(filename, data):
-    """
-    A smart way to write data to binary file. Return True if success.
-    This should be atomic operation - data is written to another temporary file and than renamed.
-    """
-    try:
-        tmpfilename = filename + ".new"
-        f = open(tmpfilename, "wb")
-        bin_data = strng.to_bin(data)
-        f.write(bin_data)
-        f.flush()
-        # from http://docs.python.org/library/os.html on os.fsync
-        os.fsync(f.fileno())
-        f.close()
-        # in Unix the rename will overwrite an existing file,
-        # but in Windows it fails, so have to remove existing
-        if Windows() and os.path.exists(filename):
-            os.remove(filename)
-        os.rename(tmpfilename, filename)
-    except:
-        lg.out(1, 'bpio.AtomicWriteFile ERROR ' + str(filename))
-        lg.exc()
-        try:
-            # make sure file gets closed
-            f.close()
-        except:
-            pass
-        return False
-    return True
-
-
-def AtomicAppendFile(filename, data, mode='a'):
-    """
-    Same as AtomicWriteFile but do not erase previous data in the file.
-
-    TODO: this is not atomic right now
-    """
-    try:
-        f = open(filename, mode)
-        if 'b' in mode:
-            bin_data = strng.to_bin(data)
-            f.write(bin_data)
-        else:
-            f.write(data)
-        f.flush()
-        os.fsync(f.fileno())
-        f.close()
-    except:
-        lg.out(1, 'bpio.AtomicAppendFile ERROR ' + str(filename))
-        lg.exc()
-        try:
-            f.close()  # make sure file gets closed
-        except:
-            lg.exc()
-        return False
-    return True
-
-
-def WriteFile(filename, data):
-    """
-    Calls ``AtomicWriteFile``, just an interface.
-
-    PREPRO - probably all writes should be Atomic, so we should write to temp file then rename.
-    """
-    return AtomicWriteFile(filename, data)
-
-
-def WriteFileSimple(filename, data, mode="w"):
-    """
-    Simple non-atomic method to write data to file, return True if success.
-    """
-    try:
-        fil = open(filename, mode)
-        if 'b' in mode:
-            fil.write(strng.to_bin(data))
-        else:
-            fil.write(strng.to_text(data))
-        fil.close()
-    except:
-        lg.exc()
-        return False
-    return True
+def WriteBinaryFile(filename, data):
+    return local_fs.WriteBinaryFile(filename=filename, data=data)
 
 
 def ReadBinaryFile(filename, decode_encoding=None):
-    """
-    A smart way to read binary file. Return empty string in case of:
+    return local_fs.ReadBinaryFile(filename=filename, decode_encoding=decode_encoding)
 
-    - path not exist
-    - process got no read access to the file
-    - some read error happens
-    - file is really empty
-    """
-    if not os.path.isfile(filename):
-        return b''
-    if not os.access(filename, os.R_OK):
-        return b''
-    try:
-        infile = open(filename, "rb")
-        data = infile.read()
-        if decode_encoding:
-            data = data.decode(decode_encoding)
-        infile.close()
-        return data
-    except:
-        lg.exc()
-        return b''
+
+def WriteTextFile(filepath, data):
+    return local_fs.WriteTextFile(filepath=filepath, data=data)
 
 
 def ReadTextFile(filename):
-    """
-    Read text file and return its content.
-
-    Also replace line endings: \r\n with \n - convert to Linux file format.
-    """
-    if not os.path.isfile(filename):
-        return ''
-    if not os.access(filename, os.R_OK):
-        return ''
-    try:
-        infile = open(filename, "r")
-        data = infile.read()
-        infile.close()
-        # Windows/Linux trouble with text files
-        return data.replace('\r\n', '\n')
-    except:
-        lg.exc()
-    return ''
-
-#-------------------------------------------------------------------------------
-
-
-def _read_data(path):
-    """
-    Another way to read text file, return None if path not exist or have no
-    read access to the file. Returns text string.
-    """
-    if not os.path.exists(path):
-        return None
-    if not os.access(path, os.R_OK):
-        return None
-    fin = open(path, 'r')
-    src = fin.read()
-    fin.close()
-    return src
-
-
-def _write_data(path, src):
-    """
-    Write data to text file.
-    Very close to ``AtomicWriteFile`` but do some checking before write.
-    """
-    temp_path = path + '.tmp'
-    if os.path.exists(temp_path):
-        if not os.access(temp_path, os.W_OK):
-            return False
-    if os.path.exists(path):
-        if not os.access(path, os.W_OK):
-            return False
-        try:
-            os.remove(path)
-        except:
-            lg.out(1, 'bpio._write_data ERROR removing ' + str(path))
-    fout = open(temp_path, 'w')
-    fout.write(strng.to_text(src))
-    fout.flush()
-    os.fsync(fout)
-    fout.close()
-    try:
-        os.rename(temp_path, path)
-    except:
-        lg.out(1, 'bpio._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
-    return True
-
-
-def _append_data(path, src):
-    """
-    Append data to text file.
-    """
-    if os.path.exists(path):
-        if not os.access(path, os.W_OK):
-            return False
-    fout = open(path, 'a')
-    fout.write(strng.to_text(src))
-    fout.flush()
-    os.fsync(fout)
-    fout.close()
-    return True
+    return local_fs.ReadTextFile(filename=filename)
 
 #-------------------------------------------------------------------------------
 
@@ -590,7 +417,7 @@ def _read_list(path):
     """
     Read list from file on disk.
     """
-    src = _read_data(path)
+    src = ReadTextFile(path)
     if src is None:
         return None
     return _unpack_list(src)[0]
@@ -600,7 +427,7 @@ def _write_list(path, lst):
     """
     Write a list to the local file.
     """
-    return _write_data(path, _pack_list(lst))
+    return WriteTextFile(path, _pack_list(lst))
 
 
 def _pack_dict(dictionary, sort=False):
@@ -647,7 +474,7 @@ def _read_dict(path, default=None):
 
     If file not exist or no read access - returns ``default`` value.
     """
-    src = _read_data(path)
+    src = ReadTextFile(path)
     if src is None:
         return default
     return _unpack_dict(src.strip())
@@ -658,7 +485,7 @@ def _write_dict(path, dictionary, sort=False):
     Write dictionary to the file.
     """
     data = _pack_dict(dictionary, sort)
-    return _write_data(path, data)
+    return WriteTextFile(path, data)
 
 
 def _dir_exist(path):
@@ -1286,7 +1113,6 @@ def list_processes_linux():
             # we replace the \x00 to spaces to make a prettier output from kernel
             cmdline = f.read().replace("\x00", " ").rstrip()
             f.close()
-
             yield (pid, cmdline)
         except:
             pass

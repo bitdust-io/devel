@@ -346,7 +346,8 @@ def update(url, xml_src):
             idset(url, newid)
             return True
 
-    bpio.WriteFile(filename, xml_src)             # publickeys match so we can update it
+    # publickeys match so we can update it
+    bpio.WriteTextFile(filename, xml_src)
     idset(url, newid)
 
     return True

@@ -122,7 +122,7 @@ def init(ftp_port=None):
     if not ftp_port:
         ftp_port = settings.getFTPServerPort()
     if not os.path.isfile(settings.FTPServerCredentialsFile()):
-        bpio.AtomicWriteFile(settings.FTPServerCredentialsFile(), 'bitdust:bitdust')
+        bpio.WriteTextFile(settings.FTPServerCredentialsFile(), 'bitdust:bitdust')
     # TODO: add protection: accept connections only from local host: 127.0.0.1
     _FTPServer = reactor.listenTCP(
         ftp_port,
