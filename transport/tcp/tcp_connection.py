@@ -49,7 +49,6 @@ _DebugLevel = 10
 
 import os
 import time
-import six
 
 from twisted.protocols import basic
 
@@ -58,6 +57,8 @@ from twisted.protocols import basic
 from logs import lg
 
 from automats import automat
+
+from lib import strng
 
 #------------------------------------------------------------------------------
 
@@ -392,9 +393,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def sendData(self, command, payload):
         try:
-            data = self.SoftwareVersion + str(command.lower())[0] + payload
-            if not isinstance(data, six.binary_type):
-                data = data.encode('utf-8')
+            data = strng.to_bin(self.SoftwareVersion) + strng.to_bin(command.lower())[0] + strng.to_bin(payload)
             self.sendString(data)
         except:
             lg.exc()
