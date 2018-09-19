@@ -106,9 +106,9 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        file = open(filename, 'a')
-        file.write(' ' * increase)
-        file.close()
+        f = open(filename, 'ab')
+        f.write(' ' * increase)
+        f.close()
 
 
 def ReadBinaryFile(filename):
@@ -118,9 +118,9 @@ def ReadBinaryFile(filename):
         return ''
     if not os.access(filename, os.R_OK):
         return ''
-    file = open(filename, "rb")
-    data = file.read().decode('utf-8')
-    file.close()
+    f = open(filename, "rb")
+    data = f.read()
+    f.close()
     return data
 
 
