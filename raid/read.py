@@ -94,13 +94,10 @@ def ReadBinaryFile(filename):
         return ''
     if not os.access(filename, os.R_OK):
         return ''
-    try:
-        fin = open(filename, "rb")
-        data = fin.read().encode('utf-8')
-        fin.close()
-        return data
-    except:
-        return ''
+    f = open(filename, "rb")
+    data = f.read()
+    f.close()
+    return data
 
 # RebuildOne_new and RebuildOne_orig are just for debugging purposes
 
@@ -123,7 +120,7 @@ def RebuildOne(inlist, listlen, outfilename):
     rebuildfile = open(outfilename, "wb")
     while True:
         for k in range(listlen):
-            raidreads[k] = raidfiles[k].read(2048).decode('utf-8')
+            raidreads[k] = raidfiles[k].read(2048)
         if not raidreads[0]:
             break
         i = 0
@@ -132,7 +129,7 @@ def RebuildOne(inlist, listlen, outfilename):
             for j in range(listlen):
                 b1 = ord(raidreads[j][i])
                 xor = xor ^ b1
-            rebuildfile.write(chr(xor).encode('utf-8'))
+            rebuildfile.write(chr(xor))
             i += readsize
     for filenum in range(listlen):
         raidfiles[filenum].close()
@@ -171,11 +168,11 @@ def RebuildOne_orig(inlist, listlen, outfilename):
     for i in range(0, seglength / INTSIZE):
         xor = 0
         for j in range(0, listlen):
-            bstr1 = fds[j].read(INTSIZE).decode('utf-8')
+            bstr1 = fds[j].read(INTSIZE)
             b1, = struct.unpack(">l", bstr1)
             xor = xor ^ b1
         outstr = struct.pack(">l", xor)
-        fout.write(outstr.encode('utf-8'))
+        fout.write(outstr)
     for filenum in range(0, listlen):
         fds[filenum].close
 
@@ -243,8 +240,8 @@ def raidread(
             '-Data')
         if os.path.exists(FileName):
             GoodDSegs += 1
-            moredata = open(FileName, "rb").read().decode('utf-8')
-            output.write(moredata.encode('utf-8'))
+            moredata = open(FileName, "rb").read()
+            output.write(moredata)
     output.close()
     return GoodDSegs
     # except:

@@ -88,6 +88,7 @@ from . import rebuild
 
 _MODULES = (
     'os',
+    'sys',
     'cStringIO',
     'struct',
     'logs.lg',
