@@ -509,13 +509,14 @@ def PingContact(idurl, timeout=30):
         return idsrc
 
     def _identity_cache_failed(err, idurl):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed [%s]" % idurl)
+        try:
+            msg = err.getErrorMessage()
+        except:
+            msg = str(err)
+        if _Debug:
+            lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed %s : %s" % (idurl, msg, ))
         if not ping_result.called:
-            try:
-                msg = err.getErrorMessage()
-            except:
-                msg = str(err)
-            ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg)))
+            ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg, )))
         return None
 
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout=timeout)
