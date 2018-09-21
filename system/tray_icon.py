@@ -35,6 +35,8 @@ Uses wxPython to show tray icon for BitDust. This is working inside
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import platform
@@ -143,10 +145,10 @@ def init(icons_path, icons_files=None):
                 self.popup_icons[name] = wx.Bitmap(os.path.join(icons_path, filename))
             if len(self.icons) == 0:
                 self.icons['default'] = ''
-            if current_icon_name is not None and current_icon_name in self.icons.keys():
+            if current_icon_name is not None and current_icon_name in list(self.icons.keys()):
                 self.current = current_icon_name
             else:
-                self.current = self.icons.keys()[0]
+                self.current = list(self.icons.keys())[0]
             self.Bind(wx.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
             self.select_icon(self.current)
 
@@ -186,9 +188,9 @@ def init(icons_path, icons_files=None):
 
         def select_icon(self, icon_name):
             # print 'select_icon', icon_name, self.icons
-            if icon_name in self.icons.keys():
+            if icon_name in list(self.icons.keys()):
                 self.current = icon_name
-                self.SetIcon(self.icons.get(self.current, self.icons.values()[0]), LABEL)
+                self.SetIcon(self.icons.get(self.current, list(self.icons.values())[0]), LABEL)
 
         def clear_icon(self):
             self.RemoveIcon()
@@ -201,11 +203,11 @@ def init(icons_path, icons_files=None):
 
         def OnInit(self):
             self.trayicon = MyTaskBarIcon(self.icons_path)
-            print 'OnInit'
+            print('OnInit')
             return True
 
         def OnExit(self):
-            print 'OnExit'
+            print('OnExit')
             try:
                 self.trayicon.Destroy()
             except:
@@ -213,9 +215,9 @@ def init(icons_path, icons_files=None):
 
         def SetIcon(self, name):
             # if self.trayicon.IsAvailable():
-            print 'try'
+            print('try')
             self.trayicon.select_icon(name)
-            print 'ok'
+            print('ok')
 
         def Stop(self):
             self.trayicon.clear_icon()
@@ -231,7 +233,7 @@ def init(icons_path, icons_files=None):
 
 def main_porcess_stopped():
     global _IconObject
-    print 'main_porcess_stopped', _IconObject
+    print('main_porcess_stopped', _IconObject)
     if _IconObject:
         try:
             _IconObject.Stop()
@@ -244,7 +246,7 @@ def main_porcess_stopped():
 
 
 def control(cmd):
-    print 'control', cmd
+    print('control', cmd)
     global _ControlFunc
     if _ControlFunc is not None:
         _ControlFunc(cmd)
@@ -292,10 +294,10 @@ def SetControlFunc(f):
 
 if __name__ == "__main__":
     def test_control(cmd):
-        print 'test_control', cmd
+        print('test_control', cmd)
         if cmd == 'exit':
             reactor.stop()
-            print 'reactor stopped'
+            print('reactor stopped')
             # os._exit(0)
             # sys.exit()
 

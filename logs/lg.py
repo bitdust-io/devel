@@ -30,12 +30,16 @@
 module:: lg
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
 import os
 import sys
 import time
 import threading
 import traceback
 import platform
+from io import open
 
 #------------------------------------------------------------------------------
 
@@ -90,9 +94,7 @@ def out(level, msg, nl='\n'):
     global _GlobalDebugLevel
     if not _LogsEnabled:
         return
-    s = '' + msg
-    if isinstance(s, unicode):
-        s = s.encode('utf-8')
+    s = msg
     s_ = s
     if level < 0:
         level = 0
@@ -122,18 +124,25 @@ def out(level, msg, nl='\n'):
         s = s + ' {%s}' % currentThreadName.lower()
     if is_debug(level):
         if _LogFile is not None:
-            _LogFile.write(s + nl)
+            o = s + nl
+            if sys.version_info[0] == 3:
+                if not isinstance(o, str):
+                    o = o.decode('utf-8')
+            else:
+                if not isinstance(o, unicode):
+                    o = o.decode('utf-8')
+            _LogFile.write(o)
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
             try:
-                s = str(s) + nl
+                s = s + nl
                 sys.stdout.write(s)
             except:
                 try:
                     sys.stdout.write(format_exception() + '\n\n' + s)
                 except:
+                    # very bad stuff... we can't write anything to std out
                     pass
-
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
@@ -168,9 +177,9 @@ def info(message):
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
-        output_string = 'INFO from %s.%s() :\n\033[6;37;42m%s%s\033[0m' % (modul, caller, ' ' * 10, message)
+        output_string = '\033[6;37;42mINFO %s\033[0m in %s.%s()' % (message, modul, caller, )
     else:
-        output_string = 'INFO from %s.%s() :\n%s' % (modul, caller, message)
+        output_string = 'INFO %s in %s.%s()' % (message, modul, caller, )
     out(0, output_string)
     return message
 
@@ -183,9 +192,9 @@ def warn(message, level=2):
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
-        output_string = 'WARNING!!!  in  %s.%s() :\n\033[0;35m%s%s\033[0m' % (modul, caller, ' ' * (level + 11), message)
+        output_string = '\033[0;35mWARNING %s\033[0m in %s.%s()' % (message, modul, caller, )
     else:
-        output_string = 'WARNING!!!  in  %s.%s() :\n%s' % (modul, caller, message)
+        output_string = 'WARNING %s in %s.%s()' % (message, modul, caller, )
     out(level, output_string)
     return message
 
@@ -270,9 +279,16 @@ def exception(level, maxTBlevel, exc_info):
             out(level, '\033[1;31m%s\033[0m' % (l.replace('\n', '')))
         else:
             out(level, l.replace('\n', ''))
-    if _StoreExceptionsEnabled:
+    if _StoreExceptionsEnabled and _LogFileName:
         import tempfile
         fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
+        
+        if sys.version_info[0] == 3:
+            if not isinstance(s, bytes):
+                s = s.encode('utf-8')
+        else:
+            if not isinstance(s, str):
+                s = s.encode('utf-8')
         os.write(fd, s)
         os.close(fd)
         out(level, 'saved to: %s' % filename)
@@ -311,7 +327,10 @@ def exception_name(value):
     Some tricks to extract the correct exception name from traceback string.
     """
     try:
-        excStr = unicode(value)
+        if sys.version_info[0] == 3:
+            excStr = str(value)
+        else:
+            excStr = unicode(value)
     except:
         try:
             excStr = repr(value)
@@ -512,13 +531,13 @@ def log_filename():
 
 def stdout_start_redirecting():
     """
-    Replace sys.stdout with PATCHED_stdout so all output get logged.
+    Replace sys.stdout with STDOUT_redirected so all output get logged.
     """
     global _RedirectStdOut
     global _StdOutPrev
     _RedirectStdOut = True
     _StdOutPrev = sys.stdout
-    sys.stdout = PATCHED_stdout()
+    sys.stdout = STDOUT_redirected()
 
 
 def stdout_stop_redirecting():
@@ -570,7 +589,7 @@ def setup_unbuffered_stdout():
     """
     global _OriginalStdOut
     _OriginalStdOut = sys.stdout
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+    sys.stdout = STDUOUT_unbuffered(sys.stdout)
 
 
 def restore_original_stdout():
@@ -588,7 +607,6 @@ def restore_original_stdout():
         _std_out.close()
     except Exception as exc:
         pass
-        # traceback.print_last(file=open('bitdust.error', 'w'))
 
 
 def set_weblog_func(webstreamfunc):
@@ -604,7 +622,7 @@ def set_weblog_func(webstreamfunc):
 #------------------------------------------------------------------------------
 
 
-class PATCHED_stdout:
+class STDOUT_redirected(object):
     """
     Emulate system STDOUT, useful to log any program output.
     """
@@ -613,14 +631,14 @@ class PATCHED_stdout:
     def read(self): pass
 
     def write(self, s):
-        out(0, unicode(s).rstrip())
+        out(0, s.rstrip())
 
     def flush(self): pass
 
     def close(self): pass
 
 
-class STDOUT_black_hole:
+class STDOUT_black_hole(object):
     """
     Useful to disable any output to STDOUT.
     """
@@ -633,3 +651,20 @@ class STDOUT_black_hole:
     def flush(self): pass
 
     def close(self): pass
+
+
+class STDUOUT_unbuffered(object):
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)

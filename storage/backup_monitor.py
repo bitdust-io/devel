@@ -69,7 +69,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -307,7 +311,7 @@ class BackupMonitor(automat.Automat):
             self.automat('list-backups-done')
             return
         # take remote and local backups and get union from it
-        allBackupIDs = set(backup_matrix.local_files().keys() + backup_matrix.remote_files().keys())
+        allBackupIDs = set(list(backup_matrix.local_files().keys()) + list(backup_matrix.remote_files().keys()))
         # take only backups from data base
         allBackupIDs.intersection_update(backup_fs.ListAllBackupIDs())
         # remove running backups

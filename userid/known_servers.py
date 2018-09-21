@@ -24,6 +24,7 @@
 #
 
 
+from __future__ import absolute_import
 def default_nodes():
     """
     A set of identity servers currently maintained.

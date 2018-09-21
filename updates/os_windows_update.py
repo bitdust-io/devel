@@ -33,10 +33,13 @@ A code for Windows platforms to check for updates and download latest
 binaries.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import time
 import calendar
+from io import open
 
 try:
     from twisted.internet import reactor
@@ -45,11 +48,15 @@ except:
 
 from twisted.internet.defer import Deferred
 
+#------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -151,8 +158,8 @@ def UpdatingInProgress():
 
 
 def write2log(txt):
-    out_file = file(settings.UpdateLogFilename(), 'a')
-    print >>out_file, txt
+    out_file = open(settings.UpdateLogFilename(), 'a')
+    print(txt, file=out_file)
     out_file.close()
 
 
@@ -236,7 +243,7 @@ def download_and_replace_starter(output_func=None):
     def _done(x, filename):
         try:
             fin = open(filename, 'rb')
-            src = fin.read()
+            src = strng.to_text(fin.read())
             fin.close()
         except:
             if output_func:
@@ -300,7 +307,7 @@ def step0():
     repo, locationURL = misc.ReadRepoLocation()
     src = bpio.ReadTextFile(settings.RepoFile())
     if src == '':
-        bpio.WriteFile(settings.RepoFile(), '%s\n%s' % (repo, locationURL))
+        bpio.WriteTextFile(settings.RepoFile(), u'%s\n%s' % (repo, locationURL))
 
     _UpdatingInProgress = True
     d = download_version()
@@ -526,7 +533,7 @@ def string_to_shedule(raw_data):
     d['type'] = l[0].strip()
     if d['type'] in ['0', '1', '2', '3', '4', '5']:
         d['type'] = _SheduleTypesDict.get(d['type'], 'none')
-    if d['type'] not in _SheduleTypesDict.values():
+    if d['type'] not in list(_SheduleTypesDict.values()):
         d['type'] = 'daily'
     d['daytime'] = l[1].strip()
     d['interval'] = l[2].strip()

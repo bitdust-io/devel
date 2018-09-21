@@ -33,7 +33,12 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -174,7 +179,7 @@ class SenderServer(resource.Resource):
         if idurl is None:
             return ''
         lg.out(14, 'http_node.SenderServer.render connection from ' + idurl)
-        if idurl not in _Outbox.keys():
+        if idurl not in list(_Outbox.keys()):
             return ''
         r = ''
         for filename in _Outbox[idurl]:
@@ -387,10 +392,10 @@ def on_contacts_changed(oldlist, newlist):
 #------------------------------------------------------------------------------
 
 def usage():
-    print '''usage:
+    print('''usage:
 http_node.py send [server_port] [to idurl] [filename]
 http_node.py receive
-'''
+''')
 
 def main():
     import logging

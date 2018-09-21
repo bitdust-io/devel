@@ -40,8 +40,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 14
+from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
@@ -51,11 +50,20 @@ import time
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------
+
 from logs import lg
 
+from lib import strng
 from lib import misc
-from automats import automat
 from lib import udp
+
+from automats import automat
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -200,7 +208,7 @@ def process_sessions(sessions_to_process=None):
     global _ProcessSessionsDelay
     has_activity = False
     if not sessions_to_process:
-        sessions_to_process = sessions().values()
+        sessions_to_process = list(sessions().values())
     for s in sessions_to_process:
         if not s.peer_id:
             continue
@@ -432,8 +440,12 @@ class UDPSession(automat.Automat):
 #            if not (self.peer_address.count('37.18.255.42') or self.peer_address.count('37.18.255.38')):
 #                return
         # rtt_id_out = self._rtt_start('PING')
-        udp.send_command(self.node.listen_port, udp.CMD_PING,
-                         self.my_rtt_id, self.peer_address)
+        udp.send_command(
+            self.node.listen_port,
+            udp.CMD_PING,
+            strng.to_bin(self.my_rtt_id),
+            self.peer_address,
+        )
         # # print 'doPing', self.my_rtt_id
         self.my_rtt_id = '0'
 
@@ -448,7 +460,7 @@ class UDPSession(automat.Automat):
         udp.send_command(
             self.node.listen_port,
             udp.CMD_GREETING,
-            payload,
+            strng.to_bin(payload),
             self.peer_address)
         # print 'doGreeting', self.peer_rtt_id, self.my_rtt_id
         self.peer_rtt_id = '0'
@@ -461,7 +473,7 @@ class UDPSession(automat.Automat):
         udp.send_command(
             self.node.listen_port,
             udp.CMD_ALIVE,
-            self.peer_rtt_id,
+            strng.to_bin(self.peer_rtt_id),
             self.peer_address)
         # print 'doAlive', self.peer_rtt_id
         self.peer_rtt_id = '0'
@@ -695,7 +707,7 @@ class UDPSession(automat.Automat):
         sessions_by_peer_address()[self.peer_address].remove(self)
         if len(sessions_by_peer_address()[self.peer_address]) == 0:
             sessions_by_peer_address().pop(self.peer_address)
-        if self.peer_id in sessions_by_peer_id().keys():
+        if self.peer_id in list(sessions_by_peer_id().keys()):
             sessions_by_peer_id()[self.peer_id].remove(self)
             if len(sessions_by_peer_id()[self.peer_id]) == 0:
                 sessions_by_peer_id().pop(self.peer_id)
@@ -714,7 +726,7 @@ class UDPSession(automat.Automat):
 
     def _rtt_start(self, name):
         i = 0
-        while name + str(i) in self.rtts.keys():
+        while name + str(i) in list(self.rtts.keys()):
             i += 1
         new_rtt_id = name + str(i)
         self.rtts[new_rtt_id] = [time.time(), -1]

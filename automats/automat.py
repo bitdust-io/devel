@@ -66,9 +66,13 @@ of Information Technologies, Mechanics and Optics, Programming Technologies Depa
 `Page <http://is.ifmo.ru/english>`_.
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
 import sys
 import time
 import traceback
+from io import open
 
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
@@ -600,6 +604,7 @@ class Automat(object):
             text = '%s(): %s' % (self.name, text, )
         if _LogFile is not None:
             if _LogsCount > 100000 and _LogFilename:
+                # very simple log rotation
                 _LogFile.close()
                 _LogFile = open(_LogFilename, 'w')
                 _LogsCount = 0
@@ -612,7 +617,12 @@ class Automat(object):
                 s = ('%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100)) + s
             else:
                 s = time.strftime('%H:%M:%S') + s
-
+            if sys.version_info[0] == 3:
+                if not isinstance(s, str):
+                    s = s.decode('utf-8')
+            else:
+                if not isinstance(s, unicode):
+                    s = s.decode('utf-8')
             _LogFile.write(s)
             _LogFile.flush()
             _LogsCount += 1

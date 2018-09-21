@@ -43,8 +43,13 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 4
 
 #------------------------------------------------------------------------------
 
@@ -64,6 +69,7 @@ from system import bpio
 
 from automats import automat
 
+from lib import strng
 from lib import udp
 
 from main import settings
@@ -84,7 +90,13 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8)
+        _StunClient = StunClient(
+            name='stun_client',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient
@@ -282,10 +294,9 @@ class StunClient(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doRequestStunPortNumbers')
-        nodes = arg
-        for node in nodes:
+        for node in self.stun_nodes:
             if _Debug:
-                lg.out(_DebugLevel + 10, '    %s' % node)
+                lg.out(_DebugLevel + 10, '    from %s' % node)
             d = node.request('stun_port')
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node] = d
@@ -305,7 +316,7 @@ class StunClient(automat.Automat):
         if arg is not None:
             if _Debug:
                 lg.out(_DebugLevel + 10, 'stun_client.doStun to one stun_server: %s' % str(arg))
-            udp.send_command(self.listen_port, udp.CMD_STUN, '', arg)
+            udp.send_command(self.listen_port, udp.CMD_STUN, b'', arg)
             return
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doStun to %d stun_servers' % (
@@ -313,9 +324,9 @@ class StunClient(automat.Automat):
         for address in self.stun_servers:
             if address is None:
                 continue
-            if address in self.stun_results.keys():
+            if address in list(self.stun_results.keys()):
                 continue
-            udp.send_command(self.listen_port, udp.CMD_STUN, '', address)
+            udp.send_command(self.listen_port, udp.CMD_STUN, b'', address)
 
     def doRecordResult(self, arg):
         """
@@ -347,9 +358,9 @@ class StunClient(automat.Automat):
         Action method.
         """
         try:
-            min_port = min(map(lambda addr: addr[1], self.stun_results.values()))
-            max_port = max(map(lambda addr: addr[1], self.stun_results.values()))
-            my_ip = self.stun_results.values()[0][0]
+            min_port = min([addr[1] for addr in list(self.stun_results.values())])
+            max_port = max([addr[1] for addr in list(self.stun_results.values())])
+            my_ip = strng.to_text(list(self.stun_results.values())[0][0])
             if min_port == max_port:
                 result = ('stun-success', 'non-symmetric', my_ip, min_port)
             else:
@@ -360,8 +371,8 @@ class StunClient(automat.Automat):
             result = ('stun-failed', None, None, [])
             self.my_address = None
         if self.my_address:
-            bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
-            bpio.WriteFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
+            bpio.WriteTextFile(settings.ExternalIPFilename(), self.my_address[0])
+            bpio.WriteTextFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
         if _Debug:
             lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %s' % (
                 len(self.stun_results), str(self.my_address)))
@@ -427,7 +438,7 @@ class StunClient(automat.Automat):
 
     def _some_nodes_found(self, nodes):
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client._some_nodes_found : %d' % len(nodes))
+            lg.out(_DebugLevel + 4, 'stun_client._some_nodes_found : %r' % nodes)
         if len(nodes) > 0:
             self.automat('found-some-nodes', nodes)
         else:
@@ -435,7 +446,7 @@ class StunClient(automat.Automat):
 
     def _nodes_not_found(self, err):
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client._nodes_not_found err=%s' % str(err))
+            lg.out(_DebugLevel, 'stun_client._nodes_not_found err=%s' % str(err))
         self.automat('dht-nodes-not-found')
 
     def _stun_port_received(self, result, node):
@@ -450,6 +461,8 @@ class StunClient(automat.Automat):
                 lg.out(_DebugLevel, 'stun_client._stun_port_received ERROR result=%s from node: %s' % (
                     str(result), node))
             return
+        if _Debug:
+            lg.out(_DebugLevel, 'stun_client._stun_port_received  %s at %s' % (address, port, ))
         self.automat('port-number-received', (address, port))
 
 #------------------------------------------------------------------------------
@@ -459,8 +472,8 @@ def safe_stun(udp_port=None, dht_port=None, ):
     result = Deferred()
     try:
         settings.init()
-        dht_port = dht_port  # or settings.getDHTPort()
-        udp_port = udp_port  # or settings.getUDPPort()
+        dht_port = dht_port or settings.getDHTPort()
+        udp_port = udp_port or settings.getUDPPort()
         if dht_port:
             dht_service.init(dht_port)
         d = dht_service.connect()
@@ -477,7 +490,7 @@ def safe_stun(udp_port=None, dht_port=None, ):
             })
 
         def _go(live_nodes):
-            A('init', (udp_port))
+            A('init', udp_port)
             A('start', _cb)
 
         d.addCallback(_go)
@@ -494,11 +507,11 @@ def test_safe_stun():
     from twisted.internet import reactor
 
     def _cb(res):
-        print res
+        print(res)
         reactor.stop()
 
     def _eb(err):
-        print err
+        print(err)
         reactor.stop()
 
     lg.set_debug_level(30)
@@ -522,7 +535,7 @@ def main():
     udp.listen(udp_port)
 
     def _cb(result, typ, ip, details):
-        print result, typ, ip, details
+        print(result, typ, ip, details)
         A('shutdown')
         reactor.stop()
 

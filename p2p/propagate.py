@@ -43,7 +43,11 @@ their server.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -254,7 +258,7 @@ def SendServers():
     sendfile, sendfilename = tmpfile.make("propagate")
     os.close(sendfile)
     LocalIdentity = my_id.getLocalIdentity()
-    bpio.WriteFile(sendfilename, LocalIdentity.serialize())
+    bpio.WriteTextFile(sendfilename, LocalIdentity.serialize())
     dlist = []
     for idurl in LocalIdentity.sources:
         # sources for out identity are servers we need to send to
@@ -505,13 +509,14 @@ def PingContact(idurl, timeout=30):
         return idsrc
 
     def _identity_cache_failed(err, idurl):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed [%s]" % idurl)
+        try:
+            msg = err.getErrorMessage()
+        except:
+            msg = str(err)
+        if _Debug:
+            lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed %s : %s" % (idurl, msg, ))
         if not ping_result.called:
-            try:
-                msg = err.getErrorMessage()
-            except:
-                msg = str(err)
-            ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg)))
+            ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg, )))
         return None
 
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout=timeout)

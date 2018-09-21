@@ -19,6 +19,8 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -43,7 +45,7 @@ for filename in os.listdir(sys.argv[1]):
             if words[0] == 'import' and words[2] == 'as':
                 pkg, modl = words[1].split('.')
                 if modl == words[3]:
-                    print path, line
+                    print(path, line)
                     line = 'from %s import %s' % (pkg, modl)
         newsrc += line + '\n'
 

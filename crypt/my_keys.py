@@ -31,7 +31,11 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -39,6 +43,7 @@ _DebugLevel = 4
 import os
 import sys
 import gc
+import six
 
 #------------------------------------------------------------------------------
 
@@ -230,7 +235,7 @@ def save_keys_local(keys_folder=None):
         else:
             key_filepath = os.path.join(keys_folder, key_id + '.private')
         key_string = key_object.toPrivateString()
-        bpio.WriteFile(key_filepath, key_string)
+        bpio.WriteTextFile(key_filepath, key_string)
         count += 1
     if _Debug:
         lg.out(_DebugLevel, '    %d keys saved' % count)
@@ -251,7 +256,7 @@ def generate_key(key_id, key_size=4096, keys_folder=None):
         keys_folder = settings.KeyStoreDir()
     key_string = key_object.toPrivateString()
     key_filepath = os.path.join(keys_folder, key_id + '.private')
-    bpio.WriteFile(key_filepath, key_string)
+    bpio.WriteTextFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s generated, saved to %s' % (key_id, key_filepath))
     return key_object
@@ -263,7 +268,7 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
         return None
-    if isinstance(key_object_or_string, str):
+    if isinstance(key_object_or_string, six.string_types):
         lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
             key_id, len(key_object_or_string)))
         key_object = unserialize_key_to_object(key_object_or_string)
@@ -279,11 +284,11 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
     if key_object.isPublic():
         key_string = key_object.toPublicString()
         key_filepath = os.path.join(keys_folder, key_id + '.public')
-        bpio.WriteFile(key_filepath, key_string)
+        bpio.WriteTextFile(key_filepath, key_string)
     else:
         key_string = key_object.toPrivateString()
         key_filepath = os.path.join(keys_folder, key_id + '.private')
-        bpio.WriteFile(key_filepath, key_string)
+        bpio.WriteTextFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s added, saved to %s' % (key_id, key_filepath))
     return key_filepath

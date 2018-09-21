@@ -30,6 +30,7 @@
 module:: service_ip_port_responder
 """
 
+from __future__ import absolute_import
 from services.local_service import LocalService
 
 

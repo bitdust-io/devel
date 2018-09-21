@@ -36,7 +36,13 @@ A code for all platforms to perform source code updates from official Git repo a
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+from io import open
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -60,6 +66,8 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
+from lib import strng
+
 from logs import lg
 
 from system import bpio
@@ -70,15 +78,15 @@ from main import events
 #------------------------------------------------------------------------------
 
 _CurrentProcess = None
-_FirstRunDelay = 30
+_FirstRunDelay = 1200
 _LoopInterval = 3600 * 6
 _ShedulerTask = None
 
 #------------------------------------------------------------------------------
 
 def write2log(txt):
-    out_file = file(settings.UpdateLogFilename(), 'a')
-    print >>out_file, txt
+    out_file = open(settings.UpdateLogFilename(), 'a')
+    out_file.write(strng.to_text(txt))
     out_file.close()
 
 #------------------------------------------------------------------------------
@@ -87,7 +95,7 @@ def init():
     lg.out(4, 'git_proc.init')
     if os.environ.get('BITDUST_GIT_SYNC_SKIP', '0') == '1':
         return
-    reactor.callLater(0, loop, True)
+    reactor.callLater(0, loop, first_start=True)
 
 
 def shutdown():
@@ -337,7 +345,7 @@ if __name__ == "__main__":
     lg.set_debug_level(18)
 
     def _result(res):
-        print 'RESULT:', res
+        print('RESULT:', res)
         reactor.stop()
     reactor.callWhenRunning(sync, _result)
     reactor.run()

@@ -66,7 +66,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -291,7 +296,7 @@ class NetworkConnector(automat.Automat):
             from transport import gateway
             if time.time() - gateway.last_inbox_time() < 60:
                 return True
-            transport_states = map(lambda t: t.state, gateway.transports().values())
+            transport_states = [t.state for t in list(gateway.transports().values())]
             if 'LISTENING' in transport_states:
                 return True
             if 'STARTING' in transport_states:
@@ -323,7 +328,7 @@ class NetworkConnector(automat.Automat):
                 lg.out(_DebugLevel, 'network_connector.isAllListening returning False : service_gateway is OFF')
             return False
         from transport import gateway
-        transports = gateway.transports().values()
+        transports = list(gateway.transports().values())
         for t in transports:
             if t.state != 'LISTENING':
                 if _Debug:
@@ -344,7 +349,7 @@ class NetworkConnector(automat.Automat):
         LISTENING_count = 0
         OFFLINE_count = 0
         from transport import gateway
-        transports = gateway.transports().values()
+        transports = list(gateway.transports().values())
         for t in transports:
             if t.state != 'OFFLINE' and t.state != 'LISTENING':
                 if _Debug:
@@ -384,6 +389,14 @@ class NetworkConnector(automat.Automat):
 #         d.addErrback(_fail)
         
         # First Solution
+        if driver.is_on('service_udp_datagrams'):
+            from lib import udp
+            udp_port = settings.getUDPPort()
+            if not udp.proto(udp_port):
+                try:
+                    udp.listen(udp_port)
+                except:
+                    lg.exc()
         if driver.is_on('service_service_entangled_dht'):
             from dht import dht_service
             dht_service.reconnect()
@@ -398,14 +411,6 @@ class NetworkConnector(automat.Automat):
         if driver.is_on('service_private_messages'):
             from chat import nickname_holder
             nickname_holder.A('set')
-        if driver.is_on('service_udp_datagrams'):
-            from lib import udp
-            udp_port = settings.getUDPPort()
-            if not udp.proto(udp_port):
-                try:
-                    udp.listen(udp_port)
-                except:
-                    lg.exc()
         self.automat('network-up')
 
     def doSetDown(self, arg):

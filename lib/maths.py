@@ -30,8 +30,11 @@
 This is mostly methods to calculate schedule events.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
 import datetime
+from six.moves import range
 
 #-------------------------------------------------------------------------------
 
@@ -120,12 +123,12 @@ def shedule_next_daily(last_time, period_string, start_time_string):
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         period = int(period_string)
     except:
-        print 'DEBUG: next_daily1'
+        print('DEBUG: next_daily1')
         from logs import lg
         lg.exc()
         return None
     if period == 0:
-        print 'DEBUG: next_daily2'
+        print('DEBUG: next_daily2')
         return None
 
     start_time = datetime.time(
@@ -186,7 +189,7 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
         lg.exc()
         return None
     if len(week_days) == 0 or period == 0:
-        print 'DEBUG: next_weekly2'
+        print('DEBUG: next_weekly2')
         return None
 
     start_time = datetime.time(
@@ -254,7 +257,7 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
         lg.exc()
         return None
     if len(months) == 0 or day > 31 or day < 1:
-        print 'DEBUG: next_monthly2'
+        print('DEBUG: next_monthly2')
         return None
 
     start_time = datetime.time(
@@ -431,6 +434,6 @@ if __name__ == '__main__':
     # print shedule_non_stop(t, 60*60) - time.time()
     #    print shedule_next_hourly(time.time()-60*60*9-12, 1)/60
     t = shedule_next_monthly(time.time() - 60 * 60 * 9 - 12, '1', '14:00', ['2', '6', '9', '15', '16'])
-    print time.time(), t, time.time() - t
-    print time.asctime(time.localtime(t))
-    print time.asctime(time.localtime())
+    print(time.time(), t, time.time() - t)
+    print(time.asctime(time.localtime(t)))
+    print(time.asctime(time.localtime()))

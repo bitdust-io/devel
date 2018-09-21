@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from pkgversion import list_requirements, pep440_version, write_setup_py
 from setuptools import find_packages
 

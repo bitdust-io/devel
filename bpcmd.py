@@ -24,6 +24,7 @@
 #
 #
 
+from __future__ import absolute_import
 if __name__ == "__main__":
-    import interface.cmd_line_json
-    interface.cmd_line_json.main()
+    from interface.cmd_line_json import main
+    main()

@@ -19,6 +19,8 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -69,7 +71,7 @@ def backup_done(bid, result):
             'http://megafaq.ru/cvps1010.xml')
         newfilepath = os.path.join(settings.getLocalBackupsDir(),
                                    bid + '.out', filename)
-        bpio.AtomicWriteFile(newfilepath, outpacket.Serialize())
+        bpio.WriteBinaryFile(newfilepath, outpacket.Serialize())
     # Assume we delivered all pieces from ".out" to suppliers and lost original data
     # Then we requested the data back and got it into ".inp"
     try:
@@ -84,7 +86,7 @@ def backup_done(bid, result):
         assert inppacket.Valid()
         newfilepath = os.path.join(settings.getLocalBackupsDir(),
                                    bid + '.inp', filename)
-        bpio.AtomicWriteFile(newfilepath, inppacket.Payload)
+        bpio.WriteBinaryFile(newfilepath, inppacket.Payload)
     # Now do restore from input data
     backupID = bid + '.inp'
     outfd, tarfilename = tmpfile.make(
@@ -99,8 +101,8 @@ def backup_done(bid, result):
 
 def restore_done(x, tarfilename):
     backupID, result = x.split(' ')
-    print backupID, result
-    print tarfilename
+    print(backupID, result)
+    print(tarfilename)
     reactor.stop()
 
 

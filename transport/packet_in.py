@@ -46,7 +46,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -101,7 +105,7 @@ def increment_packets_counter():
 #------------------------------------------------------------------------------
 
 
-def items():
+def inbox_items():
     """
     """
     global _InboxItems
@@ -110,14 +114,14 @@ def items():
 
 def create(transfer_id):
     p = PacketIn(transfer_id)
-    items()[transfer_id] = p
+    inbox_items()[transfer_id] = p
     # lg.out(10, 'packet_in.create  %s,  %d working items now' % (
     #     transfer_id, len(items())))
     return p
 
 
 def get(transfer_id):
-    return items().get(transfer_id, None)
+    return inbox_items().get(transfer_id, None)
 
 
 def search(sender_idurl=None, proto=None, host=None):
@@ -127,7 +131,7 @@ def search(sender_idurl=None, proto=None, host=None):
     if sender_idurl and not isinstance(sender_idurl, list):
         sender_idurl = [sender_idurl, ]
     results = set()
-    for transfer_id, itm in items().items():
+    for transfer_id, itm in inbox_items().items():
         if sender_idurl:
             if itm.sender_idurl and itm.sender_idurl == sender_idurl:
                 results.add(transfer_id)
@@ -384,7 +388,7 @@ class PacketIn(automat.Automat):
                 fd, _ = tmpfile.make('error', extension='.inbox')
                 data = bpio.ReadBinaryFile(self.filename)
                 os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
-                os.write(fd, str(data))
+                os.write(fd, data)
                 os.close(fd)
             except:
                 lg.exc()
@@ -439,7 +443,7 @@ class PacketIn(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        items().pop(self.transfer_id)
+        inbox_items().pop(self.transfer_id)
         self.destroy()
 
     def _remote_identity_cached(self, xmlsrc, arg):

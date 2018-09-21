@@ -23,6 +23,7 @@
 #
 #
 #
+from __future__ import absolute_import
 from fileinput import fileno
 
 """
@@ -121,7 +122,7 @@ def init(ftp_port=None):
     if not ftp_port:
         ftp_port = settings.getFTPServerPort()
     if not os.path.isfile(settings.FTPServerCredentialsFile()):
-        bpio.AtomicWriteFile(settings.FTPServerCredentialsFile(), 'bitdust:bitdust')
+        bpio.WriteTextFile(settings.FTPServerCredentialsFile(), 'bitdust:bitdust')
     # TODO: add protection: accept connections only from local host: 127.0.0.1
     _FTPServer = reactor.listenTCP(
         ftp_port,
@@ -339,7 +340,7 @@ class BitDustFTP(FTP):
             result.append((os.path.basename(itm['path']), [  # name
                 known_size,  # size
                 True if itm['type'] == 'dir' else False,  # folder or file ?
-                filepath.Permissions(07777),  # permissions
+                filepath.Permissions(0o7777),  # permissions
                 0,  # hardlinks
                 time.mktime(time.strptime(itm['latest'], '%Y-%m-%d %H:%M:%S')) if itm['latest'] else None,  # time
                 itm['customer'],  # owner

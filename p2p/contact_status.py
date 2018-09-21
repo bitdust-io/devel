@@ -58,7 +58,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -82,12 +86,11 @@ from contacts import contactsdb
 
 from automats import automat
 
+from p2p import ratings
 from p2p import commands
 from p2p import propagate
 
 from transport import callback
-
-import ratings
 
 from userid import my_id
 
@@ -139,7 +142,7 @@ def shutdown():
 def check_create(idurl):
     """
     """
-    if idurl not in _ContactsStatusDict.keys():
+    if idurl not in list(_ContactsStatusDict.keys()):
         A(idurl)
         lg.info('contact %s is not found, made a new instance' % idurl)
     return True
@@ -156,7 +159,7 @@ def isKnown(idurl):
         return False
     if idurl in [None, 'None', '']:
         return False
-    return idurl in _ContactsStatusDict.keys()
+    return idurl in list(_ContactsStatusDict.keys())
 
 
 def isOnline(idurl):
