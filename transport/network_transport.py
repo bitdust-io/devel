@@ -67,6 +67,7 @@ from automats import automat
 
 from lib import misc
 from lib import nameurl
+from lib import strng
 
 from userid import my_id
 
@@ -244,7 +245,7 @@ class NetworkTransport(automat.Automat):
 #             id_contact = id_contact.lstrip(self.proto + '://')
         if self.proto == 'tcp':
             if not id_contact:
-                default_host = misc.readExternalIP() + ':' + str(settings.getTCPPort())
+                default_host = strng.to_bin(misc.readExternalIP()) + ':' + str(settings.getTCPPort())
             options['host'] = id_contact or default_host
             options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':
@@ -257,7 +258,7 @@ class NetworkTransport(automat.Automat):
             pass
         elif self.proto == 'http':
             if not id_contact:
-                default_host = misc.readExternalIP() + ':' + str(settings.getHTTPPort())
+                default_host = strng.to_bin(misc.readExternalIP()) + ':' + str(settings.getHTTPPort())
             options['host'] = id_contact or default_host
             options['http_port'] = settings.getHTTPPort()
         if _Debug:
