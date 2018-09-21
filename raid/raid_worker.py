@@ -89,7 +89,7 @@ from . import rebuild
 _MODULES = (
     'os',
     'sys',
-    'cStringIO',
+    'StringIO',
     'struct',
     'logs.lg',
     'raid.read',

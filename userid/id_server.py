@@ -39,12 +39,12 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
 import os
 import sys
-import cStringIO
 import struct
 
 from twisted.internet import reactor
@@ -343,7 +343,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
             # self.transport.loseConnection()
             lg.warn('not a "data" packet from %s' % str(self.transport.getPeer()))
             return
-        inp = cStringIO.StringIO(payload)
+        inp = StringIO.StringIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
             file_size = struct.unpack('i', inp.read(4))[0]

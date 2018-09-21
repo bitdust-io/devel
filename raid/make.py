@@ -50,6 +50,7 @@
 
 from __future__ import absolute_import
 from io import open
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -75,6 +76,7 @@ import raid.eccmap
 #     from raid.utils import build_parity, chunks
 
 import raid.utils
+
 #------------------------------------------------------------------------------
 
 _ECCMAP = {}
@@ -178,7 +180,6 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         with open(FileName, "wb") as f:
             chunk_to_write = copy.copy(chunk)
             chunk_to_write.byteswap()
-
             sds[seg_num] = iter(chunk)
             f.write(chunk_to_write)
 
