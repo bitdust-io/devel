@@ -510,7 +510,7 @@ def ReadLatestRawListFiles(customer_idurl=None):
             filename = os.path.join(settings.SupplierPath(idurl, customer_idurl, 'listfiles'))
             if os.path.isfile(filename):
                 listFileText = bpio.ReadTextFile(filename).strip()
-                if listFileText != '':
+                if listFileText:
                     ReadRawListFiles(
                         contactsdb.supplier_position(idurl),
                         listFileText,
