@@ -53,6 +53,7 @@ from main import events
 
 from lib import misc
 from lib import nameurl
+from lib import strng
 
 from crypt import key
 
@@ -453,9 +454,9 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     Nice to provide a user name or it will have a form like: [ip
     address]_[date].
     """
-    if ip == '':
-        ip = misc.readExternalIP()  # bpio.ReadTextFile(settings.ExternalIPFilename())
-    if name == '':
+    if not ip:
+        ip = strng.to_bin(misc.readExternalIP())  # bpio.ReadTextFile(settings.ExternalIPFilename())
+    if not name:
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
     lg.out(4, 'my_id.buildDefaultIdentity: %s %s' % (name, ip))
     # create a new identity object
@@ -468,7 +469,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     if len(idurls) == 0:
         idurls.append('http://localhost/' + name.lower() + '.xml')
     for idurl in idurls:
-        ident.sources.append(idurl.encode("ascii").strip())
+        ident.sources.append(idurl.strip())
     # create a full list of needed transport methods
     # to be able to accept incoming traffic from other nodes
     new_contacts, new_order = buildProtoContacts(ident)
@@ -516,7 +517,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     return ident
 
 
-def rebuildLocalIdentity(skip_transports=[]):
+def rebuildLocalIdentity(skip_transports=[], revision_up=False):
     """
     If some transports was enabled or disabled we want to update identity
     contacts. Just empty all of the contacts and create it again in the same
@@ -543,17 +544,14 @@ def rebuildLocalIdentity(skip_transports=[]):
 #            continue
 #        lid.setProtoContact(proto, contact)
     # update software version number
-    vernum = bpio.ReadTextFile(settings.VersionNumberFile())
+    vernum = strng.to_bin(bpio.ReadTextFile(settings.VersionNumberFile())).strip()
     repo, _ = misc.ReadRepoLocation()
-    lid.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+    lid.version = (vernum + ' ' + strng.to_bin(repo.strip()) + ' ' + bpio.osinfo().strip()).strip()
     # generate signature with changed content
     lid.sign()
     new_xmlsrc = lid.serialize()
     changed = False
-    if new_xmlsrc == current_identity_xmlsrc:
-        # no modifications in my identity - cool !!!
-        lg.out(4, '    same revision: %s' % lid.revision)
-    else:
+    if new_xmlsrc != current_identity_xmlsrc or revision_up:
         try:
             lid.revision = str(int(lid.revision) + 1)
         except:
@@ -561,10 +559,13 @@ def rebuildLocalIdentity(skip_transports=[]):
             return False
         # generate signature again because revision were changed !!!
         lid.sign()
-        lg.out(4, '    add revision: %s' % lid.revision)
+        lg.out(4, '    incremented revision: %s' % lid.revision)
         changed = True
         # remember the new identity
         setLocalIdentity(lid)
+    else:
+        # no modifications in my identity - cool !!!
+        lg.out(4, '    same revision: %s' % lid.revision)
     lg.out(4, '    version: %s' % str(lid.version))
     lg.out(4, '    contacts: %s' % str(lid.contacts))
     lg.out(4, '    sources: %s' % str(lid.sources))
@@ -573,5 +574,5 @@ def rebuildLocalIdentity(skip_transports=[]):
         # finally saving modified local identity
         saveLocalIdentity()
     lg.out(4, '    my identity HAS %sBEEN changed !!!' % (('' if changed else 'NOT ')))
-    lg.out(4, '\n' + new_xmlsrc + '\n')
+    lg.out(4, '\n' + getLocalIdentity().serialize() + '\n')
     return changed
