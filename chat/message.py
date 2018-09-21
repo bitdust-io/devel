@@ -182,7 +182,7 @@ class PrivateMessage:
     """
 
     def __init__(self, recipient_global_id):
-        self.sender = my_id.getGlobalID()
+        self.sender = my_id.getGlobalID(key_alias='master')
         self.recipient = recipient_global_id
         self.encrypted_session = None
         self.encrypted_body = None

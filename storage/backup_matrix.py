@@ -52,8 +52,8 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 14
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -73,7 +73,6 @@ from logs import lg
 from system import bpio
 
 from lib import packetid
-from lib import nameurl
 from lib import misc
 
 from main import settings
@@ -477,20 +476,19 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
                 remote_max_block_numbers()[backupID] = maxBlockNum
             if len(missingBlocksSet['Data']) == 0 and len(missingBlocksSet['Parity']) == 0:
                 missed_backups.discard(backupID)
-            # if item_version_info[0] != maxBlockNum or item_version_info[1] != versionSize:
-            #     lg.warn('updating version %s info with %s / %s from recent ListFiles()' % (
-            #         backupID, maxBlockNum, versionSize, ))
-            #     item.set_version_info(versionName, maxBlockNum, versionSize)
-            #     remote_files_changed = True
+            if item_version_info[0] != maxBlockNum or item_version_info[1] != versionSize:
+                lg.warn('updating version %s info with %s / %s from recent ListFiles()' % (
+                    backupID, maxBlockNum, versionSize, ))
+                item.set_version_info(versionName, maxBlockNum, versionSize)
+                remote_files_changed = True
             # mark this backup to be repainted
             RepaintBackup(backupID)
     inpt.close()
     lg.out(8, '            remote_files_changed:%s, old:%d, new:%d, backups2remove:%d, paths2remove:%d' % (
         remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove)))
-    # if remote_files_changed and is_in_sync:
-        # backup_control.commit()
-    #     backup_control.Save()
-    # return list of backupID's which is too old but stored on suppliers machines
+    if remote_files_changed and is_in_sync:
+        backup_control.Save()
+    # finally return list of items which are too old but stored on suppliers machines
     return backups2remove, paths2remove, missed_backups
 
 
