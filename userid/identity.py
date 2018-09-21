@@ -341,6 +341,7 @@ class identity:
         hsh += sep + self.date.replace(u' ', u'_')
         hsh += sep + self.version
         hsh += sep + self.revision
+        lg.out(12, "identity.makehash: %s" % hsh)
         hashcode = key.Hash(strng.to_bin(hsh))
         return hashcode
 

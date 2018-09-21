@@ -587,6 +587,8 @@ class DHTNode(DistributedTupleSpacePeer):
                 lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
         else:
             value = internal_value
+        if value is None:
+            value = 0
         if _Debug:
             lg.out(_DebugLevel, '    read internal value, counter=%d' % counter('request'))
         return {key: value, }
