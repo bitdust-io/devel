@@ -98,6 +98,7 @@ from system import bpio
 
 from lib import net_misc
 from lib import misc
+from lib import strng
 
 from services import driver
 
@@ -314,7 +315,7 @@ class NetworkConnector(automat.Automat):
     def isCurrentInterfaceActive(self, arg):
         # I am not sure about external IP,
         # because if you have a white IP it should be the same with your local IP
-        return (misc.readLocalIP() in arg) or (misc.readExternalIP() in arg)
+        return (strng.to_bin(misc.readLocalIP()) in arg) or (strng.to_bin(misc.readExternalIP()) in arg)
 
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15

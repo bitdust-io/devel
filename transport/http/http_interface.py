@@ -60,6 +60,7 @@ from logs import lg
 from main import settings
 
 from lib import misc
+from lib import strng
 
 from transport.http import http_node
 
@@ -132,7 +133,7 @@ class GateInterface():
         """
         """
         result = []
-        nowip = misc.readExternalIP()
+        nowip = strng.to_bin(misc.readExternalIP())
         result.append('http://%s:%s' % (nowip, str(settings.getHTTPPort())))
         if _Debug:
             lg.out(4, 'http_interface.build_contacts : %s' % str(result))
@@ -141,7 +142,7 @@ class GateInterface():
     def verify_contacts(self, id_obj):
         """
         """
-        nowip = misc.readExternalIP()
+        nowip = strng.to_bin(misc.readExternalIP())
         http_contact = 'http://%s:%s' % (nowip, str(settings.getHTTPPort()))
         if id_obj.getContactIndex(contact=http_contact) < 0:
             if _Debug:
