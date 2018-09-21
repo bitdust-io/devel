@@ -279,7 +279,7 @@ def exception(level, maxTBlevel, exc_info):
             out(level, '\033[1;31m%s\033[0m' % (l.replace('\n', '')))
         else:
             out(level, l.replace('\n', ''))
-    if _StoreExceptionsEnabled:
+    if _StoreExceptionsEnabled and _LogFileName:
         import tempfile
         fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
         

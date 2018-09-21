@@ -1061,10 +1061,10 @@ def find_process(applist):
                     continue
                 if app.startswith('regexp:'):
                     if re.match(app[7:], cmdline) is not None:
-                        pidsL.append(p.pid)
+                        pidsL.append(p_pid)
                 else:
                     if cmdline.count(app):
-                        pidsL.append(p.pid)
+                        pidsL.append(p_pid)
         if pidsL:
             return pidsL
     except:
@@ -1216,9 +1216,7 @@ def find_main_process(pid_file_path=None):
     appList = find_process([
         'bitdustnode.exe',
         'BitDustNode.exe',
-        'bpmain.py',
-        'bitdust.py',
-        'regexp:^/usr/bin/python.*bitdust.*$',
+        'regexp:^.*python.*bitdust.py$',
     ])
     if not appList:
         return []

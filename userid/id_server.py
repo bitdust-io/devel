@@ -170,7 +170,7 @@ class IdServer(automat.Automat):
         """
         self.hostname = settings.getIdServerHost()
         if self.hostname == '':
-            self.hostname = misc.readExternalIP()  # bpio.ReadTextFile(settings.ExternalIPFilename())
+            self.hostname = strng.to_bin(misc.readExternalIP())  # bpio.ReadTextFile(settings.ExternalIPFilename())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
         lg.out(4, 'id_server.doSetUp hostname=%s' % self.hostname)
@@ -336,7 +336,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
             return
         if command == 'h':
             # lg.out(6, 'id_server.stringReceived HELLO received from %s' % payload)
-            self.sendString('%swid-server:%s' % (version, A().hostname))
+            self.sendString(strng.to_bin('%swid-server:%s' % (version, A().hostname)))
             return
         if command != 'd':
             self.disconnect()
@@ -361,7 +361,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
         os.write(self.fin, inp_data)
         self.received += len(inp_data)
         # self.transport.loseConnection()
-        self.sendString('%so%s' % (version, struct.pack('i', file_id)))
+        self.sendString(strng.to_bin('%so%s' % (version, struct.pack('i', file_id))))
         # lg.out(6, 'id_server.stringReceived  %d bytes received from %s' % (len(data), str(self.transport.getPeer())))
         if self.received == file_size:
             os.close(self.fin)

@@ -429,7 +429,7 @@ class DiscoveryTask(object):
         try:
             self.failed += 1
             if _Debug:
-                lg.warn('%r : %r' % (arg, err))
+                lg.warn('%r : %s' % (arg, strng.to_string(repr(err), errors='ignore')))
         except:
             lg.exc()
         return None

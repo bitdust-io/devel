@@ -39,7 +39,7 @@ def main():
 
     # TEST
     # call with parameters like that:
-    # python raidworker.py C:\temp\joomla2.sql ecc/7x7 myID_ABC 1234 c:\temp\somedir
+    # python raidworker.py ./somefile ecc/7x7 myID_ABC 1234 ./somefolder/
     tasks = {}
 
     def _cb(cmd, taskdata, result):
