@@ -61,12 +61,12 @@ Those dictionaries are trees - replicates the file system structure.
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import range
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
 import os
 import sys
-import cStringIO
 import time
 import json
 import random
@@ -2029,7 +2029,7 @@ def Serialize(iterID=None, to_json=False, encoding='utf-8', filter_cb=None):
     if to_json:
         result = {'items': [], }
     else:
-        result = cStringIO.StringIO()
+        result = StringIO.StringIO()
 
     def cb(path_id, path, info):
         if filter_cb is not None:
@@ -2076,7 +2076,7 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
             else:
                 raise ValueError('Incorrect entry type')
     else:
-        inpt = cStringIO.StringIO(raw_data)
+        inpt = StringIO.StringIO(raw_data)
         while True:
             src = inpt.readline() + inpt.readline()  # 2 times because we take 2 lines for every item
             if src.strip() == '':
@@ -2114,7 +2114,7 @@ def _test():
     filepath = settings.BackupIndexFilePath()
     # print filepath
     src = bpio.ReadTextFile(filepath)
-    inpt = cStringIO.StringIO(src)
+    inpt = StringIO.StringIO(src)
     inpt.readline()
     # count = Unserialize(inpt)
     json_data = json.loads(inpt.read())
@@ -2226,7 +2226,7 @@ def _test():
 #        pprint.pprint(ListByID(id))
 #    fs().clear()
 #    fsID().clear()
-#    inp = cStringIO.StringIO(s)
+#    inp = StringIO.StringIO(s)
 #    Unserialize(inp)
 #    inp.close()
 #    pprint.pprint(fs())

@@ -25,6 +25,7 @@
 from __future__ import absolute_import
 from six.moves import map
 from six.moves import range
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -35,7 +36,6 @@ _DebugLevel = 6
 
 import os
 import zlib
-import cStringIO
 
 #------------------------------------------------------------------------------
 
@@ -135,7 +135,7 @@ def UnpackListFiles(payload, method):
 #------------------------------------------------------------------------------
 
 def TreeSummary(ownerdir, key_alias):
-    out = cStringIO.StringIO()
+    out = StringIO.StringIO()
     out.write('K%s\n' % key_alias)
 
     def cb(result, realpath, subpath, name):

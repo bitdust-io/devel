@@ -37,6 +37,7 @@ gets finished.
 
 from __future__ import absolute_import
 from __future__ import print_function
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -49,7 +50,6 @@ import os
 import sys
 import time
 import json
-import cStringIO
 
 try:
     from twisted.internet import reactor
@@ -193,7 +193,7 @@ def WriteIndex(filepath=None, encoding='utf-8'):
 
 def ReadIndex(raw_data, encoding='utf-8'):
     """
-    Read index data base, ``input`` is a ``cStringIO.StringIO`` object which
+    Read index data base, ``input`` is a ``StringIO.StringIO`` object which
     keeps the data.
 
     This is a simple text format, see ``p2p.backup_fs.Serialize()``
@@ -257,7 +257,7 @@ def Load(filepath=None):
     if not src:
         lg.out(2, 'backup_control.Load ERROR reading file %s' % filepath)
         return False
-    inpt = cStringIO.StringIO(src)
+    inpt = StringIO.StringIO(src)
     try:
         known_revision = int(inpt.readline().rstrip('\n'))
     except:
@@ -359,7 +359,7 @@ def IncomingSupplierBackupIndex(newpacket):
     try:
         session_key = key.DecryptLocalPrivateKey(b.EncryptedSessionKey)
         padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData)
-        inpt = cStringIO.StringIO(padded_data[:int(b.Length)])
+        inpt = StringIO.StringIO(padded_data[:int(b.Length)])
         supplier_revision = inpt.readline().rstrip('\n')
         if supplier_revision:
             supplier_revision = int(supplier_revision)

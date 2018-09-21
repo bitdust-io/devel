@@ -78,6 +78,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -89,7 +90,6 @@ _DebugLevel = 8
 import os
 import sys
 import time
-import cStringIO
 import gc
 
 try:
@@ -167,7 +167,7 @@ class backup(automat.Automat):
         self.stateEOF = False
         self.stateReading = False
         self.closed = False
-        self.currentBlockData = cStringIO.StringIO()
+        self.currentBlockData = StringIO.StringIO()
         self.currentBlockSize = 0
         self.workBlocks = {}
         self.blockNumber = 0
@@ -404,7 +404,7 @@ class backup(automat.Automat):
         self.blocksSent = 0
         self.blockNumber = 0
         self.currentBlockSize = 0
-        self.currentBlockData = cStringIO.StringIO()
+        self.currentBlockData = StringIO.StringIO()
 
     def doNextBlock(self, arg):
         """
@@ -415,7 +415,7 @@ class backup(automat.Automat):
         self.blockNumber += 1
         self.currentBlockData.close()
         self.currentBlockSize = 0
-        self.currentBlockData = cStringIO.StringIO()
+        self.currentBlockData = StringIO.StringIO()
 
     def doBlockReport(self, arg):
         """

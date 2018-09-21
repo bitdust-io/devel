@@ -55,6 +55,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -66,7 +67,6 @@ _DebugLevel = 10
 import os
 import sys
 import time
-import cStringIO
 import json
 import pprint
 
@@ -355,7 +355,7 @@ class ProxyRouter(automat.Automat):
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
+            inpt = StringIO.StringIO(padded_data[:int(block.Length)])
             payload = serialization.StringToObject(inpt.read())
             inpt.close()
             sender_idurl = payload['f']         # from
@@ -425,12 +425,13 @@ class ProxyRouter(automat.Automat):
             Data=newpacket.Serialize(),
             EncryptKey=lambda inp: key.EncryptOpenSSHPublicKey(publickey, inp),
         )
+        raw_data = block.Serialize()
         routed_packet = signed.Packet(
             commands.Relay(),
             newpacket.OwnerID,
             my_id.getLocalID(),
             newpacket.PacketID,
-            block.Serialize(),
+            raw_data,
             receiver_idurl,
         )
         pout = packet_out.create(
@@ -451,7 +452,8 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '<<<Relay-IN-OUT %s %s:%s' % (
                 str(newpacket), info.proto, info.host,))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
-                receiver_proto, receiver_host, len(routed_packet.Payload), pout))
+                receiver_proto, receiver_host, len(raw_data), pout))
+        del raw_data
         del block
         del newpacket
         del routed_packet

@@ -29,6 +29,7 @@
 
 from __future__ import absolute_import
 from io import open
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -39,7 +40,6 @@ _DebugLevel = 12
 
 import os
 import time
-import cStringIO
 import struct
 import random
 import six
@@ -210,7 +210,7 @@ class TCPFileStream():
         """
         """
         from transport.tcp import tcp_connection
-        inp = cStringIO.StringIO(payload)
+        inp = StringIO.StringIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
             file_size = struct.unpack('i', inp.read(4))[0]
@@ -235,7 +235,7 @@ class TCPFileStream():
             self.inbox_file_done(file_id, 'finished')
 
     def ok_received(self, payload):
-        inp = cStringIO.StringIO(payload)
+        inp = StringIO.StringIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
@@ -248,7 +248,7 @@ class TCPFileStream():
             self.outbox_file_done(file_id, 'finished')
 
     def abort_received(self, payload):
-        inp = cStringIO.StringIO(payload)
+        inp = StringIO.StringIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
         except:

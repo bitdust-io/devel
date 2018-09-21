@@ -54,6 +54,7 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 
 from __future__ import absolute_import
 from six.moves import range
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -64,7 +65,6 @@ _DebugLevel = 14
 
 import os
 import sys
-import cStringIO
 
 try:
     from twisted.internet import reactor
@@ -297,7 +297,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     newfiles = 0
     remote_files_changed = False
     current_key_alias = 'master'
-    inpt = cStringIO.StringIO(listFileText)
+    inpt = StringIO.StringIO(listFileText)
     while True:
         line = inpt.readline()
         if line == '':
@@ -582,7 +582,7 @@ def ReadLocalFiles():
 def DetectSupplierPosition(raw_list_file_text):
     """
     """
-    inpt = cStringIO.StringIO(raw_list_file_text)
+    inpt = StringIO.StringIO(raw_list_file_text)
     all_positions = {}
     while True:
         line = inpt.readline()
