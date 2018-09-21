@@ -356,11 +356,10 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
+            'regexp:^.*python.*bitdust.py$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             'bppipe.py',
             'bptester.py',
         ])
@@ -399,11 +398,10 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = bpio.find_process([
+            'regexp:^.*python.*bitdust.py$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             'bppipe.py',
             'bptester.py',
         ])

@@ -437,10 +437,10 @@ def _test():
     init()
 
     def _resp(src):
-        # print(src)
+        print(src)
         reactor.stop()
 
-    immediatelyCaching('http://p2p-id.ru/severino.xml').addBoth(_resp)
+    immediatelyCaching(sys.argv[1]).addBoth(_resp)
     reactor.run()
     shutdown()
 

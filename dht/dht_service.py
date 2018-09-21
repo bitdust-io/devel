@@ -78,6 +78,7 @@ from main import settings
 
 from dht import known_nodes
 
+from lib import strng
 from lib import utime
 
 #------------------------------------------------------------------------------
@@ -323,7 +324,7 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
     count('set_value_%s' % key)
-    sz_bytes = len(str(value))
+    sz_bytes = len(value)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds, counter=%d' % (
             key, sz_bytes, expire, counter('set_value_%s' % key)))
@@ -478,9 +479,13 @@ def find_node(node_id):
 
 def get_node_data(key):
     if not node():
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.get_node_data local node is not not read')
         return None
     count('get_node_data')
     if key not in node().data:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] not exist' % key)
         return None
     value = node().data[key]
     if _Debug:
@@ -491,6 +496,8 @@ def get_node_data(key):
 
 def set_node_data(key, value):
     if not node():
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.set_node_data local node is not not read')
         return False
     count('set_node_data')
     node().data[key] = value
@@ -502,9 +509,13 @@ def set_node_data(key, value):
 
 def delete_node_data(key):
     if not node():
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not not read')
         return False
     count('delete_node_data')
     if key not in node().data:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s] not exist' % key)
         return False
     node().data.pop(key)
     if _Debug:
@@ -549,7 +560,7 @@ class DHTNode(DistributedTupleSpacePeer):
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
-                base64.b32encode(key), len(str(value)), expireSeconds, counter('store')))
+                strng.to_string(key, errors='ignore')[:6], len(str(value)), expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
@@ -567,8 +578,8 @@ class DHTNode(DistributedTupleSpacePeer):
     def request(self, key):
         count('request')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % key)
-        internal_value = self.data.get(key)
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_string(key, errors='ignore')[:10])
+        internal_value = get_node_data(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
             self.data[key] = value
@@ -576,8 +587,10 @@ class DHTNode(DistributedTupleSpacePeer):
                 lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
         else:
             value = internal_value
+        if value is None:
+            value = 0
         if _Debug:
-            lg.out(_DebugLevel, '    read %d bytes, counter=%d' % (len(str(value)), counter('request')))
+            lg.out(_DebugLevel, '    read internal value, counter=%d' % counter('request'))
         return {key: value, }
 
     def reconnect(self, knownNodeAddresses=None):

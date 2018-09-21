@@ -438,7 +438,7 @@ class StunClient(automat.Automat):
 
     def _some_nodes_found(self, nodes):
         if _Debug:
-            lg.out(_DebugLevel + 4, 'stun_client._some_nodes_found : %d' % len(nodes))
+            lg.out(_DebugLevel + 4, 'stun_client._some_nodes_found : %r' % nodes)
         if len(nodes) > 0:
             self.automat('found-some-nodes', nodes)
         else:

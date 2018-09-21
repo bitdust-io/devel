@@ -265,11 +265,10 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
+            'regexp:^.*python.*bitdust.py$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python.*bitdust.*$',
             'bppipe.py',
             'bptester.py',
         ])
@@ -309,11 +308,10 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = bpio.find_process([
+            'regexp:^.*python.*bitdust.py$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
-            'bitdust.py',
-            'regexp:^/usr/bin/python.*bitdust.*$',
             'bppipe.py',
             'bptester.py',
         ])
@@ -397,6 +395,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         def _run_stand_alone_id_server():
             from logs import lg
             from userid import id_server
+            lg.open_log_file(os.path.join(settings.LogsDir(), 'idserver.log'))
             lg.set_debug_level(settings.getDebugLevel())
             reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')
             reactor.callWhenRunning(
@@ -463,14 +462,14 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             print_text('file is too big for private key')
             return 0
         try:
-            lines = src.split(u'\n')
+            lines = src.split('\n')
             idurl = lines[0]
-            txt = u'\n'.join(lines[1:])
+            txt = '\n'.join(lines[1:])
             if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-                idurl = u''
+                idurl = ''
                 txt = src
         except:
-            idurl = u''
+            idurl = ''
             txt = src
         if not idurl and len(args) > 3:
             idurl = args[3]
@@ -482,7 +481,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         from logs import lg
         automat.LifeBegins(lg.when_life_begins())
         automat.OpenLogFile(settings.AutomatsLog())
-        initializer.A('run-cmd-line-recover', {u'idurl': idurl, u'keysrc': txt})
+        initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
         reactor.run()
         automat.objects().clear()
         my_id.loadLocalIdentity()

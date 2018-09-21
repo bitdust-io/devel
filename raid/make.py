@@ -49,8 +49,6 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
-from six.moves import range
 from io import open
 
 #------------------------------------------------------------------------------
@@ -106,9 +104,9 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        file = open(filename, 'a')
-        file.write(' ' * increase)
-        file.close()
+        f = open(filename, 'ab')
+        f.write(' ' * increase)
+        f.close()
 
 
 def ReadBinaryFile(filename):
@@ -118,17 +116,21 @@ def ReadBinaryFile(filename):
         return ''
     if not os.access(filename, os.R_OK):
         return ''
-    file = open(filename, "rb")
-    data = file.read().decode('utf-8')
-    file.close()
+    f = open(filename, "rb")
+    data = f.read()
+    f.close()
     return data
 
 
 def WriteFile(filename, data):
     """
     """
+    if sys.version_info[0] == 3:
+        binary_type = bytes
+    else:
+        binary_type = str
     s = data
-    if not isinstance(s, six.binary_type):
+    if not isinstance(s, binary_type):
         s = s.encode('utf-8')
     f = open(filename, "wb")
     f.write(s)
@@ -164,11 +166,11 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         for i in range(seglength):
             offset = segoffset + i
             if offset < length:
-                f.write(wholefile[offset].encode('utf-8'))
+                f.write(wholefile[offset])
             else:
                 # any padding should go at the end of last seg
                 # and block.Length fixes
-                f.write(" ".encode('utf-8'))
+                f.write(" ")
         f.close()
 
     dfds = {}
@@ -259,11 +261,11 @@ def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
         for i in range(seglength):
             offset = segoffset + i
             if (offset < length):
-                f.write(wholefile[offset].encode('utf-8'))
+                f.write(wholefile[offset])
             else:
                 # any padding should go at the end of last seg
                 # and block.Length fixes
-                f.write(" ".encode('utf-8'))
+                f.write(" ")
         f.close()
     del wholefile
 
@@ -303,7 +305,7 @@ def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
 
         for PSegNum in range(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
-            pfds[PSegNum].write(bstr).encode('utf-8')
+            pfds[PSegNum].write(bstr)
 
     dataNum = 0
     parityNum = 0
