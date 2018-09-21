@@ -34,16 +34,26 @@ TODO:
 need to move out userconfig stuff from that file
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+from __future__ import print_function
 import os
+import random
+
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys
     import os.path as _p
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from system import bpio
+from system import deploy
 
 from lib import diskspace
 
@@ -51,11 +61,6 @@ from main import config
 
 #------------------------------------------------------------------------------
 
-_BaseDirPath = ''   # location for ".bitdust" folder, lets keep all program DB in one place
-# however you can setup your donated location in another place, second disk ...
-# Linux: /home/$USER/.bitdust
-# WindowsXP: c:\\Document and Settings\\[user]\\.bitdust
-# Windows7: c:\\Users\\[user]\\.bitdust
 _UserConfig = None  # user settings read from file .bitdust/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings
 _InitDone = False
@@ -94,7 +99,7 @@ def _init(base_dir=None):
     - Check custom folders
     """
     lg.out(2, 'settings.init')
-    _initBaseDir(base_dir)
+    deploy.init_base_dir(base_dir)
     lg.out(2, 'settings.init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     _checkConfigDirectory()
@@ -103,6 +108,7 @@ def _init(base_dir=None):
     #     bpio._dir_make(ConfigDir())
     #     convert_configs()
     _setUpDefaultSettings()
+    _checkRandomizePortNumbers()
     _createNotExisingSettings()
     _checkStaticDirectories()
     _checkCustomDirectories()
@@ -195,6 +201,54 @@ def convert_key(key):
 """
 Below is a set of global constants.
 """
+
+#------------------------------------------------------------------------------
+#--- LOGS --------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+
+def MainLogFilename():
+    """
+    A prefix for file names to store main process logs.
+    """
+    # return os.path.join(LogsDir(), 'bitdust')
+    return os.path.join(LogsDir(), 'main.log')
+
+
+def UpdateLogFilename():
+    """
+    A place to store logs from update porcess.
+    """
+    return os.path.join(LogsDir(), 'software_update.log')
+
+
+def AutomatsLog():
+    """
+    All state machines logs in the main process is written here.
+    """
+    return os.path.join(LogsDir(), 'automats.log')
+
+
+def TransportLog():
+    """
+    Every x seconds will log stats about current transfers.
+    """
+    return os.path.join(LogsDir(), 'transport.log')
+
+
+def ParallelPLogFilename():
+    """
+    Log from parallelp workers goes here, raid code is executed inside child processes.
+    """
+    return os.path.join(LogsDir(), 'parallelp.log')
+
+
+def LocalTesterLogFilename():
+    """
+    A file name path where bptester.py will write its logs.
+    """
+    return os.path.join(LogsDir(), 'bptester.log')
+
 
 #------------------------------------------------------------------------------
 #--- CONSTANTS (NUMBERS) ------------------------------------------------------
@@ -444,27 +498,27 @@ def MaximumUsernameLength():
 
 def DefaultDonatedBytes():
     """
-    Default donated space value - user can set this at any moment in the settings.
+    Default donated space value. User can set this at any moment in the settings.
     """
     return 8 * 1024 * 1024 * 1024  # 8 GB
 
 
 def DefaultNeededBytes():
     """
-    Default needed space value.
+    Default needed space value. User can set this at any moment in the settings.
     """
-    return 1 * 1024 * 1024 * 1024  # 1 GB
+    return 256 * 1024 * 1024  # 256 MB
 
 
 def MinimumDonatedBytes():
     """
     Minimum donated space amount in Megabytes - need to donate at least 2 Mb right now.
     """
-    return 64 * 1024 * 1024  # 64 Mb
+    return 64 * 1024 * 1024  # 64 MB
 
 
 def MinimumNeededBytes():
-    return 32 * 1024 * 1024  # 32 Mb - minimum 1 Mb will be taken from every supplier
+    return 32 * 1024 * 1024  # 32 MB - minimum 1 MB will be taken from every supplier
 
 
 def DefaultBackupBlockSize():
@@ -627,57 +681,13 @@ def LegalNickNameChars():
 #--- FOLDERS ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 
-def BaseDirDefault():
-    """
-    A default location for BitDust data folder.
-
-    All of the paths below should be under some base directory.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirLinux():
-    """
-    Default data folder location for Linux users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirWindows():
-    """
-    Default data folder location for Windows users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def BaseDirMac():
-    """
-    Default data folder location for MacOS users.
-    """
-    return os.path.join(os.path.expanduser('~'), '.bitdust')
-
-
-def GetBaseDir():
-    """
-    A portable method to get the default data folder location.
-    """
-    if bpio.Windows():
-        return BaseDirWindows()
-    elif bpio.Linux():
-        return BaseDirLinux()
-    elif bpio.Mac():
-        return BaseDirMac()
-    return BaseDirDefault()
-
-
 def BaseDir():
     """
     Return current data folder location, also call ``init()`` to be sure all
     things were configured.
     """
-    global _BaseDirPath
     init()
-    return _BaseDirPath
+    return deploy.current_base_dir()
 
 
 def BaseDirPathFileName():
@@ -891,15 +901,6 @@ def KeyFileNameLocation():
     return KeyFileName() + '_location'
 
 
-def SupplierIDsFilename():
-    """
-    IDs for places that store data for us.
-
-    Keeps a list of IDURLs of our suppliers.
-    """
-    return os.path.join(MetaDataDir(), "supplierids")
-
-
 def CustomerIDsFilename():
     """
     IDs for places we store data for, keeps a list of IDURLs of our customers.
@@ -959,15 +960,6 @@ def UserNameFilename():
     File contains something like "guesthouse" - user account name.
     """
     return os.path.join(MetaDataDir(), "username")
-
-
-def UserConfigFilename():
-    """
-    File to keep a configurable user settings in XML format.
-
-    See ``lib.userconfig`` module.
-    """
-    return os.path.join(MetaDataDir(), "userconfig")
 
 
 def GUIOptionsFilename():
@@ -1116,42 +1108,6 @@ def SupplierServiceFilename(supplier_idurl, customer_idurl):
     Return a "service" file location for given supplier.
     """
     return os.path.join(SupplierPath(supplier_idurl, customer_idurl), 'service')
-
-
-def LocalTesterLogFilename():
-    """
-    A file name path where bptester.py will write its logs.
-    """
-    return os.path.join(LogsDir(), 'bptester.log')
-
-
-def MainLogFilename():
-    """
-    A prefix for file names to store main process logs.
-    """
-    # return os.path.join(LogsDir(), 'bitdust')
-    return os.path.join(LogsDir(), 'main.log')
-
-
-def UpdateLogFilename():
-    """
-    A place to store logs from update porcess.
-    """
-    return os.path.join(LogsDir(), 'software_update.log')
-
-
-def AutomatsLog():
-    """
-    All state machines logs in the main process is written here.
-    """
-    return os.path.join(LogsDir(), 'automats.log')
-
-
-def TransportLog():
-    """
-    Every x seconds will log stats about current transfers.
-    """
-    return os.path.join(LogsDir(), 'transport.log')
 
 
 def RepoFile():
@@ -1334,18 +1290,21 @@ def FontImageFile():
 
 def DefaultXMLRPCPort():
     """
+    Obsolete. To be removed.
     """
     return 8082
 
 
 def DefaultJsonRPCPort():
     """
+    Only Local! Never expose to outside of localhost.
     """
     return 8083
 
 
 def DefaultRESTHTTPPort():
     """
+    Only Local! Never expose to outside of localhost.
     """
     return 8180
 
@@ -2294,19 +2253,17 @@ def RenameBaseDir(newdir):
 
     Not used.
     """
-    global _BaseDirPath
-    olddir = _BaseDirPath
+    olddir = deploy.current_base_dir()
     try:
-        #        os.renames(_BaseDirPath, newdir) # - this not fit for us.
         import shutil
         shutil.copytree(olddir, newdir)
     except:
         lg.exc()
         return False
-    _BaseDirPath = newdir
+    deploy.set_base_dir(newdir)
     lg.out(2, 'settings.RenameBaseDir  directory was copied,  BaseDir=' + BaseDir())
     pathfilename = BaseDirPathFileName()
-    bpio.WriteFile(pathfilename, _BaseDirPath)
+    bpio.WriteTextFile(pathfilename, deploy.current_base_dir())
     lg.out(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
     logfilename = lg.log_filename()
     lg.close_log_file()
@@ -2317,93 +2274,6 @@ def RenameBaseDir(newdir):
         lg.exc()
     lg.open_log_file(logfilename, True)
     return True
-
-
-def _initBaseDir(base_dir=None):
-    """
-    Do some validation and create needed data folders if they are not exist
-    yet.
-
-    You can specify another location for data files.
-    """
-    global _BaseDirPath
-
-    # if we already know the place - we are done
-    if base_dir:
-        _BaseDirPath = base_dir
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we have a file "appdata" in current folder - take the place from there
-    if os.path.isfile(BaseDirPathFileName()):
-        path = bpio.ReadBinaryFile(BaseDirPathFileName()).strip()
-        if path:
-            path = os.path.abspath(path)
-            if not os.path.isdir(path):
-                bpio._dirs_make(path)
-            _BaseDirPath = path
-            return
-
-    # get the default place for thet machine
-    default_path = GetBaseDir()
-
-    # we can use folder ".bitdust" placed on the same level with binary folder:
-    # /..
-    #   /.bitdust - data files
-    #   /bitdust  - binary files
-    path1 = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), '..', '.bitdust')))
-    # and default path will have lower priority
-    path2 = default_path
-
-    # if default path exists - use it
-    if os.path.isdir(path2):
-        _BaseDirPath = path2
-    # but .bitdust on same level will have bigger priority
-    if os.path.isdir(path1):
-        _BaseDirPath = path1
-
-    # if we did not found "metadata" subfolder - use default path, new copy of BitDust
-    if not os.path.isdir(MetaDataDir()):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our key - use default path, new copy of BitDust
-    if not os.access(KeyFileName(), os.R_OK) or not os.access(KeyFileNameLocation(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our identity - use default path, new copy of BitDust
-    if not os.access(LocalIdentityFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our config - use default path, new copy of BitDust
-    if not os.access(UserConfigFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our suppliers - use default path, new copy of BitDust
-    if not os.access(SupplierIDsFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
-
-    # if we did not found our customers - use default path, new copy of BitDust
-    if not os.access(CustomerIDsFilename(), os.R_OK):
-        _BaseDirPath = path2
-        if not os.path.exists(_BaseDirPath):
-            bpio._dirs_make(_BaseDirPath)
-        return
 
 #------------------------------------------------------------------------------
 #--- USER SETTINGS VALIDATION -------------------------------------------------
@@ -2617,6 +2487,29 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/udp-transport/priority', 20)
 
 
+def _checkRandomizePortNumbers():
+    """
+    To avoid conflicts between two nodes inside same sub-network they both need to use
+    different port numbers. So this method will first check if port number already set or not.
+    If it is not it will set random value in the range.
+    """
+    # 7000-8000 for tcp transport
+    if not config.conf().getOriginalData('services/tcp-connections/tcp-port'):
+        config.conf().setData('services/tcp-connections/tcp-port', str(random.randint(7001, 8000) - 1))
+    # 8000-9000 for udp transport
+    if not config.conf().getOriginalData('services/udp-datagrams/udp-port'):
+        config.conf().setData('services/udp-datagrams/udp-port', str(random.randint(8001, 9000) - 1))
+    # 9000-10000 for http transport
+    if not config.conf().getOriginalData('services/http-connections/http-port'):
+        config.conf().setData('services/http-connections/http-port', str(random.randint(9001, 10000) - 1))
+    # 10000-11000 for entangled dht
+    if not config.conf().getOriginalData('services/entangled-dht/udp-port'):
+        config.conf().setData('services/entangled-dht/udp-port', str(random.randint(10001, 11000) - 1))
+    # 11000-12000 for blockchain
+    if not config.conf().getOriginalData('services/blockchain/port'):
+        config.conf().setData('services/blockchain/port', str(random.randint(11001, 12000) - 1))
+
+
 def _createNotExisingSettings():
     """
     Validate user settings and create them from default values.
@@ -2698,19 +2591,19 @@ def main():
     try:
         inp = sys.argv[1].rstrip('/')
     except:
-        print 'wrong input'
+        print('wrong input')
         return
     if not config.conf().exist(inp):
-        print 'not exist'
+        print('not exist')
         return
     if not config.conf().hasChilds(inp):
-        print inp, config.conf().getData(inp)
+        print(inp, config.conf().getData(inp))
         return
     for child in config.conf().listEntries(inp):
         if config.conf().hasChilds(child):
-            print child, config.conf().listEntries(child)
+            print(child, config.conf().listEntries(child))
         else:
-            print child, config.conf().getData(child)
+            print(child, config.conf().getData(child))
 
 #------------------------------------------------------------------------------
 

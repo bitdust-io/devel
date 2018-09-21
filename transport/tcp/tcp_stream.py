@@ -27,7 +27,12 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from io import open
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -37,6 +42,7 @@ import time
 import cStringIO
 import struct
 import random
+import six
 
 from twisted.internet import reactor
 from twisted.protocols import basic
@@ -113,7 +119,7 @@ def list_input_streams(sorted_by_time=True):
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
             if connection.stream:
-                streams.extend(connection.stream.inboxFiles.values())
+                streams.extend(list(connection.stream.inboxFiles.values()))
     if sorted_by_time:
         streams.sort(key=lambda stream: stream.started)
     return streams
@@ -125,7 +131,7 @@ def list_output_streams(sorted_by_time=True):
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
             if connection.stream:
-                streams.extend(connection.stream.outboxFiles.values())
+                streams.extend(list(connection.stream.outboxFiles.values()))
     if sorted_by_time:
         streams.sort(key=lambda stream: stream.started)
     return streams
@@ -189,11 +195,11 @@ class TCPFileStream():
 
     def abort_files(self, reason='connection closed'):
         from transport.tcp import tcp_connection
-        file_ids_to_remove = self.inboxFiles.keys()
+        file_ids_to_remove = list(self.inboxFiles.keys())
         for file_id in file_ids_to_remove:
             # self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id)+' '+reason)
             self.inbox_file_done(file_id, 'failed', reason)
-        file_ids_to_remove = self.outboxFiles.keys()
+        file_ids_to_remove = list(self.outboxFiles.keys())
         for file_id in file_ids_to_remove:
             self.send_data(
                 tcp_connection.CMD_ABORT, struct.pack(
@@ -547,6 +553,8 @@ class FileSender(basic.FileSender):
         self.parent = None
 
     def transform_data(self, data):
+        # if isinstance(data, six.binary_type):
+        #     data = data.decode('utf-8')
         datalength = len(data)
         datagram = ''
         datagram += struct.pack('i', self.parent.file_id)

@@ -19,11 +19,14 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 import re
 import time
 import pprint
+from six.moves import range
 
 h1 = open(sys.argv[1]).read().splitlines()
 h2 = open(sys.argv[2]).read().splitlines()
@@ -42,8 +45,8 @@ for commit2 in h2:
         dt2 = time.mktime(time.strptime(dt2.group(1)[:-6]))
         h2times[dt2] = commit2
 
-h1sorted = sorted(h1times.keys(), reverse=True)
-h2sorted = sorted(h2times.keys(), reverse=True)
+h1sorted = sorted(list(h1times.keys()), reverse=True)
+h2sorted = sorted(list(h2times.keys()), reverse=True)
 
 tcurr = time.time()
 
@@ -51,7 +54,7 @@ parts = {}
 parts[-1] = []
 parts[-1].append((tcurr, '123456 [date] !!! NOT PUBLISHED YET !!!'))
 
-for i in xrange(len(h2sorted)):
+for i in range(len(h2sorted)):
     dt2 = h2sorted[i]
     commit2 = h2times[dt2]
     parts[i] = []
@@ -62,15 +65,15 @@ for i in xrange(len(h2sorted)):
             parts[i - 1].append((dt1, commit1))
     tcurr = dt2
 
-for i in sorted(parts.keys(), reverse=False):
+for i in sorted(list(parts.keys()), reverse=False):
     commits = parts[i]
     headcommit = commits.pop(0)
-    print '[%s]' % time.asctime(time.localtime(headcommit[0]))
-    print re.match('\w+? \[.+?\] (.+?)$', headcommit[1]).group(1)
-    print '\n%s Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)\n' % (time.strftime('%Y-%m-%d', time.localtime(headcommit[0])))
+    print('[%s]' % time.asctime(time.localtime(headcommit[0])))
+    print(re.match('\w+? \[.+?\] (.+?)$', headcommit[1]).group(1))
+    print('\n%s Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)\n' % (time.strftime('%Y-%m-%d', time.localtime(headcommit[0]))))
     for dt, commit in commits:
-        print '* %s' % (
+        print('* %s' % (
             # time.strftime('%c', time.localtime(dt)),
             re.match('\w+? \[.+?\] (.+?)$', commit).group(1),
-        )
-    print
+        ))
+    print()

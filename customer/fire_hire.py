@@ -99,7 +99,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -320,7 +325,8 @@ class FireHire(automat.Automat):
         # contactsdb.num_suppliers(), len(self.dismiss_list),
         # settings.getSuppliersNumberDesired()))
         if '' in contactsdb.suppliers():
-            lg.out(4, 'fire_hire.isMoreNeeded found empty suppliers!!!')
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty suppliers!!!')
             return True
         if isinstance(arg, list):
             dismissed = arg
@@ -329,9 +335,10 @@ class FireHire(automat.Automat):
         s = set(contactsdb.suppliers())
         s.difference_update(set(dismissed))
         result = len(s) < settings.getSuppliersNumberDesired()
-        lg.out(14, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
-            contactsdb.num_suppliers(), len(dismissed), len(s),
-            settings.getSuppliersNumberDesired(), result))
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
+                contactsdb.num_suppliers(), len(dismissed), len(s),
+                settings.getSuppliersNumberDesired(), result))
         return result
 
     def isAllReady(self, arg):
@@ -416,7 +423,7 @@ class FireHire(automat.Automat):
         """
         self.connect_list = []
         for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl == '':
+            if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
@@ -550,7 +557,7 @@ class FireHire(automat.Automat):
         position = -1
         old_idurl = None
         for i in range(len(current_suppliers)):
-            if current_suppliers[i].strip() == '':
+            if not current_suppliers[i].strip():
                 position = i
                 break
             if current_suppliers[i] in self.dismiss_list:

@@ -30,6 +30,7 @@
 module:: my_id
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import string
@@ -194,7 +195,7 @@ def loadLocalIdentity():
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     if os.path.exists(filename):
         xmlid = bpio.ReadTextFile(filename)
-        lg.out(6, 'my_id.loadLocalIdentity %d bytes read from\n        %s' % (len(xmlid), filename))
+        lg.out(6, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), filename))
     if xmlid == '':
         lg.out(2, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % filename)
         return
@@ -229,7 +230,7 @@ def saveLocalIdentity():
     _LocalIdentity.sign()
     xmlid = _LocalIdentity.serialize()
     filename = bpio.portablePath(settings.LocalIdentityFilename())
-    bpio.WriteFile(filename, xmlid)
+    bpio.WriteTextFile(filename, xmlid)
     lg.out(6, "my_id.saveLocalIdentity %d bytes wrote to %s" % (len(xmlid), filename))
 
 
@@ -314,7 +315,7 @@ def setTransportOrder(orderL):
     orderL = validateTransports(orderL)
     orderTxt = string.join(orderl, ' ')
     lg.out(8, 'my_id.setTransportOrder: ' + str(orderTxt))
-    bpio.WriteFile(settings.DefaultTransportOrderFilename(), orderTxt)
+    bpio.WriteTextFile(settings.DefaultTransportOrderFilename(), orderTxt)
 
 
 def getTransportOrder():
@@ -396,7 +397,7 @@ def buildProtoContacts(id_obj, skip_transports=[]):
                     new_order.append(cproto)
         new_order_correct = list(new_order)
         for nproto in new_order:
-            if nproto not in new_contacts.keys():
+            if nproto not in list(new_contacts.keys()):
                 new_order_correct.remove(nproto)
 
 #            cset = set(corder)

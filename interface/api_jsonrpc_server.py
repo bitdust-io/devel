@@ -32,6 +32,10 @@ module:: api_jsonrpc_server
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 24
 
@@ -78,7 +82,7 @@ def init(json_rpc_port=None):
     from system import bpio
     if not json_rpc_port:
         json_rpc_port = settings.getJsonRPCServerPort()
-    bpio.AtomicWriteFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
+    bpio.WriteTextFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
     # TODO: add protection: accept connections only from local host: 127.0.0.1
     _JsonRPCServer = reactor.listenTCP(json_rpc_port, server.Site(BitDustJsonRPCServer()))
     if _Debug:
@@ -131,7 +135,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
             fm_request = {}
             params = [] if 'params' not in request_dict else request_dict['params']
             fm_request['params'] = {
-                i[0]: i[1] for i in map(lambda p: p.split("=", 1), params)}
+                i[0]: i[1] for i in [p.split("=", 1) for p in params]}
             fm_request['params']['mode'] = fm_method
             request_dict = {'_executed': time.time(), }
         except Exception as exc:
@@ -172,13 +176,13 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return result
 
     def jsonrpc_stop(self):
-        return api.stop()
+        return api.process_stop()
 
     def jsonrpc_restart(self, show=False):
-        return api.restart(show)
+        return api.process_restart(show)
 
     def jsonrpc_show(self):
-        return api.show()
+        return api.process_show()
 
     def jsonrpc_filemanager(self, json_request):
         return api.filemanager(json_request)

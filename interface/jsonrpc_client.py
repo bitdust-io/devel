@@ -30,6 +30,8 @@
 module:: jsonrpc_client
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
 import pprint
 
@@ -57,7 +59,7 @@ def loop_network_connected():
     proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
 
     def _call():
-        print '_call', time.asctime()
+        print('_call', time.asctime())
         proxy.callRemote('network_connected', 3).addBoth(_loop)
 
     def _loop(x=None):
@@ -67,7 +69,7 @@ def loop_network_connected():
             reason = x.get('reason')
         except:
             status = 'FAILED'
-        print '_loop', 'status:', status, '   reason:', reason, ' ...'
+        print('_loop', 'status:', status, '   reason:', reason, ' ...')
         if status == 'OK':
             reactor.callLater(3, _call)
         else:
@@ -84,10 +86,10 @@ def loop_event_listen():
     def _loop(x=None):
         if x:
             for evt in x.get('result', []):
-                print 'EVENT:', evt['id']
+                print('EVENT:', evt['id'])
                 # pprint.pprint(evt)
         else:
-            print '.',
+            print('.', end=' ')
         d = proxy.callRemote('events_listen', 'test_event_consumer')
         d.addCallback(_loop)
         d.addErrback(lambda err: reactor.callLater(1, _loop))

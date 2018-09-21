@@ -21,12 +21,14 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
+from __future__ import absolute_import
 import os
 
 import lib.packetid
 import main.settings
 
 import raid.read
+from six.moves import range
 
 
 def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix):
@@ -54,7 +56,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
     # in the "remote" matrix (see ``p2p.backup_matrix``) is -1 or 0
     # but the supplier who must keep that file is online.
     # In other words, if supplier is online but do not have that piece - this piece is missing.
-    for supplierNum in xrange(supplierCount):
+    for supplierNum in range(supplierCount):
         if availableSuppliers[supplierNum] == 0:
             continue
         # if remote Data file not exist and supplier is online
@@ -73,7 +75,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
     while madeProgress:
         madeProgress = False
         # will check all data packets we have
-        for supplierNum in xrange(supplierCount):
+        for supplierNum in range(supplierCount):
             dataFileName = _build_raid_file_name(supplierNum, 'Data')
             # if we do not have this item on hands - we will reconstruct it from other items
             if localData[supplierNum] == 0:
@@ -102,7 +104,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 # self.outstandingFilesList.append((dataFileName, self.BuildFileName(supplierNum, 'Data'), supplierNum))
                 # self.dataSent[supplierNum] = 1
     # now with parities ...
-    for supplierNum in xrange(supplierCount):
+    for supplierNum in range(supplierCount):
         parityFileName = _build_raid_file_name(supplierNum, 'Parity')
         if localParity[supplierNum] == 0:
             parityMap = eccMap.ParityToData[supplierNum]

@@ -51,11 +51,12 @@ http://www.parallelpython.com - updates, documentation, examples and support
 forums
 """
 
+from __future__ import absolute_import
 import socket
 import sys
 import time
 import logging
-import thread
+import six.moves._thread
 
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
@@ -114,7 +115,7 @@ class Discover(object):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.bind(self.interface_addr)
 
-        thread.start_new_thread(self.broadcast, ())
+        six.moves._thread.start_new_thread(self.broadcast, ())
 
         while True:
             try:
@@ -126,7 +127,7 @@ class Discover(object):
                 if not self.base.autopp_list.get(hostid, 0) and self.isclient \
                         and message[0] == 'S':
                     logging.debug("Connecting to host %s" % (hostid, ))
-                    thread.start_new_thread(self.base.connect1,
+                    six.moves._thread.start_new_thread(self.base.connect1,
                                             remote_address + (False, ))
                 if not self.isclient and message[0] == 'C':
                     logging.debug("Replying to host %s" % (hostid, ))

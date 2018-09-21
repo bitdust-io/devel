@@ -62,6 +62,7 @@ EVENTS:
     * :red:`shutdowner.state`
 """
 
+from __future__ import absolute_import
 import os
 import sys
 
@@ -320,12 +321,12 @@ class Initializer(automat.Automat):
         if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
             lg.out(2, 'initializer._check_install local key or local id not exists')
             return False
-        current_key = bpio.ReadBinaryFile(keyfilename)
-        current_id = bpio.ReadBinaryFile(idfilename)
-        if current_id == '':
+        current_key = bpio.ReadTextFile(keyfilename)
+        current_id = bpio.ReadTextFile(idfilename)
+        if not current_id:
             lg.out(2, 'initializer._check_install local identity is empty ')
             return False
-        if current_key == '':
+        if not current_key:
             lg.out(2, 'initializer._check_install private key is empty ')
             return False
         try:
@@ -346,7 +347,7 @@ class Initializer(automat.Automat):
         if not res:
             lg.out(2, 'initializer._check_install local identity is not valid ')
             return False
-        lg.out(2, 'initializer._check_install done')
+        lg.out(2, 'initializer._check_install SUCCESS!!!')
         return True
 
     def _init_local(self):

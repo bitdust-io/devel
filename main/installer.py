@@ -68,7 +68,10 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import sys
+
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor
@@ -330,7 +333,7 @@ class Installer(automat.Automat):
 
     def doSaveName(self, arg):
         settings.setPrivateKeySize(arg['pksize'])
-        bpio.WriteFile(settings.UserNameFilename(), arg['username'])
+        bpio.WriteTextFile(settings.UserNameFilename(), arg['username'])
 
     def doReadKey(self, arg):
         # keyfn = arg['keyfilename']

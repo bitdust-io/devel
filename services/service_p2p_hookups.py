@@ -30,6 +30,7 @@
 module:: service_p2p_hookups
 """
 
+from __future__ import absolute_import
 from services.local_service import LocalService
 
 
@@ -116,7 +117,7 @@ class P2PHookupsService(LocalService):
             lg.warn('json payload invalid')
             p2p_service.SendFail(newpacket, 'json payload invalid')
             return False
-        service_name = json_payload['name']
+        service_name = str(json_payload['name'])
         lg.out(self.debug_level, "service_p2p_hookups.RequestService {%s} from %s" % (service_name, newpacket.OwnerID, ))
         if not driver.is_exist(service_name):
             lg.warn("got wrong payload in %s" % service_name)

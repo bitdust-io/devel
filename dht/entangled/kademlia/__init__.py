@@ -48,5 +48,6 @@ C{entangled.kademlia.constants} to suit their needs. Refer to the C{constants}
 module for documentation on what these values control.
 """
 
-from node import Node
-from datastore import DictDataStore, SQLiteDataStore
+from __future__ import absolute_import
+from .node import Node
+from .datastore import DictDataStore, SQLiteDataStore

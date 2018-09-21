@@ -45,21 +45,23 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 18
+from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
 import time
 
-#------------------------------------------------------------------------------
-
 from twisted.internet import reactor
+
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from automats import automat
+
 from lib import udp
+from lib import strng
+
 from main import settings
 
 from stun import stun_client
@@ -70,6 +72,11 @@ from services import driver
 
 from transport.udp import udp_connector
 from transport.udp import udp_session
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 18
 
 #------------------------------------------------------------------------------
 
@@ -133,8 +140,7 @@ class UDPNode(automat.Automat):
     def A(self, event, arg):
         #---LISTEN---
         if self.state == 'LISTEN':
-            if event == 'datagram-received' and self.isPacketValid(
-                    arg) and not self.isStun(arg) and not self.isKnownPeer(arg):
+            if event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg):
                 self.doStartNewSession(arg)
             elif event == 'go-offline':
                 self.state = 'DISCONNECTING'
@@ -244,7 +250,7 @@ class UDPNode(automat.Automat):
             return True
         if _Debug:
             lg.out(_DebugLevel, 'udp_node.isKnownUser %s not found in %s' % (
-                user_id, udp_session.sessions_by_peer_id().keys()))
+                user_id, list(udp_session.sessions_by_peer_id().keys())))
         return False
 
     def isKnowMyAddress(self, arg):
@@ -278,7 +284,7 @@ class UDPNode(automat.Automat):
         from transport.udp import udp_interface
         from transport.udp import udp_stream
         self.options = arg
-        self.my_idurl = self.options['idurl']
+        self.my_idurl = strng.to_text(self.options['idurl'])
         self.listen_port = int(self.options['udp_port'])
         self.my_id = udp_interface.idurl_to_id(self.my_idurl)
         udp.proto(self.listen_port).add_callback(self._datagram_received)
@@ -408,8 +414,8 @@ class UDPNode(automat.Automat):
         Action method.
         """
         d = dht_service.set_value(
-            self.my_id + ':address', '%s:%d' %
-            (self.my_address[0], self.my_address[1]),
+            self.my_id + ':address',
+            '%s:%d' % (strng.to_bin(self.my_address[0]), self.my_address[1]),
             age=int(time.time()),
         )
         d.addCallback(self._wrote_my_address)
@@ -423,8 +429,8 @@ class UDPNode(automat.Automat):
         lg.out(
             12, 'udp_node.doDisconnect going to close %d sessions and %d connectors' %
             (len(
-                udp_session.sessions().values()), len(
-                udp_connector.connectors().values())))
+                list(udp_session.sessions().values())), len(
+                list(udp_connector.connectors().values()))))
         udp_stream.stop_process_streams()
         udp_session.stop_process_sessions()
         for s in udp_session.sessions().values():

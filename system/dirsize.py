@@ -33,6 +33,8 @@ and it will do the job and than remember that size. Now you have a fast
 way to get the folder size, you can ask to scan same folder again.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 
@@ -47,7 +49,7 @@ from logs import lg
 
 from lib import diskspace
 
-import bpio
+from . import bpio
 
 #------------------------------------------------------------------------------
 
@@ -143,7 +145,7 @@ def main():
     Run the test - use command line to pass a location.
     """
     def _done(path, sz, arg):
-        print path, sz
+        print(path, sz)
         reactor.stop()
     bpio.init()
     ask(sys.argv[1], _done)

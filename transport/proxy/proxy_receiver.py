@@ -20,7 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-
 """
 .. module:: proxy_receiver.
 
@@ -58,6 +57,10 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 10
 
@@ -86,6 +89,7 @@ from crypt import encrypted
 from p2p import commands
 from p2p import lookup
 from p2p import contact_status
+from p2p import propagate
 
 from contacts import identitycache
 
@@ -169,7 +173,9 @@ def A(event=None, arg=None):
     if _ProxyReceiver is None:
         # set automat name and starting state here
         _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP',
-                                       debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug)
+                                       debug_level=_DebugLevel,
+                                       log_events=(_Debug and _DebugLevel>12),
+                                       log_transitions=_Debug, )
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver
@@ -442,8 +448,19 @@ class ProxyReceiver(automat.Automat):
             return
         inpt.close()
         routed_packet = signed.Unserialize(data)
-        if not routed_packet or not routed_packet.Valid():
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
+        if not routed_packet:
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet failed from %s' % newpacket.CreatorID)
+            return
+        if routed_packet.Command == commands.Identity():
+            newidentity = identity.identity(xmlsrc=routed_packet.Payload)
+            idurl = newidentity.getIDURL()
+            if not identitycache.HasKey(idurl):
+                lg.warn('received new identity: %s' % idurl)
+            if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
+                lg.warn("ERROR has non-Valid identity")
+                return
+        if not routed_packet.Valid():
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet from %s' % newpacket.CreatorID)
             return
         self.traffic_in += len(data)
         if _Debug:
@@ -640,6 +657,7 @@ class ProxyReceiver(automat.Automat):
         # self.automat('found-one-node', 'http://p2p-id.ru/seed0_cb67.xml')
         # self.automat('found-one-node', 'https://bitdust.io:8084/seed2_b17a.xml')
         # self.automat('found-one-node', 'http://datahaven.net/seed2_916e.xml')
+        # self.automat('found-one-node', 'http://bitdust.ai/seed1_c2c2.xml')
         # return
         preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         preferred_routers = []
@@ -649,7 +667,10 @@ class ProxyReceiver(automat.Automat):
             known_router = random.choice(preferred_routers)
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
-            self.automat('found-one-node', known_router)
+            d = propagate.PingContact(known_router, timeout=5)
+            d.addCallback(lambda resp_tuple: self.automat('found-one-node', known_router))
+            d.addErrback(lg.errback)
+            # self.automat('found-one-node', known_router)
             return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node will start DHT lookup')

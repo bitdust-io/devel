@@ -34,7 +34,12 @@ IDURL. So this is a local cache of user ID's.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -335,7 +340,7 @@ def scheduleForCaching(idurl, timeout=0):
 #------------------------------------------------------------------------------
 
 
-def immediatelyCaching(idurl, timeout=0):
+def immediatelyCaching(idurl, timeout=10):
     """
     A smart method to cache some identity and get results in callbacks.
     """
@@ -353,13 +358,13 @@ def immediatelyCaching(idurl, timeout=0):
             if result:
                 result.callback(src)
             if _Debug:
-                lg.out(14, '    [cached] %s' % idurl)
+                lg.out(14, '[cached] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, len(src))
         else:
             if result:
                 result.errback(Exception(src))
             if _Debug:
-                lg.out(14, '    [cache error] %s' % idurl)
+                lg.warn('[cache error] %s is not valid' % idurl)
             p2p_stats.count_identity_cache(idurl, 0)
         return src
 
@@ -372,7 +377,7 @@ def immediatelyCaching(idurl, timeout=0):
             lg.warn('caching task for %s was not found' % idurl)
         p2p_stats.count_identity_cache(idurl, 0)
         if _Debug:
-            lg.out(14, '    [cache failed] %s' % idurl)
+            lg.warn('[cache failed] %s : %s' % (idurl, x.getErrorMessage(), ))
         return None
 
     _CachingTasks[idurl] = Deferred()
@@ -432,10 +437,10 @@ def _test():
     init()
 
     def _resp(src):
-        print src
+        print(src)
         reactor.stop()
 
-    immediatelyCaching('http://p2p-id.ru/veselin.xml').addBoth(_resp)
+    immediatelyCaching(sys.argv[1]).addBoth(_resp)
     reactor.run()
     shutdown()
 

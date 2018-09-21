@@ -57,7 +57,12 @@ RAIDREAD:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+import six
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -65,6 +70,7 @@ _DebugLevel = 12
 from logs import lg
 
 from lib import misc
+from lib import strng
 
 from contacts import contactsdb
 
@@ -113,7 +119,7 @@ class Block:
         self.BlockNumber = BlockNumber
         if callable(EncryptKey):
             self.EncryptedSessionKey = EncryptKey(SessionKey)
-        elif isinstance(EncryptKey, basestring):
+        elif isinstance(EncryptKey, six.string_types):
             self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
         else:
             self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
@@ -143,7 +149,7 @@ class Block:
         """
         if callable(self.DecryptKey):
             return self.DecryptKey(self.EncryptedSessionKey)
-        elif isinstance(self.DecryptKey, basestring):
+        elif isinstance(self.DecryptKey, six.string_types):
             return my_keys.decrypt(self.DecryptKey, self.EncryptedSessionKey)
         return key.DecryptLocalPrivateKey(self.EncryptedSessionKey)
 
@@ -152,15 +158,16 @@ class Block:
         Generate a single string with all data fields, used to create a hash
         for that ``encrypted_block``.
         """
-        sep = "::::"
-        StringToHash = self.CreatorID
-        StringToHash += sep + self.BackupID
-        StringToHash += sep + str(self.BlockNumber)
-        StringToHash += sep + self.SessionKeyType
-        StringToHash += sep + self.EncryptedSessionKey
-        StringToHash += sep + str(self.Length)
-        StringToHash += sep + str(self.LastBlock)
-        StringToHash += sep + self.EncryptedData
+        sep = b'::::'
+        StringToHash = b''
+        StringToHash += strng.to_bin(self.CreatorID)
+        StringToHash += sep + strng.to_bin(self.BackupID)
+        StringToHash += sep + strng.to_bin(str(self.BlockNumber))
+        StringToHash += sep + strng.to_bin(self.SessionKeyType)
+        StringToHash += sep + strng.to_bin(self.EncryptedSessionKey)
+        StringToHash += sep + strng.to_bin(str(self.Length))
+        StringToHash += sep + strng.to_bin(str(self.LastBlock))
+        StringToHash += sep + strng.to_bin(self.EncryptedData)
         return StringToHash
 
     def GenerateHash(self):

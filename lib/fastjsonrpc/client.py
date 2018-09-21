@@ -23,6 +23,7 @@ Provides a Proxy class, that can be used for calling remote functions via
 JSON-RPC.
 """
 
+from __future__ import absolute_import
 import base64
 
 from zope.interface import implements
@@ -37,7 +38,7 @@ from twisted.web.client import (Agent, ContentDecoderAgent, GzipDecoder,
                                 HTTPConnectionPool)
 from twisted.web.http_headers import Headers
 
-import jsonrpc
+from . import jsonrpc
 
 
 class ReceiverProtocol(Protocol):

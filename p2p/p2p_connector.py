@@ -65,6 +65,11 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 12
 
@@ -92,9 +97,9 @@ from services import driver
 
 from userid import my_id
 
-import propagate
-import ratings
-import network_connector
+from . import propagate
+from . import ratings
+from . import network_connector
 
 #------------------------------------------------------------------------------
 

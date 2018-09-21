@@ -31,7 +31,11 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -182,7 +186,7 @@ class PrivateMessage:
     """
 
     def __init__(self, recipient_global_id):
-        self.sender = my_id.getGlobalID()
+        self.sender = my_id.getGlobalID(key_alias='master')
         self.recipient = recipient_global_id
         self.encrypted_session = None
         self.encrypted_body = None
@@ -249,7 +253,7 @@ class PrivateMessage:
                         lg.out(_DebugLevel, 'message.PrivateMessage.decrypt with "master" key')
                     decrypt_session_func = lambda inp: my_keys.decrypt('master', inp)
         if not decrypt_session_func:
-            raise Exception('can not find key for given recipient')
+            raise Exception('can not find key for given recipient: %s' % self.recipient)
         decrypted_sessionkey = decrypt_session_func(self.encrypted_session)
         return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body)
 

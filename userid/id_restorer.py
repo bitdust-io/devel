@@ -51,6 +51,7 @@ Needed for restoration of the user account information using its Private key and
     * do verification and restoration of his locally identity to be able to start the software
 """
 
+from __future__ import absolute_import
 import os
 import sys
 
@@ -240,7 +241,7 @@ class IdRestorer(automat.Automat):
             return
 
         key.ForgetMyKey()
-        bpio.WriteFile(settings.KeyFileName(), _WorkingKey)
+        bpio.WriteTextFile(settings.KeyFileName(), _WorkingKey)
         try:
             key.InitMyKey()
         except:
@@ -267,7 +268,7 @@ class IdRestorer(automat.Automat):
         my_id.setLocalIdentity(local_ident)
         my_id.saveLocalIdentity()
 
-        bpio.WriteFile(settings.UserNameFilename(), my_id.getIDName())
+        bpio.WriteTextFile(settings.UserNameFilename(), my_id.getIDName())
 
         if os.path.isfile(settings.KeyFileName() + '.backup'):
             lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.KeyFileName())

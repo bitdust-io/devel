@@ -37,13 +37,18 @@ opened to be able to send asap
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
 import sys
 import optparse
+import six
 
 try:
     from twisted.internet import reactor
@@ -57,6 +62,8 @@ from twisted.internet.error import CannotListenError
 #------------------------------------------------------------------------------
 
 from logs import lg
+
+from lib import net_misc
 
 from transport.tcp import tcp_stream
 
@@ -141,7 +148,7 @@ def receive(options):
         return None
     try:
         _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))
-        _MyHost = options['host'].split(':')[0] + ':' + str(_InternalPort)
+        _MyHost = net_misc.pack_address((options['host'].split(':')[0], int(_InternalPort)))
         tcp_interface.interface_receiving_started(_MyHost, options)
 
     except CannotListenError as ex:
@@ -164,6 +171,7 @@ def receive(options):
 def connect_to(host, keep_alive=True):
     """
     """
+    host = net_misc.normalize_address(host)
     if host in started_connections():
         lg.warn('already connecting to "%s"' % host)
         return False
@@ -179,14 +187,15 @@ def connect_to(host, keep_alive=True):
     if _Debug:
         lg.out(_DebugLevel, 'tcp_node.connect_to "%s", keep_alive=%s' % (host, keep_alive))
     connection = TCPFactory(host, keep_alive=keep_alive)
-    connection.connector = reactor.connectTCP(host[0], host[1], connection, timeout=_ConnectionTimeout)
     started_connections()[host] = connection
+    connection.connector = reactor.connectTCP(host[0], host[1], connection, timeout=_ConnectionTimeout)
     return False
 
 
 def disconnect_from(host):
     """
     """
+    host = net_misc.normalize_address(host)
     ok = False
     for peeraddr, connections in opened_connections().items():
         alll = False
@@ -233,6 +242,7 @@ def close_connections():
 def send(filename, remoteaddress, description=None, keep_alive=True):
     """
     """
+    remoteaddress = net_misc.normalize_address(remoteaddress)
     result_defer = Deferred()
     if remoteaddress in started_connections():
         started_connections()[remoteaddress].add_outbox_file(filename, description, result_defer, keep_alive)
@@ -261,9 +271,9 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
     if _Debug:
         lg.out(_DebugLevel, 'tcp_node.send start connecting to "%s"' % str(remoteaddress))
     connection = TCPFactory(remoteaddress, keep_alive=keep_alive)
+    started_connections()[remoteaddress] = connection
     connection.add_outbox_file(filename, description, result_defer, keep_alive)
     connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection, timeout=_ConnectionTimeout)
-    started_connections()[remoteaddress] = connection
     if not keep_alive:
         if _Debug:
             lg.out(_DebugLevel, 'tcp_node.send opened a single connection to %s, %d already started and %d opened' % (
@@ -343,6 +353,7 @@ def cancel_file_sending(transferID):
 def cancel_outbox_file(host, filename):
     """
     """
+    host = net_misc.normalize_address(host)
     from transport.tcp import tcp_interface
     for connections in opened_connections().values():
         for connection in connections:
@@ -413,31 +424,3 @@ class TCPFactory(protocol.ClientFactory):
         self.pendingoutboxfiles.append((filename, description, result_defer, keep_alive))
         tcp_stream.process_streams()
 
-#------------------------------------------------------------------------------
-
-
-def parseCommandLine():
-    oparser = optparse.OptionParser()
-    # oparser.add_option("-p", "--tcpport", dest="tcpport", type="int", help="specify port to listen for incoming TCP connections")
-    oparser.add_option("-r", "--rooturl", dest="rooturl", help="specify XMLRPC server URL address in the main process")
-    oparser.add_option("-x", "--xmlrpcport", dest="xmlrpcport", type="int", help="specify port for XMLRPC control")
-    oparser.add_option("-d", "--debug", dest="debug", action="store_true", help="redirect output to stderr")
-    # oparser.set_default('tcpport', 7771)
-    oparser.set_default('rooturl', '')
-    oparser.set_default('xmlrpcport', 0)
-    oparser.set_default('debug', False)
-    (options, args) = oparser.parse_args()
-    options.xmlrpcport = int(options.xmlrpcport)
-    # options.tcpport = int(options.tcpport)
-    return options, args
-
-
-def main():
-    pass
-
-#------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    main()
-    reactor.run()

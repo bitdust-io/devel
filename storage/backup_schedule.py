@@ -36,7 +36,10 @@ need to turn on this module, it is switched off during last "big changes".
 many things was changed since that moment, so need to put some work here
 """
 
+from __future__ import absolute_import
 from logs import lg
+import six
+from io import open
 
 #------------------------------------------------------------------------------
 
@@ -207,7 +210,7 @@ def task(dirName=None):
     global _SheduledTasks
     if dirName is None:
         return _SheduledTasks
-    return _SheduledTasks.get(unicode(dirName), None)
+    return _SheduledTasks.get(six.text_type(dirName), None)
 
 
 def next(dirName):

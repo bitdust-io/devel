@@ -47,12 +47,15 @@ were we left off if a crash happened while we were waiting to send a block
 (most of the time is waiting so good chance).
 """
 
+from __future__ import absolute_import
 import os
 import sys
 import platform
 import tarfile
 import traceback
 import locale
+import six
+from io import open
 
 #------------------------------------------------------------------------------
 
@@ -188,9 +191,9 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
         mode += compression
     basedir, filename = os.path.split(sourcepath)
     if arcname is None:
-        arcname = unicode(filename)
+        arcname = six.text_type(filename)
     else:
-        arcname = unicode(arcname)
+        arcname = six.text_type(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
     tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
     # if we have python 2.6 then we can use an exclude function, filter parameter is not available
@@ -208,7 +211,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
                 if not os.path.isdir(subpath):
                     tar.add(
                         name=subpath,
-                        arcname=unicode(os.path.join(arcname, subfile)),
+                        arcname=six.text_type(os.path.join(arcname, subfile)),
                         recursive=False,
                         exclude=lambda tar_path: _ExcludeFunction(subpath, tar_path),
                     )
@@ -228,7 +231,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
                 if not os.path.isdir(subpath):
                     tar.add(
                         name=subpath,
-                        arcname=unicode(os.path.join(arcname, subfile)),
+                        arcname=six.text_type(os.path.join(arcname, subfile)),
                         recursive=False,
                         filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
                     )
@@ -245,7 +248,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
                 if not os.path.isdir(subpath):
                     tar.add(
                         name=subpath,
-                        arcname=unicode(os.path.join(arcname, subfile)),
+                        arcname=six.text_type(os.path.join(arcname, subfile)),
                         recursive=False,
                     )
     tar.close()

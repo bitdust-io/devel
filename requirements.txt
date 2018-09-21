@@ -1,14 +1,8 @@
-twisted
+twisted==18.4.0
+service_identity
 pycryptodomex
-# pyasn1
-# pycrypto
-# pyOpenSSL
 pyparsing
 appdirs
-# cryptography
-# service_identity
 psutil
-# enum34
-# ipaddress
 cffi
-# pkgversion
+six

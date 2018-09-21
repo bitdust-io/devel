@@ -32,6 +32,11 @@ module:: api_rest_http_server
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+import os
 import cgi
 import json
 
@@ -132,7 +137,9 @@ class BitDustAPISite(Site):
         Only accepting connections from local machine!
         """
         if addr.host != '127.0.0.1':
-            return None
+            if 'BITDUST_API_PASS_EXTERNAL_CONNECTIONS' not in os.environ.keys():
+                return None
+
         return Site.buildProtocol(self, addr)
 
 
@@ -146,21 +153,25 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/p/st$')
     @GET('^/process/stop/v1$')
     def process_stop_v1(self, request):
-        return api.stop()
+        return api.process_stop()
 
     @GET('^/p/rst$')
     @GET('^/process/restart/v1$')
     def process_restart_v1(self, request):
-        return api.restart(showgui=bool(request.args.get('showgui')))
+        return api.process_restart(showgui=bool(request.args.get('showgui')))
 
     @GET('^/p/s$')
     @GET('^/process/show/v1$')
     def process_show_v1(self, request):
-        return api.show()
+        return api.process_show()
     
     @GET('^/process/health/v1$')
     def process_health_v1(self, request):
-        return api.health()
+        return api.process_health()
+
+    @GET('^/process/debug/v1$')
+    def process_shell_v1(self, request):
+        return api.process_debug()
 
     #------------------------------------------------------------------------------
 
@@ -236,6 +247,12 @@ class BitDustRESTHTTPServer(APIResource):
         data = _request_data(request, mandatory_keys=['username', ])
         return api.identity_create(username=data['username'], )
 
+    @POST('^/i/b')
+    @POST('^/identity/backup/v1$')
+    def identity_backup_v1(self, request):
+        data = _request_data(request, mandatory_keys=['destination_path', ])
+        return api.identity_backup(destination_filepath=data['destination_path'])
+
     @POST('^/i/r$')
     @POST('^/identity/recover/v1$')
     @POST('^/identity/my/recover/v1$')
@@ -246,7 +263,7 @@ class BitDustRESTHTTPServer(APIResource):
             private_key_local_file = data.get('private_key_local_file')
             if private_key_local_file:
                 from system import bpio
-                private_key_source = bpio.ReadBinaryFile(bpio.portablePath(private_key_local_file))
+                private_key_source = bpio.ReadTextFile(bpio.portablePath(private_key_local_file))
         return api.identity_recover(
             private_key_source=private_key_source,
             known_idurl=data.get('known_idurl'))
@@ -484,6 +501,23 @@ class BitDustRESTHTTPServer(APIResource):
 
     #------------------------------------------------------------------------------
 
+    @GET('^/sp/d$')
+    @GET('^/space/donated/v1$')
+    def space_donated_v1(self, request):
+        return api.space_donated()
+
+    @GET('^/sp/c$')
+    @GET('^/space/consumed/v1$')
+    def space_consumed_v1(self, request):
+        return api.space_consumed()
+
+    @GET('^/sp/l$')
+    @GET('^/space/local/v1$')
+    def space_local_v1(self, request):
+        return api.space_local()
+
+    #------------------------------------------------------------------------------
+
     @GET('^/su/l$')
     @GET('^/supplier/v1$')
     @GET('^/supplier/list/v1$')
@@ -604,11 +638,11 @@ class BitDustRESTHTTPServer(APIResource):
         )
 
     #------------------------------------------------------------------------------
-
-    @GET('^/msg/l?')
-    @GET('^/message/list/v1?')
-    def message_list_v1(self):
-        return
+    @GET('^/msg/h?')
+    @GET('^/message/history/v1$')
+    def message_history_v1(self, request):
+        user_identity = _request_arg(request, 'id', None, True)
+        return api.message_history(user=user_identity)
 
     @GET('^/msg/r/(?P<consumer_id>[^/]+)/$')
     @GET('^/message/receive/(?P<consumer_id>[^/]+)/v1$')
@@ -768,12 +802,6 @@ class BitDustRESTHTTPServer(APIResource):
     @GET('^/queue/list/v1$')
     def queue_list_v1(self, request):
         return api.queue_list()
-
-    #------------------------------------------------------------------------------
-
-    @GET('^/shell/v1$')
-    def pdb_shell_v1(self, request):
-        return api.pdb_shell()
 
     #------------------------------------------------------------------------------
 

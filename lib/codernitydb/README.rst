@@ -1,73 +1,253 @@
-CodernityDB pure python, NoSQL, fast database
-=============================================
+This repository
+===============
+
+
+This is an intent **to port CodernityDB to Python 3**, from de [original source](http://labs.codernity.com/codernitydb), written for Python 2.x, 
 
 CodernityDB is opensource, pure python (no 3rd party dependency), fast (really fast check Speed in documentation if you don't believe in words), multiplatform, schema-less, NoSQL_ database. It has optional support for HTTP server version (CodernityDB-HTTP), and also Python client library (CodernityDB-PyClient) that aims to be 100% compatible with embeded version.
 
+**Although this port is a beta** yet, it works in the basic usage cases.
 
-You can call it a more advanced key-value database. With multiple key-values indexes in the same engine. Also CodernityDB supports functions that are executed inside database.
+Calling for help
+================
 
+Any help to port CodernityDB to Python 3 is wellcome. It's a hard works. 
 
-.. note::
-   Bitbucket repo is a public release repo, we will sync it time to time with our main repo. But really feel free to make pull requests / forks etc from this repo.
+Feel free to clone the repo an send any patch.
 
+Status
+======
 
-.. image:: https://bitbucket.org/codernity/codernitydb/raw/tip/docs/CodernityDB.png
-  :align: center
+Following the official examples, I was able to determinate:
 
-
-
-Visit `Codernity Labs`_ to see documentation (included in repo).
-
-Key features
-~~~~~~~~~~~~
-
-* Native python database
-* Multiple indexes
-* Fast (more than 50 000 insert operations per second see Speed in documentation for details)
-* Embeded mode (default) and Server (CodernityDB-HTTP), with client library (CodernityDB-PyClient) that aims to be 100% compatible with embeded one.
-* Easy way to implement custom Storage
+- Insert/Save: Works oks!
+- Get query: Works oks!
+- Duplicates: Works oks!
+- Update/delete: Doesn't works yet.
+- Ordered data: Doesn't works yet.
 
 
-Install
-~~~~~~~
+Ported examples
+===============
 
-Because CodernityDB is pure Python you need to perform standard installation for Python applications::
+There he ported examples:
 
-   pip install CodernityDB
+Insert/Save
+-----------
 
-or using easy_install::
+.. code-block:: python
 
-   easy_install CodernityDB
+    from CodernityDB3.database import Database
 
-or from sources::
+    def main():
+        db = Database('/tmp/tut1')
+        db.create()
+        for x in range(100):
+            print(db.insert(dict(x=x)))
+        for curr in db.all('id'):
+            print(curr)
 
-   hg clone ssh://hg@bitbucket.org/codernity/codernitydb
-   cd codernitydb
-   python setup.py install
-
-
-Contribute & Bugs & Requests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-CodernityDB is one of projects developed and released by Codernity_, so you can contact us directly in any case.
-
-Do you want to contribute? Great! Then just fork this repository on Bitbucket and do a pull request. It can't be more easy!
-
-To fill a bug please also use Bitbucket.
+    main()
 
 
-.. _codernity: http://codernity.com
+Get query
+---------
+
+.. code-block:: python
+
+    from CodernityDB3.database import Database
+    from CodernityDB3.hash_index import HashIndex
 
 
-Support
-~~~~~~~
+    class WithXIndex(HashIndex):
 
-In case of any problems, feature request you can also contact us directly.
+        def __init__(self, *args, **kwargs):
+            kwargs['key_format'] = 'I'
+            super(WithXIndex, self).__init__(*args, **kwargs)
 
-Do you want customized version of CodernityDB ? No problem, just contact us.
+        def make_key_value(self, data):
+            a_val = data.get("x")
+            if a_val is not None:
+                return a_val, None
+            return None
+
+        def make_key(self, key):
+            return key
 
 
+    def main():
+        db = Database('/tmp/tut2')
+        db.create()
+        x_ind = WithXIndex(db.path, 'x')
+        db.add_index(x_ind)
 
-.. _NoSQL: http://en.wikipedia.org/wiki/NoSQL
-.. _KnockoutJS: http://knockoutjs.com/
-.. _Codernity Labs: http://labs.codernity.com/codernitydb
+        for x in range(100):
+            db.insert(dict(x=x))
+
+        for y in range(100):
+            db.insert(dict(y=y))
+
+        print(db.get('x', 10, with_doc=True))        
+
+    if __name__ == '__main__':
+        main()
+    
+
+Duplicates
+----------
+
+.. code-block:: python
+
+    from CodernityDB3.database import Database
+    from CodernityDB3.hash_index import HashIndex
+
+
+    class WithXIndex(HashIndex):
+
+        def __init__(self, *args, **kwargs):
+            kwargs['key_format'] = 'I'
+            super(WithXIndex, self).__init__(*args, **kwargs)
+
+        def make_key_value(self, data):
+            a_val = data.get("x")
+            if a_val is not None:
+                return a_val, None
+            return None
+
+        def make_key(self, key):
+            return key
+
+
+    def main():
+        db = Database('/tmp/tut3')
+        db.create()
+        x_ind = WithXIndex(db.path, 'x')
+        db.add_index(x_ind)
+
+        for x in range(100):
+            db.insert(dict(x=x))
+
+        for x in range(100):
+            db.insert(dict(x=x))
+
+        for y in range(100):
+            db.insert(dict(y=y))
+
+        print(db.get('x', 10, with_doc=True))
+        for curr in db.get_many('x', 10, limit=-1, with_doc=True):
+            print(curr)
+
+    if __name__ == '__main__':
+        main()
+
+    
+    
+Update/delete
+-------------
+
+.. code-block:: python
+
+    from CodernityDB3.database import Database
+    from CodernityDB3.tree_index import TreeBasedIndex
+
+
+    class WithXIndex(TreeBasedIndex):
+
+        def __init__(self, *args, **kwargs):
+            kwargs['node_capacity'] = 10
+            kwargs['key_format'] = 'I'
+            super(WithXIndex, self).__init__(*args, **kwargs)
+
+        def make_key_value(self, data):
+            t_val = data.get('x')
+            if t_val is not None:
+                return t_val, None
+            return None
+
+        def make_key(self, key):
+            return key
+
+
+    def main():
+        db = Database('/tmp/tut_update')
+        db.create()
+        x_ind = WithXIndex(db.path, 'x')
+        db.add_index(x_ind)
+
+        # full examples so we had to add first the data
+        # the same code as in previous step
+
+        for x in range(100):
+            db.insert(dict(x=x))
+
+        for y in range(100):
+            db.insert(dict(y=y))
+
+        # end of insert part
+
+        print(db.count(db.all, 'x'))
+
+        for curr in db.all('x', with_doc=True):
+            doc = curr['doc']
+            if curr['key'] % 7 == 0:
+                db.delete(doc)
+            elif curr['key'] % 5 == 0:
+                doc['updated'] = True
+                db.update(doc)
+
+        print(db.count(db.all, 'x'))
+
+        for curr in db.all('x', with_doc=True):
+            print(curr)
+
+    if __name__ == '__main__':
+        main()
+
+
+Ordered
+-------
+
+.. code-block:: python
+
+    from CodernityDB3.database import Database
+    from CodernityDB3.tree_index import TreeBasedIndex
+
+
+    class WithXIndex(TreeBasedIndex):
+
+        def __init__(self, *args, **kwargs):
+            kwargs['node_capacity'] = 10
+            kwargs['key_format'] = 'I'
+            super(WithXXIndex, self).__init__(*args, **kwargs)
+
+        def make_key_value(self, data):
+            t_val = data.get('x')
+            if t_val is not None:
+                return t_val, data
+            return None
+
+        def make_key(self, key):
+            return key
+
+
+    def main():
+        db = Database('/tmp/tut4')
+        db.create()
+        x_ind = WithXIndex(db.path, 'x')
+        db.add_index(x_ind)
+
+        for x in range(11):
+            db.insert(dict(x=x))
+
+        for y in range(11):
+            db.insert(dict(y=y))
+
+        print(db.get('x', 10, with_doc=True))
+
+        for curr in db.get_many('x', start=15, end=25, limit=-1, with_doc=True):
+            print(curr)
+
+
+    if __name__ == '__main__':
+        main()
+    

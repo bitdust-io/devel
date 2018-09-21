@@ -23,6 +23,9 @@ Provides functions for encoding and decoding the JSON into functions, params
 etc. and other JSON-RPC related stuff like constants.
 """
 
+from __future__ import absolute_import
+import six
+
 cjson_loaded = False
 try:
     import cjson
@@ -217,7 +220,7 @@ def verifyMethodCall(request):
         # 'jsonrpc' is only contained in V2 requests
         if 'jsonrpc' in request:
             if not isinstance(request['jsonrpc'],
-                              (types.StringTypes, types.FloatType)):
+                              ((str,), float)):
                 raise JSONRPCError('Invalid jsonrpc type', INVALID_REQUEST)
 
             request['jsonrpc'] = float(request['jsonrpc'])
@@ -228,13 +231,13 @@ def verifyMethodCall(request):
             request['id'] = None
 
         if (not 'method' in request or
-                not isinstance(request['method'], types.StringTypes)):
+                not isinstance(request['method'], (six.string_types,))):
             raise JSONRPCError('Invalid method type', INVALID_REQUEST)
 
         if ('params' in request and
                 not isinstance(request['params'],
-                               (types.ListType, types.TupleType,
-                                types.DictType))):
+                               (list, tuple,
+                                dict))):
             raise JSONRPCError('Invalid params type', INVALID_REQUEST)
 
         return request

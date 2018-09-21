@@ -25,10 +25,10 @@
 #
 #
 
+from __future__ import absolute_import
 import os
 import sys
 import time
-import math
 
 
 try:
@@ -41,13 +41,13 @@ from twisted.internet import task
 from logs import lg
 
 from system import bpio
-from lib import maths
-from lib import misc
-from lib import nameurl
-from main import settings
-from contacts import contactsdb
 
-import contact_status
+from lib import maths
+from lib import nameurl
+
+from main import settings
+
+from contacts import contactsdb
 
 #-------------------------------------------------------------------------------
 
@@ -188,6 +188,7 @@ def increase_rating(idurl, alive_state):
 def rate_all_users():
     lg.out(4, 'ratings.rate_all_users')
     monthStr = time.strftime('%B')
+    from p2p import contact_status
     for idurl in contactsdb.contacts_full():
         isalive = contact_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
@@ -208,16 +209,17 @@ def rate_all_users():
 def remember_connected_time(idurl):
     if not exist_rating_dir(idurl):
         make_rating_dir(idurl)
-    bpio._write_data(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
+    bpio.WriteTextFile(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
 
 
 def connected_time(idurl):
-    s = bpio._read_data(os.path.join(rating_dir(idurl), 'connected'))
-    if s == '':
+    s = bpio.ReadTextFile(os.path.join(rating_dir(idurl), 'connected'))
+    if not s:
         return 0
     try:
         return time.mktime(time.strptime(s, '%d%m%y %H:%M:%S'))
     except:
+        lg.exc()
         return 0
 
 

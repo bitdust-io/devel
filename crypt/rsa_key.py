@@ -31,6 +31,8 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from io import open
 import gc
 
 #------------------------------------------------------------------------------
@@ -40,6 +42,12 @@ from Cryptodome.Hash import SHA1
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.Util import number
+
+#------------------------------------------------------------------------------
+
+from lib import strng
+
+from system import local_fs
 
 #------------------------------------------------------------------------------
 
@@ -60,9 +68,16 @@ class RSAKey(object):
     def isPublic(self):
         if not self.keyObject:
             raise ValueError('key object is not exist')
+        if self.keyObject.has_private():
+            return False
+        return True
+
+    def isPrivate(self):
+        if not self.keyObject:
+            raise ValueError('key object is not exist')
         if not self.keyObject.has_private():
-            return True
-        return False
+            return False
+        return True
 
     def public(self):
         if self.isPublic():
@@ -72,47 +87,49 @@ class RSAKey(object):
     def fromString(self, key_string):
         if self.keyObject:
             raise ValueError('key object already exist')
-        self.keyObject = RSA.import_key(key_string)
+        self.keyObject = RSA.import_key(strng.to_bin(key_string))
         return True
 
     def fromFile(self, keyfilename):
         if self.keyObject:
             raise ValueError('key object already exist')
-        fin = open(keyfilename, 'r')
-        key_src = fin.read()
-        fin.close()
-        self.keyObject = RSA.import_key(key_src)
+        key_src = local_fs.ReadTextFile(keyfilename)
+        self.keyObject = RSA.import_key(strng.to_bin(key_src))
         del key_src
         gc.collect()
         return True
 
-    def toString(self, output_format='PEM'):
+    def toPrivateString(self, output_format='PEM'):
         if not self.keyObject:
             raise ValueError('key object is not exist')
-        return self.keyObject.exportKey(format=output_format)
+        if not self.keyObject.has_private():
+            raise ValueError('this key contains only public component')
+        return strng.to_text(self.keyObject.exportKey(format=output_format))
 
     def toPublicString(self, output_format='OpenSSH'):
         if not self.keyObject:
             raise ValueError('key object is not exist')
-        return self.keyObject.publickey().exportKey(format=output_format)
+        return strng.to_text(self.keyObject.publickey().exportKey(format=output_format))
 
     def sign(self, message):
         if not self.keyObject:
             raise ValueError('key object is not exist')
-        h = SHA1.new(message)
+        h = SHA1.new(strng.to_bin(message))
         signature_bytes = pkcs1_15.new(self.keyObject).sign(h)
         signature_int = number.bytes_to_long(signature_bytes)
-        signature = str(signature_int)
+        signature = strng.to_text(str(signature_int))
         return signature
 
     def verify(self, signature, message):
-        h = SHA1.new(message)
+        h = SHA1.new(strng.to_bin(message))
         try:
-            signature_int = long(signature)
+            signature_int = int(signature)
             signature_bytes = number.long_to_bytes(signature_int)
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
         except (ValueError, TypeError):
+            from logs import lg
+            lg.exc()
             result = False
         return result
 

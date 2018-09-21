@@ -33,6 +33,7 @@ module:: known_nodes
 #------------------------------------------------------------------------------
 
 
+from __future__ import absolute_import
 def default_nodes():
     """
     List of DHT nodes currently maintained : (host, UDP port number)
@@ -42,11 +43,16 @@ def default_nodes():
         ('datahaven.net', 14441, ),
         # ('identity.datahaven.net', 14441),
         ('p2p-id.ru', 14441),
-        # ('bitdust.io', 14441),
+        ('bitdust.io', 14441),
         # ('work.offshore.ai', 14441),
         # ('whmcs.whois.ai', 14441),
         ('blog.bitdust.io', 14441, ),
         ('bitdust.ai', 14441, ),
+        # ('veselin-p2p.ru', 14441, ),
+        # ('test.zenaida.ai', 14441, ),
+
+        # by Renato Cardoso:
+        ('bitrex.ai', 14441, ),
     ]
 
 

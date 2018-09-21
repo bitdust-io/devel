@@ -10,6 +10,8 @@
 #
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import base64
@@ -59,7 +61,7 @@ _CurrentDelay = 5
 def send(idurl, filename):
     lg.out(12, 'http_node.send to %s %s' % (idurl, filename))
     global _Outbox
-    if not _Outbox.has_key(idurl):
+    if idurl not in _Outbox:
         _Outbox[idurl] = []
     _Outbox[idurl].append(filename)
     #we want to keep only 10 last files.
@@ -80,7 +82,7 @@ class SenderServer(resource.Resource):
         if idurl is None:
             return ''
         lg.out(14, 'http_node.SenderServer.render connection from ' + idurl)
-        if not idurl in _Outbox.keys():
+        if not idurl in list(_Outbox.keys()):
             return ''
         r = ''
         for filename in _Outbox[idurl]:
@@ -89,7 +91,7 @@ class SenderServer(resource.Resource):
             if not os.access(filename, os.R_OK):
                 continue
             src = dhnio.ReadBinaryFile(filename)
-            if src == '':
+            if not src:
                 continue
             src64 = base64.b64encode(src)
             r += src64 + '\n'
@@ -244,7 +246,7 @@ def receive():
         _CurrentDelay = settings.getHTTPDelay()
 
         for idurl, hostport in _Contacts.items():
-            if _ConnectionsDict.has_key(idurl):
+            if idurl in _ConnectionsDict:
                 continue
 
             lasttm = _LastPingTimeDict.get(idurl, 0)
@@ -270,7 +272,7 @@ def decrease_receiving_delay(idurl):
 def increase_receiving_delay(idurl):
     global _PingDelayDict
     global _CurrentDelay
-    if not _PingDelayDict.has_key(idurl):
+    if idurl not in _PingDelayDict:
         _PingDelayDict[idurl] = _CurrentDelay
     d = _PingDelayDict[idurl]
     if d < settings.DefaultSendTimeOutHTTP() / 2:
@@ -354,10 +356,10 @@ def shutdown():
 #-------------------------------------------------------------------------------
 
 def usage():
-    print '''usage:
+    print('''usage:
 http_node.py send [server_port] [to idurl] [filename]
 http_node.py receive
-'''
+''')
 
 def main():
     if sys.argv.count('receive'):

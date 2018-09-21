@@ -38,6 +38,10 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import cStringIO
@@ -64,6 +68,7 @@ from system import tmpfile
 
 from automats import automat
 
+from lib import strng
 from lib import nameurl
 from lib import misc
 from lib import net_misc
@@ -175,16 +180,16 @@ class IdServer(automat.Automat):
         root = WebRoot()
         root.putChild('', WebMainPage())
         try:
-            self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))
-            lg.out(4, "            have started web listener on port %d " % (self.web_port))
-        except:
-            lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
-            lg.exc()
-        try:
             self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())
             lg.out(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
         except:
             lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.tcp_port))
+            lg.exc()
+        try:
+            self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))
+            lg.out(4, "            have started web server at http://%s:%d " % (self.hostname, self.web_port))
+        except:
+            lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
             lg.exc()
 
     def doSetDown(self, arg):
@@ -292,7 +297,7 @@ class IdServer(automat.Automat):
         if newxml != oldxml:
             if not os.path.exists(localfilename):
                 lg.out(6, "id_server._save_identity will save NEW Identity: " + filename)
-            bpio.WriteFile(localfilename, newxml)
+            bpio.WriteTextFile(localfilename, newxml)
 
 #------------------------------------------------------------------------------
 
@@ -331,7 +336,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
             return
         if command == 'h':
             # lg.out(6, 'id_server.stringReceived HELLO received from %s' % payload)
-            self.sendString('%swid-server:%s' % (version, A().hostname))
+            self.sendString(strng.to_bin('%swid-server:%s' % (version, A().hostname)))
             return
         if command != 'd':
             self.disconnect()
@@ -356,7 +361,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
         os.write(self.fin, inp_data)
         self.received += len(inp_data)
         # self.transport.loseConnection()
-        self.sendString('%so%s' % (version, struct.pack('i', file_id)))
+        self.sendString(strng.to_bin('%so%s' % (version, struct.pack('i', file_id))))
         # lg.out(6, 'id_server.stringReceived  %d bytes received from %s' % (len(data), str(self.transport.getPeer())))
         if self.received == file_size:
             os.close(self.fin)
@@ -436,7 +441,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
         src += '</p>'
         src += '</body>\n</html>'
         del files
-        return src
+        return strng.to_bin(src)
 
 #------------------------------------------------------------------------------
 
