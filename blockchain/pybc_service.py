@@ -58,7 +58,11 @@ Fifth node, this will also start a minining process, but will only solve one blo
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -86,9 +90,9 @@ from main import events
 
 #------------------------------------------------------------------------------
 
-import pybc.util
-import pybc.json_coin
-import pybc.token
+from . import pybc.util
+from . import pybc.json_coin
+from . import pybc.token
 
 #------------------------------------------------------------------------------
 
@@ -265,7 +269,7 @@ def start_block_explorer(port_number, peer_instance):
         logging.info('Block Explorer already started')
         return False
     logging.info('Starting Block Explorer on port %d, peer network versions is: %s/%s' % (port_number, peer_instance.network, peer_instance.version))
-    import pybc.block_explorer
+    from . import pybc.block_explorer
     _BlockExplorerListener = pybc.block_explorer.start(port_number, peer_instance)
     return True
 
@@ -290,7 +294,7 @@ def start_wallet(port_number, peer_instance, wallet_instance):
         logging.info('Wallet already started')
         return False
     logging.info('Starting Wallet on port %d, peer network versions is: %s/%s' % (port_number, peer_instance.network, peer_instance.version))
-    import pybc.wallet
+    from . import pybc.wallet
     _WalletListener = pybc.wallet.start(port_number, peer_instance, wallet_instance)
     return True
 

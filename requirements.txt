@@ -5,3 +5,4 @@ pyparsing
 appdirs
 psutil
 cffi
+six

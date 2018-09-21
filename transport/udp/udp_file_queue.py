@@ -24,6 +24,13 @@
 ..module:: udp_file_queue.
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+from io import open
+
+#------------------------------------------------------------------------------
+
 import os
 import time
 import struct
@@ -32,15 +39,20 @@ import random
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------
+
 from logs import lg
 
+from lib import strng
 from lib import udp
+
 from system import tmpfile
+
 from contacts import contactsdb
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -100,7 +112,7 @@ class FileQueue:
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
             output))
-        return self.session.send_packet(udp.CMD_DATA, newoutput)
+        return self.session.send_packet(udp.CMD_DATA, strng.to_bin(newoutput))
 
     def do_send_ack(self, stream_id, infile, ack_data):
         #         if _Debug:
@@ -110,7 +122,7 @@ class FileQueue:
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))
-        return self.session.send_packet(udp.CMD_ACK, newoutput)
+        return self.session.send_packet(udp.CMD_ACK, strng.to_bin(newoutput))
 
     def append_outbox_file(self, filename, description='', result_defer=None, keep_alive=True):
         from transport.udp import udp_session
@@ -248,7 +260,7 @@ class FileQueue:
                 lg.warn('SEND ZERO ACK, peer id is unknown yet %s' % stream_id)
             self.do_send_ack(stream_id, None, '')
             return
-        if stream_id not in self.streams.keys():
+        if stream_id not in list(self.streams.keys()):
             if stream_id in self.dead_streams:
                 inp.close()
                 # if _Debug:
@@ -282,7 +294,7 @@ class FileQueue:
             lg.exc()
             # self.session.automat('shutdown')
             return
-        if stream_id not in self.streams.keys():
+        if stream_id not in list(self.streams.keys()):
             inp.close()
             # if not self.receivedFiles.has_key(stream_id):
             # lg.warn('unknown stream_id=%d in ACK packet from %s' % (
@@ -304,7 +316,7 @@ class FileQueue:
         inp.close()
 
     def on_inbox_file_done(self, stream_id):
-        assert stream_id in self.inboxFiles.keys()
+        assert stream_id in list(self.inboxFiles.keys())
         infile = self.inboxFiles[stream_id]
         if _Debug:
             lg.out(18, 'udp_file_queue.on_inbox_file_done %s (%d bytes) %s "%s" registration=%r' % (
@@ -318,7 +330,7 @@ class FileQueue:
         s = None
 
     def on_outbox_file_done(self, stream_id):
-        assert stream_id in self.outboxFiles.keys()
+        assert stream_id in list(self.outboxFiles.keys())
         outfile = self.outboxFiles[stream_id]
         if _Debug:
             lg.out(18, 'udp_file_queue.on_outbox_file_done %s (%d bytes) %s "%s" registration=%r' % (
@@ -336,7 +348,7 @@ class FileQueue:
         reactor.callLater(0, self.process_outbox_queue)
 
     def on_inbox_file_registered(self, response, stream_id):
-        if stream_id not in self.inboxFiles.keys():
+        if stream_id not in list(self.inboxFiles.keys()):
             lg.warn('stream %d not found in the inboxFiles' % stream_id)
             return
         try:
@@ -363,7 +375,7 @@ class FileQueue:
         self.session.automat('shutdown')
 
     def on_outbox_file_registered(self, response, stream_id):
-        if stream_id not in self.outboxFiles.keys():
+        if stream_id not in list(self.outboxFiles.keys()):
             lg.warn('stream %d not found in the outboxFiles' % stream_id)
             return
         try:
@@ -403,7 +415,7 @@ class FileQueue:
                 ((filename, description), 'failed', error_message))
 
     def on_timeout_receiving(self, stream_id):
-        assert stream_id in self.inboxFiles.keys()
+        assert stream_id in list(self.inboxFiles.keys())
         infile = self.inboxFiles[stream_id]
         if _Debug:
             lg.out(18, 'udp_file_queue.on_timeout_receiving stream_id=%s %d : %s' % (
@@ -419,7 +431,7 @@ class FileQueue:
         s = None
 
     def on_timeout_sending(self, stream_id):
-        assert stream_id in self.outboxFiles.keys()
+        assert stream_id in list(self.outboxFiles.keys())
         outfile = self.outboxFiles[stream_id]
         if _Debug:
             lg.out(18, 'udp_file_queue.on_timeout_sending stream_id=%s %d/%d bytes sent : %s' % (
@@ -541,7 +553,7 @@ class OutboxFile():
         self.keep_alive = keep_alive
         self.bytes_sent = 0
         self.bytes_delivered = 0
-        self.buffer = ''
+        self.buffer = b''
         self.eof = False
         self.cancelled = False
         self.timeout = False
@@ -573,7 +585,7 @@ class OutboxFile():
         self.close_file()
         self.queue = None
         self.stream_callback = None
-        self.buffer = ''
+        self.buffer = b''
         self.description = None
         self.result_defer = None
 
@@ -613,12 +625,13 @@ class OutboxFile():
             if not self.buffer:
                 if not self.fileobj:
                     return False
-                self.buffer = self.fileobj.read(udp_stream.CHUNK_SIZE)
-                if not self.buffer:
+                data = self.fileobj.read(udp_stream.CHUNK_SIZE)
+                if not data:
                     if _Debug:
                         lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state %d' % self.stream_id)
                     self.eof = True
                     break
+                self.buffer = data
             if not self.stream_callback:
                 break
             try:
@@ -626,7 +639,7 @@ class OutboxFile():
             except udp_stream.BufferOverflow:
                 break
             self.bytes_sent += len(self.buffer)
-            self.buffer = ''
+            self.buffer = b''
             has_sends = True
         return has_sends
 

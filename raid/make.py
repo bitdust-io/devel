@@ -48,12 +48,15 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from io import open
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import struct
-import time
 import cStringIO
-import platform
 
 #------------------------------------------------------------------------------
 
@@ -101,9 +104,9 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        file = open(filename, 'a')
-        file.write(' ' * increase)
-        file.close()
+        f = open(filename, 'ab')
+        f.write(' ' * increase)
+        f.close()
 
 
 def ReadBinaryFile(filename):
@@ -113,18 +116,24 @@ def ReadBinaryFile(filename):
         return ''
     if not os.access(filename, os.R_OK):
         return ''
-    file = open(filename, "rb")
-    data = file.read()
-    file.close()
+    f = open(filename, "rb")
+    data = f.read()
+    f.close()
     return data
 
 
 def WriteFile(filename, data):
     """
-    
     """
+    if sys.version_info[0] == 3:
+        binary_type = bytes
+    else:
+        binary_type = str
+    s = data
+    if not isinstance(s, binary_type):
+        s = s.encode('utf-8')
     f = open(filename, "wb")
-    f.write(data)
+    f.write(s)
     f.close()
 
 #------------------------------------------------------------------------------
@@ -150,11 +159,11 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
 
-    for DSegNum in xrange(myeccmap.datasegments):
+    for DSegNum in range(myeccmap.datasegments):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         f = open(FileName, "wb")
         segoffset = DSegNum * seglength
-        for i in xrange(seglength):
+        for i in range(seglength):
             offset = segoffset + i
             if offset < length:
                 f.write(wholefile[offset])
@@ -165,7 +174,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         f.close()
 
     dfds = {}
-    for DSegNum in xrange(myeccmap.datasegments):
+    for DSegNum in range(myeccmap.datasegments):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         # instead of reading data from opened file
         # we'l put it in memory
@@ -175,7 +184,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         dfds[DSegNum] = cStringIO.StringIO(ReadBinaryFile(FileName))
 
     pfds = {}
-    for PSegNum in xrange(myeccmap.paritysegments):
+    for PSegNum in range(myeccmap.paritysegments):
         # we will keep parirty data in the momory
         # after doing all calculations
         # will write all parts on the disk
@@ -183,10 +192,10 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
 
     #Parities = range(myeccmap.paritysegments)
     Parities = {}
-    for i in xrange(seglength / INTSIZE):
-        for PSegNum in xrange(myeccmap.paritysegments):
+    for i in range(seglength / INTSIZE):
+        for PSegNum in range(myeccmap.paritysegments):
             Parities[PSegNum] = 0
-        for DSegNum in xrange(myeccmap.datasegments):
+        for DSegNum in range(myeccmap.datasegments):
             bstr = dfds[DSegNum].read(INTSIZE)
             #pos = dfds[DSegNum][0]
             #dfds[DSegNum][0] += INTSIZE
@@ -207,7 +216,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
                 #out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
                 #out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
-        for PSegNum in xrange(myeccmap.paritysegments):
+        for PSegNum in range(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
             #pfds[PSegNum] += bstr
             pfds[PSegNum].write(bstr)
@@ -278,7 +287,7 @@ def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
         for PSegNum in range(myeccmap.paritysegments):
             Parities[PSegNum] = 0
         for DSegNum in range(myeccmap.datasegments):
-            bstr = dfds[DSegNum].read(INTSIZE)
+            bstr = dfds[DSegNum].read(INTSIZE).decode('utf-8')
             if len(bstr) == INTSIZE:
                 b, = struct.unpack(">l", bstr)
                 Map = myeccmap.DataToParity[DSegNum]

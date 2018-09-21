@@ -56,6 +56,14 @@ The software keeps 2 index dictionaries in the memory:
 Those dictionaries are trees - replicates the file system structure.
 """
 
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import cStringIO
@@ -70,6 +78,8 @@ if __name__ == '__main__':
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
+
+from lib import strng
 
 from logs import lg
 
@@ -158,7 +168,7 @@ def known_customers():
     """
     """
     global _FileSystemIndexByID
-    return _FileSystemIndexByID.keys()
+    return list(_FileSystemIndexByID.keys())
 
 
 def counter():
@@ -241,10 +251,7 @@ class FSItemInfo():
     """
 
     def __init__(self, name='', path_id='', typ=UNKNOWN, key_id=None):
-        if isinstance(name, unicode):
-            self.unicodename = name
-        else:
-            self.unicodename = unicode(name)
+        self.unicodename = strng.to_text(name)
         self.path_id = path_id
         self.type = typ
         self.size = -1
@@ -279,7 +286,7 @@ class FSItemInfo():
             except:
                 lg.exc()
                 return False
-        self.size = long(s.st_size)
+        self.size = int(s.st_size)
         return True
 
     def read_versions(self, local_path):
@@ -313,7 +320,7 @@ class FSItemInfo():
                     lg.warn('incorrect file name found: %s' % filepath)
                     continue
                 try:
-                    sz = long(os.path.getsize(filepath))
+                    sz = int(os.path.getsize(filepath))
                 except:
                     lg.exc()
                     sz = 0
@@ -350,8 +357,8 @@ class FSItemInfo():
 
     def list_versions(self, sorted=False, reverse=False):
         if sorted:
-            return misc.sorted_versions(self.versions.keys(), reverse)
-        return self.versions.keys()
+            return misc.sorted_versions(list(self.versions.keys()), reverse)
+        return list(self.versions.keys())
 
     def get_versions(self):
         return self.versions
@@ -627,7 +634,7 @@ def AddLocalPath(localpath, read_stats=False, iter=None, iterID=None, key_id=Non
             return c
         for localname in bpio.list_dir_safe(path):
             p = os.path.join(path, localname)  # .encode("utf-8")
-            name = unicode(localname)
+            name = strng.to_text(localname)
             if bpio.pathIsDir(p):
                 if name not in iter:
                     id = MakeID(iter, lastID)
@@ -757,7 +764,7 @@ def SetDir(item, iter=None, iterID=None):
                     found = True
                     break
                 continue
-            if isinstance(iter[name], str):
+            if isinstance(iter[name], strng.string_types):
                 if iter[name] == itemname:
                     iter = iter[name]
                     iterID = iterID[id]
@@ -2133,13 +2140,13 @@ def _test():
 #     print IsDir('dir1')
 #     print IsFile('dir2/fff')
 
-    print '------------'
+    print('------------')
     pprint.pprint(fs())
-    print
+    print()
     pprint.pprint(fsID())
-    print
+    print()
 
-    print HasChilds('', iter=fs(customer_idurl))
+    print(HasChilds('', iter=fs(customer_idurl)))
 
 #     for i in range(10000):
 #         r = AddFile('file' + str(i))

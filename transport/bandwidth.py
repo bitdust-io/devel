@@ -36,6 +36,7 @@ folders /bandin and /bandout in the BitDust local data dir.
 This is a daily stats - a single file for every day.
 """
 
+from __future__ import absolute_import
 import os
 import time
 
@@ -76,9 +77,9 @@ def init():
     fin = filenameIN()
     fout = filenameOUT()
     if not os.path.isfile(fin):
-        bpio.WriteFile(fin, '')
+        bpio.WriteTextFile(fin, '')
     if not os.path.isfile(fout):
-        bpio.WriteFile(fout, '')
+        bpio.WriteTextFile(fout, '')
     read_bandwidthIN()
     read_bandwidthOUT()
     CountTimeIn = time.time()

@@ -1,14 +1,16 @@
+from __future__ import absolute_import
 import re
 import json
 import time
 
-from itertools import ifilter
+
 from functools import wraps
 
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET
 from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
+from six.moves import filter
 
 
 def _to_json(output_object):
@@ -98,7 +100,7 @@ class APIResource(Resource):
     def _get_callback(self, request):
         filterf = lambda t: t[0] in (request.method, 'ALL')
         path_to_check = getattr(request, '_remaining_path', request.path)
-        for _, r, cb in ifilter(filterf, self._registry):
+        for _, r, cb in filter(filterf, self._registry):
             result = r.search(path_to_check)
             if result:
                 request._remaining_path = path_to_check[result.span()[1]:]

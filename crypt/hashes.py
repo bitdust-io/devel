@@ -31,28 +31,35 @@
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
 from Cryptodome.Hash import MD5
 from Cryptodome.Hash import SHA1
 from Cryptodome.Hash import SHA256
 
+from lib import strng
+
 #------------------------------------------------------------------------------
 
 def md5(inp, hexdigest=False):
-    h = MD5.new(inp)
+    s = strng.to_bin(inp)
+    h = MD5.new(s)
     if hexdigest:
         return h.hexdigest()
     return h.digest()
 
 
 def sha1(inp, hexdigest=False):
-    h = SHA1.new(inp)
+    s = strng.to_bin(inp)
+    h = SHA1.new(s)
     if hexdigest:
         return h.hexdigest()
     return h.digest()
 
 
 def sha256(inp, hexdigest=False):
-    h = SHA256.new(inp)
+    s = strng.to_bin(inp)
+    h = SHA256.new(s)
     if hexdigest:
         return h.hexdigest()
     return h.digest()

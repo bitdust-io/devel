@@ -23,7 +23,6 @@
 #
 #
 #
-from access.key_ring import _Debug
 
 """
 .. module:: fire_hire
@@ -100,7 +99,12 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -419,7 +423,7 @@ class FireHire(automat.Automat):
         """
         self.connect_list = []
         for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl == '':
+            if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
@@ -553,7 +557,7 @@ class FireHire(automat.Automat):
         position = -1
         old_idurl = None
         for i in range(len(current_suppliers)):
-            if current_suppliers[i].strip() == '':
+            if not current_suppliers[i].strip():
                 position = i
                 break
             if current_suppliers[i] in self.dismiss_list:

@@ -34,7 +34,13 @@ Main thing here is to be able to use public keys in contacts to verify packets.
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -122,7 +128,7 @@ def GenerateNewKey(keyfilename=None):
     _MyKeyObject = rsa_key.RSAKey()
     _MyKeyObject.generate(settings.getPrivateKeySize())
     keystring = _MyKeyObject.toPrivateString()
-    bpio.WriteFile(keyfilename, keystring)
+    bpio.WriteTextFile(keyfilename, keystring)
     if _Debug:
         lg.out(_DebugLevel, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
     del keystring
@@ -356,7 +362,7 @@ def SpeedTest():
     loops = 10
     packets = []
     dt = time.time()
-    print 'encrypt %d pieces of %d bytes' % (loops, dataSZ)
+    print('encrypt %d pieces of %d bytes' % (loops, dataSZ))
     for i in range(loops):
         Data = os.urandom(dataSZ)
         SessionKey = NewSessionKey()
@@ -364,11 +370,11 @@ def SpeedTest():
         EncryptedData = EncryptWithSessionKey(SessionKey, Data)
         Signature = Sign(Hash(EncryptedData))
         packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
-        print '.',
-    print time.time() - dt, 'seconds'
+        print('.', end=' ')
+    print(time.time() - dt, 'seconds')
 
     dt = time.time()
-    print 'decrypt now'
+    print('decrypt now')
     i = 0
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
         SessionKey = DecryptLocalPrivateKey(EncryptedSessionKey)
@@ -378,10 +384,10 @@ def SpeedTest():
             raise Exception()
         if newData != Data:
             raise Exception
-        print '.',
+        print('.', end=' ')
         # open(str(i), 'wb').write(EncryptedData)
         i += 1
-    print time.time() - dt, 'seconds'
+    print(time.time() - dt, 'seconds')
 
 #------------------------------------------------------------------------------
 

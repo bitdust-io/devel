@@ -32,6 +32,12 @@ module:: message_db
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import map
+
+#------------------------------------------------------------------------------
+
 _Debug = True
 _DebugLevel = 10
 
@@ -154,17 +160,17 @@ def rewrite_indexes(db_instance, source_db_instance):
             index_name = source_index_file[2:source_index_file.index('.')]
             destination_index_path = os.path.join(existing_location, source_index_file)
             source_index_path = os.path.join(source_location, source_index_file)
-            if not bpio.AtomicWriteFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
+            if not bpio.WriteTextFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
                 lg.warn('failed writing index to %s' % destination_index_path)
                 continue
             destination_buck_path = os.path.join(db_instance.path, index_name + '_buck')
             source_buck_path = os.path.join(source_db_instance.path, index_name + '_buck')
-            if not bpio.AtomicWriteFile(destination_buck_path, bpio.ReadBinaryFile(source_buck_path)):
+            if not bpio.WriteBinaryFile(destination_buck_path, bpio.ReadBinaryFile(source_buck_path)):
                 lg.warn('failed writing index bucket to %s' % destination_buck_path)
                 continue
             destination_stor_path = os.path.join(db_instance.path, index_name + '_stor')
             source_stor_path = os.path.join(source_db_instance.path, index_name + '_stor')
-            if not bpio.AtomicWriteFile(destination_stor_path, bpio.ReadBinaryFile(source_stor_path)):
+            if not bpio.WriteBinaryFile(destination_stor_path, bpio.ReadBinaryFile(source_stor_path)):
                 lg.warn('failed writing index storage to %s' % destination_stor_path)
                 continue
             if _Debug:
@@ -364,27 +370,27 @@ def build_json_message(data, message_id, sender=None, recipient=None):
 #------------------------------------------------------------------------------
 
 def _test_query(inp):
-    print 'Query:'
-    print inp
-    print '==================================='
+    print('Query:')
+    print(inp)
+    print('===================================')
     lst = _to_list(query_json(inp))
-    print '\n'.join(map(str, lst))
-    print 'total:', len(lst)
+    print('\n'.join(map(str, lst)))
+    print('total:', len(lst))
     return lst
 
 
 def main():
     if len(sys.argv) < 2:
-        print """
+        print("""
         commands:
         get_all <index>
         get_many <index> <key>
         get <index> <key>
-        insert "message body"
+        insert "message body" "message id"
         search "json query"
         indexes
         tmpdb <destination folder>
-        """
+        """)
         return
 
     if sys.argv[1] == 'get_all':
@@ -415,12 +421,12 @@ def main():
 
     if sys.argv[1] == 'indexes':
         init()
-        print 'Indexes in %s are:' % db().path
-        print '  ' + ('\n  '.join(db().indexes_names))
+        print('Indexes in %s are:' % db().path)
+        print('  ' + ('\n  '.join(db().indexes_names)))
         shutdown()
 
     if sys.argv[1] == 'refresh':
-        print 'ReIndexing'
+        print('ReIndexing')
         init()
         refresh_indexes(db())
         shutdown()
@@ -430,12 +436,12 @@ def main():
 
     if sys.argv[1] == 'insert':
         init()
-        print insert(build_json_message(sys.argv[2]))
+        print(insert(build_json_message(data=sys.argv[2], message_id=sys.argv[3])))
         shutdown()
 
     if sys.argv[1] == 'search':
         init()
-        print '\n'.join(map(str, [m for m in search(json.loads(sys.argv[2]))]))
+        print('\n'.join(map(str, [m for m in search(json.loads(sys.argv[2]))])))
         shutdown()
 
 

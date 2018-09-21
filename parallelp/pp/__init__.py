@@ -52,8 +52,10 @@ http://www.parallelpython.com - updates, documentation, examples and support
 forums
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
-import thread
+import six.moves._thread
 import logging
 import inspect
 import sys
@@ -61,9 +63,10 @@ import types
 import time
 import atexit
 import user
-import cPickle as pickle
-import pptransport
-import ppauto
+import six.moves.cPickle as pickle
+from . import pptransport
+from . import ppauto
+from six.moves import range
 
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
@@ -110,7 +113,7 @@ class _Task(object):
         """
         Initializes the task.
         """
-        self.lock = thread.allocate_lock()
+        self.lock = six.moves._thread.allocate_lock()
         self.lock.acquire()
         self.tid = tid
         self.server = server
@@ -166,7 +169,7 @@ class _Task(object):
         if self.sresult is not None:
             self.result, sout = pickle.loads(self.sresult)
             if len(sout) > 0:
-                print sout,
+                print(sout, end=' ')
         else:
             self.result = None
         self.unpickled = True
@@ -402,9 +405,9 @@ class Server(object):
         logging.info("Creating server instance (pp-" + version + ")")
         self.__tid = 0
         self.__active_tasks = 0
-        self.__active_tasks_lock = thread.allocate_lock()
+        self.__active_tasks_lock = six.moves._thread.allocate_lock()
         self.__queue = []
-        self.__queue_lock = thread.allocate_lock()
+        self.__queue_lock = six.moves._thread.allocate_lock()
         self.__workers = []
         self.__rworkers = []
         self.__rworkers_reserved = []
@@ -412,11 +415,11 @@ class Server(object):
         self.__sourcesHM = {}
         self.__sfuncHM = {}
         self.__waittasks = []
-        self.__waittasks_lock = thread.allocate_lock()
+        self.__waittasks_lock = six.moves._thread.allocate_lock()
         self.__exiting = False
         self.__accurate_stats = True
         self.autopp_list = {}
-        self.__active_rworkers_list_lock = thread.allocate_lock()
+        self.__active_rworkers_list_lock = six.moves._thread.allocate_lock()
         self.__restart_on_free = restart
         self.__pickle_proto = proto
 
@@ -450,14 +453,14 @@ class Server(object):
                 broadcast = host.replace("*", "255")
                 self.auto_ppservers.append(((interface, port),
                                             (broadcast, port)))
-        self.__stats_lock = thread.allocate_lock()
+        self.__stats_lock = six.moves._thread.allocate_lock()
         if secret is not None:
-            if not isinstance(secret, types.StringType):
+            if not isinstance(secret, bytes):
                 raise TypeError("secret must be of a string type")
             self.secret = str(secret)
         elif hasattr(user, "pp_secret"):
             secret = user["pp_secret"]
-            if not isinstance(secret, types.StringType):
+            if not isinstance(secret, bytes):
                 raise TypeError("secret must be of a string type")
             self.secret = str(secret)
         else:
@@ -503,7 +506,7 @@ class Server(object):
             raise TypeError("callbackargs argument must be a tuple")
 
         for module in modules:
-            if not isinstance(module, types.StringType):
+            if not isinstance(module, bytes):
                 raise TypeError("modules argument must be a list of strings")
 
         tid = self.__gentid()
@@ -515,7 +518,7 @@ class Server(object):
                                (tid, str(modules)))
             for object1 in globals.values():
                 if isinstance(object1, types.FunctionType) \
-                        or isinstance(object1, types.ClassType):
+                        or isinstance(object1, type):
                     depfuncs += (object1, )
 
         task = _Task(self, tid, callback, callbackargs, group)
@@ -525,8 +528,8 @@ class Server(object):
         self.__waittasks_lock.release()
 
         # if the function is a method of a class add self to the arguments list
-        if isinstance(func, types.MethodType) and func.im_self is not None:
-            args = (func.im_self, ) + args
+        if isinstance(func, types.MethodType) and func.__self__ is not None:
+            args = (func.__self__, ) + args
 
         # if there is an instance of a user deined class in the arguments add
         # whole class to dependancies
@@ -550,7 +553,7 @@ class Server(object):
         self.__queue_lock.release()
 
         self.__logger.info("Task %i submited, function='%s'" %
-                           (tid, func.func_name))
+                           (tid, func.__name__))
         self.__scheduler()
         return task
 
@@ -561,7 +564,7 @@ class Server(object):
 
         wtask = None
         self.__waittasks_lock.acquire()
-        for i in xrange(len(self.__waittasks)):
+        for i in range(len(self.__waittasks)):
             wtask = self.__waittasks[i]
             if wtask.tid == taskID:
                 self.__waittasks[i].cancelled = True
@@ -596,13 +599,13 @@ class Server(object):
         else:
 
             self.__queue_lock.acquire()
-            for i in xrange(len(self.__queue)):
+            for i in range(len(self.__queue)):
                 if self.__queue[i][0].tid == taskID:
                     self.__queue.pop(i)
             self.__queue_lock.release()
 
             self.__waittasks_lock.acquire()
-            for i in xrange(len(self.__waittasks)):
+            for i in range(len(self.__waittasks)):
                 if self.__waittasks[i].tid == taskID:
                     self.__waittasks.pop(i)
                     break
@@ -689,25 +692,25 @@ class Server(object):
         Useful for benchmarking on clusters
         """
 
-        print "Job execution statistics:"
+        print("Job execution statistics:")
         walltime = time.time() - self.__creation_time
-        statistics = self.get_stats().items()
+        statistics = list(self.get_stats().items())
         totaljobs = 0.0
         for ppserver, stat in statistics:
             totaljobs += stat.njobs
-        print " job count | % of all jobs | job time sum | " \
-            "time per job | job server"
+        print(" job count | % of all jobs | job time sum | " \
+            "time per job | job server")
         for ppserver, stat in statistics:
             if stat.njobs:
-                print "    %6i |        %6.2f |     %8.4f |  %11.6f | %s" \
+                print("    %6i |        %6.2f |     %8.4f |  %11.6f | %s" \
                     % (stat.njobs, 100.0 * stat.njobs / totaljobs, stat.time,
-                       stat.time / stat.njobs, ppserver, )
-        print "Time elapsed since server creation", walltime
+                       stat.time / stat.njobs, ppserver, ))
+        print("Time elapsed since server creation", walltime)
 
         if not self.__accurate_stats:
-            print "WARNING: statistics provided above is not accurate" \
-                  " due to job rescheduling"
-        print
+            print("WARNING: statistics provided above is not accurate" \
+                  " due to job rescheduling")
+        print()
 
     # all methods below are for internal use only
 
@@ -765,11 +768,11 @@ class Server(object):
         Connects to all remote ppservers.
         """
         for ppserver in self.ppservers:
-            thread.start_new_thread(self.connect1, ppserver)
+            six.moves._thread.start_new_thread(self.connect1, ppserver)
 
         discover = ppauto.Discover(self, True)
         for ppserver in self.auto_ppservers:
-            thread.start_new_thread(discover.run, ppserver)
+            six.moves._thread.start_new_thread(discover.run, ppserver)
 
     def __detect_ncpus(self):
         """
@@ -816,7 +819,7 @@ class Server(object):
         if hashs not in self.__sfuncHM:
             sources = [self.__get_source(func) for func in funcs]
             self.__sfuncHM[hashs] = pickle.dumps(
-                (funcs[0].func_name, sources, modules),
+                (funcs[0].__name__, sources, modules),
                 self.__pickle_proto)
         return self.__sfuncHM[hashs]
 
@@ -853,10 +856,10 @@ class Server(object):
                 self.__add_to_active_tasks(1)
                 try:
                     self.__stats["local"].njobs += 1
-                    thread.start_new_thread(self.__run, task + (worker, ))
+                    six.moves._thread.start_new_thread(self.__run, task + (worker, ))
                 except:
                     pass
-                for i in xrange(len(self.__waittasks)):
+                for i in range(len(self.__waittasks)):
                     if self.__waittasks[i].tid == task[0].tid:
                         self.__waittasks[i].worker_pid = worker.pid
                         break
@@ -866,7 +869,7 @@ class Server(object):
                         rworker.is_free = False
                         task = self.__queue.pop(0)
                         self.__stats[rworker.id].njobs += 1
-                        thread.start_new_thread(self.__rrun, task + (rworker, ))
+                        six.moves._thread.start_new_thread(self.__rrun, task + (rworker, ))
                         break
                 else:
                     if len(self.__queue) > self.__ncpus:
@@ -875,7 +878,7 @@ class Server(object):
                                 rworker.is_free = False
                                 task = self.__queue.pop(0)
                                 self.__stats[rworker.id].njobs += 1
-                                thread.start_new_thread(self.__rrun,
+                                six.moves._thread.start_new_thread(self.__rrun,
                                                         task + (rworker, ))
                                 break
                         else:
@@ -888,7 +891,7 @@ class Server(object):
                                         rworker.is_free = False
                                         task = self.__queue.pop(0)
                                         self.__stats[rworker.id].njobs += 1
-                                        thread.start_new_thread(self.__rrun,
+                                        six.moves._thread.start_new_thread(self.__rrun,
                                                                 task + (rworker, ))
                                         break
                     else:

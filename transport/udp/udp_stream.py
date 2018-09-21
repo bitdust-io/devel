@@ -44,9 +44,9 @@ EVENTS:
     * :red:`resume`
     * :red:`set-limits`
     * :red:`timeout`
-"""
 
-"""
+
+
 TODO: Need to put small explanation here.
 
 Datagrams format:
@@ -79,8 +79,8 @@ Datagrams format:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 16
+from __future__ import absolute_import
+from six.moves import map
 
 #------------------------------------------------------------------------------
 
@@ -91,9 +91,16 @@ import bisect
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 16
 
 #------------------------------------------------------------------------------
 
@@ -229,7 +236,7 @@ def process_streams():
 
     sending_streams_count = 0.0
     total_sending_rate = 0.0
-    for s in sorted(streams().values(), key=lambda s: s.output_blocks_last_delta):
+    for s in sorted(list(streams().values()), key=lambda s: s.output_blocks_last_delta):
         if s.state != 'SENDING':
             continue
         s.event('iterate')
@@ -682,7 +689,7 @@ class UDPStream(automat.Automat):
             self.input_block_id_last = block_id
             eof = False
             raw_size = 0
-            if block_id in self.input_blocks.keys():
+            if block_id in list(self.input_blocks.keys()):
             #--- duplicated block received
                 self.input_duplicated_blocks += 1
                 self.input_duplicated_bytes += len(data)
@@ -780,8 +787,7 @@ class UDPStream(automat.Automat):
         if pause_time == 0.0 and eof_flag:
             #--- EOF state found in the ACK
             if _Debug:
-                sum_not_acked_blocks = sum(map(lambda block: len(block[0]),
-                                               self.output_blocks.values()))
+                sum_not_acked_blocks = sum([len(block[0]) for block in list(self.output_blocks.values())])
                 try:
                     sz = self.consumer.size
                 except:
@@ -1283,7 +1289,7 @@ class UDPStream(automat.Automat):
         #--- prepare EOF state in ACK
         ack_data = struct.pack('?', self.eof)
         #--- prepare ACKS
-        ack_data += ''.join(map(lambda bid: struct.pack('i', bid), acks))
+        ack_data += ''.join([struct.pack('i', bid) for bid in acks])
         if pause_time > 0:
         #--- add extra "PAUSE REQUIRED" ACK
             ack_data += struct.pack('i', -1)

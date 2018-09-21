@@ -2,6 +2,10 @@
 # json_coin.py: a coin implemented on top of pybc.coin
 #               with addition json_data field for transactions
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
 if __name__ == '__main__':
     import os.path as _p, sys
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
@@ -15,10 +19,10 @@ import json
 try:
     import pyelliptic
 except BaseException:    # pyelliptic didn't load. Either it's not installed or it can't find OpenSSL
-    import emergency_crypto_munitions as pyelliptic
-import util
-from transactions import pack_transactions, unpack_transactions
-from coin import Transaction, CoinState, CoinBlockchain, Wallet
+    from . import emergency_crypto_munitions as pyelliptic
+from . import util
+from .transactions import pack_transactions, unpack_transactions
+from .coin import Transaction, CoinState, CoinBlockchain, Wallet
 
 
 class JsonTransaction(Transaction):
@@ -222,7 +226,7 @@ class JsonTransaction(Transaction):
         # Where are we in the string
         index = 4
 
-        for _ in xrange(input_count):
+        for _ in range(input_count):
             # Unpack that many 108-byte records of 64-byte transaction hashes,
             # 4-byte output indices, 8-byte amounts, and 32-byte destination
             # public key hashes.
@@ -272,7 +276,7 @@ class JsonTransaction(Transaction):
         # Where are we in the string
         index = 4
 
-        for _ in xrange(output_count):
+        for _ in range(output_count):
             # Unpack that many 40-byte records of 8-byte amounts and 32-byte
             # destination public key hashes.
             parts = self.unpack_output(bytestring, index)
@@ -323,7 +327,7 @@ class JsonTransaction(Transaction):
         # Where are we in the string
         index = 4
 
-        for _ in xrange(authorization_count):
+        for _ in range(authorization_count):
             # Get the length of the authorization's public key
             (length,) = struct.unpack(">I", bytestring[index:index + 4])
             index += 4
@@ -412,7 +416,7 @@ class JsonCoinState(CoinState):
         Yield each unused output, as a tuple:
             (transaction hash, index, amount, destination, json_data)
         """
-        for key, value in self.unused_outputs.iteritems():
+        for key, value in six.iteritems(self.unused_outputs):
             output4 = list(self.bytes2output(key))
             output = tuple(output4 + [json.loads(value), ])
             yield output
@@ -1198,22 +1202,22 @@ if __name__ == "__main__":
         block = blockchain.make_block(destination, min_fee=min_fee, json_data=json_data)
 
         # Now unpack and dump the block for debugging.
-        print "Block will be:\n{}".format(block)
+        print("Block will be:\n{}".format(block))
 
         for transaction in unpack_transactions(block.payload):
             # Print all the transactions
-            print "JsonTransaction: {}".format(JsonTransaction.from_bytes(transaction))
+            print("JsonTransaction: {}".format(JsonTransaction.from_bytes(transaction)))
 
         # Do proof of work on the block to mine it.
         block.do_work(blockchain.algorithm)
 
-        print "Successful nonce: {}".format(block.nonce)
+        print("Successful nonce: {}".format(block.nonce))
 
         # See if the work really is enough
-        print "Work is acceptable: {}".format(block.verify_work(blockchain.algorithm))
+        print("Work is acceptable: {}".format(block.verify_work(blockchain.algorithm)))
 
         # See if the block is good according to the blockchain
-        print "Block is acceptable: {}".format(blockchain.verify_block(block))
+        print("Block is acceptable: {}".format(blockchain.verify_block(block)))
 
         # Add it to the blockchain through the complicated queueing mechanism
         blockchain.queue_block(block)
@@ -1224,7 +1228,7 @@ if __name__ == "__main__":
     # Make a wallet that hits against it
     wallet = JsonWallet(blockchain, "coin.wallet")
 
-    print "Receiving address: {}".format(util.bytes2string(wallet.get_address()))
+    print("Receiving address: {}".format(util.bytes2string(wallet.get_address())))
 
     # Make a block that gives us coins.
     import time
@@ -1234,7 +1238,7 @@ if __name__ == "__main__":
     ))
 
     # Send some coins to ourselves
-    print "Sending ourselves 10 coins..."
+    print("Sending ourselves 10 coins...")
     transaction = wallet.make_simple_transaction(
         10,
         wallet.get_address(),
@@ -1244,7 +1248,7 @@ if __name__ == "__main__":
         ),
         auth_data=dict(k='test123'),
     )
-    print transaction
+    print(transaction)
     blockchain.add_transaction(transaction.to_bytes())
 
     # Make a block that confirms that transaction.

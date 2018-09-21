@@ -50,11 +50,13 @@ Parallel Python Software, PP Worker.
 http://www.parallelpython.com - updates, documentation, examples and support
 forums
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 import StringIO
-import cPickle as pickle
-import pptransport
+import six.moves.cPickle as pickle
+from . import pptransport
 
 try:
     import msvcrt
@@ -82,7 +84,7 @@ def preprocess(msg):
         try:
             globals()[module.split('.')[0]] = __import__(module)
         except:
-            print "An error has occured during the module import"
+            print("An error has occured during the module import")
             sys.excepthook(*sys.exc_info())
     return fname, fobjs
 
@@ -115,8 +117,8 @@ class _WorkerProcess(object):
                         eval(__fobj)
                         globals().update(locals())
                     except:
-                        print "An error has occured during the " + \
-                              "function import"
+                        print("An error has occured during the " + \
+                              "function import")
                         sys.excepthook(*sys.exc_info())
 
                 __args = pickle.loads(__sargs)
@@ -125,7 +127,7 @@ class _WorkerProcess(object):
                 try:
                     __result = __f(*__args)
                 except:
-                    print "An error has occured during the function execution"
+                    print("An error has occured during the function execution")
                     sys.excepthook(*sys.exc_info())
                     __result = None
 
@@ -134,7 +136,7 @@ class _WorkerProcess(object):
                 self.t.send(__sresult)
                 self.sout.truncate(0)
         except:
-            print "Fatal error has occured during the function execution"
+            print("Fatal error has occured during the function execution")
             sys.excepthook(*sys.exc_info())
             __result = None
             __sresult = pickle.dumps((__result, self.sout.getvalue()),

@@ -38,6 +38,7 @@ Various methods to keep track of:
 
 #------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -118,7 +119,7 @@ def validate_customers_quotas(space_dict=None):
             unknown_customers.add(idurl)
             continue
     for idurl in contactsdb.customers():
-        if idurl not in space_dict.keys():
+        if idurl not in list(space_dict.keys()):
             unknown_customers.add(idurl)
     for idurl in space_dict.keys():
         if idurl != 'free':
@@ -206,7 +207,7 @@ def report_donated_storage():
     for idurl in contactsdb.customers():
         consumed_by_customer = 0
         used_by_customer = 0
-        if idurl not in space_dict.keys():
+        if idurl not in list(space_dict.keys()):
             r['errors'].append('space consumed by customer %s is unknown' % idurl)
         else:
             try:
@@ -214,7 +215,7 @@ def report_donated_storage():
                 r['consumed'] += consumed_by_customer
             except:
                 r['errors'].append('incorrect value of consumed space for customer %s' % idurl)
-        if idurl in used_space_dict.keys():
+        if idurl in list(used_space_dict.keys()):
             try:
                 used_by_customer = int(used_space_dict.pop(idurl))
                 used += used_by_customer
@@ -276,7 +277,7 @@ def report_local_storage():
     r['temp_str'] = diskspace.MakeStringFromBytes(r['temp'])
     r['customers'] = bpio.getDirectorySize(settings.getCustomersFilesDir())
     r['customers_str'] = diskspace.MakeStringFromBytes(r['customers'])
-    r['total'] = bpio.getDirectorySize(settings.GetBaseDir())
+    r['total'] = bpio.getDirectorySize(settings.BaseDir())
     r['total_str'] = diskspace.MakeStringFromBytes(r['total'])
     dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(settings.getCustomersFilesDir())
     if dataDriveFreeSpace is None:

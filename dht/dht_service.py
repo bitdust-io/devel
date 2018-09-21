@@ -29,13 +29,19 @@ module:: dht_service
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+from __future__ import absolute_import
+from __future__ import print_function
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import os
 import sys
+import six
 import hashlib
 import random
 import base64
@@ -50,17 +56,17 @@ from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------
 
-from entangled.dtuple import DistributedTupleSpacePeer
-from entangled.kademlia.datastore import SQLiteExpiredDataStore
-from entangled.kademlia.node import rpcmethod
-from entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
-from entangled.kademlia import constants
-
-#------------------------------------------------------------------------------
-
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------
+
+from dht.entangled.dtuple import DistributedTupleSpacePeer
+from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore
+from dht.entangled.kademlia.node import rpcmethod
+from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
+from dht.entangled.kademlia import constants
 
 #------------------------------------------------------------------------------
 
@@ -72,6 +78,7 @@ from main import settings
 
 from dht import known_nodes
 
+from lib import strng
 from lib import utime
 
 #------------------------------------------------------------------------------
@@ -224,15 +231,22 @@ def drop_counters():
 #------------------------------------------------------------------------------
 
 def on_host_resoled(ip, port, host, result_list, total_hosts, result_defer):
-    if not isinstance(ip, str) or port is None:
+    if not isinstance(ip, six.string_types) or port is None:
         result_list.append(None)
         lg.warn('"%s" failed to resolve' % host)
     else:
         result_list.append((ip, port, ))
     if len(result_list) != total_hosts:
         return None
-    return result_defer.callback(filter(None, result_list))
+    return result_defer.callback([_f for _f in result_list if _f])
 
+
+def on_host_failed(err, host, result_list, total_hosts, result_defer):
+    lg.warn('"%s" failed to resolve: %s' % (host, err))
+    result_list.append(None)
+    if len(result_list) != total_hosts:
+        return None
+    return result_defer.callback([_f for _f in result_list if _f])
 
 def resolve_hosts(nodes_list):
     result_defer = Deferred()
@@ -240,7 +254,8 @@ def resolve_hosts(nodes_list):
     for node_tuple in nodes_list:
         d = reactor.resolve(node_tuple[0])
         d.addCallback(on_host_resoled, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
-        d.addErrback(on_host_resoled, None, node_tuple[0], result_list, len(nodes_list), result_defer)
+        d.addErrback(on_host_failed, node_tuple[0], result_list, len(nodes_list), result_defer)
+        # d.addErrback(on_host_resoled, None, node_tuple[0], result_list, len(nodes_list), result_defer)
     return result_defer
 
 #------------------------------------------------------------------------------
@@ -309,7 +324,7 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
     count('set_value_%s' % key)
-    sz_bytes = len(str(value))
+    sz_bytes = len(value)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds, counter=%d' % (
             key, sz_bytes, expire, counter('set_value_%s' % key)))
@@ -464,9 +479,13 @@ def find_node(node_id):
 
 def get_node_data(key):
     if not node():
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.get_node_data local node is not not read')
         return None
     count('get_node_data')
     if key not in node().data:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] not exist' % key)
         return None
     value = node().data[key]
     if _Debug:
@@ -477,6 +496,8 @@ def get_node_data(key):
 
 def set_node_data(key, value):
     if not node():
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.set_node_data local node is not not read')
         return False
     count('set_node_data')
     node().data[key] = value
@@ -488,9 +509,13 @@ def set_node_data(key, value):
 
 def delete_node_data(key):
     if not node():
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not not read')
         return False
     count('delete_node_data')
     if key not in node().data:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s] not exist' % key)
         return False
     node().data.pop(key)
     if _Debug:
@@ -535,7 +560,7 @@ class DHTNode(DistributedTupleSpacePeer):
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
-                base64.b32encode(key), len(str(value)), expireSeconds, counter('store')))
+                strng.to_string(key, errors='ignore')[:6], len(str(value)), expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
@@ -552,13 +577,20 @@ class DHTNode(DistributedTupleSpacePeer):
     @rpcmethod
     def request(self, key):
         count('request')
-        value = self.data.get(key)
-        if value is None and key in self._dataStore:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_string(key, errors='ignore')[:10])
+        internal_value = get_node_data(key)
+        if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
             self.data[key] = value
+            if _Debug:
+                lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
+        else:
+            value = internal_value
+        if value is None:
+            value = 0
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s] read %d bytes, counter=%d' % (
-                base64.b32encode(key), len(str(value)), counter('request')))
+            lg.out(_DebugLevel, '    read internal value, counter=%d' % counter('request'))
         return {key: value, }
 
     def reconnect(self, knownNodeAddresses=None):
@@ -606,8 +638,9 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def _send(self, data, rpcID, address):
         count('dht_send')
-        if len(self.sending_queue) > 10:
-            lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
+        if _Debug:
+            if len(self.sending_queue) > 10:
+                lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
         self.sending_queue.append((data, rpcID, address, ))
         if self.receiving_worker is None:
             self._process_outgoing()
@@ -646,10 +679,10 @@ def main():
     def _go(nodes):
         try:
             if len(args) == 0:
-                print 'STARTED'
+                print('STARTED')
             elif len(args) > 0:
                 def _r(x):
-                    print x
+                    print(x)
                     reactor.stop()
                 cmd = args[0]
                 if cmd == 'get':
@@ -671,7 +704,7 @@ def main():
                     find_node(random_key()).addBoth(_r)
                 elif cmd == 'discover':
                     def _l(x):
-                        print x
+                        print(x)
                         find_node(random_key()).addBoth(_l)
                     _l('')
         except:
