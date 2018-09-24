@@ -1,90 +1,26 @@
-from __future__ import absolute_import
 import re
-import json
-import time
-
-
+from six import PY2, PY3, b, u
+if PY2:
+    from itertools import ifilter as filter
 from functools import wraps
+from twisted.web.resource import Resource, NoResource
 
-from twisted.web.resource import Resource
-from twisted.web.server import NOT_DONE_YET
-from twisted.internet.defer import Deferred
-from twisted.python import log as twlog
-from six.moves import filter
-
-
-def _to_json(output_object):
-    return json.dumps(
-        output_object,
-        indent=2,
-        separators=(',', ': '),
-        sort_keys=True,
-    ) + '\n'
-
-
-class _JsonResource(Resource):
+class _FakeResource(Resource):
     _result = ''
     isLeaf = True
-
-    def __init__(self, result, executed):
+    def __init__(self, result):
         Resource.__init__(self)
         self._result = result
-        self._executed = executed
-
-    def _setHeaders(self, request):
-        request.responseHeaders.addRawHeader(b'content-type', b'application/json')
-        request.responseHeaders.addRawHeader(b'Access-Control-Allow-Origin', b'*')
-        request.responseHeaders.addRawHeader(b'Access-Control-Allow-Methods', b'GET, POST, PUT, DELETE')
-        request.responseHeaders.addRawHeader(b'Access-Control-Allow-Headers', b'x-prototype-version,x-requested-with')
-        request.responseHeaders.addRawHeader(b'Access-Control-Max-Age', 2520)
-        return request
-
     def render(self, request):
-        self._setHeaders(request)
-        self._result['execution'] = '%3.6f' % (time.time() - self._executed)
-        return _to_json(self._result)
-
-
-class _DelayedJsonResource(_JsonResource):
-
-    def _cb(self, result, request):
-        self._setHeaders(request)
-        result['execution'] = '%3.6f' % (time.time() - self._executed)
-        raw = _to_json(result)
-        if request.channel:
-            request.write(raw)
-            request.finish()
-        else:
-            twlog.err('REST API connection channel already closed')
-
-    def _eb(self, err, request):
-        self._setHeaders(request)
-        execution = '%3.6f' % (time.time() - self._executed)
-        raw = _to_json(dict(status='ERROR', execution=execution, errors=[str(err), ]))
-        if request.channel:
-            request.write(raw)
-            request.finish()
-        else:
-            twlog.err('REST API connection channel already closed')
-
-    def render(self, request):
-        self._result.addCallback(self._cb, request)
-        self._result.addErrback(self._eb, request)
-        return NOT_DONE_YET
+        return self._result
 
 
 def maybeResource(f):
     @wraps(f)
     def inner(*args, **kwargs):
-        _executed = time.time()
-        try:
-            result = f(*args, **kwargs)
-        except Exception as exc:
-            return _JsonResource(dict(status='ERROR', errors=[str(exc), ]), _executed)
-        if isinstance(result, Deferred):
-            return _DelayedJsonResource(result, _executed)
+        result = f(*args, **kwargs)
         if not isinstance(result, Resource):
-            result = _JsonResource(result, _executed)
+            result = _FakeResource(result)
         return result
     return inner
 
@@ -93,14 +29,26 @@ class APIResource(Resource):
 
     _registry = None
 
+    def __new__(cls, *args, **kwds):
+        instance = super().__new__(cls, *args, **kwds)
+        instance._registry = []
+        for name in dir(instance):
+            attribute = getattr(instance, name)
+            annotation = getattr(attribute, "__txrestapi__", None)
+            if annotation is not None:
+                method, regex = annotation
+                instance.register(method, regex, attribute)
+        return instance
+
     def __init__(self, *args, **kwargs):
         Resource.__init__(self, *args, **kwargs)
-        self._registry = []
+        if PY2:
+            self._registry = []
 
     def _get_callback(self, request):
-        filterf = lambda t: t[0] in (request.method, 'ALL')
+        filterf = lambda t:t[0] in (request.method, b('ALL'))
         path_to_check = getattr(request, '_remaining_path', request.path)
-        for _, r, cb in filter(filterf, self._registry):
+        for m, r, cb in filter(filterf, self._registry):
             result = r.search(path_to_check)
             if result:
                 request._remaining_path = path_to_check[result.span()[1]:]
@@ -111,12 +59,11 @@ class APIResource(Resource):
         self._registry.append((method, re.compile(regex), callback))
 
     def unregister(self, method=None, regex=None, callback=None):
-        if regex is not None:
-            regex = re.compile(regex)
+        if regex is not None: regex = re.compile(regex)
         for m, r, cb in self._registry[:]:
-            if not method or (method and m == method):
-                if not regex or (regex and r == regex):
-                    if not callback or (callback and cb == callback):
+            if not method or (method and m==method):
+                if not regex or (regex and r==regex):
+                    if not callback or (callback and cb==callback):
                         self._registry.remove((m, r, cb))
 
     def getChild(self, name, request):
@@ -125,7 +72,7 @@ class APIResource(Resource):
             # Go into the thing
             callback, args = self._get_callback(request)
             if callback is None:
-                return _JsonResource(dict(status='ERROR', errors=['path \'%s\' not found' % name, ]), time.time())
+                return NoResource()
             else:
                 return maybeResource(callback)(request, **args)
         else:
