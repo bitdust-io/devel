@@ -75,6 +75,10 @@ class DataStore(DictMixin):
         originally published.
         """
 
+    def getItem(self, key):
+        """
+        """
+
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         """
         Set the value of the (key, value) pair identified by C{key}; this
@@ -99,7 +103,11 @@ class DataStore(DictMixin):
         Delete the specified key (and its value)
         """
 
-    def getItem(self, key):
+    def __iter__(self):
+        """
+        """
+
+    def __len__(self):
         """
         """
 

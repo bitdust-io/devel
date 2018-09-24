@@ -62,7 +62,6 @@ import sys
 import types
 import time
 import atexit
-import user
 import six.moves.cPickle as pickle
 from . import pptransport
 from . import ppauto
@@ -458,11 +457,11 @@ class Server(object):
             if not isinstance(secret, bytes):
                 raise TypeError("secret must be of a string type")
             self.secret = str(secret)
-        elif hasattr(user, "pp_secret"):
-            secret = user["pp_secret"]
-            if not isinstance(secret, bytes):
-                raise TypeError("secret must be of a string type")
-            self.secret = str(secret)
+        # elif hasattr(user, "pp_secret"):
+        #     secret = user["pp_secret"]
+        #     if not isinstance(secret, bytes):
+        #         raise TypeError("secret must be of a string type")
+        #     self.secret = str(secret)
         else:
             self.secret = Server.default_secret
         self.__connect()

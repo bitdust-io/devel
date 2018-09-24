@@ -42,7 +42,6 @@ from logs import lg
 
 from system import bpio
 
-from lib import maths
 from lib import nameurl
 
 from main import settings
@@ -76,6 +75,7 @@ def shutdown():
 
 def run():
     global _LoopCountRatingsTask
+    from lib import maths
     stop()
     interval = maths.interval_to_next_hour()
     # debug

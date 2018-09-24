@@ -51,7 +51,7 @@ from logs import lg
 
 from interface import api
 
-from lib.txrestapi.txrestapi.resource import APIResource
+from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
 from lib.txrestapi.txrestapi.methods import GET, POST, PUT, DELETE, ALL
 
 #------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ class BitDustAPISite(Site):
         return Site.buildProtocol(self, addr)
 
 
-class BitDustRESTHTTPServer(APIResource):
+class BitDustRESTHTTPServer(JsonAPIResource):
     """
     A set of API method to interract and control locally running BitDust process.
     """

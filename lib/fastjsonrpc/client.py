@@ -26,7 +26,8 @@ JSON-RPC.
 from __future__ import absolute_import
 import base64
 
-from zope.interface import implements
+# from zope.interface import implements
+from zope.interface import implementer
 from twisted.internet.defer import succeed
 from twisted.web.iweb import IBodyProducer
 
@@ -84,13 +85,14 @@ class ReceiverProtocol(Protocol):
         self.finished.callback(self.body)
 
 
+@implementer(IBodyProducer)
 class StringProducer(object):
     """
     There's no FileBodyProducer in Twisted < 12.0.0 See
     http://twistedmatrix.com/documents/current/web/howto/client.html for
     details about this class.
     """
-    implements(IBodyProducer)
+    # implements(IBodyProducer)
 
     def __init__(self, body):
         self.body = body

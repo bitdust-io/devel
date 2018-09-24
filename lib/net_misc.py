@@ -70,7 +70,7 @@ from twisted.web.client import HTTPDownloader
 from twisted.web.client import Agent, readBody
 from twisted.web.http_headers import Headers
 
-from zope.interface import implements
+from zope.interface import implementer
 
 #------------------------------------------------------------------------------
 
@@ -786,10 +786,11 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 self._deferred.callback(self.buffer)
             else:
                 self._deferred.errback(Exception(self.buffer))
-    
-    
+
+
+    @implementer(iweb.IBodyProducer)
     class MultiPartProducer:
-        implements(iweb.IBodyProducer)
+
         CHUNK_SIZE = 2 ** 8
     
         def __init__(self, files={}, data={}, callback=None, deferred=None):
