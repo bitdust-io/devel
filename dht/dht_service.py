@@ -113,6 +113,7 @@ def init(udp_port, db_file_path=None):
         # del dataStore['not_exist_key']
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
+        lg.exc()
         os.remove(dbPath)
         dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
