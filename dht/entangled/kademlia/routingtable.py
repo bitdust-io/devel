@@ -30,6 +30,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import time
 import random
+import codecs
 
 from . import constants
 from . import kbucket
@@ -68,8 +69,10 @@ class RoutingTable(object):
         @return: XOR result of two long variables
         @rtype: long
         """
-        valKeyOne = int(keyOne.encode('hex'), 16)
-        valKeyTwo = int(keyTwo.encode('hex'), 16)
+        # valKeyOne = int(keyOne.encode('hex'), 16)
+        valKeyOne = int(codecs.encode(keyOne, 'hex'), 16)
+        # valKeyTwo = int(keyTwo.encode('hex'), 16)
+        valKeyTwo = int(codecs.encode(keyTwo, 'hex'), 16)
         return valKeyOne ^ valKeyTwo
 
     def findCloseNodes(self, key, count, _rpcNodeID=None):
@@ -351,7 +354,8 @@ class TreeRoutingTable(RoutingTable):
         @return: The index of the k-bucket responsible for the specified key
         @rtype: int
         """
-        valKey = int(key.encode('hex'), 16)
+        # valKey = int(key.encode('hex'), 16)
+        valKey = int(codecs.encode(key, 'hex'), 16)
         i = 0
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):
@@ -373,7 +377,8 @@ class TreeRoutingTable(RoutingTable):
             randomID = randomID[:-1]
         if len(randomID) % 2 != 0:
             randomID = '0' + randomID
-        randomID = randomID.decode('hex')
+        # randomID = randomID.decode('hex')
+        randomID = codecs.decode(randomID, 'hex')
         randomID = (20 - len(randomID)) * '\x00' + randomID
         return randomID
 

@@ -947,7 +947,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 import random
                 import sha
                 bits = random.getrandbits(160)
-                boundary = sha.new(str(bits)).hexdigest()
+                boundary = sha.new(str(bits).encode()).hexdigest()
             return boundary
     
         def _file_type(self, field):

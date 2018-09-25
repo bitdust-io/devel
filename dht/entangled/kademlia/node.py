@@ -29,6 +29,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 import hashlib
 import random
 import time
@@ -489,7 +490,7 @@ class Node(object):
         @rtype: str
         """
         hash = hashlib.sha1()
-        hash.update(str(random.getrandbits(255)))
+        hash.update(str(random.getrandbits(255)).encode())
         return hash.digest()
 
     def _iterativeFind(self, key, startupShortlist=None, rpc='findNode'):
@@ -627,7 +628,11 @@ class Node(object):
             # print '==> searchiteration'
             slowNodeCount[0] = len(activeProbes)
             # Sort the discovered active nodes from closest to furthest
-            activeContacts.sort(lambda firstContact, secondContact, targetKey=key: cmp(self._routingTable.distance(firstContact.id, targetKey), self._routingTable.distance(secondContact.id, targetKey)))
+            # activeContacts.sort(lambda firstContact, secondContact, targetKey=key: cmp(
+            #     self._routingTable.distance(firstContact.id, targetKey),
+            #     self._routingTable.distance(secondContact.id, targetKey)
+            # ))
+            activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
             # This makes sure a returning probe doesn't force calling this function by mistake
             while len(pendingIterationCalls):
                 del pendingIterationCalls[0]
@@ -650,7 +655,11 @@ class Node(object):
             if len(activeContacts):
                 prevClosestNode[0] = activeContacts[0]
             contactedNow = 0
-            shortlist.sort(lambda firstContact, secondContact, targetKey=key: cmp(self._routingTable.distance(firstContact.id, targetKey), self._routingTable.distance(secondContact.id, targetKey)))
+            # shortlist.sort(key=lambda firstContact, secondContact, targetKey=key: cmp(
+            #     self._routingTable.distance(firstContact.id, targetKey),
+            #     self._routingTable.distance(secondContact.id, targetKey)
+            # ))
+            activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
             # Store the current shortList length before contacting other nodes
             prevShortlistLength = len(shortlist)
             for contact in shortlist:
