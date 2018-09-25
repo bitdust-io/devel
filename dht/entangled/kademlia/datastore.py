@@ -28,6 +28,7 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
+import six
 try:
     from UserDict import DictMixin
 except ImportError:
@@ -35,8 +36,15 @@ except ImportError:
 import sqlite3
 import six.moves.cPickle as pickle
 import os
+import codecs
 
 from . import constants
+
+
+try:
+    buffer = buffer
+except:
+    buffer = memoryview
 
 
 class DataStore(DictMixin):
@@ -216,7 +224,12 @@ class SQLiteDataStore(DataStore):
         try:
             self._cursor.execute("SELECT key FROM data")
             for row in self._cursor:
-                keys.append(row[0].decode('hex'))
+                key = row[0]
+                if not isinstance(key, six.text_type):
+                    key = key.decode()
+                decodedKey = codecs.decode(key, 'hex')            
+                keys.append(decodedKey)
+                # keys.append(row[0].decode('hex'))
         finally:
             return keys
 
@@ -248,7 +261,10 @@ class SQLiteDataStore(DataStore):
 
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         # Encode the key so that it doesn't corrupt the database
-        encodedKey = key.encode('hex')
+        # encodedKey = key.encode('hex')
+        if not isinstance(key, six.binary_type):
+            key = key.encode()
+        encodedKey = codecs.encode(key, 'hex')
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (
@@ -259,7 +275,13 @@ class SQLiteDataStore(DataStore):
 
     def _dbQuery(self, key, columnName, unpickle=False):
         try:
-            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {'reqKey': key.encode('hex')})
+            if not isinstance(key, six.binary_type):
+                key = key.encode()
+            encodedKey = codecs.encode(key, 'hex')
+            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
+                # 'reqKey': key.encode('hex'),
+                'reqKey': encodedKey,
+            })
             row = self._cursor.fetchone()
             value = str(row[0])
         except TypeError:
@@ -274,11 +296,23 @@ class SQLiteDataStore(DataStore):
         return self._dbQuery(key, 'value', unpickle=True)
 
     def __delitem__(self, key):
-        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+        if not isinstance(key, six.binary_type):
+            key = key.encode()
+        encodedKey = codecs.encode(key, 'hex')
+        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
+            # 'reqKey': key.encode('hex'),
+            'reqKey': encodedKey,
+        })
 
     def getItem(self, key):
         try:
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+            if not isinstance(key, six.binary_type):
+                key = key.encode()
+            encodedKey = codecs.encode(key, 'hex')
+            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
+                # 'reqKey': key.encode('hex'),
+                'reqKey': encodedKey,
+            })
             row = self._cursor.fetchone()
             result = dict(
                 key=row[0],
@@ -325,7 +359,10 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 expireSeconds=constants.dataExpireSecondsDefaut,
                 **kwargs):
         # Encode the key so that it doesn't corrupt the database
-        encodedKey = key.encode('hex')
+        # encodedKey = key.encode('hex')
+        if not isinstance(key, six.binary_type):
+            key = key.encode()
+        encodedKey = codecs.encode(key, 'hex')
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds) VALUES (?, ?, ?, ?, ?, ?)', (
@@ -336,7 +373,13 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
 
     def getItem(self, key):
         try:
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+            if not isinstance(key, six.binary_type):
+                key = key.encode()
+            encodedKey = codecs.encode(key, 'hex')            
+            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
+                # 'reqKey': key.encode('hex'),
+                'reqKey': encodedKey,
+            })
             row = self._cursor.fetchone()
             result = dict(
                 key=row[0],

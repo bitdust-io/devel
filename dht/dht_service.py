@@ -262,7 +262,7 @@ def resolve_hosts(nodes_list):
 #------------------------------------------------------------------------------
 
 def random_key():
-    return key_to_hash(str(random.getrandbits(255)))
+    return key_to_hash(str(random.getrandbits(255)).encode())
 
 
 def key_to_hash(key):

@@ -48,7 +48,7 @@ class RequestMessage(Message):
     def __init__(self, nodeID, method, methodArgs, rpcID=None):
         if rpcID is None:
             hash = hashlib.sha1()
-            hash.update(str(random.getrandbits(255)))
+            hash.update(str(random.getrandbits(255)).encode())
             rpcID = hash.digest()
         Message.__init__(self, rpcID, nodeID)
         self.request = method

@@ -29,6 +29,7 @@
 
 from __future__ import absolute_import
 import six
+import codecs
 
 from . import constants
 
@@ -159,7 +160,8 @@ class KBucket(object):
         @rtype: bool
         """
         if isinstance(key, six.string_types):
-            key = int(key.encode('hex'), 16)
+            # key = int(key.encode('hex'), 16)
+            key = int(codecs.encode(key, 'hex'), 16)
         return self.rangeMin <= key < self.rangeMax
 
     def __len__(self):
