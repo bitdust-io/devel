@@ -62,6 +62,7 @@ import cStringIO
 
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
 #------------------------------------------------------------------------------
@@ -328,7 +329,13 @@ def do_with_files(filename, eccmapname, version, blockNumber, targetDir):
 def main():
     from logs import lg
     lg.set_debug_level(18)
-    do_in_memory(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6] == '1')
+    do_in_memory(
+        filename=sys.argv[1],
+        eccmapname=sys.argv[2],
+        version=sys.argv[3],
+        blockNumber=int(sys.argv[4]),
+        targetDir=sys.argv[5]
+    )
 
 
 if __name__ == "__main__":
