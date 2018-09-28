@@ -283,11 +283,14 @@ class SQLiteDataStore(DataStore):
                 'reqKey': encodedKey,
             })
             row = self._cursor.fetchone()
-            value = str(row[0])
+            value = row[0]
         except TypeError:
             raise KeyError(key)
         else:
             if unpickle:
+                if six.PY2:
+                    if isinstance(value, buffer):
+                        value = str(value)
                 return pickle.loads(value)
             else:
                 return value

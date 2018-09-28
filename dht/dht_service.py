@@ -34,7 +34,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -560,8 +560,8 @@ class DHTNode(DistributedTupleSpacePeer):
         # TODO: add signature validation to be sure this is the owner of that key:value pair
         count('store_dht_service')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
-                strng.to_string(key, errors='ignore')[:6], len(str(value)), expireSeconds, counter('store')))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
+                strng.to_string(key, errors='ignore')[:6], expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
