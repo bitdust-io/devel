@@ -453,7 +453,6 @@ class DiscoveryTask(object):
             d.addCallback(self._on_identity_cached, node)
             return d
         except:
-            import pdb; pdb.set_trace()
             lg.exc()
             return idurl
         
