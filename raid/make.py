@@ -55,12 +55,8 @@ from io import open
 
 import os
 import sys
-import struct
-import cStringIO
+import copy
 import array
-
-unpack = struct.Struct('>l').unpack
-pack = struct.Struct('>l').pack
 
 #------------------------------------------------------------------------------
 
@@ -72,6 +68,11 @@ if __name__ == '__main__':
 #------------------------------------------------------------------------------
 
 import raid.eccmap
+
+try:
+    from raid_cython import build_parity, chunks
+except ImportError:
+    from raid.utils import build_parity, chunks
 
 #------------------------------------------------------------------------------
 
@@ -143,32 +144,14 @@ def WriteFile(filename, data):
 
 #------------------------------------------------------------------------------
 
-# def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
-#    # lg.out(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
-#    #     os.path.basename(filename), eccmapname, backupId, blockNumber))
-#    # t = time.time()
-#    if in_memory:
-#        dataNum, parityNum = do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir)
-#    else:
-#        dataNum, parityNum = do_with_files(filename, eccmapname, backupId, blockNumber, targetDir)
-#        # lg.out(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
-#    return dataNum, parityNum
 
-
-def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    for i in xrange(0, len(l), n):
-        yield l[i:i + n]
-
-
-def ReadBinaryFile2(filename):
+def read_binary_file_as_array(filename):
     """
     """
     if not os.path.isfile(filename):
         return ''
     if not os.access(filename, os.R_OK):
         return ''
-    length = os.stat(filename).st_size
 
     with open(filename, "rb") as f:
         values = array.array('i', f.read())
@@ -178,67 +161,37 @@ def ReadBinaryFile2(filename):
 
 
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
-    import copy
     INTSIZE = 4
     myeccmap = raid.eccmap.eccmap(eccmapname)
     # any padding at end and block.Length fixes
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)
-    wholefile = ReadBinaryFile2(filename)
+    wholefile = read_binary_file_as_array(filename)
     length = len(wholefile)
     length = length * 4
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
-    iters = seglength / INTSIZE
 
     #: dict of data segments
     sds = {}
-    sds_ = {}
-    dfds = {}
-    pfds = {}
     for seg_num, chunk in enumerate(chunks(wholefile, seglength / 4)):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
         with open(FileName, "wb") as f:
             chunk_to_write = copy.copy(chunk)
-            sds[seg_num] = iter(chunk)
-
-            pfds[seg_num] = cStringIO.StringIO()
-
             chunk_to_write.byteswap()
+
+            sds[seg_num] = iter(chunk)
             f.write(chunk_to_write)
 
-    Parities = {}
+    psds_list = build_parity(sds, seglength / INTSIZE, myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
 
-    for i in range(iters):
-        for PSegNum in range(myeccmap.paritysegments):
-            Parities[PSegNum] = 0
-        for seg_num in range(myeccmap.datasegments):
-            bstr = next(sds[seg_num])
+    dataNum = len(sds)
+    parityNum = len(psds_list)
 
-            # assert len(bstr) == INTSIZE, 'strange read under INTSIZE bytes, len(bstr)=%d seg_num=%d' % (len(bstr), seg_num)
-
-            b = bstr
-            # b, = unpack(bstr)
-            Map = myeccmap.DataToParity[seg_num]
-            for PSegNum in Map:
-                if PSegNum > myeccmap.paritysegments:
-                    myeccmap.check()
-                    raise Exception("eccmap error")
-                Parities[PSegNum] = Parities[PSegNum] ^ b
-
-        for PSegNum in range(myeccmap.paritysegments):
-            bstr = pack(Parities[PSegNum])
-            pfds[PSegNum].write(bstr)
-
-    dataNum = len(dfds)
-    parityNum = len(pfds)
-
-    for PSegNum, data in pfds.items():
+    for PSegNum, data in psds_list.items():
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-        WriteFile(FileName, pfds[PSegNum].getvalue())
+        with open(FileName, 'wb') as f:
+            f.write(psds_list[PSegNum])
 
     return dataNum, parityNum
-
-    # except:
-    #     return None
 
 
 def main():
