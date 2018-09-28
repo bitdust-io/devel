@@ -57,6 +57,10 @@ import os
 import sys
 import struct
 import cStringIO
+import array
+
+unpack = struct.Struct('>l').unpack
+pack = struct.Struct('>l').pack
 
 #------------------------------------------------------------------------------
 
@@ -157,47 +161,63 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def bitwise_xor(a, b):
-    return a ^ b
+def ReadBinaryFile2(filename):
+    """
+    """
+    if not os.path.isfile(filename):
+        return ''
+    if not os.access(filename, os.R_OK):
+        return ''
+    length = os.stat(filename).st_size
 
+    with open(filename, "rb") as f:
+        values = array.array('i', f.read())
 
-unpack = struct.Struct('>l').unpack
-pack = struct.Struct('>l').pack
+    values.byteswap()
+    return values
 
 
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
+    import copy
     INTSIZE = 4
     myeccmap = raid.eccmap.eccmap(eccmapname)
     # any padding at end and block.Length fixes
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)
-    wholefile = ReadBinaryFile(filename)
+    wholefile = ReadBinaryFile2(filename)
     length = len(wholefile)
+    length = length * 4
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
     iters = seglength / INTSIZE
 
     #: dict of data segments
     sds = {}
+    sds_ = {}
     dfds = {}
     pfds = {}
-    for seg_num, chunk in enumerate(chunks(wholefile, seglength)):
+    for seg_num, chunk in enumerate(chunks(wholefile, seglength / 4)):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
         with open(FileName, "wb") as f:
+            chunk_to_write = copy.copy(chunk)
+            sds[seg_num] = iter(chunk)
+
             pfds[seg_num] = cStringIO.StringIO()
-            dfds[seg_num] = cStringIO.StringIO(chunk)
-            sds[seg_num] = chunks(chunk, INTSIZE)
-            f.write(chunk)
+
+            chunk_to_write.byteswap()
+            f.write(chunk_to_write)
 
     Parities = {}
-    for i in range(seglength / INTSIZE):
+
+    for i in range(iters):
         for PSegNum in range(myeccmap.paritysegments):
             Parities[PSegNum] = 0
-        for DSegNum in range(myeccmap.datasegments):
-            bstr = next(sds[DSegNum])
+        for seg_num in range(myeccmap.datasegments):
+            bstr = next(sds[seg_num])
 
-            assert len(bstr) == INTSIZE, 'strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum)
+            # assert len(bstr) == INTSIZE, 'strange read under INTSIZE bytes, len(bstr)=%d seg_num=%d' % (len(bstr), seg_num)
 
-            b, = unpack(bstr)
-            Map = myeccmap.DataToParity[DSegNum]
+            b = bstr
+            # b, = unpack(bstr)
+            Map = myeccmap.DataToParity[seg_num]
             for PSegNum in Map:
                 if PSegNum > myeccmap.paritysegments:
                     myeccmap.check()
@@ -215,18 +235,6 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
         WriteFile(FileName, pfds[PSegNum].getvalue())
 
-    for f in dfds.values():
-        f.close()
-        #dataNum += 1
-
-    for f in pfds.values():
-        f.close()
-        #parityNum += 1
-
-    del myeccmap
-    del dfds
-    del pfds
-    del Parities
     return dataNum, parityNum
 
     # except:
