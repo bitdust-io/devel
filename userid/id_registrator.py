@@ -429,7 +429,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        login = strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename()))
+        login = bpio.ReadTextFile(settings.UserNameFilename())
 
         def _cb(xmlsrc, idurl, host):
             if not xmlsrc:
