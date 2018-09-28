@@ -34,8 +34,8 @@ class APIResource(Resource):
         instance._registry = []
         for name in dir(instance):
             attribute = getattr(instance, name)
-            annotation = getattr(attribute, "__txrestapi__", None)
-            if annotation is not None:
+            annotations = getattr(attribute, "__txrestapi__", [])
+            for annotation in annotations:
                 method, regex = annotation
                 instance.register(method, regex, attribute)
         return instance
