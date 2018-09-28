@@ -2,18 +2,14 @@ services: docker
 
 before_install:
   - docker -v
-  - git clone https://github.com/bitdust-io/tests.git tests_e2e
-
-  - mkdir -p tests_e2e/src/bitdust
-  - rsync -rR . tests_e2e/src/bitdust
-  - cd tests_e2e
+  - cd tests/e2e
 
 #install:
 #  - docker-compose up -d
 
 script:
-  - docker-compose -f docker-compose.yml up -d
-  - docker-compose exec test sh -c "pytest tests/test_ss/ -v -s"
+  - make -j2 all
+  - make test_1
 
-  - docker-compose -f docker-compose-upload_file.yml up -d --build --force-recreate
-  - docker-compose exec test sh -c "pytest tests/test_upload_file/ -v -s"
+  - make test_2
+  - make -j2 clean_all
