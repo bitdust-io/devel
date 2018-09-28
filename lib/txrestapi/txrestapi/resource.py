@@ -56,10 +56,10 @@ class APIResource(Resource):
         return None, None
 
     def register(self, method, regex, callback):
-        self._registry.append((method, re.compile(regex), callback))
+        self._registry.append((method, re.compile(regex.decode()), callback))
 
     def unregister(self, method=None, regex=None, callback=None):
-        if regex is not None: regex = re.compile(regex)
+        if regex is not None: regex = re.compile(regex.decode())
         for m, r, cb in self._registry[:]:
             if not method or (method and m==method):
                 if not regex or (regex and r==regex):

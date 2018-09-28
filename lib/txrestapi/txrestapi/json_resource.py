@@ -1,6 +1,7 @@
 import re
 import json
 import time
+import six
 
 from six import PY2, PY3, b, u
 from six.moves import filter
@@ -15,13 +16,15 @@ from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
 
 
+
+
 def _to_json(output_object):
-    return json.dumps(
+    return (json.dumps(
         output_object,
         indent=2,
         separators=(',', ': '),
         sort_keys=True,
-    ) + '\n'
+    ) + '\n').encode()
 
 
 class _JsonResource(Resource):
@@ -91,7 +94,6 @@ def maybeResource(f):
     return inner
 
 
-
 class JsonAPIResource(Resource):
 
     _registry = None
@@ -113,22 +115,27 @@ class JsonAPIResource(Resource):
             self._registry = []
 
     def _get_callback(self, request):
-        filterf = lambda t: t[0] in (request.method, 'ALL')
+        request_method = request.method
         path_to_check = getattr(request, '_remaining_path', request.path)
-        for _, r, cb in filter(filterf, self._registry):
-            result = r.search(path_to_check)
-            if result:
-                request._remaining_path = path_to_check[result.span()[1]:]
-                return cb, result.groupdict()
+        if not isinstance(path_to_check, six.text_type):
+            path_to_check = path_to_check.decode()
+        for m, r, cb in self._registry:
+            if m == request_method or m == b'ALL':
+                result = r.search(path_to_check)
+                if result:
+                    request._remaining_path = path_to_check[result.span()[1]:]
+                    return cb, result.groupdict()
         return None, None
 
-
-
     def register(self, method, regex, callback):
+        if not isinstance(regex, six.text_type):
+            regex = regex.decode()
         self._registry.append((method, re.compile(regex), callback))
 
     def unregister(self, method=None, regex=None, callback=None):
         if regex is not None:
+            if not isinstance(regex, six.text_type):
+                regex = regex.decode()
             regex = re.compile(regex)
         for m, r, cb in self._registry[:]:
             if not method or (method and m == method):
@@ -142,7 +149,7 @@ class JsonAPIResource(Resource):
             # Go into the thing
             callback, args = self._get_callback(request)
             if callback is None:
-                return _JsonResource(dict(status='ERROR', errors=['path \'%s\' not found' % name, ]), time.time())
+                return _JsonResource(dict(status='ERROR', errors=['path %r not found' % name, ]), time.time())
             else:
                 return maybeResource(callback)(request, **args)
         else:
