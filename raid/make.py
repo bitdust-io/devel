@@ -151,6 +151,20 @@ def WriteFile(filename, data):
 #    return dataNum, parityNum
 
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in xrange(0, len(l), n):
+        yield l[i:i + n]
+
+
+def bitwise_xor(a, b):
+    return a ^ b
+
+
+unpack = struct.Struct('>l').unpack
+pack = struct.Struct('>l').pack
+
+
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     INTSIZE = 4
     myeccmap = raid.eccmap.eccmap(eccmapname)
@@ -159,67 +173,39 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     wholefile = ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
+    iters = seglength / INTSIZE
 
-    for DSegNum in range(myeccmap.datasegments):
-        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
-        f = open(FileName, "wb")
-        segoffset = DSegNum * seglength
-        for i in range(seglength):
-            offset = segoffset + i
-            if offset < length:
-                f.write(wholefile[offset])
-            else:
-                # any padding should go at the end of last seg
-                # and block.Length fixes
-                f.write(" ")
-        f.close()
-
+    #: dict of data segments
+    sds = {}
     dfds = {}
-    for DSegNum in range(myeccmap.datasegments):
-        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
-        # instead of reading data from opened file
-        # we'l put it in memory
-        # and store current position in the data
-        # so start from zero
-        #dfds[DSegNum] = [0, bpio.ReadBinaryFile(FileName)]
-        dfds[DSegNum] = cStringIO.StringIO(ReadBinaryFile(FileName))
-
     pfds = {}
-    for PSegNum in range(myeccmap.paritysegments):
-        # we will keep parirty data in the momory
-        # after doing all calculations
-        # will write all parts on the disk
-        pfds[PSegNum] = cStringIO.StringIO()
+    for seg_num, chunk in enumerate(chunks(wholefile, seglength)):
+        FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
+        with open(FileName, "wb") as f:
+            pfds[seg_num] = cStringIO.StringIO()
+            dfds[seg_num] = cStringIO.StringIO(chunk)
+            sds[seg_num] = chunks(chunk, INTSIZE)
+            f.write(chunk)
 
-    #Parities = range(myeccmap.paritysegments)
     Parities = {}
     for i in range(seglength / INTSIZE):
         for PSegNum in range(myeccmap.paritysegments):
             Parities[PSegNum] = 0
         for DSegNum in range(myeccmap.datasegments):
-            bstr = dfds[DSegNum].read(INTSIZE)
-            #pos = dfds[DSegNum][0]
-            #dfds[DSegNum][0] += INTSIZE
-            #bstr = dfds[DSegNum][1][pos:pos+INTSIZE]
-            if len(bstr) == INTSIZE:
-                b, = struct.unpack(">l", bstr)
-                Map = myeccmap.DataToParity[DSegNum]
-                for PSegNum in Map:
-                    if PSegNum > myeccmap.paritysegments:
-                        # lg.out(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                        # lg.out(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
-                        myeccmap.check()
-                        raise Exception("eccmap error")
-                    Parities[PSegNum] = Parities[PSegNum] ^ b
-            else:
-                raise Exception('strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum))
-                # TODO
-                #out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
-                #out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
+            bstr = next(sds[DSegNum])
+
+            assert len(bstr) == INTSIZE, 'strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum)
+
+            b, = unpack(bstr)
+            Map = myeccmap.DataToParity[DSegNum]
+            for PSegNum in Map:
+                if PSegNum > myeccmap.paritysegments:
+                    myeccmap.check()
+                    raise Exception("eccmap error")
+                Parities[PSegNum] = Parities[PSegNum] ^ b
 
         for PSegNum in range(myeccmap.paritysegments):
-            bstr = struct.pack(">l", Parities[PSegNum])
-            #pfds[PSegNum] += bstr
+            bstr = pack(Parities[PSegNum])
             pfds[PSegNum].write(bstr)
 
     dataNum = len(dfds)
