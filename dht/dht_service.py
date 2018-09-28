@@ -249,6 +249,7 @@ def on_host_failed(err, host, result_list, total_hosts, result_defer):
         return None
     return result_defer.callback([_f for _f in result_list if _f])
 
+
 def resolve_hosts(nodes_list):
     result_defer = Deferred()
     result_list = []
@@ -266,6 +267,7 @@ def random_key():
 
 
 def key_to_hash(key):
+    key = strng.to_bin(key)
     h = hashlib.sha1()
     h.update(key)
     return h.digest()
@@ -280,6 +282,7 @@ def make_key(key, index, prefix, version=None):
 
 
 def split_key(key_str):
+    key_str = strng.to_text(key_str)
     prefix, key, index, version = key_str.split(':')
     return dict(
         key=key,
@@ -484,6 +487,7 @@ def get_node_data(key):
             lg.out(_DebugLevel, 'dht_service.get_node_data local node is not not read')
         return None
     count('get_node_data')
+    key = strng.to_bin(key)
     if key not in node().data:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] not exist' % key)
@@ -501,6 +505,7 @@ def set_node_data(key, value):
             lg.out(_DebugLevel, 'dht_service.set_node_data local node is not not read')
         return False
     count('set_node_data')
+    key = strng.to_bin(key)
     node().data[key] = value
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes, counter=%d' % (
@@ -514,6 +519,7 @@ def delete_node_data(key):
             lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not not read')
         return False
     count('delete_node_data')
+    key = strng.to_bin(key)
     if key not in node().data:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s] not exist' % key)
@@ -537,7 +543,7 @@ class DHTNode(DistributedTupleSpacePeer):
         now = utime.get_sec1970()
         expired_keys = []
         for key in self._dataStore.keys():
-            if key == 'nodeState':
+            if key == b'nodeState':
                 continue
             item_data = self._dataStore.getItem(key)
             if item_data:

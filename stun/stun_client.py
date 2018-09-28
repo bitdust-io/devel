@@ -295,11 +295,14 @@ class StunClient(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doRequestStunPortNumbers')
         for node in self.stun_nodes:
+            if node.id in self.deferreds:
+                lg.warn('Already requested stun_port from %r' % node)
+                continue
             if _Debug:
                 lg.out(_DebugLevel + 10, '    from %s' % node)
-            d = node.request('stun_port')
+            d = node.request(b'stun_port')
             d.addBoth(self._stun_port_received, node)
-            self.deferreds[node] = d
+            self.deferreds[node.id] = d
 
     def doAddStunServer(self, arg):
         """
@@ -337,7 +340,7 @@ class StunClient(automat.Automat):
         try:
             datagram, address = arg
             command, payload = datagram
-            ip, port = payload.split(':')
+            ip, port = payload.split(b':')
             port = int(port)
         except:
             lg.exc()
@@ -450,11 +453,11 @@ class StunClient(automat.Automat):
         self.automat('dht-nodes-not-found')
 
     def _stun_port_received(self, result, node):
-        self.deferreds.pop(node)
+        self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
             return
         try:
-            port = int(result['stun_port'])
+            port = int(result[b'stun_port'])
             address = node.address
         except:
             if _Debug:
