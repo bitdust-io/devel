@@ -697,7 +697,7 @@ class ProxyReceiver(automat.Automat):
 #             lg.out(_DebugLevel, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
 #         if len(nodes) > 0:
 #             node = random.choice(nodes)
-#             d = node.request('idurl')
+#             d = node.request(b'idurl')
 #             d.addCallback(self._got_remote_idurl)
 #             d.addErrback(lambda x: self.automat('nodes-not-found'))
 #         else:

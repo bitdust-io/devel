@@ -257,7 +257,7 @@ def lookup_in_dht():
 def on_idurl_response(response, result):
     if _Debug:
         lg.out(_DebugLevel, 'lookup.on_idurl_response : %r' % response)
-    responded_idurl = response.get('idurl')
+    responded_idurl = response.get(b'idurl')
     if not responded_idurl:
         result.errback(Exception('idurl observe failed'))
         return response
@@ -275,7 +275,7 @@ def observe_dht_node(node):
     if _Debug:
         lg.out(_DebugLevel, 'lookup.observe_dht_node %s' % node)
     result = Deferred()
-    d = node.request('idurl')
+    d = node.request(b'idurl')
     d.addCallback(on_idurl_response, result)
     # d.addCallback(lambda response: result.callback(strng.to_text(response.get('idurl'))))
     d.addErrback(result.errback)

@@ -338,7 +338,7 @@ class P2PConnector(automat.Automat):
         # TODO: need to run this actions one by one, not in parallel - use Defered chain
         propagate.update()
         propagate.write_to_dht()
-        dht_service.set_node_data('idurl', my_id.getLocalID())
+        dht_service.set_node_data(b'idurl', my_id.getLocalID())
         d = propagate.start(wide=True)
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 

@@ -1,24 +1,11 @@
 #!/usr/bin/env python
 # kbucket.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
-#
-# This file (kbucket.py) is part of BitDust Software.
-#
-# BitDust is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# BitDust Software is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Please contact us if you have any questions at bitdust.io@gmail.com
+# Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
+# See AUTHORS for all authors and contact information. 
+# 
+# License: GNU Lesser General Public License, version 3 or later; see COPYING
+#          included in this archive for details.
 #
 # This library is free software, distributed under the terms of
 # the GNU Lesser General Public License Version 3, or any later version.
@@ -32,6 +19,7 @@ import six
 import codecs
 
 from . import constants
+from . import encoding
 
 
 class BucketFull(Exception):
@@ -161,7 +149,8 @@ class KBucket(object):
         """
         if isinstance(key, six.string_types):
             # key = int(key.encode('hex'), 16)
-            key = int(codecs.encode(key, 'hex'), 16)
+            # key = int(codecs.encode(key, 'hex'), 16)
+            key = int(encoding.encode_hex(key), 16)
         return self.rangeMin <= key < self.rangeMax
 
     def __len__(self):

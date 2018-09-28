@@ -1,24 +1,11 @@
 #!/usr/bin/env python
 # datastore.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
-#
-# This file (datastore.py) is part of BitDust Software.
-#
-# BitDust is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# BitDust Software is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Please contact us if you have any questions at bitdust.io@gmail.com
+# Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
+# See AUTHORS for all authors and contact information. 
+# 
+# License: GNU Lesser General Public License, version 3 or later; see COPYING
+#          included in this archive for details.
 #
 # This library is free software, distributed under the terms of
 # the GNU Lesser General Public License Version 3, or any later version.
@@ -39,6 +26,7 @@ import os
 import codecs
 
 from . import constants
+from . import encoding
 
 
 try:
@@ -112,6 +100,11 @@ class DataStore(DictMixin):
         """
 
     def __iter__(self):
+        """
+        """
+        return self
+
+    def __next__(self):
         """
         """
 
@@ -224,12 +217,13 @@ class SQLiteDataStore(DataStore):
         try:
             self._cursor.execute("SELECT key FROM data")
             for row in self._cursor:
-                key = row[0]
-                if not isinstance(key, six.text_type):
-                    key = key.decode()
-                decodedKey = codecs.decode(key, 'hex')            
-                keys.append(decodedKey)
+#                 key = row[0]
+#                 if not isinstance(key, six.text_type):
+#                     key = key.decode()
+#                 decodedKey = codecs.decode(key, 'hex')            
+#                 keys.append(decodedKey)
                 # keys.append(row[0].decode('hex'))
+                keys.append(encoding.decode_hex(row[0]))
         finally:
             return keys
 
@@ -262,9 +256,10 @@ class SQLiteDataStore(DataStore):
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         # Encode the key so that it doesn't corrupt the database
         # encodedKey = key.encode('hex')
-        if not isinstance(key, six.binary_type):
-            key = key.encode()
-        encodedKey = codecs.encode(key, 'hex')
+#         if not isinstance(key, six.binary_type):
+#             key = key.encode()
+#         encodedKey = codecs.encode(key, 'hex')
+        encodedKey = encoding.encode_hex(key)
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (
@@ -275,12 +270,13 @@ class SQLiteDataStore(DataStore):
 
     def _dbQuery(self, key, columnName, unpickle=False):
         try:
-            if not isinstance(key, six.binary_type):
-                key = key.encode()
-            encodedKey = codecs.encode(key, 'hex')
+#             if not isinstance(key, six.binary_type):
+#                 key = key.encode()
+#             encodedKey = codecs.encode(key, 'hex')
             self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
                 # 'reqKey': key.encode('hex'),
-                'reqKey': encodedKey,
+#                 'reqKey': encodedKey,
+                'reqKey': encoding.encode_hex(key), 
             })
             row = self._cursor.fetchone()
             value = row[0]
@@ -299,22 +295,24 @@ class SQLiteDataStore(DataStore):
         return self._dbQuery(key, 'value', unpickle=True)
 
     def __delitem__(self, key):
-        if not isinstance(key, six.binary_type):
-            key = key.encode()
-        encodedKey = codecs.encode(key, 'hex')
+#         if not isinstance(key, six.binary_type):
+#             key = key.encode()
+#         encodedKey = codecs.encode(key, 'hex')
         self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
             # 'reqKey': key.encode('hex'),
-            'reqKey': encodedKey,
+#             'reqKey': encodedKey,
+            'reqKey': encoding.encode_hex(key),
         })
 
     def getItem(self, key):
         try:
-            if not isinstance(key, six.binary_type):
-                key = key.encode()
-            encodedKey = codecs.encode(key, 'hex')
+#             if not isinstance(key, six.binary_type):
+#                 key = key.encode()
+#             encodedKey = codecs.encode(key, 'hex')
             self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
                 # 'reqKey': key.encode('hex'),
-                'reqKey': encodedKey,
+                # 'reqKey': encodedKey,
+                'reqKey': encoding.encode_hex(key),
             })
             row = self._cursor.fetchone()
             result = dict(
@@ -363,9 +361,10 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 **kwargs):
         # Encode the key so that it doesn't corrupt the database
         # encodedKey = key.encode('hex')
-        if not isinstance(key, six.binary_type):
-            key = key.encode()
-        encodedKey = codecs.encode(key, 'hex')
+#         if not isinstance(key, six.binary_type):
+#             key = key.encode()
+#         encodedKey = codecs.encode(key, 'hex')
+        encodedKey = encoding.encode_hex(key)
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds) VALUES (?, ?, ?, ?, ?, ?)', (
@@ -376,12 +375,13 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
 
     def getItem(self, key):
         try:
-            if not isinstance(key, six.binary_type):
-                key = key.encode()
-            encodedKey = codecs.encode(key, 'hex')            
+            # if not isinstance(key, six.binary_type):
+            #     key = key.encode()
+            # encodedKey = codecs.encode(key, 'hex')            
             self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
                 # 'reqKey': key.encode('hex'),
-                'reqKey': encodedKey,
+                # 'reqKey': encodedKey,
+                'reqKey': encoding.encode_hex(key),
             })
             row = self._cursor.fetchone()
             result = dict(
