@@ -346,14 +346,14 @@ class Proxy(object):
             json_request = jsonrpc.encodeRequest(method, args,
                                                  version=self.version)
 
-        body = StringProducer(json_request)
+        body = StringProducer(json_request.encode())
 
-        headers_dict = {'Content-Type': ['application/json']}
+        headers_dict = {b'Content-Type': [b'application/json']}
         if not isinstance(self.credentials, Anonymous):
             headers_dict.update(self._getBasicHTTPAuthHeaders())
         headers = Headers(headers_dict)
 
-        d = self.agent.request('POST', self.url, headers, body)
+        d = self.agent.request(b'POST', self.url, headers, body)
         d.addCallback(self.checkAuthError)
         d.addCallback(self.bodyFromResponse)
         d.addCallback(jsonrpc.decodeResponse)
@@ -371,8 +371,8 @@ class Proxy(object):
             if password is None:
                 password = ''
 
-            encoded_cred = base64.encodestring('%s:%s' % (username, password))
-            auth_value = "Basic " + encoded_cred.strip()
-            self.auth_headers = {'Authorization': [auth_value]}
+            encoded_cred = base64.encodestring(b'%s:%s' % (username, password))
+            auth_value = b"Basic " + encoded_cred.strip()
+            self.auth_headers = {b'Authorization': [auth_value]}
 
         return self.auth_headers

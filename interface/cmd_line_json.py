@@ -46,6 +46,7 @@ import sys
 from lib import strng
 
 from lib import jsontemplate
+from lib import strng
 
 from interface import cmd_line_json_templates as templ
 
@@ -185,21 +186,42 @@ def fail_and_stop(err):
 
 #------------------------------------------------------------------------------
 
-def call_rest_http_method(path, method='GET', params=None, data=None, *args, **kwargs):
+def call_rest_http_method(path, method=b'GET', params=None, data=None):
     """
     """
-    from twisted.internet import reactor
-    from twisted.web import client, http_headers
+    from lib import net_misc
     from main import settings
-    # TODO: add body and params handling
-    return client.Agent(reactor).request(
+    return net_misc.getPageTwisted(
+        url=b'http://127.0.0.1:%d/%s' % (settings.getRESTHTTPServerPort(), strng.to_bin(path)),
         method=method,
-        uri='http://127.0.0.1:%s/%s' % (settings.getRESTHTTPServerPort(), path),
-        headers=http_headers.Headers({
-            'User-Agent': ['Twisted Web Client Example'],
-            'Content-Type': ['application/json'],
-        }),
     )
+    
+    
+#     from twisted.internet import reactor
+#     from twisted.web import client, http_headers
+#     from main import settings
+#     # TODO: add body and params handling
+#     path = path.lstrip('/')
+#     return client.Agent(reactor).request(
+#         method=method,
+#         uri=b'http://127.0.0.1:%d/%s' % (settings.getRESTHTTPServerPort(), strng.to_bin(path)),
+#         headers=http_headers.Headers({
+#             b'User-Agent': [b'Twisted Web Client Example'],
+#             b'Content-Type': [b'application/json'],
+#         }),
+#     )
+
+
+
+
+
+def call_rest_http_method_and_stop(path, method=b'GET', params=None, data=None):
+    from twisted.internet import reactor
+    d = call_rest_http_method(path=path, method=method, params=params, data=data)
+    d.addCallback(print_and_stop)
+    d.addErrback(fail_and_stop)
+    reactor.run()
+    return 0
 
 #------------------------------------------------------------------------------
 
@@ -216,7 +238,7 @@ def call_jsonrpc_method(method, *args, **kwargs):
         local_port = int(bpio.ReadTextFile(settings.LocalJsonRPCPortFilename()))
     except:
         local_port = settings.DefaultJsonRPCPort()
-    proxy = jsonProxy('http://127.0.0.1:' + str(local_port))
+    proxy = jsonProxy(b'http://127.0.0.1:%d' % local_port)
     return proxy.callRemote(method, *args, **kwargs)
 
 
@@ -977,8 +999,8 @@ def cmd_automats(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(templ.TPL_AUTOMATS)
         return call_jsonrpc_method_template_and_stop('automats_list', tpl)
+        # return call_rest_http_method_and_stop('/automat/list/v1')
 #     if len(args) == 2 and args[1] in ['log', 'monitor', 'watch',]:\
-#
 #         reactor.
 #         reactor.run()
     return 2
@@ -1327,7 +1349,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_storage(opts, args, overDict)
 
     #---automats---
-    elif cmd in ['automats', 'aut', 'states', 'machines', ]:
+    elif cmd in ['st', 'state', 'automats', 'aut', 'states', 'machines', ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
