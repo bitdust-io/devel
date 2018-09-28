@@ -472,7 +472,7 @@ def readResponse(response):
     return d
 
 
-def getPageTwisted(url, timeout=10):
+def getPageTwisted(url, timeout=10, method=b'GET'):
     """
     A smart way to download pages from HTTP hosts.
     """
@@ -502,9 +502,9 @@ def getPageTwisted(url, timeout=10):
     agent = Agent(reactor, connectTimeout=timeout)
     
     d = agent.request(
-        method=b'GET',
+        method=method,
         uri=url,
-        headers=Headers({'User-Agent': [_UserAgentString, ]}),
+        headers=Headers({b'User-Agent': [_UserAgentString, ]}),
     )
 #     d = getPage(url, agent=_UserAgentString, timeout=timeout)
 #     if timeout:
