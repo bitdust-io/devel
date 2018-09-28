@@ -379,7 +379,7 @@ class TreeRoutingTable(RoutingTable):
             randomID = '0' + randomID
         # randomID = randomID.decode('hex')
         randomID = codecs.decode(randomID, 'hex')
-        randomID = (20 - len(randomID)) * '\x00' + randomID
+        randomID = (20 - len(randomID)) * b'\x00' + randomID
         return randomID
 
     def _splitBucket(self, oldBucketIndex):
