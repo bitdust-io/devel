@@ -224,8 +224,11 @@ def run(args):
             print_text('\n##### Clean up of existing virtual environment files failed!\n')
             return status
 
-    print_text('\n##### Create new Python virtual environment in "%s"' % venv_path)
-    make_venv_cmd = 'virtualenv -p python3.6 {}'.format(venv_path)
+    current_python = sys.executable
+    print_text('\n##### Current Python executable is {}'.format(current_python))
+
+    print_text('\n##### Create fresh virtual environment in "%s"' % venv_path)
+    make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
     if on_windows:
         virtualenv_bin = '"%s"' % os.path.join(base_dir, 'python', 'Scripts', 'virtualenv.exe')
         make_venv_cmd = "{} --system-site-packages {}".format(virtualenv_bin, venv_path)
