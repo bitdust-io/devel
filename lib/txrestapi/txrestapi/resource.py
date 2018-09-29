@@ -1,5 +1,6 @@
 import re
-from six import PY2, PY3, b, u
+import six
+from six import PY2, b, u
 if PY2:
     from itertools import ifilter as filter
 from functools import wraps
@@ -48,6 +49,8 @@ class APIResource(Resource):
     def _get_callback(self, request):
         filterf = lambda t:t[0] in (request.method, b('ALL'))
         path_to_check = getattr(request, '_remaining_path', request.path)
+        if not isinstance(path_to_check, six.binary_type):
+            path_to_check = path_to_check.encode()
         for m, r, cb in filter(filterf, self._registry):
             result = r.search(path_to_check)
             if result:
@@ -56,10 +59,15 @@ class APIResource(Resource):
         return None, None
 
     def register(self, method, regex, callback):
-        self._registry.append((method, re.compile(regex.decode()), callback))
+        if not isinstance(regex, six.text_type):
+            regex = regex.decode()
+        self._registry.append((method, re.compile(regex), callback))
 
     def unregister(self, method=None, regex=None, callback=None):
-        if regex is not None: regex = re.compile(regex.decode())
+        if regex is not None:
+            if not isinstance(regex, six.text_type):
+                regex = regex.decode()
+            regex = re.compile(regex)
         for m, r, cb in self._registry[:]:
             if not method or (method and m==method):
                 if not regex or (regex and r==regex):

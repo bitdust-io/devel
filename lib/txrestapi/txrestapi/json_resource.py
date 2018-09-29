@@ -3,7 +3,7 @@ import json
 import time
 import six
 
-from six import PY2
+from six import PY2, b
 
 from functools import wraps
 
@@ -36,11 +36,11 @@ class _JsonResource(Resource):
         Those headers will allow you to call API methods from web browsers, they require CORS:
             https://en.wikipedia.org/wiki/Cross-origin_resource_sharing
         """
-        request.responseHeaders.addRawHeader(b'content-type', b'application/json')
-        request.responseHeaders.addRawHeader(b'Access-Control-Allow-Origin', b'*')
-        request.responseHeaders.addRawHeader(b'Access-Control-Allow-Methods', b'GET, POST, PUT, DELETE')
-        request.responseHeaders.addRawHeader(b'Access-Control-Allow-Headers', b'x-prototype-version,x-requested-with')
-        request.responseHeaders.addRawHeader(b'Access-Control-Max-Age', 2520)
+        request.responseHeaders.addRawHeader(b('content-type'), b('application/json'))
+        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Origin'), b('*'))
+        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Methods'), b('GET, POST, PUT, DELETE'))
+        request.responseHeaders.addRawHeader(b('Access-Control-Allow-Headers'), b('x-prototype-version,x-requested-with'))
+        request.responseHeaders.addRawHeader(b('Access-Control-Max-Age'), 2520)
         return request
 
     def render(self, request):
@@ -123,12 +123,11 @@ class JsonAPIResource(Resource):
             self._registry = []
 
     def _get_callback(self, request):
-        request_method = request.method
         path_to_check = getattr(request, '_remaining_path', request.path)
-        if not isinstance(path_to_check, six.text_type):
-            path_to_check = path_to_check.decode()
+        if not isinstance(path_to_check, six.binary_type):
+            path_to_check = path_to_check.encode()
         for m, r, cb in self._registry:
-            if m == request_method or m == b'ALL':
+            if m == request.method or m == b('ALL'):
                 result = r.search(path_to_check)
                 if result:
                     request._remaining_path = path_to_check[result.span()[1]:]
