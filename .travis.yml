@@ -4,12 +4,8 @@ before_install:
   - docker -v
   - cd tests/e2e
 
-#install:
-#  - docker-compose up -d
-
 script:
   - make -j2 all
   - make test_1
-
   - make test_2
   - make -j2 clean_all
