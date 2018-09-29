@@ -75,6 +75,7 @@ from main import settings
 
 from lib import net_misc
 from lib import packetid
+from lib import strng
 
 #------------------------------------------------------------------------------
 
@@ -1080,7 +1081,7 @@ def ReadRepoLocation():
                 except:
                     lg.exc()
         return 'sources', 'https://bitdust.io/download/'
-    src = bpio.ReadTextFile(settings.RepoFile()).strip()
+    src = strng.to_bin(bpio.ReadTextFile(settings.RepoFile())).strip()
     if not src:
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     l = src.split('\n')

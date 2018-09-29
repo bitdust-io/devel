@@ -1,0 +1,116 @@
+version: "3.4"
+
+x-common: &common
+  context: ./../../
+
+x-common-links: &common-links-all
+  links: &common-links
+    - "dht_seed_1"
+    - "dht_seed_2"
+
+x-common-volumes: &common-volumes
+  volumes:
+    - "./Dockerfiles:/Dockerfiles"
+    - app-volume:/volume
+    - download_volume:/download_volume
+
+services:
+  identity-server:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Identity/Dockerfile
+
+  stun_1:
+    <<: *common-volumes
+    <<: *common-links-all
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Stun/Dockerfile
+
+  dht_seed_1:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+
+  dht_seed_2:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+
+  proxy_server_1:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "identity-server:is"
+
+  proxy_server_2:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "identity-server:is"
+
+  supplier_1:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Supplier_1/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+
+  supplier_2:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Supplier_2/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+
+  customer_1:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Customer_1/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+
+  customer_2:
+    <<: *common-volumes
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Customer_2/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+
+  test:
+    <<: *common-volumes
+    build: Dockerfiles/Test/.
+    links:
+      - "supplier_1"
+      - "supplier_2"
+      - "customer_1"
+      - "customer_2"
+      - "proxy_server_1"
+      - "proxy_server_2"
+
+volumes:
+     app-volume:
+     download_volume:

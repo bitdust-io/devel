@@ -111,6 +111,7 @@ from system import bpio
 from lib import nameurl
 from lib import net_misc
 from lib import misc
+from lib import strng
 
 from main import settings
 from main import config
@@ -184,9 +185,9 @@ class IdRegistrator(automat.Automat):
     def msg(self, msgid, arg=None):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0] % {
-            'login': bpio.ReadTextFile(settings.UserNameFilename()),
-            'externalip': misc.readExternalIP(),
-            'localip': bpio.ReadTextFile(settings.LocalIPFilename()),
+            'login': strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename())),
+            'externalip': strng.to_bin(misc.readExternalIP()),
+            'localip': strng.to_bin(bpio.ReadTextFile(settings.LocalIPFilename())),
         }
         color = 'black'
         if len(msg) == 2:
@@ -428,7 +429,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        login = bpio.ReadTextFile(settings.UserNameFilename())
+        login = strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename()))
 
         def _cb(xmlsrc, idurl, host):
             if not xmlsrc:
@@ -583,18 +584,13 @@ class IdRegistrator(automat.Automat):
     def _create_new_identity(self):
         """
         Generate new Private key and new identity file.
-
         Reads some extra info from config files.
         """
-        login = bpio.ReadTextFile(settings.UserNameFilename())
-        externalIP = misc.readExternalIP() or '127.0.0.1'
-
+        login = strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename()))
+        externalIP = strng.to_bin(misc.readExternalIP()) or '127.0.0.1'
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
-
         key.InitMyKey()
-
         lg.out(4, '    my key is ready')
-
         ident = my_id.buildDefaultIdentity(
             name=login, ip=externalIP, idurls=self.free_idurls)
         # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
@@ -607,7 +603,6 @@ class IdRegistrator(automat.Automat):
     def _send_new_identity(self):
         """
         Send created identity to the identity server to register it.
-
         TODO: need to close transport and gateway after that
         """
         lg.out(4, 'id_registrator._send_new_identity ')

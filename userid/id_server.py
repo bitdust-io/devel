@@ -170,7 +170,7 @@ class IdServer(automat.Automat):
         """
         self.hostname = settings.getIdServerHost()
         if self.hostname == '':
-            self.hostname = misc.readExternalIP()  # bpio.ReadTextFile(settings.ExternalIPFilename())
+            self.hostname = strng.to_bin(misc.readExternalIP())  # bpio.ReadTextFile(settings.ExternalIPFilename())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
         lg.out(4, 'id_server.doSetUp hostname=%s' % self.hostname)

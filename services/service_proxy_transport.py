@@ -120,6 +120,7 @@ class ProxyTransportService(LocalService):
     def _check_reset_original_identity(self):
         from logs import lg
         from lib import misc
+        from lib import strng
         from main.config import conf
         from userid import identity
         from userid import my_id
@@ -143,7 +144,7 @@ class ProxyTransportService(LocalService):
             lg.warn('"my-original-identity" source is not equal to local identity source')
             self._reset_my_original_identity()
             return
-        externalIP = misc.readExternalIP()
+        externalIP = strng.to_bin(misc.readExternalIP())
         if externalIP and orig_ident.getIP() != externalIP:
             lg.warn('external IP was changed : reset "my-original-identity" config')
             self._reset_my_original_identity()
