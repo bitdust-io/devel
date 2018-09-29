@@ -59,11 +59,6 @@ import struct
 import cStringIO
 import array
 
-# import cython
-
-import pyximport
-pyximport.install()
-
 #------------------------------------------------------------------------------
 
 
@@ -74,7 +69,6 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from example_cython import build_parity, chunks
 from raid import eccmap
 
 #------------------------------------------------------------------------------
@@ -147,6 +141,31 @@ def WriteFile(filename, data):
 
 #------------------------------------------------------------------------------
 
+# def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
+#    # lg.out(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
+#    #     os.path.basename(filename), eccmapname, backupId, blockNumber))
+#    # t = time.time()
+#    if in_memory:
+#        dataNum, parityNum = do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir)
+#    else:
+#        dataNum, parityNum = do_with_files(filename, eccmapname, backupId, blockNumber, targetDir)
+#        # lg.out(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
+#    return dataNum, parityNum
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in xrange(0, len(l), n):
+        yield l[i:i + n]
+
+
+def bitwise_xor(a, b):
+    return a ^ b
+
+
+unpack = struct.Struct('>l').unpack
+pack = struct.Struct('>l').pack
+
 
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     INTSIZE = 4
@@ -156,6 +175,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     wholefile = ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
+    iters = seglength / INTSIZE
 
     #: dict of data segments
     sds = {}
@@ -167,21 +187,41 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
             sds[seg_num] = chunks(chunk, INTSIZE)
             f.write(chunk)
 
-    # del chunk
-
     # we will keep parirty data in the memory
     # after doing all calculations
     # will write all parts on the disk
+    psds = {seg_num: array.array('l') for seg_num in xrange(myeccmap.paritysegments)}
+    psds_list = {seg_num: [] for seg_num in xrange(myeccmap.paritysegments)}
     parities = {seg_num: 0 for seg_num in xrange(myeccmap.paritysegments)}
-    psds_list = build_parity(sds, seglength / INTSIZE, myeccmap.datasegments, INTSIZE, myeccmap, myeccmap.paritysegments, parities)
+    pfds = {seg_num: cStringIO.StringIO() for seg_num in xrange(myeccmap.paritysegments)}
+
+    for i in xrange(iters):
+
+        for DSegNum in xrange(myeccmap.datasegments):
+            bstr = next(sds[DSegNum])
+
+            assert len(bstr) == INTSIZE, 'strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum)
+
+            b, = unpack(bstr)
+            Map = myeccmap.DataToParity[DSegNum]
+            for PSegNum in Map:
+                if PSegNum > myeccmap.paritysegments:
+                    myeccmap.check()
+                    raise Exception("eccmap error")
+
+                parities[PSegNum] = bitwise_xor(parities[PSegNum], b)
+
+        for PSegNum in xrange(myeccmap.paritysegments):
+            bstr = pack(parities[PSegNum])
+            psds_list[PSegNum].append(bstr)
 
     dataNum = len(sds)
-    parityNum = len(psds_list)
+    parityNum = len(psds)
 
-    for PSegNum, data in psds_list.items():
+    for PSegNum, data in psds.items():
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
         with open(FileName, 'wb') as f:
-            f.write(psds_list[PSegNum])
+            f.write(''.join(psds_list[PSegNum]))
 
     return dataNum, parityNum
 
