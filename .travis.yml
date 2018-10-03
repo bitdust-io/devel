@@ -11,4 +11,5 @@ script:
   - make -j2 clean_all
 
 after_failure:
-  - docker-compose logs
+  - docker-compose -p "namespace1" logs
+  - docker-compose -p "namespace2" logs
