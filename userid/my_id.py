@@ -455,7 +455,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     address]_[date].
     """
     if not ip:
-        ip = strng.to_bin(misc.readExternalIP())  # bpio.ReadTextFile(settings.ExternalIPFilename())
+        ip = misc.readExternalIP()
     if not name:
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
     lg.out(4, 'my_id.buildDefaultIdentity: %s %s' % (name, ip))
@@ -467,22 +467,22 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     # just need to keep all them synchronized
     # this is identity propagate procedure, see p2p/propagate.py
     if len(idurls) == 0:
-        idurls.append('http://localhost/' + name.lower() + '.xml')
+        idurls.append(b'http://localhost/%s.xml' % strng.to_bin(name.lower()))
     for idurl in idurls:
-        ident.sources.append(idurl.strip())
+        ident.sources.append(strng.to_bin(idurl.strip()))
     # create a full list of needed transport methods
     # to be able to accept incoming traffic from other nodes
     new_contacts, new_order = buildProtoContacts(ident)
     if len(new_contacts) == 0:
         if settings.enableTCP() and settings.enableTCPreceiving():
-            new_contacts['tcp'] = 'tcp://' + ip + ':' + str(settings.getTCPPort())
+            new_contacts['tcp'] = strng.to_bin('tcp://' + str(ip) + ':' + str(settings.getTCPPort()))
             new_order.append('tcp')
         if settings.enableUDP() and settings.enableUDPreceiving():
             x, servername, x, x = nameurl.UrlParse(ident.sources[0])
-            new_contacts['udp'] = 'udp://%s@%s' % (name.lower(), servername)
+            new_contacts['udp'] = strng.to_bin('udp://%s@%s' % (name.lower(), servername))
             new_order.append('udp')
         if settings.enableHTTP() and settings.enableHTTPreceiving():
-            new_contacts['http'] = 'http://' + ip + ':' + str(settings.getHTTPPort())
+            new_contacts['http'] = strng.to_bin('http://' + ip + ':' + str(settings.getHTTPPort()))
             new_order.append('http')
     # erase current contacts from my identity
     ident.clearContacts()
@@ -494,11 +494,11 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
             continue
         ident.setProtoContact(proto, contact)
     # set other info
-    ident.certificates = []
-    ident.date = time.strftime('%b %d, %Y')
-    ident.postage = "1"
-    ident.revision = "0"
-    ident.version = ""  # TODO: put latest git commit hash here
+    # ident.certificates = []
+    ident.setDate(time.strftime('%b %d, %Y'))
+    ident.setPostage(1)
+    ident.setRevision(0)
+    ident.setVersion('')  # TODO: put latest git commit hash here
     # update software version number
     # version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
     # repo, location = misc.ReadRepoLocation()
@@ -508,7 +508,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     # repo, location = misc.ReadRepoLocation()
     # ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
     # put my public key in my identity
-    ident.publickey = key.MyPublicKey()
+    ident.setPublicKey(key.MyPublicKey())
     # generate signature
     ident.sign()
     # validate new identity
@@ -546,14 +546,14 @@ def rebuildLocalIdentity(skip_transports=[], revision_up=False):
     # update software version number
     vernum = strng.to_bin(bpio.ReadTextFile(settings.VersionNumberFile())).strip()
     repo, _ = misc.ReadRepoLocation()
-    lid.version = (vernum + ' ' + strng.to_bin(repo.strip()) + ' ' + bpio.osinfo().strip()).strip()
+    lid.setVersion((vernum + ' ' + strng.to_bin(repo.strip()) + ' ' + bpio.osinfo().strip()).strip())
     # generate signature with changed content
     lid.sign()
     new_xmlsrc = lid.serialize()
     changed = False
     if new_xmlsrc != current_identity_xmlsrc or revision_up:
         try:
-            lid.revision = str(int(lid.revision) + 1)
+            lid.setRevision(int(lid.revision) + 1)
         except:
             lg.exc()
             return False

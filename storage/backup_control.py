@@ -257,7 +257,7 @@ def Load(filepath=None):
     if not src:
         lg.out(2, 'backup_control.Load ERROR reading file %s' % filepath)
         return False
-    inpt = StringIO.StringIO(src)
+    inpt = StringIO(src)
     try:
         known_revision = int(inpt.readline().rstrip('\n'))
     except:
@@ -359,7 +359,7 @@ def IncomingSupplierBackupIndex(newpacket):
     try:
         session_key = key.DecryptLocalPrivateKey(b.EncryptedSessionKey)
         padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData)
-        inpt = StringIO.StringIO(padded_data[:int(b.Length)])
+        inpt = StringIO(padded_data[:int(b.Length)])
         supplier_revision = inpt.readline().rstrip('\n')
         if supplier_revision:
             supplier_revision = int(supplier_revision)

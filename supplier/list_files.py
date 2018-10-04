@@ -135,7 +135,7 @@ def UnpackListFiles(payload, method):
 #------------------------------------------------------------------------------
 
 def TreeSummary(ownerdir, key_alias):
-    out = StringIO.StringIO()
+    out = StringIO()
     out.write('K%s\n' % key_alias)
 
     def cb(result, realpath, subpath, name):

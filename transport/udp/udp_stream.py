@@ -706,7 +706,7 @@ class UDPStream(automat.Automat):
                     bisect.insort(self.input_blocks_to_ack, block_id)
             if block_id == self.input_block_id_current + 1:
             #--- receiving data and check every next block one by one
-                newdata = StringIO.StringIO()
+                newdata = StringIO()
                 while True:
                     next_block_id = self.input_block_id_current + 1
                     try:
@@ -884,7 +884,7 @@ class UDPStream(automat.Automat):
             reactor.callLater(0, self.automat, 'close')
 
     def _push_blocks(self, data):
-        outp = StringIO.StringIO(data)
+        outp = StringIO(data)
         while True:
             piece = outp.read(BLOCK_SIZE)
             if not piece:

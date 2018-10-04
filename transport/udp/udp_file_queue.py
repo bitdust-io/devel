@@ -246,7 +246,7 @@ class FileQueue:
     #-------------------------------------------------------------------------
 
     def on_received_data_packet(self, payload):
-        inp = StringIO.StringIO(payload)
+        inp = StringIO(payload)
         try:
             stream_id = struct.unpack('i', inp.read(4))[0]
             data_size = struct.unpack('i', inp.read(4))[0]
@@ -286,7 +286,7 @@ class FileQueue:
         inp.close()
 
     def on_received_ack_packet(self, payload):
-        inp = StringIO.StringIO(payload)
+        inp = StringIO(payload)
         try:
             stream_id = struct.unpack('i', inp.read(4))[0]
         except:

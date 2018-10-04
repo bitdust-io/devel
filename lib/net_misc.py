@@ -151,6 +151,8 @@ def normalize_address(host_port):
     Input argument `host` can be string: "123.45.67.89:8080" or tuple: ("123.45.67.89", 8080)
     Method always return tuple and make sure host is string/bytes but not unicode.
     """
+    if isinstance(host_port, six.binary_type):
+        host_port = host_port.decode('utf-8')
     if isinstance(host_port, six.string_types):
         host_port = (host_port.split(':')[0], int(host_port.split(':')[1]), )
     if isinstance(host_port[0], six.text_type):

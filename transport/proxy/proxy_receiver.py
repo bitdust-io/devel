@@ -58,7 +58,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import StringIO
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
@@ -436,7 +436,7 @@ class ProxyReceiver(automat.Automat):
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = StringIO.StringIO(padded_data[:int(block.Length)])
+            inpt = BytesIO(padded_data[:int(block.Length)])
             data = inpt.read()
         except:
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
