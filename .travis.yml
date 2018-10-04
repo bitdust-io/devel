@@ -5,6 +5,7 @@ before_install:
 
 script:
   - make test_raid
+  - python -m unittest  discover -p "test_raid.py" -v
   - make -C tests/e2e/ -j2 all
   - make -C tests/e2e/test_1
   - make -C tests/e2e/test_2
