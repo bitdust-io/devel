@@ -1,4 +1,5 @@
-FROM python:2.7.15
+ARG  PYTHON_VERSION=2.7.15
+FROM python:${PYTHON_VERSION}
 
 COPY . bitdust
 
