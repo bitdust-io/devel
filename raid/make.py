@@ -69,11 +69,12 @@ if __name__ == '__main__':
 
 import raid.eccmap
 
-try:
-    from raid_cython import build_parity, chunks
-except ImportError:
-    from raid.utils import build_parity, chunks
+# try:
+#     from raid_cython import build_parity, chunks
+# except ImportError:
+#     from raid.utils import build_parity, chunks
 
+import raid.utils
 #------------------------------------------------------------------------------
 
 _ECCMAP = {}
@@ -145,7 +146,7 @@ def WriteFile(filename, data):
 #------------------------------------------------------------------------------
 
 
-def read_binary_file_as_array(filename):
+def ReadBinaryFileAsArray(filename):
     """
     """
     if not os.path.isfile(filename):
@@ -165,14 +166,14 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
     # any padding at end and block.Length fixes
     RoundupFile(filename, myeccmap.datasegments * INTSIZE)
-    wholefile = read_binary_file_as_array(filename)
+    wholefile = ReadBinaryFileAsArray(filename)
     length = len(wholefile)
     length = length * 4
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
 
     #: dict of data segments
     sds = {}
-    for seg_num, chunk in enumerate(chunks(wholefile, seglength / 4)):
+    for seg_num, chunk in enumerate(raid.utils.chunks(wholefile, seglength / 4)):
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
         with open(FileName, "wb") as f:
             chunk_to_write = copy.copy(chunk)
@@ -181,7 +182,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
             sds[seg_num] = iter(chunk)
             f.write(chunk_to_write)
 
-    psds_list = build_parity(sds, seglength / INTSIZE, myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
+    psds_list = raid.utils.build_parity(sds, seglength / INTSIZE, myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
 
     dataNum = len(sds)
     parityNum = len(psds_list)
