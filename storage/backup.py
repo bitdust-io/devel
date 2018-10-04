@@ -167,7 +167,7 @@ class backup(automat.Automat):
         self.stateEOF = False
         self.stateReading = False
         self.closed = False
-        self.currentBlockData = StringIO.StringIO()
+        self.currentBlockData = StringIO()
         self.currentBlockSize = 0
         self.workBlocks = {}
         self.blockNumber = 0
@@ -404,7 +404,7 @@ class backup(automat.Automat):
         self.blocksSent = 0
         self.blockNumber = 0
         self.currentBlockSize = 0
-        self.currentBlockData = StringIO.StringIO()
+        self.currentBlockData = StringIO()
 
     def doNextBlock(self, arg):
         """
@@ -415,7 +415,7 @@ class backup(automat.Automat):
         self.blockNumber += 1
         self.currentBlockData.close()
         self.currentBlockSize = 0
-        self.currentBlockData = StringIO.StringIO()
+        self.currentBlockData = StringIO()
 
     def doBlockReport(self, arg):
         """

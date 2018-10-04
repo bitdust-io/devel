@@ -94,7 +94,7 @@ class _WorkerProcess(object):
     def __init__(self):
         self.hashmap = {}
         self.e = sys.__stderr__
-        self.sout = StringIO.StringIO()
+        self.sout = StringIO()
 #        self.sout = open("/tmp/pp.debug","a+")
         origsout = sys.stdout
         sys.stdout = self.sout

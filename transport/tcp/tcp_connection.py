@@ -43,7 +43,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -302,9 +302,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         from transport.tcp import tcp_node
-        host = tcp_node.my_host() or '127.0.0.1:7771'
-        idurl = tcp_node.my_idurl() or 'None'
-        payload = host + ' ' + idurl
+        host = strng.to_bin(tcp_node.my_host() or '127.0.0.1:7771')
+        idurl = strng.to_bin(tcp_node.my_idurl() or 'None')
+        payload = host + b' ' + idurl
         self.sendData(CMD_HELLO, payload)
 
     def doSendWazap(self, arg):
@@ -312,7 +312,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         from transport.tcp import tcp_node
-        payload = tcp_node.my_idurl() or 'None'
+        payload = strng.to_bin(tcp_node.my_idurl() or 'None')
         self.sendData(CMD_WAZAP, payload)
 
     def doStartPendingFiles(self, arg):
@@ -393,7 +393,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def sendData(self, command, payload):
         try:
-            data = strng.to_bin(self.SoftwareVersion) + strng.to_bin(command.lower())[0] + strng.to_bin(payload)
+            data = strng.to_bin(self.SoftwareVersion) + strng.to_bin(command.lower()[0:1]) + strng.to_bin(payload)
             self.sendString(data)
         except:
             lg.exc()

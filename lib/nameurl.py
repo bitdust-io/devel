@@ -57,6 +57,10 @@ import re
 
 #------------------------------------------------------------------------------
 
+from lib import strng
+
+#------------------------------------------------------------------------------
+
 legalchars = "#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 legalset = set(legalchars)
 
@@ -70,31 +74,32 @@ def UrlParse(url):
         nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
         ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
+    url = strng.to_bin(url)
     o = six.moves.urllib.parse.urlparse(url)
     proto = o.scheme.strip()
-    base = o.netloc.lstrip(' /')
-    filename = o.path.lstrip(' /')
+    base = o.netloc.lstrip(b' /')
+    filename = o.path.lstrip(b' /')
     if not base:
-        base = o.path.lstrip(' /')
-        filename = ''
+        base = o.path.lstrip(b' /')
+        filename = b''
 
-    if base.find('/') < 0:
-        if base.find(':') < 0:
+    if base.find(b'/') < 0:
+        if base.find(b':') < 0:
             host = base
-            port = ''
+            port = b''
         else:
-            host, port = base.split(':', 1)
+            host, port = base.split(b':', 1)
     else:
-        host, tail = base.split('/', 1)
-        if host.find(':') < 0:
-            port = ''
+        host, tail = base.split(b'/', 1)
+        if host.find(b':') < 0:
+            port = b''
         else:
-            host, port = host.split(':', 1)
+            host, port = host.split(b':', 1)
 
         if not filename:
             filename = tail
 
-    return proto.strip(), host.strip(), port.strip(), filename.strip()
+    return strng.to_text(proto).strip(), strng.to_text(host).strip(), strng.to_text(port).strip(), strng.to_text(filename).strip()
 
 
 def UrlMake(protocol='', machine='', port='', filename='', parts=None):
@@ -108,7 +113,7 @@ def UrlMake(protocol='', machine='', port='', filename='', parts=None):
         url += ':' + str(port)
     if filename != '':
         url += '/' + filename
-    return url
+    return strng.to_bin(url)
 
 
 def UrlFilename(url):

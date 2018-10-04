@@ -124,8 +124,8 @@ class JsonAPIResource(Resource):
 
     def _get_callback(self, request):
         path_to_check = getattr(request, '_remaining_path', request.path)
-        if not isinstance(path_to_check, six.binary_type):
-            path_to_check = path_to_check.encode()
+        if not isinstance(path_to_check, six.text_type):
+            path_to_check = path_to_check.decode()
         for m, r, cb in self._registry:
             if m == request.method or m == b('ALL'):
                 result = r.search(path_to_check)

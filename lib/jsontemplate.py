@@ -1005,7 +1005,7 @@ def FromString(s, more_formatters=lambda x: None, _constructor=None):
     Like FromFile, but takes a string.
     """
 
-    f = StringIO.StringIO(s)
+    f = StringIO(s)
     return FromFile(f, more_formatters=more_formatters, _constructor=_constructor)
 
 

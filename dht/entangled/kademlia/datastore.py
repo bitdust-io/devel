@@ -35,6 +35,9 @@ except:
     buffer = memoryview
 
 
+PICKLE_PROTOCOL = 2
+
+
 class DataStore(DictMixin):
     """
     Interface for classes implementing physical storage (for data published via
@@ -263,10 +266,20 @@ class SQLiteDataStore(DataStore):
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (
-                encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID))
+                encodedKey,
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+            ))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=? WHERE key=?', (
-                buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, encodedKey))
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+                encodedKey,
+            ))
 
     def _dbQuery(self, key, columnName, unpickle=False):
         try:
@@ -287,7 +300,10 @@ class SQLiteDataStore(DataStore):
                 if six.PY2:
                     if isinstance(value, buffer):
                         value = str(value)
-                return pickle.loads(value)
+                try:
+                    return pickle.loads(value)
+                except:
+                    import pdb; pdb.set_trace()
             else:
                 return value
 
@@ -368,10 +384,22 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds) VALUES (?, ?, ?, ?, ?, ?)', (
-                encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, expireSeconds))
+                encodedKey,
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+                expireSeconds,
+            ))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=? WHERE key=?', (
-                buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, expireSeconds, encodedKey))
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+                expireSeconds,
+                encodedKey,
+            ))
 
     def getItem(self, key):
         try:

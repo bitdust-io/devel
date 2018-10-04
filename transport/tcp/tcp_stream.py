@@ -29,12 +29,12 @@
 
 from __future__ import absolute_import
 from io import open
-from io import StringIO
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -42,7 +42,6 @@ import os
 import time
 import struct
 import random
-import six
 
 from twisted.internet import reactor
 from twisted.protocols import basic
@@ -210,7 +209,7 @@ class TCPFileStream():
         """
         """
         from transport.tcp import tcp_connection
-        inp = StringIO.StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
             file_size = struct.unpack('i', inp.read(4))[0]
@@ -235,7 +234,7 @@ class TCPFileStream():
             self.inbox_file_done(file_id, 'finished')
 
     def ok_received(self, payload):
-        inp = StringIO.StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
@@ -248,7 +247,7 @@ class TCPFileStream():
             self.outbox_file_done(file_id, 'finished')
 
     def abort_received(self, payload):
-        inp = StringIO.StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
         except:

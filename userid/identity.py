@@ -96,13 +96,9 @@ signature on all identity info
 Contact list has enough info we can tell what protocol to use.
 User could put in order he prefers us to try the contact methods.
 So we might have a list like:
-    bitdust:offshore.ai:5008
-    bitdust:209.88.68.34:5008
-    stun:stun.me:90
-    vertex:foo@bar.com
-    email:bitdust@gmail.com
-    email:bitdust@hotmal.com
-    http://foobar.com/data.pl?vince
+    tcp://123.45.67.89:9876
+    udp://user123@idserver456.com
+    http://123.45.67.89:8765
 
 Really best if all the identity servers use SSL.
 We could make certificates for identity servers, but might
@@ -196,29 +192,29 @@ class identity:
     * publickey : the public part of user's key, string in twisted.conch.ssh format
     * signature : digital signature to protect the file
     """
-    sources = []       # list of URLs, first is primary URL and name
-    contacts = []      # list of ways to contact this identity
-    certificates = []  # signatures by identity servers
-    scrubbers = []     # list of URLs for people allowed to scrub
-    postage = "1"      # a price for message delivery if not on correspondents list
-    date = ""          # date
-    version = ""       # version string
-    revision = "0"     # revision number, every time my id were modified this value will be increased by 1
-    publickey = ""     # string in twisted.conch.ssh format
-    signature = ""     # digital signature
+    sources = []        # list of URLs, first is primary URL and name
+    contacts = []       # list of ways to contact this identity
+    certificates = []   # signatures by identity servers
+    scrubbers = []      # list of URLs for people allowed to scrub
+    postage = b"1"      # a price for message delivery if not on correspondents list
+    date = b""          # date
+    version = b""       # version string
+    revision = b"0"     # revision number, every time my id were modified this value will be increased by 1
+    publickey = b""     # string in twisted.conch.ssh format
+    signature = b""     # digital signature
 
     def __init__(self,
                  sources=[],
                  contacts=[],
                  certificates=[],
                  scrubbers=[],
-                 postage="1",
-                 date="",
-                 version="",
-                 revision="0",
-                 publickey='',
+                 postage=b"1",
+                 date=b"",
+                 version=b"",
+                 revision=b"0",
+                 publickey=b'',
                  xmlsrc=None,
-                 filename=''):
+                 filename=b''):
 
         self.sources = sources
         self.contacts = contacts
@@ -233,7 +229,7 @@ class identity:
         if publickey:
             self.sign()
         else:
-            self.signature = ''
+            self.signature = b''
             # no point in signing if no public key listed, probably about to unserialize something
 
         if xmlsrc is not None:
@@ -249,16 +245,16 @@ class identity:
         """
         Erase all fields data, clear identity.
         """
-        self.sources = []      # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
-        self.certificates = [] # identity servers each sign the source they are with - hash just (IDURL + publickey)
-        self.publickey = ''    # string
-        self.contacts = []     # list of ways to contact this identity
-        self.scrubbers = []    # list of URLs for people allowed to scrub
-        self.date = ''         # date
-        self.postage = '1'     # postage price for message delivery if not on correspondents list
-        self.version = ''      # version string
-        self.signature = ''    # digital signature
-        self.revision = '0'    # revision number
+        self.sources = []       # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
+        self.certificates = []  # identity servers each sign the source they are with - hash just (IDURL + publickey)
+        self.publickey = b''    # string
+        self.contacts = []      # list of ways to contact this identity
+        self.scrubbers = []     # list of URLs for people allowed to scrub
+        self.date = b''         # date
+        self.postage = b'1'     # postage price for message delivery if not on correspondents list
+        self.version = b''      # version string
+        self.signature = b''    # digital signature
+        self.revision = b'0'    # revision number
 
     def default(self):
         """
@@ -331,20 +327,19 @@ class identity:
         maybe don't need to change anything for now.
         Don't include certificate - so identity server can just add it.
         """
-        sep = "-"
-        hsh = ''
+        sep = b"-"
+        hsh = b''
         hsh += sep + sep.join(self.sources)
         hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
         hsh += sep + sep.join(self.scrubbers)
         hsh += sep + self.postage
-        hsh += sep + self.date.replace(' ', '_')
+        hsh += sep + self.date.replace(b' ', b'_')
         hsh += sep + self.version
         hsh += sep + self.revision
         # lg.out(12, "identity.makehash: %r" % hsh)
         hashcode = key.Hash(hsh)
         return hashcode
-
 
     def sign(self):
         """
@@ -420,16 +415,17 @@ class identity:
         """
         This loads data from Python dictionary.
         """
-        self.sources = json_data['sources']
-        self.contacts = json_data['contacts']
-        self.certificates = json_data['certificates']
-        self.scrubbers = json_data['scrubbers']
-        self.date = json_data['date']
-        self.postage = json_data['postage']
-        self.version = json_data['version']
-        self.revision = json_data['revision']
-        self.publickey = json_data['publickey']
-        self.signature = json_data['signature']
+        self.clear_data()
+        self.setSources(json_data['sources'])
+        self.setContacts(json_data['contacts'])
+        self.setCertificates(json_data['certificates'])
+        self.setScrubbers(json_data['scrubbers'])
+        self.setDate(json_data['date'])
+        self.setPostage(json_data['postage'])
+        self.setVersion(json_data['version'])
+        self.setRevision(json_data['version'])
+        self.setPublicKey(json_data['publickey'])
+        self.setSignature(json_data['signature'])
 
     def serialize(self):
         """
@@ -480,52 +476,52 @@ class identity:
         root.appendChild(sources)
         for source in self.sources:
             n = doc.createElement('source')
-            n.appendChild(doc.createTextNode(source))
+            n.appendChild(doc.createTextNode(strng.to_text(source)))
             sources.appendChild(n)
 
         contacts = doc.createElement('contacts')
         root.appendChild(contacts)
         for contact in self.contacts:
             n = doc.createElement('contact')
-            n.appendChild(doc.createTextNode(contact))
+            n.appendChild(doc.createTextNode(strng.to_text(contact)))
             contacts.appendChild(n)
 
         certificates = doc.createElement('certificates')
         root.appendChild(certificates)
         for certificate in self.certificates:
             n = doc.createElement('certificate')
-            n.appendChild(doc.createTextNode(certificate))
+            n.appendChild(doc.createTextNode(strng.to_text(certificate)))
             certificates.appendChild(n)
 
         scrubbers = doc.createElement('scrubbers')
         root.appendChild(scrubbers)
         for scrubber in self.scrubbers:
             n = doc.createElement('scrubber')
-            n.appendChild(doc.createTextNode(scrubber))
+            n.appendChild(doc.createTextNode(strng.to_text(scrubber)))
             scrubbers.appendChild(n)
 
         postage = doc.createElement('postage')
-        postage.appendChild(doc.createTextNode(self.postage))
+        postage.appendChild(doc.createTextNode(strng.to_text(self.postage)))
         root.appendChild(postage)
 
         date = doc.createElement('date')
-        date.appendChild(doc.createTextNode(self.date))
+        date.appendChild(doc.createTextNode(strng.to_text(self.date)))
         root.appendChild(date)
 
         version = doc.createElement('version')
-        version.appendChild(doc.createTextNode(self.version))
+        version.appendChild(doc.createTextNode(strng.to_text(self.version)))
         root.appendChild(version)
 
         revision = doc.createElement('revision')
-        revision.appendChild(doc.createTextNode(self.revision))
+        revision.appendChild(doc.createTextNode(strng.to_text(self.revision)))
         root.appendChild(revision)
 
         publickey = doc.createElement('publickey')
-        publickey.appendChild(doc.createTextNode(self.publickey))
+        publickey.appendChild(doc.createTextNode(strng.to_text(self.publickey)))
         root.appendChild(publickey)
 
         signature = doc.createElement('signature')
-        signature.appendChild(doc.createTextNode(self.signature))
+        signature.appendChild(doc.createTextNode(strng.to_text(self.signature)))
         root.appendChild(signature)
 
         return doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8"), root, doc
@@ -633,8 +629,6 @@ class identity:
             host += ':' + str(port)
         return host
 
-    #------------------------------------------------------------------------------
-
     def getContacts(self):
         """
         Return identity contacts list.
@@ -702,10 +696,10 @@ class identity:
         for i in range(0, len(self.contacts)):
             c = strng.to_bin(self.contacts[i])
             if proto:
-                if c.find(strng.to_bin(proto) + "://") == 0:
+                if c.find(strng.to_bin(proto) + b"://") == 0:
                     return i
             if host:
-                if c.find('://' + strng.to_bin(host)) == 0:
+                if c.find(b'://' + strng.to_bin(host)) == 0:
                     return i
             if contact:
                 if c == strng.to_bin(contact):
@@ -719,7 +713,7 @@ class identity:
         Return None if not found a contact.
         """
         for contact in self.contacts:
-            if contact.startswith(strng.to_bin(proto) + "://"):
+            if contact.startswith(strng.to_bin(proto) + b"://"):
                 return contact
         return None
 
@@ -741,7 +735,7 @@ class identity:
         """
         result = []
         for c in self.contacts:
-            proto, host = c.split('://')
+            proto, host = c.split(b'://')
             result.append((proto, host))
         return result
 
@@ -778,10 +772,19 @@ class identity:
 
     #------------------------------------------------------------------------------
 
+    def setSources(self, sources_list):
+        """
+        """
+        self.sources = []
+        for sourc in sources_list:
+            self.contacts.append(strng.to_bin(sourc))
+
     def setContacts(self, contacts_list):
         """
         """
-        self.contacts = contacts_list
+        self.contacts = []
+        for cont in contacts_list:
+            self.contacts.append(strng.to_bin(cont))
 
     def setContactsFromDict(self, contacts_dict, contacts_order=None):
         """
@@ -806,7 +809,7 @@ class identity:
         contact.
         """
         for i in range(0, len(self.contacts)):
-            proto_, host, port, filename = nameurl.UrlParse(self.contacts[i])
+            proto_, _, _, _ = nameurl.UrlParse(self.contacts[i])
             if proto_.strip() == strng.to_bin(proto).strip():
                 self.contacts[i] = strng.to_bin(contact)
                 return
@@ -823,7 +826,7 @@ class identity:
         """
         This is to set only host part of the contact.
         """
-        protocol, host_, port, filename = nameurl.UrlParse(self.contacts[index])
+        protocol, _, port, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, port, filename)
         self.contacts[index] = strng.to_bin(url).strip()
 
@@ -831,9 +834,55 @@ class identity:
         """
         This is useful when listening port get changed.
         """
-        protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
+        protocol, host, _, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, newport, filename)
         self.contacts[index] = strng.to_bin(url).strip()
+
+    def setPublicKey(self, pub_key_raw):
+        """
+        """
+        self.publickey = strng.to_bin(pub_key_raw)
+
+    def setSignature(self, signature_raw):
+        """
+        """
+        self.signature = strng.to_bin(signature_raw)
+
+    def setCertificates(self, certificates_list):
+        """
+        Not used yet.
+        """
+        self.certificates = []
+        for cert in certificates_list:
+            self.certificates.append(strng.to_bin(cert))
+
+    def setScrubbers(self, scrubbers_list):
+        """
+        Not used yet.
+        """
+        self.scrubbers = []
+        for scrub in scrubbers_list:
+            self.scrubbers.append(strng.to_bin(scrub))
+
+    def setDate(self, date_string):
+        """
+        """
+        self.date = strng.to_bin(date_string)
+
+    def setPostage(self, postage_value):
+        """
+        """
+        self.postage = strng.to_bin(str(postage_value))
+
+    def setVersion(self, version_string):
+        """
+        """
+        self.version = strng.to_bin(version_string)
+
+    def setRevision(self, revision):
+        """
+        """
+        self.postage = strng.to_bin(str(revision))
 
     #------------------------------------------------------------------------------
 
@@ -848,7 +897,7 @@ class identity:
         Remove all contacts with given ``proto``.
         """
         for contact in self.contacts:
-            if contact.find(strng.to_bin(proto) + "://") == 0:
+            if contact.find(strng.to_bin(proto) + b"://") == 0:
                 self.contacts.remove(contact)
 
     def pushProtoContact(self, proto):
@@ -880,16 +929,6 @@ class identity:
         del self.contacts[i]
         self.contacts.insert(0, contact)
 
-    #------------------------------------------------------------------------------
-
-    def setCertificate(self, certificate):
-        """
-        Not used yet.
-
-        TODO. Need to ask Vince for more details about id certificates.
-        """
-        self.certificates.append(strng.to_bin(certificate))
-        self.sign()
 
 #-------------------------------------------------------------------------------
 
