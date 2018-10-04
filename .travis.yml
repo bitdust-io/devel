@@ -8,7 +8,7 @@ script:
   - make -j2 all
   - make test_1
   - make test_2
-  - make -j2 clean_all
-  
+
 after_failure:
-  - docker-compose logs
+  - docker-compose -p "namespace1" logs
+  - docker-compose -p "namespace2" logs
