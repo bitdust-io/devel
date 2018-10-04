@@ -51,7 +51,7 @@ venv:
 test: clean tox
 
 test_raid:
-	@$(PYTHON) -m unittest -v tests.test_raid.Test
+	@$(PYTHON) -m unittest  discover -p "test_raid.py" -v
 
 test/%: venv pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*

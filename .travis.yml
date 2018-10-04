@@ -5,6 +5,7 @@ before_install:
   - cd tests/e2e
 
 script:
+  - make test_raid
   - make -j2 all
   - make test_1
   - make test_2

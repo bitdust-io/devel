@@ -18,7 +18,6 @@ class Test(TestCase):
         self.dir_to_restored_file = '%s/restored_file' % self.dir_to_files
 
     def tearDown(self):
-        pass
         subprocess.call(['rm', '-rf', self.dir_to_test])
 
     def _test_file(self, filename):
