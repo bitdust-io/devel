@@ -2,13 +2,14 @@ services: docker
 
 before_install:
   - docker -v
-  - cd tests/e2e
 
 script:
-  - make -j2 all
-  - make test_1
-  - make test_2
-  - make -j2 clean_all
-  
+  - make test_raid
+  - python -m unittest  discover -p "test_raid.py" -v
+  - make -C tests/e2e/ -j2 all
+  - make -C tests/e2e/ test_1
+  - make -C tests/e2e/ test_2
+
 after_failure:
-  - docker-compose logs
+  - docker-compose -p "namespace1" logs
+  - docker-compose -p "namespace2" logs
