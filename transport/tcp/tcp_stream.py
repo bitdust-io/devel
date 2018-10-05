@@ -55,6 +55,7 @@ from system import tmpfile
 from main import settings
 
 from lib import misc
+from lib import strng
 
 #------------------------------------------------------------------------------
 
@@ -552,8 +553,7 @@ class FileSender(basic.FileSender):
         self.parent = None
 
     def transform_data(self, data):
-        # if isinstance(data, six.binary_type):
-        #     data = data.decode('utf-8')
+        data = strng.to_bin(data)
         datalength = len(data)
         datagram = ''
         datagram += struct.pack('i', self.parent.file_id)

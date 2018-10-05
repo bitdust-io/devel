@@ -495,6 +495,7 @@ class Automat(object):
                 if _Debug:
                     self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
                         self.id, self.name, self.state, event_string, arg))
+                return self
             self.state = new_state
         else:
             try:
@@ -503,6 +504,7 @@ class Automat(object):
                 if _Debug:
                     self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
                         self.id, self.name, self.state, event_string, arg))
+                return self
             new_state = self.state
         if old_state != new_state:
             if _Debug and self.log_transitions:
