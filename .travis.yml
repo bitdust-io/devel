@@ -1,11 +1,22 @@
+language: python
+matrix:
+  include:
+  - name: "3.6"
+    python: "3.6"
+    env: PYTHON_VERSION=3.6
+  - name: "2.7"
+    python: "2.7"
+    env: PYTHON_VERSION=2.7
+
 services: docker
 
 before_install:
   - docker -v
+  - python -V
 
 script:
   - make test_raid
-  - python -m unittest  discover -p "test_raid.py" -v
+  - docker-compose -f tests/e2e/docker-compose.yml build --build-arg PYTHON_VERSION=$PYTHON_VERSION
   - make -C tests/e2e/ -j2 all
   - make -C tests/e2e/ test_1
   - make -C tests/e2e/ test_2

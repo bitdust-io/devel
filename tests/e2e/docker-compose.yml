@@ -2,8 +2,6 @@ version: "3.4"
 
 x-common: &common
   context: ./../../
-  args:
-    PYTHON_VERSION: 3.6
 
 x-common-links: &common-links-all
   links: &common-links
