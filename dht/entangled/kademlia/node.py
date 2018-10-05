@@ -104,8 +104,8 @@ class Node(object):
             # Try to restore the node's state...
             if b'nodeState' in self._dataStore:
                 state = self._dataStore[b'nodeState']
-                self.id = state['id']
-                for contactTriple in state['closestNodes']:
+                self.id = state[b'id']
+                for contactTriple in state[b'closestNodes']:
                     contact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
                     self._routingTable.addContact(contact)
         self._counter = None
@@ -768,8 +768,8 @@ class Node(object):
 
     def _persistState(self, *args):
         state = {
-            'id': self.id,
-            'closestNodes': self.findNode(self.id),
+            b'id': self.id,
+            b'closestNodes': self.findNode(self.id),
         }
         now = int(time.time())
         self._dataStore.setItem(b'nodeState', state, now, now, self.id)

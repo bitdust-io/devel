@@ -22,6 +22,7 @@ except ImportError:
     from collections import MutableMapping as DictMixin
 import sqlite3
 import six.moves.cPickle as pickle
+# import pickle
 import os
 import codecs
 
@@ -300,10 +301,9 @@ class SQLiteDataStore(DataStore):
                 if six.PY2:
                     if isinstance(value, buffer):
                         value = str(value)
-                try:
                     return pickle.loads(value)
-                except:
-                    import pdb; pdb.set_trace()
+                else:
+                    return pickle.loads(value, encoding='bytes')
             else:
                 return value
 

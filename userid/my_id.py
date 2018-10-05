@@ -314,7 +314,7 @@ def setTransportOrder(orderL):
     """
     orderl = orderL
     orderL = validateTransports(orderL)
-    orderTxt = string.join(orderl, ' ')
+    orderTxt = ' '.join(orderl)
     lg.out(8, 'my_id.setTransportOrder: ' + str(orderTxt))
     bpio.WriteTextFile(settings.DefaultTransportOrderFilename(), orderTxt)
 
