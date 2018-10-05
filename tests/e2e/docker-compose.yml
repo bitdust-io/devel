@@ -10,7 +10,6 @@ x-common-links: &common-links-all
 
 x-common-volumes: &common-volumes
   volumes:
-    - "./Dockerfiles:/Dockerfiles"
     - app-volume:/volume
     - download_volume:/download_volume
 

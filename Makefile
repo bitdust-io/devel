@@ -24,6 +24,9 @@ install: clean venv deploy
 deploy:
 	$(PYTHON) bitdust.py deploy
 
+compile:
+	$(PYTHON) compile.py build_ext
+
 tox: venv setup.py
 	$(TOX)
 
@@ -46,6 +49,9 @@ venv:
 	# @$(PIP) install -r $(DEPS)
 
 test: clean tox
+
+test_raid:
+	python -m unittest  discover -p "test_raid.py" -v
 
 test/%: venv pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
