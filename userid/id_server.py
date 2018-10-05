@@ -39,7 +39,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import StringIO
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
@@ -343,7 +343,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
             # self.transport.loseConnection()
             lg.warn('not a "data" packet from %s' % str(self.transport.getPeer()))
             return
-        inp = StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
             file_size = struct.unpack('i', inp.read(4))[0]

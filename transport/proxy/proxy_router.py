@@ -55,7 +55,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import StringIO
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
@@ -355,13 +355,13 @@ class ProxyRouter(automat.Automat):
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = StringIO(padded_data[:int(block.Length)])
+            inpt = BytesIO(padded_data[:int(block.Length)])
             payload = serialization.StringToObject(inpt.read())
             inpt.close()
-            sender_idurl = payload['f']         # from
-            receiver_idurl = payload['t']       # to
-            wide = payload['w']                 # wide
-            routed_data = payload['p']                 # payload
+            sender_idurl = payload['f']                 # from
+            receiver_idurl = payload['t']               # to
+            wide = payload['w']                         # wide
+            routed_data = payload['p']                  # payload
         except:
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
             lg.exc()
