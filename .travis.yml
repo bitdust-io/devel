@@ -9,6 +9,8 @@ matrix:
     env: PYTHON_VERSION=2.7
 
 services: docker
+env:
+  - DOCKER_COMPOSE_VERSION=1.22.0
 
 before_install:
   - docker -v
