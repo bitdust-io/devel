@@ -388,6 +388,7 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     try:
         value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
+        import pdb; pdb.set_trace()
         return fail(Exception('bad input json data'))
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] with %d bytes' % (

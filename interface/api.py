@@ -95,7 +95,10 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
+        try:
+            lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
+        except:
+            import pdb; pdb.set_trace()
     return o
 
 

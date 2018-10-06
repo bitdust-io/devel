@@ -184,8 +184,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         try:
             command, payload = arg
-            peeraddress, peeridurl = payload.split(' ')
-            peerip, peerport = peeraddress.split(':')
+            peeraddress, peeridurl = payload.split(b' ')
+            peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
             peeraddress = (peerip, peerport)
         except:
@@ -248,8 +248,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         from transport.tcp import tcp_node
         try:
             command, payload = arg
-            peeraddress, peeridurl = payload.split(' ')
-            peerip, peerport = peeraddress.split(':')
+            peeraddress, peeridurl = payload.split(b' ')
+            peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
             peeraddress = (peerip, peerport)
         except:
