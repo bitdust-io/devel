@@ -41,9 +41,7 @@ from six.moves import range
 
 def interval_to_next_hour():
     """
-    Here is a value for "seconds to to the end of an hour.:"
-    C:\work\bitdust>python -c "import lib.maths; print
-    lib.maths.interval_to_next_hour()" 3538.81299996.
+    Here is a value for "seconds to to the end of an hour"
     """
     _struct_time = list(time.localtime())
     _struct_time[4] = 0
@@ -57,13 +55,6 @@ def interval_to_next_hour():
 def shedule_continuously(last_time, interval):
     """
     Return value for "moment when next time interval event will happens".
-
-    In other words: when need to run the backup exactly, within that
-    ``interval`` in seconds. ``last_time`` is taken from file [BitDust
-    data dir]\metadata\updateshedule.     C:\work\bitdust>python -c
-    "import time, lib.maths; print
-    lib.maths.shedule_continuously(1397152186.41, 60)-time.time()"
-    12.5670001507
     """
     try:
         dt = time.time() - float(last_time)
@@ -78,12 +69,6 @@ def shedule_continuously(last_time, interval):
 def shedule_next_hourly(last_time, interval):
     """
     Return value for "moment when next time interval event happens".
-
-    ``interval`` is number of hours between events. ``last_time`` is
-    taken from file [BitDust data dir]\metadata\updateshedule.
-    C:\work\bitdust>python -c "import time, lib.maths; print
-    lib.maths.shedule_next_hourly(1397152186.41, 5)-time.time()"
-    9930.79699993
     """
     try:
         t = list(time.localtime(float(last_time)))
