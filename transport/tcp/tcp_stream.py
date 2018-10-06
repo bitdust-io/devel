@@ -555,7 +555,7 @@ class FileSender(basic.FileSender):
     def transform_data(self, data):
         data = strng.to_bin(data)
         datalength = len(data)
-        datagram = ''
+        datagram = b''
         datagram += struct.pack('i', self.parent.file_id)
         datagram += struct.pack('i', self.parent.size)
         datagram += data
@@ -564,7 +564,7 @@ class FileSender(basic.FileSender):
         return datagram
 
     def resumeProducing(self):
-        chunk = ''
+        chunk = b''
         if self.file:
             #             try:
             chunk = self.file.read(self.CHUNK_SIZE)
