@@ -53,6 +53,7 @@ from twisted.internet.defer import Deferred
 #------------------------------------------------------------------------------
 
 from lib import strng
+from lib import jsn
 
 from logs import lg
 
@@ -79,7 +80,7 @@ def OK(result='', message=None, status='OK', extra_fields=None):
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
+        lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
 
 
@@ -95,10 +96,7 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
     if _Debug:
-        try:
-            lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
-        except:
-            import pdb; pdb.set_trace()
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
 
 
@@ -112,7 +110,7 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, json.dumps(o, sort_keys=True)[:150]))
+        lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
 
 #------------------------------------------------------------------------------

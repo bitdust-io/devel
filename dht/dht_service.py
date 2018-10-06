@@ -80,6 +80,7 @@ from dht import known_nodes
 
 from lib import strng
 from lib import utime
+from lib import jsn
 
 #------------------------------------------------------------------------------
 
@@ -386,9 +387,9 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
     try:
-        value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
+        value = jsn.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'))
+        # value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
-        import pdb; pdb.set_trace()
         return fail(Exception('bad input json data'))
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] with %d bytes' % (
