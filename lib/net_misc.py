@@ -148,7 +148,7 @@ def ConnectionFailed(param=None, proto=None, info=None):
 
 def normalize_address(host_port):
     """
-    Input argument `host` can be string: "123.45.67.89:8080" or tuple: ("123.45.67.89", 8080)
+    Input argument `host` can be string: "123.45.67.89:8080" or tuple: (b"123.45.67.89", 8080)
     Method always return tuple and make sure host is string/bytes but not unicode.
     """
     if isinstance(host_port, six.binary_type):
@@ -162,10 +162,10 @@ def normalize_address(host_port):
 
 def pack_address(host_port):
     """
-    Same as `normalize_address()`, but always return address as string/bytes: "123.45.67.89:8080"
+    Same as `normalize_address()`, but always return address as string/bytes: b"123.45.67.89:8080"
     """
     norm = normalize_address(host_port)
-    return '{}:{}'.format(norm[0], norm[1])
+    return norm[0] + b':' + str(norm[1]).encode()
 
 #------------------------------------------------------------------------------
 
