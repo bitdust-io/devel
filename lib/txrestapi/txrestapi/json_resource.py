@@ -13,13 +13,21 @@ from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
 
 
+def _to_text(v):
+    if not isinstance(v, six.text_type):
+        v = v.decode()
+    return v
+
+
 def _to_json(output_object):
-    return (json.dumps(
-        output_object,
-        indent=2,
-        separators=(',', ': '),
-        sort_keys=True,
-    ) + '\n').encode()
+    return (
+        json.dumps(
+            output_object,
+            indent=2,
+            separators=(',', ': '),
+            sort_keys=True,
+            default=_to_text,
+        ) + '\n').encode()
 
 
 class _JsonResource(Resource):

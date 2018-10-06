@@ -40,10 +40,10 @@ def _to_text(v):
 
 #------------------------------------------------------------------------------
 
-def dumps(o, ident=None, separators=None, sort_keys=None, **kw):
+def dumps(o, indent=None, separators=None, sort_keys=None, **kw):
     return json.dumps(
         o,
-        ident=ident,
+        indent=indent,
         separators=separators,
         sort_keys=sort_keys,
         ensure_ascii=False,
