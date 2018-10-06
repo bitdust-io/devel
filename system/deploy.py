@@ -277,9 +277,10 @@ def run(args):
     fil.close()
     os.chmod(script_path, 0o775)
 
-    print_text('\n##### BitDust application files created successfully in {}\n'.format(base_dir))
+    print_text('\n##### BitDust environment files created successfully in {}\n'.format(base_dir))
     print_text('To run the programm use this executable script:\n\n    {}\n\n'.format(script_path))
     print_text('To create system-wide shell command, add /Users/veselin/.bitdust/bitdust to your PATH, or create a symlink:\n')
     print_text('    sudo ln -s -f {} /usr/local/bin/bitdust\n\n'.format(script_path))
+    print_text('Learn more about available shell commands:\n\n    bitdust help\n\n')
     print_text('Welcome to BitDust!\n\n')
     return 0

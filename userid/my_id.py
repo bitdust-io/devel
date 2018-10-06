@@ -389,7 +389,7 @@ def buildProtoContacts(id_obj, skip_transports=[]):
             cdict = {}
             corder = []
             for contact in clist:
-                cproto, cdata = contact.split('://')
+                cproto, _ = contact.split('://')
                 cdict[cproto] = contact
                 corder.append(cproto)
             new_contacts.update(cdict)
@@ -451,8 +451,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     """
     Use some local settings and config files to create some new identity.
 
-    Nice to provide a user name or it will have a form like: [ip
-    address]_[date].
+    Nice to provide a user name or it will have a form like: [ip_address]_[date].
     """
     if not ip:
         ip = misc.readExternalIP()
@@ -467,7 +466,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     # just need to keep all them synchronized
     # this is identity propagate procedure, see p2p/propagate.py
     if len(idurls) == 0:
-        idurls.append(b'http://localhost/%s.xml' % strng.to_bin(name.lower()))
+        idurls.append(b'http://127.0.0.1/%s.xml' % strng.to_bin(name.lower()))
     for idurl in idurls:
         ident.sources.append(strng.to_bin(idurl.strip()))
     # create a full list of needed transport methods
@@ -478,7 +477,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
             new_contacts['tcp'] = strng.to_bin('tcp://' + str(ip) + ':' + str(settings.getTCPPort()))
             new_order.append('tcp')
         if settings.enableUDP() and settings.enableUDPreceiving():
-            x, servername, x, x = nameurl.UrlParse(ident.sources[0])
+            _, servername, _, _ = nameurl.UrlParse(ident.sources[0])
             new_contacts['udp'] = strng.to_bin('udp://%s@%s' % (name.lower(), servername))
             new_order.append('udp')
         if settings.enableHTTP() and settings.enableHTTPreceiving():
@@ -546,7 +545,7 @@ def rebuildLocalIdentity(skip_transports=[], revision_up=False):
     # update software version number
     vernum = strng.to_bin(bpio.ReadTextFile(settings.VersionNumberFile())).strip()
     repo, _ = misc.ReadRepoLocation()
-    lid.setVersion((vernum + ' ' + strng.to_bin(repo.strip()) + ' ' + bpio.osinfo().strip()).strip())
+    lid.setVersion((vernum + b' ' + strng.to_bin(repo.strip()) + b' ' + strng.to_bin(bpio.osinfo().strip()).strip()))
     # generate signature with changed content
     lid.sign()
     new_xmlsrc = lid.serialize()
@@ -574,5 +573,5 @@ def rebuildLocalIdentity(skip_transports=[], revision_up=False):
         # finally saving modified local identity
         saveLocalIdentity()
     lg.out(4, '    my identity HAS %sBEEN changed !!!' % (('' if changed else 'NOT ')))
-    lg.out(4, '\n' + getLocalIdentity().serialize() + '\n')
+    lg.out(4, '\n' + strng.to_text(getLocalIdentity().serialize()) + '\n')
     return changed
