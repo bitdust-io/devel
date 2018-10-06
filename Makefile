@@ -50,6 +50,16 @@ venv:
 
 test: clean tox
 
+test_docker_test_1:
+	make -C tests/e2e/ -j2 all
+	make -C tests/e2e/ test_1
+	docker-compose -p "namespace1" logs
+
+test_docker_test_2:
+	make -C tests/e2e/ -j2 all
+	make -C tests/e2e/ test_2
+	docker-compose -p "namespace2" logs
+
 test_raid:
 	python -m unittest  discover -p "test_raid.py" -v
 
