@@ -44,6 +44,7 @@ import os
 import sys
 import gc
 import six
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -321,10 +322,10 @@ def erase_key(key_id, keys_folder=None):
 def validate_key(key_object):
     """
     """
-    data256 = os.urandom(256)
-    hash_base = key.Hash(data256)
-    signature256 = key_object.sign(hash_base)
-    return key_object.verify(signature256, hash_base)
+    sample_data = base64.b64encode(os.urandom(256))
+    sample_hash_base = key.Hash(sample_data)
+    sample_signature = key_object.sign(sample_hash_base)
+    return key_object.verify(sample_signature, sample_hash_base)
 
 #------------------------------------------------------------------------------
 

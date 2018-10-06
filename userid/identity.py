@@ -196,22 +196,22 @@ class identity:
     contacts = []       # list of ways to contact this identity
     certificates = []   # signatures by identity servers
     scrubbers = []      # list of URLs for people allowed to scrub
-    postage = b"1"      # a price for message delivery if not on correspondents list
-    date = b""          # date
-    version = b""       # version string
-    revision = b"0"     # revision number, every time my id were modified this value will be increased by 1
-    publickey = b""     # string in twisted.conch.ssh format
-    signature = b""     # digital signature
+    postage = b'1'      # a price for message delivery if not on correspondents list
+    date = b''          # date
+    version = b''       # version string
+    revision = b'0'     # revision number, every time my id were modified this value will be increased by 1
+    publickey = b''     # string in twisted.conch.ssh format
+    signature = b''     # digital signature
 
     def __init__(self,
                  sources=[],
                  contacts=[],
                  certificates=[],
                  scrubbers=[],
-                 postage=b"1",
-                 date=b"",
-                 version=b"",
-                 revision=b"0",
+                 postage=b'1',
+                 date=b'',
+                 version=b'',
+                 revision=b'0',
                  publickey=b'',
                  xmlsrc=None,
                  filename=b''):
@@ -327,7 +327,7 @@ class identity:
         maybe don't need to change anything for now.
         Don't include certificate - so identity server can just add it.
         """
-        sep = b"-"
+        sep = b'-'
         hsh = b''
         hsh += sep + sep.join(self.sources)
         hsh += sep + sep.join(self.contacts)
@@ -696,7 +696,7 @@ class identity:
         for i in range(0, len(self.contacts)):
             c = strng.to_bin(self.contacts[i])
             if proto:
-                if c.find(strng.to_bin(proto) + b"://") == 0:
+                if c.find(strng.to_bin(proto) + b'://') == 0:
                     return i
             if host:
                 if c.find(b'://' + strng.to_bin(host)) == 0:
@@ -713,7 +713,7 @@ class identity:
         Return None if not found a contact.
         """
         for contact in self.contacts:
-            if contact.startswith(strng.to_bin(proto) + b"://"):
+            if contact.startswith(strng.to_bin(proto) + b'://'):
                 return contact
         return None
 
@@ -897,7 +897,7 @@ class identity:
         Remove all contacts with given ``proto``.
         """
         for contact in self.contacts:
-            if contact.find(strng.to_bin(proto) + b"://") == 0:
+            if contact.find(strng.to_bin(proto) + b'://') == 0:
                 self.contacts.remove(contact)
 
     def pushProtoContact(self, proto):

@@ -141,7 +141,7 @@ class GateInterface():
         """
         result = []
         nowip = strng.to_bin(misc.readExternalIP())
-        result.append('tcp://%s:%d' % (nowip, settings.getTCPPort(), ))
+        result.append(b'tcp://%s:%d' % (nowip, settings.getTCPPort(), ))
         # TODO:
         #    # if IP is not external and upnp configuration was failed for some reasons
         #    # we may want to use another contact methods, NOT tcp
@@ -149,14 +149,14 @@ class GateInterface():
         #        lg.out(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
         #        lid.pushProtoContact('tcp')
         if _Debug:
-            lg.out(4, 'tcp_interface.build_contacts : %s' % str(result))
+            lg.out(4, 'tcp_interface.build_contacts : %r' % str(result))
         return result
 
     def verify_contacts(self, id_obj):
         """
         """
         nowip = strng.to_bin(misc.readExternalIP())
-        tcp_contact = 'tcp://%s:%d' % (nowip, settings.getTCPPort(), )
+        tcp_contact = b'tcp://%s:%d' % (nowip, settings.getTCPPort(), )
         if id_obj.getContactIndex(contact=tcp_contact) < 0:
             if _Debug:
                 lg.out(4, 'tcp_interface.verify_contacts returning False: tcp contact not found or changed')

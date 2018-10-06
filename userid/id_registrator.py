@@ -588,6 +588,8 @@ class IdRegistrator(automat.Automat):
         """
         login = strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename()))
         externalIP = strng.to_bin(misc.readExternalIP()) or '127.0.0.1'
+        if self.free_idurls[0].count('127.0.0.1'):
+            externalIP = '127.0.0.1'
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
         key.InitMyKey()
         lg.out(4, '    my key is ready')

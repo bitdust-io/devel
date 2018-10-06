@@ -567,7 +567,7 @@ class DHTNode(DistributedTupleSpacePeer):
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
-                strng.to_string(key, errors='ignore')[:6], expireSeconds, counter('store')))
+                base64.b64encode(key), expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
