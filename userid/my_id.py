@@ -389,7 +389,7 @@ def buildProtoContacts(id_obj, skip_transports=[]):
             cdict = {}
             corder = []
             for contact in clist:
-                cproto, _ = contact.split('://')
+                cproto, _ = contact.split(b'://')
                 cdict[cproto] = contact
                 corder.append(cproto)
             new_contacts.update(cdict)
@@ -474,14 +474,14 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     new_contacts, new_order = buildProtoContacts(ident)
     if len(new_contacts) == 0:
         if settings.enableTCP() and settings.enableTCPreceiving():
-            new_contacts['tcp'] = strng.to_bin('tcp://' + str(ip) + ':' + str(settings.getTCPPort()))
+            new_contacts['tcp'] = b'tcp://' + strng.to_bin(ip) + b':' + strng.to_bin(str(settings.getTCPPort()))
             new_order.append('tcp')
         if settings.enableUDP() and settings.enableUDPreceiving():
             _, servername, _, _ = nameurl.UrlParse(ident.sources[0])
-            new_contacts['udp'] = strng.to_bin('udp://%s@%s' % (name.lower(), servername))
+            new_contacts['udp'] = b'udp://' + strng.to_bin(name.lower()) + b'@' + strng.to_bin(servername)
             new_order.append('udp')
         if settings.enableHTTP() and settings.enableHTTPreceiving():
-            new_contacts['http'] = strng.to_bin('http://' + ip + ':' + str(settings.getHTTPPort()))
+            new_contacts['http'] = b'http://' + strng.to_bin(ip) + b':' + strng.to_bin(str(settings.getHTTPPort()))
             new_order.append('http')
     # erase current contacts from my identity
     ident.clearContacts()

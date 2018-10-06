@@ -173,6 +173,8 @@ def parse_url(url, defaultPort=None):
     """
     Split the given URL into the scheme, host, port, and path.
     """
+    if isinstance(url, six.binary_type):
+        url = url.decode('utf-8')
     url = url.strip()
     parsed = six.moves.urllib.parse.urlparse(url)
     scheme = parsed[0]

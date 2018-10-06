@@ -99,7 +99,12 @@ def UrlParse(url):
         if not filename:
             filename = tail
 
-    return strng.to_text(proto).strip(), strng.to_text(host).strip(), strng.to_text(port).strip(), strng.to_text(filename).strip()
+    return (
+        strng.to_text(proto).strip(),
+        strng.to_text(host).strip(),
+        strng.to_text(port).strip(),
+        strng.to_text(filename).strip(),
+    )
 
 
 def UrlMake(protocol='', machine='', port='', filename='', parts=None):
@@ -159,6 +164,7 @@ def UrlFilenameHTML(url):
     'id_bitdust_net_veselin_xml'
     """
     global legalset
+    url = strng.to_text(url)
     s = url.replace('http://', '')
     o = ''
     for x in s:
@@ -174,7 +180,7 @@ def IdContactSplit(contact):
     """
     """
     try:
-        return contact.split('://')
+        return strng.to_text(contact).split('://')
     except:
         return '', ''
 

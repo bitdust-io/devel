@@ -308,21 +308,15 @@ class DHTUDPConnector(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            incoming_peer_id, incoming_user_address, time_placed = incoming.split(
-                ' ')
-            incoming_user_address = incoming_user_address.split(':')
-            incoming_user_address = (
-                incoming_user_address[0], int(
-                    incoming_user_address[1]))
+            incoming_peer_id, incoming_user_address, _ = incoming.split(b' ')
+            incoming_user_address = incoming_user_address.split(b':')
+            incoming_user_address = (incoming_user_address[0], int(incoming_user_address[1]))
         except:
             lg.out(2, '%r' % incoming)
             lg.exc()
             self.automat('dht-read-failed')
             return
-        self.automat(
-            'dht-read-success',
-            (incoming_peer_id,
-             incoming_user_address))
+        self.automat('dht-read-success', (incoming_peer_id, incoming_user_address))
 
     def _wrote_peer_incoming(self, nodes):
         self.working_deferred = None
@@ -336,7 +330,7 @@ class DHTUDPConnector(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            peer_ip, peer_port = value[dht_service.key_to_hash(key)].split(':')
+            peer_ip, peer_port = value[dht_service.key_to_hash(key)].split(b':')
             peer_port = int(peer_port)
         except:
             lg.exc()
