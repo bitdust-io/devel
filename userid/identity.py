@@ -878,12 +878,12 @@ class identity:
     def setVersion(self, version_string):
         """
         """
-        self.version = strng.to_bin(version_string)
+        self.version = strng.to_bin(strng.to_string(version_string).strip())
 
     def setRevision(self, revision):
         """
         """
-        self.postage = strng.to_bin(str(revision))
+        self.revision = strng.to_bin(str(revision))
 
     #------------------------------------------------------------------------------
 

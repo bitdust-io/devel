@@ -197,7 +197,7 @@ def loadLocalIdentity():
     if os.path.exists(filename):
         xmlid = bpio.ReadTextFile(filename)
         lg.out(6, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), filename))
-    if xmlid == '':
+    if not xmlid:
         lg.out(2, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % filename)
         return
     lid = identity.identity(xmlsrc=xmlid)
@@ -229,6 +229,9 @@ def saveLocalIdentity():
         lg.warn('local identity is not correct')
         return
     _LocalIdentity.sign()
+    if not _LocalIdentity.Valid():
+        lg.err('local identity is not valid')
+        return
     xmlid = _LocalIdentity.serialize()
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     bpio.WriteTextFile(filename, xmlid)
@@ -516,7 +519,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     return ident
 
 
-def rebuildLocalIdentity(skip_transports=[], revision_up=False):
+def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=False, save_identity=True):
     """
     If some transports was enabled or disabled we want to update identity
     contacts. Just empty all of the contacts and create it again in the same
@@ -525,7 +528,7 @@ def rebuildLocalIdentity(skip_transports=[], revision_up=False):
     Also increase revision number by one - others may keep track of my modifications.
     """
     # getting current copy of local identity
-    lid = getLocalIdentity()
+    lid = identity_object or getLocalIdentity()
     # remember the current identity - full XML source code
     current_identity_xmlsrc = lid.serialize()
     lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long' % len(current_identity_xmlsrc))
@@ -552,7 +555,7 @@ def rebuildLocalIdentity(skip_transports=[], revision_up=False):
     changed = False
     if new_xmlsrc != current_identity_xmlsrc or revision_up:
         try:
-            lid.setRevision(int(lid.revision) + 1)
+            lid.setRevision(int(strng.to_text(lid.revision)) + 1)
         except:
             lg.exc()
             return False
@@ -561,7 +564,8 @@ def rebuildLocalIdentity(skip_transports=[], revision_up=False):
         lg.out(4, '    incremented revision: %s' % lid.revision)
         changed = True
         # remember the new identity
-        setLocalIdentity(lid)
+        if save_identity:
+            setLocalIdentity(lid)
     else:
         # no modifications in my identity - cool !!!
         lg.out(4, '    same revision: %s' % lid.revision)
@@ -571,7 +575,13 @@ def rebuildLocalIdentity(skip_transports=[], revision_up=False):
     if changed:
         lg.out(4, '    SAVING new identity #%s' % lid.revision)
         # finally saving modified local identity
-        saveLocalIdentity()
+        if save_identity:
+            saveLocalIdentity()
+            # NOW TEST IT!
+            forgetLocalIdentity()
+            loadLocalIdentity()
+            lg.out(4, '    LOCAL IDENTITY CORRECT: %r' % getLocalIdentity().isCorrect())
+            lg.out(4, '    LOCAL IDENTITY VALID: %r' % getLocalIdentity().Valid())
     lg.out(4, '    my identity HAS %sBEEN changed !!!' % (('' if changed else 'NOT ')))
-    lg.out(4, '\n' + strng.to_text(getLocalIdentity().serialize()) + '\n')
+    lg.out(4, '\n' + strng.to_text(lid.serialize()) + '\n')
     return changed
