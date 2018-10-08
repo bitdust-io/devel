@@ -178,7 +178,7 @@ class IdServer(automat.Automat):
             os.makedirs(settings.IdentityServerDir())
             lg.out(4, '            created a folder %s' % settings.IdentityServerDir())
         root = WebRoot()
-        root.putChild('', WebMainPage())
+        root.putChild(b'', WebMainPage())
         try:
             self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())
             lg.out(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
@@ -449,9 +449,9 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 class WebRoot(resource.Resource):
 
     def getChild(self, path, request):
-        if path == '':
+        if not path:
             return self
-        filepath = os.path.join(settings.IdentityServerDir(), path)
+        filepath = os.path.join(settings.IdentityServerDir(), strng.to_text(path))
         if os.path.isfile(filepath):
             return static.File(filepath)
         return resource.NoResource('Not found')
