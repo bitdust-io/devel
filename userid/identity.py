@@ -608,7 +608,7 @@ class identity:
         Return a source IDURL - this is a user ID.
         Must have at least one IDURL in the ``sources``.
         """
-        result = self.sources[index].strip()
+        result = self.sources[index]
         return result
 
     def getIDName(self, index=0):

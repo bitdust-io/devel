@@ -3,11 +3,12 @@
 
 bitdust stop
 
-rm -rf ~/.bitdsut/identityserver/alice.xml
+rm -rf ~/.bitdust/identityserver/alice.xml
 
-# TODO: remember current values from:
-#     bitdust get services/identity-propagate/known-servers
-#     bitdust get services/identity-server/host
+# TODO:
+#     backup current identtiy and private key
+#     remember current value from: "bitdust get services/identity-propagate/known-servers"
+#     remember current value from: "bitdust get services/identity-server/host"
 
 bitdust set services/identity-propagate/known-servers 127.0.0.1:8084:6661
 
@@ -18,6 +19,8 @@ bitdust daemon
 sleep 5
 
 curl -X POST -d '{"username": "alice"}' localhost:8180/identity/create/v1
+
+curl -X POST -d '{"destination_path": "/tmp/alice_127_0_0_1.txt"}' localhost:8180/identity/backup/v1
 
 bitdust set services/identity-propagate/known-servers ""
 

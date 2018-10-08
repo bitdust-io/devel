@@ -62,6 +62,11 @@ class RSAKey(object):
     def isReady(self):
         return self.keyObject is not None
 
+    def forget(self):
+        self.keyObject = None
+        gc.collect()
+        return True
+
     def generate(self, bits):
         if self.keyObject:
             raise ValueError('key object already exist')

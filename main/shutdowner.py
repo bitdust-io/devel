@@ -117,7 +117,8 @@ def shutdown(x=None):
     control.shutdown()
     weblog.shutdown()
     webtraffic.shutdown()
-    for a in automat.objects().values():
+    survived_automats = list(automat.objects().values())
+    for a in survived_automats:
         if a.name != 'shutdowner':
             a.event('shutdown')
     return DeferredList(dl)
