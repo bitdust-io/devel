@@ -59,11 +59,13 @@ from logs import lg
 from system import bpio
 
 from lib import misc
+from lib import strng
 
 from main import settings
 
 from crypt import key
 from crypt import rsa_key
+from crypt import hashes
 
 from userid import my_id
 from userid import global_id
@@ -322,10 +324,17 @@ def erase_key(key_id, keys_folder=None):
 def validate_key(key_object):
     """
     """
-    sample_data = base64.b64encode(os.urandom(256))
-    sample_hash_base = key.Hash(sample_data)
+    sample_data = strng.to_bin(base64.b64encode(os.urandom(256)))
+    sample_hash_base = hashes.sha1(sample_data, hexdigest=True)
     sample_signature = key_object.sign(sample_hash_base)
-    return key_object.verify(sample_signature, sample_hash_base)
+    is_valid = key_object.verify(sample_signature, sample_hash_base)
+    if not is_valid:
+        if _Debug:
+            lg.err('validate_key FAILED')
+            lg.out(_DebugLevel, 'signature=%r' % sample_signature)
+            lg.out(_DebugLevel, 'hash_base=%r' % sample_hash_base)
+            lg.out(_DebugLevel, 'data=%r' % sample_data)
+    return is_valid
 
 #------------------------------------------------------------------------------
 
