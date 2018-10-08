@@ -163,7 +163,7 @@ def isMyKeyReady():
     Check if the Key is already loaded into memory.
     """
     global _MyKeyObject
-    return _MyKeyObject is not None and _MyKeyObject.is_ready()
+    return _MyKeyObject is not None and _MyKeyObject.isReady()
 
 
 def MyPublicKey():

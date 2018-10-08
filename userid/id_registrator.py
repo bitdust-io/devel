@@ -592,6 +592,8 @@ class IdRegistrator(automat.Automat):
             externalIP = b'127.0.0.1'
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
         key.InitMyKey()
+        if not key.isMyKeyReady():
+            key.GenerateNewKey()
         lg.out(4, '    my key is ready')
         ident = my_id.buildDefaultIdentity(
             name=login, ip=externalIP, idurls=self.free_idurls)
