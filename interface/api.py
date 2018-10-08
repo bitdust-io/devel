@@ -377,9 +377,16 @@ def identity_create(username):
 
 def identity_backup(destination_filepath):
     from userid import my_id
+    from lib import strng
     from crypt import key
     from system import bpio
-    TextToSave = my_id.getLocalIDURL() + u"\n" + key.MyPrivateKey()
+    if not my_id.isLocalIdentityReady():
+        return ERROR('local identity is not ready')
+    # TextToSave = strng.to_text(my_id.getLocalIDURL()) + u"\n" + key.MyPrivateKey()
+    TextToSave = ''
+    for id_source in my_id.getLocalIdentity().getSources():
+        TextToSave += strng.to_text(id_source) + u'\n'
+    TextToSave += key.MyPrivateKey()
     if not bpio.WriteTextFile(destination_filepath, TextToSave):
         del TextToSave
         gc.collect()
@@ -390,7 +397,6 @@ def identity_backup(destination_filepath):
 
 
 def identity_recover(private_key_source, known_idurl=None):
-    from lib import nameurl
     from userid import my_id
     from userid import id_restorer
 
@@ -399,22 +405,41 @@ def identity_recover(private_key_source, known_idurl=None):
     if len(private_key_source) > 1024 * 10:
         return ERROR('private key is too large')
 
-    idurl = ''
+    idurl_list = []
     pk_source = ''
     try:
         lines = private_key_source.split('\n')
-        idurl = lines[0]
-        pk_source = '\n'.join(lines[1:])
-        if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-            idurl = ''
-            pk_source = private_key_source
+        for i in range(len(lines)):
+            line = lines[i]
+            if not line.startswith('-----BEGIN RSA PRIVATE KEY-----'):
+                idurl_list.append(strng.to_bin(line.strip()))
+                continue
+            pk_source = '\n'.join(lines[i:])
+            break
     except:
-        idurl = ''
+        idurl_list = []
         pk_source = private_key_source
-    if not idurl and known_idurl:
-        idurl = known_idurl
-    if not idurl:
-        return ERROR('you must specify the global IDURL address where your identity file was last located')
+    if not idurl_list and known_idurl:
+        idurl_list.append(known_idurl)
+    if not idurl_list:
+        return ERROR('you must provide at least one IDURL address of your identity')
+
+#     idurl = ''
+#     pk_source = ''
+#     try:
+#         lines = private_key_source.split('\n')
+#         idurl = lines[0]
+#         pk_source = '\n'.join(lines[1:])
+#         if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
+#             idurl = ''
+#             pk_source = private_key_source
+#     except:
+#         idurl = ''
+#         pk_source = private_key_source
+#     if not idurl and known_idurl:
+#         idurl = known_idurl
+#     if not idurl:
+#         return ERROR('you must specify the global IDURL address where your identity file was last located')
 
     ret = Deferred()
     my_id_restorer = id_restorer.A()
@@ -433,7 +458,8 @@ def identity_recover(private_key_source, known_idurl=None):
             return
 
     my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
-    my_id_restorer.A('start', {'idurl': idurl, 'keysrc': pk_source, })
+    my_id_restorer.A('start', {'idurl': idurl_list[0], 'keysrc': pk_source, })
+    # TODO: iterate over idurl_list to find at least one reliable source
     return ret
 
 def identity_list():

@@ -46,7 +46,7 @@ def interval_to_next_hour():
     _struct_time = list(time.localtime())
     _struct_time[4] = 0
     _struct_time[5] = 0
-    prev_hour_time = time.mktime(_struct_time)
+    prev_hour_time = time.mktime(tuple(_struct_time))
     return prev_hour_time + 60 * 60 - time.time()
 
 #-------------------------------------------------------------------------------
@@ -89,11 +89,6 @@ def shedule_next_hourly(last_time, interval):
 def shedule_next_daily(last_time, period_string, start_time_string):
     """
     Return value for "moment when next time interval event happens".
-
-    ``period_string`` is number of days between events.
-    ``start_time_string`` is start time throughout the day.
-    ``last_time`` is taken from file [BitDust data
-    dir]\metadata\updateshedule.
     """
     try:
         start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
@@ -151,11 +146,6 @@ def shedule_next_daily(last_time, period_string, start_time_string):
 def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
     """
     Weekly scheduler.
-
-    ``period_string`` is number of weeks between events.
-    ``start_time_string`` is start time throughout the day.
-    ``week_days`` is a string to mark needed days of week, format like that : "Monday Tuesday Wednesday".
-    ``last_time`` is taken from file [BitDust data dir]\metadata\updateshedule.
     """
     try:
         start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
@@ -294,11 +284,6 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
 def shedule_next_monthly(last_time, interval_months_string, start_time_string, dates):
     """
     Monthly scheduler.
-
-    ``interval_months_string`` is number of months between events.
-    ``start_time_string`` is start time throughout the day.
-    ``dates`` is a string to mark needed days of month, format like that : "1 2 3 28 29 30 31".
-    ``last_time`` is taken from file [BitDust data dir]\metadata\updateshedule.
     """
     try:
         start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
