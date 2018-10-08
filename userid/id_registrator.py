@@ -597,6 +597,8 @@ class IdRegistrator(automat.Automat):
         lg.out(4, '    my key is ready')
         ident = my_id.buildDefaultIdentity(
             name=login, ip=externalIP, idurls=self.free_idurls)
+        # my_id.rebuildLocalIdentity(
+        #     identity_object=ident, revision_up=True, save_identity=False)
         # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
         my_identity_xmlsrc = ident.serialize()
         newfilename = settings.LocalIdentityFilename() + '.new'
