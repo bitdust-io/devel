@@ -358,6 +358,7 @@ class identity:
 
         PREPRO - should test certificate too.
         """
+        # print('Valid %r' % self.signature)
         hashcode = self.makehash()
         result = key.VerifySignature(
             self.publickey,

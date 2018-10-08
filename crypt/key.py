@@ -95,7 +95,8 @@ def InitMyKey(keyfilename=None):
     if _MyKeyObject is not None and _MyKeyObject.isReady():
         return False
     if not LoadMyKey(keyfilename):
-        GenerateNewKey(keyfilename)
+        return False
+        # GenerateNewKey(keyfilename)
     return True
 
 
@@ -107,13 +108,17 @@ def LoadMyKey(keyfilename=None):
         newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
-    if os.path.exists(keyfilename):
-        _MyKeyObject = rsa_key.RSAKey()
-        _MyKeyObject.fromFile(keyfilename)
+    if not os.path.exists(keyfilename):
+        return False
+    _MyKeyObject = rsa_key.RSAKey()
+    _MyKeyObject.fromFile(keyfilename)
+    if _Debug:
+        lg.out(_DebugLevel, 'key.InitMyKey loaded private key from %s' % (keyfilename))
+    if not ValidateKey():
         if _Debug:
-            lg.out(_DebugLevel, 'key.InitMyKey loaded private key from %s' % (keyfilename))
-        return ValidateKey()
-    return False
+            lg.out(_DebugLevel, 'key.InitMyKey  private key is not valid: %s' % (keyfilename))
+        return False
+    return True
 
 
 def GenerateNewKey(keyfilename=None):

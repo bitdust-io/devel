@@ -51,8 +51,10 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 class Test(TestCase):
 
     def setUp(self):
+        from logs import lg
         from main import settings
         from crypt import key
+        lg.set_debug_level(30)
         settings.init()
         self.my_current_key = None
         if key.LoadMyKey():
@@ -76,5 +78,7 @@ class Test(TestCase):
         self.assertFalse(broken_identity.Valid())
 
     def tearDown(self):
+        import os
         from crypt import key
         key.LoadMyKey()
+        os.remove('/tmp/_some_priv_key')
