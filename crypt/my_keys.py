@@ -331,6 +331,7 @@ def validate_key(key_object):
     if not is_valid:
         if _Debug:
             lg.err('validate_key FAILED')
+            lg.out(_DebugLevel, 'pubkey=%r' % key_object.toPublicString())
             lg.out(_DebugLevel, 'signature=%r' % sample_signature)
             lg.out(_DebugLevel, 'hash_base=%r' % sample_hash_base)
             lg.out(_DebugLevel, 'data=%r' % sample_data)

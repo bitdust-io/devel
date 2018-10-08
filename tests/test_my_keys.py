@@ -17,21 +17,36 @@ ZgxOEzGC0/jPgtERAkEA1KlbxGPkz7ZlRZ8jdNd9VnYG/LQlXwwsZ7c8fsnWhies
 j1xY9wr6ou7N8kv4T8O5bnr5BNrvARPX/z4IdG4m+w==
 -----END RSA PRIVATE KEY-----"""
 
+
 class Test(TestCase):
 
     def test_sign_verify(self):
-        import os
-        import base64
         from logs import lg
         from crypt import my_keys
         lg.set_debug_level(30)
-        key_id = 'test_key_01'
+        key_id = 'some_key_abc'
         my_keys.erase_key(key_id, keys_folder='/tmp/')
-        # my_keys.generate_key(key_id, key_size=1024, keys_folder='/tmp/')
         my_keys.register_key(key_id, _some_private_key, keys_folder='/tmp/')
-        self.assertTrue(my_keys.validate_key(my_keys.key_obj(key_id)))
-        sample_data = b'12345678'  # base64.b64encode(os.urandom(100))
-        raw_sign = my_keys.sign(key_id, inp=sample_data)
-        is_valid = my_keys.verify(key_id, hashcode=sample_data, signature=raw_sign)
-        # my_keys.erase_key(key_id, keys_folder='/tmp/')
+        is_valid = my_keys.validate_key(my_keys.key_obj(key_id))
+        if not is_valid:
+            print(key_id)
+            print(my_keys.get_private_key_raw(key_id))
+        else:
+            my_keys.erase_key(key_id, keys_folder='/tmp/')
         self.assertTrue(is_valid)
+
+    def test_regression(self):
+        from logs import lg
+        from crypt import my_keys
+        lg.set_debug_level(30)
+        for i in range(100):
+            key_id = 'test_key_%d' % i
+            my_keys.erase_key(key_id, keys_folder='/tmp/')
+            my_keys.generate_key(key_id, key_size=1024, keys_folder='/tmp/')
+            is_valid = my_keys.validate_key(my_keys.key_obj(key_id))
+            if not is_valid:
+                print(key_id)
+                print(my_keys.get_private_key_raw(key_id))
+            else:
+                my_keys.erase_key(key_id, keys_folder='/tmp/')
+            self.assertTrue(is_valid)
