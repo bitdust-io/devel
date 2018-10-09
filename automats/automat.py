@@ -481,7 +481,7 @@ class Automat(object):
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).
         """
         global _StateChangedCallback
-        if _LogEvents and self.log_events and _Debug:
+        if _LogEvents and getattr(self, 'log_events') and _Debug:
             if self.log_events or not event_string.startswith('timer-'):
                 self.log(
                     max(self.debug_level, _DebugLevel),
