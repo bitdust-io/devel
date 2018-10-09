@@ -582,6 +582,6 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=F
             loadLocalIdentity()
             lg.out(4, '    LOCAL IDENTITY CORRECT: %r' % getLocalIdentity().isCorrect())
             lg.out(4, '    LOCAL IDENTITY VALID: %r' % getLocalIdentity().Valid())
-    lg.out(4, '    my identity HAS %sBEEN changed !!!' % (('' if changed else 'NOT ')))
+    lg.info('my identity HAS %sBEEN changed' % (('' if changed else 'NOT ')))
     lg.out(4, '\n' + strng.to_text(lid.serialize()) + '\n')
     return changed
