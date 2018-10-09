@@ -72,6 +72,7 @@ from lib import misc
 from lib import packetid
 from lib import nameurl
 from lib import utime
+from lib import strng
 
 from contacts import contactsdb
 
@@ -156,25 +157,25 @@ class Packet:
 
         Just to be able to generate a hash of the whole packet .
         """
-        sep = "-"
-        stufftosum = ""
+        sep = b"-"
+        stufftosum = b""
         try:
-            stufftosum += str(self.Command)
+            stufftosum += strng.to_bin(self.Command)
             stufftosum += sep
-            stufftosum += str(self.OwnerID)
+            stufftosum += strng.to_bin(self.OwnerID)
             stufftosum += sep
-            stufftosum += str(self.CreatorID)
+            stufftosum += strng.to_bin(self.CreatorID)
             stufftosum += sep
-            stufftosum += str(self.PacketID)
+            stufftosum += strng.to_bin(self.PacketID)
             stufftosum += sep
-            stufftosum += str(self.Date)
+            stufftosum += strng.to_bin(self.Date)
             stufftosum += sep
             stufftosum += self.Payload
             stufftosum += sep
-            stufftosum += str(self.RemoteID)
+            stufftosum += strng.to_bin(self.RemoteID)
             if self.KeyID:
                 stufftosum += sep
-                stufftosum += str(self.KeyID)
+                stufftosum += strng.to_bin(self.KeyID)
         except Exception as exc:
             lg.exc()
             raise exc

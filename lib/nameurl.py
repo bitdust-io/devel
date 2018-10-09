@@ -129,9 +129,10 @@ def UrlFilename(url):
     nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
     'http###id.bitdust.io#veselin.xml'
     """
-    if url is None:
+    if not url:
         return None
-    result = url.replace("://", "###")
+    result = strng.to_string(url)
+    result = result.replace("://", "###")
     result = result.replace("/", "#")
     result = re.sub('(\:)(\d+)', '(#\g<2>#)', result)
     result = result.lower()
@@ -152,7 +153,7 @@ def FilenameUrl(filename):
         return None
     src = re.sub('\(#(\d+)#\)', ':\g<1>', src)
     src = 'http://' + src[7:].replace('#', '/')
-    return str(src)
+    return strng.to_bin(src)
 
 
 def UrlFilenameHTML(url):
@@ -192,8 +193,9 @@ def GetName(url):
 
     nameurl.GetName('http://id.bitdust.io/kinggeorge.xml') 'kinggeorge'
     """
-    if url in [None, 'None', '', ]:
+    if url in [None, 'None', '', b'None', b'', ]:
         return ''
+    url = strng.to_text(url)
     if not url.endswith('.xml'):
         return url
     return url[url.rfind("/") + 1:-4]  # return url[url.rfind("/")+1:url.rfind(".")]
@@ -203,9 +205,11 @@ def GetFileName(url):
     """
     Almost the same, but keeps the file extension.
     """
-    if url in [None, 'None', ]:
+    if url in [None, 'None', '', b'None', b'', ]:
         return ''
+    url = strng.to_text(url)
     return url[url.rfind("/") + 1:]
+
 
 def GetHost(url):
     """
@@ -256,11 +260,11 @@ def DjangoUnQuote(s):
     """
     mychr = chr
     myatoi = int
-    list = s.split('_')
-    res = [list[0]]
+    lst = s.split('_')
+    res = [lst[0]]
     myappend = res.append
-    del list[0]
-    for item in list:
+    del lst[0]
+    for item in lst:
         if item[1:2]:
             try:
                 myappend(mychr(myatoi(item[:2], 16)) + item[2:])
@@ -277,24 +281,6 @@ def main():
     """
     I used this place for tests.
     """
-#    url = 'http://id.bitdust.io:565/sdfsdfsdf/veselin2.xml'
-##    url = 'ssh://34.67.22.5: 5654 /gfgfg.sdfsdf/sdfsd'
-##    url = 'q2q://d5wJMQRBYD72V6Zb5aZ1@work.offshore.ai'
-# print UrlParse(url)
-#    print url
-#    fn =  UrlFilename(url)
-#    print fn
-#    ur = FilenameUrl(fn)
-#    print ur
-# print filenameurl
-# print FilenameUrl(filenameurl)
-##    proto, machine, port, name = UrlParse(url)
-##    url2 = UrlMake(proto, machine, 1234, name)
-# print url2
-##    filenameurl2 = UrlFilename(url2)
-# print filenameurl2
-# print FilenameUrl(filenameurl2)
-# print UrlParse('q2q://d5wJMQRBYD72V6Zb5aZ1@work.offshore.ai')
     print(GetName(str(None)))
 
 if __name__ == '__main__':
