@@ -177,9 +177,9 @@ def info(message):
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
-        output_string = '\033[6;37;42mINFO %s\033[0m in %s.%s()' % (message, modul, caller, )
+        output_string = ' \033[6;37;42mINFO %s \033[0m in %s.%s()' % (message, modul, caller, )
     else:
-        output_string = 'INFO %s in %s.%s()' % (message, modul, caller, )
+        output_string = ' INFO %s in %s.%s()' % (message, modul, caller, )
     out(0, output_string)
     return message
 

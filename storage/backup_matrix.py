@@ -79,6 +79,7 @@ from system import bpio
 
 from lib import packetid
 from lib import misc
+from lib import strng
 
 from main import settings
 
@@ -297,7 +298,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     newfiles = 0
     remote_files_changed = False
     current_key_alias = 'master'
-    inpt = BytesIO(listFileText)
+    inpt = BytesIO(strng.to_bin(listFileText))
     while True:
         line = inpt.readline()
         if line == '':
