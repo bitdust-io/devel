@@ -170,7 +170,7 @@ class Packet:
             stufftosum += sep
             stufftosum += strng.to_bin(self.Date)
             stufftosum += sep
-            stufftosum += self.Payload
+            stufftosum += strng.to_bin(self.Payload)
             stufftosum += sep
             stufftosum += strng.to_bin(self.RemoteID)
             if self.KeyID:
