@@ -1,7 +1,7 @@
 FROM python:2.7.15
 
 COPY . bitdust
-COPY ./tests/e2e/Dockerfiles/Customer_1/file.txt /volume/file_customer_1.txt
+COPY ./tests/e2e/Dockerfiles/Customer_1/file.txt /customer_1/file_customer_1.txt
 
 WORKDIR bitdust
 RUN python bitdust.py install
