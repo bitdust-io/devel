@@ -669,6 +669,7 @@ class ProxyReceiver(automat.Automat):
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
             d = propagate.PingContact(known_router, timeout=5)
             d.addCallback(lambda resp_tuple: self.automat('found-one-node', known_router))
+            d.addErrback(lambda err: self.automat('nodes-not-found'))
             # d.addErrback(lg.errback)
             # self.automat('found-one-node', known_router)
             return
