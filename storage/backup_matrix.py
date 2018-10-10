@@ -300,7 +300,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None):
     current_key_alias = 'master'
     inpt = BytesIO(strng.to_bin(listFileText))
     while True:
-        line = inpt.readline()
+        line = strng.to_text(inpt.readline())
         if line == '':
             break
         typ = line[0]

@@ -117,10 +117,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
             import time
             _t = time.time()
         try:
-            if datagram[0] == '\x00' and datagram[25] == '\x00':
-                totalPackets = (ord(datagram[1]) << 8) | ord(datagram[2])
+            if datagram[0:1] == b'\x00' and datagram[25:26] == b'\x00':
+                totalPackets = (ord(datagram[1:2]) << 8) | ord(datagram[2:3])
                 msgID = datagram[5:25]
-                seqNumber = (ord(datagram[3]) << 8) | ord(datagram[4])
+                seqNumber = (ord(datagram[3:4]) << 8) | ord(datagram[4:5])
                 if msgID not in self._partialMessages:
                     self._partialMessages[msgID] = {}
                 self._partialMessages[msgID][seqNumber] = datagram[26:]
