@@ -451,7 +451,7 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '<<<Relay-IN-OUT %s %s:%s' % (
                 str(newpacket), info.proto, info.host,))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
-                receiver_proto, receiver_host, len(src), pout))
+                receiver_proto, receiver_host, len(routed_packet.Payload), pout))
         del block
         del newpacket
         del routed_packet
