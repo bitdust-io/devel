@@ -20,7 +20,7 @@ def get_hash(path):
 
 
 def test_customer_1_upload_download_file_with_master():
-    shared_volume = '/volume'
+    shared_volume = '/customer_1'
     origin_filename = 'file_customer_1.txt'
 
     directory_local_file = '%s/%s' % (shared_volume, origin_filename)
@@ -30,7 +30,7 @@ def test_customer_1_upload_download_file_with_master():
 
     remote_path = '%s:%s' % (key_id, virtual_file)
 
-    download_volume = '/download_volume'
+    download_volume = '/customer_1'
 
     directory_dowloaded_file = '%s/%s' % (download_volume, virtual_file)
 

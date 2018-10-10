@@ -9,7 +9,7 @@ test_parallel: test_1 test_2
 clean_all: clean_1 clean_2
 
 run:
-	docker-compose -p ${NAMESPACE} up --build --force-recreate -d
+	docker-compose -p ${NAMESPACE} up --build -d
 
 clean: 
 	docker-compose -p ${NAMESPACE} down -v
