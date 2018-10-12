@@ -63,6 +63,7 @@ def test_customer_1_upload_download_file_with_master():
         else:
             print(response.json())
             assert False, response.json()
+
     else:
         print('download was not successful')
         assert False, response.json()
