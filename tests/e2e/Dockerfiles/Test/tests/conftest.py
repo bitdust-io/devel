@@ -18,6 +18,8 @@ def timeout_before_tests_to_activate_bitdust():
         'identity-server',
     ]  #: keep up to date with docker-compose links
 
+    print('\nRunning health checks\n')
+
     async def server_is_health(server):
         url = f'http://{server}:8180/process/health/v1'
         print('GET: ', url)
@@ -31,9 +33,11 @@ def timeout_before_tests_to_activate_bitdust():
     ]
     loop.run_until_complete(asyncio.wait(tasks))
 
-    print('all done!')
+    print('\nall done!\n')
 
     yield
+    
+    print('\ntests finished\n')
 
 
 @pytest.fixture(scope='session', autouse=True)

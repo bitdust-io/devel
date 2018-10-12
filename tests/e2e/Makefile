@@ -41,7 +41,7 @@ _test:
 	docker-compose -p ${NAMESPACE} exec -T test sh -c "${COMMAND}"
 
 _clean:
-	docker-compose -p ${NAMESPACE} down -v
+	docker-compose -p ${NAMESPACE} down -v -t 1
 
 _run:
 	docker-compose -p ${NAMESPACE} up -d
