@@ -113,6 +113,8 @@ services:
       - "customer_2"
       - "proxy_server_1"
       - "proxy_server_2"
+      - "stun_1"
+      - "identity-server"
     volumes:
       - customer_1:/customer_1
       - customer_2:/customer_2

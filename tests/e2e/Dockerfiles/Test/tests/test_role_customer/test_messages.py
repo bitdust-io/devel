@@ -4,7 +4,7 @@ import requests
 
 
 def test_customer_1_send_message_to_customer_2():
-    random_message = base64.b32encode(os.urandom(20))
+    random_message = base64.b32encode(os.urandom(20)).encode()
     response = requests.post('http://customer_1:8180/message/send/v1', json={
         'id': 'messages$customer_2@is_8084',
         'data': {
