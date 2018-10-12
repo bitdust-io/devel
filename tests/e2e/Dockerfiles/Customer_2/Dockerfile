@@ -1,12 +1,6 @@
-FROM python:2.7.15
+FROM bitdust/base
 
-COPY . bitdust
 COPY ./tests/e2e/Dockerfiles/Customer_2/file.txt /customer_2/file_customer_2.txt
-
-WORKDIR bitdust
-RUN python bitdust.py install
-
-ENV PATH="/root/.bitdust:${PATH}"
 
 #: it allow us to use api interface externally
 ENV BITDUST_API_PASS_EXTERNAL_CONNECTIONS=1

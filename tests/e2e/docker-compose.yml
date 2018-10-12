@@ -9,6 +9,12 @@ x-common-links: &common-links-all
     - "dht_seed_2"
 
 services:
+  base:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/base/Dockerfile
+    image: bitdust/base
+
   identity-server:
     build:
       <<: *common
