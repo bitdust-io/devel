@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # constants.py
 #
-#
 # Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
 # See AUTHORS for all authors and contact information. 
 # 
