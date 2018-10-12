@@ -29,20 +29,19 @@
 
 from __future__ import absolute_import
 from io import open
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
 import os
 import time
-import cStringIO
 import struct
 import random
-import six
 
 from twisted.internet import reactor
 from twisted.protocols import basic
@@ -56,6 +55,7 @@ from system import tmpfile
 from main import settings
 
 from lib import misc
+from lib import strng
 
 #------------------------------------------------------------------------------
 
@@ -210,7 +210,7 @@ class TCPFileStream():
         """
         """
         from transport.tcp import tcp_connection
-        inp = cStringIO.StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
             file_size = struct.unpack('i', inp.read(4))[0]
@@ -235,7 +235,7 @@ class TCPFileStream():
             self.inbox_file_done(file_id, 'finished')
 
     def ok_received(self, payload):
-        inp = cStringIO.StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
@@ -248,7 +248,7 @@ class TCPFileStream():
             self.outbox_file_done(file_id, 'finished')
 
     def abort_received(self, payload):
-        inp = cStringIO.StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
@@ -553,10 +553,9 @@ class FileSender(basic.FileSender):
         self.parent = None
 
     def transform_data(self, data):
-        # if isinstance(data, six.binary_type):
-        #     data = data.decode('utf-8')
+        data = strng.to_bin(data)
         datalength = len(data)
-        datagram = ''
+        datagram = b''
         datagram += struct.pack('i', self.parent.file_id)
         datagram += struct.pack('i', self.parent.size)
         datagram += data
@@ -565,7 +564,7 @@ class FileSender(basic.FileSender):
         return datagram
 
     def resumeProducing(self):
-        chunk = ''
+        chunk = b''
         if self.file:
             #             try:
             chunk = self.file.read(self.CHUNK_SIZE)

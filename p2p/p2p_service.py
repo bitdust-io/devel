@@ -73,6 +73,7 @@ from p2p import commands
 
 from lib import packetid
 from lib import nameurl
+from lib import strng
 
 from crypt import signed
 

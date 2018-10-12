@@ -1,24 +1,11 @@
 #!/usr/bin/env python
 # encoding.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
-#
-# This file (encoding.py) is part of BitDust Software.
-#
-# BitDust is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# BitDust Software is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Please contact us if you have any questions at bitdust.io@gmail.com
+# Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
+# See AUTHORS for all authors and contact information. 
+# 
+# License: GNU Lesser General Public License, version 3 or later; see COPYING
+#          included in this archive for details.
 #
 # This library is free software, distributed under the terms of
 # the GNU Lesser General Public License Version 3, or any later version.
@@ -29,7 +16,19 @@
 
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 import six
+import codecs
+
+
+def encode_hex(value):
+    return codecs.decode(codecs.encode(value, 'hex'), 'utf8')
+
+
+def decode_hex(value):
+#     if not isinstance(value, six.text_type):
+#         value = value.decode()
+    return codecs.decode(value, 'hex')
 
 
 class Encoding(object):
@@ -88,30 +87,30 @@ class Bencode(Encoding):
         """
         try:
             if type(data) in six.integer_types:
-                return 'i%de' % data
+                return b'i%de' % data
             elif isinstance(data, six.text_type):
-                return '%d:%s' % (len(data.encode('utf-8')), data.encode('utf-8'))
+                return b'%d:%s' % (len(data.encode('utf-8')), data.encode('utf-8'))
             elif isinstance(data, six.binary_type):
-                return '%d:%s' % (len(data), data)
+                return b'%d:%s' % (len(data), data)
             elif type(data) in (list, tuple):
-                encodedListItems = ''
+                encodedListItems = b''
                 for item in data:
                     encodedListItems += self.encode(item)
-                return 'l%se' % encodedListItems
+                return b'l%se' % encodedListItems
             elif isinstance(data, dict):
-                encodedDictItems = ''
+                encodedDictItems = b''
                 keys = sorted(data.keys())
                 for key in keys:
                     e_key = self.encode(key)
                     e_data = self.encode(data[key])
                     encodedDictItems += e_key
                     encodedDictItems += e_data
-                return 'd%se' % encodedDictItems
+                return b'd%se' % encodedDictItems
             elif isinstance(data, float):
                 # This (float data type) is a non-standard extension to the original Bencode algorithm
-                return 'f%fe' % data
+                return b'f%fe' % data
             elif data is None:
-                return 'i0e'  # return 0
+                return b'i0e'  # return 0
             else:
                 raise TypeError("Cannot bencode '%s' object" % type(data))
         except:
@@ -140,32 +139,36 @@ class Bencode(Encoding):
 
         Do not call this; use C{decode()} instead
         """
-        if data[startIndex] == 'i':
-            endPos = data[startIndex:].find('e') + startIndex
-            return (int(data[startIndex + 1:endPos]), endPos + 1)
-        elif data[startIndex] == 'l':
-            startIndex += 1
-            decodedList = []
-            while data[startIndex] != 'e':
-                listData, startIndex = Bencode._decodeRecursive(data, startIndex)
-                decodedList.append(listData)
-            return (decodedList, startIndex + 1)
-        elif data[startIndex] == 'd':
-            startIndex += 1
-            decodedDict = {}
-            while data[startIndex] != 'e':
-                key, startIndex = Bencode._decodeRecursive(data, startIndex)
-                value, startIndex = Bencode._decodeRecursive(data, startIndex)
-                decodedDict[key] = value
-            return (decodedDict, startIndex)
-        elif data[startIndex] == 'f':
-            # This (float data type) is a non-standard extension to the original Bencode algorithm
-            endPos = data[startIndex:].find('e') + startIndex
-            return (float(data[startIndex + 1:endPos]), endPos + 1)
-        else:
-            splitPos = data[startIndex:].find(':') + startIndex
-            length = int(data[startIndex:splitPos])
-            startIndex = splitPos + 1
-            endPos = startIndex + length
-            byts = data[startIndex:endPos]
-            return (byts, endPos)
+        try:
+            if data[startIndex:startIndex+1] == b'i':
+                endPos = data[startIndex:].find(b'e') + startIndex
+                return (int(data[startIndex + 1:endPos]), endPos + 1)
+            elif data[startIndex:startIndex+1] == b'l':
+                startIndex += 1
+                decodedList = []
+                while data[startIndex:startIndex+1] != b'e':
+                    listData, startIndex = Bencode._decodeRecursive(data, startIndex)
+                    decodedList.append(listData)
+                return (decodedList, startIndex + 1)
+            elif data[startIndex:startIndex+1] == b'd':
+                startIndex += 1
+                decodedDict = {}
+                while data[startIndex:startIndex+1] != b'e':
+                    key, startIndex = Bencode._decodeRecursive(data, startIndex)
+                    value, startIndex = Bencode._decodeRecursive(data, startIndex)
+                    decodedDict[key] = value
+                return (decodedDict, startIndex)
+            elif data[startIndex:startIndex+1] == b'f':
+                # This (float data type) is a non-standard extension to the original Bencode algorithm
+                endPos = data[startIndex:].find(b'e') + startIndex
+                return (float(data[startIndex + 1:endPos]), endPos + 1)
+            else:
+                splitPos = data[startIndex:].find(b':') + startIndex
+                length = int(data[startIndex:splitPos])
+                startIndex = splitPos + 1
+                endPos = startIndex + length
+                byts = data[startIndex:endPos]
+                return (byts, endPos)
+        except:
+            import traceback
+            traceback.print_exc()

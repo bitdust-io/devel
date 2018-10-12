@@ -145,6 +145,9 @@ def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
 
 #-------------------------------------------------------------------------------
 
+def cmp(a, b):
+    return (a > b) - (a < b)
+
 
 def NewBackupID(time_st=None):
     """

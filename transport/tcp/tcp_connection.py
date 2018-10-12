@@ -43,7 +43,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -59,22 +59,24 @@ from logs import lg
 from automats import automat
 
 from lib import strng
+from lib import net_misc
 
 #------------------------------------------------------------------------------
 
 MAX_SIMULTANEOUS_CONNECTIONS = 250
 
-CMD_HELLO = 'h'
-CMD_WAZAP = 'w'
-CMD_DATA = 'd'
-CMD_OK = 'o'
-CMD_ABORT = 'a'
+CMD_HELLO = b'h'
+CMD_WAZAP = b'w'
+CMD_DATA = b'd'
+CMD_OK = b'o'
+CMD_ABORT = b'a'
+CMD_LIST = [CMD_HELLO, CMD_WAZAP, CMD_DATA, CMD_OK, CMD_ABORT, ]
 
 #------------------------------------------------------------------------------
 
 
 class TCPConnection(automat.Automat, basic.Int32StringReceiver):
-    SoftwareVersion = '1'
+    SoftwareVersion = b'1'
 
     timers = {
         'timer-10sec': (10.0, ['CLIENT?', 'SERVER?']),
@@ -92,9 +94,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def connectionMade(self):
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
+            lg.out(_DebugLevel, 'tcp_connection.connectionMade %s' % net_misc.pack_address(self.getTransportAddress()))
         address = self.getAddress()
-        name = 'tcp_connection[%s:%d]' % (address[0], address[1])
+        name = 'tcp_connection[%s:%d]' % (strng.to_text(address[0]), address[1])
         automat.Automat.__init__(
             self, name, 'AT_STARTUP',
             debug_level=_DebugLevel, log_events=_Debug, publish_events=False)
@@ -103,7 +105,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def connectionLost(self, reason):
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
+            lg.out(_DebugLevel, 'tcp_connection.connectionLost with %s' % net_misc.pack_address(self.getTransportAddress()))
         self.automat('connection-lost')
 
     def init(self):
@@ -182,8 +184,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         try:
             command, payload = arg
-            peeraddress, peeridurl = payload.split(' ')
-            peerip, peerport = peeraddress.split(':')
+            peeraddress, peeridurl = payload.split(b' ')
+            peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
             peeraddress = (peerip, peerport)
         except:
@@ -246,8 +248,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         from transport.tcp import tcp_node
         try:
             command, payload = arg
-            peeraddress, peeridurl = payload.split(' ')
-            peerip, peerport = peeraddress.split(':')
+            peeraddress, peeridurl = payload.split(b' ')
+            peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
             peeraddress = (peerip, peerport)
         except:
@@ -302,9 +304,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         from transport.tcp import tcp_node
-        host = tcp_node.my_host() or '127.0.0.1:7771'
-        idurl = tcp_node.my_idurl() or 'None'
-        payload = host + ' ' + idurl
+        host = strng.to_bin(tcp_node.my_host() or '127.0.0.1:7771')
+        idurl = strng.to_bin(tcp_node.my_idurl() or 'None')
+        payload = host + b' ' + idurl
         self.sendData(CMD_HELLO, payload)
 
     def doSendWazap(self, arg):
@@ -312,7 +314,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         from transport.tcp import tcp_node
-        payload = tcp_node.my_idurl() or 'None'
+        payload = strng.to_bin(tcp_node.my_idurl() or 'None')
         self.sendData(CMD_WAZAP, payload)
 
     def doStartPendingFiles(self, arg):
@@ -380,20 +382,20 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def getTransportAddress(self):
         peer = self.transport.getPeer()
-        return (peer.host, int(peer.port))
+        return net_misc.normalize_address((peer.host, int(peer.port), ))
 
     def getConnectionAddress(self):
-        return self.factory.connection_address
+        return net_misc.normalize_address(self.factory.connection_address)
 
     def getAddress(self):
         addr = self.getConnectionAddress()
         if not addr:
             addr = self.getTransportAddress()
-        return addr
+        return net_misc.normalize_address(addr)
 
     def sendData(self, command, payload):
         try:
-            data = strng.to_bin(self.SoftwareVersion) + strng.to_bin(command.lower())[0] + strng.to_bin(payload)
+            data = self.SoftwareVersion + strng.to_bin(command.lower()[0:1]) + strng.to_bin(payload)
             self.sendString(data)
         except:
             lg.exc()
@@ -403,9 +405,13 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def stringReceived(self, data):
         try:
-            version = data[0]
-            command = data[1]
+            version = data[0:1]
+            command = data[1:2]
             payload = data[2:]
+            if version != self.SoftwareVersion:
+                raise Exception('different software version')
+            if command not in CMD_LIST:
+                raise Exception('unknown command received')
         except:
             lg.warn('invalid string received in tcp connection')
             try:
@@ -416,7 +422,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 except:
                     lg.exc()
             return
-        # print '>>>>>> [%s] %d bytes' % (command, len(payload))
         self.automat('data-received', (command, payload))
 
     def append_outbox_file(self, filename, description='', result_defer=None, keep_alive=True):

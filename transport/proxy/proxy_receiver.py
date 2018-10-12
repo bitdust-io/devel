@@ -58,6 +58,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
@@ -69,7 +70,6 @@ _DebugLevel = 10
 import json
 import time
 import random
-import cStringIO
 
 #------------------------------------------------------------------------------
 
@@ -436,7 +436,7 @@ class ProxyReceiver(automat.Automat):
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
+            inpt = BytesIO(padded_data[:int(block.Length)])
             data = inpt.read()
         except:
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
@@ -669,7 +669,8 @@ class ProxyReceiver(automat.Automat):
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
             d = propagate.PingContact(known_router, timeout=5)
             d.addCallback(lambda resp_tuple: self.automat('found-one-node', known_router))
-            d.addErrback(lg.errback)
+            d.addErrback(lambda err: self.automat('nodes-not-found'))
+            # d.addErrback(lg.errback)
             # self.automat('found-one-node', known_router)
             return
         if _Debug:
@@ -697,7 +698,7 @@ class ProxyReceiver(automat.Automat):
 #             lg.out(_DebugLevel, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
 #         if len(nodes) > 0:
 #             node = random.choice(nodes)
-#             d = node.request('idurl')
+#             d = node.request(b'idurl')
 #             d.addCallback(self._got_remote_idurl)
 #             d.addErrback(lambda x: self.automat('nodes-not-found'))
 #         else:

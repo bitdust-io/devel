@@ -522,5 +522,5 @@ def PingContact(idurl, timeout=30):
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout=timeout)
     idcache_defer.addCallback(_identity_cached, idurl)
     idcache_defer.addErrback(_identity_cache_failed, idurl)
-    ping_result.addErrback(lg.errback)
+    # ping_result.addErrback(lg.errback)
     return ping_result

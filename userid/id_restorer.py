@@ -267,6 +267,7 @@ class IdRestorer(automat.Automat):
 
         my_id.setLocalIdentity(local_ident)
         my_id.saveLocalIdentity()
+        # my_id.rebuildLocalIdentity(save_identity=True)
 
         bpio.WriteTextFile(settings.UserNameFilename(), my_id.getIDName())
 

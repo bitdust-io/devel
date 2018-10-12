@@ -341,8 +341,8 @@ class UDPNode(automat.Automat):
         if incoming_str is None:
             return
         try:
-            incoming_user_id, incoming_user_address, time_placed = incoming_str.split(' ')
-            incoming_user_address = incoming_user_address.split(':')
+            incoming_user_id, incoming_user_address, _ = incoming_str.split(b' ')
+            incoming_user_address = incoming_user_address.split(b':')
             incoming_user_address[1] = int(incoming_user_address[1])
             incoming_user_address = tuple(incoming_user_address)
         except:

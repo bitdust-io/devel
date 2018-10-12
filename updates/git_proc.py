@@ -276,8 +276,8 @@ class GitProcessProtocol(protocol.ProcessProtocol):
 
     def __init__(self, callbacks=[]):
         self.callbacks = callbacks
-        self.out = ''
-        self.err = ''
+        self.out = b''
+        self.err = b''
 
     def errReceived(self, inp):
         self.err += inp

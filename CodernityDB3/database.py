@@ -184,8 +184,8 @@ class Database(object):
                                        index.__class__.__name__,
                                        getattr(self, 'custom_header', ''),
                                        getattr(index, 'custom_header', ''),
-                                       classes_code))
-            f.write(code)
+                                       classes_code).encode())
+            f.write(code.encode())
         return True
 
     def _read_index_single(self, p, ind, ind_kwargs={}):

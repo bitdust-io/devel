@@ -39,6 +39,9 @@ def default_nodes():
     List of DHT nodes currently maintained : (host, UDP port number)
     """
     return [
+        # local node (for testing)
+        ('localhost', 14441, ),
+
         # by Veselin Penev:
         ('datahaven.net', 14441, ),
         # ('identity.datahaven.net', 14441),

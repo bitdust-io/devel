@@ -160,7 +160,7 @@ class StunServer(automat.Automat):
             externalPort = int(bpio.ReadTextFile(settings.ExternalUDPPortFilename()))
         except:
             externalPort = self.listen_port
-        dht_service.set_node_data('stun_port', externalPort)
+        dht_service.set_node_data(b'stun_port', externalPort)
 
     def doStop(self, arg):
         """
@@ -198,12 +198,18 @@ def main():
     lg.set_debug_level(24)
     bpio.init()
     settings.init()
-    dht_service.init(settings.getDHTPort())
+    dht_port = settings.getDHTPort()
+    if len(sys.argv) > 1:
+        dht_port = int(sys.argv[1])
+    udp_port = settings.getUDPPort()
+    if len(sys.argv) > 2:
+        udp_port = int(sys.argv[2])
+    dht_service.init(dht_port)
     d = dht_service.connect()
-    udp.listen(settings.getUDPPort())
+    udp.listen(udp_port)
 
     def _go(live_nodes):
-        A('start', settings.getUDPPort())
+        A('start', udp_port)
 
     d.addCallback(_go)
 

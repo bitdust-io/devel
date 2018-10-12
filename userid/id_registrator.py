@@ -429,7 +429,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        login = strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename()))
+        login = bpio.ReadTextFile(settings.UserNameFilename())
 
         def _cb(xmlsrc, idurl, host):
             if not xmlsrc:
@@ -481,7 +481,7 @@ class IdRegistrator(automat.Automat):
         """
         lg.out(4, 'id_registrator.doStunExternalIP')
         if len(self.free_idurls) == 1:
-            if self.free_idurls[0].count('localhost:') or self.free_idurls[0].count('127.0.0.1:'):
+            if self.free_idurls[0].count(b'localhost:') or self.free_idurls[0].count(b'127.0.0.1:'):
                 # if you wish to create a local identity you do not need to stun external IP at all
                 self.automat('stun-success', '127.0.0.1')
 
@@ -587,12 +587,18 @@ class IdRegistrator(automat.Automat):
         Reads some extra info from config files.
         """
         login = strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename()))
-        externalIP = strng.to_bin(misc.readExternalIP()) or '127.0.0.1'
+        externalIP = strng.to_bin(misc.readExternalIP()) or b'127.0.0.1'
+        if self.free_idurls[0].count(b'127.0.0.1'):
+            externalIP = b'127.0.0.1'
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
         key.InitMyKey()
+        if not key.isMyKeyReady():
+            key.GenerateNewKey()
         lg.out(4, '    my key is ready')
         ident = my_id.buildDefaultIdentity(
             name=login, ip=externalIP, idurls=self.free_idurls)
+        # my_id.rebuildLocalIdentity(
+        #     identity_object=ident, revision_up=True, save_identity=False)
         # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
         my_identity_xmlsrc = ident.serialize()
         newfilename = settings.LocalIdentityFilename() + '.new'
@@ -618,7 +624,7 @@ class IdRegistrator(automat.Automat):
         sendfilename = settings.LocalIdentityFilename() + '.new'
         dlist = []
         for idurl in self.new_identity.sources:
-            self.free_idurls.remove(idurl)
+            self.free_idurls.remove(strng.to_bin(idurl))
             _, host, _, _ = nameurl.UrlParse(idurl)
             _, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
