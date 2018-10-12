@@ -1,14 +1,22 @@
+env:
+  global:
+    - DOCKER_COMPOSE_VERSION=1.18.0
+
 services: docker
 
 before_install:
+  - set -e
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
   - docker -v
+  - make -v
 
 script:
   - make test_raid
-  - python -m unittest  discover -p "test_raid.py" -v
-  - make -C tests/e2e/ -j2 all
-  - make -C tests/e2e/ test_1
-  - make -C tests/e2e/ test_2
+  - make -C tests/e2e/ -j2 test
 
 after_failure:
   - docker-compose -p "namespace1" -f tests/e2e/docker-compose.yml logs
