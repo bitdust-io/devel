@@ -33,11 +33,11 @@ def timeout_before_tests_to_activate_bitdust():
     ]
     loop.run_until_complete(asyncio.wait(tasks))
 
-    print('\nall done!\n')
+    print('\nall containers are ready\n')
 
     yield
     
-    print('\ntests finished\n')
+    print('\ntest suite finished\n')
 
 
 @pytest.fixture(scope='session', autouse=True)
