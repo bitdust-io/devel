@@ -2935,10 +2935,12 @@ def message_receive(consumer_id):
          'result': [{
             'type': 'private_message',
             'dir': 'incoming',
-            'id': '123456788',
-            'sender': 'abc$alice@first-host.com',
-            'recipient': 'abc$bob@second-host.net',
-            'message': 'Hello World!',
+            'message_id': '123456788',
+            'sender': 'messages$alice@first-host.com',
+            'recipient': 'messages$bob@second-host.net',
+            'data': {
+                'message': 'Hello BitDust!'
+            },
             'time': 123456789
         }]}
     """
