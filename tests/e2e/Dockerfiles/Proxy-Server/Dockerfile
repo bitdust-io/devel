@@ -1,11 +1,4 @@
-FROM python:2.7.15
-
-COPY . bitdust
-
-WORKDIR bitdust
-RUN python bitdust.py install
-
-ENV PATH="/root/.bitdust:${PATH}"
+FROM bitdust/base
 
 ENV BITDUST_API_PASS_EXTERNAL_CONNECTIONS=1
 ENV BITDUST_GIT_SYNC_SKIP=1

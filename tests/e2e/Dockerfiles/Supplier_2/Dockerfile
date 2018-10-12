@@ -1,11 +1,4 @@
-FROM python:2.7.15
-
-COPY . bitdust
-
-WORKDIR bitdust
-RUN python bitdust.py install
-
-ENV PATH="/root/.bitdust:${PATH}"
+FROM bitdust/base
 
 #: it allow us to use api interface externally
 ENV BITDUST_API_PASS_EXTERNAL_CONNECTIONS=1

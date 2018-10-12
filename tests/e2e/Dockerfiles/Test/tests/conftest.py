@@ -1,12 +1,36 @@
 import pytest
 import requests
 import time
+import asyncio
+import aiohttp
 
 
 @pytest.yield_fixture(scope='session', autouse=True)
 def timeout_before_tests_to_activate_bitdust():
-    print('timeout_before_tests_to_activate_bitdust before')
-    time.sleep(20)
+    links = [
+        'supplier_1',
+        'supplier_2',
+        'customer_1',
+        'customer_2',
+        'proxy_server_1',
+        'proxy_server_2'
+    ]  #: keep up to date with docker-compose links
+
+    async def server_is_health(server):
+        url = f'http://{server}:8180/process/health/v1'
+        print('GET: ', url)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                print(f'Done: {response.url} ({response.status})')
+
+    loop = asyncio.get_event_loop()
+    tasks = [
+        asyncio.ensure_future(server_is_health(l)) for l in links
+    ]
+    loop.run_until_complete(asyncio.wait(tasks))
+
+    print('all done!')
+
     yield
     print('timeout_before_tests_to_activate_bitdust after')
 
