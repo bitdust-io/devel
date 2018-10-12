@@ -1,35 +1,47 @@
-.PHONY: all
+BUILD=.build
+RUN_TEST_1=.run_test_1
+RUN_TEST_2=.run_test_2
 
-all: run_1 run_2
+.PHONY: test
 
-run_all: all
+clean: clean_1 clean_2
 
-test_parallel: test_1 test_2
+clean_build:
+	@rm -f $(BUILD)
 
-clean_all: clean_1 clean_2
+test: clean_build clean $(BUILD) $(RUN_TEST_1) $(RUN_TEST_2) test_1 test_2
 
-run:
-	docker-compose -p ${NAMESPACE} up --build -d
+$(BUILD):
+	docker-compose build
+	@touch $@
 
-clean: 
-	docker-compose -p ${NAMESPACE} down -v
+$(RUN_TEST_1): $(BUILD)
+	$(MAKE) NAMESPACE="namespace1" _run
+	@touch $@
 
-test:
-	docker-compose -p ${NAMESPACE} exec test sh -c "${COMMAND}"
+$(RUN_TEST_2): $(BUILD)
+	$(MAKE) NAMESPACE="namespace2" _run
+	@touch $@
 
-run_1:
-	$(MAKE) NAMESPACE="namespace1" run
-run_2:
-	$(MAKE) NAMESPACE="namespace2" run
-
-test_1:
-	$(MAKE) NAMESPACE="namespace1" COMMAND="pytest tests/test_ss/ -v -s" test
+test_1: $(RUN_TEST_1)
+	$(MAKE) NAMESPACE="namespace1" COMMAND="pytest tests/test_ss/ -v -s" _test
 	
-test_2:
-	$(MAKE) NAMESPACE="namespace2" COMMAND="pytest tests/test_upload_file/ -v -s" test
+test_2: $(RUN_TEST_2)
+	$(MAKE) NAMESPACE="namespace2" COMMAND="pytest tests/test_upload_file/ -v -s" _test
 
 clean_1:
-	$(MAKE) NAMESPACE="namespace1" clean
+	$(MAKE) NAMESPACE="namespace1" _clean
+	@rm -f $(RUN_TEST_1)
 
 clean_2:
-	$(MAKE) NAMESPACE="namespace2" clean
+	$(MAKE) NAMESPACE="namespace2" _clean
+	@rm -f $(RUN_TEST_2)
+
+_test:
+	docker-compose -p ${NAMESPACE} exec -T test sh -c "${COMMAND}"
+
+_clean:
+	docker-compose -p ${NAMESPACE} down -v
+
+_run:
+	docker-compose -p ${NAMESPACE} up -d
