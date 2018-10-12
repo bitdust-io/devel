@@ -24,10 +24,10 @@ $(RUN_TEST_2): $(BUILD)
 	@touch $@
 
 test_1: $(RUN_TEST_1)
-	$(MAKE) NAMESPACE="namespace1" COMMAND="pytest tests/test_role_proxy_router/ -v -s" _test
+	$(MAKE) NAMESPACE="namespace1" COMMAND="python -u -m pytest tests/test_role_proxy_router/ -v -s" _test
 
 test_2: $(RUN_TEST_2)
-	$(MAKE) NAMESPACE="namespace2" COMMAND="pytest tests/test_role_customer/ -v -s" _test
+	$(MAKE) NAMESPACE="namespace2" COMMAND="python -u -m pytest tests/test_role_customer/ -v -s" _test
 
 clean_1:
 	$(MAKE) NAMESPACE="namespace1" _clean
