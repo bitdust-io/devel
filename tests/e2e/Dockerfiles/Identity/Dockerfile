@@ -1,11 +1,4 @@
-FROM python:2.7.15
-
-COPY . bitdust
-
-WORKDIR bitdust
-RUN python bitdust.py install
-
-ENV PATH="/root/.bitdust:${PATH}"
+FROM bitdust/base
 
 RUN bitdust set services/customer/enabled false
 RUN bitdust set services/supplier/enabled false
