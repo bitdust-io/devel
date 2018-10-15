@@ -41,7 +41,6 @@ _Debug = True
 #------------------------------------------------------------------------------
 
 import six
-import os
 import sys
 
 try:
@@ -61,6 +60,7 @@ from main import settings
 
 from lib import misc
 from lib import strng
+from lib import net_misc
 
 from transport.http import http_node
 
@@ -226,7 +226,7 @@ def interface_receiving_started(host, new_options={}):
     """
     """
     if proxy():
-        return proxy().callRemote('receiving_started', 'http', host, new_options)
+        return proxy().callRemote('receiving_started', 'http', net_misc.pack_address(host), new_options)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))
 
@@ -253,7 +253,8 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
     """
     """
     if proxy():
-        return proxy().callRemote('register_file_sending', 'http', '%s:%d' % host, receiver_idurl, filename, size, description)
+        return proxy().callRemote(
+            'register_file_sending', 'http', net_misc.pack_address(host), receiver_idurl, filename, size, description)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))
 
@@ -262,7 +263,8 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     """
     """
     if proxy():
-        return proxy().callRemote('register_file_receiving', 'http', '%s:%d' % host, sender_idurl, filename, size)
+        return proxy().callRemote(
+            'register_file_receiving', 'http', net_misc.pack_address(host), sender_idurl, filename, size)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))
 
@@ -289,6 +291,7 @@ def interface_cancelled_file_sending(host, filename, size=0, description=None, e
     """
     """
     if proxy():
-        return proxy().callRemote('cancelled_file_sending', 'http', '%s:%d' % host, filename, size, description, error_message)
+        return proxy().callRemote(
+            'cancelled_file_sending', 'http', net_misc.pack_address(host), filename, size, description, error_message)
     lg.warn('transport_http is not ready')
     return fail(Exception('transport_http is not ready'))

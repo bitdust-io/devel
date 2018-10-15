@@ -96,7 +96,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         if _Debug:
             lg.out(_DebugLevel, 'tcp_connection.connectionMade %s' % net_misc.pack_address(self.getTransportAddress()))
         address = self.getAddress()
-        name = 'tcp_connection[%s:%d]' % (strng.to_text(address[0]), address[1])
+        name = 'tcp_connection[%s]' % strng.to_text(net_misc.pack_address(address))
         automat.Automat.__init__(
             self, name, 'AT_STARTUP',
             debug_level=_DebugLevel, log_events=_Debug, publish_events=False)

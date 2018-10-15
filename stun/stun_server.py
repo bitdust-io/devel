@@ -54,8 +54,6 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-from lib import strng
-
 from logs import lg
 
 from system import bpio
@@ -64,6 +62,8 @@ from main import settings
 
 from automats import automat
 
+from lib import strng
+from lib import net_misc
 from lib import udp
 
 from dht import dht_service
@@ -180,8 +180,8 @@ class StunServer(automat.Automat):
             command, payload = datagram
         except:
             return False
-        youripport = '%s:%d' % (address[0], address[1])
-        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, strng.to_bin(youripport), address)
+        youripport = net_misc.pack_address((address[0], address[1]))
+        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
         lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
             youripport, address))
 
