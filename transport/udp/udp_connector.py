@@ -212,8 +212,7 @@ class DHTUDPConnector(automat.Automat):
         Action method.
         """
         key = self.peer_id + ':incoming' + str(self.KeyPosition)
-        value = '%s %s:%d %s\n' % (str(self.my_id), self.my_address[
-            0], self.my_address[1], str(time.time()))
+        value = '%s %s:%d %s\n' % (str(self.my_id), self.my_address[0], self.my_address[1], str(time.time()))
         if _Debug:
             lg.out(_DebugLevel, 'doDHTWriteIncoming  key=%s' % key)
         self.working_deferred = dht_service.set_value(key, value, age=int(time.time()))

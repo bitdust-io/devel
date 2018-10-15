@@ -628,7 +628,7 @@ class IdRegistrator(automat.Automat):
             _, host, _, _ = nameurl.UrlParse(idurl)
             _, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
-            srvhost = '%s:%d' % (host, tcpport)
+            srvhost = net_misc.pack_address((host, tcpport, ))
             dlist.append(gateway.send_file_single(idurl, 'tcp', srvhost, sendfilename, 'Identity'))
         # assert len(self.free_idurls) == 0
         return DeferredList(dlist, fireOnOneCallback=True)

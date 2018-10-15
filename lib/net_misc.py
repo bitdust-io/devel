@@ -36,6 +36,7 @@ from __future__ import absolute_import
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 import six.moves.urllib.parse
+import six
 from io import open
 
 #------------------------------------------------------------------------------
@@ -43,7 +44,6 @@ from io import open
 import os
 import re
 import sys
-import six
 import socket
 import random
 import platform
@@ -149,16 +149,17 @@ def ConnectionFailed(param=None, proto=None, info=None):
 def normalize_address(host_port):
     """
     Input argument `host` can be string: "123.45.67.89:8080" or tuple: (b"123.45.67.89", 8080)
-    Method always return tuple and make sure host is string/bytes but not unicode.
+    Method always return tuple and make sure host is string/bytes but not unicode and port is integer.
     """
     if not host_port:
         return host_port
     if isinstance(host_port, six.binary_type):
         host_port = host_port.decode('utf-8')
     if isinstance(host_port, six.string_types):
-        host_port = (host_port.split(':')[0], int(host_port.split(':')[1]), )
+        host_port = host_port.split(':')
+        host_port = (host_port[0], int(host_port[1]), )
     if isinstance(host_port[0], six.text_type):
-        host_port = (host_port[0].encode('utf-8'), host_port[1], )
+        host_port = (host_port[0].encode('utf-8'), int(host_port[1]), )
     return host_port
 
 

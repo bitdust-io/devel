@@ -466,7 +466,7 @@ class SupplierConnector(automat.Automat):
         """
         if _Debug:
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
-        for cb in self.callbacks.values():
+        for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'CONNECTED')
 
     def doReportNoService(self, arg):
@@ -475,7 +475,7 @@ class SupplierConnector(automat.Automat):
         """
         if _Debug:
             lg.out(14, 'supplier_connector.doReportNoService : %s' % self.supplier_idurl)
-        for cb in self.callbacks.values():
+        for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'NO_SERVICE')
 
     def doReportDisconnect(self, arg):
@@ -484,7 +484,7 @@ class SupplierConnector(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect : %s' % self.supplier_idurl)
-        for cb in self.callbacks.values():
+        for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'DISCONNECTED')
 
     def doDestroyMe(self, arg):
