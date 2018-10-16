@@ -47,16 +47,17 @@ from io import open
 #------------------------------------------------------------------------------
 
 import os
+import re
 import sys
-import random
 import time
 import math
-import hashlib
+import random
 import base64
 import string
-import subprocess
-import re
+import hashlib
 import tempfile
+import functools
+import subprocess
 
 #------------------------------------------------------------------------------
 
@@ -249,13 +250,13 @@ def backup_id_compare(backupID1, backupID2):
     if customerGlobalID1 != customerGlobalID2:
         return cmp(customerGlobalID1, customerGlobalID2)
     return version_compare(version1, version2)
-
+    
 
 def sorted_backup_ids(backupIds, reverse=False):
     """
     Sort a list of backupID's.
     """
-    sorted_ids = sorted(backupIds, backup_id_compare, reverse=reverse)
+    sorted_ids = sorted(backupIds, key=functools.cmp_to_key(backup_id_compare), reverse=reverse)
     return sorted_ids
 
 
@@ -263,7 +264,7 @@ def sorted_versions(versions, reverse=False):
     """
     Sort a list of versions.
     """
-    sorted_versions_list = sorted(versions, version_compare, reverse=reverse)
+    sorted_versions_list = sorted(versions, key=functools.cmp_to_key(version_compare), reverse=reverse)
     return sorted_versions_list
 
 #------------------------------------------------------------------------------
