@@ -1106,7 +1106,8 @@ class UDPStream(automat.Automat):
         blocks_not_acked = sorted(
             self.output_blocks_ids,
             key=lambda bid: self.output_blocks[bid][2],
-            reverse=True, )
+            reverse=True,
+        )
         for block_id in blocks_not_acked:
             if block_id in blocks_to_send_now:
                 continue
