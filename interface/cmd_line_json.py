@@ -652,7 +652,8 @@ def cmd_api(opts, args, overDict, executablePath):
             if item.startswith('_'):
                 continue
             if item in ['Deferred', 'ERROR', 'OK', 'RESULT', 'driver', 'lg',
-                        'os', 'time', 'on_api_result_prepared', 'succeed', ]:
+                        'os', 'time', 'on_api_result_prepared', 'succeed', 'sys',
+                        'strng', 'map', 'jsn', 'json', 'gc', ]:
                 continue
             method = getattr(api, item, None)
             if not method:
