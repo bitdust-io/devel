@@ -56,7 +56,7 @@ class ReceiverProtocol(Protocol):
         @param finished: Deferred to be called when we've got all the data.
         """
 
-        self.body = ''
+        self.body = b''
         self.finished = finished
 
     def dataReceived(self, data):
