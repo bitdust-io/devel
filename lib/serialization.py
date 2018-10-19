@@ -65,10 +65,6 @@ def ObjectToString(obj):
         import jsonpickle
         return json.dumps(jsonpickle.encode(obj), ensure_ascii=False)
 
-    elif SERIALIZATION_METHOD == 'fallback':
-        import six.moves.cPickle
-        return six.moves.cPickle.dumps(obj, protocol=2)
-
     else:
         raise Exception('unknown SERIALIZATION_METHOD')
 
@@ -95,18 +91,6 @@ def StringToObject(inp):
         import json
         import jsonpickle
         return jsonpickle.decode(json.loads(inp))
-
-    elif SERIALIZATION_METHOD == 'fallback':
-        # first try cPickle, than pickle... on py3 - all the same
-        try:
-            import six.moves.cPickle
-            return six.moves.cPickle.loads(inp)
-        except:
-            import six.moves.cPickle as pickle
-            if six.PY2:
-                return pickle.loads(inp)
-            else:
-                return pickle.loads(inp, encoding='bytes')
 
     else:
         raise Exception('unknown SERIALIZATION_METHOD')
