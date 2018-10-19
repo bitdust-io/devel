@@ -311,7 +311,7 @@ def Unserialize(data):
     if newobject is None:
         lg.warn("result is None")
         return None
-    if not isinstance(newobject, types.InstanceType):
+    if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
         lg.warn("not an instance: " + str(newobject))
         return None
     if not str(newobject.__class__).count('signed.Packet'):
