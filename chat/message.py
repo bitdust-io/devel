@@ -177,7 +177,7 @@ def RemoveOutgoingMessageCallback(cb):
 
 #------------------------------------------------------------------------------
 
-class PrivateMessage:
+class PrivateMessage(object):
     """
     A class to represent a message.
 

@@ -40,7 +40,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-SERIALIZATION_METHOD = 'custom_a'
+SERIALIZATION_METHOD = 'fallback'
 
 #------------------------------------------------------------------------------
 
@@ -73,10 +73,10 @@ def ObjectToString(obj):
         import dill
         return dill.dumps(obj)
 
-    elif SERIALIZATION_METHOD == 'custom_a':
+    elif SERIALIZATION_METHOD == 'fallback':
         try:
             import dill
-            return dill.dumps(obj)
+            return dill.dumps(obj, protocol=2)
         except:
             import six.moves.cPickle
             return six.moves.cPickle.dumps(obj, protocol=2)
@@ -116,7 +116,7 @@ def StringToObject(inp):
         import dill
         return dill.loads(inp)
 
-    elif SERIALIZATION_METHOD == 'custom_a':
+    elif SERIALIZATION_METHOD == 'fallback':
         try:
             import dill
             return dill.loads(inp)

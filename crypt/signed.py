@@ -84,7 +84,7 @@ from userid import my_id
 #------------------------------------------------------------------------------
 
 
-class Packet:
+class Packet(object):
     """
     Init with: Command, OwnerID, CreatorID, PacketID, Payload, RemoteID The
     core class.
