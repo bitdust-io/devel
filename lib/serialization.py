@@ -37,12 +37,26 @@ So I decide to use standard pickle module and upgrade that in future.
 
 from __future__ import absolute_import
 
+import json
+    
 #------------------------------------------------------------------------------
 
 SERIALIZATION_METHOD = 'pickle'
 
 #------------------------------------------------------------------------------
 
+def DictToString(dct):
+    """
+    """
+    return json.dumps(dct, separators=(',', ':'), indent=0, sort_keys=True, )
+
+
+def StringToDict(inp):
+    """
+    """
+    return json.loads(inp)
+
+#------------------------------------------------------------------------------
 
 def ObjectToString(obj):
     """
