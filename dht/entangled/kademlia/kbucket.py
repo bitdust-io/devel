@@ -147,10 +147,12 @@ class KBucket(object):
                  if not.
         @rtype: bool
         """
-        if isinstance(key, six.string_types):
-            # key = int(key.encode('hex'), 16)
-            # key = int(codecs.encode(key, 'hex'), 16)
-            key = int(encoding.encode_hex(key), 16)
+        _k = key
+        if isinstance(key, six.integer_types):
+            return self.rangeMin <= key < self.rangeMax
+        if isinstance(key, six.text_type):
+            key = key.encode(encoding='utf-8')
+        key = int(encoding.encode_hex(key), 16)
         return self.rangeMin <= key < self.rangeMax
 
     def __len__(self):
