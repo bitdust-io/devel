@@ -6,9 +6,9 @@ services: docker
 language: python
 matrix:
   include:
-  - name: "3.6"
-    python: "3.6"
-    env: PYTHON_VERSION=3.6
+#  - name: "3.6"
+#    python: "3.6"
+#    env: PYTHON_VERSION=3.6
   - name: "2.7"
     python: "2.7"
     env: PYTHON_VERSION=2.7
@@ -22,14 +22,12 @@ before_install:
 
   - docker -v
   - docker-compose -v
-  - python -V
+  - make -v
 
 script:
   - make test_raid
-  - docker-compose -f tests/e2e/docker-compose.yml build --build-arg PYTHON_VERSION=$PYTHON_VERSION
-  - make -C tests/e2e/ -j2 all
-  - make -C tests/e2e/ test_1
-  - make -C tests/e2e/ test_2
+  - make -C tests/e2e/ -j2 test
+
 
 after_failure:
   - docker-compose -p "namespace1" -f tests/e2e/docker-compose.yml logs

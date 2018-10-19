@@ -481,7 +481,7 @@ class Automat(object):
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).
         """
         global _StateChangedCallback
-        if _LogEvents and self.log_events and _Debug:
+        if _LogEvents and getattr(self, 'log_events', False) and _Debug:
             if self.log_events or not event_string.startswith('timer-'):
                 self.log(
                     max(self.debug_level, _DebugLevel),
@@ -495,6 +495,7 @@ class Automat(object):
                 if _Debug:
                     self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
                         self.id, self.name, self.state, event_string, arg))
+                return self
             self.state = new_state
         else:
             try:
@@ -503,6 +504,7 @@ class Automat(object):
                 if _Debug:
                     self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
                         self.id, self.name, self.state, event_string, arg))
+                return self
             new_state = self.state
         if old_state != new_state:
             if _Debug and self.log_transitions:

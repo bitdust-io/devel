@@ -54,7 +54,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ from . import rebuild
 _MODULES = (
     'os',
     'sys',
-    'cStringIO',
+    'StringIO',
     'struct',
     'logs.lg',
     'raid.read',

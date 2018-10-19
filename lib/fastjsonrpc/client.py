@@ -26,7 +26,8 @@ JSON-RPC.
 from __future__ import absolute_import
 import base64
 
-from zope.interface import implements
+# from zope.interface import implements
+from zope.interface import implementer
 from twisted.internet.defer import succeed
 from twisted.web.iweb import IBodyProducer
 
@@ -84,13 +85,14 @@ class ReceiverProtocol(Protocol):
         self.finished.callback(self.body)
 
 
+@implementer(IBodyProducer)
 class StringProducer(object):
     """
     There's no FileBodyProducer in Twisted < 12.0.0 See
     http://twistedmatrix.com/documents/current/web/howto/client.html for
     details about this class.
     """
-    implements(IBodyProducer)
+    # implements(IBodyProducer)
 
     def __init__(self, body):
         self.body = body
@@ -344,14 +346,14 @@ class Proxy(object):
             json_request = jsonrpc.encodeRequest(method, args,
                                                  version=self.version)
 
-        body = StringProducer(json_request)
+        body = StringProducer(json_request.encode())
 
-        headers_dict = {'Content-Type': ['application/json']}
+        headers_dict = {b'Content-Type': [b'application/json']}
         if not isinstance(self.credentials, Anonymous):
             headers_dict.update(self._getBasicHTTPAuthHeaders())
         headers = Headers(headers_dict)
 
-        d = self.agent.request('POST', self.url, headers, body)
+        d = self.agent.request(b'POST', self.url, headers, body)
         d.addCallback(self.checkAuthError)
         d.addCallback(self.bodyFromResponse)
         d.addCallback(jsonrpc.decodeResponse)
@@ -369,8 +371,8 @@ class Proxy(object):
             if password is None:
                 password = ''
 
-            encoded_cred = base64.encodestring('%s:%s' % (username, password))
-            auth_value = "Basic " + encoded_cred.strip()
-            self.auth_headers = {'Authorization': [auth_value]}
+            encoded_cred = base64.encodestring(b'%s:%s' % (username, password))
+            auth_value = b"Basic " + encoded_cred.strip()
+            self.auth_headers = {b'Authorization': [auth_value]}
 
         return self.auth_headers

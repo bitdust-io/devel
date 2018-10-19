@@ -245,12 +245,12 @@ class NetworkTransport(automat.Automat):
 #             id_contact = id_contact.lstrip(self.proto + '://')
         if self.proto == 'tcp':
             if not id_contact:
-                default_host = strng.to_bin(misc.readExternalIP()) + ':' + str(settings.getTCPPort())
+                default_host = strng.to_bin(misc.readExternalIP()) + b':' + strng.to_bin(str(settings.getTCPPort()))
             options['host'] = id_contact or default_host
             options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':
             if not id_contact:
-                default_host = nameurl.GetName(my_id.getLocalID()) + '@' + platform.node()
+                default_host = strng.to_bin(nameurl.GetName(my_id.getLocalID())) + b'@' + strng.to_bin(platform.node())
             options['host'] = id_contact or default_host
             options['dht_port'] = settings.getDHTPort()
             options['udp_port'] = settings.getUDPPort()
@@ -258,7 +258,7 @@ class NetworkTransport(automat.Automat):
             pass
         elif self.proto == 'http':
             if not id_contact:
-                default_host = strng.to_bin(misc.readExternalIP()) + ':' + str(settings.getHTTPPort())
+                default_host = strng.to_bin(misc.readExternalIP()) + b':' + strng.to_bin(str(settings.getHTTPPort()))
             options['host'] = id_contact or default_host
             options['http_port'] = settings.getHTTPPort()
         if _Debug:

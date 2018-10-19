@@ -1,13 +1,6 @@
-ARG  PYTHON_VERSION=2.7.15
-FROM python:${PYTHON_VERSION}
+FROM bitdust/base
 
-COPY . bitdust
-COPY ./tests/e2e/Dockerfiles/Customer_1/file.txt /volume/file_customer_1.txt
-
-WORKDIR bitdust
-RUN python bitdust.py install
-
-ENV PATH="/root/.bitdust:${PATH}"
+COPY ./tests/e2e/Dockerfiles/Customer_1/file.txt /customer_1/file_customer_1.txt
 
 #: it allow us to use api interface externally
 ENV BITDUST_API_PASS_EXTERNAL_CONNECTIONS=1

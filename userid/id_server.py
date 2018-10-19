@@ -39,12 +39,12 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
 import os
 import sys
-import cStringIO
 import struct
 
 from twisted.internet import reactor
@@ -173,12 +173,12 @@ class IdServer(automat.Automat):
             self.hostname = strng.to_bin(misc.readExternalIP())  # bpio.ReadTextFile(settings.ExternalIPFilename())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
-        lg.out(4, 'id_server.doSetUp hostname=%s' % self.hostname)
+        lg.out(4, 'id_server.doSetUp hostname=%s' % strng.to_text(self.hostname))
         if not os.path.isdir(settings.IdentityServerDir()):
             os.makedirs(settings.IdentityServerDir())
             lg.out(4, '            created a folder %s' % settings.IdentityServerDir())
         root = WebRoot()
-        root.putChild('', WebMainPage())
+        root.putChild(b'', WebMainPage())
         try:
             self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())
             lg.out(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
@@ -187,7 +187,7 @@ class IdServer(automat.Automat):
             lg.exc()
         try:
             self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))
-            lg.out(4, "            have started web server at http://%s:%d " % (self.hostname, self.web_port))
+            lg.out(4, "            have started web server at http://%s:%d " % (strng.to_text(self.hostname), self.web_port))
         except:
             lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
             lg.exc()
@@ -260,7 +260,7 @@ class IdServer(automat.Automat):
         matchid = ""
         for idurl in newidentity.sources:
             protocol, host, port, filename = nameurl.UrlParse(idurl)
-            if host == self.hostname:
+            if strng.to_text(host) == strng.to_text(self.hostname):
                 lg.out(4, "id_server._save_identity found match for us")
                 matchid = idurl
                 break
@@ -336,14 +336,15 @@ class IdServerProtocol(basic.Int32StringReceiver):
             return
         if command == 'h':
             # lg.out(6, 'id_server.stringReceived HELLO received from %s' % payload)
-            self.sendString(strng.to_bin('%swid-server:%s' % (version, A().hostname)))
+            self.sendString(strng.to_bin(
+                '%swid-server:%s' % (version, strng.to_text(A().hostname))))
             return
         if command != 'd':
             self.disconnect()
             # self.transport.loseConnection()
             lg.warn('not a "data" packet from %s' % str(self.transport.getPeer()))
             return
-        inp = cStringIO.StringIO(payload)
+        inp = BytesIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
             file_size = struct.unpack('i', inp.read(4))[0]
@@ -404,7 +405,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 <body>
 <div id="content">
 <h1 align=center>Identities on %(hostname)s</h1>
-''' % {'hostname': A().hostname}
+''' % {'hostname': strng.to_text(A().hostname)}
         src += '<table cellspacing=0 width=100% border=0><tr valign=top>\n'
         src += '<td width=152px nowrap>\n'
         HTDOCS_DIR = settings.IdentityServerDir()
@@ -431,7 +432,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
             name = filename[:-4]
             src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (url, name)
         src += '</td>\n</tr>\n</table>\n</td>\n</tr>\n<tr><td align=left>'
-        src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (A().hostname, len(files))
+        src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (strng.to_text(A().hostname), len(files))
         src += '<p>Other known identity servers:\n'
         for idhost in sorted(known_servers.by_host().keys()):
             idport = known_servers.by_host()[idhost][0]
@@ -449,9 +450,9 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
 class WebRoot(resource.Resource):
 
     def getChild(self, path, request):
-        if path == '':
+        if not path:
             return self
-        filepath = os.path.join(settings.IdentityServerDir(), path)
+        filepath = os.path.join(settings.IdentityServerDir(), strng.to_text(path))
         if os.path.isfile(filepath):
             return static.File(filepath)
         return resource.NoResource('Not found')

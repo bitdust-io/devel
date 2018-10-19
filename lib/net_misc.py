@@ -70,7 +70,7 @@ from twisted.web.client import HTTPDownloader
 from twisted.web.client import Agent, readBody
 from twisted.web.http_headers import Headers
 
-from zope.interface import implements
+from zope.interface import implementer
 
 #------------------------------------------------------------------------------
 
@@ -148,9 +148,13 @@ def ConnectionFailed(param=None, proto=None, info=None):
 
 def normalize_address(host_port):
     """
-    Input argument `host` can be string: "123.45.67.89:8080" or tuple: ("123.45.67.89", 8080)
+    Input argument `host` can be string: "123.45.67.89:8080" or tuple: (b"123.45.67.89", 8080)
     Method always return tuple and make sure host is string/bytes but not unicode.
     """
+    if not host_port:
+        return host_port
+    if isinstance(host_port, six.binary_type):
+        host_port = host_port.decode('utf-8')
     if isinstance(host_port, six.string_types):
         host_port = (host_port.split(':')[0], int(host_port.split(':')[1]), )
     if isinstance(host_port[0], six.text_type):
@@ -160,10 +164,12 @@ def normalize_address(host_port):
 
 def pack_address(host_port):
     """
-    Same as `normalize_address()`, but always return address as string/bytes: "123.45.67.89:8080"
+    Same as `normalize_address()`, but always return address as string/bytes: b"123.45.67.89:8080"
     """
+    if not host_port:
+        return host_port
     norm = normalize_address(host_port)
-    return '{}:{}'.format(norm[0], norm[1])
+    return norm[0] + b':' + str(norm[1]).encode()
 
 #------------------------------------------------------------------------------
 
@@ -171,6 +177,8 @@ def parse_url(url, defaultPort=None):
     """
     Split the given URL into the scheme, host, port, and path.
     """
+    if isinstance(url, six.binary_type):
+        url = url.decode('utf-8')
     url = url.strip()
     parsed = six.moves.urllib.parse.urlparse(url)
     scheme = parsed[0]
@@ -472,7 +480,7 @@ def readResponse(response):
     return d
 
 
-def getPageTwisted(url, timeout=10):
+def getPageTwisted(url, timeout=10, method=b'GET'):
     """
     A smart way to download pages from HTTP hosts.
     """
@@ -502,9 +510,9 @@ def getPageTwisted(url, timeout=10):
     agent = Agent(reactor, connectTimeout=timeout)
     
     d = agent.request(
-        method=b'GET',
+        method=method,
         uri=url,
-        headers=Headers({'User-Agent': [_UserAgentString, ]}),
+        headers=Headers({b'User-Agent': [_UserAgentString, ]}),
     )
 #     d = getPage(url, agent=_UserAgentString, timeout=timeout)
 #     if timeout:
@@ -786,10 +794,11 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 self._deferred.callback(self.buffer)
             else:
                 self._deferred.errback(Exception(self.buffer))
-    
-    
+
+
+    @implementer(iweb.IBodyProducer)
     class MultiPartProducer:
-        implements(iweb.IBodyProducer)
+
         CHUNK_SIZE = 2 ** 8
     
         def __init__(self, files={}, data={}, callback=None, deferred=None):
@@ -946,7 +955,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
                 import random
                 import sha
                 bits = random.getrandbits(160)
-                boundary = sha.new(str(bits)).hexdigest()
+                boundary = sha.new(str(bits).encode()).hexdigest()
             return boundary
     
         def _file_type(self, field):

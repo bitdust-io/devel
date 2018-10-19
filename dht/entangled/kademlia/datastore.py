@@ -1,24 +1,11 @@
 #!/usr/bin/env python
 # datastore.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
-#
-# This file (datastore.py) is part of BitDust Software.
-#
-# BitDust is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# BitDust Software is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Please contact us if you have any questions at bitdust.io@gmail.com
+# Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
+# See AUTHORS for all authors and contact information. 
+# 
+# License: GNU Lesser General Public License, version 3 or later; see COPYING
+#          included in this archive for details.
 #
 # This library is free software, distributed under the terms of
 # the GNU Lesser General Public License Version 3, or any later version.
@@ -28,15 +15,28 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
+import six
 try:
     from UserDict import DictMixin
 except ImportError:
     from collections import MutableMapping as DictMixin
 import sqlite3
 import six.moves.cPickle as pickle
+# import pickle
 import os
+import codecs
 
 from . import constants
+from . import encoding
+
+
+try:
+    buffer = buffer
+except:
+    buffer = memoryview
+
+
+PICKLE_PROTOCOL = 2
 
 
 class DataStore(DictMixin):
@@ -75,6 +75,10 @@ class DataStore(DictMixin):
         originally published.
         """
 
+    def getItem(self, key):
+        """
+        """
+
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         """
         Set the value of the (key, value) pair identified by C{key}; this
@@ -99,7 +103,16 @@ class DataStore(DictMixin):
         Delete the specified key (and its value)
         """
 
-    def getItem(self, key):
+    def __iter__(self):
+        """
+        """
+        return self
+
+    def __next__(self):
+        """
+        """
+
+    def __len__(self):
         """
         """
 
@@ -208,7 +221,13 @@ class SQLiteDataStore(DataStore):
         try:
             self._cursor.execute("SELECT key FROM data")
             for row in self._cursor:
-                keys.append(row[0].decode('hex'))
+#                 key = row[0]
+#                 if not isinstance(key, six.text_type):
+#                     key = key.decode()
+#                 decodedKey = codecs.decode(key, 'hex')            
+#                 keys.append(decodedKey)
+                # keys.append(row[0].decode('hex'))
+                keys.append(encoding.decode_hex(row[0]))
         finally:
             return keys
 
@@ -240,25 +259,51 @@ class SQLiteDataStore(DataStore):
 
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
         # Encode the key so that it doesn't corrupt the database
-        encodedKey = key.encode('hex')
+        # encodedKey = key.encode('hex')
+#         if not isinstance(key, six.binary_type):
+#             key = key.encode()
+#         encodedKey = codecs.encode(key, 'hex')
+        encodedKey = encoding.encode_hex(key)
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (
-                encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID))
+                encodedKey,
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+            ))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=? WHERE key=?', (
-                buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, encodedKey))
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+                encodedKey,
+            ))
 
     def _dbQuery(self, key, columnName, unpickle=False):
         try:
-            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {'reqKey': key.encode('hex')})
+#             if not isinstance(key, six.binary_type):
+#                 key = key.encode()
+#             encodedKey = codecs.encode(key, 'hex')
+            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
+                # 'reqKey': key.encode('hex'),
+#                 'reqKey': encodedKey,
+                'reqKey': encoding.encode_hex(key), 
+            })
             row = self._cursor.fetchone()
-            value = str(row[0])
+            value = row[0]
         except TypeError:
             raise KeyError(key)
         else:
             if unpickle:
-                return pickle.loads(value)
+                if six.PY2:
+                    if isinstance(value, buffer):
+                        value = str(value)
+                    return pickle.loads(value)
+                else:
+                    return pickle.loads(value, encoding='bytes')
             else:
                 return value
 
@@ -266,11 +311,25 @@ class SQLiteDataStore(DataStore):
         return self._dbQuery(key, 'value', unpickle=True)
 
     def __delitem__(self, key):
-        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+#         if not isinstance(key, six.binary_type):
+#             key = key.encode()
+#         encodedKey = codecs.encode(key, 'hex')
+        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
+            # 'reqKey': key.encode('hex'),
+#             'reqKey': encodedKey,
+            'reqKey': encoding.encode_hex(key),
+        })
 
     def getItem(self, key):
         try:
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+#             if not isinstance(key, six.binary_type):
+#                 key = key.encode()
+#             encodedKey = codecs.encode(key, 'hex')
+            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
+                # 'reqKey': key.encode('hex'),
+                # 'reqKey': encodedKey,
+                'reqKey': encoding.encode_hex(key),
+            })
             row = self._cursor.fetchone()
             result = dict(
                 key=row[0],
@@ -317,18 +376,41 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 expireSeconds=constants.dataExpireSecondsDefaut,
                 **kwargs):
         # Encode the key so that it doesn't corrupt the database
-        encodedKey = key.encode('hex')
+        # encodedKey = key.encode('hex')
+#         if not isinstance(key, six.binary_type):
+#             key = key.encode()
+#         encodedKey = codecs.encode(key, 'hex')
+        encodedKey = encoding.encode_hex(key)
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds) VALUES (?, ?, ?, ?, ?, ?)', (
-                encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, expireSeconds))
+                encodedKey,
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+                expireSeconds,
+            ))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=? WHERE key=?', (
-                buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, expireSeconds, encodedKey))
+                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                lastPublished,
+                originallyPublished,
+                originalPublisherID,
+                expireSeconds,
+                encodedKey,
+            ))
 
     def getItem(self, key):
         try:
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {'reqKey': key.encode('hex')})
+            # if not isinstance(key, six.binary_type):
+            #     key = key.encode()
+            # encodedKey = codecs.encode(key, 'hex')            
+            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
+                # 'reqKey': key.encode('hex'),
+                # 'reqKey': encodedKey,
+                'reqKey': encoding.encode_hex(key),
+            })
             row = self._cursor.fetchone()
             result = dict(
                 key=row[0],

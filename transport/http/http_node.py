@@ -74,6 +74,7 @@ from logs import lg
 
 from lib import nameurl
 from lib import net_misc
+from lib import strng
 
 from system import bpio
 from system import tmpfile
@@ -277,7 +278,7 @@ class Receiver(object):
 
     def do_ping(self, idurl, host, port):
         lg.out(14, 'http_node.receive.ping     %s (%s:%s)' % (idurl, host, port))
-        url = 'http://' + str(host) + ':' + str(port)
+        url = b'http://' + host + b':' + strng.to_bin(str(port))
 
         if net_misc.proxy_is_on():
             f = TransportHTTPProxyClientFactory(url, method='POST', headers={

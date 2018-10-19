@@ -36,6 +36,10 @@ So I decide to use standard pickle module and upgrade that in future.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import six
+
+#------------------------------------------------------------------------------
+
 SERIALIZATION_METHOD = 'pickle'
 
 #------------------------------------------------------------------------------
@@ -43,7 +47,7 @@ SERIALIZATION_METHOD = 'pickle'
 
 if SERIALIZATION_METHOD == 'pickle':
 
-    import pickle
+    import six.moves.cPickle as pickle
 
     def ObjectToString(obj):
         """
@@ -53,7 +57,10 @@ if SERIALIZATION_METHOD == 'pickle':
     def StringToObject(inp):
         """
         """
-        return pickle.loads(inp)
+        if six.PY2:
+            return pickle.loads(inp)
+        else:
+            return pickle.loads(inp, encoding='bytes')
 
 
 elif SERIALIZATION_METHOD == 'cPickle':

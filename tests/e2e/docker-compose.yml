@@ -8,39 +8,39 @@ x-common-links: &common-links-all
     - "dht_seed_1"
     - "dht_seed_2"
 
-x-common-volumes: &common-volumes
-  volumes:
-    - app-volume:/volume
-    - download_volume:/download_volume
-
 services:
+  base:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/base/Dockerfile
+    image: bitdust/base
+
   identity-server:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Identity/Dockerfile
+    image: bitdust/identity-server
 
   stun_1:
-    <<: *common-volumes
     <<: *common-links-all
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Stun/Dockerfile
+    image: bitdust/stun
 
   dht_seed_1:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+    image: bitdust/dht_seed
 
   dht_seed_2:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+    image: bitdust/dht_seed
 
   proxy_server_1:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
@@ -48,9 +48,9 @@ services:
       - "dht_seed_1"
       - "dht_seed_2"
       - "identity-server:is"
+    image: bitdust/proxy
 
   proxy_server_2:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
@@ -58,9 +58,9 @@ services:
       - "dht_seed_1"
       - "dht_seed_2"
       - "identity-server:is"
+    image: bitdust/proxy
 
   supplier_1:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Supplier_1/Dockerfile
@@ -68,9 +68,9 @@ services:
       - "identity-server:is"
       - "dht_seed_1"
       - "dht_seed_2"
+    image: bitdust/supplier_1
 
   supplier_2:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Supplier_2/Dockerfile
@@ -78,9 +78,9 @@ services:
       - "identity-server:is"
       - "dht_seed_1"
       - "dht_seed_2"
+    image: bitdust/supplier_2
 
   customer_1:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Customer_1/Dockerfile
@@ -88,9 +88,11 @@ services:
       - "identity-server:is"
       - "dht_seed_1"
       - "dht_seed_2"
+    volumes:
+      - customer_1:/customer_1
+    image: bitdust/customer_1
 
   customer_2:
-    <<: *common-volumes
     build:
       <<: *common
       dockerfile: tests/e2e/Dockerfiles/Customer_2/Dockerfile
@@ -98,9 +100,11 @@ services:
       - "identity-server:is"
       - "dht_seed_1"
       - "dht_seed_2"
+    volumes:
+      - customer_2:/customer_2
+    image: bitdust/customer_2
 
   test:
-    <<: *common-volumes
     build: Dockerfiles/Test/.
     links:
       - "supplier_1"
@@ -109,7 +113,11 @@ services:
       - "customer_2"
       - "proxy_server_1"
       - "proxy_server_2"
+    volumes:
+      - customer_1:/customer_1
+      - customer_2:/customer_2
+    image: bitdust/test
 
 volumes:
-     app-volume:
-     download_volume:
+  customer_1:
+  customer_2:

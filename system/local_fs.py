@@ -183,7 +183,7 @@ def ReadTextFile(filename):
         infile = open(filename, 'r')
         data = infile.read()
         infile.close()
-        return data
+        return strng.to_text(data)
     except:
         lg.exc()
     return u''

@@ -306,7 +306,7 @@ def prepareMethodResponse(result, id_=None, version=VERSION_1):
     @rtype: str
     @return: JSON-encoded response
     """
-
+    
     if id_ is None:
         # notification
         return None

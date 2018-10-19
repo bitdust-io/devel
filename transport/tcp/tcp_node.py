@@ -148,7 +148,7 @@ def receive(options):
         return None
     try:
         _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))
-        _MyHost = net_misc.pack_address((options['host'].split(':')[0], int(_InternalPort)))
+        _MyHost = net_misc.pack_address((options['host'].split(b':')[0], int(_InternalPort)))
         tcp_interface.interface_receiving_started(_MyHost, options)
 
     except CannotListenError as ex:
