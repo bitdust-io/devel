@@ -36,11 +36,10 @@ So I decide to use standard pickle module and upgrade that in future.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
 
 #------------------------------------------------------------------------------
 
-SERIALIZATION_METHOD = 'fallback'
+SERIALIZATION_METHOD = 'pickle'
 
 #------------------------------------------------------------------------------
 
@@ -49,8 +48,8 @@ def ObjectToString(obj):
     """
     """
     if SERIALIZATION_METHOD == 'pickle':
-        import six.moves.cPickle as pickle
-        return pickle.dumps(obj, protocol=2)
+        import six.moves.cPickle
+        return six.moves.cPickle.dumps(obj, protocol=2)
     
     elif SERIALIZATION_METHOD == 'cPickle':
         import six.moves.cPickle
@@ -65,10 +64,6 @@ def ObjectToString(obj):
         import jsonpickle
         return json.dumps(jsonpickle.encode(obj), ensure_ascii=False)
 
-    elif SERIALIZATION_METHOD == 'fallback':
-        import six.moves.cPickle
-        return six.moves.cPickle.dumps(obj, protocol=2)
-
     else:
         raise Exception('unknown SERIALIZATION_METHOD')
 
@@ -77,11 +72,12 @@ def StringToObject(inp):
     """
     """
     if SERIALIZATION_METHOD == 'pickle':
-        import six.moves.cPickle as pickle
+        import six
+        import six.moves.cPickle
         if six.PY2:
-            return pickle.loads(inp)
+            return six.moves.cPickle.loads(inp)
         else:
-            return pickle.loads(inp, encoding='bytes')
+            return six.moves.cPickle.loads(inp, encoding='bytes')
 
     elif SERIALIZATION_METHOD == 'cPickle':
         import six.moves.cPickle
@@ -95,18 +91,6 @@ def StringToObject(inp):
         import json
         import jsonpickle
         return jsonpickle.decode(json.loads(inp))
-
-    elif SERIALIZATION_METHOD == 'fallback':
-        # first try cPickle, than pickle... on py3 - all the same
-        try:
-            import six.moves.cPickle
-            return six.moves.cPickle.loads(inp)
-        except:
-            import six.moves.cPickle as pickle
-            if six.PY2:
-                return pickle.loads(inp)
-            else:
-                return pickle.loads(inp, encoding='bytes')
 
     else:
         raise Exception('unknown SERIALIZATION_METHOD')
