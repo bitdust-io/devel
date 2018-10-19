@@ -46,6 +46,7 @@ Packet Fields are all strings (no integers, objects, etc)
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 
 #------------------------------------------------------------------------------
 
@@ -55,9 +56,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import sys
-
 import types
-
 from twisted.internet import threads
 
 #------------------------------------------------------------------------------
@@ -311,9 +310,14 @@ def Unserialize(data):
     if newobject is None:
         lg.warn("result is None")
         return None
-    if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
-        lg.warn("not an instance: " + str(newobject))
-        return None
+    if six.PY2:
+        if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
+            lg.warn("not an instance: " + str(newobject))
+            return None
+    else:
+        if not str(type(newobject))[:6] == "<class":
+            lg.warn("not an instance: " + str(newobject))
+            return None
     if not str(newobject.__class__).count('signed.Packet'):
         lg.warn("not a packet: " + str(newobject.__class__))
         return None
