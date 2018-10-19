@@ -321,41 +321,50 @@ def Unserialize(data):
     if data is None:
         return None
     lg.out(10, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
-    # newobject = misc.StringToObject(data)
     try:
-        json_data = serialization.StringToDict(data)
-        newobject = Packet(
-            Command=json_data['m'],
-            OwnerID=json_data['o'],
-            CreatorID=json_data['c'],
-            PacketID=json_data['i'],
-            Date=json_data['d'],
-            Payload=json_data['p'],
-            RemoteID=json_data['r'],
-            KeyID=json_data['k'],
-            Signature=json_data['s'],
-        )
+        newobject = misc.StringToObject(data)
+
+        if six.PY2:
+            if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
+                lg.warn("not an instance: " + str(newobject))
+                return None
+        else:
+            if not str(type(newobject))[:6] == "<class":
+                lg.warn("not an instance: " + str(newobject))
+                return None
+        if not str(newobject.__class__).count('signed.Packet'):
+            lg.warn("not a packet: " + str(newobject.__class__))
+            return None
+        if not hasattr(newobject, 'KeyID'):
+            setattr(newobject, 'KeyID', None)
+        if not hasattr(newobject, 'Packets'):
+            setattr(newobject, 'Packets', [])
+        
+        if not newobject:
+            raise Exception('must be json serialized')
+
     except:
-        lg.exc(data)
-        return None
+        try:
+            json_data = serialization.StringToDict(data)
+            newobject = Packet(
+                Command=json_data['m'],
+                OwnerID=json_data['o'],
+                CreatorID=json_data['c'],
+                PacketID=json_data['i'],
+                Date=json_data['d'],
+                Payload=json_data['p'],
+                RemoteID=json_data['r'],
+                KeyID=json_data['k'],
+                Signature=json_data['s'],
+            )
+        except:
+            lg.exc(data)
+            newobject = None
+
     if newobject is None:
         lg.warn("result is None")
         return None
-#     if six.PY2:
-#         if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
-#             lg.warn("not an instance: " + str(newobject))
-#             return None
-#     else:
-#         if not str(type(newobject))[:6] == "<class":
-#             lg.warn("not an instance: " + str(newobject))
-#             return None
-#     if not str(newobject.__class__).count('signed.Packet'):
-#         lg.warn("not a packet: " + str(newobject.__class__))
-#         return None
-#     if not hasattr(newobject, 'KeyID'):
-#         setattr(newobject, 'KeyID', None)
-#     if not hasattr(newobject, 'Packets'):
-#         setattr(newobject, 'Packets', [])
+
     return newobject
 
 
