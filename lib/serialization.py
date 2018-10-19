@@ -69,7 +69,7 @@ def ObjectToString(obj):
         import jsonpickle
         return json.dumps(jsonpickle.encode(obj), ensure_ascii=False)
 
-    elif SERIALIZATION_METHOD == 'dill'
+    elif SERIALIZATION_METHOD == 'dill':
         import dill
         return dill.dumps(obj)
 
@@ -112,7 +112,7 @@ def StringToObject(inp):
         import jsonpickle
         return jsonpickle.decode(json.loads(inp))
 
-    elif SERIALIZATION_METHOD == 'dill'
+    elif SERIALIZATION_METHOD == 'dill':
         import dill
         return dill.loads(inp)
 
