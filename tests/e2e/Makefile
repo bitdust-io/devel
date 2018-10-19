@@ -1,6 +1,7 @@
 BUILD=.build
 RUN_TEST_1=.run_test_1
 RUN_TEST_2=.run_test_2
+PYTHON_VERSION=2.7
 
 .PHONY: test
 
@@ -12,7 +13,7 @@ clean_build:
 test: clean_build clean $(BUILD) $(RUN_TEST_1) $(RUN_TEST_2) test_1 test_2
 
 $(BUILD):
-	docker-compose build
+	docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION)
 	@touch $@
 
 $(RUN_TEST_1): $(BUILD)
