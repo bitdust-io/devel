@@ -48,8 +48,8 @@ def ObjectToString(obj):
     """
     """
     if SERIALIZATION_METHOD == 'pickle':
-        import six.moves.cPickle as pickle
-        return pickle.dumps(obj, protocol=2)
+        import six.moves.cPickle
+        return six.moves.cPickle.dumps(obj, protocol=2)
     
     elif SERIALIZATION_METHOD == 'cPickle':
         import six.moves.cPickle
@@ -73,11 +73,11 @@ def StringToObject(inp):
     """
     if SERIALIZATION_METHOD == 'pickle':
         import six
-        import six.moves.cPickle as pickle
+        import six.moves.cPickle
         if six.PY2:
-            return pickle.loads(inp)
+            return six.moves.cPickle.loads(inp)
         else:
-            return pickle.loads(inp, encoding='bytes')
+            return six.moves.cPickle.loads(inp, encoding='bytes')
 
     elif SERIALIZATION_METHOD == 'cPickle':
         import six.moves.cPickle
