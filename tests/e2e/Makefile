@@ -13,7 +13,7 @@ clean_build:
 test: clean_build clean $(BUILD) $(RUN_TEST_1) $(RUN_TEST_2) test_1 test_2
 
 $(BUILD):
-	docker-compose build --build-arg PYTHON_VERSION=$PYTHON_VERSION
+	docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION)
 	@touch $@
 
 $(RUN_TEST_1): $(BUILD)
