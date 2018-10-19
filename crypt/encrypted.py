@@ -82,7 +82,7 @@ from crypt import my_keys
 #------------------------------------------------------------------------------
 
 
-class Block:
+class Block(object):
     """
     A class to represent an encrypted Data block. The only 2 things secret in
     here will be the ``EncryptedSessionKey`` and ``EncryptedData``. Scrubbers
