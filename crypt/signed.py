@@ -279,7 +279,7 @@ class Packet(object):
         #     currentPackets = []
         # src = misc.ObjectToString(self)
         # setattr(self, 'Packets', currentPackets)
-        src = serialization.DictToString({
+        src = strng.to_bin(serialization.DictToString({
             'm': self.Command,
             'o': self.OwnerID,
             'c': self.CreatorID,
@@ -289,7 +289,7 @@ class Packet(object):
             'r': self.RemoteID,
             'k': self.KeyID,
             's': self.Signature,
-        })
+        }))
         lg.out(10, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
         return src
 
@@ -322,7 +322,7 @@ def Unserialize(data):
         return None
     lg.out(10, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
     try:
-        newobject = misc.StringToObject(data)
+        newobject = misc.StringToObject(strng.to_text(data))
 
         if six.PY2:
             if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
