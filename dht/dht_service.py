@@ -630,7 +630,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def datagramReceived(self, datagram, address):
         count('dht_datagramReceived')
-        if len(self.receiving_queue) > 10:
+        if len(self.receiving_queue) > 50:
             lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
         self.receiving_queue.append((datagram, address, ))
         if self.receiving_worker is None:
@@ -648,7 +648,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
     def _send(self, data, rpcID, address):
         count('dht_send')
         if _Debug:
-            if len(self.sending_queue) > 10:
+            if len(self.sending_queue) > 50:
                 lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
         self.sending_queue.append((data, rpcID, address, ))
         if self.receiving_worker is None:

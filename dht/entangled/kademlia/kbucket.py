@@ -147,7 +147,10 @@ class KBucket(object):
                  if not.
         @rtype: bool
         """
-        if isinstance(key, six.string_types):
+        _k = key
+        if not isinstance(key, six.binary_type):
+            key = key.encode(encoding='utf-8')
+        if not isinstance(key, six.integer_types):
             # key = int(key.encode('hex'), 16)
             # key = int(codecs.encode(key, 'hex'), 16)
             key = int(encoding.encode_hex(key), 16)
