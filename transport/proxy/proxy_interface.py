@@ -267,7 +267,7 @@ def interface_transport_initialized(xmlrpcurl):
 def interface_receiving_started(host, new_options={}):
     if proxy():
         return proxy().callRemote(
-            'receiving_started', 'proxy', net_misc.pack_address(host), new_options).addErrback(proxy_errback)
+            'receiving_started', 'proxy', host, new_options).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
 
@@ -294,7 +294,7 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
     """
     if proxy():
         return proxy().callRemote(
-            'register_file_sending', 'proxy', net_misc.pack_address(host), receiver_idurl, filename, size, description,
+            'register_file_sending', 'proxy', host, receiver_idurl, filename, size, description,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
@@ -305,7 +305,7 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     """
     if proxy():
         return proxy().callRemote(
-            'register_file_receiving', 'proxy', net_misc.pack_address(host), sender_idurl, filename, size,
+            'register_file_receiving', 'proxy', host, sender_idurl, filename, size,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
@@ -338,7 +338,7 @@ def interface_cancelled_file_sending(host, filename, size=0, description=None, e
     """
     if proxy():
         return proxy().callRemote(
-            'cancelled_file_sending', 'proxy', net_misc.pack_address(host), filename, size, description, error_message,
+            'cancelled_file_sending', 'proxy', host, filename, size, description, error_message,
         ).addErrback(proxy_errback)
     lg.warn('transport_proxy is not ready')
     return fail(Exception('transport_proxy is not ready')).addErrback(proxy_errback)
