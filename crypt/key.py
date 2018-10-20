@@ -100,6 +100,16 @@ def InitMyKey(keyfilename=None):
     return True
 
 
+def isMyKeyExists(keyfilename=None):
+    if keyfilename is None:
+        keyfilename = settings.KeyFileName()
+    if os.path.exists(keyfilename + '_location'):
+        newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
+        if os.path.exists(newkeyfilename):
+            keyfilename = newkeyfilename
+    return os.path.exists(keyfilename)
+
+
 def LoadMyKey(keyfilename=None):
     global _MyKeyObject
     if keyfilename is None:
