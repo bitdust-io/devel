@@ -35,6 +35,7 @@ module:: message_db
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import map
+import six
 
 #------------------------------------------------------------------------------
 
@@ -69,11 +70,20 @@ from chat import message_index
 
 from userid import my_id
 
-from CodernityDB.database import (
-    Database, RecordNotFound, RecordDeleted,
-    IndexNotFoundException, DatabaseIsNotOpened,
-    PreconditionsException,
-)
+#------------------------------------------------------------------------------
+
+if six.PY2:
+    from CodernityDB.database import (
+        Database, RecordNotFound, RecordDeleted,
+        IndexNotFoundException, DatabaseIsNotOpened,
+        PreconditionsException,
+    )
+else:
+    from CodernityDB3.database import (
+        Database, RecordNotFound, RecordDeleted,
+        IndexNotFoundException, DatabaseIsNotOpened,
+        PreconditionsException,
+    )
 
 #------------------------------------------------------------------------------
 

@@ -81,11 +81,11 @@ Datagrams format:
 
 from __future__ import absolute_import
 from six.moves import map
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
 import time
-import cStringIO
 import struct
 import bisect
 
@@ -706,7 +706,7 @@ class UDPStream(automat.Automat):
                     bisect.insort(self.input_blocks_to_ack, block_id)
             if block_id == self.input_block_id_current + 1:
             #--- receiving data and check every next block one by one
-                newdata = cStringIO.StringIO()
+                newdata = StringIO()
                 while True:
                     next_block_id = self.input_block_id_current + 1
                     try:
@@ -884,7 +884,7 @@ class UDPStream(automat.Automat):
             reactor.callLater(0, self.automat, 'close')
 
     def _push_blocks(self, data):
-        outp = cStringIO.StringIO(data)
+        outp = StringIO(data)
         while True:
             piece = outp.read(BLOCK_SIZE)
             if not piece:
@@ -1106,7 +1106,8 @@ class UDPStream(automat.Automat):
         blocks_not_acked = sorted(
             self.output_blocks_ids,
             key=lambda bid: self.output_blocks[bid][2],
-            reverse=True, )
+            reverse=True,
+        )
         for block_id in blocks_not_acked:
             if block_id in blocks_to_send_now:
                 continue

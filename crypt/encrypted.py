@@ -69,8 +69,8 @@ _DebugLevel = 12
 
 from logs import lg
 
-from lib import misc
 from lib import strng
+from lib import serialization
 
 from contacts import contactsdb
 
@@ -82,7 +82,7 @@ from crypt import my_keys
 #------------------------------------------------------------------------------
 
 
-class Block:
+class Block(object):
     """
     A class to represent an encrypted Data block. The only 2 things secret in
     here will be the ``EncryptedSessionKey`` and ``EncryptedData``. Scrubbers
@@ -102,41 +102,56 @@ class Block:
     Signature              digital signature by Creator - verifiable by public key in creator identity
     """
 
-    def __init__(self,
-                 CreatorID=None,
-                 BackupID='',
-                 BlockNumber=0,
-                 SessionKey='',
-                 SessionKeyType=None,
-                 LastBlock=True,
-                 Data='',
-                 EncryptKey=None,
-                 DecryptKey=None, ):
+    def __init__(
+            self,
+            CreatorID=None,
+            BackupID='',
+            BlockNumber=0,
+            SessionKey='',
+            SessionKeyType=None,
+            LastBlock=True,
+            Data='',
+            EncryptKey=None,
+            DecryptKey=None,
+            EncryptedSessionKey=None,
+            EncryptedData=None,
+            Length=None,
+            Signature=None,
+        ):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getLocalID()
         self.BackupID = str(BackupID)
         self.BlockNumber = BlockNumber
-        if callable(EncryptKey):
-            self.EncryptedSessionKey = EncryptKey(SessionKey)
-        elif isinstance(EncryptKey, six.string_types):
-            self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
-        else:
-            self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
-        self.SessionKeyType = SessionKeyType
-        if not self.SessionKeyType:
-            self.SessionKeyType = key.SessionKeyType()
-        self.Length = len(Data)
         self.LastBlock = bool(LastBlock)
-        self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data)  # DataLonger
-        self.Signature = None
-        self.Sign()
+        self.SessionKeyType = SessionKeyType or key.SessionKeyType()
+        if EncryptedSessionKey:
+            self.EncryptedSessionKey = EncryptedSessionKey
+        else:
+            if callable(EncryptKey):
+                self.EncryptedSessionKey = EncryptKey(SessionKey)
+            elif isinstance(EncryptKey, six.string_types):
+                self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
+            else:
+                self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
+        if EncryptedData and Length:
+            self.Length = Length
+            self.EncryptedData = EncryptedData
+        else:
+            self.Length = len(Data)
+            self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data)
+        if Signature:
+            self.Signature = Signature
+        else:
+            self.Signature = None
+            self.Sign()
         self.DecryptKey = DecryptKey
         if _Debug:
             lg.out(_DebugLevel, 'new data in %s' % self)
 
     def __repr__(self):
-        return 'encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }' % (str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
+        return 'encrypted{ BackupID=%s BlockNumber=%s Length=%s LastBlock=%s }' % (
+            str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
 
     def SessionKey(self):
         """
@@ -180,7 +195,8 @@ class Block:
         """
         Generate digital signature for that ``encrypted_block``.
         """
-        self.Signature = self.GenerateSignature()  # usually just done at packet creation
+        # usually just done at packet creation
+        self.Signature = self.GenerateSignature()
         return self
 
     def GenerateSignature(self):
@@ -200,7 +216,6 @@ class Block:
         Validate signature to verify the ``encrypted_block``.
         """
         if not self.Ready():
-            # lg.warn("block is not ready yet " + str(self))
             lg.warn("block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
@@ -225,11 +240,17 @@ class Block:
         Create a string that stores all data fields of that ``encrypted.Block``
         object.
         """
-        decrypt_key = getattr(self, 'DecryptKey')
-        delattr(self, 'DecryptKey')
-        e = misc.ObjectToString(self)
-        setattr(self, 'DecryptKey', decrypt_key)
-        return e
+        return serialization.DictToBytes({
+            'c': self.CreatorID,
+            'b': self.BackupID,
+            'n': self.BlockNumber,
+            'e': self.LastBlock,
+            'k': self.EncryptedSessionKey,
+            't': self.SessionKeyType,
+            'l': self.Length,
+            'p': self.EncryptedData,
+            's': self.Signature,
+        })
 
 #------------------------------------------------------------------------------
 
@@ -238,6 +259,15 @@ def Unserialize(data, decrypt_key=None):
     """
     A method to create a ``encrypted.Block`` instance from input string.
     """
-    newobject = misc.StringToObject(data)
-    setattr(newobject, 'DecryptKey', decrypt_key)
+    dct = serialization.BytesToDict(data)
+    newobject = Block(
+        CreatorID=dct['c'],
+        BackupID=dct['b'],
+        BlockNumber=dct['n'],
+        EncryptedSessionKey=dct['k'],
+        SessionKeyType=dct['t'],
+        Length=dct['l'],
+        EncryptedData=dct['p'],
+        Signature=dct['s'],
+    )
     return newobject

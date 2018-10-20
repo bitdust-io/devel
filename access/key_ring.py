@@ -189,7 +189,7 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     d.addCallback(lambda response_tuple: _do_request_service_keys_registry(
         key_id, trusted_idurl, include_private, timeout, result,
     ))
-    d.addErrback(lg.errback)
+    # d.addErrback(lg.errback)
     d.addErrback(result.errback)
     return result
 

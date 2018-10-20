@@ -34,7 +34,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -80,6 +80,7 @@ from dht import known_nodes
 
 from lib import strng
 from lib import utime
+from lib import jsn
 
 #------------------------------------------------------------------------------
 
@@ -113,6 +114,7 @@ def init(udp_port, db_file_path=None):
         # del dataStore['not_exist_key']
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
+        lg.exc()
         os.remove(dbPath)
         dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
@@ -248,6 +250,7 @@ def on_host_failed(err, host, result_list, total_hosts, result_defer):
         return None
     return result_defer.callback([_f for _f in result_list if _f])
 
+
 def resolve_hosts(nodes_list):
     result_defer = Deferred()
     result_list = []
@@ -261,10 +264,11 @@ def resolve_hosts(nodes_list):
 #------------------------------------------------------------------------------
 
 def random_key():
-    return key_to_hash(str(random.getrandbits(255)))
+    return key_to_hash(str(random.getrandbits(255)).encode())
 
 
 def key_to_hash(key):
+    key = strng.to_bin(key)
     h = hashlib.sha1()
     h.update(key)
     return h.digest()
@@ -279,6 +283,7 @@ def make_key(key, index, prefix, version=None):
 
 
 def split_key(key_str):
+    key_str = strng.to_text(key_str)
     prefix, key, index, version = key_str.split(':')
     return dict(
         key=key,
@@ -382,7 +387,8 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if not node():
         return fail(Exception('DHT service is off'))
     try:
-        value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
+        value = jsn.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'))
+        # value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
@@ -483,6 +489,7 @@ def get_node_data(key):
             lg.out(_DebugLevel, 'dht_service.get_node_data local node is not not read')
         return None
     count('get_node_data')
+    key = strng.to_bin(key)
     if key not in node().data:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] not exist' % key)
@@ -500,6 +507,7 @@ def set_node_data(key, value):
             lg.out(_DebugLevel, 'dht_service.set_node_data local node is not not read')
         return False
     count('set_node_data')
+    key = strng.to_bin(key)
     node().data[key] = value
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes, counter=%d' % (
@@ -513,6 +521,7 @@ def delete_node_data(key):
             lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not not read')
         return False
     count('delete_node_data')
+    key = strng.to_bin(key)
     if key not in node().data:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s] not exist' % key)
@@ -536,7 +545,7 @@ class DHTNode(DistributedTupleSpacePeer):
         now = utime.get_sec1970()
         expired_keys = []
         for key in self._dataStore.keys():
-            if key == 'nodeState':
+            if key == b'nodeState':
                 continue
             item_data = self._dataStore.getItem(key)
             if item_data:
@@ -559,8 +568,8 @@ class DHTNode(DistributedTupleSpacePeer):
         # TODO: add signature validation to be sure this is the owner of that key:value pair
         count('store_dht_service')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] with %d bytes for %d seconds, counter=%d' % (
-                strng.to_string(key, errors='ignore')[:6], len(str(value)), expireSeconds, counter('store')))
+            lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
+                base64.b64encode(key), expireSeconds, counter('store')))
         try:
             return super(DHTNode, self).store(
                 key=key,
@@ -621,7 +630,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def datagramReceived(self, datagram, address):
         count('dht_datagramReceived')
-        if len(self.receiving_queue) > 10:
+        if len(self.receiving_queue) > 50:
             lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
         self.receiving_queue.append((datagram, address, ))
         if self.receiving_worker is None:
@@ -639,7 +648,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
     def _send(self, data, rpcID, address):
         count('dht_send')
         if _Debug:
-            if len(self.sending_queue) > 10:
+            if len(self.sending_queue) > 50:
                 lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
         self.sending_queue.append((data, rpcID, address, ))
         if self.receiving_worker is None:

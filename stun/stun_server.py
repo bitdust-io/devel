@@ -54,8 +54,6 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-from lib import strng
-
 from logs import lg
 
 from system import bpio
@@ -64,6 +62,8 @@ from main import settings
 
 from automats import automat
 
+from lib import strng
+from lib import net_misc
 from lib import udp
 
 from dht import dht_service
@@ -160,7 +160,7 @@ class StunServer(automat.Automat):
             externalPort = int(bpio.ReadTextFile(settings.ExternalUDPPortFilename()))
         except:
             externalPort = self.listen_port
-        dht_service.set_node_data('stun_port', externalPort)
+        dht_service.set_node_data(b'stun_port', externalPort)
 
     def doStop(self, arg):
         """
@@ -180,8 +180,8 @@ class StunServer(automat.Automat):
             command, payload = datagram
         except:
             return False
-        youripport = '%s:%d' % (address[0], address[1])
-        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, strng.to_bin(youripport), address)
+        youripport = net_misc.pack_address((address[0], address[1]))
+        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
         lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
             youripport, address))
 
@@ -198,12 +198,18 @@ def main():
     lg.set_debug_level(24)
     bpio.init()
     settings.init()
-    dht_service.init(settings.getDHTPort())
+    dht_port = settings.getDHTPort()
+    if len(sys.argv) > 1:
+        dht_port = int(sys.argv[1])
+    udp_port = settings.getUDPPort()
+    if len(sys.argv) > 2:
+        udp_port = int(sys.argv[2])
+    dht_service.init(dht_port)
     d = dht_service.connect()
-    udp.listen(settings.getUDPPort())
+    udp.listen(udp_port)
 
     def _go(live_nodes):
-        A('start', settings.getUDPPort())
+        A('start', udp_port)
 
     d.addCallback(_go)
 

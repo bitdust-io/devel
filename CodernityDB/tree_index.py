@@ -24,7 +24,6 @@ import os
 import io
 import shutil
 from .storage import IU_Storage
-# from ipdb import set_trace
 
 from CodernityDB.env import cdb_environment
 from CodernityDB.index import TryReindexException

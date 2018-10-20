@@ -33,6 +33,10 @@ module:: p2p_stats
 
 #------------------------------------------------------------------------------
 
+from lib import strng
+
+#------------------------------------------------------------------------------
+
 _PeersProtos = {}
 _MyProtos = {}
 _CountersIn = {
@@ -108,6 +112,8 @@ def count_outbox(remote_idurl, proto, status, size):
     """
     
     """
+    remote_idurl = strng.to_text(remote_idurl)
+    proto = strng.to_text(proto)
     if remote_idurl not in peers_protos():
         peers_protos()[remote_idurl] = set()
     if status == 'finished':
@@ -129,8 +135,9 @@ def count_outbox(remote_idurl, proto, status, size):
 
 def count_inbox(remote_idurl, proto, status, bytes_received):
     """
-    
     """
+    remote_idurl = strng.to_text(remote_idurl)
+    proto = strng.to_text(proto)
     if remote_idurl not in my_protos():
         my_protos()[remote_idurl] = set()
     if status == 'finished':

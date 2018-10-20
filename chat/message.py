@@ -61,9 +61,8 @@ from p2p import contact_status
 from p2p import propagate
 
 from lib import packetid
-
-from lib import misc
 from lib import utime
+from lib import serialization
 
 from crypt import signed
 from crypt import key
@@ -177,7 +176,7 @@ def RemoveOutgoingMessageCallback(cb):
 
 #------------------------------------------------------------------------------
 
-class PrivateMessage:
+class PrivateMessage(object):
     """
     A class to represent a message.
 
@@ -185,15 +184,13 @@ class PrivateMessage:
     with encrypted body.
     """
 
-    def __init__(self, recipient_global_id):
-        self.sender = my_id.getGlobalID(key_alias='master')
+    def __init__(self, recipient_global_id, sender=None, encrypted_session=None, encrypted_body=None):
+        self.sender = sender or my_id.getGlobalID(key_alias='master')
         self.recipient = recipient_global_id
-        self.encrypted_session = None
-        self.encrypted_body = None
+        self.encrypted_session = encrypted_session
+        self.encrypted_body = encrypted_body
 
     def sender_id(self):
-        """
-        """
         return self.sender
 
     def recipient_id(self):
@@ -258,17 +255,27 @@ class PrivateMessage:
         return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body)
 
     def serialize(self):
-        return misc.ObjectToString(self)
+        dct = {
+            'r': self.recipient,
+            's': self.sender,
+            'k': self.encrypted_session,
+            'p': self.encrypted_body,
+        }
+        return serialization.DictToBytes(dct)
 
     @staticmethod
     def deserialize(input_string):
         try:
-            message_obj = misc.StringToObject(input_string)
+            dct = serialization.BytesToDict(input_string)
+            message_obj = PrivateMessage(
+                recipient_global_id=dct['r'],
+                sender=dct['s'],
+                encrypted_session=dct['k'],
+                encrypted_body=dct['b'],
+            )
         except:
             lg.exc()
             return None
-        if not hasattr(message_obj, 'sender'):
-            setattr(message_obj, 'sender', None)
         return message_obj
 
 
@@ -348,7 +355,6 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
     except Exception as exc:
         lg.exc()
         raise Exception('message encryption failed')
-    # Payload = misc.ObjectToString(Amessage)
     Payload = private_message_object.serialize()
     lg.out(4, "        payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
     outpacket = signed.Packet(

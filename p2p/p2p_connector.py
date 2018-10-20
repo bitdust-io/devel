@@ -82,6 +82,7 @@ from system import bpio
 from main import settings
 
 from lib import net_misc
+from lib import strng
 
 from automats import automat
 from automats import global_state
@@ -119,7 +120,7 @@ def inbox(newpacket, info, status, message):
         lg.out(_DebugLevel, 'p2p_connector.inbox %s %s' % (status, newpacket))
     # here need to mark this protocol as working
     if info.proto in ['tcp', ]:
-        if not net_misc.IpIsLocal(str(info.host).split(':')[0]):
+        if not net_misc.IpIsLocal(strng.to_text(info.host).split(':')[0]):
             # but we want to check that this packet is come from the Internet, not our local network
             # because we do not want to use this proto as first method if it is not working for all
             if info.proto not in active_protos():
@@ -128,7 +129,7 @@ def inbox(newpacket, info, status, message):
                     lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
     elif info.proto in ['http', ]:
-        if not net_misc.IpIsLocal(str(info.host).split(':')[0]):
+        if not net_misc.IpIsLocal(strng.to_text(info.host).split(':')[0]):
             # but we want to check that this packet is come from the Internet, not our local network
             # because we do not want to use this proto as first method if it is not working for all
             if info.proto not in active_protos():
@@ -338,7 +339,7 @@ class P2PConnector(automat.Automat):
         # TODO: need to run this actions one by one, not in parallel - use Defered chain
         propagate.update()
         propagate.write_to_dht()
-        dht_service.set_node_data('idurl', my_id.getLocalID())
+        dht_service.set_node_data(b'idurl', my_id.getLocalID())
         d = propagate.start(wide=True)
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 

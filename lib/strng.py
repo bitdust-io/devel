@@ -73,6 +73,8 @@ def to_text(s, encoding='utf-8', errors='strict'):
     """
     if ``s`` is binary type - decode it to unicode - "text" type in Python3 terms, otherwise return ``s``.
     """
+    if s is None:
+        return s
     if is_text(s):
         return s
     return s.decode(encoding=encoding, errors=errors)
@@ -82,6 +84,8 @@ def to_bin(s, encoding='utf-8', errors='strict'):
     """
     If ``s`` is unicode ("text" type in Python3 terms) - encode it to utf-8, otherwise return ``s``.
     """
+    if s is None:
+        return s
     if is_bin(s):
         return s
     return s.encode(encoding=encoding, errors=errors)
@@ -91,6 +95,8 @@ def to_string(v, encoding='utf-8', errors='strict'):
     """
     Something like `str(obj)`, but to "text" type.
     """
+    if v is None:
+        return v
     if not is_string(v):
         return text_type(v)
     if is_text(v):

@@ -54,6 +54,10 @@ And use pip to get all required packages:
         pip install virtualenv --user
 
 
+On Raspberry PI you will need to install those packages:
+
+        sudo apt-get install git gcc python-dev python-virtualenv libffi-dev libssl-dev
+
 
 #### Get BitDust to your local machine
 

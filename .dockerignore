@@ -1,0 +1,5 @@
+**/temp*
+temp*
+**/Makefile
+**/*.pyc
+**/.git

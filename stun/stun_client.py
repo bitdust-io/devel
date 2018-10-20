@@ -38,6 +38,7 @@ EVENTS:
     * :red:`shutdown`
     * :red:`start`
     * :red:`timer-10sec`
+    * :red:`timer-1sec`
     * :red:`timer-2sec`
 """
 
@@ -110,6 +111,7 @@ class StunClient(automat.Automat):
     # fast = True
 
     timers = {
+        'timer-1sec': (1.0, ['REQUEST']),
         'timer-2sec': (2.0, ['REQUEST']),
         'timer-10sec': (10.0, ['PORT_NUM?', 'REQUEST']),
     }
@@ -166,14 +168,14 @@ class StunClient(automat.Automat):
                 self.doAddCallback(arg)
             elif event == 'datagram-received' and self.isMyIPPort(arg) and self.isNeedMoreResults(arg):
                 self.doRecordResult(arg)
-            elif (event == 'timer-10sec' and self.isSomeServersResponded(arg)) or (event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg)):
+            elif event == 'port-number-received':
+                self.doAddStunServer(arg)
+                self.doStun(arg)
+            elif ( event == 'timer-1sec' and self.isSomeServersResponded(arg) ) or ( event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg) ):
                 self.state = 'KNOW_MY_IP'
                 self.doRecordResult(arg)
                 self.doReportSuccess(arg)
                 self.doClearResults(arg)
-            elif event == 'port-number-received':
-                self.doAddStunServer(arg)
-                self.doStun(arg)
         #---KNOW_MY_IP---
         elif self.state == 'KNOW_MY_IP':
             if event == 'shutdown':
@@ -295,11 +297,14 @@ class StunClient(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doRequestStunPortNumbers')
         for node in self.stun_nodes:
+            if node.id in self.deferreds:
+                lg.warn('Already requested stun_port from %r' % node)
+                continue
             if _Debug:
                 lg.out(_DebugLevel + 10, '    from %s' % node)
-            d = node.request('stun_port')
+            d = node.request(b'stun_port')
             d.addBoth(self._stun_port_received, node)
-            self.deferreds[node] = d
+            self.deferreds[node.id] = d
 
     def doAddStunServer(self, arg):
         """
@@ -337,7 +342,7 @@ class StunClient(automat.Automat):
         try:
             datagram, address = arg
             command, payload = datagram
-            ip, port = payload.split(':')
+            ip, port = payload.split(b':')
             port = int(port)
         except:
             lg.exc()
@@ -450,11 +455,11 @@ class StunClient(automat.Automat):
         self.automat('dht-nodes-not-found')
 
     def _stun_port_received(self, result, node):
-        self.deferreds.pop(node)
+        self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
             return
         try:
-            port = int(result['stun_port'])
+            port = int(result[b'stun_port'])
             address = node.address
         except:
             if _Debug:
