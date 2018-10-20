@@ -64,10 +64,10 @@ test_docker_test_2:
 	docker-compose -p "namespace2" logs
 
 test:
-	$(PYTHON) -m unittest discover -s tests/ -v
+	python -m unittest discover -s tests/ -v
 
 test_raid:
-	$(PYTHON) -m unittest discover -p "test_raid.py" -v
+	python -m unittest discover -p "test_raid.py" -v
 
 lint: venv
 	@$(TOX) -e lint
