@@ -273,13 +273,15 @@ class ProxySender(automat.Automat):
         except:
             lg.exc('failed to Serialize %s' % outpacket)
             return None
+        # see proxy_router: doForwardOutboxPacket() for receiving part
         payload = {
             'f': my_id.getLocalID(),  # from
             't': outpacket.RemoteID,  # to
             'w': wide,                # wide
             'p': raw_data,            # payload
         }
-        raw_bytes = serialization.ObjectToString(payload)
+        # raw_bytes = serialization.ObjectToString(payload)
+        raw_bytes = serialization.DictToBytes(payload)
         block = encrypted.Block(
             CreatorID=my_id.getLocalID(),
             BackupID='routed outgoing data',

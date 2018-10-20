@@ -526,35 +526,6 @@ def Parity():
     return "Parity"
 
 
-def BinaryToAscii(inpt):
-    """
-    Not used right now.
-
-    Have had some troubles with jelly/banana. Plan to move to my own
-    serialization of objects but leaving this here for now.
-    """
-    return base64.encodestring(inpt)
-
-
-def AsciiToBinary(inpt):
-    """
-    Uses built-in method ``base64.decodestring``.
-    """
-    return base64.decodestring(inpt)
-
-
-def ObjectToString_old(obj):
-    """
-    """
-    return six.moves.cPickle.dumps(obj, protocol=six.moves.cPickle.HIGHEST_PROTOCOL)
-
-
-def StringToObject_old(inp):
-    """
-    """
-    return six.moves.cPickle.loads(inp)
-
-
 def ObjectToString(obj):
     """
     """
@@ -567,20 +538,6 @@ def StringToObject(inp):
     """
     from . import serialization
     return serialization.StringToObject(inp)
-
-
-def ObjectToAscii(input):
-    """
-    Not used.
-    """
-    return BinaryToAscii(ObjectToString(input))
-
-
-def AsciiToObject(input):
-    """
-    Not used.
-    """
-    return StringToObject(AsciiToBinary(input))              # works for 384 bit RSA keys
 
 #------------------------------------------------------------------------------
 

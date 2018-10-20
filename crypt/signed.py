@@ -279,7 +279,7 @@ class Packet(object):
         #     currentPackets = []
         # src = misc.ObjectToString(self)
         # setattr(self, 'Packets', currentPackets)
-        src = strng.to_bin(serialization.DictToString({
+        src = serialization.DictToBytes({
             'm': self.Command,
             'o': self.OwnerID,
             'c': self.CreatorID,
@@ -289,7 +289,7 @@ class Packet(object):
             'r': self.RemoteID,
             'k': self.KeyID,
             's': self.Signature,
-        }))
+        })
         lg.out(10, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
         return src
 
@@ -321,7 +321,26 @@ def Unserialize(data):
     if data is None:
         return None
     lg.out(10, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
+
     try:
+        json_data = serialization.BytesToDict(data)
+        newobject = Packet(
+            Command=json_data['m'],
+            OwnerID=json_data['o'],
+            CreatorID=json_data['c'],
+            PacketID=json_data['i'],
+            Date=json_data['d'],
+            Payload=json_data['p'],
+            RemoteID=json_data['r'],
+            KeyID=json_data['k'],
+            Signature=json_data['s'],
+        )
+    except:
+        lg.exc(data)
+        newobject = None
+    
+    # fallback for backward compatibility
+    if not newobject:
         newobject = misc.StringToObject(strng.to_text(data))
 
         if six.PY2:
@@ -339,27 +358,6 @@ def Unserialize(data):
             setattr(newobject, 'KeyID', None)
         if not hasattr(newobject, 'Packets'):
             setattr(newobject, 'Packets', [])
-        
-        if not newobject:
-            raise Exception('must be json serialized')
-
-    except:
-        try:
-            json_data = serialization.StringToDict(data)
-            newobject = Packet(
-                Command=json_data['m'],
-                OwnerID=json_data['o'],
-                CreatorID=json_data['c'],
-                PacketID=json_data['i'],
-                Date=json_data['d'],
-                Payload=json_data['p'],
-                RemoteID=json_data['r'],
-                KeyID=json_data['k'],
-                Signature=json_data['s'],
-            )
-        except:
-            lg.exc(data)
-            newobject = None
 
     if newobject is None:
         lg.warn("result is None")

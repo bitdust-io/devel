@@ -38,6 +38,7 @@ So I decide to use standard pickle module and upgrade that in future.
 from __future__ import absolute_import
 
 from lib import jsn
+from lib import strng
     
 #------------------------------------------------------------------------------
 
@@ -45,16 +46,25 @@ SERIALIZATION_METHOD = 'pickle'
 
 #------------------------------------------------------------------------------
 
-def DictToString(dct):
+def DictToBytes(dct, encoding='utf-8', errors='strict'):
     """
     """
-    return jsn.dumps(dct, separators=(',', ':'), indent=0, sort_keys=True, )
+    return strng.to_bin(
+        jsn.dumps(
+            dct,
+            separators=(',', ':'),
+            indent=0,
+            sort_keys=True,
+        ),
+        encoding=encoding,
+        errors=errors,
+    )
 
 
-def StringToDict(inp):
+def BytesToDict(inp, encoding='utf-8', errors='strict'):
     """
     """
-    return jsn.loads(inp)
+    return jsn.loads(strng.to_text(inp, encoding=encoding, errors=errors))
 
 #------------------------------------------------------------------------------
 
