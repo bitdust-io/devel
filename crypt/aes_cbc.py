@@ -45,6 +45,7 @@ from lib import serialization
 #------------------------------------------------------------------------------
 
 def encrypt_json(raw_data, secret_16bytes_key):
+    # TODO: add salt to raw_data
     cipher = AES.new(
         key=secret_16bytes_key,
         mode=AES.MODE_CBC,
@@ -67,31 +68,8 @@ def decrypt_json(encrypted_data, secret_16bytes_key):
         iv=iv,
     )
     result = Padding.unpad(cipher.decrypt(ct), AES.block_size)
+    # TODO: remove salt from raw_data
     return result
-
-#------------------------------------------------------------------------------
-
-# def encrypt(raw_data, secret_16bytes_key):
-#     cipher = AES.new(
-#         key=secret_16bytes_key,
-#         mode=AES.MODE_CBC,
-#     )
-#     ct_bytes = cipher.encrypt(Padding.pad(raw_data, AES.block_size))
-#     output_data = dict(iv=cipher.iv, ct=ct_bytes)
-#     result = serialization.ObjectToString(output_data)
-#     return result
-
-
-# def decrypt(encrypted_data, secret_16bytes_key):
-#     input_data = serialization.StringToObject(encrypted_data)
-#     cipher = AES.new(
-#         key=secret_16bytes_key,
-#         mode=AES.MODE_CBC,
-#         iv=input_data['iv'],
-#     )
-#     padded_data = cipher.decrypt(input_data['ct'])
-#     result = Padding.unpad(padded_data, AES.block_size)
-#     return result
 
 #------------------------------------------------------------------------------
 
