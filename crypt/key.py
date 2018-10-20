@@ -296,7 +296,7 @@ def EncryptWithSessionKey(session_key, inp):
     :param session_key: randomly generated session key
     :param inp: input string to encrypt
     """
-    ret = aes_cbc.encrypt(inp, session_key)
+    ret = aes_cbc.encrypt_json(inp, session_key)
     return ret
 
 
@@ -308,7 +308,7 @@ def DecryptWithSessionKey(session_key, inp):
         here it must be already decrypted
     :param inp: input string to decrypt
     """
-    ret = aes_cbc.decrypt(inp, session_key)
+    ret = aes_cbc.decrypt_json(inp, session_key)
     return ret
 
 #------------------------------------------------------------------------------

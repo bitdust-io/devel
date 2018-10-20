@@ -356,7 +356,8 @@ class ProxyRouter(automat.Automat):
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
             inpt = BytesIO(padded_data[:int(block.Length)])
-            payload = serialization.StringToObject(inpt.read())
+            # payload = serialization.StringToObject(inpt.read())
+            payload = serialization.BytesToDict(inpt.read())
             inpt.close()
             sender_idurl = payload['f']                 # from
             receiver_idurl = payload['t']               # to

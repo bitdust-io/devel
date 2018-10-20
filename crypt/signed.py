@@ -72,6 +72,7 @@ from lib import packetid
 from lib import nameurl
 from lib import utime
 from lib import strng
+from lib import serialization
 
 from contacts import contactsdb
 
@@ -98,7 +99,7 @@ class Packet(object):
     make all network working.
     """
 
-    def __init__(self, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID, KeyID=None, ):
+    def __init__(self, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID, KeyID=None, Date=None, Signature=None, ):
         """
         Init all fields and sign the packet .
         """
@@ -112,7 +113,7 @@ class Packet(object):
         # on the local machine.  Can be used for filenames, and to prevent duplicates.
         self.PacketID = PacketID
         # create a string to remember current world time
-        self.Date = utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p")
+        self.Date = Date or utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p")
         # datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
         # main body of binary data
         self.Payload = Payload
@@ -120,13 +121,14 @@ class Packet(object):
         # use his packets to mess up other nodes by sending it to them
         self.RemoteID = RemoteID
         # which private key to use to generate signature
-        self.KeyID = KeyID
-        if not self.KeyID:
-            self.KeyID = my_id.getGlobalID(key_alias='master')
-        # signature on Hash is always by CreatorID
-        self.Signature = None
-        # must be signed to be valid
-        self.Sign()
+        self.KeyID = KeyID or my_id.getGlobalID(key_alias='master')
+        if Signature:
+            self.Signature = Signature
+        else:
+            # signature on Hash is always by CreatorID
+            self.Signature = None
+            # must be signed to be valid
+            self.Sign()
         # stores list of related objects packet_in() or packet_out()
         self.Packets = []
 
@@ -268,14 +270,25 @@ class Packet(object):
 
         This is useful when need to save the packet on disk.
         """
-        if hasattr(self, 'Packets'):
-            currentPackets = getattr(self, 'Packets')
-            delattr(self, 'Packets')
-        else:
-            currentPackets = []
-        src = misc.ObjectToString(self)
-        setattr(self, 'Packets', currentPackets)
-        # lg.out(10, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
+        # if hasattr(self, 'Packets'):
+        #     currentPackets = getattr(self, 'Packets')
+        #     delattr(self, 'Packets')
+        # else:
+        #     currentPackets = []
+        # src = misc.ObjectToString(self)
+        # setattr(self, 'Packets', currentPackets)
+        src = serialization.DictToBytes({
+            'm': self.Command,
+            'o': self.OwnerID,
+            'c': self.CreatorID,
+            'i': self.PacketID,
+            'd': self.Date,
+            'p': self.Payload,
+            'r': self.RemoteID,
+            'k': self.KeyID,
+            's': self.Signature,
+        })
+        lg.out(10, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
         return src
 
     def __len__(self):
@@ -305,26 +318,49 @@ def Unserialize(data):
     """
     if data is None:
         return None
-    # lg.out(10, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
-    newobject = misc.StringToObject(data)
+    lg.out(10, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
+
+    try:
+        json_data = serialization.BytesToDict(data)
+        newobject = Packet(
+            Command=json_data['m'],
+            OwnerID=json_data['o'],
+            CreatorID=json_data['c'],
+            PacketID=json_data['i'],
+            Date=json_data['d'],
+            Payload=json_data['p'],
+            RemoteID=json_data['r'],
+            KeyID=json_data['k'],
+            Signature=json_data['s'],
+        )
+    except:
+        lg.exc(data)
+        newobject = None
+    
+#     # fallback for backward compatibility
+#     if not newobject:
+#         newobject = misc.StringToObject(strng.to_text(data))
+# 
+#         if six.PY2:
+#             if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
+#                 lg.warn("not an instance: " + str(newobject))
+#                 return None
+#         else:
+#             if not str(type(newobject))[:6] == "<class":
+#                 lg.warn("not an instance: " + str(newobject))
+#                 return None
+#         if not str(newobject.__class__).count('signed.Packet'):
+#             lg.warn("not a packet: " + str(newobject.__class__))
+#             return None
+#         if not hasattr(newobject, 'KeyID'):
+#             setattr(newobject, 'KeyID', None)
+#         if not hasattr(newobject, 'Packets'):
+#             setattr(newobject, 'Packets', [])
+
     if newobject is None:
         lg.warn("result is None")
         return None
-    if six.PY2:
-        if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
-            lg.warn("not an instance: " + str(newobject))
-            return None
-    else:
-        if not str(type(newobject))[:6] == "<class":
-            lg.warn("not an instance: " + str(newobject))
-            return None
-    if not str(newobject.__class__).count('signed.Packet'):
-        lg.warn("not a packet: " + str(newobject.__class__))
-        return None
-    if not hasattr(newobject, 'KeyID'):
-        setattr(newobject, 'KeyID', None)
-    if not hasattr(newobject, 'Packets'):
-        setattr(newobject, 'Packets', [])
+
     return newobject
 
 
