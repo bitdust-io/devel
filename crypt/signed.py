@@ -270,13 +270,6 @@ class Packet(object):
 
         This is useful when need to save the packet on disk.
         """
-        # if hasattr(self, 'Packets'):
-        #     currentPackets = getattr(self, 'Packets')
-        #     delattr(self, 'Packets')
-        # else:
-        #     currentPackets = []
-        # src = misc.ObjectToString(self)
-        # setattr(self, 'Packets', currentPackets)
         src = serialization.DictToBytes({
             'm': self.Command,
             'o': self.OwnerID,
@@ -337,26 +330,6 @@ def Unserialize(data):
         lg.exc(data)
         newobject = None
     
-#     # fallback for backward compatibility
-#     if not newobject:
-#         newobject = misc.StringToObject(strng.to_text(data))
-# 
-#         if six.PY2:
-#             if not isinstance(newobject, (types.InstanceType, types.ObjectType)):
-#                 lg.warn("not an instance: " + str(newobject))
-#                 return None
-#         else:
-#             if not str(type(newobject))[:6] == "<class":
-#                 lg.warn("not an instance: " + str(newobject))
-#                 return None
-#         if not str(newobject.__class__).count('signed.Packet'):
-#             lg.warn("not a packet: " + str(newobject.__class__))
-#             return None
-#         if not hasattr(newobject, 'KeyID'):
-#             setattr(newobject, 'KeyID', None)
-#         if not hasattr(newobject, 'Packets'):
-#             setattr(newobject, 'Packets', [])
-
     if newobject is None:
         lg.warn("result is None")
         return None
