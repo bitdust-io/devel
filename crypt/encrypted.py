@@ -69,7 +69,6 @@ _DebugLevel = 12
 
 from logs import lg
 
-from lib import misc
 from lib import strng
 from lib import serialization
 
@@ -196,7 +195,8 @@ class Block(object):
         """
         Generate digital signature for that ``encrypted_block``.
         """
-        self.Signature = self.GenerateSignature()  # usually just done at packet creation
+        # usually just done at packet creation
+        self.Signature = self.GenerateSignature()
         return self
 
     def GenerateSignature(self):
@@ -216,7 +216,6 @@ class Block(object):
         Validate signature to verify the ``encrypted_block``.
         """
         if not self.Ready():
-            # lg.warn("block is not ready yet " + str(self))
             lg.warn("block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
@@ -241,11 +240,6 @@ class Block(object):
         Create a string that stores all data fields of that ``encrypted.Block``
         object.
         """
-        # decrypt_key = getattr(self, 'DecryptKey')
-        # delattr(self, 'DecryptKey')
-        # e = misc.ObjectToString(self)
-        # setattr(self, 'DecryptKey', decrypt_key)
-        # return e
         return serialization.DictToBytes({
             'c': self.CreatorID,
             'b': self.BackupID,
@@ -265,9 +259,6 @@ def Unserialize(data, decrypt_key=None):
     """
     A method to create a ``encrypted.Block`` instance from input string.
     """
-    # newobject = misc.StringToObject(data)
-    # setattr(newobject, 'DecryptKey', decrypt_key)
-    # return newobject
     dct = serialization.BytesToDict(data)
     newobject = Block(
         CreatorID=dct['c'],

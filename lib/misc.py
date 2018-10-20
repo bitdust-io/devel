@@ -525,20 +525,6 @@ def Parity():
     """
     return "Parity"
 
-
-# def ObjectToString(obj):
-#     """
-#     """
-#     from . import serialization
-#     return serialization.ObjectToString(obj)
-
-
-# def StringToObject(inp):
-#     """
-#     """
-#     from . import serialization
-#     return serialization.StringToObject(inp)
-
 #------------------------------------------------------------------------------
 
 def pack_url_param(s):

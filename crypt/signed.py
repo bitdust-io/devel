@@ -46,7 +46,6 @@ Packet Fields are all strings (no integers, objects, etc)
 
 from __future__ import absolute_import
 from __future__ import print_function
-import six
 
 #------------------------------------------------------------------------------
 
@@ -56,7 +55,6 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import sys
-import types
 from twisted.internet import threads
 
 #------------------------------------------------------------------------------
@@ -67,7 +65,6 @@ from system import bpio
 
 from p2p import commands
 
-from lib import misc
 from lib import packetid
 from lib import nameurl
 from lib import utime
@@ -101,7 +98,7 @@ class Packet(object):
 
     def __init__(self, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID, KeyID=None, Date=None, Signature=None, ):
         """
-        Init all fields and sign the packet .
+        Init all fields and sign the packet.
         """
         # Legal Commands are in commands.py
         self.Command = Command
@@ -145,7 +142,6 @@ class Packet(object):
     def Sign(self):
         """
         Call ``GenerateSignature`` and save the result.
-
         Usually just done at packet creation.
         """
         self.Signature = self.GenerateSignature()
@@ -155,7 +151,6 @@ class Packet(object):
         """
         This make a long string containing all needed fields of ``packet``
         (without Signature).
-
         Just to be able to generate a hash of the whole packet .
         """
         sep = b"-"
@@ -266,9 +261,8 @@ class Packet(object):
 
     def Serialize(self):
         """
-        Create a string from packet object using ``lib.misc.ObjectToString``.
-
-        This is useful when need to save the packet on disk.
+        Create a string from packet object.
+        This is useful when need to save the packet on disk or send via network.
         """
         src = serialization.DictToBytes({
             'm': self.Command,
@@ -281,7 +275,8 @@ class Packet(object):
             'k': self.KeyID,
             's': self.Signature,
         })
-        lg.out(10, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
+        if _Debug:
+            lg.out(_DebugLevel, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
         return src
 
     def __len__(self):
@@ -302,16 +297,15 @@ class PacketZeroSigned(Packet):
 
 def Unserialize(data):
     """
-    We expect here a string containing a whole packet object in text form. Here
-    is used a special libraries in ``twisted.spread``: ``banana`` and ``jelly``
-    to do that work. This stuff is placed in the ``lib.misc.StringToObject``.
-    So return a real object in the memory from given string.
-
-    All class fields are loaded, signature can be verified to be sure - it was  truly original string.
+    We expect here a string containing a whole packet object in text form.
+    Will return a real object in the memory from given string.
+    All class fields are loaded, signature can be verified to be sure - it was truly original string.
     """
     if data is None:
         return None
-    lg.out(10, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
+
+    if _Debug:
+        lg.out(_DebugLevel, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
 
     try:
         json_data = serialization.BytesToDict(data)

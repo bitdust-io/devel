@@ -455,6 +455,8 @@ class ProxyReceiver(automat.Automat):
             lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
                 str(routed_packet), info.proto, info.host, len(data)))
         if routed_packet.Command == commands.Identity():
+            if _Debug:
+                lg.out('    found identity in relay packet %s' % routed_packet)
             newidentity = identity.identity(xmlsrc=routed_packet.Payload)
             idurl = newidentity.getIDURL()
             if not identitycache.HasKey(idurl):
@@ -463,6 +465,8 @@ class ProxyReceiver(automat.Automat):
                 lg.warn("ERROR has non-Valid identity")
                 return
         if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
+            if _Debug:
+                lg.out('    found routed identity in relay packet %s' % routed_packet)
             try:
                 routed_identity = signed.Unserialize(routed_packet.Payload)
                 newidentity = identity.identity(xmlsrc=routed_identity.Payload)
