@@ -32,13 +32,15 @@
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import open
 import gc
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+
+#------------------------------------------------------------------------------
+
 from Cryptodome.PublicKey import RSA
-from Cryptodome.Hash import SHA1
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.Util import number
@@ -49,6 +51,8 @@ from lib import strng
 
 from system import local_fs
 
+from crypt import hashes
+
 #------------------------------------------------------------------------------
 
 class RSAKey(object):
@@ -58,6 +62,11 @@ class RSAKey(object):
     
     def isReady(self):
         return self.keyObject is not None
+
+    def forget(self):
+        self.keyObject = None
+        gc.collect()
+        return True
 
     def generate(self, bits):
         if self.keyObject:
@@ -87,14 +96,14 @@ class RSAKey(object):
     def fromString(self, key_string):
         if self.keyObject:
             raise ValueError('key object already exist')
-        self.keyObject = RSA.import_key(strng.to_bin(key_string))
+        self.keyObject = RSA.import_key(key_string)
         return True
 
     def fromFile(self, keyfilename):
         if self.keyObject:
             raise ValueError('key object already exist')
         key_src = local_fs.ReadTextFile(keyfilename)
-        self.keyObject = RSA.import_key(strng.to_bin(key_src))
+        self.keyObject = RSA.import_key(key_src)
         del key_src
         gc.collect()
         return True
@@ -111,25 +120,37 @@ class RSAKey(object):
             raise ValueError('key object is not exist')
         return strng.to_text(self.keyObject.publickey().exportKey(format=output_format))
 
-    def sign(self, message):
+    def sign(self, message, as_digits=True):
         if not self.keyObject:
             raise ValueError('key object is not exist')
-        h = SHA1.new(strng.to_bin(message))
+        if not strng.is_bin(message):
+            raise ValueError('message must be byte string')
+        h = hashes.sha1(message, return_object=True)
         signature_bytes = pkcs1_15.new(self.keyObject).sign(h)
-        signature_int = number.bytes_to_long(signature_bytes)
-        signature = strng.to_text(str(signature_int))
-        return signature
+        if not as_digits:
+            return signature_bytes
+        signature_raw = strng.to_bin(strng.to_string(number.bytes_to_long(signature_bytes)))
+        if signature_bytes[0:1] == b'\x00':
+            signature_raw = b'0' + signature_raw
+        return signature_raw
 
-    def verify(self, signature, message):
-        h = SHA1.new(strng.to_bin(message))
+    def verify(self, signature, message, signature_as_digits=True):
+        if signature_as_digits:
+            signature_raw = number.long_to_bytes(int(strng.to_text(signature)))
+            if signature[0:1] == b'0':
+                signature_raw = b'\x00' + signature_raw
+        if not strng.is_bin(signature_raw):
+            raise ValueError('signature must be byte string')
+        if not strng.is_bin(message):
+            raise ValueError('message must be byte string')
+        h = hashes.sha1(message, return_object=True)
         try:
-            signature_int = int(signature)
-            signature_bytes = number.long_to_bytes(signature_int)
-            pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
+            pkcs1_15.new(self.keyObject).verify(h, signature_raw)
             result = True
-        except (ValueError, TypeError):
-            from logs import lg
-            lg.exc()
+        except (ValueError, TypeError, ):
+            if _Debug:
+                from logs import lg
+                lg.exc()
             result = False
         return result
 
@@ -146,4 +167,3 @@ class RSAKey(object):
         cipher = PKCS1_OAEP.new(self.keyObject)
         private_message = cipher.decrypt(encrypted_payload)
         return private_message
-

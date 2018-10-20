@@ -36,6 +36,11 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import os
 import cgi
 import json
@@ -51,7 +56,7 @@ from logs import lg
 
 from interface import api
 
-from lib.txrestapi.txrestapi.resource import APIResource
+from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
 from lib.txrestapi.txrestapi.methods import GET, POST, PUT, DELETE, ALL
 
 #------------------------------------------------------------------------------
@@ -136,14 +141,16 @@ class BitDustAPISite(Site):
         """
         Only accepting connections from local machine!
         """
-        if addr.host != '127.0.0.1':
-            if 'BITDUST_API_PASS_EXTERNAL_CONNECTIONS' not in os.environ.keys():
-                return None
-
+        if addr.host == '127.0.0.1':
+            return Site.buildProtocol(self, addr)
+        if not _Debug:
+            return None
+        if os.environ.get('BITDUST_API_PASS_EXTERNAL_CONNECTIONS', '0') != '1':
+            return None
         return Site.buildProtocol(self, addr)
 
 
-class BitDustRESTHTTPServer(APIResource):
+class BitDustRESTHTTPServer(JsonAPIResource):
     """
     A set of API method to interract and control locally running BitDust process.
     """

@@ -7,8 +7,8 @@
 DEPS:=requirements.txt
 DOCKER_COMPOSE=$(shell which docker-compose)
 
-VENV="${HOME}/.bitdust/venv"
-PIP:="${VENV}/bin/pip"
+VENV=${HOME}/.bitdust/venv
+PIP=${VENV}/bin/pip
 CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
@@ -18,11 +18,14 @@ TOX_PY_LIST="$(shell $(TOX) -l | grep ^py | xargs | sed -e 's/ /,/g')"
 
 .PHONY: install
 
-install: clean venv deploy
-	@echo "Building BitDust environemt and installing requirements"
+install:
+	@echo "Building BitDust environment and installing requirements"
+	python bitdust.py deploy
 
-deploy:
-	$(PYTHON) bitdust.py deploy
+venv: install
+
+compile:
+	$(PYTHON) compile.py build_ext
 
 tox: venv setup.py
 	$(TOX)
@@ -39,16 +42,32 @@ clean: pyclean docsclean
 	@echo "Cleanup current BitDust environemt"
 	@rm -rf ${VENV}
 
-venv:
+venv_off:
 	@echo "Creating new virtual environment in ${VENV}"
 	@virtualenv -p python2.7 ${VENV}
 	@$(PIP) install -U "pip>=7.0" -q
-	# @$(PIP) install -r $(DEPS)
+	@$(PIP) install -r $(DEPS)
 
-test: clean tox
+test_tox: clean tox
 
-test/%: venv pyclean
+test_tox/%: venv pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
+
+test_docker_test_1:
+	make -C tests/e2e/ -j2 all
+	make -C tests/e2e/ test_1
+	docker-compose -p "namespace1" logs
+
+test_docker_test_2:
+	make -C tests/e2e/ -j2 all
+	make -C tests/e2e/ test_2
+	docker-compose -p "namespace2" logs
+
+test: install
+	$(PYTHON) -m unittest discover -s tests/ -v
+
+test_raid: install
+	$(PYTHON) -m unittest discover -p "test_raid.py" -v
 
 lint: venv
 	@$(TOX) -e lint
@@ -80,7 +99,7 @@ link:
 	@echo "created executable script in ${HOME}/.bitdust/bitdust"
 
 smoketest:
-	@for srv in `$(PYTHON) -c "import userid.known_servers; s=userid.known_servers.by_host(); print ' '.join(['{}:{}'.format(i, s[i][0]) for i in s])"`; do echo "\n$$srv"; curl -I --connect-timeout 2 $$srv 2>/dev/null | grep "HTTP"; done
+	@for srv in `$(PYTHON) -c "import userid.known_servers; s=userid.known_servers.by_host(); print ' '.join(['{}:{}'.format(i, s[i][0]) for i in s])"`; do echo "\n$$srv"; curl -I --connect-timeout 10 $$srv 2>/dev/null | grep "HTTP"; done
 
 smoketestdht:
 	@for srv in `$(PYTHON) -c "import dht.known_nodes; s=dht.known_nodes.default_nodes(); print ' '.join(['{}:{}'.format(i[0], i[1]) for i in s])"`; do echo "\n$$srv"; rndudpport=`echo $$RANDOM % 10000 + 10000 | bc`; rm -rf /tmp/bitdust_dht_smoketest; ~/.bitdust/venv/bin/python dht/dht_service.py ping --dhtdb=/tmp/bitdust_dht_smoketest --udpport=$$rndudpport --seeds="$$srv"; done

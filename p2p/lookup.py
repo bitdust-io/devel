@@ -36,8 +36,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 6
+_Debug = False
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -257,7 +257,7 @@ def lookup_in_dht():
 def on_idurl_response(response, result):
     if _Debug:
         lg.out(_DebugLevel, 'lookup.on_idurl_response : %r' % response)
-    responded_idurl = response.get('idurl')
+    responded_idurl = response.get(b'idurl')
     if not responded_idurl:
         result.errback(Exception('idurl observe failed'))
         return response
@@ -275,7 +275,7 @@ def observe_dht_node(node):
     if _Debug:
         lg.out(_DebugLevel, 'lookup.observe_dht_node %s' % node)
     result = Deferred()
-    d = node.request('idurl')
+    d = node.request(b'idurl')
     d.addCallback(on_idurl_response, result)
     # d.addCallback(lambda response: result.callback(strng.to_text(response.get('idurl'))))
     d.addErrback(result.errback)
@@ -453,7 +453,6 @@ class DiscoveryTask(object):
             d.addCallback(self._on_identity_cached, node)
             return d
         except:
-            import pdb; pdb.set_trace()
             lg.exc()
             return idurl
         

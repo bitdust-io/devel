@@ -54,7 +54,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -89,22 +89,25 @@ from . import rebuild
 _MODULES = (
     'os',
     'sys',
-    'cStringIO',
+    'StringIO',
     'struct',
     'logs.lg',
     'raid.read',
     'raid.make',
     'raid.rebuild',
     'raid.eccmap',
+    'raid.utils',
     'main.settings',
     'system.bpio',
     'lib.misc',
     'lib.packetid',
+    'copy',
+    'array',
 )
 
 _VALID_TASKS = {
     'make': (make.do_in_memory,
-             (make.RoundupFile, make.ReadBinaryFile, make.WriteFile)),
+             (make.RoundupFile, make.ReadBinaryFile, make.WriteFile, make.ReadBinaryFileAsArray)),
     'read': (read.raidread,
              (read.RebuildOne, read.ReadBinaryFile,)),
     'rebuild': (rebuild.rebuild,

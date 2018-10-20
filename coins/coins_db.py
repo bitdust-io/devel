@@ -35,6 +35,7 @@ module:: coins_db
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import map
+import six
 
 #------------------------------------------------------------------------------
 
@@ -46,11 +47,6 @@ _DebugLevel = 10
 import os
 
 from twisted.internet import reactor
-
-#------------------------------------------------------------------------------
-
-from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
-from CodernityDB.index import IndexNotFoundException
 
 #------------------------------------------------------------------------------
 
@@ -69,6 +65,15 @@ from main import settings
 
 from coins import coins_index
 from coins import coins_io
+
+#------------------------------------------------------------------------------
+
+if six.PY2:
+    from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
+    from CodernityDB.index import IndexNotFoundException
+else:
+    from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
+    from CodernityDB.index import IndexNotFoundException    
 
 #------------------------------------------------------------------------------
 

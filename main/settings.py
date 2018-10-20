@@ -1290,6 +1290,7 @@ def FontImageFile():
 
 def DefaultXMLRPCPort():
     """
+    Only Local! Never expose to outside of localhost.
     Obsolete. To be removed.
     """
     return 8082
@@ -1311,6 +1312,7 @@ def DefaultRESTHTTPPort():
 
 def DefaultFTPPort():
     """
+    Only Local! Never expose to outside of localhost.
     """
     return 8021
 
@@ -1328,7 +1330,7 @@ def IdentityServerPort():
         7) you can use different ways to transfer your identity file to your own id server - do it by your own.
 
     This is a port number of our identity file to receive identity files from users.
-    This should be same for all identity servers everywhere.
+    Must accept external incoming connections.
     """
     return 6661  # 7773
 
@@ -1337,6 +1339,8 @@ def IdentityWebPort():
     """
     Our public identity servers use standard web port number to publish
     identity files.
+    Must accept external incoming connections.
+    Normally you would add port 8084 to port 80 routing using Apache2 or Nginx web server.
     """
     return 8084
 
@@ -1344,6 +1348,7 @@ def IdentityWebPort():
 def DefaultTCPPort():
     """
     A default port number for transport_tcp.
+    Must accept external incoming connections.
     """
     return 7771
 
@@ -1351,6 +1356,7 @@ def DefaultTCPPort():
 def DefaultUDPPort():
     """
     A default port number for transport_udp.
+    Must accept external incoming connections.
     """
     return 8882
 
@@ -1358,6 +1364,7 @@ def DefaultUDPPort():
 def DefaultDHTPort():
     """
     A default UDP port number for DHT network.
+    Must accept external incoming connections.
     """
     return 14441
 
@@ -1365,6 +1372,7 @@ def DefaultDHTPort():
 def DefaultHTTPPort():
     """
     A default port number for transport_http.
+    Must accept external incoming connections.
     """
     return 9993
 
@@ -1372,6 +1380,7 @@ def DefaultHTTPPort():
 def DefaultWebLogPort():
     """
     A port number for HTTP server to print program logs.
+    Only Local! Never expose to outside of localhost.
     """
     return 9999
 
@@ -1379,6 +1388,7 @@ def DefaultWebLogPort():
 def DefaultWebTrafficPort():
     """
     A port number for HTTP server to print program packets traffic.
+    Only Local! Never expose to outside of localhost.
     """
     return 9997
 

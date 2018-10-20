@@ -77,6 +77,8 @@ from p2p import commands
 from p2p import p2p_stats
 
 from lib import nameurl
+from lib import strng
+from lib import net_misc
 
 from system import tmpfile
 
@@ -286,7 +288,7 @@ class WorkItem(object):
 
     def __init__(self, proto, host, size=0):
         self.proto = proto
-        self.host = host
+        self.host = net_misc.pack_address(host)
         self.time = time.time()
         self.transfer_id = None
         self.status = None
@@ -662,7 +664,8 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        assert self.popped_item
+        if not self.popped_item:
+            raise Exception('Current outgoing item not exist')
         p2p_stats.count_outbox(
             self.remote_idurl, self.popped_item.proto,
             self.popped_item.status, self.popped_item.bytes_sent)
@@ -846,7 +849,7 @@ class PacketOut(automat.Automat):
                 proto, host, port, fn = nameurl.UrlParse(tcp_contact)
                 if port:
                     host = localIP + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
+                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -856,7 +859,7 @@ class PacketOut(automat.Automat):
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
                 if port:
                     host = host + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -864,17 +867,17 @@ class PacketOut(automat.Automat):
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
+                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
         # http contact
         if http_contact and 'http' in working_protos:
-            proto, host, port, fn = nameurl.UrlParse(http_contact)
+            proto, host, port, _ = nameurl.UrlParse(http_contact)
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
                 if port:
                     host = host + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
+                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -882,7 +885,7 @@ class PacketOut(automat.Automat):
         if proxy_contact and 'proxy' in working_protos:
             proto, host = nameurl.IdContactSplit(proxy_contact)
             if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
-                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
+                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -896,7 +899,7 @@ class PacketOut(automat.Automat):
                 # try sending with tcp even if it is switched off in the settings
                 if gateway.is_installed(proto) and gateway.can_send(proto):
                     if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
-                        gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
+                        gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
                         self.items.append(WorkItem(proto, host, self.filesize))
                         self.automat('items-sent')
                         return
@@ -928,7 +931,7 @@ class PacketOut(automat.Automat):
                     self.results.append(i)
                     self.popped_item = i
                     break
-        else:
-            raise Exception('Wrong argument!')
+        if not self.popped_item:
+            raise Exception('Failed to populate active item')
 
 #------------------------------------------------------------------------------

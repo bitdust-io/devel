@@ -202,7 +202,7 @@ class SupplierService(LocalService):
                 if not my_keys.is_key_registered(customer_public_key_id):
                     key_id, key_object = my_keys.read_key_info(customer_public_key)
                     if not my_keys.register_key(key_id, key_object):
-                        lg.warn('failed to register customer public key')
+                        lg.err('failed to register customer public key')
             except:
                 lg.exc()
         else:

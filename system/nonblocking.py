@@ -47,7 +47,7 @@ PIPE_EMPTY = 0
 PIPE_READY2READ = 1
 PIPE_CLOSED = 2
 
-if subprocess.mswindows:
+if getattr(subprocess, 'mswindows', None):
     from win32file import ReadFile, WriteFile
     from win32pipe import PeekNamedPipe
     from win32api import TerminateProcess, OpenProcess, CloseHandle
@@ -121,7 +121,7 @@ class Popen(subprocess.Popen):
         Under Linux use built-in method ``fcntl.fcntl`` to make the pipe
         read/write non blocking.
         """
-        if subprocess.mswindows:
+        if getattr(subprocess, 'mswindows', None):
             return
         conn, maxsize = self.get_conn_maxsize('stdout', None)
         if conn is None:
@@ -130,7 +130,7 @@ class Popen(subprocess.Popen):
         if not conn.closed:
             fcntl.fcntl(conn, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
-    if subprocess.mswindows:
+    if getattr(subprocess, 'mswindows', None):
         def send(self, input):
             if not self.stdin:
                 return None

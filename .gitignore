@@ -22,6 +22,7 @@ services/html_src/
 venv
 bitdust.egg-info/
 dist/
+tests/data/test_*
 
 # IDE specific
 .idea
