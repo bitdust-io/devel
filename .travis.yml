@@ -25,7 +25,7 @@ before_install:
   - make -v
 
 script:
-  - make test_raid
+  - make test
   - make -C tests/e2e/ -j2 test
 
 

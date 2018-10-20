@@ -451,7 +451,12 @@ class ProxyReceiver(automat.Automat):
         if not routed_packet:
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet failed from %s' % newpacket.CreatorID)
             return
+        if _Debug:
+            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
+                str(routed_packet), info.proto, info.host, len(data)))
         if routed_packet.Command == commands.Identity():
+            if _Debug:
+                lg.out('    found identity in relay packet %s' % routed_packet)
             newidentity = identity.identity(xmlsrc=routed_packet.Payload)
             idurl = newidentity.getIDURL()
             if not identitycache.HasKey(idurl):
@@ -459,13 +464,25 @@ class ProxyReceiver(automat.Automat):
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
+        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
+            if _Debug:
+                lg.out('    found routed identity in relay packet %s' % routed_packet)
+            try:
+                routed_identity = signed.Unserialize(routed_packet.Payload)
+                newidentity = identity.identity(xmlsrc=routed_identity.Payload)
+                idurl = newidentity.getIDURL()
+                if not identitycache.HasKey(idurl):
+                    lg.warn('received new "routed" identity: %s' % idurl)
+                if not identitycache.UpdateAfterChecking(idurl, routed_identity.Payload):
+                    lg.warn("ERROR has non-Valid identity")
+                    return
+            except:
+                lg.exc()
         if not routed_packet.Valid():
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet from %s' % newpacket.CreatorID)
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet %s from %s' % (
+                routed_packet, newpacket.CreatorID, ))
             return
         self.traffic_in += len(data)
-        if _Debug:
-            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
-                str(routed_packet), info.proto, info.host, len(data)))
         packet_in.process(routed_packet, info)
         del block
         del data

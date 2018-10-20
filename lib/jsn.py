@@ -40,16 +40,28 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, encoding='utf-8', *
             v = v.decode(encoding)
         return v
 
-    return json.dumps(
-        obj=obj,
-        indent=indent,
-        separators=separators,
-        sort_keys=sort_keys,
-        ensure_ascii=False,
-        default=_to_text,
-        encoding=encoding,
-        **kw
-    )
+    if six.PY2:
+        return json.dumps(
+            obj=obj,
+            indent=indent,
+            separators=separators,
+            sort_keys=sort_keys,
+            ensure_ascii=False,
+            default=_to_text,
+            encoding=encoding,
+            **kw
+        )
+
+    else:
+        return json.dumps(
+            obj=obj,
+            indent=indent,
+            separators=separators,
+            sort_keys=sort_keys,
+            ensure_ascii=False,
+            default=_to_text,
+            **kw
+        )
 
 #------------------------------------------------------------------------------
 

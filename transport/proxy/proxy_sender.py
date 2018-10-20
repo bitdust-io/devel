@@ -54,8 +54,6 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-import six
-
 from twisted.internet.defer import Deferred
 from twisted.internet import reactor
 
@@ -280,7 +278,6 @@ class ProxySender(automat.Automat):
             'w': wide,                # wide
             'p': raw_data,            # payload
         }
-        # raw_bytes = serialization.ObjectToString(payload)
         raw_bytes = serialization.DictToBytes(payload)
         block = encrypted.Block(
             CreatorID=my_id.getLocalID(),

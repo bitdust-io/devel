@@ -64,21 +64,13 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-import os
-import sys
 import time
 import json
 import pprint
 
 #------------------------------------------------------------------------------
 
-try:
-    from logs import lg
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
-    from logs import lg
+from logs import lg
 
 from automats import automat
 
@@ -356,7 +348,6 @@ class ProxyRouter(automat.Automat):
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
             inpt = BytesIO(padded_data[:int(block.Length)])
-            # payload = serialization.StringToObject(inpt.read())
             payload = serialization.BytesToDict(inpt.read())
             inpt.close()
             sender_idurl = payload['f']                 # from
@@ -384,7 +375,6 @@ class ProxyRouter(automat.Automat):
         # send the packet directly to target user_id
         # we pass not callbacks because all response packets from this call will be also re-routed
         pout = packet_out.create(routed_packet, wide=wide, callbacks={}, target=receiver_idurl,)
-        # gateway.outbox(routed_packet, wide=wide)
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
                 len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
@@ -508,20 +498,6 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '    current overridden contacts is : %s' % current_contacts)
             lg.out(_DebugLevel, '    new override contacts will be : %s' % new_ident.getContacts())
             lg.out(_DebugLevel, '    result=%s' % result)
-#         if self._is_my_contacts_present_in_identity(new_ident):
-#             if _Debug:
-#                 lg.out(_DebugLevel, '    SKIP OVERRIDE identity from %s' % arg.CreatorID)
-#                 lg.out(_DebugLevel, '    current contacts : %s' % new_ident.getContacts())
-#         else:
-#             if _Debug:
-#                 lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % arg.CreatorID)
-#                 lg.out(_DebugLevel, '    new contacts will be : %s' % new_ident.getContacts())
-#             for new_contact in new_ident.getContacts():
-#                 if new_contact in current_contacts:
-#                     override_required = False
-#                     if _Debug:
-#                         lg.out(_DebugLevel, '   new contact %s found in current override contacts' % (new_contact))
-#                     break
 
     def doClearContactsOverride(self, arg):
         """

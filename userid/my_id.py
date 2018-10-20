@@ -86,6 +86,13 @@ def shutdown():
 #-------------------------------------------------------------------------------
 
 
+def isLocalIdentityExists():
+    """
+    Return True if local file `~/.bitdust/metadata/localidentity` exists.
+    """
+    return os.path.isfile(settings.LocalIdentityFilename())
+
+
 def isLocalIdentityReady():
     """
     Return True if local identity object already initialized and stored in
@@ -199,20 +206,21 @@ def loadLocalIdentity():
         lg.out(6, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), filename))
     if not xmlid:
         lg.out(2, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % filename)
-        return
+        return False
     lid = identity.identity(xmlsrc=xmlid)
     if not lid.isCorrect():
         lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Correct")
-        return
+        return False
     if not lid.Valid():
         lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Valid")
-        return
+        return False
     setLocalIdentity(lid)
 #     _LocalIdentity = lid
 #     _LocalIDURL = lid.getIDURL()
 #     _LocalName = lid.getIDName()
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
     lg.out(6, "my_id.loadLocalIdentity my name is [%s]" % lid.getIDName())
+    return True
 
 
 def saveLocalIdentity():

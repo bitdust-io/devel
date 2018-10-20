@@ -61,7 +61,6 @@ from p2p import contact_status
 from p2p import propagate
 
 from lib import packetid
-from lib import misc
 from lib import utime
 from lib import serialization
 
@@ -256,7 +255,6 @@ class PrivateMessage(object):
         return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body)
 
     def serialize(self):
-        # return misc.ObjectToString(self)
         dct = {
             'r': self.recipient,
             's': self.sender,
@@ -268,7 +266,6 @@ class PrivateMessage(object):
     @staticmethod
     def deserialize(input_string):
         try:
-            # message_obj = misc.StringToObject(input_string)
             dct = serialization.BytesToDict(input_string)
             message_obj = PrivateMessage(
                 recipient_global_id=dct['r'],
@@ -279,8 +276,6 @@ class PrivateMessage(object):
         except:
             lg.exc()
             return None
-        # if not hasattr(message_obj, 'sender'):
-        #     setattr(message_obj, 'sender', None)
         return message_obj
 
 
@@ -360,7 +355,6 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
     except Exception as exc:
         lg.exc()
         raise Exception('message encryption failed')
-    # Payload = misc.ObjectToString(Amessage)
     Payload = private_message_object.serialize()
     lg.out(4, "        payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
     outpacket = signed.Packet(

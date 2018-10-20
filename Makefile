@@ -7,8 +7,8 @@
 DEPS:=requirements.txt
 DOCKER_COMPOSE=$(shell which docker-compose)
 
-VENV="${HOME}/.bitdust/venv"
-PIP:="${VENV}/bin/pip"
+VENV=${HOME}/.bitdust/venv
+PIP=${VENV}/bin/pip
 CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
@@ -18,11 +18,11 @@ TOX_PY_LIST="$(shell $(TOX) -l | grep ^py | xargs | sed -e 's/ /,/g')"
 
 .PHONY: install
 
-install: clean venv deploy
-	@echo "Building BitDust environemt and installing requirements"
+install:
+	@echo "Building BitDust environment and installing requirements"
+	python bitdust.py deploy
 
-deploy:
-	$(PYTHON) bitdust.py deploy
+venv: install
 
 compile:
 	$(PYTHON) compile.py build_ext
@@ -42,13 +42,16 @@ clean: pyclean docsclean
 	@echo "Cleanup current BitDust environemt"
 	@rm -rf ${VENV}
 
-venv:
+venv_off:
 	@echo "Creating new virtual environment in ${VENV}"
 	@virtualenv -p python2.7 ${VENV}
 	@$(PIP) install -U "pip>=7.0" -q
-	# @$(PIP) install -r $(DEPS)
+	@$(PIP) install -r $(DEPS)
 
-test: clean tox
+test_tox: clean tox
+
+test_tox/%: venv pyclean
+	$(TOX) -e $(TOX_PY_LIST) -- $*
 
 test_docker_test_1:
 	make -C tests/e2e/ -j2 all
@@ -60,11 +63,11 @@ test_docker_test_2:
 	make -C tests/e2e/ test_2
 	docker-compose -p "namespace2" logs
 
-test_raid:
-	python -m unittest  discover -p "test_raid.py" -v
+test: install
+	$(PYTHON) -m unittest discover -s tests/ -v
 
-test/%: venv pyclean
-	$(TOX) -e $(TOX_PY_LIST) -- $*
+test_raid: install
+	$(PYTHON) -m unittest discover -p "test_raid.py" -v
 
 lint: venv
 	@$(TOX) -e lint
