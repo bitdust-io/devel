@@ -148,7 +148,7 @@ def receive(options):
         return None
     try:
         _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))
-        _MyHost = net_misc.pack_address((options['host'].split(':')[0], int(_InternalPort)))
+        _MyHost = net_misc.pack_address((options['host'].split(b':')[0], int(_InternalPort)))
         tcp_interface.interface_receiving_started(_MyHost, options)
 
     except CannotListenError as ex:
@@ -408,17 +408,19 @@ class TCPFactory(protocol.ClientFactory):
         connection = started_connections().pop(self.connection_address, None)
         if connection:
             connection.connector = None
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_node.clientConnectionFailed with %s, %d more connections started' % (
+                str(destaddress), len(started_connections())))
         for filename, description, result_defer, keep_alive in self.pendingoutboxfiles:
             try:
                 tcp_interface.interface_cancelled_file_sending(
-                    destaddress, filename, 0, description, 'connection failed').addErrback(lambda err: lg.exc(err))
+                    destaddress, filename, 0, description, 'connection failed'
+                ).addErrback(lambda err: lg.exc(err))
             except Exception as exc:
                 lg.warn(str(exc))
             if result_defer:
                 result_defer.callback((filename, description, 'failed', 'connection failed'))
         self.pendingoutboxfiles = []
-        # lg.out(18, 'tcp_node.clientConnectionFailed from %s  :   %s closed, %d more started' % (
-        #     str(destaddress), self, len(started_connections())))
 
     def add_outbox_file(self, filename, description='', result_defer=None, keep_alive=True):
         self.pendingoutboxfiles.append((filename, description, result_defer, keep_alive))

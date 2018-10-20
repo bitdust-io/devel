@@ -47,16 +47,17 @@ from io import open
 #------------------------------------------------------------------------------
 
 import os
+import re
 import sys
-import random
 import time
 import math
-import hashlib
+import random
 import base64
 import string
-import subprocess
-import re
+import hashlib
 import tempfile
+import functools
+import subprocess
 
 #------------------------------------------------------------------------------
 
@@ -144,6 +145,9 @@ def writeSupplierData(supplier_idurl, filename, data, customer_idurl):
     return bpio.WriteTextFile(path, data)
 
 #-------------------------------------------------------------------------------
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 
 def NewBackupID(time_st=None):
@@ -246,13 +250,13 @@ def backup_id_compare(backupID1, backupID2):
     if customerGlobalID1 != customerGlobalID2:
         return cmp(customerGlobalID1, customerGlobalID2)
     return version_compare(version1, version2)
-
+    
 
 def sorted_backup_ids(backupIds, reverse=False):
     """
     Sort a list of backupID's.
     """
-    sorted_ids = sorted(backupIds, backup_id_compare, reverse=reverse)
+    sorted_ids = sorted(backupIds, key=functools.cmp_to_key(backup_id_compare), reverse=reverse)
     return sorted_ids
 
 
@@ -260,7 +264,7 @@ def sorted_versions(versions, reverse=False):
     """
     Sort a list of versions.
     """
-    sorted_versions_list = sorted(versions, version_compare, reverse=reverse)
+    sorted_versions_list = sorted(versions, key=functools.cmp_to_key(version_compare), reverse=reverse)
     return sorted_versions_list
 
 #------------------------------------------------------------------------------
@@ -520,63 +524,6 @@ def Parity():
     An alias for Parity packets.
     """
     return "Parity"
-
-
-def BinaryToAscii(inpt):
-    """
-    Not used right now.
-
-    Have had some troubles with jelly/banana. Plan to move to my own
-    serialization of objects but leaving this here for now.
-    """
-    return base64.encodestring(inpt)
-
-
-def AsciiToBinary(inpt):
-    """
-    Uses built-in method ``base64.decodestring``.
-    """
-    return base64.decodestring(inpt)
-
-
-def ObjectToString_old(obj):
-    """
-    """
-    return six.moves.cPickle.dumps(obj, protocol=six.moves.cPickle.HIGHEST_PROTOCOL)
-
-
-def StringToObject_old(inp):
-    """
-    """
-    return six.moves.cPickle.loads(inp)
-
-
-def ObjectToString(obj):
-    """
-    """
-    from . import serialization
-    return serialization.ObjectToString(obj)
-
-
-def StringToObject(inp):
-    """
-    """
-    from . import serialization
-    return serialization.StringToObject(inp)
-
-
-def ObjectToAscii(input):
-    """
-    Not used.
-    """
-    return BinaryToAscii(ObjectToString(input))
-
-
-def AsciiToObject(input):
-    """
-    Not used.
-    """
-    return StringToObject(AsciiToBinary(input))              # works for 384 bit RSA keys
 
 #------------------------------------------------------------------------------
 

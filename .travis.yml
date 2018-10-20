@@ -1,19 +1,34 @@
+env:
+  global:
+    - DOCKER_COMPOSE_VERSION=1.20.0
+
 services: docker
+language: python
+matrix:
+  include:
+#  - name: "3.6"
+#    python: "3.6"
+#    env: PYTHON_VERSION=3.6
+  - name: "2.7"
+    python: "2.7"
+    env: PYTHON_VERSION=2.7
 
 before_install:
+  - set -e
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
   - docker -v
-  - git clone https://github.com/bitdust-io/tests.git tests_e2e
-
-  - mkdir -p tests_e2e/src/bitdust
-  - rsync -rR . tests_e2e/src/bitdust
-  - cd tests_e2e
-
-#install:
-#  - docker-compose up -d
+  - docker-compose -v
+  - make -v
 
 script:
-  - docker-compose -f docker-compose.yml up -d
-  - docker-compose exec test sh -c "pytest tests/test_ss/ -v -s"
+  - make test
+  - make -C tests/e2e/ -j2 test
 
-  - docker-compose -f docker-compose-upload_file.yml up -d --build --force-recreate
-  - docker-compose exec test sh -c "pytest tests/test_upload_file/ -v -s"
+
+after_failure:
+  - docker-compose -p "namespace1" -f tests/e2e/docker-compose.yml logs
+  - docker-compose -p "namespace2" -f tests/e2e/docker-compose.yml logs

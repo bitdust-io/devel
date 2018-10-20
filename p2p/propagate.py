@@ -71,6 +71,7 @@ from logs import lg
 from system import bpio
 
 from lib import nameurl
+from lib import net_misc
 
 from contacts import contactsdb
 from contacts import identitycache
@@ -90,7 +91,6 @@ from crypt import signed
 from transport import gateway
 from transport import packet_out
 
-from dht import dht_service
 from dht import dht_records
 
 #------------------------------------------------------------------------------
@@ -268,7 +268,9 @@ def SendServers():
         webport, tcpport = known_servers.by_host().get(host, (
             settings.IdentityWebPort(), settings.IdentityServerPort()))
         # srvhost = '%s:%d' % (host, int(tcpport))
-        dlist.append(tcp_node.send(sendfilename, (host, int(tcpport)), 'Identity', keep_alive=False))
+        dlist.append(tcp_node.send(
+            sendfilename, net_misc.normalize_address((host, int(tcpport), )), 'Identity', keep_alive=False,
+        ))
         # dlist.append(gateway.send_file_single('tcp', srvhost, sendfilename, 'Identity'))
     dl = DeferredList(dlist, consumeErrors=True)
     return dl
@@ -522,5 +524,5 @@ def PingContact(idurl, timeout=30):
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout=timeout)
     idcache_defer.addCallback(_identity_cached, idurl)
     idcache_defer.addErrback(_identity_cache_failed, idurl)
-    ping_result.addErrback(lg.errback)
+    # ping_result.addErrback(lg.errback)
     return ping_result

@@ -56,7 +56,7 @@ def output(value):
 #------------------------------------------------------------------------------
 
 def loop_network_connected():
-    proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
+    proxy = Proxy(b'http://localhost:%d' % settings.DefaultJsonRPCPort())
 
     def _call():
         print('_call', time.asctime())
@@ -81,7 +81,7 @@ def loop_network_connected():
 #------------------------------------------------------------------------------
 
 def loop_event_listen():
-    proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
+    proxy = Proxy(b'http://localhost:%d' % settings.DefaultJsonRPCPort())
 
     def _loop(x=None):
         if x:
@@ -100,15 +100,16 @@ def loop_event_listen():
 #------------------------------------------------------------------------------
 
 def test():
-    proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
+    proxy = Proxy(b'http://localhost:%d' % settings.DefaultJsonRPCPort())
     # proxy.callRemote('ping', 'http://p2p-id.ru/bitdust_j_vps1014.xml').addBoth(output)
     # proxy.callRemote('config_set', 'logs/debug-level', '20').addBoth(output)
     # proxy.callRemote('filemanager_list', 'path=/').addBoth(output)
     # proxy.callRemote('keys_list').addBoth(output)
     # proxy.callRemote('key_create', 'ccc2').addBoth(output)
-    proxy.callRemote('nickname_set', 'veselin').addBoth(output)
+    # proxy.callRemote('nickname_set', 'veselin').addBoth(output)
     # proxy.callRemote('key_get', key_id='cool$testveselin@p2p-id.ru', include_private=True).addBoth(output)
     # proxy.callRemote('event_send', 'existing-customer-accepted', '{"idurl": "abc123@def.net"}').addBoth(output)
+    proxy.callRemote('automats_list').addBoth(output)
     reactor.run()
 
 #------------------------------------------------------------------------------

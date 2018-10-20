@@ -25,11 +25,14 @@
 #
 #
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
 import os
 import sys
 import time
 
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor
@@ -42,7 +45,6 @@ from logs import lg
 
 from system import bpio
 
-from lib import maths
 from lib import nameurl
 
 from main import settings
@@ -76,6 +78,11 @@ def shutdown():
 
 def run():
     global _LoopCountRatingsTask
+    try:
+        from lib import maths
+    except:
+        lg.exc()
+        
     stop()
     interval = maths.interval_to_next_hour()
     # debug

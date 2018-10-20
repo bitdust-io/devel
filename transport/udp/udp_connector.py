@@ -212,8 +212,7 @@ class DHTUDPConnector(automat.Automat):
         Action method.
         """
         key = self.peer_id + ':incoming' + str(self.KeyPosition)
-        value = '%s %s:%d %s\n' % (str(self.my_id), self.my_address[
-            0], self.my_address[1], str(time.time()))
+        value = '%s %s:%d %s\n' % (str(self.my_id), self.my_address[0], self.my_address[1], str(time.time()))
         if _Debug:
             lg.out(_DebugLevel, 'doDHTWriteIncoming  key=%s' % key)
         self.working_deferred = dht_service.set_value(key, value, age=int(time.time()))
@@ -308,21 +307,15 @@ class DHTUDPConnector(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            incoming_peer_id, incoming_user_address, time_placed = incoming.split(
-                ' ')
-            incoming_user_address = incoming_user_address.split(':')
-            incoming_user_address = (
-                incoming_user_address[0], int(
-                    incoming_user_address[1]))
+            incoming_peer_id, incoming_user_address, _ = incoming.split(b' ')
+            incoming_user_address = incoming_user_address.split(b':')
+            incoming_user_address = (incoming_user_address[0], int(incoming_user_address[1]))
         except:
             lg.out(2, '%r' % incoming)
             lg.exc()
             self.automat('dht-read-failed')
             return
-        self.automat(
-            'dht-read-success',
-            (incoming_peer_id,
-             incoming_user_address))
+        self.automat('dht-read-success', (incoming_peer_id, incoming_user_address))
 
     def _wrote_peer_incoming(self, nodes):
         self.working_deferred = None
@@ -336,7 +329,7 @@ class DHTUDPConnector(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            peer_ip, peer_port = value[dht_service.key_to_hash(key)].split(':')
+            peer_ip, peer_port = value[dht_service.key_to_hash(key)].split(b':')
             peer_port = int(peer_port)
         except:
             lg.exc()

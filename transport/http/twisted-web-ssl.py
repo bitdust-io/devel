@@ -30,7 +30,7 @@ import os
 import sys
 
 from twisted.web.static import File
-from zope.interface import implements
+from zope.interface import implementer
 from twisted.python import log
 from twisted.internet import reactor, ssl
 from twisted.web import server, resource, guard
@@ -46,8 +46,8 @@ sslContext = ssl.DefaultOpenSSLContextFactory(
     os.path.join(home_dir, '.ssl/cacert.pem'),
 )
 
+@implementer(IRealm)
 class SimpleRealm(object):
-    implements(IRealm)
 
     def __init__(self, path):
         self.path = path

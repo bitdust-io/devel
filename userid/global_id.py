@@ -36,6 +36,10 @@ import re
 
 #------------------------------------------------------------------------------
 
+from lib import strng
+
+#------------------------------------------------------------------------------
+
 _FORMAT_GLOBAL_ID = '{key_alias}${username}@{host}'
 _FORMAT_GLOBAL_ID_USER = '{username}@{host}'
 _FORMAT_GLOBAL_ID_USER_KEY = '{user}!{key_alias}'
@@ -163,8 +167,9 @@ def ParseGlobalID(inp, detect_version=False):
         "path": "",
         "version": "",
     }
-    if not inp or not str(inp):
+    if not inp:
         return result
+    inp = strng.to_text(inp)
     if inp.count(':'):
         user, _, path = inp.strip().rpartition(':')
     else:

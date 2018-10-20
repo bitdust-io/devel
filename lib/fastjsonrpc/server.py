@@ -23,6 +23,8 @@ Provides JSONRPCServer class, which can be used to expose methods via RPC.
 """
 
 from __future__ import absolute_import
+import six
+
 from twisted.web import resource
 from twisted.web import server
 from twisted.internet.defer import maybeDeferred
@@ -168,11 +170,11 @@ class JSONRPCServer(resource.Resource):
         for (success, result) in results:
             if result is not None:
                 method_responses.append(result)
-
         if not is_batch and len(method_responses) == 1:
             method_responses = method_responses[0]
-
         response = jsonrpc.prepareCallResponse(method_responses)
+        if not isinstance(response, six.binary_type):
+            response = response.encode(encoding='utf-8')
         self._sendResponse(response, request)
 
     def _sendResponse(self, response, request):

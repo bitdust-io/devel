@@ -1,8 +1,0 @@
-cov-core
-coverage
-execnet
-py
-pytest
-pytest-cov
-pytest-xdist
-wsgiref

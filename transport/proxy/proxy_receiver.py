@@ -58,6 +58,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
@@ -69,7 +70,6 @@ _DebugLevel = 10
 import json
 import time
 import random
-import cStringIO
 
 #------------------------------------------------------------------------------
 
@@ -436,7 +436,7 @@ class ProxyReceiver(automat.Automat):
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
             padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
+            inpt = BytesIO(padded_data[:int(block.Length)])
             data = inpt.read()
         except:
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
@@ -451,7 +451,12 @@ class ProxyReceiver(automat.Automat):
         if not routed_packet:
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet failed from %s' % newpacket.CreatorID)
             return
+        if _Debug:
+            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
+                str(routed_packet), info.proto, info.host, len(data)))
         if routed_packet.Command == commands.Identity():
+            if _Debug:
+                lg.out('    found identity in relay packet %s' % routed_packet)
             newidentity = identity.identity(xmlsrc=routed_packet.Payload)
             idurl = newidentity.getIDURL()
             if not identitycache.HasKey(idurl):
@@ -459,13 +464,25 @@ class ProxyReceiver(automat.Automat):
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
+        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
+            if _Debug:
+                lg.out('    found routed identity in relay packet %s' % routed_packet)
+            try:
+                routed_identity = signed.Unserialize(routed_packet.Payload)
+                newidentity = identity.identity(xmlsrc=routed_identity.Payload)
+                idurl = newidentity.getIDURL()
+                if not identitycache.HasKey(idurl):
+                    lg.warn('received new "routed" identity: %s' % idurl)
+                if not identitycache.UpdateAfterChecking(idurl, routed_identity.Payload):
+                    lg.warn("ERROR has non-Valid identity")
+                    return
+            except:
+                lg.exc()
         if not routed_packet.Valid():
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet from %s' % newpacket.CreatorID)
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet %s from %s' % (
+                routed_packet, newpacket.CreatorID, ))
             return
         self.traffic_in += len(data)
-        if _Debug:
-            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
-                str(routed_packet), info.proto, info.host, len(data)))
         packet_in.process(routed_packet, info)
         del block
         del data
@@ -669,7 +686,8 @@ class ProxyReceiver(automat.Automat):
                 lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
             d = propagate.PingContact(known_router, timeout=5)
             d.addCallback(lambda resp_tuple: self.automat('found-one-node', known_router))
-            d.addErrback(lg.errback)
+            d.addErrback(lambda err: self.automat('nodes-not-found'))
+            # d.addErrback(lg.errback)
             # self.automat('found-one-node', known_router)
             return
         if _Debug:
@@ -697,7 +715,7 @@ class ProxyReceiver(automat.Automat):
 #             lg.out(_DebugLevel, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
 #         if len(nodes) > 0:
 #             node = random.choice(nodes)
-#             d = node.request('idurl')
+#             d = node.request(b'idurl')
 #             d.addCallback(self._got_remote_idurl)
 #             d.addErrback(lambda x: self.automat('nodes-not-found'))
 #         else:

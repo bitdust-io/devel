@@ -1,0 +1,125 @@
+version: "3.4"
+
+x-common: &common
+  context: ./../../
+
+x-common-links: &common-links-all
+  links: &common-links
+    - "dht_seed_1"
+    - "dht_seed_2"
+
+services:
+  base:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/base/Dockerfile
+    image: bitdust/base
+
+  identity-server:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Identity/Dockerfile
+    image: bitdust/identity-server
+
+  stun_1:
+    <<: *common-links-all
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Stun/Dockerfile
+    image: bitdust/stun
+
+  dht_seed_1:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+    image: bitdust/dht_seed
+
+  dht_seed_2:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+    image: bitdust/dht_seed
+
+  proxy_server_1:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "identity-server:is"
+    image: bitdust/proxy
+
+  proxy_server_2:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "identity-server:is"
+    image: bitdust/proxy
+
+  supplier_1:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Supplier_1/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+    image: bitdust/supplier_1
+
+  supplier_2:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Supplier_2/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+    image: bitdust/supplier_2
+
+  customer_1:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Customer_1/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+    volumes:
+      - customer_1:/customer_1
+    image: bitdust/customer_1
+
+  customer_2:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/Customer_2/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+    volumes:
+      - customer_2:/customer_2
+    image: bitdust/customer_2
+
+  test:
+    build: Dockerfiles/Test/.
+    links:
+      - "supplier_1"
+      - "supplier_2"
+      - "customer_1"
+      - "customer_2"
+      - "proxy_server_1"
+      - "proxy_server_2"
+      - "stun_1"
+      - "identity-server"
+    volumes:
+      - customer_1:/customer_1
+      - customer_2:/customer_2
+    image: bitdust/test
+
+volumes:
+  customer_1:
+  customer_2:

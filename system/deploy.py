@@ -224,8 +224,11 @@ def run(args):
             print_text('\n##### Clean up of existing virtual environment files failed!\n')
             return status
 
-    print_text('\n##### Create new Python virtual environment in "%s"' % venv_path)
-    make_venv_cmd = 'virtualenv -p python2.7 {}'.format(venv_path)
+    current_python = sys.executable
+    print_text('\n##### Current Python executable is {}'.format(current_python))
+
+    print_text('\n##### Create fresh virtual environment in "%s"' % venv_path)
+    make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
     if on_windows:
         virtualenv_bin = '"%s"' % os.path.join(base_dir, 'python', 'Scripts', 'virtualenv.exe')
         make_venv_cmd = "{} --system-site-packages {}".format(virtualenv_bin, venv_path)
@@ -239,17 +242,17 @@ def run(args):
         pass
     else:
         print_text('\n##### Install/Upgrade pip in "%s"' % venv_path)
-        status = os.system('{} install --index-url=https://pypi.python.org/simple/ -U pip'.format(pip_bin))
+        status = os.system('{} install -U pip'.format(pip_bin))
         if status != 0:
             print_text('\n##### Failed to install latest pip version, please check/install latest pip version manually\n')
             return status
 
     requirements_txt = os.path.join(source_dir, 'requirements.txt')
     print_text('\n##### Install BitDust requirements from "%s"' % (requirements_txt))
-    requirements_cmd = '{} install --index-url=https://pypi.python.org/simple/ -r "{}"'.format(pip_bin, requirements_txt)
+    requirements_cmd = '{} install -r "{}"'.format(pip_bin, requirements_txt)
     if on_windows:
         venv_python_path = os.path.join(base_dir, 'venv', 'Scripts', 'python.exe')
-        requirements_cmd = '{} -m pip install --index-url=https://pypi.python.org/simple/ --trusted-host=pypi.python.org --trusted-host=files.pythonhosted.org -r "{}"'.format(venv_python_path, requirements_txt)
+        requirements_cmd = '{} -m pip install -r "{}"'.format(venv_python_path, requirements_txt)
 
     print_text('\n##### Executing "{}"'.format(requirements_cmd))
     status = os.system(requirements_cmd)
@@ -274,9 +277,10 @@ def run(args):
     fil.close()
     os.chmod(script_path, 0o775)
 
-    print_text('\n##### BitDust application files created successfully in {}\n'.format(base_dir))
+    print_text('\n##### BitDust environment files created successfully in {}\n'.format(base_dir))
     print_text('To run the programm use this executable script:\n\n    {}\n\n'.format(script_path))
     print_text('To create system-wide shell command, add /Users/veselin/.bitdust/bitdust to your PATH, or create a symlink:\n')
     print_text('    sudo ln -s -f {} /usr/local/bin/bitdust\n\n'.format(script_path))
+    print_text('Learn more about available shell commands:\n\n    bitdust help\n\n')
     print_text('Welcome to BitDust!\n\n')
     return 0

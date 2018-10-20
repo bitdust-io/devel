@@ -58,6 +58,7 @@ if __name__ == '__main__':
 #------------------------------------------------------------------------------
 
 from logs import lg
+from lib import strng
 
 from system import bpio
 
@@ -94,8 +95,19 @@ def InitMyKey(keyfilename=None):
     if _MyKeyObject is not None and _MyKeyObject.isReady():
         return False
     if not LoadMyKey(keyfilename):
-        GenerateNewKey(keyfilename)
+        return False
+        # GenerateNewKey(keyfilename)
     return True
+
+
+def isMyKeyExists(keyfilename=None):
+    if keyfilename is None:
+        keyfilename = settings.KeyFileName()
+    if os.path.exists(keyfilename + '_location'):
+        newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
+        if os.path.exists(newkeyfilename):
+            keyfilename = newkeyfilename
+    return os.path.exists(keyfilename)
 
 
 def LoadMyKey(keyfilename=None):
@@ -106,13 +118,17 @@ def LoadMyKey(keyfilename=None):
         newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
-    if os.path.exists(keyfilename):
-        _MyKeyObject = rsa_key.RSAKey()
-        _MyKeyObject.fromFile(keyfilename)
+    if not os.path.exists(keyfilename):
+        return False
+    _MyKeyObject = rsa_key.RSAKey()
+    _MyKeyObject.fromFile(keyfilename)
+    if _Debug:
+        lg.out(_DebugLevel, 'key.InitMyKey loaded private key from %s' % (keyfilename))
+    if not ValidateKey():
         if _Debug:
-            lg.out(_DebugLevel, 'key.InitMyKey loaded private key from %s' % (keyfilename))
-        return ValidateKey()
-    return False
+            lg.out(_DebugLevel, 'key.InitMyKey  private key is not valid: %s' % (keyfilename))
+        return False
+    return True
 
 
 def GenerateNewKey(keyfilename=None):
@@ -157,7 +173,7 @@ def isMyKeyReady():
     Check if the Key is already loaded into memory.
     """
     global _MyKeyObject
-    return _MyKeyObject is not None and _MyKeyObject.is_ready()
+    return _MyKeyObject is not None and _MyKeyObject.isReady()
 
 
 def MyPublicKey():
@@ -290,7 +306,7 @@ def EncryptWithSessionKey(session_key, inp):
     :param session_key: randomly generated session key
     :param inp: input string to encrypt
     """
-    ret = aes_cbc.encrypt(inp, session_key)
+    ret = aes_cbc.encrypt_json(inp, session_key)
     return ret
 
 
@@ -302,7 +318,7 @@ def DecryptWithSessionKey(session_key, inp):
         here it must be already decrypted
     :param inp: input string to decrypt
     """
-    ret = aes_cbc.decrypt(inp, session_key)
+    ret = aes_cbc.decrypt_json(inp, session_key)
     return ret
 
 #------------------------------------------------------------------------------

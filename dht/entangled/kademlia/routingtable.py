@@ -1,24 +1,12 @@
 #!/usr/bin/env python
 # routingtable.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2007-2008 Francois Aucamp, Meraka Institute, CSIR
+# See AUTHORS for all authors and contact information. 
+# 
+# License: GNU Lesser General Public License, version 3 or later; see COPYING
+#          included in this archive for details.
 #
-# This file (routingtable.py) is part of BitDust Software.
-#
-# BitDust is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# BitDust Software is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Please contact us if you have any questions at bitdust.io@gmail.com
 # This library is free software, distributed under the terms of
 # the GNU Lesser General Public License Version 3, or any later version.
 # See the COPYING file included in this archive
@@ -30,10 +18,15 @@ from __future__ import absolute_import
 from __future__ import print_function
 import time
 import random
+import codecs
 
 from . import constants
+from . import encoding
 from . import kbucket
 from .protocol import TimeoutError
+
+
+_Debug = False
 
 
 class RoutingTable(object):
@@ -68,8 +61,12 @@ class RoutingTable(object):
         @return: XOR result of two long variables
         @rtype: long
         """
-        valKeyOne = int(keyOne.encode('hex'), 16)
-        valKeyTwo = int(keyTwo.encode('hex'), 16)
+        valKeyOne = int(encoding.encode_hex(keyOne), 16)
+        valKeyTwo = int(encoding.encode_hex(keyTwo), 16)
+        # valKeyOne = int(keyOne.encode('hex'), 16)
+        # valKeyOne = int(codecs.encode(keyOne, 'hex'), 16)
+        # valKeyTwo = int(keyTwo.encode('hex'), 16)
+        # valKeyTwo = int(codecs.encode(keyTwo, 'hex'), 16)
         return valKeyOne ^ valKeyTwo
 
     def findCloseNodes(self, key, count, _rpcNodeID=None):
@@ -209,7 +206,7 @@ class TreeRoutingTable(RoutingTable):
                     @type failure: twisted.python.failure.Failure
                     """
                     failure.trap(TimeoutError)
-                    print('==replacing contact==')
+                    if _Debug: print('==replacing contact==')
                     # Remove the old contact...
                     deadContactID = failure.getErrorMessage()
                     try:
@@ -247,6 +244,7 @@ class TreeRoutingTable(RoutingTable):
                  node is returning all of the contacts that it knows of.
         @rtype: list
         """
+        if _Debug: print('findCloseNodes %r  _rpcNodeID=%r' % (key, _rpcNodeID))
         # if key == self.id:
         #    bucketIndex = 0 #TODO: maybe not allow this to continue?
         # else:
@@ -351,7 +349,10 @@ class TreeRoutingTable(RoutingTable):
         @return: The index of the k-bucket responsible for the specified key
         @rtype: int
         """
-        valKey = int(key.encode('hex'), 16)
+        # valKey = int(key.encode('hex'), 16)
+        # valKey = int(codecs.encode(key, 'hex'), 16)
+        valKey = int(encoding.encode_hex(key), 16)
+        if _Debug: print('_kbucketIndex  %r  %r' % (key, valKey, ))
         i = 0
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):
@@ -373,8 +374,10 @@ class TreeRoutingTable(RoutingTable):
             randomID = randomID[:-1]
         if len(randomID) % 2 != 0:
             randomID = '0' + randomID
-        randomID = randomID.decode('hex')
-        randomID = (20 - len(randomID)) * '\x00' + randomID
+        # randomID = randomID.decode('hex')
+        # randomID = codecs.decode(randomID, 'hex')
+        randomID = encoding.decode_hex(randomID)
+        randomID = (20 - len(randomID)) * b'\x00' + randomID
         return randomID
 
     def _splitBucket(self, oldBucketIndex):
@@ -423,6 +426,7 @@ class OptimizedTreeRoutingTable(TreeRoutingTable):
         @param contact: The contact to add to this node's k-buckets
         @type contact: kademlia.contact.Contact
         """
+        
         if contact.id == self._parentNodeID:
             return
 
@@ -430,9 +434,11 @@ class OptimizedTreeRoutingTable(TreeRoutingTable):
         contact.failedRPCs = 0
 
         bucketIndex = self._kbucketIndex(contact.id)
+        if _Debug: print('addContact %r at %r' % (contact.id, bucketIndex))
         try:
             self._buckets[bucketIndex].addContact(contact)
         except kbucket.BucketFull:
+            if _Debug: print('    BucketFull!')
             # The bucket is full; see if it can be split (by checking if its range includes the host node's id)
             if self._buckets[bucketIndex].keyInRange(self._parentNodeID):
                 self._splitBucket(bucketIndex)
