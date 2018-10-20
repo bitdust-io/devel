@@ -526,18 +526,18 @@ def Parity():
     return "Parity"
 
 
-def ObjectToString(obj):
-    """
-    """
-    from . import serialization
-    return serialization.ObjectToString(obj)
+# def ObjectToString(obj):
+#     """
+#     """
+#     from . import serialization
+#     return serialization.ObjectToString(obj)
 
 
-def StringToObject(inp):
-    """
-    """
-    from . import serialization
-    return serialization.StringToObject(inp)
+# def StringToObject(inp):
+#     """
+#     """
+#     from . import serialization
+#     return serialization.StringToObject(inp)
 
 #------------------------------------------------------------------------------
 

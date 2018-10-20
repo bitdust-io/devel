@@ -71,6 +71,7 @@ from logs import lg
 
 from lib import misc
 from lib import strng
+from lib import serialization
 
 from contacts import contactsdb
 
@@ -225,11 +226,22 @@ class Block(object):
         Create a string that stores all data fields of that ``encrypted.Block``
         object.
         """
-        decrypt_key = getattr(self, 'DecryptKey')
-        delattr(self, 'DecryptKey')
-        e = misc.ObjectToString(self)
-        setattr(self, 'DecryptKey', decrypt_key)
-        return e
+        # decrypt_key = getattr(self, 'DecryptKey')
+        # delattr(self, 'DecryptKey')
+        # e = misc.ObjectToString(self)
+        # setattr(self, 'DecryptKey', decrypt_key)
+        # return e
+        return serialization.DictToBytes({
+            'c': self.CreatorID,
+            'b': self.BackupID,
+            'n': self.BlockNumber,
+            'k': self.EncryptedSessionKey,
+            't': self.SessionKeyType,
+            'l': self.Length,
+            'e': self.LastBlock,
+            'p': self.EncryptedData,
+            's': self.Signature,
+        })
 
 #------------------------------------------------------------------------------
 
@@ -238,6 +250,11 @@ def Unserialize(data, decrypt_key=None):
     """
     A method to create a ``encrypted.Block`` instance from input string.
     """
-    newobject = misc.StringToObject(data)
-    setattr(newobject, 'DecryptKey', decrypt_key)
+    # newobject = misc.StringToObject(data)
+    # setattr(newobject, 'DecryptKey', decrypt_key)
+    # return newobject
+    dct = serialization.BytesToDict(data)
+    newobject = Block(
+        
+    )
     return newobject

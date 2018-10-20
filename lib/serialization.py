@@ -68,53 +68,53 @@ def BytesToDict(inp, encoding='utf-8', errors='strict'):
 
 #------------------------------------------------------------------------------
 
-def ObjectToString(obj):
-    """
-    """
-    if SERIALIZATION_METHOD == 'pickle':
-        import six.moves.cPickle
-        return six.moves.cPickle.dumps(obj, protocol=2)
-    
-    elif SERIALIZATION_METHOD == 'cPickle':
-        import six.moves.cPickle
-        return six.moves.cPickle.dumps(obj, protocol=2)
+# def ObjectToString(obj):
+#     """
+#     """
+#     if SERIALIZATION_METHOD == 'pickle':
+#         import six.moves.cPickle
+#         return six.moves.cPickle.dumps(obj, protocol=2)
+#     
+#     elif SERIALIZATION_METHOD == 'cPickle':
+#         import six.moves.cPickle
+#         return six.moves.cPickle.dumps(obj, protocol=2)
+# 
+#     elif SERIALIZATION_METHOD == 'msgpack':
+#         import msgpack
+#         return msgpack.dumps(obj)
+# 
+#     elif SERIALIZATION_METHOD == 'jsonpickle':
+#         import json
+#         import jsonpickle
+#         return json.dumps(jsonpickle.encode(obj), ensure_ascii=False)
+# 
+#     else:
+#         raise Exception('unknown SERIALIZATION_METHOD')
 
-    elif SERIALIZATION_METHOD == 'msgpack':
-        import msgpack
-        return msgpack.dumps(obj)
 
-    elif SERIALIZATION_METHOD == 'jsonpickle':
-        import json
-        import jsonpickle
-        return json.dumps(jsonpickle.encode(obj), ensure_ascii=False)
-
-    else:
-        raise Exception('unknown SERIALIZATION_METHOD')
-
-
-def StringToObject(inp):
-    """
-    """
-    if SERIALIZATION_METHOD == 'pickle':
-        import six
-        import six.moves.cPickle
-        if six.PY2:
-            return six.moves.cPickle.loads(inp)
-        else:
-            return six.moves.cPickle.loads(inp, encoding='bytes')
-
-    elif SERIALIZATION_METHOD == 'cPickle':
-        import six.moves.cPickle
-        return six.moves.cPickle.loads(inp)
-
-    elif SERIALIZATION_METHOD == 'msgpack':    
-        import msgpack
-        return msgpack.loads(inp, use_list=False)
-
-    elif SERIALIZATION_METHOD == 'jsonpickle':
-        import json
-        import jsonpickle
-        return jsonpickle.decode(json.loads(inp))
-
-    else:
-        raise Exception('unknown SERIALIZATION_METHOD')
+# def StringToObject(inp):
+#     """
+#     """
+#     if SERIALIZATION_METHOD == 'pickle':
+#         import six
+#         import six.moves.cPickle
+#         if six.PY2:
+#             return six.moves.cPickle.loads(inp)
+#         else:
+#             return six.moves.cPickle.loads(inp, encoding='bytes')
+# 
+#     elif SERIALIZATION_METHOD == 'cPickle':
+#         import six.moves.cPickle
+#         return six.moves.cPickle.loads(inp)
+# 
+#     elif SERIALIZATION_METHOD == 'msgpack':    
+#         import msgpack
+#         return msgpack.loads(inp, use_list=False)
+# 
+#     elif SERIALIZATION_METHOD == 'jsonpickle':
+#         import json
+#         import jsonpickle
+#         return jsonpickle.decode(json.loads(inp))
+# 
+#     else:
+#         raise Exception('unknown SERIALIZATION_METHOD')

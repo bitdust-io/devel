@@ -61,9 +61,9 @@ from p2p import contact_status
 from p2p import propagate
 
 from lib import packetid
-
 from lib import misc
 from lib import utime
+from lib import serialization
 
 from crypt import signed
 from crypt import key
@@ -185,15 +185,13 @@ class PrivateMessage(object):
     with encrypted body.
     """
 
-    def __init__(self, recipient_global_id):
-        self.sender = my_id.getGlobalID(key_alias='master')
+    def __init__(self, recipient_global_id, sender=None, encrypted_session=None, encrypted_body=None):
+        self.sender = sender or my_id.getGlobalID(key_alias='master')
         self.recipient = recipient_global_id
-        self.encrypted_session = None
-        self.encrypted_body = None
+        self.encrypted_session = encrypted_session
+        self.encrypted_body = encrypted_body
 
     def sender_id(self):
-        """
-        """
         return self.sender
 
     def recipient_id(self):
@@ -258,17 +256,31 @@ class PrivateMessage(object):
         return key.DecryptWithSessionKey(decrypted_sessionkey, self.encrypted_body)
 
     def serialize(self):
-        return misc.ObjectToString(self)
+        # return misc.ObjectToString(self)
+        dct = {
+            'r': self.recipient,
+            's': self.sender,
+            'k': self.encrypted_session,
+            'p': self.encrypted_body,
+        }
+        return serialization.DictToBytes(dct)
 
     @staticmethod
     def deserialize(input_string):
         try:
-            message_obj = misc.StringToObject(input_string)
+            # message_obj = misc.StringToObject(input_string)
+            dct = serialization.BytesToDict(input_string)
+            message_obj = PrivateMessage(
+                recipient_global_id=dct['r'],
+                sender=dct['s'],
+                encrypted_session=dct['k'],
+                encrypted_body=dct['b'],
+            )
         except:
             lg.exc()
             return None
-        if not hasattr(message_obj, 'sender'):
-            setattr(message_obj, 'sender', None)
+        # if not hasattr(message_obj, 'sender'):
+        #     setattr(message_obj, 'sender', None)
         return message_obj
 
 
