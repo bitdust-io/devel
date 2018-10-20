@@ -48,7 +48,10 @@ venv:
 	@$(PIP) install -U "pip>=7.0" -q
 	# @$(PIP) install -r $(DEPS)
 
-test: clean tox
+test_tox: clean tox
+
+test_tox/%: venv pyclean
+	$(TOX) -e $(TOX_PY_LIST) -- $*
 
 test_docker_test_1:
 	make -C tests/e2e/ -j2 all
@@ -60,11 +63,11 @@ test_docker_test_2:
 	make -C tests/e2e/ test_2
 	docker-compose -p "namespace2" logs
 
-test_raid:
-	python -m unittest  discover -p "test_raid.py" -v
+test:
+	$(PYTHON) -m unittest discover -s tests/ -v
 
-test/%: venv pyclean
-	$(TOX) -e $(TOX_PY_LIST) -- $*
+test_raid:
+	$(PYTHON) -m unittest discover -p "test_raid.py" -v
 
 lint: venv
 	@$(TOX) -e lint

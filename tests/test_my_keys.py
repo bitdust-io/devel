@@ -39,7 +39,7 @@ class Test(TestCase):
         from logs import lg
         from crypt import my_keys
         lg.set_debug_level(30)
-        for i in range(100):
+        for i in range(3):
             key_id = 'test_key_%d' % i
             my_keys.erase_key(key_id, keys_folder='/tmp/')
             my_keys.generate_key(key_id, key_size=1024, keys_folder='/tmp/')
