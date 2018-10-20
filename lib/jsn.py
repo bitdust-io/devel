@@ -33,29 +33,36 @@ import six
 
 #------------------------------------------------------------------------------
 
-def _to_text(v):
-    if not isinstance(v, six.text_type):
-        v = v.decode()
-    return v
+def dumps(obj, indent=None, separators=None, sort_keys=None, encoding='utf-8', **kw):
 
-#------------------------------------------------------------------------------
+    def _to_text(v):
+        if isinstance(v, six.binary_type):
+            v = v.decode(encoding)
+        return v
 
-def dumps(o, indent=None, separators=None, sort_keys=None, **kw):
     return json.dumps(
-        o,
+        obj=obj,
         indent=indent,
         separators=separators,
         sort_keys=sort_keys,
         ensure_ascii=False,
         default=_to_text,
+        encoding=encoding,
         **kw
     )
 
 #------------------------------------------------------------------------------
 
-def loads(s, encoding=None, **kw):
+def loads(s, encoding='utf-8', **kw):
+
+    def _to_bin(dct):
+        for k in dct.keys():
+            if isinstance(dct[k], six.text_type):
+                dct[k] = dct[k].encode(encoding)
+        return dct
+
     return json.loads(
-        s,
-        encoding=encoding,
+        s=s,
+        object_hook=_to_bin,
         **kw
     )
