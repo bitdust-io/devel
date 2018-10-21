@@ -62,8 +62,12 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
+
+#------------------------------------------------------------------------------
+
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -245,7 +249,7 @@ class Block(object):
             'b': self.BackupID,
             'n': self.BlockNumber,
             'e': self.LastBlock,
-            'k': self.EncryptedSessionKey,
+            'k': base64.b64encode(self.EncryptedSessionKey).decode('utf-8'),
             't': self.SessionKeyType,
             'l': self.Length,
             'p': self.EncryptedData,
@@ -264,10 +268,11 @@ def Unserialize(data, decrypt_key=None):
         CreatorID=dct['c'],
         BackupID=dct['b'],
         BlockNumber=dct['n'],
-        EncryptedSessionKey=dct['k'],
+        EncryptedSessionKey=base64.b64decode(dct['k']),
         SessionKeyType=dct['t'],
         Length=dct['l'],
         EncryptedData=dct['p'],
         Signature=dct['s'],
+        DecryptKey=decrypt_key,
     )
     return newobject

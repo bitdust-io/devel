@@ -38,8 +38,9 @@ def DictToBytes(dct, encoding='latin1'):
         jsn.dumps(
             dct,
             separators=(',', ':'),
-            indent=0,
+            indent=None,
             sort_keys=True,
+            ensure_ascii=True,
             encoding=encoding,
         ),
         encoding=encoding,
