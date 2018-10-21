@@ -321,7 +321,7 @@ def Unserialize(data):
             Signature=json_data['s'],
         )
     except:
-        lg.exc(data)
+        lg.exc()
         newobject = None
     
     if newobject is None:
