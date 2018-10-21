@@ -51,23 +51,27 @@ def encrypt_json(raw_data, secret_16bytes_key):
         mode=AES.MODE_CBC,
     )
     ct_bytes = cipher.encrypt(Padding.pad(raw_data, AES.block_size))
-    iv = base64.b64encode(cipher.iv).decode('utf-8')
-    ct = base64.b64encode(ct_bytes).decode('utf-8')
-    dct = {'iv':iv, 'ct':ct, }
+    dct = {
+        'iv': base64.b64encode(cipher.iv).decode('utf-8'),
+        'ct': base64.b64encode(ct_bytes).decode('utf-8'),
+    }
     raw = serialization.DictToBytes(dct)
     return raw
 
 
 def decrypt_json(encrypted_data, secret_16bytes_key):
     dct = serialization.BytesToDict(encrypted_data)
-    iv = base64.b64decode(dct['iv'])
-    ct = base64.b64decode(dct['ct'])
     cipher = AES.new(
         key=secret_16bytes_key,
         mode=AES.MODE_CBC,
-        iv=iv,
+        iv=base64.b64decode(dct['iv']),
     )
-    result = Padding.unpad(cipher.decrypt(ct), AES.block_size)
+    result = Padding.unpad(
+        cipher.decrypt(
+            base64.b64decode(dct['ct'])
+        ),
+        AES.block_size,
+    )
     # TODO: remove salt from raw_data
     return result
 

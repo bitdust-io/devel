@@ -33,7 +33,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-def dumps(obj, indent=None, separators=None, sort_keys=None, encoding='utf-8', **kw):
+def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', **kw):
 
     def _to_text(v):
         if isinstance(v, six.binary_type):
@@ -46,7 +46,7 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, encoding='utf-8', *
             indent=indent,
             separators=separators,
             sort_keys=sort_keys,
-            ensure_ascii=False,
+            ensure_ascii=ensure_ascii,
             default=_to_text,
             encoding=encoding,
             **kw
@@ -58,7 +58,7 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, encoding='utf-8', *
             indent=indent,
             separators=separators,
             sort_keys=sort_keys,
-            ensure_ascii=False,
+            ensure_ascii=ensure_ascii,
             default=_to_text,
             **kw
         )
