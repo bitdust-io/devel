@@ -2451,7 +2451,7 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/private-messages/enabled', 'true')
 
-    config.conf().setDefaultValue('services/proxy-server/enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-server/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-server/routes-limit', 10)
     config.conf().setDefaultValue('services/proxy-server/current-routes', '{}')
 

@@ -40,10 +40,10 @@ def default_nodes():
     """
     return [
         # local node (for testing)
-        ('localhost', 14441, ),
+        # ('localhost', 14441, ),
 
         # by Veselin Penev:
-        ('datahaven.net', 14441, ),
+        # ('datahaven.net', 14441, ),
         # ('identity.datahaven.net', 14441),
         ('p2p-id.ru', 14441),
         ('bitdust.io', 14441),

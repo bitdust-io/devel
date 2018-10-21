@@ -19,12 +19,13 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-#
-#
-#
 
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 def default_nodes():
     """
     A set of identity servers currently maintained.
@@ -32,11 +33,11 @@ def default_nodes():
     return {
         # by Veselin Penev:
         'p2p-id.ru': (80, 6661),
-        'datahaven.net': (80, 6661),
+        # 'datahaven.net': (80, 6661),
         # 'identity.datahaven.net': (80, 6661),
         'bitdust.io': (8084, 6661),
         # 'work.offshore.ai': (8084, 6661),
-        'blog.bitdust.io': (8084, 6661),
+        'blog.bitdust.io': (80, 6661),
         'bitdust.ai': (80, 6661),
         # 'veselin-p2p.ru': (80, 6661),
         # 'test.zenaida.ai': (8084, 6661),
