@@ -53,6 +53,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 #------------------------------------------------------------------------------
+from raid.worker import Manager
 
 _Debug = True
 _DebugLevel = 10
@@ -297,12 +298,18 @@ class RaidWorker(automat.Automat):
             # even decided to use only half of CPUs at the moment
             # TODO: make an option in the software settings
             ncpus = int(ncpus / 2.0)
-        self.processor = pp.Server(
-            secret='bitdust',
-            ncpus=ncpus,
-            loglevel=lg.get_loging_level(_DebugLevel),
-            logfile=settings.ParallelPLogFilename(),
-        )
+
+        # import multiprocessing
+        #
+        # self.processor = pp.Server(
+        #     secret='bitdust',
+        #     ncpus=ncpus,
+        #     loglevel=lg.get_loging_level(_DebugLevel),
+        #     logfile=settings.ParallelPLogFilename(),
+        # )
+
+        self.processor = Manager(ncpus=ncpus)
+
         self.automat('process-started')
 
     def doKillProcess(self, arg):
@@ -328,22 +335,26 @@ class RaidWorker(automat.Automat):
         """
         global _VALID_TASKS
         global _MODULES
-        if len(self.activetasks) >= self.processor.get_ncpus():
+
+        if len(self.activetasks) >= self.processor.ncpus:
             lg.out(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
-                len(self.activetasks), self.processor.get_ncpus()))
+                len(self.activetasks), self.processor.ncpus))
             return
+
         try:
             task_id, cmd, params = self.tasks.pop(0)
             func, depfuncs = _VALID_TASKS[cmd]
         except:
             lg.exc()
             return
+
         proc = self.processor.submit(func, params,
-                                     modules=_MODULES, depfuncs=depfuncs,
+                                     # modules=_MODULES, depfuncs=depfuncs,
                                      callback=lambda result: self._job_done(task_id, cmd, params, result))
+
         self.activetasks[task_id] = (proc, cmd, params)
         lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
-            task_id, len(self.activetasks), self.processor.get_ncpus()))
+            task_id, len(self.activetasks), self.processor.ncpus))
         reactor.callLater(0.01, self.automat, 'task-started', task_id)
 
     def doReportTaskDone(self, arg):
@@ -392,7 +403,7 @@ class RaidWorker(automat.Automat):
 
     def _kill_processor(self):
         if self.processor:
-            self.processor.destroy()
+            self.processor.terminate()
             lg.out(12, 'raid_worker._kill_processor processor was destroyed')
 
 
