@@ -4,6 +4,8 @@ import time
 import asyncio
 import aiohttp
 
+loop = asyncio.get_event_loop()
+
 
 @pytest.yield_fixture(scope='session', autouse=True)
 def timeout_before_tests_to_activate_bitdust():
@@ -27,7 +29,6 @@ def timeout_before_tests_to_activate_bitdust():
             async with session.get(url) as response:
                 print(f'Done: {response.url} ({response.status})')
 
-    loop = asyncio.get_event_loop()
     tasks = [
         asyncio.ensure_future(server_is_health(l)) for l in links
     ]
@@ -40,12 +41,9 @@ def timeout_before_tests_to_activate_bitdust():
     print('\ntest suite finished\n')
 
 
-@pytest.fixture(scope='session', autouse=True)
-def supplier_1_init(timeout_before_tests_to_activate_bitdust):
-    #: TODO:
-    #: implement helper to re-use it
+def prepare_node(node, identity_name):
     for i in range(5):
-        response_identity = requests.post('http://supplier_1:8180/identity/create/v1', json={'username': 'supplier_1'})
+        response_identity = requests.post(f'http://{node}:8180/identity/create/v1', json={'username': identity_name})
         assert response_identity.status_code == 200
 
         if response_identity.json()['status'] == 'OK':
@@ -53,176 +51,52 @@ def supplier_1_init(timeout_before_tests_to_activate_bitdust):
         else:
             assert response_identity.json()['errors'] == ['network connection error'], response_identity.json()
 
-        print('supplier_1_init: network connection error, retry again in 1 sec')
+        print(f'{node}: network connection error, retry again in 1 sec')
         time.sleep(1)
     else:
         assert False
 
-    response = requests.get('http://supplier_1:8180/network/connected/v1?wait_timeout=1')
+    response = requests.get(f'http://{node}:8180/network/connected/v1?wait_timeout=1')
     assert response.json()['status'] == 'ERROR'
 
     for i in range(5):
-        response = requests.get('http://supplier_1:8180/network/connected/v1?wait_timeout=1')
+        response = requests.get(f'http://{node}:8180/network/connected/v1?wait_timeout=1')
         if response.json()['status'] == 'OK':
-            print("supplier_1_init: got status OK")
+            print(f"{node}: got status OK")
             break
 
-        print("supplier_1_init: sleep 1 sec")
+        print(f"{node}: sleep 1 sec")
         time.sleep(1)
     else:
         assert False
 
 
+@pytest.fixture(scope='session', autouse=True)
+def supplier_1_init(timeout_before_tests_to_activate_bitdust):
+    prepare_node('supplier_1', 'supplier_1')
+
+
+# @pytest.mark.asyncio
 @pytest.fixture(scope='session', autouse=True)
 def supplier_2_init(timeout_before_tests_to_activate_bitdust):
-    for i in range(5):
-        response_identity = requests.post('http://supplier_2:8180/identity/create/v1', json={'username': 'supplier_2'})
-        assert response_identity.status_code == 200
-
-        if response_identity.json()['status'] == 'OK':
-            break
-        else:
-            assert response_identity.json()['errors'] == ['network connection error'], response_identity.json()
-
-        print('supplier_2_init: network connection error, retry again in 1 sec')
-        time.sleep(1)
-    else:
-        assert False
-
-    response = requests.get('http://supplier_2:8180/network/connected/v1?wait_timeout=1')
-    assert response.json()['status'] == 'ERROR'
-
-    for i in range(5):
-        response = requests.get('http://supplier_2:8180/network/connected/v1?wait_timeout=1')
-        if response.json()['status'] == 'OK':
-            print("supplier_2_init: got status OK")
-            break
-
-        print("supplier_2_init: sleep 1 sec")
-        time.sleep(1)
-    else:
-        assert False
+    prepare_node('supplier_2', 'supplier_2')
 
 
 @pytest.fixture(scope='session', autouse=True)
 def proxy_server_1_init(timeout_before_tests_to_activate_bitdust):
-    for i in range(5):
-        response_identity = requests.post('http://proxy_server_1:8180/identity/create/v1', json={'username': 'proxy_server_1'})
-        assert response_identity.status_code == 200
-
-        if response_identity.json()['status'] == 'OK':
-            break
-        else:
-            assert response_identity.json()['errors'] == ['network connection error'], response_identity.json()
-
-        print('proxy_server_1_init: network connection error, retry again in 1 sec')
-        time.sleep(1)
-    else:
-        assert False
-
-    response = requests.get('http://proxy_server_1:8180/network/connected/v1?wait_timeout=1')
-    assert response.json()['status'] == 'ERROR'
-
-    for i in range(5):
-        response = requests.get('http://proxy_server_1:8180/network/connected/v1?wait_timeout=1')
-        if response.json()['status'] == 'OK':
-            print("proxy_server_1_init: got status OK")
-            break
-
-        print("proxy_server_1_init: sleep 1 sec")
-        time.sleep(1)
-    else:
-        assert False
+    prepare_node('proxy_server_1', 'proxy_server_1')
 
 
 @pytest.fixture(scope='session', autouse=True)
 def proxy_server_2_init(timeout_before_tests_to_activate_bitdust):
-    for i in range(5):
-        response_identity = requests.post('http://proxy_server_2:8180/identity/create/v1', json={'username': 'proxy_server_2'})
-        assert response_identity.status_code == 200
-
-        if response_identity.json()['status'] == 'OK':
-            break
-        else:
-            assert response_identity.json()['errors'] == ['network connection error'], response_identity.json()
-
-        print('proxy_server_2_init: network connection error, retry again in 1 sec')
-        time.sleep(1)
-    else:
-        assert False
-
-    response = requests.get('http://proxy_server_2:8180/network/connected/v1?wait_timeout=1')
-    assert response.json()['status'] == 'ERROR'
-
-    for i in range(5):
-        response = requests.get('http://proxy_server_2:8180/network/connected/v1?wait_timeout=1')
-        if response.json()['status'] == 'OK':
-            print("proxy_server_2_init: got status OK")
-            break
-
-        print("proxy_server_2_init: sleep 1 sec")
-        time.sleep(1)
-    else:
-        assert False
+    prepare_node('proxy_server_2', 'proxy_server_2')
 
 
 @pytest.fixture(scope='session', autouse=True)
 def customer_1_init(timeout_before_tests_to_activate_bitdust):
-    for i in range(5):
-        response_identity = requests.post('http://customer_1:8180/identity/create/v1', json={'username': 'customer_1'})
-        assert response_identity.status_code == 200
-
-        if response_identity.json()['status'] == 'OK':
-            break
-        else:
-            assert response_identity.json()['errors'] == ['network connection error'], response_identity.json()
-
-        print('customer_1_init: network connection error, retry again in 1 sec')
-        time.sleep(1)
-    else:
-        assert False
-
-    response = requests.get('http://customer_1:8180/network/connected/v1?wait_timeout=1')
-    assert response.json()['status'] == 'ERROR'
-
-    for i in range(5):
-        response = requests.get('http://customer_1:8180/network/connected/v1?wait_timeout=1')
-        if response.json()['status'] == 'OK':
-            print("customer_1_init: got status OK")
-            break
-
-        print("customer_1_init: sleep 1 sec")
-        time.sleep(1)
-    else:
-        assert False
+    prepare_node('customer_1', 'customer_1')
 
 
 @pytest.fixture(scope='session', autouse=True)
 def customer_2_init(timeout_before_tests_to_activate_bitdust):
-    for i in range(5):
-        response_identity = requests.post('http://customer_2:8180/identity/create/v1', json={'username': 'customer_2'})
-        assert response_identity.status_code == 200
-
-        if response_identity.json()['status'] == 'OK':
-            break
-        else:
-            assert response_identity.json()['errors'] == ['network connection error'], response_identity.json()
-
-        print('customer_2_init: network connection error, retry again in 1 sec')
-        time.sleep(1)
-    else:
-        assert False
-
-    response = requests.get('http://customer_2:8180/network/connected/v1?wait_timeout=1')
-    assert response.json()['status'] == 'ERROR'
-
-    for i in range(5):
-        response = requests.get('http://customer_2:8180/network/connected/v1?wait_timeout=1')
-        if response.json()['status'] == 'OK':
-            print("customer_2_init: got status OK")
-            break
-
-        print("customer_2_init: sleep 1 sec")
-        time.sleep(1)
-    else:
-        assert False
+    prepare_node('customer_2', 'customer_2')

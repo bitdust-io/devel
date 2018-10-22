@@ -68,6 +68,7 @@ test: install
 
 test_raid: install
 	$(PYTHON) -m unittest discover -p "test_raid.py" -v
+	$(PYTHON) -m unittest discover -p "test_raid_worker.py" -v
 
 lint: venv
 	@$(TOX) -e lint
