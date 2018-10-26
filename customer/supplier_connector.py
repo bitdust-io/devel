@@ -70,6 +70,7 @@ from system import bpio
 
 from main import settings
 
+from lib import strng
 from lib import nameurl
 from lib import diskspace
 
@@ -324,7 +325,7 @@ class SupplierConnector(automat.Automat):
         Condition method.
         """
         newpacket = arg
-        if newpacket.Payload.startswith('accepted'):
+        if strng.to_text(newpacket.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.supplier_idurl)
             return True
@@ -336,7 +337,7 @@ class SupplierConnector(automat.Automat):
         """
         newpacket = arg
         if newpacket.Command == commands.Ack():
-            if newpacket.Payload.startswith('accepted'):
+            if strng.to_text(newpacket.Payload).startswith('accepted'):
                 if _Debug:
                     lg.out(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.supplier_idurl)
                 return True

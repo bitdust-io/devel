@@ -60,6 +60,8 @@ from logs import lg
 
 from automats import automat
 
+from lib import strng
+
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
@@ -289,7 +291,7 @@ class P2PServiceSeeker(automat.Automat):
     def _node_acked(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %r %r' % (response, info))
-        if not response.Payload.startswith('accepted'):
+        if not strng.to_text(response.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with service denied %r %r' % (response, info))
             self.automat('service-denied')
