@@ -330,13 +330,14 @@ class SupplierService(LocalService):
         import os
         from logs import lg
         from system import bpio
+        from lib import strng
         from userid import global_id
         from p2p import p2p_service
         from main import events
         if not newpacket.Payload:
             ids = [newpacket.PacketID, ]
         else:
-            ids = newpacket.Payload.split('\n')
+            ids = strng.to_text(newpacket.Payload).split('\n')
         filescount = 0
         dirscount = 0
         lg.warn('going to erase files: %s' % ids)

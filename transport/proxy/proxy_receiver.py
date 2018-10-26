@@ -751,7 +751,8 @@ class ProxyReceiver(automat.Automat):
             lg.warn('%s was not found in pending requests: %s' % (response.PacketID, self.request_service_packet_id))
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
-        if not response.Payload.startswith('rejected'):
+        service_ack_info = strng.to_text(response.Payload)
+        if not service_ack_info.startswith('rejected'):
             self.automat('service-accepted', (response, info))
         else:
             self.automat('service-refused', (response, info))
