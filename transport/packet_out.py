@@ -217,7 +217,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
             newpacket.Command, newpacket.PacketID, proto, host, ))
         lg.out(_DebugLevel, '    [%s]' % (','.join([str(p.outpacket) for p in queue()])))
     for p in queue():
-        if p.outpacket.PacketID != newpacket.PacketID:
+        if p.outpacket.PacketID.lower() != newpacket.PacketID.lower():
             # PacketID of incoming packet not matching with that outgoing packet
             continue
         if not commands.IsCommandAck(p.outpacket.Command, newpacket.Command):

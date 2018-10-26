@@ -76,6 +76,7 @@ from automats import automat
 
 from lib import nameurl
 from lib import serialization
+from lib import strng
 
 from main import config
 
@@ -232,7 +233,7 @@ class ProxyRouter(automat.Automat):
                 try:
                     # service_info = request.Payload
                     # idsrc = service_info.lstrip('service_proxy_server').strip()
-                    idsrc = json_payload['identity']
+                    idsrc = strng.to_bin(json_payload['identity'])
                     cached_id = identity.identity(xmlsrc=idsrc)
                 except:
                     lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)

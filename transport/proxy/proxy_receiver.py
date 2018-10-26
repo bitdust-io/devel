@@ -76,6 +76,7 @@ import random
 from logs import lg
 
 from lib import packetid
+from lib import strng
 
 from automats import automat
 
@@ -387,7 +388,7 @@ class ProxyReceiver(automat.Automat):
         service_info = {
             'name': 'service_proxy_server',
             'payload': {
-                'identity': orig_identity,
+                'identity': strng.to_text(orig_identity),
             },
         }
         service_info_raw = json.dumps(service_info)
@@ -397,7 +398,8 @@ class ProxyReceiver(automat.Automat):
             my_id.getLocalID(),
             packetid.UniqueID(),
             service_info_raw,
-            self.router_idurl,)
+            self.router_idurl,
+        )
         packet_out.create(newpacket, wide=False, callbacks={
             commands.Ack(): self._on_request_service_ack,
             commands.Fail(): self._on_request_service_fail,
