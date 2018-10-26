@@ -396,16 +396,16 @@ class SupplierConnector(automat.Automat):
         service_info = {'items': [{
             'scope': 'consumer',
             'action': 'start',
-            'consumer_id': my_id.getGlobalID(),
+            'consumer_id': strng.to_text(my_id.getGlobalID()),
         }, {
             'scope': 'consumer',
             'action': 'add_callback',
-            'consumer_id': my_id.getGlobalID(),
-            'method': my_id.getLocalID(),
+            'consumer_id': strng.to_text(my_id.getGlobalID()),
+            'method': strng.to_text(my_id.getLocalID()),
         }, {
             'scope': 'consumer',
             'action': 'subscribe',
-            'consumer_id': my_id.getGlobalID(),
+            'consumer_id': strng.to_text(my_id.getGlobalID()),
             'queue_id': global_id.MakeGlobalQueueID(
                 queue_alias='supplier-file-modified',
                 owner_id=my_id.getGlobalID(),
@@ -429,7 +429,7 @@ class SupplierConnector(automat.Automat):
         service_info = json.dumps({'items': [{
             'scope': 'consumer',
             'action': 'unsubscribe',
-            'consumer_id': my_id.getGlobalID(),
+            'consumer_id': strng.to_text(my_id.getGlobalID()),
             'queue_id': global_id.MakeGlobalQueueID(
                 queue_alias='supplier-file-modified',
                 owner_id=my_id.getGlobalID(),
@@ -438,12 +438,12 @@ class SupplierConnector(automat.Automat):
         }, {
             'scope': 'consumer',
             'action': 'remove_callback',
-            'consumer_id': my_id.getGlobalID(),
-            'method': my_id.getLocalID(),
+            'consumer_id': strng.to_text(my_id.getGlobalID()),
+            'method': strng.to_text(my_id.getLocalID()),
         }, {
             'scope': 'consumer',
             'action': 'stop',
-            'consumer_id': my_id.getGlobalID(),
+            'consumer_id': strng.to_text(my_id.getGlobalID()),
         }, ], })
         p2p_service.SendCancelService(
             remote_idurl=self.supplier_idurl,

@@ -345,9 +345,9 @@ def MakeGlobalQueueID(queue_alias, owner_id=None, supplier_id=None):
     """
     global _FORMAT_GLOBAL_ID_QUEUE_ID
     return _FORMAT_GLOBAL_ID_QUEUE_ID.format(
-        queue_alias=queue_alias,
-        owner_id=owner_id,
-        supplier_id=supplier_id,
+        queue_alias=strng.to_text(queue_alias),
+        owner_id=strng.to_text(owner_id),
+        supplier_id=strng.to_text(supplier_id),
     )
 
 def ParseGlobalQueueID(inp):
