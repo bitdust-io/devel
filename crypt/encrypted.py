@@ -125,7 +125,7 @@ class Block(object):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getLocalID()
-        self.BackupID = str(BackupID)
+        self.BackupID = strng.to_text(BackupID)
         self.BlockNumber = BlockNumber
         self.LastBlock = bool(LastBlock)
         self.SessionKeyType = SessionKeyType or key.SessionKeyType()
@@ -266,7 +266,7 @@ def Unserialize(data, decrypt_key=None):
     dct = serialization.BytesToDict(data)
     newobject = Block(
         CreatorID=dct['c'],
-        BackupID=dct['b'],
+        BackupID=strng.to_text(dct['b']),
         BlockNumber=dct['n'],
         EncryptedSessionKey=base64.b64decode(dct['k']),
         SessionKeyType=dct['t'],
