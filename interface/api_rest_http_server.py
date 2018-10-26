@@ -813,8 +813,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     #------------------------------------------------------------------------------
 
     @ALL('^/*')
-    def not_found(self, request):
+    def zzz_not_found(self, request):
         return api.ERROR('method %s:%s is not found' % (request.method, request.path))
 
     #------------------------------------------------------------------------------
-
