@@ -55,6 +55,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import sys
+
 from twisted.internet import threads
 
 #------------------------------------------------------------------------------
@@ -101,16 +102,16 @@ class Packet(object):
         Init all fields and sign the packet.
         """
         # Legal Commands are in commands.py
-        self.Command = Command
+        self.Command = strng.to_text(Command)
         # who owns this data and pays bills - http://cate.com/id1.xml
         self.OwnerID = OwnerID
         # signer - http://cate.com/id1.xml - might be an authorized scrubber
         self.CreatorID = CreatorID
         # string of the above 4 "Number"s with "-" separator to uniquely identify a packet
         # on the local machine.  Can be used for filenames, and to prevent duplicates.
-        self.PacketID = PacketID
+        self.PacketID = strng.to_text(PacketID)
         # create a string to remember current world time
-        self.Date = Date or utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p")
+        self.Date = strng.to_text(Date or utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p"))
         # datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
         # main body of binary data
         self.Payload = Payload
@@ -118,7 +119,7 @@ class Packet(object):
         # use his packets to mess up other nodes by sending it to them
         self.RemoteID = RemoteID
         # which private key to use to generate signature
-        self.KeyID = KeyID or my_id.getGlobalID(key_alias='master')
+        self.KeyID = strng.to_text(KeyID or my_id.getGlobalID(key_alias='master'))
         if Signature:
             self.Signature = Signature
         else:
@@ -310,14 +311,14 @@ def Unserialize(data):
     try:
         json_data = serialization.BytesToDict(data)
         newobject = Packet(
-            Command=json_data['m'],
+            Command=strng.to_text(json_data['m']),
             OwnerID=json_data['o'],
             CreatorID=json_data['c'],
-            PacketID=json_data['i'],
-            Date=json_data['d'],
+            PacketID=strng.to_text(json_data['i']),
+            Date=strng.to_text(json_data['d']),
             Payload=json_data['p'],
             RemoteID=json_data['r'],
-            KeyID=json_data['k'],
+            KeyID=strng.to_text(json_data['k']),
             Signature=json_data['s'],
         )
     except:
