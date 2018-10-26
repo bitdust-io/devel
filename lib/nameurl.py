@@ -76,11 +76,11 @@ def UrlParse(url):
     """
     url = strng.to_bin(url)
     o = six.moves.urllib.parse.urlparse(url)
-    proto = o.scheme.strip()
-    base = o.netloc.lstrip(b' /')
-    filename = o.path.lstrip(b' /')
+    proto = strng.to_bin(o.scheme.strip())
+    base = strng.to_bin(o.netloc).lstrip(b' /')
+    filename = strng.to_bin(o.path).lstrip(b' /')
     if not base:
-        base = o.path.lstrip(b' /')
+        base = strng.to_bin(o.path).lstrip(b' /')
         filename = b''
 
     if base.find(b'/') < 0:

@@ -377,7 +377,6 @@ def identity_create(username):
 
 def identity_backup(destination_filepath):
     from userid import my_id
-    from lib import strng
     from crypt import key
     from system import bpio
     if not my_id.isLocalIdentityReady():
@@ -1663,7 +1662,7 @@ def share_create(owner_id=None, key_size=2048):
     key_id = None
     while True:
         random_sample = os.urandom(24)
-        key_alias = 'share_%s' % key.HashMD5(random_sample, hexdigest=True)
+        key_alias = 'share_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
         key_id = my_keys.make_key_id(alias=key_alias, creator_glob_id=owner_id)
         if my_keys.is_key_registered(key_id):
             continue

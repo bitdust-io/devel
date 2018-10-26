@@ -49,7 +49,6 @@ _DebugLevel = 12
 import os
 import sys
 import time
-import json
 
 try:
     from twisted.internet import reactor
@@ -72,6 +71,7 @@ from lib import misc
 from lib import packetid
 from lib import nameurl
 from lib import strng
+from lib import jsn
 
 from main import settings
 from main import events
@@ -185,7 +185,12 @@ def WriteIndex(filepath=None, encoding='utf-8'):
             encoding=encoding,
         )
     src = '%d\n' % revision()
-    src += json.dumps(json_data, indent=1, separators=(',', ':'), encoding=encoding)
+    src += jsn.dumps(
+        json_data,
+        indent=1,
+        separators=(',', ':'),
+        encoding=encoding,
+    )
     if _Debug:
         import pprint
         lg.out(_DebugLevel, pprint.pformat(json_data))
@@ -207,7 +212,10 @@ def ReadIndex(text_data, encoding='utf-8'):
     backup_fs.Clear()
     count = 0
     try:
-        json_data = json.loads(text_data, encoding=encoding)
+        json_data = jsn.loads(
+            text_data,
+            encoding=encoding,
+        )
     except:
         lg.exc()
         json_data = text_data

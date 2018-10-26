@@ -260,8 +260,8 @@ def execute_in_shell(cmdargs, base_dir=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,)
     result = _CurrentProcess.communicate()
-    out_data = result[0]
-    err_data = result[1]
+    out_data = strng.to_text(result[0])
+    err_data = strng.to_text(result[1])
     write2log('STDOUT:\n%s\nSTDERR:\n%s\n' % (out_data, err_data))
     returncode = _CurrentProcess.returncode
     if _Debug:
