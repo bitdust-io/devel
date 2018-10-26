@@ -229,7 +229,7 @@ def push_event(event_object):
 def pop_event():
     """
     """
-    for consumer_id in consumers_callbacks().keys():
+    for consumer_id in list(consumers_callbacks().keys()):
         if consumer_id not in event_queue() or len(event_queue()[consumer_id]) == 0:
             continue
         registered_callbacks = consumers_callbacks()[consumer_id]

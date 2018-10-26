@@ -1207,9 +1207,9 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
-    keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     if not pathID:
-        return ERROR('path "%s" not registered yet' % path)
+        return ERROR('path "%s" not registered yet' % remote_path)
+    keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=parts['key_alias'])
     pathIDfull = packetid.MakeBackupID(customerID, pathID)
     if open_share and parts['key_alias'] != 'master':
