@@ -663,7 +663,8 @@ class Automat(object):
         Remove given callback from the state machine.
         """
         removed_count = 0
-        for key, cb_list in self._state_callbacks.items():
+        for key in list(self._state_callbacks.keys()):
+            cb_list = self._state_callbacks[key]
             for cb_tupl in cb_list:
                 cb_id_, cb_ = cb_tupl
                 if cb and cb == cb_:
@@ -683,7 +684,7 @@ class Automat(object):
         This is useful if you use ``lambda x: do_somethig()`` to catch
         the moment when state gets changed.
         """
-        for key in self._state_callbacks.keys():
+        for key in list(self._state_callbacks.keys()):
             if key == (oldstate, newstate):
                 self._state_callbacks.pop(key)
                 break
