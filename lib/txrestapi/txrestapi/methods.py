@@ -1,8 +1,8 @@
 from six import PY2, b
-from zope.interface.advice import addClassAdvisor
 
 def method_factory_factory(method):
     def factory_py2(regex):
+        from zope.interface.advice import addClassAdvisor
         _f = {}
         def decorator(f):
             _f[f.__name__] = f
