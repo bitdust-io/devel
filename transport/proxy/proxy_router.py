@@ -76,6 +76,7 @@ from automats import automat
 
 from lib import nameurl
 from lib import serialization
+from lib import strng
 
 from main import config
 
@@ -230,8 +231,7 @@ class ProxyRouter(automat.Automat):
                 p2p_service.SendAck(request, 'rejected', wide=True)
             else:
                 try:
-                    # service_info = request.Payload
-                    # idsrc = service_info.lstrip('service_proxy_server').strip()
+                    # idsrc = strng.to_bin(json_payload['identity'])
                     idsrc = json_payload['identity']
                     cached_id = identity.identity(xmlsrc=idsrc)
                 except:

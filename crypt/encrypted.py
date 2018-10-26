@@ -125,6 +125,7 @@ class Block(object):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getLocalID()
+        self.CreatorID = strng.to_bin(self.CreatorID)
         self.BackupID = strng.to_text(BackupID)
         self.BlockNumber = BlockNumber
         self.LastBlock = bool(LastBlock)
