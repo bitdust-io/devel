@@ -6,4 +6,3 @@ appdirs
 psutil
 cffi
 six
-mock
