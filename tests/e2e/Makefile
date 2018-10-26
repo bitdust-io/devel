@@ -38,6 +38,9 @@ clean_2:
 	$(MAKE) NAMESPACE="namespace2" _clean
 	@rm -f $(RUN_TEST_2)
 
+clean_unused_images:
+	docker images | grep '<none>' | awk '{ print $3 }' | xargs docker rmi --force
+
 _test:
 	docker-compose -p ${NAMESPACE} exec -T test sh -c "${COMMAND}"
 
