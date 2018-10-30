@@ -337,7 +337,7 @@ class ProxyReceiver(automat.Automat):
         """
         s = config.conf().getString('services/proxy-transport/current-router').strip()
         try:
-            self.router_idurl, _, _ = s.split(' ')
+            self.router_idurl = strng.to_bin(s.split(' ')[0])
         except:
             lg.exc()
         if _Debug:
@@ -366,45 +366,18 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self.router_idurl = arg
+        self.router_idurl = strng.to_bin(arg)
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver.doRememberNode %s' % self.router_idurl)
+            lg.out(_DebugLevel, 'proxy_receiver.doRememberNode %r' % self.router_idurl)
 
     def doSendRequestService(self, arg):
         """
         Action method.
         """
-        if len(self.request_service_packet_id) >= 3:
-            if _Debug:
-                lg.warn('too many service requests to %s' % self.router_idurl)
-            self.automat('service-refused', arg)
-            return
-        orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
-        if not orig_identity:
-            orig_identity = my_id.getLocalIdentity().serialize()
-        service_info = {
-            'name': 'service_proxy_server',
-            'payload': {
-                'identity': strng.to_text(orig_identity),
-            },
-        }
-        service_info_raw = json.dumps(service_info)
-        newpacket = signed.Packet(
-            commands.RequestService(),
-            my_id.getLocalID(),
-            my_id.getLocalID(),
-            packetid.UniqueID(),
-            service_info_raw,
-            self.router_idurl,
-        )
-        packet_out.create(newpacket, wide=False, callbacks={
-            commands.Ack(): self._on_request_service_ack,
-            commands.Fail(): self._on_request_service_fail,
-        },)
-        self.request_service_packet_id.append(newpacket.PacketID)
+        self._do_send_request_service(arg)
 
     def doSendCancelService(self, arg):
         """
@@ -420,7 +393,8 @@ class ProxyReceiver(automat.Automat):
             my_id.getLocalID(),
             packetid.UniqueID(),
             service_info_raw,
-            self.router_idurl, )
+            self.router_idurl,
+        )
         packet_out.create(newpacket, wide=True, callbacks={
             commands.Ack(): self._on_request_service_ack,
             commands.Fail(): self._on_request_service_fail,
@@ -609,8 +583,8 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        proxy_interface.interface_receiving_started(self.router_idurl,
-                                                    {'router_idurl': self.router_idurl, })
+        proxy_interface.interface_receiving_started(
+            self.router_idurl, {'router_idurl': self.router_idurl, },)
 
     def doNotifyDisconnected(self, arg):
         """
@@ -658,6 +632,36 @@ class ProxyReceiver(automat.Automat):
             },
             keep_alive=True,
         )
+
+    def _do_send_request_service(self, arg):
+        if len(self.request_service_packet_id) >= 3:
+            if _Debug:
+                lg.warn('too many service requests to %r' % self.router_idurl)
+            self.automat('service-refused', arg)
+            return
+        orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
+        if not orig_identity:
+            orig_identity = my_id.getLocalIdentity().serialize()
+        service_info = {
+            'name': 'service_proxy_server',
+            'payload': {
+                'identity': strng.to_text(orig_identity),
+            },
+        }
+        service_info_raw = json.dumps(service_info)
+        newpacket = signed.Packet(
+            commands.RequestService(),
+            my_id.getLocalID(),
+            my_id.getLocalID(),
+            packetid.UniqueID(),
+            service_info_raw,
+            self.router_idurl,
+        )
+        packet_out.create(newpacket, wide=False, callbacks={
+            commands.Ack(): self._on_request_service_ack,
+            commands.Fail(): self._on_request_service_fail,
+        },)
+        self.request_service_packet_id.append(newpacket.PacketID)
 
     def _on_nodes_lookup_finished(self, idurls):
         if _Debug:

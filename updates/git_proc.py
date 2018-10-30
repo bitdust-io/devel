@@ -284,13 +284,13 @@ class GitProcessProtocol(protocol.ProcessProtocol):
         self.err += inp
         for line in inp.splitlines():
             if _Debug:
-                lg.out(_DebugLevel, '[git:err]: %s' % line)
+                lg.out(_DebugLevel, '[git:err]: %r' % line)
 
     def outReceived(self, inp):
         self.out += inp
         for line in inp.splitlines():
             if _Debug:
-                lg.out(_DebugLevel, '[git:out]: %s' % line)
+                lg.out(_DebugLevel, '[git:out]: %r' % line)
 
     def processEnded(self, reason):
         if _Debug:
