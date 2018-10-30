@@ -78,7 +78,7 @@ from main import events
 #------------------------------------------------------------------------------
 
 _CurrentProcess = None
-_FirstRunDelay = 1200
+_FirstRunDelay = 10
 _LoopInterval = 3600 * 6
 _ShedulerTask = None
 
@@ -179,7 +179,7 @@ def sync(callback_func=None, update_method='rebase'):
         if retcode != 0:
             result = 'sync-error'
         else:
-            if response.count('Changes from') or response.count('Fast-forwarded'):
+            if response.count(b'Changes from') or response.count(b'Fast-forwarded'):
                 result = 'code-fetched'
             else:
                 result = 'up-to-date'
@@ -191,11 +191,11 @@ def sync(callback_func=None, update_method='rebase'):
                 callback_func('sync-error')
             return
         result = 'sync-error'
-        if response.count('Unpacking') or \
-            (response.count('master') and response.count('->')) or \
-            response.count('Updating') or \
-            response.count('Receiving') or \
-                response.count('Counting'):
+        if response.count(b'Unpacking') or \
+            (response.count(b'master') and response.count(b'->')) or \
+            response.count(b'Updating') or \
+            response.count(b'Receiving') or \
+                response.count(b'Counting'):
             result = 'new-code'
         if update_method == 'reset':
             run(['reset', '--hard', 'origin/master', ],
@@ -260,8 +260,9 @@ def execute_in_shell(cmdargs, base_dir=None):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,)
     result = _CurrentProcess.communicate()
-    out_data = strng.to_text(result[0])
-    err_data = strng.to_text(result[1])
+    import pdb; pdb.set_trace()
+    out_data = result[0]
+    err_data = result[1]
     write2log('STDOUT:\n%s\nSTDERR:\n%s\n' % (out_data, err_data))
     returncode = _CurrentProcess.returncode
     if _Debug:

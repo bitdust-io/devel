@@ -189,6 +189,16 @@ class PrivateMessage(object):
         self.recipient = recipient_global_id
         self.encrypted_session = encrypted_session
         self.encrypted_body = encrypted_body
+        if _Debug:
+            lg.out(_DebugLevel, 'message.%s created' % self)
+
+    def __str__(self):
+        return 'PrivateMessage (%r->%r) : %r %r' % (
+            self.sender,
+            self.recipient,
+            type(self.encrypted_session),
+            type(self.encrypted_body),
+        )
 
     def sender_id(self):
         return self.sender
