@@ -114,7 +114,7 @@ class Packet(object):
         self.Date = strng.to_text(Date or utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p"))
         # datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
         # main body of binary data
-        self.Payload = Payload
+        self.Payload = strng.to_bin(Payload)
         # want full IDURL for other party so troublemaker could not
         # use his packets to mess up other nodes by sending it to them
         self.RemoteID = strng.to_bin(RemoteID)
