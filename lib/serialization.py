@@ -33,6 +33,8 @@ from lib import strng
 
 def DictToBytes(dct, encoding='latin1'):
     """
+    Calls `json.dupms()` method for input dict to build bytes output.
+    Uses encoding to translate every byte string to text and ensure ascii output.
     """
     return strng.to_bin(
         jsn.dumps(
@@ -50,6 +52,9 @@ def DictToBytes(dct, encoding='latin1'):
 
 def BytesToDict(inp, encoding='latin1'):
     """
+    A smart way to extract input bytes into python dictionary object.
+    bytes will be encoded into text and then loaded via `json.loads()` method.
+    Finally every text value in result dict will be encoded back to bytes.
     """
     return jsn.loads(
         strng.to_text(

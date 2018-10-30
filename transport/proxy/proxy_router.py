@@ -338,54 +338,7 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        # decrypt with my key and send to outside world
-        newpacket, info = arg
-        block = encrypted.Unserialize(newpacket.Payload)
-        if block is None:
-            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
-            return
-        try:
-            session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
-            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = BytesIO(padded_data[:int(block.Length)])
-            payload = serialization.BytesToDict(inpt.read())
-            inpt.close()
-            sender_idurl = payload['f']                 # from
-            receiver_idurl = payload['t']               # to
-            wide = payload['w']                         # wide
-            routed_data = payload['p']                  # payload
-        except:
-            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
-            lg.exc()
-            try:
-                inpt.close()
-            except:
-                pass
-            return
-        route = self.routes.get(sender_idurl, None)
-        if not route:
-            inpt.close()
-            lg.warn('route with %s not found' % (sender_idurl))
-            p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
-            return
-        routed_packet = signed.Unserialize(routed_data)
-        if not routed_packet or not routed_packet.Valid():
-            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
-            return
-        # send the packet directly to target user_id
-        # we pass not callbacks because all response packets from this call will be also re-routed
-        pout = packet_out.create(routed_packet, wide=wide, callbacks={}, target=receiver_idurl,)
-        if _Debug:
-            lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
-                len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
-            lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
-        del block
-        del routed_data
-        del padded_data
-        del route
-        del inpt
-        del session_key
-        del routed_packet
+        self._do_forward_outbox_packet(arg)
 
     def doForwardInboxPacket(self, arg):
         """
@@ -528,6 +481,65 @@ class ProxyRouter(automat.Automat):
         global _ProxyRouter
         del _ProxyRouter
         _ProxyRouter = None
+
+    def _do_forward_outbox_packet(self, outpacket_info_tuple):
+        """
+        This packet addressed to me but contain routed data to be transferred to another node.
+        I will decrypt with my private key and send to outside world further.
+        """
+        newpacket, info = outpacket_info_tuple
+        block = encrypted.Unserialize(newpacket.Payload)
+        if block is None:
+            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
+            return
+        try:
+            session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            inpt = BytesIO(padded_data[:int(block.Length)])
+            # see proxy_sender.ProxySender : _on_first_outbox_packet() for sending part
+            json_payload = serialization.BytesToDict(inpt.read())
+            inpt.close()
+            sender_idurl = json_payload['f']                 # from
+            receiver_idurl = json_payload['t']               # to
+            wide = json_payload['w']                         # wide
+            routed_data = json_payload['p']                  # payload
+        except:
+            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
+            lg.exc()
+            try:
+                inpt.close()
+            except:
+                pass
+            return
+        route = self.routes.get(sender_idurl, None)
+        if not route:
+            inpt.close()
+            lg.warn('route with %s not found' % (sender_idurl))
+            p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
+            return
+        routed_packet = signed.Unserialize(routed_data)
+        if not routed_packet or not routed_packet.Valid():
+            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
+            return
+        # send the packet directly to target user_id
+        # we pass not callbacks because all response packets from this call will be also re-routed
+        pout = packet_out.create(
+            routed_packet,
+            wide=wide,
+            callbacks={},
+            target=receiver_idurl,
+        )
+        if _Debug:
+            lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
+                len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
+            lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
+        del block
+        del routed_data
+        del padded_data
+        del route
+        del inpt
+        del session_key
+        del routed_packet
 
     def _on_outbox_packet(self):
         # TODO: if node A is my supplier need to add special case here

@@ -134,9 +134,9 @@ class GateInterface():
         """
         result = []
         nowip = strng.to_bin(misc.readExternalIP())
-        result.append('http://%s:%s' % (nowip, str(settings.getHTTPPort())))
+        result.append(b'http://%s:%d' % (nowip, settings.getHTTPPort()))
         if _Debug:
-            lg.out(4, 'http_interface.build_contacts : %s' % str(result))
+            lg.out(4, 'http_interface.build_contacts : %s' % result)
         return result
 
     def verify_contacts(self, id_obj):
