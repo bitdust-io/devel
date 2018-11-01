@@ -53,8 +53,6 @@ _DebugLevel = 2
 
 #------------------------------------------------------------------------------
 
-import json
-
 from twisted.internet import reactor
 
 #------------------------------------------------------------------------------
@@ -73,7 +71,7 @@ from p2p import commands
 
 from lib import packetid
 from lib import nameurl
-from lib import strng
+from lib import serialization
 
 from crypt import signed
 
@@ -349,7 +347,7 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
         'name': service_name,
         'payload': json_payload,
     }
-    service_info_raw = json.dumps(service_info)
+    service_info_raw = serialization.DictToBytes(service_info)
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %d bytes payload' % (
             service_name, remote_idurl, len(service_info_raw)))
@@ -376,7 +374,7 @@ def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, c
         'name': service_name,
         'payload': json_payload,
     }
-    service_info_raw = json.dumps(service_info)
+    service_info_raw = serialization.DictToBytes(service_info)
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendCancelService "%s" to %s with %d bytes payload' % (
             service_name, remote_idurl, len(service_info_raw)))
@@ -686,7 +684,7 @@ def SendBroadcastMessage(outpacket):
 def Coin(request, info):
     if _Debug:
         try:
-            input_coins = json.loads(request.Payload)
+            input_coins = serialization.BytesToDict(request.Payload)
         except:
             lg.exc()
             input_coins = []
@@ -702,7 +700,7 @@ def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
     outpacket = signed.Packet(
         commands.Coin(), my_id.getLocalID(),
         my_id.getLocalID(), packet_id,
-        json.dumps(coins), remote_idurl)
+        serialization.DictToBytes(coins), remote_idurl)
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
 
@@ -719,7 +717,7 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
     outpacket = signed.Packet(
         commands.RetrieveCoin(), my_id.getLocalID(),
         my_id.getLocalID(), packetid.UniqueID(),
-        json.dumps(query), remote_idurl)
+        serialization.DictToBytes(query), remote_idurl)
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
 
@@ -785,7 +783,7 @@ def Event(request, info):
     """
     if _Debug:
         try:
-            e_json = json.loads(request.Payload)
+            e_json = serialization.BytesToDict(request.Payload)
             e_json['event_id']
             e_json['payload']
         except:
@@ -809,7 +807,7 @@ def SendEvent(remote_idurl, event_id, payload=None,
         e_json['message_id'] = message_id
     if created:
         e_json['created'] = created
-    e_json_src = json.dumps(e_json)
+    e_json_src = serialization.DictToBytes(e_json)
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendEvent to %s with %d bytes message json data" % (
             remote_idurl, len(e_json_src)))
