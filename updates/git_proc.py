@@ -78,7 +78,7 @@ from main import events
 #------------------------------------------------------------------------------
 
 _CurrentProcess = None
-_FirstRunDelay = 10
+_FirstRunDelay = 1200
 _LoopInterval = 3600 * 6
 _ShedulerTask = None
 
@@ -284,13 +284,13 @@ class GitProcessProtocol(protocol.ProcessProtocol):
         self.err += inp
         for line in inp.splitlines():
             if _Debug:
-                lg.out(_DebugLevel, '[git:err]: %r' % line)
+                lg.out(_DebugLevel, '[git:err]: %s' % strng.to_text(line))
 
     def outReceived(self, inp):
         self.out += inp
         for line in inp.splitlines():
             if _Debug:
-                lg.out(_DebugLevel, '[git:out]: %r' % line)
+                lg.out(_DebugLevel, '[git:out]: %s' % strng.to_text(line))
 
     def processEnded(self, reason):
         if _Debug:
