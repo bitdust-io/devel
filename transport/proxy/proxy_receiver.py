@@ -478,12 +478,15 @@ class ProxyReceiver(automat.Automat):
             try:
                 s = config.conf().getString('services/proxy-transport/current-router').strip()
                 _, router_proto, router_host = s.split(' ')
-                self.router_proto_host = (router_proto, router_host)
+                self.router_proto_host = (router_proto, strng.to_bin(router_host), )
             except:
                 lg.exc()
         self.router_identity = identitycache.FromCache(self.router_idurl)
         config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
-            self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
+            strng.to_text(self.router_idurl),
+            strng.to_text(self.router_proto_host[0]),
+            strng.to_text(self.router_proto_host[1]),
+        ))
         current_identity = my_id.getLocalIdentity().serialize()
         previous_identity = ReadMyOriginalIdentitySource()
         if previous_identity:
