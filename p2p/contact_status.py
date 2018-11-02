@@ -494,6 +494,7 @@ def OutboxStatus(pkt_out, status, error=''):
         return False
     if status == 'finished':
         if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
+            lg.warn('packet %s was "unanswered", sending "ping-failed" to %s' % (pkt_out, A(pkt_out.outpacket.RemoteID), ))
             A(pkt_out.outpacket.RemoteID, 'ping-failed', (pkt_out, status, error))
         else:
             A(pkt_out.outpacket.RemoteID, 'sent-done', (pkt_out, status, error))

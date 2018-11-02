@@ -123,9 +123,9 @@ def create(outpacket, wide, callbacks, target=None, route=None, response_timeout
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%r route=%r' % (
+        lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%r route=%r callbacks=%s' % (
             nameurl.GetName(outpacket.OwnerID), nameurl.GetName(outpacket.CreatorID), nameurl.GetName(outpacket.RemoteID),
-            outpacket.Command, outpacket.PacketID, target, route, ))
+            outpacket.Command, outpacket.PacketID, target, route, list(callbacks.keys())))
     p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     queue().append(p)
     p.automat('run')
