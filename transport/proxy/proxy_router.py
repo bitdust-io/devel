@@ -219,6 +219,96 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
+        self._do_process_request(arg)
+
+    def doUnregisterRoute(self, arg):
+        """
+        Action method.
+        """
+        idurl = arg
+        identitycache.StopOverridingIdentity(idurl)
+        self.routes.pop(idurl)
+        self._remove_route(idurl)
+
+    def doUnregisterAllRouts(self, arg):
+        """
+        Action method.
+        """
+        for idurl in self.routes.keys():
+            identitycache.StopOverridingIdentity(idurl)
+        self.routes.clear()
+        self._clear_routes()
+
+    def doForwardOutboxPacket(self, arg):
+        """
+        Action method.
+        """
+        self._do_forward_outbox_packet(arg)
+
+    def doForwardInboxPacket(self, arg):
+        """
+        Action method.
+        """
+        self._do_forward_inbox_packet(arg)
+
+    def doCountOutgoingTraffic(self, arg):
+        """
+        Action method.
+        """
+
+    def doCountIncomingTraffic(self, arg):
+        """
+        Action method.
+        """
+
+    def doSaveRouteProtoHost(self, arg):
+        """
+        Action method.
+        """
+        idurl, _, item, _, _, _ = arg
+        self.routes[idurl]['address'].append((item.proto, item.host))
+        self._write_route(idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
+                item.proto, item.host, nameurl.GetName(idurl)))
+
+    def doSetContactsOverride(self, arg):
+        """
+        Action method.
+        """
+        self._do_set_contacts_override(arg)
+
+    def doClearContactsOverride(self, arg):
+        """
+        Action method.
+        """
+        result = identitycache.StopOverridingIdentity(arg.CreatorID)
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router.doClearContactsOverride identity for %s, result=%s' % (
+                arg.CreatorID, result, ))
+
+    def doSendFail(self, arg):
+        """
+        Action method.
+        """
+        newpacket, _ = arg
+        p2p_service.SendFail(newpacket, wide=True)
+
+    def doDestroyMe(self, arg):
+        """
+        Remove all references to the state machine object to destroy it.
+        """
+        # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
+        if network_connector.A():
+            network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
+        callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
+        self.unregister()
+        global _ProxyRouter
+        del _ProxyRouter
+        _ProxyRouter = None
+
+    def _do_process_request(self, arg):
         global _MaxRoutesNumber
         json_payload, request, info = arg
         user_id = request.CreatorID
@@ -316,34 +406,7 @@ class ProxyRouter(automat.Automat):
         else:
             p2p_service.SendFail(request, 'rejected', wide=True)
 
-    def doUnregisterRoute(self, arg):
-        """
-        Action method.
-        """
-        idurl = arg
-        identitycache.StopOverridingIdentity(idurl)
-        self.routes.pop(idurl)
-        self._remove_route(idurl)
-
-    def doUnregisterAllRouts(self, arg):
-        """
-        Action method.
-        """
-        for idurl in self.routes.keys():
-            identitycache.StopOverridingIdentity(idurl)
-        self.routes.clear()
-        self._clear_routes()
-
-    def doForwardOutboxPacket(self, arg):
-        """
-        Action method.
-        """
-        self._do_forward_outbox_packet(arg)
-
-    def doForwardInboxPacket(self, arg):
-        """
-        Action method.
-        """
+    def _do_forward_inbox_packet(self, arg):
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
         receiver_idurl, newpacket, info = arg
         route_info = self.routes.get(receiver_idurl, None)
@@ -402,31 +465,7 @@ class ProxyRouter(automat.Automat):
         del newpacket
         del routed_packet
 
-    def doCountOutgoingTraffic(self, arg):
-        """
-        Action method.
-        """
-
-    def doCountIncomingTraffic(self, arg):
-        """
-        Action method.
-        """
-
-    def doSaveRouteProtoHost(self, arg):
-        """
-        Action method.
-        """
-        idurl, _, item, _, _, _ = arg
-        self.routes[idurl]['address'].append((item.proto, item.host))
-        self._write_route(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
-                item.proto, item.host, nameurl.GetName(idurl)))
-
-    def doSetContactsOverride(self, arg):
-        """
-        Action method.
-        """
+    def _do_set_contacts_override(self, arg):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSetContactsOverride identity for %s' % arg.CreatorID)
         user_id = arg.CreatorID
@@ -451,36 +490,6 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '    current overridden contacts is : %s' % current_contacts)
             lg.out(_DebugLevel, '    new override contacts will be : %s' % new_ident.getContacts())
             lg.out(_DebugLevel, '    result=%s' % result)
-
-    def doClearContactsOverride(self, arg):
-        """
-        Action method.
-        """
-        result = identitycache.StopOverridingIdentity(arg.CreatorID)
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doClearContactsOverride identity for %s, result=%s' % (
-                arg.CreatorID, result, ))
-
-    def doSendFail(self, arg):
-        """
-        Action method.
-        """
-        newpacket, info = arg
-        p2p_service.SendFail(newpacket, wide=True)
-
-    def doDestroyMe(self, arg):
-        """
-        Remove all references to the state machine object to destroy it.
-        """
-        # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
-        if network_connector.A():
-            network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
-        callback.remove_inbox_callback(self._on_inbox_packet_received)
-        callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
-        self.unregister()
-        global _ProxyRouter
-        del _ProxyRouter
-        _ProxyRouter = None
 
     def _do_forward_outbox_packet(self, outpacket_info_tuple):
         """

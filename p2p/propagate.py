@@ -390,7 +390,7 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
         commands.Identity(),
         my_id.getLocalID(),  # MyID,
         my_id.getLocalID(),  # MyID,
-        'Identity',  # my_id.getLocalID(), #PacketID,
+        commands.Identity(),  #  'Identity',  # my_id.getLocalID(), #PacketID,
         thePayload,
         idurl,
     )
@@ -455,7 +455,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
             commands.Identity(),
             my_id.getLocalID(),  # MyID,
             my_id.getLocalID(),  # MyID,
-            'Identity',  # my_id.getLocalID(), #PacketID,
+            commands.Identity(),  #'Identity',  # my_id.getLocalID(), #PacketID,
             Payload,
             contact,
         )
