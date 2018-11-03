@@ -78,7 +78,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import BytesIO
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -168,7 +168,7 @@ class backup(automat.Automat):
         self.stateEOF = False
         self.stateReading = False
         self.closed = False
-        self.currentBlockData = BytesIO()
+        self.currentBlockData = StringIO()
         self.currentBlockSize = 0
         self.workBlocks = {}
         self.blockNumber = 0
@@ -320,16 +320,15 @@ class backup(automat.Automat):
             return ''
 
         def readDone(data):
-            data_bin = strng.to_bin(data)
-            self.currentBlockData.write(data_bin)
-            self.currentBlockSize += len(data_bin)
+            self.currentBlockData.write(data)
+            self.currentBlockSize += len(data)
             self.stateReading = False
             if data == '':
                 self.stateEOF = True
             if _Debug:
-                lg.out(_DebugLevel + 4, 'backup.readDone %d bytes' % len(data_bin))
+                lg.out(_DebugLevel + 4, 'backup.readDone %d bytes' % len(data))
             reactor.callLater(0, self.automat, 'read-success')
-            return data_bin
+            return data
 
         def readFailed(err):
             lg.err(err)
@@ -344,7 +343,7 @@ class backup(automat.Automat):
     def doEncryptBlock(self, arg):
         def _doBlock():
             dt = time.time()
-            src = self.currentBlockData.getvalue()
+            raw_bytes = strng.to_bin(self.currentBlockData.getvalue())
             block = encrypted.Block(
                 my_id.getLocalID(),
                 self.backupID,
@@ -352,10 +351,10 @@ class backup(automat.Automat):
                 key.NewSessionKey(),
                 key.SessionKeyType(),
                 self.stateEOF,
-                src,
+                raw_bytes,
                 EncryptKey=self.keyID,
             )
-            del src
+            del raw_bytes
             if _Debug:
                 lg.out(_DebugLevel, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s EncryptKey=%s' % (
                     self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time() - dt), self.keyID))
@@ -385,13 +384,9 @@ class backup(automat.Automat):
         os.write(fileno, strng.to_bin(blocklen) + b":" + serializedblock)
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
-        # key_alias = 'master'
-        # if self.keyID:
-        #     key_alias = packetid.KeyAlias(self.keyID)
         dt = time.time()
-        customer_dir = self.customerGlobalID  # global_id.MakeGlobalID(customer=self.customerGlobalID, key_alias=key_alias)
         outputpath = os.path.join(
-            settings.getLocalBackupsDir(), customer_dir, self.pathID, self.version)
+            settings.getLocalBackupsDir(), self.customerGlobalID, self.pathID, self.version)
         task_params = (filename, self.eccmap.name, self.version, newblock.BlockNumber, outputpath)
         raid_worker.add_task('make', task_params,
                              lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
@@ -417,7 +412,7 @@ class backup(automat.Automat):
         self.blocksSent = 0
         self.blockNumber = 0
         self.currentBlockSize = 0
-        self.currentBlockData = BytesIO()
+        self.currentBlockData = StringIO()
 
     def doNextBlock(self, arg):
         """
@@ -428,7 +423,7 @@ class backup(automat.Automat):
         self.blockNumber += 1
         self.currentBlockData.close()
         self.currentBlockSize = 0
-        self.currentBlockData = BytesIO()
+        self.currentBlockData = StringIO()
 
     def doBlockReport(self, arg):
         """
