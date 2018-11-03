@@ -81,6 +81,7 @@ except:
 from logs import lg
 
 from lib import nameurl
+from lib import strng
 
 from contacts import contactsdb
 
@@ -142,9 +143,12 @@ def shutdown():
 def check_create(idurl):
     """
     """
+    if idurl in [None, 'None', '', b'None', b'', ]:
+        return False
+    idurl = strng.to_bin(idurl)
     if idurl not in list(_ContactsStatusDict.keys()):
         A(idurl)
-        lg.info('contact %s is not found, made a new instance' % idurl)
+        lg.info('contact %r is not found, made a new instance' % idurl)
     return True
 
 
@@ -157,8 +161,9 @@ def isKnown(idurl):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if idurl in [None, 'None', '']:
+    if idurl in [None, 'None', '', b'None', b'', ]:
         return False
+    idurl = strng.to_bin(idurl)
     return idurl in list(_ContactsStatusDict.keys())
 
 
@@ -166,19 +171,13 @@ def isOnline(idurl):
     """
     Return True if given contact's state is ONLINE.
     """
-    global _ContactsStatusDict
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if idurl in [None, 'None', '']:
+    if idurl in [None, 'None', '', b'None', b'', ]:
         return False
     if not isKnown(idurl):
         return False
-#     check_create(idurl)
-#     if idurl not in _ContactsStatusDict.keys():
-#         A(idurl)
-#         if _Debug:
-#             lg.out(_DebugLevel, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'CONNECTED'
 
 
@@ -186,18 +185,13 @@ def isOffline(idurl):
     """
     Return True if given contact's state is OFFLINE.
     """
-    global _ContactsStatusDict
     global _ShutdownFlag
     if _ShutdownFlag:
         return True
-    if idurl in [None, 'None', '']:
+    if idurl in [None, 'None', '', b'None', b'', ]:
         return True
     if not isKnown(idurl):
         return True
-#     if idurl not in _ContactsStatusDict.keys():
-#         A(idurl)
-#         if _Debug:
-#             lg.out(_DebugLevel, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'OFFLINE'
 
 
@@ -205,18 +199,13 @@ def isCheckingNow(idurl):
     """
     Return True if given contact's state is PING or ACK?.
     """
-    global _ContactsStatusDict
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if idurl in [None, 'None', '']:
+    if idurl in [None, 'None', '', b'None', b'', ]:
         return False
     if not isKnown(idurl):
         return False
-#     if idurl not in _ContactsStatusDict.keys():
-#         A(idurl)
-#         if _Debug:
-#             lg.out(_DebugLevel, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
     st = A(idurl).state
     return st == 'PING' or st == 'ACK?'
 
@@ -224,10 +213,9 @@ def isCheckingNow(idurl):
 def getInstance(idurl):
     """
     """
-    global _ContactsStatusDict
     if _ShutdownFlag:
         return None
-    if idurl in [None, 'None', '']:
+    if idurl in [None, 'None', '', b'None', b'', ]:
         return None
     check_create(idurl)
     return A(idurl)
@@ -242,11 +230,10 @@ def getStatusLabel(idurl):
     """
     Return some text description about the current state of that user.
     """
-    global _ContactsStatusDict
     global _ShutdownFlag
     if _ShutdownFlag:
         return '?'
-    if idurl in [None, 'None', '']:
+    if idurl in [None, 'None', '', b'None', b'', ]:
         return '?'
     check_create(idurl)
     return stateToLabel(A(idurl).state)
@@ -311,6 +298,7 @@ def A(idurl, event=None, arg=None):
     """
     global _ShutdownFlag
     global _ContactsStatusDict
+    idurl = strng.to_bin(idurl)
     if idurl not in _ContactsStatusDict:
         if _ShutdownFlag:
             return None
