@@ -78,7 +78,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import StringIO
+from io import BytesIO
 
 #------------------------------------------------------------------------------
 
@@ -168,7 +168,7 @@ class backup(automat.Automat):
         self.stateEOF = False
         self.stateReading = False
         self.closed = False
-        self.currentBlockData = StringIO()
+        self.currentBlockData = BytesIO()
         self.currentBlockSize = 0
         self.workBlocks = {}
         self.blockNumber = 0
@@ -296,34 +296,41 @@ class backup(automat.Automat):
                 lg.out(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
                 lg.out(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
                 raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
-                return ''
+                return b''
             elif size == 0:
-                return ''
+                return b''
             if self.pipe is None:
                 raise Exception('backup.pipe is None')
-                return ''
+                return b''
             if self.pipe.state() == nonblocking.PIPE_CLOSED:
                 if _Debug:
                     lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
-                return ''
+                return b''
             if self.pipe.state() == nonblocking.PIPE_READY2READ:
-                newchunk = self.pipe.recv(size)
-                if newchunk == '':
-                    if _Debug:
-                        lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned empty string')
-                else:
+                inputtext = self.pipe.recv(size)
+                newchunk = strng.to_bin(inputtext)
+                if newchunk:
                     if _Debug:
                         lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned %d bytes' % len(newchunk))
+                else:
+                    if _Debug:
+                        lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned empty string')
                 return newchunk
             lg.out(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
             raise Exception('backup.pipe.state is ' + str(self.pipe.state()))
-            return ''
+            return b''
 
         def readDone(data):
-            self.currentBlockData.write(data)
-            self.currentBlockSize += len(data)
-            self.stateReading = False
-            if data == '':
+            try:
+                self.currentBlockData.write(data)
+                self.currentBlockSize += len(data)
+                self.stateReading = False
+            except Exception as err:
+                import pdb; pdb.set_trace()
+                lg.exc()
+                self.automat('fail', err)
+                return None
+            if not data:
                 self.stateEOF = True
             if _Debug:
                 lg.out(_DebugLevel + 4, 'backup.readDone %d bytes' % len(data))
@@ -343,7 +350,7 @@ class backup(automat.Automat):
     def doEncryptBlock(self, arg):
         def _doBlock():
             dt = time.time()
-            raw_bytes = strng.to_bin(self.currentBlockData.getvalue())
+            raw_bytes = self.currentBlockData.getvalue()
             block = encrypted.Block(
                 my_id.getLocalID(),
                 self.backupID,
@@ -412,7 +419,7 @@ class backup(automat.Automat):
         self.blocksSent = 0
         self.blockNumber = 0
         self.currentBlockSize = 0
-        self.currentBlockData = StringIO()
+        self.currentBlockData = BytesIO()
 
     def doNextBlock(self, arg):
         """
@@ -421,9 +428,9 @@ class backup(automat.Automat):
         self.dataSent += self.currentBlockSize
         self.blocksSent += 1
         self.blockNumber += 1
-        self.currentBlockData.close()
         self.currentBlockSize = 0
-        self.currentBlockData = StringIO()
+        self.currentBlockData.close()
+        self.currentBlockData = BytesIO()
 
     def doBlockReport(self, arg):
         """

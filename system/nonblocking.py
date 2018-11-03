@@ -32,7 +32,12 @@ some extended functionality. Can read/write from pipe without blocking
 the main thread.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import errno
@@ -40,12 +45,21 @@ import time
 import subprocess
 import traceback
 
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 PIPE = subprocess.PIPE
 
 # Pipe States:
 PIPE_EMPTY = 0
 PIPE_READY2READ = 1
 PIPE_CLOSED = 2
+
+#------------------------------------------------------------------------------
 
 if getattr(subprocess, 'mswindows', None):
     from win32file import ReadFile, WriteFile
@@ -56,6 +70,12 @@ else:
     import select
     import fcntl  # @UnresolvedImport
     import signal
+
+#------------------------------------------------------------------------------
+
+from logs import lg
+
+#------------------------------------------------------------------------------
 
 
 class Popen(subprocess.Popen):
@@ -80,12 +100,19 @@ class Popen(subprocess.Popen):
                                   preexec_fn, close_fds, shell,
                                   cwd, env, universal_newlines,
                                   startupinfo, creationflags)
+        if _Debug:
+            lg.out(_DebugLevel, 'nonblocking.Popen created')
+            lg.out(_DebugLevel, '    stdin=%r' % self.stdin)
+            lg.out(_DebugLevel, '    stdout=%r' % self.stdout)
+            lg.out(_DebugLevel, '    stderr=%r' % self.stderr)
 
     def __del__(self):
         try:
             subprocess.Popen.__del__(self)
         except:
             pass
+        if _Debug:
+            lg.out(_DebugLevel, 'nonblocking.Popen closed')
 
     def returncode(self):
         return self.returncode
