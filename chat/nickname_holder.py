@@ -55,6 +55,8 @@ from logs import lg
 
 from automats import automat
 
+from lib import strng
+
 from main import settings
 
 from userid import my_id
@@ -300,7 +302,7 @@ class NicknameHolder(automat.Automat):
     def _dht_read_result(self, value, key):
         self.dht_read_defer = None
         try:
-            v = value['idurl']
+            v = strng.to_bin(value['idurl'])
         except:
             lg.out(8, '%r' % value)
             lg.exc()
