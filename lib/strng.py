@@ -43,13 +43,6 @@ else:
 
 #------------------------------------------------------------------------------
 
-def is_string(s):
-    """
-    Return `True` if `s` is text or binary type (not integer, class, list, etc...)
-    """
-    return isinstance(s, string_types)
-
-
 def is_text(s):
     """
     Return `True` if `s` is a text value:
@@ -66,6 +59,13 @@ def is_bin(s):
     + `bytes()` in Python3
     """
     return isinstance(s, binary_type)
+
+
+def is_string(s):
+    """
+    Return `True` if `s` is text or binary type (not integer, class, list, etc...)
+    """
+    return is_text(s) or is_bin(s)
 
 #------------------------------------------------------------------------------
 
