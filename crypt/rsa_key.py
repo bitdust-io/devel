@@ -129,7 +129,7 @@ class RSAKey(object):
         signature_bytes = pkcs1_15.new(self.keyObject).sign(h)
         if not as_digits:
             return signature_bytes
-        signature_raw = strng.to_bin(strng.to_string(number.bytes_to_long(signature_bytes)))
+        signature_raw = strng.to_bin(number.bytes_to_long(signature_bytes))
         if signature_bytes[0:1] == b'\x00':
             signature_raw = b'0' + signature_raw
         return signature_raw

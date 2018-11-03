@@ -587,7 +587,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def request(self, key):
         count('request')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_string(key, errors='ignore')[:10])
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
         internal_value = get_node_data(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]

@@ -110,6 +110,7 @@ if __name__ == "__main__":
 from logs import lg
 
 from lib import packetid
+from lib import strng
 
 from userid import my_id
 from userid import global_id
@@ -310,24 +311,30 @@ class backup(automat.Automat):
                 if newchunk == '':
                     if _Debug:
                         lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned empty string')
+                else:
+                    if _Debug:
+                        lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned %d bytes' % len(newchunk))
                 return newchunk
             lg.out(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
             raise Exception('backup.pipe.state is ' + str(self.pipe.state()))
             return ''
 
         def readDone(data):
-            self.currentBlockData.write(data)
-            self.currentBlockSize += len(data)
+            data_bin = strng.to_bin(data)
+            self.currentBlockData.write(data_bin)
+            self.currentBlockSize += len(data_bin)
             self.stateReading = False
             if data == '':
                 self.stateEOF = True
             if _Debug:
-                lg.out(_DebugLevel + 6, 'backup.readDone %d bytes' % len(data))
+                lg.out(_DebugLevel + 4, 'backup.readDone %d bytes' % len(data_bin))
             reactor.callLater(0, self.automat, 'read-success')
+            return data_bin
 
         def readFailed(err):
             lg.err(err)
             self.automat('fail', err)
+            return None
 
         self.stateReading = True
         d = maybeDeferred(readChunk)
@@ -375,7 +382,7 @@ class backup(automat.Automat):
         fileno, filename = tmpfile.make('raid', extension='.raid')
         serializedblock = newblock.Serialize()
         blocklen = len(serializedblock)
-        os.write(fileno, str(blocklen) + ":" + serializedblock)
+        os.write(fileno, strng.to_bin(blocklen) + b":" + serializedblock)
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
         # key_alias = 'master'

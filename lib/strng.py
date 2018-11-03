@@ -33,11 +33,9 @@ import sys
 #------------------------------------------------------------------------------
 
 if sys.version_info[0] == 3:
-    string_types = str,
     text_type = str
     binary_type = bytes
 else:
-    string_types = basestring,
     text_type = unicode
     binary_type = str
 
@@ -71,10 +69,13 @@ def is_string(s):
 
 def to_text(s, encoding='utf-8', errors='strict'):
     """
-    if ``s`` is binary type - decode it to unicode - "text" type in Python3 terms, otherwise return ``s``.
+    If ``s`` is binary type - decode it to unicode - "text" type in Python3 terms.
+    If ``s`` is not binary and not text calls `repr(s)` to build text representation.
     """
     if s is None:
         return s
+    if not is_string(s):
+        s = repr(s)
     if is_text(s):
         return s
     return s.decode(encoding=encoding, errors=errors)
@@ -83,22 +84,13 @@ def to_text(s, encoding='utf-8', errors='strict'):
 def to_bin(s, encoding='utf-8', errors='strict'):
     """
     If ``s`` is unicode ("text" type in Python3 terms) - encode it to utf-8, otherwise return ``s``.
+    If ``s`` is not binary and not text calls `repr(s)` to build text representation,
+    then encode to binary and return.
     """
     if s is None:
         return s
+    if not is_string(s):
+        s = repr(s)
     if is_bin(s):
         return s
     return s.encode(encoding=encoding, errors=errors)
-
-
-def to_string(v, encoding='utf-8', errors='strict'):
-    """
-    Something like `str(obj)`, but to "text" type.
-    """
-    if v is None:
-        return v
-    if not is_string(v):
-        return text_type(v)
-    if is_text(v):
-        return v
-    return to_text(v, encoding=encoding, errors=errors)
