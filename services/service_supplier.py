@@ -155,7 +155,7 @@ class SupplierService(LocalService):
             lg.out(6, 'service_supplier.request created a new space file')
         space_dict = accounting.read_customers_quotas()
         try:
-            free_bytes = int(space_dict['free'])
+            free_bytes = int(space_dict[b'free'])
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
@@ -167,7 +167,7 @@ class SupplierService(LocalService):
             return p2p_service.SendFail(newpacket, 'broken customers file')
         if customer_idurl in current_customers:
             free_bytes += int(space_dict[customer_idurl])
-            space_dict['free'] = free_bytes
+            space_dict[b'free'] = free_bytes
             current_customers.remove(customer_idurl)
             space_dict.pop(customer_idurl)
             new_customer = False
@@ -189,7 +189,7 @@ class SupplierService(LocalService):
                 lg.out(8, "    OLD CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
                 events.send('existing-customer-denied', dict(idurl=customer_idurl))
             return p2p_service.SendAck(newpacket, 'deny')
-        space_dict['free'] = free_bytes - bytes_for_customer
+        space_dict[b'free'] = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
         space_dict[customer_idurl] = bytes_for_customer
         contactsdb.update_customers(current_customers)
@@ -240,8 +240,8 @@ class SupplierService(LocalService):
             lg.warn("got packet from %s, but not found him in space dictionary" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
         try:
-            free_bytes = int(space_dict['free'])
-            space_dict['free'] = free_bytes + int(space_dict[customer_idurl])
+            free_bytes = int(space_dict[b'free'])
+            space_dict[b'free'] = free_bytes + int(space_dict[customer_idurl])
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
@@ -580,7 +580,7 @@ class SupplierService(LocalService):
         data = newpacket.Serialize()
         donated_bytes = settings.getDonatedBytes()
         if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes, })
+            bpio._write_dict(settings.CustomersSpaceFile(), {b'free': donated_bytes, })
             lg.warn('created a new space file: %s' % settings.CustomersSpaceFile())
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
         if newpacket.OwnerID not in list(space_dict.keys()):
