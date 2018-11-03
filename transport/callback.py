@@ -150,9 +150,7 @@ def insert_outbox_filter_callback(index, cb):
     """
     Same like ``append_outbox_filter_callback(cb)`` but put the callback at the
     given position in the filters list. If you put your callback at the top you
-    will catch the.
-
-    outgoing packet as soon as possible - before other callbacks.
+    will catch the outgoing packet as soon as possible - before other callbacks.
     If callback returned True - all other callbacks will be skipped.
     Callback will be called in a such way:
 

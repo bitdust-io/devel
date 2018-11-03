@@ -622,7 +622,7 @@ class ProxyReceiver(automat.Automat):
             commands.Identity(),
             my_id.getLocalID(),
             my_id.getLocalID(),
-            'identity',
+            commands.Identity(),
             identity_source,
             self.router_idurl,
         )

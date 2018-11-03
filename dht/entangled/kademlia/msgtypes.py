@@ -15,6 +15,8 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
+import six
+
 import hashlib
 import random
 
@@ -63,3 +65,5 @@ class ErrorMessage(ResponseMessage):
             self.exceptionType = '%s.%s' % (exceptionType.__module__, exceptionType.__name__)
         else:
             self.exceptionType = exceptionType
+            if isinstance(self.exceptionType, six.binary_type):
+                self.exceptionType = self.exceptionType.decode()
