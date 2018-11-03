@@ -389,8 +389,8 @@ class FSItemInfo():
     def serialize(self, encoding='utf-8', to_json=False):
         if to_json:
             return {
-                'n': self.unicodename.encode(encoding),
-                'i': str(self.path_id),
+                'n': strng.to_text(self.unicodename, encoding=encoding),
+                'i': strng.to_text(self.path_id),
                 't': self.type,
                 's': self.size,
                 'k': self.key_id,
@@ -400,31 +400,34 @@ class FSItemInfo():
                     's': self.versions[v][1],
                 } for v in self.list_versions(sorted=True)]
             }
-        e = self.unicodename.encode(encoding)
+        e = strng.to_text(self.unicodename, encoding=encoding)
         return '%s %d %d %s\n%s\n' % (self.path_id, self.type,
                                       self.size, self.pack_versions(), e,)
 
     def unserialize(self, src, decoding='utf-8', from_json=False):
         if from_json:
             try:
-                self.unicodename = src['n']
-                self.path_id = str(src['i'])
+                self.unicodename = strng.to_text(src['n'], encoding=decoding)
+                self.path_id = strng.to_text(src['i'], encoding=decoding)
                 self.type = src['t']
                 self.size = src['s']
-                self.key_id = src['k']
-                self.versions = {v['n']: [v['b'], v['s'], ] for v in src['v']}
+                self.key_id = strng.to_text(src['k'], encoding=decoding)
+                self.versions = {
+                    strng.to_text(v['n']): [v['b'], v['s'], ] for v in src['v']
+                }
             except:
                 lg.exc()
                 raise KeyError('Incorrect item format:\n%s' % src)
-            return
+            return True
+
         try:
-            details, name = src.split('\n')[:2]
+            details, name = strng.to_text(src, encoding=decoding).split('\n')[:2]
         except:
             raise Exception('Incorrect item format:\n%s' % src)
-        if details == '' or name == '':
+        if not details or not name:
             raise Exception('Incorrect item format:\n%s' % src)
         try:
-            self.unicodename = name.decode(decoding)
+            self.unicodename = name
             details = details.split(' ')
             self.path_id, self.type, self.size = details[:3]
             self.type, self.size = int(self.type), int(self.size)
@@ -432,6 +435,7 @@ class FSItemInfo():
         except:
             lg.exc()
             raise KeyError('Incorrect item format:\n%s' % src)
+        return True
 
 #------------------------------------------------------------------------------
 
@@ -2075,6 +2079,7 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
                 count += 1
             else:
                 raise ValueError('Incorrect entry type')
+
     else:
         inpt = StringIO(raw_data)
         while True:
@@ -2196,8 +2201,6 @@ def _test():
     #     sz = diskspace.MakeStringFromBytes(item.size) if item.exist() else ''
     #     print '  %s %s %s' % (pathID.ljust(27), localPath.ljust(70), sz.ljust(9))
 
-    # import pdb
-    # pdb.set_trace()
     # pprint.pprint(ListRootItems())
     # pprint.pprint(ListAllBackupIDs())
     # pprint.pprint(ListChildsByPath((sys.argv[1])))

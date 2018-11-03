@@ -583,10 +583,10 @@ def ReadLocalFiles():
 def DetectSupplierPosition(raw_list_file_text):
     """
     """
-    inpt = BytesIO(raw_list_file_text)
+    inpt = BytesIO(strng.to_bin(raw_list_file_text))
     all_positions = {}
     while True:
-        line = inpt.readline()
+        line = strng.to_text(inpt.readline())
         if line == '':
             break
         typ = line[0]

@@ -444,7 +444,7 @@ def print_keys():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        lg.out(6, "%d: %s" % (_IdentityCacheIDs[key], key))
+        lg.out(6, "%d: %r" % (_IdentityCacheIDs[key], key))
 
 
 def print_cache():
