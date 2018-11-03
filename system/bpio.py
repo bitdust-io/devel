@@ -407,7 +407,7 @@ def _unpack_list(src):
         return words, None
     res = words[1:]
     if len(res) < length:
-        res += [u''] * (length - len(res))
+        res += [u'', ] * (length - len(res))
     elif len(res) > length:
         return res[:length], res[length:]
     return res, None
