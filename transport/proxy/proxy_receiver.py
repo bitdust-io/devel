@@ -353,8 +353,6 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s' % self.router_idurl)
         self._do_send_identity_to_router(my_id.getLocalIdentity().serialize(), failed_event='fail-received')
         identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if identity_source:
@@ -404,68 +402,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        newpacket, info, _, _ = arg
-        block = encrypted.Unserialize(newpacket.Payload)
-        if block is None:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
-            return
-        try:
-            session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
-            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = BytesIO(padded_data[:int(block.Length)])
-            data = inpt.read()
-        except:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
-            lg.exc()
-            try:
-                inpt.close()
-            except:
-                pass
-            return
-        inpt.close()
-        routed_packet = signed.Unserialize(data)
-        if not routed_packet:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet failed from %s' % newpacket.CreatorID)
-            return
-        if _Debug:
-            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
-                str(routed_packet), info.proto, info.host, len(data)))
-        if routed_packet.Command == commands.Identity():
-            if _Debug:
-                lg.out('    found identity in relay packet %s' % routed_packet)
-            newidentity = identity.identity(xmlsrc=routed_packet.Payload)
-            idurl = newidentity.getIDURL()
-            if not identitycache.HasKey(idurl):
-                lg.warn('received new identity: %s' % idurl)
-            if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
-                lg.warn("ERROR has non-Valid identity")
-                return
-        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
-            if _Debug:
-                lg.out('    found routed identity in relay packet %s' % routed_packet)
-            try:
-                routed_identity = signed.Unserialize(routed_packet.Payload)
-                newidentity = identity.identity(xmlsrc=routed_identity.Payload)
-                idurl = newidentity.getIDURL()
-                if not identitycache.HasKey(idurl):
-                    lg.warn('received new "routed" identity: %s' % idurl)
-                if not identitycache.UpdateAfterChecking(idurl, routed_identity.Payload):
-                    lg.warn("ERROR has non-Valid identity")
-                    return
-            except:
-                lg.exc()
-        if not routed_packet.Valid():
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet %s from %s' % (
-                routed_packet, newpacket.CreatorID, ))
-            return
-        self.traffic_in += len(data)
-        packet_in.process(routed_packet, info)
-        del block
-        del data
-        del padded_data
-        del inpt
-        del session_key
-        del routed_packet
+        self._do_process_inbox_packet(arg)
 
     def doStartListening(self, arg):
         """
@@ -610,6 +547,70 @@ class ProxyReceiver(automat.Automat):
         del _ProxyReceiver
         _ProxyReceiver = None
 
+    def _do_process_inbox_packet(self, arg):
+        newpacket, info, _, _ = arg
+        block = encrypted.Unserialize(newpacket.Payload)
+        if block is None:
+            lg.err('reading data from %s' % newpacket.CreatorID)
+            return
+        try:
+            session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            inpt = BytesIO(padded_data[:int(block.Length)])
+            data = inpt.read()
+        except:
+            lg.err('reading data from %s' % newpacket.CreatorID)
+            lg.exc()
+            try:
+                inpt.close()
+            except:
+                pass
+            return
+        inpt.close()
+        routed_packet = signed.Unserialize(data)
+        if not routed_packet:
+            lg.err('unserialize packet failed from %s' % newpacket.CreatorID)
+            return
+        if _Debug:
+            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
+                str(routed_packet), info.proto, info.host, len(data)))
+        if routed_packet.Command == commands.Identity():
+            if _Debug:
+                lg.out(_DebugLevel, '    found identity in relay packet %s' % routed_packet)
+            newidentity = identity.identity(xmlsrc=routed_packet.Payload)
+            idurl = newidentity.getIDURL()
+            if not identitycache.HasKey(idurl):
+                lg.warn('received new identity: %s' % idurl)
+            if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
+                lg.warn("ERROR has non-Valid identity")
+                return
+        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
+            if _Debug:
+                lg.out(_DebugLevel, '    found routed identity in relay packet %s' % routed_packet)
+            try:
+                routed_identity = signed.Unserialize(routed_packet.Payload)
+                newidentity = identity.identity(xmlsrc=routed_identity.Payload)
+                idurl = newidentity.getIDURL()
+                if not identitycache.HasKey(idurl):
+                    lg.warn('received new "routed" identity: %s' % idurl)
+                if not identitycache.UpdateAfterChecking(idurl, routed_identity.Payload):
+                    lg.warn("ERROR has non-Valid identity")
+                    return
+            except:
+                lg.exc()
+        if not routed_packet.Valid():
+            lg.err('invalid packet %s from %s' % (
+                routed_packet, newpacket.CreatorID, ))
+            return
+        self.traffic_in += len(data)
+        packet_in.process(routed_packet, info)
+        del block
+        del data
+        del padded_data
+        del inpt
+        del session_key
+        del routed_packet
+
     def _do_send_identity_to_router(self, identity_source, failed_event):
         try:
             identity_obj = identity.identity(xmlsrc=identity_source)
@@ -617,6 +618,7 @@ class ProxyReceiver(automat.Automat):
             lg.exc()
             return
         if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s' % self.router_idurl)
             lg.out(_DebugLevel, '        contacts=%s, sources=%s' % (identity_obj.contacts, identity_obj.sources))
         newpacket = signed.Packet(
             commands.Identity(),
