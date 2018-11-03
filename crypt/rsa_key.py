@@ -136,16 +136,18 @@ class RSAKey(object):
 
     def verify(self, signature, message, signature_as_digits=True):
         if signature_as_digits:
-            signature_raw = number.long_to_bytes(int(strng.to_text(signature)))
+            signature_text = strng.to_text(signature)
+            signature_int = int(signature_text)
+            signature_bytes = number.long_to_bytes(signature_int)
             if signature[0:1] == b'0':
-                signature_raw = b'\x00' + signature_raw
-        if not strng.is_bin(signature_raw):
+                signature_bytes = b'\x00' + signature_bytes
+        if not strng.is_bin(signature_bytes):
             raise ValueError('signature must be byte string')
         if not strng.is_bin(message):
             raise ValueError('message must be byte string')
         h = hashes.sha1(message, return_object=True)
         try:
-            pkcs1_15.new(self.keyObject).verify(h, signature_raw)
+            pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
         except (ValueError, TypeError, ):
             if _Debug:
