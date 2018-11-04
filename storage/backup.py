@@ -288,6 +288,9 @@ class backup(automat.Automat):
         events.send('backup-started', dict(backup_id=self.backupID))
 
     def doRead(self, arg):
+        """
+        Action method.
+        """
 
         def readChunk():
             size = self.blockSize - self.currentBlockSize
@@ -296,19 +299,21 @@ class backup(automat.Automat):
                 lg.out(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
                 lg.out(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
                 raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
-                return b''
             elif size == 0:
                 return b''
             if self.pipe is None:
                 raise Exception('backup.pipe is None')
-                return b''
             if self.pipe.state() == nonblocking.PIPE_CLOSED:
                 if _Debug:
                     lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
                 return b''
             if self.pipe.state() == nonblocking.PIPE_READY2READ:
-                inputtext = self.pipe.recv(size)
-                newchunk = strng.to_bin(inputtext)
+                try:
+                    inputtext = self.pipe.recv(size)
+                    newchunk = strng.to_bin(inputtext)
+                except:
+                    lg.err('pipe.recv() failed')
+                    lg.exc()
                 if newchunk:
                     if _Debug:
                         lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned %d bytes' % len(newchunk))
@@ -318,17 +323,15 @@ class backup(automat.Automat):
                 return newchunk
             lg.out(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
             raise Exception('backup.pipe.state is ' + str(self.pipe.state()))
-            return b''
 
         def readDone(data):
             try:
                 self.currentBlockData.write(data)
                 self.currentBlockSize += len(data)
                 self.stateReading = False
-            except Exception as err:
-                import pdb; pdb.set_trace()
+            except:
                 lg.exc()
-                self.automat('fail', err)
+                self.automat('fail', None)
                 return None
             if not data:
                 self.stateEOF = True
@@ -348,6 +351,10 @@ class backup(automat.Automat):
         d.addErrback(readFailed)
 
     def doEncryptBlock(self, arg):
+        """
+        Action method.
+        """
+
         def _doBlock():
             dt = time.time()
             raw_bytes = self.currentBlockData.getvalue()
@@ -366,6 +373,7 @@ class backup(automat.Automat):
                 lg.out(_DebugLevel, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s EncryptKey=%s' % (
                     self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time() - dt), self.keyID))
             return block
+
         d = maybeDeferred(_doBlock)
         d.addCallback(lambda block: self.automat('block-encrypted', block))
         d.addErrback(lambda err: self.automat('fail', err))
@@ -434,6 +442,7 @@ class backup(automat.Automat):
 
     def doBlockReport(self, arg):
         """
+        Action method.
         """
         BlockNumber, result = arg
         if self.blockResultCallback:
@@ -441,6 +450,7 @@ class backup(automat.Automat):
 
     def doClose(self, arg):
         """
+        Action method.
         """
         self.closed = True
         for filename in self.workBlocks.values():
@@ -448,6 +458,7 @@ class backup(automat.Automat):
 
     def doReport(self, arg):
         """
+        Action method.
         """
         if self.ask4abort:
             if self.finishCallback:
@@ -460,6 +471,7 @@ class backup(automat.Automat):
 
     def doDestroyMe(self, arg):
         """
+        Action method.
         """
         self.currentBlockData.close()
         del self.currentBlockData
