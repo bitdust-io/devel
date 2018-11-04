@@ -768,7 +768,7 @@ def SetDir(item, iter=None, iterID=None):
                     found = True
                     break
                 continue
-            if isinstance(iter[name], strng.string_types):
+            if strng.is_string(iter[name]):
                 if iter[name] == itemname:
                     iter = iter[name]
                     iterID = iterID[id]
