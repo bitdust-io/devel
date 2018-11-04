@@ -134,8 +134,10 @@ def supplier(index, customer_idurl=None):
     """
     Return supplier ID on given position or empty string.
     """
-    num = int(index)
+    if not customer_idurl:
+        customer_idurl = my_id.getLocalID()
     customer_idurl = strng.to_bin(customer_idurl.strip())
+    num = int(index)
     if num >= 0 and num < len(suppliers(customer_idurl=customer_idurl)):
         return suppliers(customer_idurl=customer_idurl)[num]
     return b''
