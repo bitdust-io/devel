@@ -147,7 +147,7 @@ class ProxyTransportService(LocalService):
             self._reset_my_original_identity()
             return
         externalIP = strng.to_bin(misc.readExternalIP())
-        if externalIP and orig_ident.getIP() != externalIP:
+        if externalIP and strng.to_bin(orig_ident.getIP()) != externalIP:
             lg.warn('external IP was changed : reset "my-original-identity" config')
             self._reset_my_original_identity()
             return

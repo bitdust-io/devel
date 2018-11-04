@@ -79,14 +79,15 @@ test_tox: clean tox
 test_tox/%: venv_install pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
 
-test_docker_test_1:
-	make -C tests/e2e/ -j2 all
-	make -C tests/e2e/ test_1
+test_docker:
+	make -C tests/e2e/ -j2 test
+
+test_docker_1:
+	make -C tests/e2e/ -j2 test_1
 	docker-compose -p "namespace1" logs
 
-test_docker_test_2:
-	make -C tests/e2e/ -j2 all
-	make -C tests/e2e/ test_2
+test_docker_2:
+	make -C tests/e2e/ -j2 test_2
 	docker-compose -p "namespace2" logs
 
 test: $(VENV_TEST)

@@ -131,7 +131,7 @@ def UrlFilename(url):
     """
     if not url:
         return None
-    result = strng.to_string(url)
+    result = strng.to_text(url)
     result = result.replace("://", "###")
     result = result.replace("/", "#")
     result = re.sub('(\:)(\d+)', '(#\g<2>#)', result)

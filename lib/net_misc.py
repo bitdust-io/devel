@@ -519,8 +519,8 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
 #     if timeout:
 #         timeout_call = reactor.callLater(timeout, getPageTwistedTimeout, d)
 #         d.addBoth(getPageTwistedCancelTimeout, timeout_call)
-    d.addCallback(ConnectionDone, 'http', 'getPageTwisted %s' % url)
-    d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %s' % url)
+    d.addCallback(ConnectionDone, 'http', 'getPageTwisted %r' % url)
+    d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %r' % url)
     d.addCallback(readResponse)
     return d
 

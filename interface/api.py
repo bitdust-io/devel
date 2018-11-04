@@ -271,8 +271,8 @@ def config_set(key, value):
                           config_types.TYPE_UNDEFINED, ]:
         config.conf().setData(key, strng.text_type(value))
     elif typ in [config_types.TYPE_BOOLEAN, ]:
-        if isinstance(value, strng.string_types):
-            vl = value.strip().lower() == 'true'
+        if strng.is_string(value):
+            vl = strng.to_text(value).strip().lower() == 'true'
         else:
             vl = bool(value)
         config.conf().setBool(key, vl)
@@ -3012,10 +3012,10 @@ def event_send(event_id, json_data=None):
     from main import events
     json_payload = None
     json_length = 0
-    if json_data and isinstance(json_data, strng.string_types):
+    if json_data and strng.is_string(json_data):
         json_length = len(json_data)
         try:
-            json_payload = json.loads(json_data or '{}')
+            json_payload = json.loads(strng.to_text(json_data or '{}'))
         except:
             return ERROR('json data payload is not correct')
     evt = events.send(event_id, data=json_payload)

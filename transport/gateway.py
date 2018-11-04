@@ -754,7 +754,7 @@ def on_receiving_started(proto, host, options_modified=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel - 8, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
+        lg.out(_DebugLevel - 8, 'gateway.on_receiving_started %r host=%r' % (proto.upper(), host))
     transport(proto).automat('receiving-started', (proto, host, options_modified))
     return True
 

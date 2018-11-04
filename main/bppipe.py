@@ -47,15 +47,19 @@ were we left off if a crash happened while we were waiting to send a block
 (most of the time is waiting so good chance).
 """
 
+#------------------------------------------------------------------------------ 
+
 from __future__ import absolute_import
+import six
+from io import open
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import platform
 import tarfile
 import traceback
-import locale
-import six
-from io import open
 
 #------------------------------------------------------------------------------
 
@@ -63,7 +67,6 @@ AppData = ''
 _ExcludeFunction = None
 
 #------------------------------------------------------------------------------
-
 
 def sharedPath(filename, subdir='logs'):
     global AppData
@@ -87,10 +90,6 @@ def logfilepath():
     A method to detect where is placed the log file for ``bppipe`` child
     process.
     """
-#    logspath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs')
-#    if not os.path.isdir(logspath):
-#        return 'bppipe.log'
-#    return os.path.join(logspath, 'bppipe.log')
     return sharedPath('bppipe.log')
 
 
@@ -129,12 +128,9 @@ def LinuxExcludeFunction(source_path, tar_path):
     Also should test that the file is readable and maybe that directory is executable.
     If tar gets stuff it can not read - it just stops and we the whole process is failed.
     """
-    # if filename.count(".bitdust"):
     # TODO: - must do more smart checking
+    # if filename.count(".bitdust"):
     #     return True
-#     basedir, filename = os.path.split(source_path)
-#     tar_basedir, tar_filename = os.path.split(tar_path)
-#     local_filepath = os.path.join(basedir, tar_filename)
     if not os.access(source_path, os.R_OK):
         return True
     return False  # don't exclude the file
@@ -143,27 +139,23 @@ def LinuxExcludeFunction(source_path, tar_path):
 def WindowsExcludeFunction(source_path, tar_path):
     """
     Same method for Windows platforms. Filename comes in with the path relative
-    to the start path, so: "Local Settings\Application
-    Data\Microsoft\Windows\UsrClass.dat".
+    to the start path, so: "Local Settings/Application Data/Microsoft/Windows/UsrClass.dat"
 
     PREPRO: On windows I run into some files that Windows tells me I
     don't have permission to open (system files), I had hoped to use
     os.access(filename, os.R_OK) == False to skip a file if I couldn't
     read it, but I did not get it to work every time. DWC.
     """
-#     basedir, filename = os.path.split(source_path)
-#     tar_basedir, tar_filename = os.path.split(tar_path)
-#     local_filepath = os.path.join(basedir, tar_filename)
-    if (source_path.lower().find("local settings\\temp") != -1): #  or (filename.lower().find(".bitdust") != -1):
+    # TODO: - must do more smart checking
+    # if source_path.lower().count(".bitdust"):
+    #     return True
+    if (source_path.lower().find("local settings\\temp") != -1):
         return True
-    if sys.version_info[:2] == (2, 7):
-        if not os.access(source_path, os.R_OK):
-            return True
-    # printlog(filename+'\n')
+    if not os.access(source_path, os.R_OK):
+        return True
     return False  # don't exclude the file
 
 #------------------------------------------------------------------------------
-
 
 _ExcludeFunction = LinuxExcludeFunction
 if platform.uname()[0] == 'Windows':
@@ -189,68 +181,30 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     mode = 'w|'
     if compression != 'none':
         mode += compression
-    basedir, filename = os.path.split(sourcepath)
+    _, filename = os.path.split(sourcepath)
     if arcname is None:
         arcname = six.text_type(filename)
     else:
         arcname = six.text_type(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
     tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
-    # if we have python 2.6 then we can use an exclude function, filter parameter is not available
-    if sys.version_info[:2] == (2, 6):
-        tar.add(
-            name=sourcepath,
-            arcname=arcname,
-            recursive=subdirs,
-            exclude=lambda tar_path: _ExcludeFunction(sourcepath, tar_path),
-        )
-        if not subdirs and os.path.isdir(sourcepath):
-            # the True is for recursive, if we wanted to just do the immediate directory set to False
-            for subfile in os.listdir(sourcepath):
-                subpath = os.path.join(sourcepath, subfile)
-                if not os.path.isdir(subpath):
-                    tar.add(
-                        name=subpath,
-                        arcname=six.text_type(os.path.join(arcname, subfile)),
-                        recursive=False,
-                        exclude=lambda tar_path: _ExcludeFunction(subpath, tar_path),
-                    )
-    # for python 2.7 we should have a filter parameter, which should be used instead of exclude function
-    elif sys.version_info[:2] == (2, 7):
-        tar.add(
-            name=sourcepath,
-            arcname=arcname,
-            recursive=subdirs,
-            filter=lambda tarinfo: writetar_filter(tarinfo, sourcepath),
-        )
-        if not subdirs and os.path.isdir(sourcepath):
-            # the True is for recursive, if we wanted to just do the immediate directory set to False
-            for subfile in os.listdir(sourcepath):
-                subpath = os.path.join(sourcepath, subfile)
-                # printlog(subpath+'\n')
-                if not os.path.isdir(subpath):
-                    tar.add(
-                        name=subpath,
-                        arcname=six.text_type(os.path.join(arcname, subfile)),
-                        recursive=False,
-                        filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
-                    )
-    # otherwise no exclude function
-    else:
-        tar.add(
-            name=sourcepath,
-            arcname=arcname,
-            recursive=subdirs,
-        )
-        if not subdirs and os.path.isdir(sourcepath):
-            for subfile in os.listdir(sourcepath):
-                subpath = os.path.join(sourcepath, subfile)
-                if not os.path.isdir(subpath):
-                    tar.add(
-                        name=subpath,
-                        arcname=six.text_type(os.path.join(arcname, subfile)),
-                        recursive=False,
-                    )
+    tar.add(
+        name=sourcepath,
+        arcname=arcname,
+        recursive=subdirs,
+        filter=lambda tarinfo: writetar_filter(tarinfo, sourcepath),
+    )
+    if not subdirs and os.path.isdir(sourcepath):
+        # the True is for recursive, if we wanted to just do the immediate directory set to False
+        for subfile in os.listdir(sourcepath):
+            subpath = os.path.join(sourcepath, subfile)
+            if not os.path.isdir(subpath):
+                tar.add(
+                    name=subpath,
+                    arcname=six.text_type(os.path.join(arcname, subfile)),
+                    recursive=False,
+                    filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
+                )
     tar.close()
 
 #------------------------------------------------------------------------------
@@ -277,20 +231,17 @@ def main():
 
     Use command line arguments to get the command from ``bpmain``.
     """
-    try:
-        import msvcrt
-        msvcrt.setmode(1, os.O_BINARY)
-    except:
-        pass
+    ostype = platform.uname()[0]
+    if ostype == 'Windows':
+        try:
+            import msvcrt
+            msvcrt.setmode(1, os.O_BINARY)
+        except:
+            pass
 
-    try:
-        reload(sys)
-        if hasattr(sys, "setdefaultencoding"):
-            denc = locale.getpreferredencoding()
-            if denc != '':
-                sys.setdefaultencoding(denc)
-    except:
-        pass
+    else:
+        if six.PY3:
+            sys.stdout = sys.stdout.buffer
 
     if len(sys.argv) < 4:
         printlog('bppipe extract <archive path> <output dir>\n')
@@ -299,12 +250,14 @@ def main():
 
     try:
         cmd = sys.argv[1].strip().lower()
+
         if cmd == 'extract':
             readtar(
                 archivepath=sys.argv[2],
                 outputdir=sys.argv[3],
-                encoding=locale.getpreferredencoding(),
+                encoding='utf-8',
             )
+
         else:
             arcname = None
             if len(sys.argv) >= 5:
@@ -314,7 +267,7 @@ def main():
                 arcname=arcname,
                 subdirs=True if cmd == 'subdirs' else False,
                 compression=sys.argv[2],
-                encoding=locale.getpreferredencoding(),
+                encoding='utf-8',
             )
     except:
         printexc()

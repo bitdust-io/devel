@@ -232,7 +232,7 @@ def drop_counters():
 
 #------------------------------------------------------------------------------
 
-def on_host_resoled(ip, port, host, result_list, total_hosts, result_defer):
+def on_host_resolved(ip, port, host, result_list, total_hosts, result_defer):
     if not isinstance(ip, six.string_types) or port is None:
         result_list.append(None)
         lg.warn('"%s" failed to resolve' % host)
@@ -256,9 +256,8 @@ def resolve_hosts(nodes_list):
     result_list = []
     for node_tuple in nodes_list:
         d = reactor.resolve(node_tuple[0])
-        d.addCallback(on_host_resoled, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
+        d.addCallback(on_host_resolved, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
         d.addErrback(on_host_failed, node_tuple[0], result_list, len(nodes_list), result_defer)
-        # d.addErrback(on_host_resoled, None, node_tuple[0], result_list, len(nodes_list), result_defer)
     return result_defer
 
 #------------------------------------------------------------------------------
@@ -587,7 +586,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def request(self, key):
         count('request')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_string(key, errors='ignore')[:10])
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
         internal_value = get_node_data(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
