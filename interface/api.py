@@ -271,8 +271,8 @@ def config_set(key, value):
                           config_types.TYPE_UNDEFINED, ]:
         config.conf().setData(key, strng.text_type(value))
     elif typ in [config_types.TYPE_BOOLEAN, ]:
-        if isinstance(value, strng.string_types):
-            vl = value.strip().lower() == 'true'
+        if strng.is_string(value):
+            vl = strng.to_text(value).strip().lower() == 'true'
         else:
             vl = bool(value)
         config.conf().setBool(key, vl)
