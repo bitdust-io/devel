@@ -417,7 +417,7 @@ class BackupRebuilder(automat.Automat):
         """
         Action method.
         """
-        # TODO : make sure to not kill workers for backup jobs....
+        # TODO: make sure to not kill workers for backup jobs....
         raid_worker.A('shutdown')
 
     def doClearStoppedFlag(self, arg):

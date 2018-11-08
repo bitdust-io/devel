@@ -11,6 +11,7 @@ lock = Lock()
 
 
 class my_decorator_class(object):
+
     def __init__(self, target):
         self.target = target
 

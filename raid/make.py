@@ -114,7 +114,7 @@ def RoundupFile(filename, stepsize):
     if mod > 0:
         increase = stepsize - mod
         f = open(filename, 'ab')
-        f.write(' ' * increase)
+        f.write(b' ' * increase)
         f.close()
 
 
@@ -122,9 +122,9 @@ def ReadBinaryFile(filename):
     """
     """
     if not os.path.isfile(filename):
-        return ''
+        return b''
     if not os.access(filename, os.R_OK):
-        return ''
+        return b''
     f = open(filename, "rb")
     data = f.read()
     f.close()
@@ -152,9 +152,9 @@ def ReadBinaryFileAsArray(filename):
     """
     """
     if not os.path.isfile(filename):
-        return ''
+        return b''
     if not os.access(filename, os.R_OK):
-        return ''
+        return b''
 
     with open(filename, "rb") as f:
         values = array.array('i', f.read())
@@ -188,7 +188,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     dataNum = len(sds)
     parityNum = len(psds_list)
 
-    for PSegNum, data in psds_list.items():
+    for PSegNum, _ in psds_list.items():
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
         with open(FileName, 'wb') as f:
             f.write(psds_list[PSegNum])
