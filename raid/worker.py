@@ -8,6 +8,7 @@ queue = multiprocessing.Queue()
 
 
 class my_decorator_class(object):
+
     def __init__(self, target):
         self.target = target
 

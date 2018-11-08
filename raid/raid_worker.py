@@ -53,7 +53,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 #------------------------------------------------------------------------------
-from raid.worker import Manager
 
 _Debug = True
 _DebugLevel = 10
@@ -79,6 +78,8 @@ from system import bpio
 from automats import automat
 
 from main import settings
+
+from raid.worker import Manager
 
 from . import read
 from . import make
@@ -338,8 +339,11 @@ class RaidWorker(automat.Automat):
             lg.exc()
             return
 
-        proc = self.processor.submit(func, params,
-                                     callback=lambda result: self._job_done(task_id, cmd, params, result))
+        proc = self.processor.submit(
+            func,
+            params,
+            callback=lambda result: self._job_done(task_id, cmd, params, result),
+        )
 
         self.activetasks[task_id] = (proc, cmd, params)
         lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
@@ -386,7 +390,7 @@ class RaidWorker(automat.Automat):
         _RaidWorker = None
 
     def _job_done(self, task_id, cmd, params, result):
-        lg.out(12, 'raid_worker._job_done %r : %r active:%r' % (
+        lg.out(6, 'raid_worker._job_done %r : %r active:%r' % (
             task_id, result, list(self.activetasks.keys())))
         self.automat('task-done', (task_id, cmd, params, result))
 
