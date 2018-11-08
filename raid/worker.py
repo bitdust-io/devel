@@ -1,39 +1,88 @@
 import multiprocessing
-import functools
 import time
+import traceback
 from collections import OrderedDict
 from threading import Thread, Lock
+import six
 
 queue = multiprocessing.Queue()
+
+lock = Lock()
 
 
 class my_decorator_class(object):
     def __init__(self, target):
         self.target = target
 
-        try:
-            functools.update_wrapper(self, target)
-        except:
-            pass
-
     def __call__(self, *args, **kwargs):
-        res = self.target(*args)
-        queue.put(1)
+        task_id = args[-1]
+        args = args[:-1]
+        res = None
+
+        try:
+            res = self.target(*args)
+        except Exception as e:
+            traceback.print_exc()
+            res = e
+        finally:
+            try:
+                queue.put(1)
+            except Exception:
+                print('worker got Exception in queue -- exiting')
+
         return res
+
+
+# def _initializer_worker(queue_cancel):
+#     print(os.getpid(), '_initializer_worker', queue_cancel)
+#
+#     def func():
+#         while True:
+#             value = pipea.recv()
+#             print(os.getpid(), 'value', value)
+#             # tid = joinable_cancel_task.get()
+#             process = multiprocessing.current_process()
+#             print('kill process %s. tid - %s' % (process.pid, value))
+#             os.kill(process.pid, signal.SIGTERM)
+#             time.sleep(1)
+#
+#     thread = Thread(target=func)
+#     thread.daemon = True
+#     thread.start()
 
 
 def func_thread(tasks, pool):
     while True:
-        queue.get()
         try:
-            task = tasks.popitem(last=False)
-        except KeyError:
-            queue.put(1)
-            time.sleep(0.5)
-        else:
-            func, params, callback = task[1]
+            queue.get()
+        except (EOFError, OSError, IOError):
+            print('publisher got EOFError or OSError or IOError -- exiting')
+            break
 
-            pool.apply_async(func=func, args=params, callback=callback)
+        with lock:
+            try:
+                task = tasks.popitem(last=False)
+            except KeyError:
+                task = None
+
+        if task:
+            func, params, callback, error_callback, task_id = task[1]
+
+            if six.PY3:
+                pool.apply_async(func=func, args=params + (task_id,), callback=callback, error_callback=error_callback)
+            else:
+                pool.apply_async(func=func, args=params + (task_id,), callback=callback)
+        else:
+            try:
+                queue.put(1)
+            except Exception:
+                print('publisher got Exception with queue -- exiting')
+                break
+
+            time.sleep(0.1)
+
+    print('close pool')
+    pool.terminate()
 
 
 class Task(object):
@@ -62,16 +111,15 @@ class Manager(object):
 
         self._propagate_queue()
 
-        self._lock = Lock()
-
     def _propagate_queue(self):
         for i in range(self.ncpus):
             queue.put(1)
 
-    def submit(self, func, params, callback):
-        with self._lock:
+    def submit(self, func, params, callback, error_callback=None):
+        with lock:
             self.task_id += 1
-            self.tasks[self.task_id] = (my_decorator_class(target=func), params, callback)
+            self.tasks[self.task_id] = (my_decorator_class(target=func), params, callback, error_callback, self.task_id)
+
         return Task(self.task_id)
 
     @property
@@ -82,7 +130,7 @@ class Manager(object):
         self.processor.terminate()
 
     def cancel(self, task_id):
-        with self._lock:
+        with lock:
             try:
                 del self.tasks[task_id]
             except KeyError:
