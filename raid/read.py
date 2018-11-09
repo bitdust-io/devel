@@ -56,6 +56,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 from io import open
 from six.moves import range
 
@@ -139,7 +140,11 @@ def RebuildOne(inlist, listlen, outfilename):
             for j in range(listlen):
                 b1 = ord(raidreads[j][i:i+1])
                 xor = xor ^ b1
-            rebuildfile.write(bytes([xor, ]))
+            if six.PY3:
+                out_byte = bytes([xor, ])
+            else:
+                out_byte = chr(xor)
+            rebuildfile.write(out_byte)
             i += readsize
     for filenum in range(listlen):
         raidfiles[filenum].close()
