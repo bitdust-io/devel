@@ -177,7 +177,7 @@ def RebuildOne_orig(inlist, listlen, outfilename):
     for filenum in range(0, listlen):
         fds[filenum] = open(inlist[filenum], "rb")
     fout = open(outfilename, "wb")
-    for i in range(0, seglength / INTSIZE):
+    for i in range(0, int(seglength / INTSIZE)):
         xor = 0
         for j in range(0, listlen):
             bstr1 = fds[j].read(INTSIZE)

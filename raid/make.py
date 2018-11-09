@@ -180,7 +180,8 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
                 sds[seg_num] = iter(chunk)
                 f.write(chunk_to_write)
     
-        psds_list = utils.build_parity(sds, seglength / INTSIZE, myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
+        psds_list = utils.build_parity(
+            sds, int(seglength / INTSIZE), myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
     
         dataNum = len(sds)
         parityNum = len(psds_list)
