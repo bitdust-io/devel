@@ -79,6 +79,8 @@ from logs import lg
 from lib import utime
 from lib import misc
 from lib import packetid
+from lib import strng
+from lib import serialization
 
 from main import events
 
@@ -520,7 +522,7 @@ def push_signed_message(producer_id, queue_id, data, creation_time=None):
             OwnerID=producer_id,
             CreatorID=producer_id,
             PacketID=packetid.UniqueID(),
-            Payload=json.dumps(data),
+            Payload=serialization.DictToBytes(data),
             RemoteID=queue_id,
             KeyID=producer_id,
         )
@@ -576,16 +578,14 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
 #------------------------------------------------------------------------------
 
 def on_event_packet_received(newpacket, info, status, error_message):
-    if newpacket.Command != commands.Event():
-        return False
     try:
-        e_json = json.loads(newpacket.Payload)
-        event_id = e_json['event_id']
+        e_json = serialization.BytesToDict(newpacket.Payload)
+        event_id = strng.to_text(e_json['event_id'])
         payload = e_json['payload']
-        queue_id = e_json.get('queue_id')
+        queue_id = strng.to_text(e_json.get('queue_id'))
         producer_id = e_json.get('producer_id')
-        message_id = e_json.get('message_id')
-        created = e_json.get('created')
+        message_id = strng.to_text(e_json.get('message_id'))
+        created = strng.to_text(e_json.get('created'))
     except:
         lg.warn("invlid json payload")
         return False
