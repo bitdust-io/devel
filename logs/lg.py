@@ -281,9 +281,9 @@ def exception(level, maxTBlevel, exc_info):
         else:
             out(level, l.replace('\n', ''))
     if _StoreExceptionsEnabled and _LogFileName:
-        # import tempfile
-        # fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
-        exc_filename = os.path.join(os.path.dirname(_LogFileName), exc_name.lower() + '.log')
+        exc_label = exc_name.lower().replace(' ', '_').replace('-', '_')[:80]
+        exc_label = ''.join([c for c in exc_label if c in '0123456789abcdefghijklmnopqrstuvwxyz_'])
+        exc_filename = os.path.join(os.path.dirname(_LogFileName), 'exception_' + exc_label + '.log')
         if os.path.isfile(exc_filename):
             fout = open(exc_filename, 'ab')
         else:

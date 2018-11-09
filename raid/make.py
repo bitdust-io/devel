@@ -68,14 +68,10 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-import raid.eccmap
+from logs import lg
 
-# try:
-#     from raid_cython import build_parity, chunks
-# except ImportError:
-#     from raid.utils import build_parity, chunks
-
-import raid.utils
+from raid import eccmap
+from raid import utils
 
 #------------------------------------------------------------------------------
 
@@ -86,7 +82,7 @@ _ECCMAP = {}
 def geteccmap(name):
     global _ECCMAP
     if name not in _ECCMAP:
-        _ECCMAP[name] = raid.eccmap.eccmap(name)
+        _ECCMAP[name] = eccmap.eccmap(name)
     return _ECCMAP[name]
 
 #------------------------------------------------------------------------------
@@ -164,36 +160,42 @@ def ReadBinaryFileAsArray(filename):
 
 
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
-    INTSIZE = 4
-    myeccmap = raid.eccmap.eccmap(eccmapname)
-    # any padding at end and block.Length fixes
-    RoundupFile(filename, myeccmap.datasegments * INTSIZE)
-    wholefile = ReadBinaryFileAsArray(filename)
-    length = len(wholefile)
-    length = length * 4
-    seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
+    try:
+        INTSIZE = 4
+        myeccmap = eccmap.eccmap(eccmapname)
+        # any padding at end and block.Length fixes
+        RoundupFile(filename, myeccmap.datasegments * INTSIZE)
+        wholefile = ReadBinaryFileAsArray(filename)
+        length = len(wholefile)
+        length = length * 4
+        seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
+    
+        #: dict of data segments
+        sds = {}
+        for seg_num, chunk in enumerate(utils.chunks(wholefile, int(seglength / 4))):
+            FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
+            with open(FileName, "wb") as f:
+                chunk_to_write = copy.copy(chunk)
+                chunk_to_write.byteswap()
+                sds[seg_num] = iter(chunk)
+                f.write(chunk_to_write)
+    
+        psds_list = utils.build_parity(
+            sds, int(seglength / INTSIZE), myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
+    
+        dataNum = len(sds)
+        parityNum = len(psds_list)
+    
+        for PSegNum, _ in psds_list.items():
+            FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
+            with open(FileName, 'wb') as f:
+                f.write(psds_list[PSegNum])
+    
+        return dataNum, parityNum
 
-    #: dict of data segments
-    sds = {}
-    for seg_num, chunk in enumerate(raid.utils.chunks(wholefile, seglength / 4)):
-        FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
-        with open(FileName, "wb") as f:
-            chunk_to_write = copy.copy(chunk)
-            chunk_to_write.byteswap()
-            sds[seg_num] = iter(chunk)
-            f.write(chunk_to_write)
-
-    psds_list = raid.utils.build_parity(sds, seglength / INTSIZE, myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
-
-    dataNum = len(sds)
-    parityNum = len(psds_list)
-
-    for PSegNum, _ in psds_list.items():
-        FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-        with open(FileName, 'wb') as f:
-            f.write(psds_list[PSegNum])
-
-    return dataNum, parityNum
+    except:
+        lg.exc()
+        return -1, -1
 
 
 def main():
