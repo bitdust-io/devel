@@ -6,9 +6,9 @@ services: docker
 language: python
 matrix:
   include:
-#  - name: "3.6"
-#    python: "3.6"
-#    env: PYTHON_VERSION=3.6
+  - name: "3.6"
+    python: "3.6"
+    env: PYTHON_VERSION=3.6
   - name: "2.7"
     python: "2.7"
     env: PYTHON_VERSION=2.7
