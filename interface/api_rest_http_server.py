@@ -537,6 +537,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @DELETE('^/su/r$')
     @DELETE('^/supplier/rotate/v1$')
     @DELETE('^/supplier/replace/v1$')
+    @POST('^/supplier/rotate/v1$')
+    @POST('^/supplier/replace/v1$')
     def supplier_replace_v1(self, request):
         data = _request_data(request, mandatory_keys=[('index', 'position', 'idurl', 'global_id', 'id', ), ])
         return api.supplier_replace(

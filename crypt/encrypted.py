@@ -265,15 +265,19 @@ def Unserialize(data, decrypt_key=None):
     A method to create a ``encrypted.Block`` instance from input string.
     """
     dct = serialization.BytesToDict(data)
-    newobject = Block(
-        CreatorID=dct['c'],
-        BackupID=strng.to_text(dct['b']),
-        BlockNumber=dct['n'],
-        EncryptedSessionKey=base64.b64decode(dct['k']),
-        SessionKeyType=dct['t'],
-        Length=dct['l'],
-        EncryptedData=dct['p'],
-        Signature=dct['s'],
-        DecryptKey=decrypt_key,
-    )
+    try:
+        newobject = Block(
+            CreatorID=dct['c'],
+            BackupID=strng.to_text(dct['b']),
+            BlockNumber=dct['n'],
+            EncryptedSessionKey=base64.b64decode(dct['k']),
+            SessionKeyType=dct['t'],
+            Length=dct['l'],
+            EncryptedData=dct['p'],
+            Signature=dct['s'],
+            DecryptKey=decrypt_key,
+        )
+    except:
+        lg.exc()
+        return None
     return newobject
