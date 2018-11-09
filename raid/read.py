@@ -56,6 +56,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 from io import open
 from six.moves import range
 
@@ -111,8 +112,6 @@ def ReadBinaryFile(filename):
     f.close()
     return data
 
-# RebuildOne_new and RebuildOne_orig are just for debugging purposes
-
 
 def RebuildOne(inlist, listlen, outfilename):
     readsize = 1  # vary from 1 byte to 4 bytes
@@ -139,54 +138,19 @@ def RebuildOne(inlist, listlen, outfilename):
         while i < len(raidreads[0]):
             xor = 0
             for j in range(listlen):
-                b1 = ord(raidreads[j][i])
+                b1 = ord(raidreads[j][i:i+1])
                 xor = xor ^ b1
-            rebuildfile.write(chr(xor))
+            if six.PY3:
+                out_byte = bytes([xor, ])
+            else:
+                out_byte = chr(xor)
+            rebuildfile.write(out_byte)
             i += readsize
     for filenum in range(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
     return True
 
-
-def RebuildOne_new(inlist, listlen, outfilename):
-    fds = list(range(0, listlen))   # just need a list of this size
-    wholefile = ReadBinaryFile(inlist[0])
-    seglength = len(wholefile)   # just needed length of file
-    for filenum in range(listlen):
-        fds[filenum] = open(inlist[filenum], "r")
-    fout = open(outfilename, "w")
-    for i in range(seglength):
-        xor = 0
-        for j in range(listlen):
-            b1 = ord(fds[j].read(1))
-            xor = xor ^ b1
-        fout.write(chr(xor))
-    for filenum in range(listlen):
-        fds[filenum].close
-
-# We XOR list of listlen input files and write result to a file named
-# outfilename
-
-
-def RebuildOne_orig(inlist, listlen, outfilename):
-    INTSIZE = 4
-    fds = list(range(0, listlen))   # just need a list of this size
-    wholefile = ReadBinaryFile(inlist[0])
-    seglength = len(wholefile)   # just needed length of file
-    for filenum in range(0, listlen):
-        fds[filenum] = open(inlist[filenum], "rb")
-    fout = open(outfilename, "wb")
-    for i in range(0, int(seglength / INTSIZE)):
-        xor = 0
-        for j in range(0, listlen):
-            bstr1 = fds[j].read(INTSIZE)
-            b1, = struct.unpack(">l", bstr1)
-            xor = xor ^ b1
-        outstr = struct.pack(">l", xor)
-        fout.write(outstr)
-    for filenum in range(0, listlen):
-        fds[filenum].close
 
 # If segment is good, there is a file for it, if not then no file exists.
 # We only rebuild data segments.

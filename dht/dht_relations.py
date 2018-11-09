@@ -49,6 +49,7 @@ from twisted.internet.defer import Deferred
 from logs import lg
 
 from lib import utime
+from lib import strng
 
 from userid import my_id
 from userid import global_id
@@ -156,8 +157,8 @@ class RelationsLookup(object):
         if isinstance(dht_value, dict):
             try:
                 record = dht_value['data']
-                record['customer_idurl'] = str(record['customer_idurl'])
-                record['supplier_idurl'] = str(record['supplier_idurl'])
+                record['customer_idurl'] = strng.to_bin(record['customer_idurl'])
+                record['supplier_idurl'] = strng.to_bin(record['supplier_idurl'])
                 record['time'] = int(record['time'])
                 record['signature'] = str(record['signature'])
             except:
