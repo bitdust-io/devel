@@ -2,7 +2,7 @@ import array
 
 
 def build_parity(sds, iters, datasegments, myeccmap, paritysegments):
-    psds_list = {seg_num: array.array('i') for seg_num in rangenge(myeccmap.paritysegments)}
+    psds_list = {seg_num: array.array('i') for seg_num in range(myeccmap.paritysegments)}
 
     for i in range(iters):
         parities = {seg_num: 0 for seg_num in range(myeccmap.paritysegments)}
