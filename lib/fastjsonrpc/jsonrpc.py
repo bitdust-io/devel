@@ -66,13 +66,19 @@ def jdumps(obj):
     @rtype: str
     @return: JSON representation of obj
     """
+
+    def _to_text(v):
+        if isinstance(v, six.binary_type):
+            v = v.decode('utf-8')
+        return v
+
     if cjson_loaded:
         try:
             return cjson.encode(obj)
         except cjson.EncodeError as e:
             raise ValueError(str(e))
     else:
-        return json.dumps(obj)
+        return json.dumps(obj, default=_to_text)
 
 
 def jloads(json_string):

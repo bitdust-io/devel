@@ -2,11 +2,11 @@ import array
 
 
 def build_parity(sds, iters, datasegments, myeccmap, paritysegments):
-    psds_list = {seg_num: array.array('i') for seg_num in xrange(myeccmap.paritysegments)}
+    psds_list = {seg_num: array.array('i') for seg_num in rangenge(myeccmap.paritysegments)}
 
-    for i in xrange(iters):
-        parities = {seg_num: 0 for seg_num in xrange(myeccmap.paritysegments)}
-        for DSegNum in xrange(datasegments):
+    for i in range(iters):
+        parities = {seg_num: 0 for seg_num in range(myeccmap.paritysegments)}
+        for DSegNum in range(datasegments):
             b = next(sds[DSegNum])
 
             Map = myeccmap.DataToParity[DSegNum]
@@ -17,7 +17,7 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments):
 
                 parities[PSegNum] = parities[PSegNum] ^ b
 
-        for PSegNum in xrange(myeccmap.paritysegments):
+        for PSegNum in range(myeccmap.paritysegments):
             psds_list[PSegNum].append(parities[PSegNum])
 
     for PSegNum in psds_list:
@@ -28,5 +28,5 @@ def build_parity(sds, iters, datasegments, myeccmap, paritysegments):
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
