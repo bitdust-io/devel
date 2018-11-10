@@ -2,6 +2,33 @@ Change Log
 ==========
 
 
+2018-11-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* ported to Python3.6 finally (Python2.7 also supported) !!!
+* speed up raid workers (Stanislav Evseev)
+* switched from parallelp to the built-in multiprocessing (Stanislav Evseev)
+* turn on proxy server by default for all nodes, updated seed nodes
+* built more unit tests
+* "make test" command will also execute "python bitdust.py install" first
+* use global python to run unit tests
+* run unit tests on travis
+* transition from pickle to json
+* new regression tests based on docker containers (Stanislav Evseev)
+* CI/CD integration with travis
+* detect current python version in deploy script and use it
+* added system.deploy module to isolate everythng related to "python bitdust.py install" command
+* Add chat-history endpoint (Anton Grishun)
+* slow down DHT traffic
+* added space_donated(), space_consumed() and space_local() methods to REST HTTP API
+* added api method identity_backup(), tested recover identity
+* bug fix : correctly load/save list of my suppliers
+* randomize tcp, udp, http, dht and blockchain port numbers during startup
+* Added environment variable to access to internal api interface
+* added bitrex.ai to dht seed nodes (by Renato Cardoso)
+* added CodernityDB3 fork to code base
+
+
+
 2018-07-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added more known id servers
