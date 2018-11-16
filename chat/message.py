@@ -277,11 +277,15 @@ class PrivateMessage(object):
     def deserialize(input_string):
         try:
             dct = serialization.BytesToDict(input_string)
+            _recipient = dct['r']
+            _sender = dct['s']
+            _encrypted_session_key = dct['k']
+            _encrypted_body = dct['b']
             message_obj = PrivateMessage(
-                recipient_global_id=dct['r'],
-                sender=dct['s'],
-                encrypted_session=dct['k'],
-                encrypted_body=dct['b'],
+                recipient_global_id=_recipient,
+                sender=_sender,
+                encrypted_session=_encrypted_session_key,
+                encrypted_body=_encrypted_body,
             )
         except:
             lg.exc()
