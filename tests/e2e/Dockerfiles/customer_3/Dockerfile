@@ -1,7 +1,5 @@
 FROM bitdust/base
 
-COPY ./tests/e2e/Dockerfiles/Customer_2/file.txt /customer_2/file_customer_2.txt
-
 #: it allow us to use api interface externally
 ENV BITDUST_API_PASS_EXTERNAL_CONNECTIONS=1
 ENV BITDUST_GIT_SYNC_SKIP=1
