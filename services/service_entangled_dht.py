@@ -65,6 +65,9 @@ class EntangledDHTService(LocalService):
         dht_service.shutdown()
         return True
 
+    def health_check(self):
+        return
+
     def _on_udp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg

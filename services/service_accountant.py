@@ -98,6 +98,11 @@ class CoinsAccountantService(LocalService):
             return p2p_service.SendAck(newpacket, 'accepted')
         return p2p_service.SendFail(newpacket, 'bad request')
 
+    def health_check(self):
+        from coins import accountant_node
+        return accountant_node.A().state in [
+            'READY', 'READ_COINS', 'VALID_COIN?', 'WRITE_COIN!', ]
+
     def _on_accountant_node_switched(self, oldstate, newstate, evt, args):
         from logs import lg
         from twisted.internet import reactor

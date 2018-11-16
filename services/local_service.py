@@ -118,6 +118,9 @@ class LocalService(automat.Automat):
     def cancel(self, newpacket, info):
         raise RequireSubclass()
 
+    def health_check(self):
+        raise RequireSubclass()
+
     def add_callback(self, cb):
         if not self.result_deferred:
             self.result_deferred = Deferred()

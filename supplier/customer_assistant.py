@@ -73,8 +73,6 @@ from supplier import list_files
 
 from storage import accounting
 
-from userid import global_id
-
 #------------------------------------------------------------------------------
 
 _CustomerAssistants = {}

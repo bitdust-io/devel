@@ -1914,7 +1914,7 @@ def supplier_replace(index_or_idurl_or_global_id):
     from userid import my_id
     from userid import global_id
     customer_idurl = my_id.getLocalID()
-    supplier_idurl = index_or_idurl_or_global_id
+    supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
     if supplier_idurl.isdigit():
         supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
     else:
@@ -1942,7 +1942,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     from userid import my_id
     from userid import global_id
     customer_idurl = my_id.getLocalID()
-    supplier_idurl = index_or_idurl_or_global_id
+    supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
     if supplier_idurl.isdigit():
         supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
     else:
