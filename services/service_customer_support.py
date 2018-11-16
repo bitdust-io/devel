@@ -68,6 +68,9 @@ class CustomerSupportService(LocalService):
             sc.automat('shutdown')
         return True
 
+    def health_check(self):
+        return True
+
     def _on_outbox_packet_sent(self, pkt_out):
         from p2p import commands
         from contacts import contactsdb

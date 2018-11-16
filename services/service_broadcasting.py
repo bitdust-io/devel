@@ -127,6 +127,10 @@ class BroadcastingService(LocalService):
             return p2p_service.SendAck(newpacket, 'accepted')
         return p2p_service.SendAck(newpacket, 'bad request')
 
+    def health_check(self):
+        from broadcast import broadcaster_node
+        return broadcaster_node.A().state in ['BROADCASTING', ]
+
     def _on_broadcast_routing_enabled_disabled(self, path, value, oldvalue, result):
         from logs import lg
         from broadcast import broadcaster_node

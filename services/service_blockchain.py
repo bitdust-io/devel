@@ -112,6 +112,10 @@ class BlockchainService(LocalService):
         self.flag_public_key_transaction_sent = False
         return True
 
+    def health_check(self):
+        from blockchain import pybc_service
+        return len(pybc_service.node().connections) > 0
+
     def _on_blockchain_forward(self, evt):
         self._do_check_register_my_identity()
         return True

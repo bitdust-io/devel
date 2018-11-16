@@ -59,7 +59,8 @@ class EmployerService(LocalService):
                            self._on_suppliers_number_modified)
         conf().addCallback('services/customer/needed-space',
                            self._on_needed_space_modified)
-        events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
+        events.add_subscriber(self._on_supplier_modified,
+                              'supplier-modified')
         self._do_cleanup_dht_suppliers()
         return True
 
@@ -72,6 +73,13 @@ class EmployerService(LocalService):
         conf().removeCallback('services/customer/needed-space')
         fire_hire.Destroy()
         return True
+
+    def health_check(self):
+        from contacts import contactsdb
+        from raid import eccmap
+        missed_suppliers = contactsdb.suppliers().count('')
+        # critical amount of suppliers must be already in the family to have that service running
+        return missed_suppliers <= eccmap.Current().CorrectableErrors
 
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
         from customer import fire_hire
@@ -95,7 +103,7 @@ class EmployerService(LocalService):
             d.addCallback(self._on_my_dht_relations_discovered)
             d.addErrback(self._on_my_dht_relations_failed)
         else:
-            lg.warn('service service_entangled_dht is not ready')
+            lg.warn('service service_entangled_dht is OFF')
 
     def _on_supplier_modified(self, evt):
         self._do_cleanup_dht_suppliers()

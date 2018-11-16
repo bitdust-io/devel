@@ -76,3 +76,12 @@ class CustomerService(LocalService):
             sc.automat('shutdown')
         # TODO: disconnect other suppliers
         return True
+
+    def health_check(self):
+        from customer import supplier_connector
+        from userid import my_id
+        for sc in supplier_connector.connectors(my_id.getLocalIDURL()).values():
+            # at least one supplier must be online to consider my customer service to be healthy
+            if sc.state in ['CONNECTED', ]:
+                return True
+        return False

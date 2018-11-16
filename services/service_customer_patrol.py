@@ -66,6 +66,9 @@ class CustomerPatrolService(LocalService):
         customers_rejector.Destroy()
         return True
 
+    def health_check(self):
+        return True
+
     def _on_donated_space_modified(self, path, value, oldvalue, result):
         from supplier import customers_rejector
         customers_rejector.A('restart')

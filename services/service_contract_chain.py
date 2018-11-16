@@ -63,6 +63,10 @@ class ContractChainService(LocalService):
         contract_chain_consumer.A('shutdown')
         return True
 
+    def health_check(self):
+        from coins import contract_chain_consumer
+        return contract_chain_consumer.A().state in ['CONNECTED', ]
+
     def _on_contract_chain_state_changed(self, oldstate, newstate, event_string, args):
         if self.starting_deferred:
             if newstate in ['CONNECTED', 'DISCONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
