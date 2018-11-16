@@ -18,32 +18,32 @@ services:
   identity-server:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Identity/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/identity/Dockerfile
     image: bitdust/identity-server
 
   stun_1:
     <<: *common-links-all
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Stun/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/stun/Dockerfile
     image: bitdust/stun
 
   dht_seed_1:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/dht/Dockerfile
     image: bitdust/dht_seed
 
   dht_seed_2:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/DHT/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/dht/Dockerfile
     image: bitdust/dht_seed
 
   proxy_server_1:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/proxy-server/Dockerfile
     links:
       - "dht_seed_1"
       - "dht_seed_2"
@@ -53,7 +53,7 @@ services:
   proxy_server_2:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Proxy-Server/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/proxy-server/Dockerfile
     links:
       - "dht_seed_1"
       - "dht_seed_2"
@@ -63,7 +63,7 @@ services:
   supplier_1:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Supplier_1/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/supplier_1/Dockerfile
     links:
       - "identity-server:is"
       - "dht_seed_1"
@@ -73,7 +73,7 @@ services:
   supplier_2:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Supplier_2/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/supplier_2/Dockerfile
     links:
       - "identity-server:is"
       - "dht_seed_1"
@@ -83,7 +83,7 @@ services:
   customer_1:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Customer_1/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/customer_1/Dockerfile
     links:
       - "identity-server:is"
       - "dht_seed_1"
@@ -95,7 +95,7 @@ services:
   customer_2:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/Customer_2/Dockerfile
+      dockerfile: tests/e2e/Dockerfiles/customer_2/Dockerfile
     links:
       - "identity-server:is"
       - "dht_seed_1"
@@ -104,13 +104,26 @@ services:
       - customer_2:/customer_2
     image: bitdust/customer_2
 
+  customer_3:
+    build:
+      <<: *common
+      dockerfile: tests/e2e/Dockerfiles/customer_3/Dockerfile
+    links:
+      - "identity-server:is"
+      - "dht_seed_1"
+      - "dht_seed_2"
+    volumes:
+      - customer_3:/customer_3
+    image: bitdust/customer_3
+
   test:
-    build: Dockerfiles/Test/.
+    build: Dockerfiles/test/.
     links:
       - "supplier_1"
       - "supplier_2"
       - "customer_1"
       - "customer_2"
+      - "customer_3"
       - "proxy_server_1"
       - "proxy_server_2"
       - "stun_1"
@@ -118,8 +131,10 @@ services:
     volumes:
       - customer_1:/customer_1
       - customer_2:/customer_2
+      - customer_3:/customer_3
     image: bitdust/test
 
 volumes:
   customer_1:
   customer_2:
+  customer_3:

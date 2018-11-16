@@ -36,9 +36,14 @@ def test_customer_1_upload_download_file_with_master():
 
     assert not os.path.exists(directory_dowloaded_file)
 
-    response = requests.post('http://customer_1:8180/file/create/v1', json={'remote_path': remote_path})
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
+    for i in range(5):
+        response = requests.post('http://customer_1:8180/file/create/v1', json={'remote_path': remote_path})
+        assert response.status_code == 200
+        if response.json()['status'] == 'OK':
+            break
+        # assert response.json()['status'] == 'OK', response.json()
+    else:
+        assert response.json()['status'] == 'OK', response.json()
 
     response = requests.post(
         'http://customer_1:8180/file/upload/start/v1',

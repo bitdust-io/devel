@@ -1,6 +1,6 @@
 FROM bitdust/base
 
-COPY ./tests/e2e/Dockerfiles/Customer_1/file.txt /customer_1/file_customer_1.txt
+COPY ./tests/e2e/Dockerfiles/customer_2/file.txt /customer_2/file_customer_2.txt
 
 #: it allow us to use api interface externally
 ENV BITDUST_API_PASS_EXTERNAL_CONNECTIONS=1
