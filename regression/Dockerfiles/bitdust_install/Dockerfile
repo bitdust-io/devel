@@ -20,6 +20,8 @@ WORKDIR /app
 
 COPY . /app/bitdust
 
+ENV BITDUST_GIT_SYNC_SKIP=1
+
 RUN python /app/bitdust/bitdust.py install
 
 RUN echo '#!/bin/sh\n /root/.bitdust/venv/bin/python /app/bitdust/bitdust.py "$@"' > /bin/bitdust

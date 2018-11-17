@@ -1245,36 +1245,35 @@ def DoRestart(param='', detach=False):
             lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
             return os.execvpe(pypath, cmdargs, os.environ)
 
+    lg.out(2, "misc.DoRestart under Linux param=%s" % param)
+    lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
+    lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+    pypyth = sys.executable
+    cmdargs = [sys.executable, ]
+    if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
+        cmdargs.append('/usr/bin/bitdust')
     else:
-        lg.out(2, "misc.DoRestart under Linux param=%s" % param)
-        lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
-        lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-        pypyth = sys.executable
-        cmdargs = [sys.executable, ]
-        if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
-            cmdargs.append('/usr/bin/bitdust')
-        else:
-            cmdargs.append(sys.argv[0])
-        if param:
-            cmdargs.append(param)
-        if cmdargs.count('restart'):
-            cmdargs.remove('restart')
-        if cmdargs.count('detach'):
-            cmdargs.remove('detach')
-        if cmdargs.count('daemon'):
-            cmdargs.remove('daemon')
-        pid = os.fork()
-        if pid != 0:
-            lg.out(2, "misc.DoRestart os.fork returned: " + str(pid))
-            return None
-        if detach:
-            cmdargs[1] = os.path.abspath(cmdargs[1])
-            cmdargs.append('1>/dev/null')
-            cmdargs.append('2>/dev/null')
-            cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
-            return os.system(cmd)
-        lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
-        return os.execvpe(pypyth, cmdargs, os.environ)
+        cmdargs.append(sys.argv[0])
+    if param:
+        cmdargs.append(param)
+    if cmdargs.count('restart'):
+        cmdargs.remove('restart')
+    if cmdargs.count('detach'):
+        cmdargs.remove('detach')
+    if cmdargs.count('daemon'):
+        cmdargs.remove('daemon')
+    pid = os.fork()
+    if pid != 0:
+        lg.out(2, "misc.DoRestart os.fork returned: " + str(pid))
+        return None
+    if detach:
+        cmdargs[1] = os.path.abspath(cmdargs[1])
+        cmdargs.append('1>/dev/null')
+        cmdargs.append('2>/dev/null')
+        cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
+        return os.system(cmd)
+    lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
+    return os.execvpe(pypyth, cmdargs, os.environ)
 
 
 def RunBatFile(filename, output_filename=None):

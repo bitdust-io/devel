@@ -67,6 +67,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import re
 import json
 import time
 import random
@@ -690,7 +691,8 @@ class ProxyReceiver(automat.Automat):
         preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         preferred_routers = []
         if preferred_routers_raw:
-            preferred_routers.extend(preferred_routers_raw.split('\n'))
+            preferred_routers_list = re.split('\n|,|;| ', preferred_routers_raw)
+            preferred_routers.extend(preferred_routers_list)
         if preferred_routers:
             known_router = random.choice(preferred_routers)
             if _Debug:
