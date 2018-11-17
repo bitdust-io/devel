@@ -1143,6 +1143,30 @@ def cmd_friend(opts, args, overDict):
 #------------------------------------------------------------------------------
 
 
+def cmd_dhtseed(opts, args, overDict):
+    from lib import misc
+    from system import bpio
+    if len(args) > 1 and args[1] in ['daemon', 'background', 'detach', 'spawn', ]:
+        appList = bpio.find_main_process()
+        if len(appList) > 0:
+            print_text('main BitDust process already started: %s' % str(appList))
+            return 0
+        print_text('starting Distributed Hash Table seed node and detach main BitDust process')
+        result = misc.DoRestart(param='dhtseed', detach=True)
+        try:
+            result = result.pid
+        except:
+            result = str(result)
+        print_text('\n')
+        return 0
+
+    from dht import dht_service
+    dht_service.main(args=args[1:])
+    return 0
+
+#------------------------------------------------------------------------------
+
+
 def run(opts, args, pars=None, overDict=None, executablePath=None):
     cmd = ''
     if len(args) > 0:
@@ -1175,7 +1199,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         try:
             result = result.pid
         except:
-            pass
+            result = str(result)
         print_text(result)
         return 0
 
@@ -1376,6 +1400,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_file(opts, args, overDict, executablePath)
+
+    #---dhtseed---
+    elif cmd == 'dhtseed':
+        if running:
+            print_text('BitDust is running at the moment, need to stop the software first\n')
+            return 0
+        return cmd_dhtseed(opts, args, overDict)
 
     #---version---
     elif cmd in ['version', 'v', 'ver']:

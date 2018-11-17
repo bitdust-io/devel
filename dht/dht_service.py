@@ -35,7 +35,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -154,10 +154,10 @@ def connect(seed_nodes=[]):
         result.callback(True)
         return result
 
-    def _on_join_success(ok):
+    def _on_join_success(ok, live_nodes):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
-        result.callback(True)
+        result.callback(live_nodes)
 
     def _on_join_failed(x):
         if _Debug:
@@ -170,7 +170,7 @@ def connect(seed_nodes=[]):
             for onenode in live_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
         node().joinNetwork(live_nodes)
-        node()._joinDeferred.addCallback(_on_join_success)
+        node()._joinDeferred.addCallback(_on_join_success, live_nodes)
         node()._joinDeferred.addErrback(_on_join_failed)
         node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)
         return live_nodes
@@ -677,20 +677,31 @@ def parseCommandLine():
     return options, args
 
 
-def main():
+def main(options=None, args=None):
     bpio.init()
     settings.init()
-    lg.set_debug_level(28)
-    (options, args) = parseCommandLine()
+
+    if options is None and args is None:
+        (options, args) = parseCommandLine()
+
+    else:
+        (_options, _args) = parseCommandLine()
+        if options is None:
+            options = _options
+        if args is None:
+            args = _args
+
     init(options.udpport, options.dhtdb)
 
     def _go(nodes):
         try:
             if len(args) == 0:
-                print('STARTED')
+                lg.out(0, 'known nodes: %r' % nodes)
+                lg.out(0, 'DHT node is active, ID=%r' % node().id)
+
             elif len(args) > 0:
                 def _r(x):
-                    print(x)
+                    lg.info(x)
                     reactor.stop()
                 cmd = args[0]
                 if cmd == 'get':
@@ -712,7 +723,7 @@ def main():
                     find_node(random_key()).addBoth(_r)
                 elif cmd == 'discover':
                     def _l(x):
-                        print(x)
+                        lg.info(x)
                         find_node(random_key()).addBoth(_l)
                     _l('')
         except:
@@ -728,7 +739,12 @@ def main():
             except:
                 continue
             seeds.append((dht_node_host, dht_node_port, ))
+    
+    if not seeds:
+        seeds = known_nodes.default_nodes()
 
+    lg.out(0, 'Seed nodes: %r' % seeds)
+    
     connect(seeds).addBoth(_go)
     reactor.run()
 

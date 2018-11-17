@@ -1,0 +1,145 @@
+version: "3.4"
+
+
+x-common: &common
+  context: ./../
+
+
+services:
+
+
+  identity-server:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/identity-server
+    ports:
+        - "22201:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+  identity-server-a:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/identity-server
+    ports:
+        - "22202:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+  identity-server-b:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/identity-server
+    ports:
+        - "22203:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+
+
+  stun_1:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/stun
+    ports:
+      - "22211:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+  stun_2:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/stun
+    ports:
+      - "22212:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+
+  dht_seed_1:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/dht_seed
+    ports:
+      - "22221:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+  dht_seed_2:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/dht_seed
+    ports:
+      - "22222:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+  dht_seed_3:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/dht_seed
+    ports:
+      - "22223:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+  dht_seed_4:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/dht_seed
+    ports:
+      - "22224:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+
+
+
+  proxy_server_1:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/proxy_server
+    ports:
+      - "22231:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+  proxy_server_2:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/proxy_server
+    ports:
+      - "22232:22"
+    environment:
+      - AUTH_MECHANISM=noAuth
+
+
+  tester:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/tester/Dockerfile
+    links:
+      - "identity-server:is"
+      - "identity-server-a:isa"
+      - "identity-server-b:isb"
+      - "stun_1"
+      - "stun_2"
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
+    image: bitdust/tester
+    cap_add:
+      - SYS_PTRACE
+    privileged: true
