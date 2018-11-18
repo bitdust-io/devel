@@ -27,6 +27,7 @@ before_install:
 script:
   - make test
   - make -C tests/e2e/ -j2 test
+  - make regression
 
 
 after_failure:
