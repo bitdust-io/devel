@@ -50,7 +50,7 @@ if __name__ == '__main__':
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -62,7 +62,6 @@ from main import settings
 
 from automats import automat
 
-from lib import strng
 from lib import net_misc
 from lib import udp
 
@@ -182,8 +181,9 @@ class StunServer(automat.Automat):
             return False
         youripport = net_misc.pack_address((address[0], address[1]))
         udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
-        lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
-            youripport, address))
+        if _Debug:
+            lg.out(_DebugLevel, 'stun_server.doSendYourIPPort [%s] to %s' % (
+                youripport, address))
 
     def _datagramReceived(self, datagram, address):
         """

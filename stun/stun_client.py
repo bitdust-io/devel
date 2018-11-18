@@ -129,8 +129,8 @@ class StunClient(automat.Automat):
         self.listen_port = None
         self.callbacks = []
         self.find_nodes_attempts = 1
-        self.minimum_needed_servers = 3
-        self.minimum_needed_results = 3
+        self.minimum_needed_servers = 1
+        self.minimum_needed_results = 1
         self.stun_nodes = []
         self.stun_servers = []
         self.stun_results = {}

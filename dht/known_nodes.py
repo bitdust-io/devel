@@ -32,8 +32,12 @@ module:: known_nodes
 
 #------------------------------------------------------------------------------
 
-
 from __future__ import absolute_import
+
+import re
+
+#------------------------------------------------------------------------------
+
 def default_nodes():
     """
     List of DHT nodes currently maintained : (host, UDP port number)
@@ -93,7 +97,7 @@ def nodes():
         return default_nodes()
 
     overridden_dht_nodes = []
-    for dht_node_str in overridden_dht_nodes_str.split(','):
+    for dht_node_str in re.split('\n|;|,| ', overridden_dht_nodes_str):
         if dht_node_str.strip():
             try:
                 dht_node = dht_node_str.strip().split(':')
