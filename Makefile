@@ -97,7 +97,7 @@ test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -p "test_raid.py" -v
 	$(PYTHON_NEW) -m unittest discover -p "test_raid_worker.py" -v
 
-regression:
+test_regression:
 	make -C regression/ test
 
 lint: venv_install
