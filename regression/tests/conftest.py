@@ -316,21 +316,21 @@ def init_supplier_3(global_wrapper):
 def init_supplier_4(global_wrapper):
     return start_supplier('supplier_4', 'supplier_4')
  
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_5(global_wrapper):
-    return start_supplier('supplier_5', 'supplier_5')
- 
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_6(global_wrapper):
-    return start_supplier('supplier_6', 'supplier_6')
- 
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_7(global_wrapper):
-    return start_supplier('supplier_7', 'supplier_7')
- 
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_8(global_wrapper):
-    return start_supplier('supplier_8', 'supplier_8')
+# @pytest.fixture(scope='session', autouse=True)
+# def init_supplier_5(global_wrapper):
+#     return start_supplier('supplier_5', 'supplier_5')
+#  
+# @pytest.fixture(scope='session', autouse=True)
+# def init_supplier_6(global_wrapper):
+#     return start_supplier('supplier_6', 'supplier_6')
+#  
+# @pytest.fixture(scope='session', autouse=True)
+# def init_supplier_7(global_wrapper):
+#     return start_supplier('supplier_7', 'supplier_7')
+#  
+# @pytest.fixture(scope='session', autouse=True)
+# def init_supplier_8(global_wrapper):
+#     return start_supplier('supplier_8', 'supplier_8')
 
 #------------------------------------------------------------------------------
 

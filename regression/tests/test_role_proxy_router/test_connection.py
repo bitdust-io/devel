@@ -32,3 +32,35 @@ def test_ping_supplier_2_towards_supplier_1():
         url='localhost:8180/user/ping/v1?id=supplier_1@is_8084',
     )
     assert response['status'] == 'OK'
+
+
+def test_ping_customer_1_towards_customer_2():
+    response = run_ssh_curl_and_wait(
+        host='customer_1',
+        url='localhost:8180/user/ping/v1?id=customer_2@is_8084',
+    )
+    assert response['status'] == 'OK'
+
+
+def test_ping_customer_2_towards_customer_1():
+    response = run_ssh_curl_and_wait(
+        host='customer_2',
+        url='localhost:8180/user/ping/v1?id=customer_1@is_8084',
+    )
+    assert response['status'] == 'OK'
+
+
+def test_ping_customer_1_towards_supplier_1():
+    response = run_ssh_curl_and_wait(
+        host='customer_1',
+        url='localhost:8180/user/ping/v1?id=supplier_1@is_8084',
+    )
+    assert response['status'] == 'OK'
+
+
+def test_ping_supplier_1_towards_customer_1():
+    response = run_ssh_curl_and_wait(
+        host='supplier_1',
+        url='localhost:8180/user/ping/v1?id=customer_1@is_8084',
+    )
+    assert response['status'] == 'OK'
