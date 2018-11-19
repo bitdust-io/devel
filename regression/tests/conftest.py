@@ -7,6 +7,7 @@ from .utils import run_ssh_command_and_wait, run_ssh_curl_and_wait
 #------------------------------------------------------------------------------
 
 DHT_SEED_NODES = 'is:14441, stun_1:14441, stun_2:14441, dht_seed_1:14441, dht_seed_2:14441'
+PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
 #------------------------------------------------------------------------------
 
@@ -15,16 +16,14 @@ def health_check(node):
     while True:
         if count > 5:
             assert False, 'node %r is not healthy after 5 seconds' % node
-        try:
-            process_health = run_ssh_curl_and_wait(
-                host=node,
-                url='localhost:8180/process/health/v1',
-            )
-            if process_health['status'] == 'OK':
-                break
-        except:
-            time.sleep(1)
-            count += 1
+        process_health = run_ssh_curl_and_wait(
+            host=node,
+            url='localhost:8180/process/health/v1',
+        )
+        if process_health and process_health['status'] == 'OK':
+            break
+        time.sleep(1)
+        count += 1
     print('health_check [%s] : OK' % node)
 
 
@@ -41,7 +40,7 @@ def create_identity(node, identity_name):
             }),
             method='POST',
         )
-        if identity_create['status'] == 'ERROR' and identity_create['errors'][0] == 'network connection error':
+        if not identity_create or (identity_create['status'] == 'ERROR' and identity_create['errors'][0] == 'network connection error'):
             count += 1
             print('retry %d to create identity %s' % (count, identity_name, ))
             continue
@@ -61,7 +60,7 @@ def connect_network(node):
             host=node,
             url='localhost:8180/network/connected/v1?wait_timeout=1',
         )
-        if network_connected['status'] == 'OK':
+        if network_connected and network_connected['status'] == 'OK':
             break
         count += 1
         print('retry %d network connect at %s' % (count, node, ))
@@ -81,7 +80,7 @@ def start_daemon(node):
 
 
 def start_identity_server(node):
-    print('\nNEW IDENTITY SERVER at %r\n' % node)
+    print('\nNEW IDENTITY SERVER at [%s]\n' % node)
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
@@ -103,7 +102,7 @@ def start_identity_server(node):
 
 
 def start_dht_seed(node):
-    print('\nNEW DHT SEED at %r\n' % node)
+    print('\nNEW DHT SEED at [%s]\n' % node)
     # enable DHT service
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
@@ -118,7 +117,7 @@ def start_dht_seed(node):
 
 
 def start_stun_server(node):
-    print('\nNEW STUN SERVER at %r\n' % node)
+    print('\nNEW STUN SERVER at [%s]\n' % node)
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
@@ -139,7 +138,7 @@ def start_stun_server(node):
 
 
 def start_proxy_server(node, identity_name):
-    print('\nNEW PROXY SERVER %r at %r\n' % (identity_name, node, ))
+    print('\nNEW PROXY SERVER %r at [%s]\n' % (identity_name, node, ))
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
@@ -162,7 +161,7 @@ def start_proxy_server(node, identity_name):
 
 
 def start_supplier(node, identity_name):
-    print('\nNEW SUPPLIER %r at %r\n' % (identity_name, node, ))
+    print('\nNEW SUPPLIER %r at [%s]\n' % (identity_name, node, ))
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')[0].strip())
@@ -174,7 +173,7 @@ def start_supplier(node, identity_name):
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
-    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml"')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable supplier service
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')[0].strip())
     # start BitDust daemon and create new identity for supplier
@@ -186,9 +185,9 @@ def start_supplier(node, identity_name):
 
 
 def start_customer(node, identity_name):
-    print('\nNEW CUSTOMER %r at %r\n' % (identity_name, node, ))
+    print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # disable unwanted services
-    print(run_ssh_command_and_wait(node, 'bitdust set services/customer/supplier false')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')[0].strip())
     # configure ID servers
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')[0].strip())
@@ -198,7 +197,7 @@ def start_customer(node, identity_name):
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
-    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml"')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable customer service and prepare tests
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number 2')[0].strip())
@@ -225,6 +224,10 @@ def start_all_seeds():
             'stun_1',
             'stun_2',
         ],
+        'proxy-servers': [
+            'proxy_server_1',
+            'proxy_server_2',
+        ],
     }
  
     print('\nStarting Seed nodes\n') 
@@ -237,6 +240,9 @@ def start_all_seeds():
 
     for stunsrv in seeds['stun-servers']:
         start_stun_server(stunsrv)
+
+    for proxysrv in seeds['proxy-servers']:
+        start_proxy_server(proxysrv, proxysrv)
 
     print('\nAll Seed nodes ready\n')
  
@@ -287,17 +293,6 @@ def global_wrapper():
 
     print('\nFinished. All operations completed in %5.3f seconds\n' % (time.time() - _begin))
 
-
-#------------------------------------------------------------------------------
-
-@pytest.fixture(scope='session', autouse=True)
-def init_proxy_server_1(global_wrapper):
-    return start_proxy_server('proxy_server_1', 'proxy_server_1')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_proxy_server_2(global_wrapper):
-    return start_proxy_server('proxy_server_2', 'proxy_server_2')
-
 #------------------------------------------------------------------------------
 
 @pytest.fixture(scope='session', autouse=True)
@@ -315,22 +310,6 @@ def init_supplier_3(global_wrapper):
 @pytest.fixture(scope='session', autouse=True)
 def init_supplier_4(global_wrapper):
     return start_supplier('supplier_4', 'supplier_4')
- 
-# @pytest.fixture(scope='session', autouse=True)
-# def init_supplier_5(global_wrapper):
-#     return start_supplier('supplier_5', 'supplier_5')
-#  
-# @pytest.fixture(scope='session', autouse=True)
-# def init_supplier_6(global_wrapper):
-#     return start_supplier('supplier_6', 'supplier_6')
-#  
-# @pytest.fixture(scope='session', autouse=True)
-# def init_supplier_7(global_wrapper):
-#     return start_supplier('supplier_7', 'supplier_7')
-#  
-# @pytest.fixture(scope='session', autouse=True)
-# def init_supplier_8(global_wrapper):
-#     return start_supplier('supplier_8', 'supplier_8')
 
 #------------------------------------------------------------------------------
 

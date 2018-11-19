@@ -6,9 +6,6 @@ services: docker
 language: python
 matrix:
   include:
-  - name: "3.6"
-    python: "3.6"
-    env: PYTHON_VERSION=3.6
   - name: "2.7"
     python: "2.7"
     env: PYTHON_VERSION=2.7
@@ -28,7 +25,6 @@ script:
   - make test
   - make test_regression
   - make -C tests/e2e/ -j2 test
-
 
 after_failure:
   - docker-compose -p "namespace1" -f tests/e2e/docker-compose.yml logs

@@ -4,7 +4,7 @@ import requests
 
 
 def test_customer_1_send_message_to_customer_2():
-    # TODO:
+    # TODO: finish test
     assert True
 
 #     random_message = base64.b32encode(os.urandom(20)).decode()

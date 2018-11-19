@@ -7,7 +7,7 @@ def test_ping_proxy_server_1_towards_proxy_server_2():
         host='proxy_server_1',
         url='localhost:8180/user/ping/v1?id=proxy_server_2@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
 
 
 def test_ping_proxy_server_2_towards_proxy_server_1():
@@ -15,7 +15,7 @@ def test_ping_proxy_server_2_towards_proxy_server_1():
         host='proxy_server_2',
         url='localhost:8180/user/ping/v1?id=proxy_server_1@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
 
 
 def test_ping_supplier_1_towards_supplier_2():
@@ -23,7 +23,7 @@ def test_ping_supplier_1_towards_supplier_2():
         host='supplier_1',
         url='localhost:8180/user/ping/v1?id=supplier_2@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
 
 
 def test_ping_supplier_2_towards_supplier_1():
@@ -31,7 +31,7 @@ def test_ping_supplier_2_towards_supplier_1():
         host='supplier_2',
         url='localhost:8180/user/ping/v1?id=supplier_1@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
 
 
 def test_ping_customer_1_towards_customer_2():
@@ -39,7 +39,7 @@ def test_ping_customer_1_towards_customer_2():
         host='customer_1',
         url='localhost:8180/user/ping/v1?id=customer_2@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
 
 
 def test_ping_customer_2_towards_customer_1():
@@ -47,7 +47,7 @@ def test_ping_customer_2_towards_customer_1():
         host='customer_2',
         url='localhost:8180/user/ping/v1?id=customer_1@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
 
 
 def test_ping_customer_1_towards_supplier_1():
@@ -55,7 +55,7 @@ def test_ping_customer_1_towards_supplier_1():
         host='customer_1',
         url='localhost:8180/user/ping/v1?id=supplier_1@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
 
 
 def test_ping_supplier_1_towards_customer_1():
@@ -63,4 +63,4 @@ def test_ping_supplier_1_towards_customer_1():
         host='supplier_1',
         url='localhost:8180/user/ping/v1?id=customer_1@is_8084',
     )
-    assert response['status'] == 'OK'
+    assert response['status'] == 'OK', response
