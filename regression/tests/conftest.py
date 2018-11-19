@@ -30,8 +30,8 @@ def health_check(node):
 def create_identity(node, identity_name):
     count = 0
     while True:
-        if count > 5:
-            assert False, 'node %s failed to create identity after 5 retries' % node
+        if count > 10:
+            assert False, 'node %s failed to create identity after 10 retries' % node
         identity_create = run_ssh_curl_and_wait(
             host=node,
             url='localhost:8180/identity/create/v1',
