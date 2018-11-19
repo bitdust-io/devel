@@ -358,7 +358,7 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
-            'regexp:^.*python.*bitdust.py$',
+            'regexp:^.*python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
@@ -400,7 +400,7 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = bpio.find_process([
-            'regexp:^.*python.*bitdust.py$',
+            'regexp:^.*python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
@@ -779,7 +779,7 @@ def main(executable_path=None):
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
         if len(appList) > 0:
-            lg.out(0, 'found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
+            lg.out(0, 'found main BitDust process: %r, sending command "exit" ... ' % appList, '')
             try:
                 from twisted.internet import reactor
                 # from interface.command_line import run_url_command
@@ -804,6 +804,12 @@ def main(executable_path=None):
                 bpio.shutdown()
                 return ret
         else:
+            appListAllChilds = bpio.find_main_process(check_processid_file=False)
+            if len(appListAllChilds) > 0:
+                lg.out(0, 'BitDust child processes found: %r, performing "kill process" actions ...\n' % appListAllChilds, '')
+                ret = kill()
+                return ret
+
             lg.out(0, 'BitDust is not running at the moment\n')
             bpio.shutdown()
             return 0

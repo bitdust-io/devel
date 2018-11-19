@@ -97,6 +97,9 @@ test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -p "test_raid.py" -v
 	$(PYTHON_NEW) -m unittest discover -p "test_raid_worker.py" -v
 
+test_regression:
+	make -C regression/ test
+
 lint: venv_install
 	@$(TOX) -e lint
 	@$(TOX) -e isort-check
