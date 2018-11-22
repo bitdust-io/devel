@@ -89,7 +89,7 @@ import time
 import struct
 import bisect
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

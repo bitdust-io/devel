@@ -65,7 +65,7 @@ class BlockchainService(LocalService):
 
     def start(self):
         import os
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from main import config
         from main import settings
         from main import events

@@ -55,7 +55,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -338,7 +338,7 @@ class ProxySender(automat.Automat):
 
 
 def main():
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callWhenRunning(A, 'init')
     reactor.run()
 

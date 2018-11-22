@@ -47,7 +47,7 @@ import json
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.web.server import Site
 
 #------------------------------------------------------------------------------

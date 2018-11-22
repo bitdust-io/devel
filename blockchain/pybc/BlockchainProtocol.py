@@ -9,7 +9,7 @@ import time
 import traceback
 import collections
 import logging
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.protocols.basic import LineReceiver
 from six.moves import map
 from six.moves import range

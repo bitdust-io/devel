@@ -811,7 +811,7 @@ class ProxyReceiver(automat.Automat):
 
 
 def main():
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callWhenRunning(A, 'init')
     reactor.run()
 

@@ -74,10 +74,10 @@ import time
 import traceback
 from io import open
 
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
-from twisted.internet.defer import Deferred, fail
-from twisted.python.failure import Failure
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.task import LoopingCall  #@UnresolvedImport
+from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
+from twisted.python.failure import Failure  #@UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -623,7 +623,7 @@ class Automat(object):
                 if not isinstance(s, str):
                     s = s.decode('utf-8')
             else:
-                if not isinstance(s, unicode):
+                if not isinstance(s, unicode):  # @UndefinedVariable
                     s = s.decode('utf-8')
             _LogFile.write(s)
             _LogFile.flush()

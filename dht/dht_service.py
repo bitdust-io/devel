@@ -50,9 +50,9 @@ import json
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
-from twisted.internet.defer import Deferred, fail
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.task import LoopingCall  #@UnresolvedImport
+from twisted.internet.defer import Deferred, fail  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -274,7 +274,7 @@ def key_to_hash(key):
 
 #------------------------------------------------------------------------------
 
-def make_key(key, index, prefix, version=None):
+def make_key(key, prefix, index=0, version=None):
     global _ProtocolVersion
     if not version:
         version = _ProtocolVersion
@@ -387,7 +387,6 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
         return fail(Exception('DHT service is off'))
     try:
         value = jsn.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'))
-        # value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
         return fail(Exception('bad input json data'))
     if _Debug:

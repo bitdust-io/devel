@@ -423,7 +423,7 @@ def SearchLocalIP(ip):
 def _test():
     import logging
     logging.basicConfig(level=logging.DEBUG)
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from twisted.internet.defer import setDebugging
     setDebugging(True)
     # from twisted.python import log as twisted_log

@@ -46,7 +46,7 @@ _DebugLevel = 10
 
 import os
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

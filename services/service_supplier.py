@@ -88,7 +88,7 @@ class SupplierService(LocalService):
         return True
 
     def request(self, json_payload, newpacket, info):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from main import events
         from crypt import my_keys
@@ -221,7 +221,7 @@ class SupplierService(LocalService):
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, json_payload, newpacket, info):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from main import events
         from p2p import p2p_service
@@ -539,7 +539,7 @@ class SupplierService(LocalService):
 
     def _on_data(self, newpacket):
         import os
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from system import bpio
         from main import settings

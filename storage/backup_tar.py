@@ -193,7 +193,7 @@ def main():
         p.make_nonblocking()
         _read(p)
 
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callLater(0, _go)
     reactor.run()
 

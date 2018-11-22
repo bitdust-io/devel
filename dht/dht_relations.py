@@ -41,7 +41,7 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
@@ -278,7 +278,7 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
         supplier_idurl = my_id.getLocalID()
     meta_info = contactsdb.get_customer_meta_info(customer_idurl)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation: customer:%s supplier:%s meta:%s' % (
+        lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation   customer:%s  supplier:%s  meta:%s' % (
             customer_idurl, supplier_idurl, meta_info, ))
     new_data = {
         'customer_idurl': customer_idurl,
@@ -293,13 +293,22 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
 
 def close_customer_supplier_relation(customer_idurl):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_relations.close_customer_supplier_relation: customer:%s' % (
+        lg.out(_DebugLevel, 'dht_relations.close_customer_supplier_relation   customer:%s' % (
             customer_idurl, ))
     return RelationsLookup(customer_idurl, new_data=None, publish=True).start()
 
 
 def scan_customer_supplier_relations(customer_idurl):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_relations.scan_customer_supplier_relations: customer:%s' % (
+        lg.out(_DebugLevel, 'dht_relations.scan_customer_supplier_relations   customer:%s' % (
             customer_idurl, ))
     return RelationsLookup(customer_idurl, new_data=None, publish=False).start()
+
+#------------------------------------------------------------------------------
+
+def update_customer_supplier_relation(customer_idurl, supplier_idurl=None):
+    if not supplier_idurl:
+        supplier_idurl = my_id.getLocalID()
+    meta_info = contactsdb.get_customer_meta_info(customer_idurl)
+    # dht_records.get_suppliers(customer_idurl)
+    # dht_records.set_suppliers(customer_idurl, ecc_map, suppliers_list, expire)

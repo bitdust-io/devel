@@ -47,7 +47,7 @@ import os
 import sys
 import importlib
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred, DeferredList, succeed, failure
 
 #------------------------------------------------------------------------------

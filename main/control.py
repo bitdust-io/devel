@@ -51,7 +51,7 @@ import webbrowser
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 from twisted.web import wsgi
 from twisted.web import server

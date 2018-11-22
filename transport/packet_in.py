@@ -58,7 +58,7 @@ _DebugLevel = 10
 import os
 import time
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

@@ -55,7 +55,7 @@ import subprocess
 #------------------------------------------------------------------------------
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in net_misc.py')
 

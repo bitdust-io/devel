@@ -393,5 +393,5 @@ if __name__ == '__main__':
     fd, filename = make('raid')
     os.write(fd, 'TEST FILE')
     os.close(fd)
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.run()

@@ -124,7 +124,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     #---twisted reactor---
     lg.out(4, 'bpmain.run want to import twisted.internet.reactor')
     try:
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
     except:
         lg.exc()
         sys.exit('Error initializing reactor in bpmain.py\n')
@@ -242,7 +242,7 @@ def shutdown():
 def run_twisted_reactor():
     from logs import lg
     try:
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
     except:
         lg.exc()
         sys.exit('Error initializing reactor in bpmain.py\n')
@@ -394,7 +394,7 @@ def wait_then_kill(x):
     procedure. This method will wait for 10 seconds and then call method
     ``kill()``.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from logs import lg
     from system import bpio
     total_count = 0
@@ -703,13 +703,13 @@ def main(executable_path=None):
 
             def done(x):
                 lg.out(0, 'DONE\n', '')
-                from twisted.internet import reactor
+                from twisted.internet import reactor  # @UnresolvedImport
                 if reactor.running and not reactor._stopped:
                     reactor.stop()
 
             def failed(x):
                 ok = str(x).count('Connection was closed cleanly') > 0
-                from twisted.internet import reactor
+                from twisted.internet import reactor  # @UnresolvedImport
                 if ok and reactor.running and not reactor._stopped:
                     lg.out(0, 'DONE\n', '')
                     reactor.stop()
@@ -723,7 +723,7 @@ def main(executable_path=None):
                 reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
                 reactor.stop()
             try:
-                from twisted.internet import reactor
+                from twisted.internet import reactor  # @UnresolvedImport
                 # from interface.command_line import run_url_command
                 # d = run_url_command('?action=restart', False)
                 # from interface import cmd_line
@@ -781,7 +781,7 @@ def main(executable_path=None):
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %r, sending command "exit" ... ' % appList, '')
             try:
-                from twisted.internet import reactor
+                from twisted.internet import reactor  # @UnresolvedImport
                 # from interface.command_line import run_url_command
                 # url = '?action=exit'
                 # run_url_command(url, False).addBoth(wait_then_kill)
