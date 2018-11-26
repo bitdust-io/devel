@@ -422,12 +422,16 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        for supplier_idurl in contactsdb.suppliers():
+        for pos, supplier_idurl in enumerate(contactsdb.suppliers()):
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
-                sc = supplier_connector.create(supplier_idurl, customer_idurl=my_id.getLocalID())
+                sc = supplier_connector.create(
+                    supplier_idurl=supplier_idurl,
+                    customer_idurl=my_id.getLocalID(),
+                    family_position=pos,
+                )
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
             sc.automat('connect')

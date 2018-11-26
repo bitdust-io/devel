@@ -64,8 +64,8 @@ class CustomerSupportService(LocalService):
         from transport import callback
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_outbox_callback(self._on_outbox_packet_sent)
-        for sc in customer_assistant.assistants().values():
-            sc.automat('shutdown')
+        for ca in customer_assistant.assistants().values():
+            ca.automat('shutdown')
         return True
 
     def health_check(self):

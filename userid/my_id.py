@@ -156,10 +156,10 @@ def getLocalID():
 
 def getLocalIDURL():
     """
-    Return my IDURL.
-    """
-    # just an alias for now
+    Returns my IDURL.
+    Just an alias for now...
     # TODO: deprecate getLocalID() in favor of getLocalIDURL()
+    """
     return getLocalID()
 
 

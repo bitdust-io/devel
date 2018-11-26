@@ -99,7 +99,8 @@ class EmployerService(LocalService):
         if driver.is_on('service_entangled_dht'):
             from dht import dht_relations
             from userid import my_id
-            d = dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
+            # d = dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
+            d = dht_relations.read_customer_suppliers(my_id.getLocalID())
             d.addCallback(self._on_my_dht_relations_discovered)
             d.addErrback(self._on_my_dht_relations_failed)
         else:
@@ -127,7 +128,7 @@ class EmployerService(LocalService):
             )
             p2p_service.SendCancelService(
                 remote_idurl=idurl,
-                service_name='service_supplier_relations',
+                service_name='service_customer_family',
             )
         if suppliers_to_be_dismissed:
             lg.info('found %d suppliers to be cleaned and sent CancelService() packets' % len(suppliers_to_be_dismissed))

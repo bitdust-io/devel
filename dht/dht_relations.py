@@ -42,7 +42,7 @@ _DebugLevel = 8
 #------------------------------------------------------------------------------
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -306,9 +306,31 @@ def scan_customer_supplier_relations(customer_idurl):
 
 #------------------------------------------------------------------------------
 
-def update_customer_supplier_relation(customer_idurl, supplier_idurl=None):
-    if not supplier_idurl:
-        supplier_idurl = my_id.getLocalID()
+def read_customer_suppliers(customer_idurl):
+    result = Deferred()
+
+    def _do_verify(dht_value):
+        try:
+            _ecc_map = dht_value['ecc_map']
+            _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
+            _suppliers_list = map(strng.to_bin, dht_value['suppliers'])
+        except:
+            lg.exc()
+            result.callback(None)
+            return None
+        result.callback({
+            'suppliers': _suppliers_list,
+            'ecc_map': _ecc_map,
+            'customer_idurl': _customer_idurl,
+        })
+        return None
+
+    d = dht_records.get_suppliers(customer_idurl)
+    d.addCallback(_do_verify)
+    d.addErrback(lambda err: result.callback(None))
+    return result
+
+
+def write_customer_suppliers(customer_idurl, suppliers_list):
     meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-    # dht_records.get_suppliers(customer_idurl)
-    # dht_records.set_suppliers(customer_idurl, ecc_map, suppliers_list, expire)
+    return dht_records.set_suppliers(customer_idurl, meta_info['ecc_map'], suppliers_list)

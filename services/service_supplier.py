@@ -112,6 +112,7 @@ class SupplierService(LocalService):
             customer_public_key_id = None
         data_owner_idurl = None
         target_customer_idurl = None
+        family_position = json_payload.get('position')  # TODO: process position of supplier in the family
         ecc_map = json_payload.get('ecc_map')
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')

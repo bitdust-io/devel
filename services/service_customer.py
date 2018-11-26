@@ -63,9 +63,13 @@ class CustomerService(LocalService):
         if not my_keys.is_key_registered(customer_key_id):
             lg.warn('customer key was not found, generate new key: %s' % customer_key_id)
             my_keys.generate_key(customer_key_id)
-        for supplier_idurl in contactsdb.suppliers():
+        for pos, supplier_idurl in contactsdb.suppliers():
             if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getLocalID()):
-                supplier_connector.create(supplier_idurl, customer_idurl=my_id.getLocalID())
+                supplier_connector.create(
+                    supplier_idurl=supplier_idurl,
+                    customer_idurl=my_id.getLocalID(),
+                    family_position=pos,
+                )
         # TODO: read from dht and connect to other suppliers - from other customers who shared data to me
         return True
 

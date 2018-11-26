@@ -48,6 +48,9 @@ class SupplierRelationsService(LocalService):
                 'service_entangled_dht',
                 ]
 
+    def installed(self):
+        return False
+
     def start(self):
         from twisted.internet.task import LoopingCall  #@UnresolvedImport
         from main import events

@@ -908,6 +908,13 @@ def CustomerIDsFilename():
     return os.path.join(MetaDataDir(), "customerids")
 
 
+def CustomersMetaInfoFilename():
+    """
+    Keeps a list of known ECCMaps and other info of my customers.
+    """
+    return os.path.join(MetaDataDir(), "customersmetainfo")
+
+
 def CorrespondentIDsFilename():
     """
     People we get messages from and other stuff not related to backup/restore
