@@ -194,8 +194,11 @@ class SupplierService(LocalService):
         current_customers.append(customer_idurl)
         space_dict[customer_idurl] = bytes_for_customer
         contactsdb.update_customers(current_customers)
-        contactsdb.add_customer_meta_info(customer_idurl, {'ecc_map': ecc_map, })
         contactsdb.save_customers()
+        contactsdb.add_customer_meta_info(customer_idurl, {
+            'ecc_map': ecc_map,
+            'position': family_position,
+        })
         accounting.write_customers_quotas(space_dict)
         if customer_public_key_id:
             my_keys.erase_key(customer_public_key_id)

@@ -140,6 +140,8 @@ from p2p import contact_status
 from customer import supplier_finder
 from customer import supplier_connector
 
+from raid import eccmap
+
 from userid import my_id
 
 #-------------------------------------------------------------------------
@@ -431,6 +433,7 @@ class FireHire(automat.Automat):
                     supplier_idurl=supplier_idurl,
                     customer_idurl=my_id.getLocalID(),
                     family_position=pos,
+                    ecc_map=eccmap.Current().name,
                 )
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)

@@ -226,6 +226,7 @@ class SupplierFinder(automat.Automat):
         """
         from customer import supplier_connector
         from customer import fire_hire
+        from raid import eccmap
         position = None
         current_suppliers = list(contactsdb.suppliers())
         for i in range(len(current_suppliers)):
@@ -241,6 +242,7 @@ class SupplierFinder(automat.Automat):
                 supplier_idurl=self.target_idurl,
                 customer_idurl=my_id.getLocalID(),
                 family_position=position,
+                ecc_map=eccmap.Current().name,
             )
         sc.automat('connect')
         sc.set_callback('supplier_finder', self._supplier_connector_state)
