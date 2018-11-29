@@ -354,15 +354,15 @@ def ParseGlobalQueueID(inp):
     global _REGEX_GLOBAL_ID_QUEUE_ID
     ret = {
         'queue_alias': '',
-        'owner_id': b'',
-        'supplier_id': b'',
+        'owner_id': '',
+        'supplier_id': '',
     }
     result = re.match(_REGEX_GLOBAL_ID_QUEUE_ID, inp)
     if not result:
         return ret
     ret['queue_alias'] = strng.to_text(result.group('queue_alias'))
-    ret['owner_id'] = strng.to_bin(result.group('owner_id'))
-    ret['supplier_id'] = strng.to_bin(result.group('supplier_id'))
+    ret['owner_id'] = strng.to_text(result.group('owner_id'))
+    ret['supplier_id'] = strng.to_text(result.group('supplier_id'))
     return ret
 
 #------------------------------------------------------------------------------

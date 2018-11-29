@@ -41,7 +41,7 @@ def create_service():
 class SupplierRelationsService(LocalService):
 
     service_name = 'service_customer_family'
-    config_path = 'services/supplier-customer-family/enabled'
+    config_path = 'services/customer-family/enabled'
 
     def dependent_on(self):
         return ['service_supplier',
@@ -52,10 +52,27 @@ class SupplierRelationsService(LocalService):
         from main import events
         from contacts import contactsdb
         from supplier import family_member
+        from transport import callback
+        # TODO: check all imports.! my_id must be loaded latest as possible!
+        from userid import my_id
+        
+        callback.append_inbox_callback(self._on_inbox_packet_received)
+        
         for customer_idurl in contactsdb.customers():
-            if customer_idurl and not family_member.by_idurl(customer_idurl):
-                fm = family_member.create(customer_idurl)
-                fm.automat('init')
+            if not customer_idurl:
+                continue
+            fm = family_member.by_customer_idurl(customer_idurl)
+            if not fm:
+                fm = family_member.create_family(customer_idurl)
+            fm.automat('init')
+            # fm.automat('family-refresh')
+            local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
+            fm.automat('family-join', {
+                'supplier_idurl': my_id.getLocalIDURL(),
+                'ecc_map': local_customer_meta_info.get('ecc_map'),
+                'position': local_customer_meta_info.get('position'),
+            })
+
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
@@ -73,32 +90,56 @@ class SupplierRelationsService(LocalService):
 
     def _on_new_customer_accepted(self, evt):
         from logs import lg
+        from userid import my_id
         from supplier import family_member
         customer_idurl = evt.data['idurl']
-        fm = family_member.by_idurl(customer_idurl)
+        fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
-            fm = family_member.create(customer_idurl)
+            fm = family_member.create_family(customer_idurl)
             fm.automat('init')
         else:
             lg.warn('FamilyMember already exists, but new customer just accepted %s' % customer_idurl)
-        fm.automat('customer-accepted', customer_idurl)
+        fm.automat('family-join', {
+            'supplier_idurl': my_id.getLocalIDURL(),
+            'ecc_map': evt.data.get('ecc_map'),
+            'position': evt.data.get('position'),
+        })
 
     def _on_existing_customer_accepted(self, evt):
         from logs import lg
+        from userid import my_id
         from supplier import family_member
         customer_idurl = evt.data['idurl']
-        fm = family_member.by_idurl(customer_idurl)
+        fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
             lg.err('FamilyMember was not found for existing customer %s' % customer_idurl)
             return
-        fm.automat('customer-accepted', customer_idurl)
+        fm.automat('family-join', {
+            'supplier_idurl': my_id.getLocalIDURL(),
+            'ecc_map': evt.data.get('ecc_map'),
+            'position': evt.data.get('position'),
+        })
 
     def _on_existing_customer_terminated(self, evt):
         from logs import lg
+        from userid import my_id
         from supplier import family_member
         customer_idurl = evt.data['idurl']
-        fm = family_member.by_idurl(customer_idurl)
+        fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
             lg.err('FamilyMember not found for existing customer %s' % customer_idurl)
             return
-        fm.automat('customer-rejected', customer_idurl)
+        fm.automat('family-leave', {
+            'supplier_idurl': my_id.getLocalIDURL(),
+        })
+
+    def _on_incoming_contacts_packet(self, newpacket, info):
+        payload = ''
+        space = ''
+        return False
+
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        from p2p import commands
+        if newpacket.Command == commands.Contacts():
+            return self._on_incoming_contacts_packet(newpacket, info)
+        return False

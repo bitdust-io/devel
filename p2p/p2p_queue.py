@@ -172,7 +172,7 @@ def producer(producer_id=None):
 def start():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.start')
-    reactor.callLater(0, process_queues)
+    reactor.callLater(0, process_queues)  # @UndefinedVariable
     return True
 
 
@@ -201,7 +201,7 @@ def process_queues():
             MAX_PROCESS_QUEUES_DELAY,
         )
         # attenuation
-        _ProcessQueuesTask = reactor.callLater(_ProcessQueuesDelay, process_queues)
+        _ProcessQueuesTask = reactor.callLater(_ProcessQueuesDelay, process_queues)  # @UndefinedVariable
 
 
 def touch_queues():
@@ -466,7 +466,7 @@ def push_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.push_message  %s added to queue %s' % (new_message.message_id, queue_id, ))
-    reactor.callLater(0, touch_queues)
+    reactor.callLater(0, touch_queues)  # @UndefinedVariable
     return True
 
 
@@ -560,7 +560,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
         finish_notification(consumer_id, queue_id, message_id, success=True)
     except:
         lg.exc()
-    reactor.callLater(0, do_cleanup)
+    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
     return result
 
 
@@ -572,7 +572,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
         finish_notification(consumer_id, queue_id, message_id, success=False)
     except:
         lg.exc()
-    reactor.callLater(0, do_cleanup)
+    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
     return err
 
 #------------------------------------------------------------------------------
@@ -680,7 +680,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
         except:
             lg.exc()
             result = False
-        reactor.callLater(0, ret.callback, result)
+        reactor.callLater(0, ret.callback, result)  # @UndefinedVariable
 
     return start_notification(consumer_id, queue_id, message_id, ret)
 
@@ -887,7 +887,7 @@ def test():
     events.send('test123', data=dict(abc='abc', counter=20))
     events.send('test123', data=dict(abc='abc', counter=30))
     events.send('test123', data=dict(abc='abc', counter=40))
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == '__main__':

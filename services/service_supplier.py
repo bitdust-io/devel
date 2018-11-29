@@ -68,9 +68,12 @@ class SupplierService(LocalService):
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
         space_dict = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
+            known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             events.send('existing-customer-accepted', data=dict(
                 idurl=customer_idurl,
                 allocated_bytes=space_dict.get(customer_idurl),
+                ecc_map=known_customer_meta_info.get('ecc_map'),
+                position=known_customer_meta_info.get('position'),
             ))
         return True
 
@@ -211,17 +214,25 @@ class SupplierService(LocalService):
                 lg.exc()
         else:
             lg.warn('customer public key was not provided in the request')
-        reactor.callLater(0, local_tester.TestUpdateCustomers)
+        reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
             events.send('new-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
                 key_id=customer_public_key_id,
             ))
         else:
             lg.out(8, "    OLD CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
-            events.send('existing-customer-accepted', dict(idurl=customer_idurl))
+            events.send('existing-customer-accepted', dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                key_id=customer_public_key_id,
+            ))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, json_payload, newpacket, info):
@@ -231,8 +242,6 @@ class SupplierService(LocalService):
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        from services import driver
-        # from userid import global_id
         customer_idurl = newpacket.OwnerID
         if not contactsdb.is_customer(customer_idurl):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)

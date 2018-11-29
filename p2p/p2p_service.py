@@ -100,83 +100,86 @@ def inbox(newpacket, info, status, error_message):
     if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
         # packet is NOT for us, skip
         return False
-    commandhandled = False
+
     if newpacket.Command == commands.Ack():
         # a response from remote node, typically handled in other places
         Ack(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Fail():
         # some operation was failed on other side
         Fail(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.Retrieve():
         # retrieve some packet customer stored with us
         # handled by service_supplier()
         Retrieve(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.RequestService():
         # other node send us a request to get some service
         # handled by service_p2p_hookups()
         RequestService(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.CancelService():
         # other node wants to stop the service we gave him
         # handled by service_p2p_hookups()
         CancelService(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Data():
         # new packet to store for customer, or data coming back from supplier
         # handled by service_backups() and service_supplier()
         Data(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.ListFiles():
         # customer wants list of their files
         # handled by service_supplier()
         ListFiles(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Files():
         # supplier sent us list of files
         # handled by service_backups()
         Files(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.DeleteFile():
         # handled by service_supplier()
         DeleteFile(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.DeleteBackup():
         # handled by service_supplier()
         DeleteBackup(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.Correspondent():
         # TODO: contact asking for our current identity, not implemented yet
         Correspondent(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.Broadcast():
         # handled by service_broadcasting()
         Broadcast(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Coin():
         # handled by service_accountant()
         Coin(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.RetrieveCoin():
         # handled by service_accountant()
         RetrieveCoin(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Key():
         # handled by service_keys_registry()
         Key(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Event():
         # handled by service_p2p_hookups()
         Event(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Message():
         # handled by service_private_messages()
         Message(newpacket, info)
-        commandhandled = False
 
-    return commandhandled
+    elif newpacket.Command == commands.Contacts():
+        # handled by service_customer_family()
+        Contacts(newpacket, info)
+
+    return False
 
 
 def outbox(outpacket):
@@ -715,9 +718,13 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendRetrieveCoin to %s" % remote_idurl)
     outpacket = signed.Packet(
-        commands.RetrieveCoin(), my_id.getLocalID(),
-        my_id.getLocalID(), packetid.UniqueID(),
-        serialization.DictToBytes(query), remote_idurl)
+        commands.RetrieveCoin(),
+        my_id.getLocalID(),
+        my_id.getLocalID(),
+        packetid.UniqueID(),
+        serialization.DictToBytes(query),
+        remote_idurl,
+    )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
 
@@ -831,5 +838,41 @@ def Message(request, info):
         lg.out(_DebugLevel, 'p2p_service.Message %d bytes in [%s]' % (len(request.Payload), request.PacketID))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
+
+#------------------------------------------------------------------------------
+
+def Contacts(request, info):
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
+
+
+def SendContacts(remote_idurl, space=None, contacts_list=[], payload=None, wide=False, callbacks={}):
+    """
+    This is used as a request method from your supplier : if you send him a ListFiles() packet
+    he will reply you with a list of stored files in a Files() packet.
+    """
+    MyID = my_id.getLocalID()
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendContacts to %s" % nameurl.GetName(remote_idurl))
+    PacketID = packetid.UniqueID()
+    Payload = serialization.DictToBytes({
+        'space': space,
+        'contacts_list': contacts_list,
+        'payload': payload,
+    })
+    result = signed.Packet(
+        Command=commands.Contacts(),
+        OwnerID=MyID,
+        CreatorID=MyID,
+        PacketID=PacketID,
+        Payload=Payload,
+        RemoteID=remote_idurl,
+    )
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
+    return result
 
 #------------------------------------------------------------------------------

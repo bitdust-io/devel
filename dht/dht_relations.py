@@ -313,24 +313,36 @@ def read_customer_suppliers(customer_idurl):
         try:
             _ecc_map = dht_value['ecc_map']
             _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
-            _suppliers_list = map(strng.to_bin, dht_value['suppliers'])
+            _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
         except:
             lg.exc()
             result.callback(None)
             return None
-        result.callback({
+        ret = {
             'suppliers': _suppliers_list,
             'ecc_map': _ecc_map,
             'customer_idurl': _customer_idurl,
-        })
+        }
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
+        result.callback(ret)
+        return None
+
+    def _on_error(err):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (customer_idurl, err, ))
+        result.callback(None)
         return None
 
     d = dht_records.get_suppliers(customer_idurl)
     d.addCallback(_do_verify)
-    d.addErrback(lambda err: result.callback(None))
+    d.addErrback(_on_error)
     return result
 
 
-def write_customer_suppliers(customer_idurl, suppliers_list):
-    meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-    return dht_records.set_suppliers(customer_idurl, meta_info['ecc_map'], suppliers_list)
+def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None):
+    return dht_records.set_suppliers(
+        customer_idurl,
+        ecc_map,
+        suppliers_list,
+    )

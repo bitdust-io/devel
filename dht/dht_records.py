@@ -44,6 +44,7 @@ _DebugLevel = 10
 from logs import lg
 
 from lib import utime
+from lib import strng
 
 from dht import dht_service
 
@@ -74,7 +75,7 @@ _Rules = {
     'suppliers': {
         'type': [{'op': 'equal', 'arg': 'suppliers', }, ],
         'timestamp': [{'op': 'exist', }, ],
-        'customer_id': [{'op': 'exist', }, ],
+        'customer_idurl': [{'op': 'exist', }, ],
         'ecc_map': [{'op': 'exist', }, ],
         'suppliers': [{'op': 'exist', }, ],
     },
@@ -167,7 +168,7 @@ def get_suppliers(customer_idurl):
         lg.args(_DebugLevel, customer_idurl)
     return dht_service.get_valid_data(
         key=dht_service.make_key(
-            key=customer_idurl,
+            key=strng.to_text(customer_idurl),
             prefix='suppliers',
         ),
         rules=get_rules('suppliers'),
@@ -176,7 +177,7 @@ def get_suppliers(customer_idurl):
 def set_suppliers(customer_idurl, ecc_map, suppliers_list, expire=60*60):
     return dht_service.set_valid_data(
         key=dht_service.make_key(
-            key=customer_idurl,
+            key=strng.to_text(customer_idurl),
             prefix='suppliers',
         ),
         json_data={
