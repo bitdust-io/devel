@@ -160,6 +160,7 @@ def history():
 
 def process(newpacket, info):
     from p2p import p2p_service
+    from userid import my_id
     if not driver.is_on('service_p2p_hookups'):
         if _Debug:
             lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
@@ -172,7 +173,16 @@ def process(newpacket, info):
         if _Debug:
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
         return None
-    if newpacket.Command == commands.Identity():  # and newpacket.RemoteID == my_id.getLocalID():
+    if newpacket.Command == commands.Identity():
+        if newpacket.RemoteID != my_id.getLocalIDURL():
+            if _Debug:
+                lg.out(_DebugLevel, '    incoming Identity is routed to another user')
+            if not p2p_service.Identity(newpacket, send_ack=False):
+                lg.warn('non-valid identity received')
+                return None
+            # remote peer sending a valid identity to another peer routed via my machine
+            # need to handle that packet - it should be processed by proxy_server
+            return handle(newpacket, info)
         # contact sending us current identity we might not have
         # so we handle it before check that packet is valid
         # because we might not have his identity on hands and so can not verify the packet

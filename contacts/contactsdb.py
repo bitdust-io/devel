@@ -629,7 +629,9 @@ def save_correspondents(path=None):
     """
     if path is None:
         path = settings.CorrespondentIDsFilename()
-    bpio._write_list(path, ["%s %s" % t for t in correspondents()])
+    bpio._write_list(path, ["%s %s" % (
+        strng.to_text(t[0]), strng.to_text(t[1]),)
+        for t in correspondents()])
 
 
 def load_correspondents(path=None):
@@ -646,7 +648,7 @@ def load_correspondents(path=None):
         if len(lst[i]) < 2:
             lst[i] = (lst[i][0], '')
         if not lst[i][1].strip():
-            lst[i] = (lst[i][0], nameurl.GetName(lst[i][0]))
+            lst[i] = (strng.to_bin(lst[i][0]), nameurl.GetName(lst[i][0]))
     set_correspondents(lst)
     lg.out(4, 'contactsdb.load_correspondents %d items' % len(lst))
 

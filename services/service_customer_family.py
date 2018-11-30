@@ -49,6 +49,7 @@ class SupplierRelationsService(LocalService):
                 ]
 
     def start(self):
+        from logs import lg
         from main import events
         from contacts import contactsdb
         from supplier import family_member
@@ -60,6 +61,9 @@ class SupplierRelationsService(LocalService):
         
         for customer_idurl in contactsdb.customers():
             if not customer_idurl:
+                continue
+            if customer_idurl == my_id.getLocalIDURL():
+                lg.warn('skipping my own identity')
                 continue
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
@@ -107,9 +111,12 @@ class SupplierRelationsService(LocalService):
 
     def _on_existing_customer_accepted(self, evt):
         from logs import lg
-        from userid import my_id
         from supplier import family_member
+        from userid import my_id
         customer_idurl = evt.data['idurl']
+        if customer_idurl == my_id.getLocalIDURL():
+            lg.warn('skipping my own identity')
+            return
         fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
@@ -122,9 +129,12 @@ class SupplierRelationsService(LocalService):
 
     def _on_existing_customer_terminated(self, evt):
         from logs import lg
-        from userid import my_id
         from supplier import family_member
+        from userid import my_id
         customer_idurl = evt.data['idurl']
+        if customer_idurl == my_id.getLocalIDURL():
+            lg.warn('skipping my own identity')
+            return
         fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
             lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
@@ -138,6 +148,7 @@ class SupplierRelationsService(LocalService):
         from lib import serialization
         from lib import strng
         from supplier import family_member
+        from userid import my_id
         try:
             json_payload = serialization.BytesToDict(newpacket.Payload)
             contacts_type = strng.to_text(json_payload['type'])
@@ -152,6 +163,9 @@ class SupplierRelationsService(LocalService):
                 ecc_map = strng.to_text(json_payload['ecc_map'])
             except:
                 lg.warn("invalid json payload")
+                return False
+            if customer_idurl == my_id.getLocalIDURL():
+                lg.warn('received contacts for my own customer family')
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:

@@ -339,7 +339,7 @@ class FamilyMember(automat.Automat):
         Action method.
         """
         try:
-            suppliers_list = args[0]['suppliers_list']
+            suppliers_list = args[0]['suppliers']
             ecc_map = args[0]['ecc_map']
             incoming_packet = args[0]['packet']
         except:

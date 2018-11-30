@@ -270,7 +270,7 @@ def SendFailNoRequest(remoteID, packetID, response=''):
 #------------------------------------------------------------------------------
 
 
-def Identity(newpacket):
+def Identity(newpacket, send_ack=True):
     """
     Normal node or Identity server is sending us a new copy of an identity for a contact of ours.
     Checks that identity is signed correctly.
@@ -294,6 +294,16 @@ def Identity(newpacket):
         # If not valid do nothing
         lg.warn("not Valid packet from %s" % idurl)
         return False
+    # TODO: after receiving full list of identity sources we can call ALL OF THEM or those which are not cached yet.
+    # this way we can be sure that even if first source (server holding your public key) is not responding
+    # other sources still can give you required user info: public key, contacts, etc..
+    # TODO: we can also consolidate few "idurl" sources for every public key - basically identify user by public key
+    # something like:
+    # for source in identitycache.FromCache(idurl).getSources():
+    #     if source not in identitycache.FromCache(idurl):
+    #         d = identitycache.immediatelyCaching(source)
+    #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))
+    #         d.addErrback(lambda err: lg.warn('caching filed: %s' % err))
     if newpacket.OwnerID == idurl:
         # TODO: this needs to be moved to a service
         # wide=True : a small trick to respond to all contacts if we receive pings
@@ -303,17 +313,9 @@ def Identity(newpacket):
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity idurl=%s, but packet ownerID=%s  ... also sent WIDE Acks" % (
                 nameurl.GetName(idurl), newpacket.OwnerID, ))
+    if not send_ack:
+        return True
     reactor.callLater(0, SendAck, newpacket, wide=True)
-    # SendAck(newpacket, wide=True)
-    # TODO: after receiving the full identity sources we can call ALL OF them if some are not cached yet.
-    # this way we can be sure that even if first source (server holding your public key) is not availabble
-    # other sources still can give you required user info: public key, contacts, etc..
-    # something like:
-    # for source in identitycache.FromCache(idurl).getSources():
-    #     if source not in identitycache.FromCache(idurl):
-    #         d = identitycache.immediatelyCaching(source)
-    #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))
-    #         d.addErrback(lambda err: lg.warn('caching filed: %s' % err))
     return True
 
 
