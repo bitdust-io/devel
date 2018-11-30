@@ -10,6 +10,7 @@
 BitDust family_member() Automat
 
 EVENTS:
+    * :red:`contacts-received`
     * :red:`dht-fail`
     * :red:`dht-ok`
     * :red:`dht-value-exist`
@@ -146,12 +147,14 @@ class FamilyMember(automat.Automat):
             elif event == 'dht-value-exist' or event == 'dht-value-not-exist':
                 self.state = 'SUPPLIERS'
                 self.doRebuildFamily(*args, **kwargs)
-                self.doNotifySuppliers(*args, **kwargs)
+                self.doSendContactsToSuppliers(*args, **kwargs)
             elif event == 'dht-fail':
                 self.state = 'DISCONNECTED'
                 self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
+            elif event == 'contacts-received':
+                self.doCheckReply(*args, **kwargs)
         #---SUPPLIERS---
         elif self.state == 'SUPPLIERS':
             if event == 'shutdown':
@@ -165,6 +168,8 @@ class FamilyMember(automat.Automat):
                 self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
+            elif event == 'contacts-received':
+                self.doCheckReply(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'shutdown':
@@ -178,6 +183,8 @@ class FamilyMember(automat.Automat):
                 self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
+            elif event == 'contacts-received':
+                self.doCheckReply(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -195,6 +202,8 @@ class FamilyMember(automat.Automat):
                 self.doDHTRead(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
+            elif event == 'contacts-received':
+                self.doCheckReply(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
@@ -206,6 +215,8 @@ class FamilyMember(automat.Automat):
                 self.doDHTRead(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
+            elif event == 'contacts-received':
+                self.doCheckReply(*args, **kwargs)
         return None
 
     def isAnyRequests(self, *args, **kwargs):
@@ -274,7 +285,7 @@ class FamilyMember(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'family_member.doRebuildFamily dht_new_family_info=%r' % self.dht_new_family_info)
 
-    def doNotifySuppliers(self, *args, **kwargs):
+    def doSendContactsToSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -283,11 +294,12 @@ class FamilyMember(automat.Automat):
                 continue
             p2p_service.SendContacts(
                 remote_idurl=supplier_idurl,
-                space='family_member:%s' % strng.to_text(self.customer_idurl),
-                contacts_list=self.dht_new_family_info['suppliers'],
                 payload={
-                    'ecc_map': self.dht_new_family_info['ecc_map'],
+                    'type': 'suppliers_list',
+                    'space': 'family_member',
                     'customer_idurl': self.customer_idurl,
+                    'suppliers_list': self.dht_new_family_info['suppliers'],
+                    'ecc_map': self.dht_new_family_info['ecc_map'],
                 },
             )
         self.automat('suppliers-ok')
@@ -322,6 +334,36 @@ class FamilyMember(automat.Automat):
         Action method.
         """
 
+    def doCheckReply(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        try:
+            suppliers_list = args[0]['suppliers_list']
+            ecc_map = args[0]['ecc_map']
+            incoming_packet = args[0]['packet']
+        except:
+            lg.exc()
+            return
+        if not self.dht_known_family_info:
+            # current DHT info is not yet known, skip
+            return p2p_service.SendAck(incoming_packet)
+        if self.state in ['DISCONNECTED', 'DHT_READ', ]:
+            # currently this family member is not ready yet, skip
+            return p2p_service.SendAck(incoming_packet)
+        if my_id.getLocalIDURL() not in suppliers_list:
+            # user trying to remove myself from the family!
+            return p2p_service.SendFail(incoming_packet, 'contacts list from remote user does not include my identity')
+        if self.dht_known_family_info['ecc_map'] and ecc_map and self.dht_known_family_info['ecc_map'] != ecc_map:
+            lg.warn('known ecc_map not matching with contacts list received from remote user')
+            # TODO: check this later
+            # return p2p_service.SendFail(incoming_packet, 'known ecc_map not matching with contacts list received from remote user')
+            return p2p_service.SendAck(incoming_packet)
+        if len(suppliers_list) != len(self.dht_known_family_info['suppliers']):
+            lg.warn('known number of suppliers not matching with contacts list received from remote user')
+            return p2p_service.SendFail(incoming_packet, 'known number of suppliers not matching with contacts list received from remote user')
+        return p2p_service.SendAck(incoming_packet)
+
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
@@ -342,7 +384,10 @@ class FamilyMember(automat.Automat):
         lg.err('doDHTRead FAILED: %s' % err)
         
     def _on_dht_write_success(self, dht_result):
+        self.dht_known_family_info = self.dht_new_family_info.copy()
         self.automat('dht-ok', dht_result)
 
     def _on_dht_write_failed(self, err):
         lg.err('doDHTWrite FAILED: %s' % err)
+        self.dht_known_family_info = None
+        self.automat('dht-fail')

@@ -98,7 +98,7 @@ class SupplierRelationsService(LocalService):
             fm = family_member.create_family(customer_idurl)
             fm.automat('init')
         else:
-            lg.warn('FamilyMember already exists, but new customer just accepted %s' % customer_idurl)
+            lg.warn('family_member() instance already exists, but new customer just accepted %s' % customer_idurl)
         fm.automat('family-join', {
             'supplier_idurl': my_id.getLocalIDURL(),
             'ecc_map': evt.data.get('ecc_map'),
@@ -112,7 +112,7 @@ class SupplierRelationsService(LocalService):
         customer_idurl = evt.data['idurl']
         fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
-            lg.err('FamilyMember was not found for existing customer %s' % customer_idurl)
+            lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
             return
         fm.automat('family-join', {
             'supplier_idurl': my_id.getLocalIDURL(),
@@ -127,18 +127,45 @@ class SupplierRelationsService(LocalService):
         customer_idurl = evt.data['idurl']
         fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
-            lg.err('FamilyMember not found for existing customer %s' % customer_idurl)
+            lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
             return
         fm.automat('family-leave', {
             'supplier_idurl': my_id.getLocalIDURL(),
         })
 
     def _on_incoming_contacts_packet(self, newpacket, info):
-        payload = ''
-        space = ''
+        from logs import lg
+        from lib import serialization
+        from lib import strng
+        from supplier import family_member
+        try:
+            json_payload = serialization.BytesToDict(newpacket.Payload)
+            contacts_type = strng.to_text(json_payload['type'])
+            contacts_space = strng.to_text(json_payload['space'])
+        except:
+            lg.warn("invalid json payload")
+            return False
+        if contacts_type == 'suppliers_list' and contacts_space == 'family_member':
+            try:
+                customer_idurl = strng.to_bin(json_payload['customer_idurl'])
+                suppliers_list = list(map(strng.to_bin, json_payload['suppliers_list']))
+                ecc_map = strng.to_text(json_payload['ecc_map'])
+            except:
+                lg.warn("invalid json payload")
+                return False
+            fm = family_member.by_customer_idurl(customer_idurl)
+            if not fm:
+                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
+                    newpacket, info, customer_idurl, ))
+                return False
+            fm.automat('contacts-received', {
+                'suppliers': suppliers_list,
+                'ecc_map': ecc_map,
+                'packet': newpacket,
+            })
         return False
 
-    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+    def _on_inbox_packet_received(self, newpacket, info, *args):
         from p2p import commands
         if newpacket.Command == commands.Contacts():
             return self._on_incoming_contacts_packet(newpacket, info)

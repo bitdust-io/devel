@@ -845,25 +845,26 @@ def Contacts(request, info):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s] : %r' % (
+            len(request.Payload), request.PacketID, serialization.BytesToDict(request.Payload)))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendContacts(remote_idurl, space=None, contacts_list=[], payload=None, wide=False, callbacks={}):
+def SendContacts(remote_idurl, json_payload={}, wide=False, callbacks={}):
     """
-    This is used as a request method from your supplier : if you send him a ListFiles() packet
-    he will reply you with a list of stored files in a Files() packet.
     """
     MyID = my_id.getLocalID()
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendContacts to %s" % nameurl.GetName(remote_idurl))
     PacketID = packetid.UniqueID()
-    Payload = serialization.DictToBytes({
-        'space': space,
-        'contacts_list': contacts_list,
-        'payload': payload,
-    })
+    try:
+        json_payload['type']
+        json_payload['space']
+    except:
+        lg.err()
+        return None
+    Payload = serialization.DictToBytes(json_payload)
     result = signed.Packet(
         Command=commands.Contacts(),
         OwnerID=MyID,
