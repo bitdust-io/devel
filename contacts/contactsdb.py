@@ -749,7 +749,7 @@ def add_customer_meta_info(customer_idurl, info):
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
                 customer_idurl, info, ))
         _CustomersMetaInfo[customer_idurl].update(info)
-    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo))
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo, indent=2, sort_keys=True, ))
     return _CustomersMetaInfo
 
 
@@ -764,7 +764,7 @@ def remove_customer_meta_info(customer_idurl):
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.remove_customer_meta_info   erase existing meta info for customer %r' % customer_idurl)
     _CustomersMetaInfo.pop(customer_idurl)
-    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo))
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo, indent=2, sort_keys=True, ))
     return True
 
 

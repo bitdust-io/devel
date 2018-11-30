@@ -354,8 +354,8 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
     }
     service_info_raw = serialization.DictToBytes(service_info)
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %d bytes payload' % (
-            service_name, remote_idurl, len(service_info_raw)))
+        lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %r' % (
+            service_name, remote_idurl, service_info))
     result = signed.Packet(
         commands.RequestService(),
         my_id.getLocalID(),

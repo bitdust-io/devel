@@ -255,35 +255,7 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        self.dht_known_family_info = args[0]
-        if not self.dht_known_family_info:
-            self.local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-            self.dht_known_family_info = {
-                'suppliers': [],
-                'ecc_map': self.local_customer_meta_info.get('ecc_map'),
-                'customer_idurl': self.customer_idurl,
-            }
-        self.dht_new_family_info = self.dht_known_family_info.copy()
-        if self.dht_new_family_info['ecc_map']:
-            total_suppliers = eccmap.GetEccMapSuppliersNumber(self.dht_new_family_info['ecc_map'])
-            if len(self.dht_new_family_info['suppliers']) < total_suppliers:
-                self.dht_new_family_info['suppliers'] += [b'', ] * (total_suppliers - len(self.dht_new_family_info['suppliers']))
-            elif len(self.dht_new_family_info['suppliers']) > total_suppliers:
-                self.dht_new_family_info['suppliers'][:total_suppliers]
-        if self.current_request['command'] == 'family-join':
-            if self.current_request['position']:
-                if self.current_request['position'] > len(self.dht_new_family_info['suppliers']):
-                    self.dht_new_family_info['suppliers'] += [b'', ] * (1 + self.current_request['position'] - len(self.dht_new_family_info['suppliers']))
-                self.dht_new_family_info['suppliers'][self.current_request['position']] = self.current_request['supplier_idurl']
-            else:
-                if self.current_request['supplier_idurl'] not in self.dht_new_family_info['suppliers']:
-                    self.dht_new_family_info['suppliers'].append(self.current_request['supplier_idurl'])
-        elif self.current_request['command'] == 'family-leave':
-            known_position = self.dht_new_family_info['suppliers'].index(self.current_request['supplier_idurl'])
-            if known_position >= 0:
-                self.dht_new_family_info['suppliers'][known_position] = b''
-        if _Debug:
-            lg.out(_DebugLevel, 'family_member.doRebuildFamily dht_new_family_info=%r' % self.dht_new_family_info)
+        self._do_build_new_family_info(args[0])
 
     def doSendContactsToSuppliers(self, *args, **kwargs):
         """
@@ -295,8 +267,8 @@ class FamilyMember(automat.Automat):
             p2p_service.SendContacts(
                 remote_idurl=supplier_idurl,
                 json_payload={
-                    'type': 'suppliers_list',
                     'space': 'family_member',
+                    'type': 'suppliers_list',
                     'customer_idurl': self.customer_idurl,
                     'suppliers_list': self.dht_new_family_info['suppliers'],
                     'ecc_map': self.dht_new_family_info['ecc_map'],
@@ -338,31 +310,7 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        try:
-            suppliers_list = args[0]['suppliers']
-            ecc_map = args[0]['ecc_map']
-            incoming_packet = args[0]['packet']
-        except:
-            lg.exc()
-            return
-        if not self.dht_known_family_info:
-            # current DHT info is not yet known, skip
-            return p2p_service.SendAck(incoming_packet)
-        if self.state in ['DISCONNECTED', 'DHT_READ', ]:
-            # currently this family member is not ready yet, skip
-            return p2p_service.SendAck(incoming_packet)
-        if my_id.getLocalIDURL() not in suppliers_list:
-            # user trying to remove myself from the family!
-            return p2p_service.SendFail(incoming_packet, 'contacts list from remote user does not include my identity')
-        if self.dht_known_family_info['ecc_map'] and ecc_map and self.dht_known_family_info['ecc_map'] != ecc_map:
-            lg.warn('known ecc_map not matching with contacts list received from remote user')
-            # TODO: check this later
-            # return p2p_service.SendFail(incoming_packet, 'known ecc_map not matching with contacts list received from remote user')
-            return p2p_service.SendAck(incoming_packet)
-        if len(suppliers_list) != len(self.dht_known_family_info['suppliers']):
-            lg.warn('known number of suppliers not matching with contacts list received from remote user')
-            return p2p_service.SendFail(incoming_packet, 'known number of suppliers not matching with contacts list received from remote user')
-        return p2p_service.SendAck(incoming_packet)
+        self._do_check_reply_incoming_contacts(args[0])
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -373,6 +321,8 @@ class FamilyMember(automat.Automat):
         self.local_customer_meta_info = None
         delete_family(self.customer_idurl)
         self.destroy()
+
+    #------------------------------------------------------------------------------
 
     def _on_dht_read_success(self, dht_result):
         if dht_result:
@@ -391,3 +341,112 @@ class FamilyMember(automat.Automat):
         lg.err('doDHTWrite FAILED: %s' % err)
         self.dht_known_family_info = None
         self.automat('dht-fail')
+
+    def _do_check_reply_incoming_contacts(self, inp):
+        try:
+            contacts_type = inp['type']
+            incoming_packet = inp['packet']
+        except:
+            lg.exc()
+            return
+
+        if not self.dht_known_family_info:
+            # current DHT info is not yet known, skip
+            return p2p_service.SendAck(incoming_packet)
+
+        if self.state in ['DISCONNECTED', 'DHT_READ', ]:
+            # currently this family member is not ready yet, skip
+            return p2p_service.SendAck(incoming_packet)
+
+        if contacts_type == 'suppliers_list':
+            try:
+                suppliers_list = inp['suppliers']
+                ecc_map = inp['ecc_map']
+            except:
+                lg.exc()
+                return
+            if my_id.getLocalIDURL() not in suppliers_list:
+                # user trying to remove myself from the family!
+                return p2p_service.SendFail(incoming_packet, 'contacts list from remote user does not include my identity')
+            if self.dht_known_family_info['ecc_map'] and ecc_map and self.dht_known_family_info['ecc_map'] != ecc_map:
+                lg.warn('known ecc_map not matching with contacts list received from remote user')
+                # TODO: check this later
+                # return p2p_service.SendFail(incoming_packet, 'known ecc_map not matching with contacts list received from remote user')
+                return p2p_service.SendAck(incoming_packet)
+            if len(suppliers_list) != len(self.dht_known_family_info['suppliers']):
+                lg.warn('known number of suppliers not matching with contacts list received from remote user')
+                return p2p_service.SendFail(incoming_packet, 'known number of suppliers not matching with contacts list received from remote user')
+            return p2p_service.SendAck(incoming_packet)
+
+        elif contacts_type == 'supplier_position':
+            try:
+                supplier_idurl = inp['supplier_idurl']
+                supplier_position = inp['supplier_position']
+                ecc_map = inp['ecc_map']
+            except:
+                lg.exc()
+                return
+            if supplier_idurl != my_id.getLocalIDURL():
+                return p2p_service.SendFail(incoming_packet, 'contacts packet with supplier position not addressed to me')
+            contactsdb.add_customer_meta_info(self.customer_idurl, {
+                'ecc_map': ecc_map,
+                'position': supplier_position,
+            })
+            self.automat('family-join', {
+                'supplier_idurl': my_id.getLocalIDURL(),
+                'ecc_map': ecc_map,
+                'position': supplier_position,
+            })
+            return p2p_service.SendAck(incoming_packet)
+
+        return p2p_service.SendFail(incoming_packet, 'invalid contacts type')
+
+    def _do_build_new_family_info(self, dht_info):
+        self.dht_known_family_info = dht_info
+
+        if not self.dht_known_family_info:
+            self.local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
+            self.dht_known_family_info = {
+                'suppliers': [],
+                'ecc_map': self.local_customer_meta_info.get('ecc_map'),
+                'customer_idurl': self.customer_idurl,
+            }
+
+        self.dht_new_family_info = self.dht_known_family_info.copy()
+
+        if self.dht_new_family_info['ecc_map']:
+            total_suppliers = eccmap.GetEccMapSuppliersNumber(self.dht_new_family_info['ecc_map'])
+            if len(self.dht_new_family_info['suppliers']) < total_suppliers:
+                self.dht_new_family_info['suppliers'] += [b'', ] * (total_suppliers - len(self.dht_new_family_info['suppliers']))
+            elif len(self.dht_new_family_info['suppliers']) > total_suppliers:
+                self.dht_new_family_info['suppliers'][:total_suppliers]
+
+        if self.current_request['command'] == 'family-join':
+            try:
+                _existing_position = self.dht_new_family_info['suppliers'].index(self.current_request['supplier_idurl'])
+            except ValueError:
+                _existing_position = -1
+            if _existing_position >= 0 and self.current_request['position']:
+                self.dht_new_family_info['suppliers'][_existing_position] = b''
+                lg.warn('found my idurl on %d position and will move it on %d position' % (_existing_position, self.current_request['position'], ))
+            if self.current_request['position'] >= 0:
+                if self.current_request['position'] >= len(self.dht_new_family_info['suppliers']):
+                    self.dht_new_family_info['suppliers'] += [b'', ] * (1 + self.current_request['position'] - len(self.dht_new_family_info['suppliers']))
+                self.dht_new_family_info['suppliers'][self.current_request['position']] = self.current_request['supplier_idurl']
+            else:
+                if self.current_request['supplier_idurl'] not in self.dht_new_family_info['suppliers']:
+                    self.dht_new_family_info['suppliers'].append(self.current_request['supplier_idurl'])
+
+        elif self.current_request['command'] == 'family-leave':
+            try:
+                _existing_position = self.dht_new_family_info['suppliers'].index(self.current_request['supplier_idurl'])
+            except ValueError:
+                _existing_position = -1
+            if _existing_position >= 0:
+                self.dht_new_family_info['suppliers'][_existing_position] = b''
+            else:
+                lg.warn('did not found supplier idurl %r in customer family %r' % (
+                    self.current_request['supplier_idurl'], self.customer_idurl, ))
+
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._do_build_new_family_info dht_new_family_info=%r' % self.dht_new_family_info)

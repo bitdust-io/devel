@@ -106,6 +106,21 @@ class EmployerService(LocalService):
         fire_hire.A('restart')
 
     def _on_supplier_modified(self, evt):
+        from p2p import p2p_service
+        from raid import eccmap
+        from userid import my_id
+        if evt.data['new_idurl']:
+            p2p_service.SendContacts(
+                remote_idurl=evt.data['new_idurl'],
+                json_payload={
+                    'space': 'family_member',
+                    'type': 'supplier_position',
+                    'customer_idurl': my_id.getLocalIDURL(),
+                    'ecc_map': eccmap.Current().name,
+                    'supplier_idurl': evt.data['new_idurl'],
+                    'supplier_position': evt.data['position'],
+                },
+            )
         self._do_cleanup_dht_suppliers()
 
     def _on_my_dht_relations_discovered(self, discovered_suppliers_list):

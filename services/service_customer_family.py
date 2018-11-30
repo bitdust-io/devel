@@ -74,7 +74,7 @@ class SupplierRelationsService(LocalService):
             fm.automat('family-join', {
                 'supplier_idurl': my_id.getLocalIDURL(),
                 'ecc_map': local_customer_meta_info.get('ecc_map'),
-                'position': local_customer_meta_info.get('position'),
+                'position': local_customer_meta_info.get('position', -1),
             })
 
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
@@ -106,7 +106,7 @@ class SupplierRelationsService(LocalService):
         fm.automat('family-join', {
             'supplier_idurl': my_id.getLocalIDURL(),
             'ecc_map': evt.data.get('ecc_map'),
-            'position': evt.data.get('position'),
+            'position': evt.data.get('position', -1),
         })
 
     def _on_existing_customer_accepted(self, evt):
@@ -124,7 +124,7 @@ class SupplierRelationsService(LocalService):
         fm.automat('family-join', {
             'supplier_idurl': my_id.getLocalIDURL(),
             'ecc_map': evt.data.get('ecc_map'),
-            'position': evt.data.get('position'),
+            'position': evt.data.get('position', -1),
         })
 
     def _on_existing_customer_terminated(self, evt):
@@ -156,7 +156,9 @@ class SupplierRelationsService(LocalService):
         except:
             lg.warn("invalid json payload")
             return False
-        if contacts_type == 'suppliers_list' and contacts_space == 'family_member':
+        if contacts_space != 'family_member':
+            return False
+        if contacts_type == 'suppliers_list':
             try:
                 customer_idurl = strng.to_bin(json_payload['customer_idurl'])
                 suppliers_list = list(map(strng.to_bin, json_payload['suppliers_list']))
@@ -173,7 +175,32 @@ class SupplierRelationsService(LocalService):
                     newpacket, info, customer_idurl, ))
                 return False
             fm.automat('contacts-received', {
+                'type': contacts_type,
                 'suppliers': suppliers_list,
+                'ecc_map': ecc_map,
+                'packet': newpacket,
+            })
+        elif contacts_type == 'supplier_position':
+            try:
+                customer_idurl = strng.to_bin(json_payload['customer_idurl'])
+                ecc_map = strng.to_text(json_payload['ecc_map'])
+                supplier_idurl = strng.to_bin(json_payload['supplier_idurl'])
+                supplier_position = json_payload['supplier_position']
+            except:
+                lg.warn("invalid json payload")
+                return False
+            if customer_idurl == my_id.getLocalIDURL():
+                lg.warn('received contacts for my own customer family')
+                return False
+            fm = family_member.by_customer_idurl(customer_idurl)
+            if not fm:
+                lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
+                    newpacket, info, customer_idurl, ))
+                return False
+            fm.automat('contacts-received', {
+                'type': contacts_type,
+                'supplier_idurl': supplier_idurl,
+                'supplier_position': supplier_position,
                 'ecc_map': ecc_map,
                 'packet': newpacket,
             })
