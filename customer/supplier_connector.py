@@ -477,6 +477,18 @@ class SupplierConnector(automat.Automat):
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'CONNECTED')
+        if self.family_position is not None:
+            p2p_service.SendContacts(
+                remote_idurl=self.supplier_idurl,
+                json_payload={
+                    'space': 'family_member',
+                    'type': 'supplier_position',
+                    'customer_idurl': my_id.getLocalIDURL(),
+                    'ecc_map': eccmap.Current().name,
+                    'supplier_idurl': self.supplier_idurl,
+                    'supplier_position': self.family_position,
+                },
+            )
 
     def doReportNoService(self, arg):
         """
