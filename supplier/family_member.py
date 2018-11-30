@@ -294,7 +294,7 @@ class FamilyMember(automat.Automat):
                 continue
             p2p_service.SendContacts(
                 remote_idurl=supplier_idurl,
-                payload={
+                json_payload={
                     'type': 'suppliers_list',
                     'space': 'family_member',
                     'customer_idurl': self.customer_idurl,
