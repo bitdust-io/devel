@@ -38,7 +38,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ import os
 import tempfile
 import time
 
-from twisted.internet import task
+from twisted.internet import task  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
