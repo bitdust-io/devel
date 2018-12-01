@@ -194,7 +194,7 @@ class StunServer(automat.Automat):
 #------------------------------------------------------------------------------
 
 def main():
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     lg.set_debug_level(24)
     bpio.init()
     settings.init()

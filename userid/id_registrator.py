@@ -640,7 +640,7 @@ def main():
     bpio.init()
     settings.init()
     lg.set_debug_level(20)
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     if len(sys.argv) > 2:
         args = (sys.argv[1], sys.argv[2])
     else:

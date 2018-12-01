@@ -105,7 +105,7 @@ class CoinsAccountantService(LocalService):
 
     def _on_accountant_node_switched(self, oldstate, newstate, evt, args):
         from logs import lg
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from coins import accountant_node
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             reactor.callLater(10 * 60, accountant_node.A, 'start')

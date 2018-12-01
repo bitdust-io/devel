@@ -38,7 +38,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ import os
 import tempfile
 import time
 
-from twisted.internet import task
+from twisted.internet import task  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -393,5 +393,5 @@ if __name__ == '__main__':
     fd, filename = make('raid')
     os.write(fd, 'TEST FILE')
     os.close(fd)
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.run()

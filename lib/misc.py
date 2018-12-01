@@ -1720,7 +1720,7 @@ if __name__ == '__main__':
     init()
 
     if True:
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
 
         def _progress(x, y):

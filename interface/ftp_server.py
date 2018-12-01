@@ -39,7 +39,7 @@ import time
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet import defer
 from twisted.internet.defer import Deferred, succeed
 

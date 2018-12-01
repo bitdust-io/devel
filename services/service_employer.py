@@ -81,6 +81,18 @@ class EmployerService(LocalService):
         # critical amount of suppliers must be already in the family to have that service running
         return missed_suppliers <= eccmap.Current().CorrectableErrors
 
+    def _do_cleanup_dht_suppliers(self):
+        from logs import lg
+        from services import driver
+        if driver.is_on('service_entangled_dht'):
+            from dht import dht_relations
+            from userid import my_id
+            d = dht_relations.read_customer_suppliers(my_id.getLocalID())
+            d.addCallback(self._on_my_dht_relations_discovered)
+            d.addErrback(self._on_my_dht_relations_failed)
+        else:
+            lg.warn('service service_entangled_dht is OFF')
+
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
         from customer import fire_hire
         from raid import eccmap
@@ -93,28 +105,21 @@ class EmployerService(LocalService):
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 
-    def _do_cleanup_dht_suppliers(self):
-        from logs import lg
-        from services import driver
-        if driver.is_on('service_entangled_dht'):
-            from dht import dht_relations
-            from userid import my_id
-            d = dht_relations.scan_customer_supplier_relations(my_id.getLocalID())
-            d.addCallback(self._on_my_dht_relations_discovered)
-            d.addErrback(self._on_my_dht_relations_failed)
-        else:
-            lg.warn('service service_entangled_dht is OFF')
-
     def _on_supplier_modified(self, evt):
+        if evt.data['new_idurl']:
+            self._do_notify_supplier_position(evt.data['new_idurl'], evt.data['position'], )
         self._do_cleanup_dht_suppliers()
 
     def _on_my_dht_relations_discovered(self, discovered_suppliers_list):
         from p2p import p2p_service
         from contacts import contactsdb
         from logs import lg
+        if not discovered_suppliers_list:
+            lg.warn('not dht records found for my customer family')
+            return
         suppliers_to_be_dismissed = set()
         # clean up old suppliers
-        for idurl in discovered_suppliers_list:
+        for idurl in discovered_suppliers_list['suppliers']:
             if not idurl:
                 continue
             if not contactsdb.is_supplier(idurl):
@@ -127,7 +132,7 @@ class EmployerService(LocalService):
             )
             p2p_service.SendCancelService(
                 remote_idurl=idurl,
-                service_name='service_supplier_relations',
+                service_name='service_customer_family',
             )
         if suppliers_to_be_dismissed:
             lg.info('found %d suppliers to be cleaned and sent CancelService() packets' % len(suppliers_to_be_dismissed))
@@ -135,3 +140,19 @@ class EmployerService(LocalService):
     def _on_my_dht_relations_failed(self, err):
         from logs import lg
         lg.err(err)
+
+    def _do_notify_supplier_position(self, supplier_idurl, supplier_position):
+        from p2p import p2p_service
+        from raid import eccmap
+        from userid import my_id
+        p2p_service.SendContacts(
+            remote_idurl=supplier_idurl,
+            json_payload={
+                'space': 'family_member',
+                'type': 'supplier_position',
+                'customer_idurl': my_id.getLocalIDURL(),
+                'ecc_map': eccmap.Current().name,
+                'supplier_idurl': supplier_idurl,
+                'supplier_position': supplier_position,
+            },
+        )

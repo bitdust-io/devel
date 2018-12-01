@@ -49,8 +49,10 @@ from logs import lg
 
 from lib import nameurl
 from lib import strng
+from lib import jsn
 
 from system import bpio
+from system import local_fs
 
 from main import settings
 
@@ -119,7 +121,7 @@ def shutdown():
 
 def suppliers(customer_idurl=None):
     """
-    Return list of suppliers ID's for given customer.
+    Return list of suppliers ID's for given customer - me or another user.
     """
     global _SuppliersList
     if not customer_idurl:
@@ -590,25 +592,32 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
 
 #------------------------------------------------------------------------------
 
-def save_customers(path=None):
+def save_customers(path=None, save_meta_info=False):
     """
     Write current customers list on the disk, ``path`` is a file path to save.
     """
+    global _CustomersMetaInfo
     if path is None:
         path = settings.CustomerIDsFilename()
     bpio._write_list(path, customers())
+    if save_meta_info:
+        local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo))
 
 
 def load_customers(path=None):
     """
     Load customers list from disk.
     """
+    global _CustomersMetaInfo
     if path is None:
         path = settings.CustomerIDsFilename()
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
     set_customers(lst)
+    _CustomersMetaInfo = jsn.loads(
+        local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}'
+    )
     lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
 
 #------------------------------------------------------------------------------
@@ -620,7 +629,9 @@ def save_correspondents(path=None):
     """
     if path is None:
         path = settings.CorrespondentIDsFilename()
-    bpio._write_list(path, ["%s %s" % t for t in correspondents()])
+    bpio._write_list(path, ["%s %s" % (
+        strng.to_text(t[0]), strng.to_text(t[1]),)
+        for t in correspondents()])
 
 
 def load_correspondents(path=None):
@@ -637,7 +648,7 @@ def load_correspondents(path=None):
         if len(lst[i]) < 2:
             lst[i] = (lst[i][0], '')
         if not lst[i][1].strip():
-            lst[i] = (lst[i][0], nameurl.GetName(lst[i][0]))
+            lst[i] = (strng.to_bin(lst[i][0]), nameurl.GetName(lst[i][0]))
     set_correspondents(lst)
     lg.out(4, 'contactsdb.load_correspondents %d items' % len(lst))
 
@@ -729,8 +740,17 @@ def add_customer_meta_info(customer_idurl, info):
     global _CustomersMetaInfo
     customer_idurl = strng.to_bin(customer_idurl.strip())
     if customer_idurl not in _CustomersMetaInfo:
+        if _Debug:
+            lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   store new meta info for customer %r: %r' % (
+                customer_idurl, info, ))
         _CustomersMetaInfo[customer_idurl] = {}
-    _CustomersMetaInfo[customer_idurl].update(info)
+    else:
+        if _Debug:
+            lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
+                customer_idurl, info, ))
+        _CustomersMetaInfo[customer_idurl].update(info)
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo, indent=2, sort_keys=True, ))
+    return _CustomersMetaInfo
 
 
 def remove_customer_meta_info(customer_idurl):
@@ -739,8 +759,12 @@ def remove_customer_meta_info(customer_idurl):
     global _CustomersMetaInfo
     customer_idurl = strng.to_bin(customer_idurl.strip())
     if customer_idurl not in _CustomersMetaInfo:
+        lg.warn('meta info for customer %r not exist' % customer_idurl)
         return False
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.remove_customer_meta_info   erase existing meta info for customer %r' % customer_idurl)
     _CustomersMetaInfo.pop(customer_idurl)
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo, indent=2, sort_keys=True, ))
     return True
 
 

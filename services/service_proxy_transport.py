@@ -54,7 +54,7 @@ class ProxyTransportService(LocalService):
         return depends
 
     def start(self):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
         from logs import lg
         from transport.proxy import proxy_interface

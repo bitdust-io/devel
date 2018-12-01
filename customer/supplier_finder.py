@@ -53,10 +53,6 @@ from logs import lg
 
 from automats import automat
 
-from services import driver
-
-from main import config
-
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
@@ -229,9 +225,25 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         from customer import supplier_connector
+        from customer import fire_hire
+        from raid import eccmap
+        position = None
+        current_suppliers = list(contactsdb.suppliers())
+        for i in range(len(current_suppliers)):
+            if not current_suppliers[i].strip():
+                position = i
+                break
+            if current_suppliers[i] in fire_hire.A().dismiss_list:
+                position = i
+                break
         sc = supplier_connector.by_idurl(self.target_idurl)
         if not sc:
-            sc = supplier_connector.create(self.target_idurl, customer_idurl=my_id.getLocalID())
+            sc = supplier_connector.create(
+                supplier_idurl=self.target_idurl,
+                customer_idurl=my_id.getLocalID(),
+                family_position=position,
+                ecc_map=eccmap.Current().name,
+            )
         sc.automat('connect')
         sc.set_callback('supplier_finder', self._supplier_connector_state)
 

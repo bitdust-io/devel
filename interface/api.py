@@ -125,7 +125,7 @@ def process_stop():
         {'status': 'OK', 'result': 'stopped'}
     """
     lg.out(4, 'api.process_stop sending event "stop" to the shutdowner() machine')
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
     reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')
     # shutdowner.A('stop', 'exit')
@@ -141,7 +141,7 @@ def process_restart(showgui=False):
 
         {'status': 'OK', 'result': 'restarted'}
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
     if showgui:
         lg.out(4, 'api.process_restart sending event "stop" to the shutdowner() machine')
@@ -1983,8 +1983,8 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     Scans DHT network for key-value pairs related to given customer and
     returns a list of his "possible" suppliers.
     """
-    if not driver.is_on('service_supplier_relations'):
-        return ERROR('service_supplier_relations() is not started')
+    if not driver.is_on('service_customer_family'):
+        return ERROR('service_customer_family() is not started')
     from dht import dht_relations
     from userid import my_id
     from userid import global_id
@@ -1995,7 +1995,8 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
         if global_id.IsValidGlobalUser(customer_idurl):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     ret = Deferred()
-    d = dht_relations.scan_customer_supplier_relations(customer_idurl)
+    # d = dht_relations.scan_customer_supplier_relations(customer_idurl)
+    d = dht_relations.read_customer_suppliers(customer_idurl)
     d.addCallback(lambda result_list: ret.callback(RESULT(result_list)))
     d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
@@ -2798,7 +2799,7 @@ def user_observe(nickname, attempts=3):
         ret.callback(RESULT(results, ))
         return None
 
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callLater(0.05, nickname_observer.observe_many,
         nickname,
         attempts=attempts,
@@ -3083,7 +3084,7 @@ def network_connected(wait_timeout=5):
     """
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from userid import my_id
     from automats import automat
     ret = Deferred()

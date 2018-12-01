@@ -73,7 +73,7 @@ import json
 import logging
 import time
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

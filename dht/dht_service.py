@@ -35,7 +35,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -50,9 +50,9 @@ import json
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
-from twisted.internet.defer import Deferred, fail
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.task import LoopingCall  #@UnresolvedImport
+from twisted.internet.defer import Deferred, fail  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -75,8 +75,6 @@ from logs import lg
 from system import bpio
 
 from main import settings
-
-from dht import known_nodes
 
 from lib import strng
 from lib import utime
@@ -182,6 +180,7 @@ def connect(seed_nodes=[]):
         return x
 
     if not seed_nodes:
+        from dht import known_nodes
         seed_nodes = known_nodes.nodes()
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
@@ -255,7 +254,7 @@ def resolve_hosts(nodes_list):
     result_defer = Deferred()
     result_list = []
     for node_tuple in nodes_list:
-        d = reactor.resolve(node_tuple[0])
+        d = reactor.resolve(node_tuple[0])  #@UndefinedVariable
         d.addCallback(on_host_resolved, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
         d.addErrback(on_host_failed, node_tuple[0], result_list, len(nodes_list), result_defer)
     return result_defer
@@ -274,7 +273,7 @@ def key_to_hash(key):
 
 #------------------------------------------------------------------------------
 
-def make_key(key, index, prefix, version=None):
+def make_key(key, prefix, index=0, version=None):
     global _ProtocolVersion
     if not version:
         version = _ProtocolVersion
@@ -371,8 +370,6 @@ def read_json_response(response, key, result_defer=None):
 
 
 def get_json_value(key):
-    if not node():
-        return fail(Exception('DHT service is off'))
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_json_value key=[%s]' % key)
     ret = Deferred()
@@ -387,7 +384,6 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
         return fail(Exception('DHT service is off'))
     try:
         value = jsn.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'))
-        # value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
@@ -433,8 +429,6 @@ def validate_data(value, key, rules, result_defer=None):
 
 
 def get_valid_data(key, rules={}):
-    if not node():
-        return fail(Exception('DHT service is off'))
     ret = Deferred()
     d = get_json_value(key)
     d.addCallback(validate_data, key, rules, ret)
@@ -642,7 +636,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         datagram, address = self.receiving_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
-        self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)
+        self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)  #@UndefinedVariable
 
     def _send(self, data, rpcID, address):
         count('dht_send')
@@ -660,7 +654,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         data, rpcID, address = self.sending_queue.pop(0)
         KademliaProtocol._send(self, data, rpcID, address)
-        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)
+        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)  #@UndefinedVariable
 
 #------------------------------------------------------------------------------
 
@@ -678,8 +672,7 @@ def parseCommandLine():
 
 
 def main(options=None, args=None):
-    bpio.init()
-    settings.init()
+    from dht import dht_relations
 
     if options is None and args is None:
         (options, args) = parseCommandLine()
@@ -692,8 +685,10 @@ def main(options=None, args=None):
             args = _args
 
     init(options.udpport, options.dhtdb)
+    lg.out(0, 'Init   udpport=%d   dhtdb=%s   node=%r' % (options.udpport, options.dhtdb, node()))
 
     def _go(nodes):
+        lg.out(0, 'Connected: %s' % nodes)
         try:
             if len(args) == 0:
                 lg.out(0, 'known nodes: %r' % nodes)
@@ -702,21 +697,25 @@ def main(options=None, args=None):
             elif len(args) > 0:
                 def _r(x):
                     lg.info(x)
-                    reactor.stop()
+                    reactor.stop()  #@UndefinedVariable
                 cmd = args[0]
                 if cmd == 'get':
                     get_value(args[1]).addBoth(_r)
                 elif cmd == 'set':
                     set_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
-                if cmd == 'get_json':
+                elif cmd == 'get_json':
                     get_json_value(args[1]).addBoth(_r)
                 elif cmd == 'set_json':
                     set_json_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
-                if cmd == 'get_valid_data':
+                elif cmd == 'get_valid_data':
                     get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
                 elif cmd == 'set_valid_data':
                     set_valid_data(args[1], json.loads(args[2]),
                                    expire=int(args[3]), rules=json.loads(args[4])).addBoth(_r)
+                elif cmd == 'read_customer_suppliers':
+                    dht_relations.read_customer_suppliers(args[1]).addBoth(_r)
+                elif cmd == 'write_customer_suppliers':
+                    dht_relations.write_customer_suppliers(args[1], args[2].split(',')).addBoth(_r)
                 elif cmd == 'find':
                     find_node(key_to_hash(args[1])).addBoth(_r)
                 elif cmd == 'ping':
@@ -741,16 +740,21 @@ def main(options=None, args=None):
             seeds.append((dht_node_host, dht_node_port, ))
     
     if not seeds:
+        from dht import known_nodes
         seeds = known_nodes.default_nodes()
 
-    lg.out(0, 'Seed nodes: %r' % seeds)
+    lg.out(0, 'Seed nodes: %s' % seeds)
     
     connect(seeds).addBoth(_go)
-    reactor.run()
+    reactor.run()  #@UndefinedVariable
 
 #------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
-    # _Debug = True
-    main()
+    from dht import dht_service
+    bpio.init()
+    settings.init()
+    lg.set_debug_level(settings.getDebugLevel())
+    dht_service._Debug = True
+    dht_service.main()

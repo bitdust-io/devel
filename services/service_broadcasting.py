@@ -158,7 +158,7 @@ class BroadcastingService(LocalService):
 
     def _on_broadcast_listener_switched(self, oldstate, newstate, evt, args):
         from logs import lg
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcast_listener
         if self.starting_deferred:
             if newstate in ['LISTENING', 'OFFLINE', ]:
@@ -170,7 +170,7 @@ class BroadcastingService(LocalService):
 
     def _on_broadcaster_node_switched(self, oldstate, newstate, evt, args):
         from logs import lg
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcaster_node
         if self.starting_deferred:
             if newstate in ['BROADCASTING', 'OFFLINE', ]:

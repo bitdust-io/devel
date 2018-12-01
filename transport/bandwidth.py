@@ -40,7 +40,7 @@ from __future__ import absolute_import
 import os
 import time
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

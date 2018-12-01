@@ -36,13 +36,13 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
-from twisted.internet.defer import Deferred
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.defer import Deferred  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -278,7 +278,7 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
         supplier_idurl = my_id.getLocalID()
     meta_info = contactsdb.get_customer_meta_info(customer_idurl)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation: customer:%s supplier:%s meta:%s' % (
+        lg.out(_DebugLevel, 'dht_relations.publish_customer_supplier_relation   customer:%s  supplier:%s  meta:%s' % (
             customer_idurl, supplier_idurl, meta_info, ))
     new_data = {
         'customer_idurl': customer_idurl,
@@ -293,13 +293,56 @@ def publish_customer_supplier_relation(customer_idurl, supplier_idurl=None):
 
 def close_customer_supplier_relation(customer_idurl):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_relations.close_customer_supplier_relation: customer:%s' % (
+        lg.out(_DebugLevel, 'dht_relations.close_customer_supplier_relation   customer:%s' % (
             customer_idurl, ))
     return RelationsLookup(customer_idurl, new_data=None, publish=True).start()
 
 
 def scan_customer_supplier_relations(customer_idurl):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_relations.scan_customer_supplier_relations: customer:%s' % (
+        lg.out(_DebugLevel, 'dht_relations.scan_customer_supplier_relations   customer:%s' % (
             customer_idurl, ))
     return RelationsLookup(customer_idurl, new_data=None, publish=False).start()
+
+#------------------------------------------------------------------------------
+
+def read_customer_suppliers(customer_idurl):
+    result = Deferred()
+
+    def _do_verify(dht_value):
+        try:
+            _ecc_map = dht_value['ecc_map']
+            _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
+            _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
+        except:
+            lg.exc()
+            result.callback(None)
+            return None
+        ret = {
+            'suppliers': _suppliers_list,
+            'ecc_map': _ecc_map,
+            'customer_idurl': _customer_idurl,
+        }
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
+        result.callback(ret)
+        return None
+
+    def _on_error(err):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (customer_idurl, err, ))
+        result.callback(None)
+        return None
+
+    d = dht_records.get_suppliers(customer_idurl)
+    d.addCallback(_do_verify)
+    d.addErrback(_on_error)
+    return result
+
+
+def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None):
+    return dht_records.set_suppliers(
+        customer_idurl,
+        ecc_map,
+        suppliers_list,
+    )

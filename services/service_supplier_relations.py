@@ -48,8 +48,11 @@ class SupplierRelationsService(LocalService):
                 'service_entangled_dht',
                 ]
 
+    def installed(self):
+        return False
+
     def start(self):
-        from twisted.internet.task import LoopingCall
+        from twisted.internet.task import LoopingCall  #@UnresolvedImport
         from main import events
         from dht import dht_service
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
@@ -87,18 +90,18 @@ class SupplierRelationsService(LocalService):
             dht_relations.publish_customer_supplier_relation(customer_idurl)
 
     def _on_new_customer_accepted(self, evt):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from dht import dht_relations
         if evt.data.get('allocated_bytes', 0) > 0:
             reactor.callLater(0, dht_relations.publish_customer_supplier_relation, evt.data['idurl'])
 
     def _on_existing_customer_accepted(self, evt):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from dht import dht_relations
         if evt.data.get('allocated_bytes', 0) > 0:
             reactor.callLater(0, dht_relations.publish_customer_supplier_relation, evt.data['idurl'])
 
     def _on_existing_customer_terminated(self, evt):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from dht import dht_relations
         reactor.callLater(0, dht_relations.close_customer_supplier_relation, evt.data['idurl'])

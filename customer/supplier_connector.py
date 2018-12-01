@@ -103,7 +103,8 @@ def connectors(customer_idurl=None):
     return _SuppliersConnectors[customer_idurl]
 
 
-def create(supplier_idurl, customer_idurl=None, needed_bytes=None, key_id=None, queue_subscribe=True, ):
+def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
+           key_id=None, queue_subscribe=True, family_position=None, ecc_map=None):
     """
     """
     if customer_idurl is None:
@@ -115,6 +116,8 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None, key_id=None, 
         needed_bytes=needed_bytes,
         key_id=key_id,
         queue_subscribe=queue_subscribe,
+        family_position=family_position,
+        ecc_map=ecc_map,
     )
     return connectors(customer_idurl)[supplier_idurl]
 
@@ -153,13 +156,16 @@ class SupplierConnector(automat.Automat):
         'timer-20sec': (20.0, ['REQUEST']),
     }
 
-    def __init__(self, supplier_idurl, customer_idurl, needed_bytes, key_id=None, queue_subscribe=True):
+    def __init__(self, supplier_idurl, customer_idurl, needed_bytes,
+                 key_id=None, queue_subscribe=True, family_position=None, ecc_map=None):
         """
         """
         self.supplier_idurl = supplier_idurl
         self.customer_idurl = customer_idurl
         self.needed_bytes = needed_bytes
         self.key_id = key_id
+        self.family_position = family_position
+        self.ecc_map = ecc_map
         self.queue_subscribe = queue_subscribe
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
@@ -359,8 +365,10 @@ class SupplierConnector(automat.Automat):
             )
         if self.key_id:
             service_info['key_id'] = self.key_id
-        if self.customer_idurl == my_id.getLocalIDURL():
-            service_info['ecc_map'] = eccmap.Current().name
+        if self.ecc_map:
+            service_info['ecc_map'] = self.ecc_map
+        if self.family_position:
+            service_info['position'] = self.family_position
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
@@ -469,6 +477,18 @@ class SupplierConnector(automat.Automat):
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'CONNECTED')
+        if self.family_position is not None:
+            p2p_service.SendContacts(
+                remote_idurl=self.supplier_idurl,
+                json_payload={
+                    'space': 'family_member',
+                    'type': 'supplier_position',
+                    'customer_idurl': my_id.getLocalIDURL(),
+                    'ecc_map': eccmap.Current().name,
+                    'supplier_idurl': self.supplier_idurl,
+                    'supplier_position': self.family_position,
+                },
+            )
 
     def doReportNoService(self, arg):
         """

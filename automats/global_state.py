@@ -33,16 +33,6 @@ It also remember the current ``global`` state of the program - this a stats of a
 """
 
 from __future__ import absolute_import
-import os
-import sys
-
-try:
-    from twisted.internet import reactor
-except:
-    sys.exit('Error initializing twisted.internet.reactor in global_state.py')
-
-from twisted.internet.defer import Deferred, maybeDeferred
-from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
 

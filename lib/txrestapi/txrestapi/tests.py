@@ -6,7 +6,7 @@ import base64
 import os.path
 import doctest
 from six import PY2, b, u
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import inlineCallbacks
 from twisted.web.resource import Resource, NoResource
 from twisted.web.server import Request, Site

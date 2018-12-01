@@ -146,7 +146,7 @@ def print_and_stop(result):
     """
     Print text to console and stop the reactor.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     import pprint
     pprint.pprint(result, indent=2,)
     reactor.stop()
@@ -168,7 +168,7 @@ def print_template_and_stop(result, template):
     """
     Print text with json template formatting and stop the reactor.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     print_template(result, template)
     reactor.stop()
 
@@ -177,7 +177,7 @@ def fail_and_stop(err):
     """
     Send error message to STDOUT and stop the reactor.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     try:
         print_text(err.getErrorMessage())
     except:
@@ -197,7 +197,7 @@ def call_rest_http_method(path, method=b'GET', params=None, data=None):
     )
     
     
-#     from twisted.internet import reactor
+#     from twisted.internet import reactor  # @UnresolvedImport
 #     from twisted.web import client, http_headers
 #     from main import settings
 #     # TODO: add body and params handling
@@ -216,7 +216,7 @@ def call_rest_http_method(path, method=b'GET', params=None, data=None):
 
 
 def call_rest_http_method_and_stop(path, method=b'GET', params=None, data=None):
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_rest_http_method(path=path, method=method, params=params, data=data)
     d.addCallback(print_and_stop)
     d.addErrback(fail_and_stop)
@@ -245,7 +245,7 @@ def call_jsonrpc_method(method, *args, **kwargs):
 def call_jsonrpc_method_and_stop(method, *args, **kwargs):
     """
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(print_and_stop)
     d.addErrback(fail_and_stop)
@@ -256,7 +256,7 @@ def call_jsonrpc_method_and_stop(method, *args, **kwargs):
 def call_jsonrpc_method_template_and_stop(method, template, *args, **kwargs):
     """
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(print_template_and_stop, template)
     d.addErrback(fail_and_stop)
@@ -267,7 +267,7 @@ def call_jsonrpc_method_template_and_stop(method, template, *args, **kwargs):
 def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args, **kwargs):
     """
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(lambda result: print_template_and_stop(transform(result), template))
     d.addErrback(fail_and_stop)
@@ -324,7 +324,7 @@ def wait_then_kill(x):
     ``kill()``.
     """
     import time
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from logs import lg
     from system import bpio
     total_count = 0
@@ -411,7 +411,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             print_text('local identity is not valid or not exist')
         return 0
 
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 
     if args[1] in ['server', 'srv', ]:
         def _run_stand_alone_id_server():
@@ -589,7 +589,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
         return call_jsonrpc_method_template_and_stop('key_create', tpl, key_id, key_sz)
 
     if len(args) >= 2 and args[1] in ['copy', 'cp', 'bk', 'backup', 'save', ]:
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
 
         def _on_key(key_json):
             TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
@@ -961,7 +961,7 @@ def cmd_customers(opts, args, overDict):
 
 def cmd_storage(opts, args, overDict):
     if len(args) < 2:
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
 
         def _got_local(result3, result2, result1):
             result = {
@@ -1041,7 +1041,7 @@ def cmd_services(opts, args, overDict):
 
 
 def cmd_message(opts, args, overDict):
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from logs import lg
     #     if len(args) < 2 or args[1] == 'list':
     #         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -1219,7 +1219,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
         def done(x):
             print_text('DONE\n', '')
-            from twisted.internet import reactor
+            from twisted.internet import reactor  # @UnresolvedImport
             if reactor.running and not reactor._stopped:
                 reactor.stop()
 
@@ -1229,12 +1229,12 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 kill()
             except:
                 print_exception()
-            from twisted.internet import reactor
+            from twisted.internet import reactor  # @UnresolvedImport
             from lib import misc
             reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
             reactor.stop()
         try:
-            from twisted.internet import reactor
+            from twisted.internet import reactor  # @UnresolvedImport
             call_jsonrpc_method('restart', ui).addCallbacks(done, failed)
             reactor.run()
         except:
@@ -1277,7 +1277,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         if appList:
             print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
-                from twisted.internet import reactor
+                from twisted.internet import reactor  # @UnresolvedImport
                 call_jsonrpc_method('stop').addBoth(wait_then_kill)
                 reactor.run()
                 return 0

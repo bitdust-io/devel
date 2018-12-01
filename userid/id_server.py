@@ -47,7 +47,7 @@ import os
 import sys
 import struct
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.protocol import ServerFactory
 from twisted.internet.defer import Deferred, DeferredList
 from twisted.protocols import basic

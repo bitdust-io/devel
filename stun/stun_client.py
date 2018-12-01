@@ -509,7 +509,7 @@ def safe_stun(udp_port=None, dht_port=None, ):
 
 
 def test_safe_stun():
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 
     def _cb(res):
         print(res)
@@ -526,7 +526,7 @@ def test_safe_stun():
 #------------------------------------------------------------------------------
 
 def main():
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     settings.init()
     lg.set_debug_level(30)
     dht_port = settings.getDHTPort()

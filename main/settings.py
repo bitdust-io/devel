@@ -908,6 +908,13 @@ def CustomerIDsFilename():
     return os.path.join(MetaDataDir(), "customerids")
 
 
+def CustomersMetaInfoFilename():
+    """
+    Keeps a list of known ECCMaps and other info of my customers.
+    """
+    return os.path.join(MetaDataDir(), "customersmetainfo")
+
+
 def CorrespondentIDsFilename():
     """
     People we get messages from and other stuff not related to backup/restore
@@ -2359,10 +2366,8 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backup-db/enabled', 'true')
 
     config.conf().setDefaultValue('services/backups/enabled', 'true')
-    config.conf().setDefaultValue('services/backups/block-size',
-                                  diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
-    config.conf().setDefaultValue('services/backups/max-block-size',
-                                  diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
+    config.conf().setDefaultValue('services/backups/block-size', diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
+    config.conf().setDefaultValue('services/backups/max-block-size', diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
     config.conf().setDefaultValue('services/backups/max-copies', '2')
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'false')
@@ -2384,15 +2389,16 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/contract-chain/enabled', 'false')
 
     config.conf().setDefaultValue('services/customer/enabled', 'true')
-    config.conf().setDefaultValue('services/customer/needed-space',
-                                  diskspace.MakeStringFromBytes(DefaultNeededBytes()))
+    config.conf().setDefaultValue('services/customer/needed-space', diskspace.MakeStringFromBytes(DefaultNeededBytes()))
     config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
+
+    config.conf().setDefaultValue('services/customer-contracts/enabled', 'false')
+
+    config.conf().setDefaultValue('services/customer-family/enabled', 'true')
 
     config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
 
     config.conf().setDefaultValue('services/customer-support/enabled', 'true')
-
-    config.conf().setDefaultValue('services/customer-contracts/enabled', 'false')
 
     config.conf().setDefaultValue('services/data-motion/enabled', 'true')
 
@@ -2471,12 +2477,11 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/shared-data/enabled', 'true')
 
     config.conf().setDefaultValue('services/supplier/enabled', 'true')
-    config.conf().setDefaultValue('services/supplier/donated-space',
-                                  diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
+    config.conf().setDefaultValue('services/supplier/donated-space', diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
 
     config.conf().setDefaultValue('services/supplier-contracts/enabled', 'false')
 
-    config.conf().setDefaultValue('services/supplier-relations/enabled', 'true')
+    config.conf().setDefaultValue('services/supplier-relations/enabled', 'false')
 
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())

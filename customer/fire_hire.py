@@ -113,7 +113,7 @@ import sys
 import time
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in fire_hire.py')
 
@@ -139,6 +139,8 @@ from p2p import contact_status
 
 from customer import supplier_finder
 from customer import supplier_connector
+
+from raid import eccmap
 
 from userid import my_id
 
@@ -422,12 +424,17 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        for supplier_idurl in contactsdb.suppliers():
+        for pos, supplier_idurl in enumerate(contactsdb.suppliers()):
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
-                sc = supplier_connector.create(supplier_idurl, customer_idurl=my_id.getLocalID())
+                sc = supplier_connector.create(
+                    supplier_idurl=supplier_idurl,
+                    customer_idurl=my_id.getLocalID(),
+                    family_position=pos,
+                    ecc_map=eccmap.Current().name,
+                )
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
             sc.automat('connect')
