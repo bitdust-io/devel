@@ -121,7 +121,7 @@ class FamilyMember(automat.Automat):
         """
         Method to catch the moment when `family_member()` state were changed.
         """
-        if newstate in ['CONNECTED', 'DISCONNECTED', ]:
+        if event != 'instant' and newstate in ['CONNECTED', 'DISCONNECTED', ]:
             self.automat('instant')
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
@@ -129,6 +129,8 @@ class FamilyMember(automat.Automat):
         This method intended to catch the moment when some event was fired in the `family_member()`
         but automat state was not changed.
         """
+        if event != 'instant' and curstate in ['CONNECTED', 'DISCONNECTED', ]:
+            self.automat('instant')
 
     def A(self, event, *args, **kwargs):
         """
