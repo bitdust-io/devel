@@ -161,9 +161,6 @@ class FamilyMember(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'suppliers-ok':
-                self.state = 'DHT_WRITE'
-                self.doDHTWrite(*args, **kwargs)
             elif event == 'suppliers-fail':
                 self.state = 'DISCONNECTED'
                 self.doNotifyDisconnected(*args, **kwargs)
@@ -171,6 +168,12 @@ class FamilyMember(automat.Automat):
                 self.doPush(event, *args, **kwargs)
             elif event == 'contacts-received':
                 self.doCheckReply(*args, **kwargs)
+            elif event == 'suppliers-ok' and not self.isFamilyModified(*args, **kwargs):
+                self.state = 'CONNECTED'
+                self.doNotifyConnected(*args, **kwargs)
+            elif event == 'suppliers-ok' and self.isFamilyModified(*args, **kwargs):
+                self.state = 'DHT_WRITE'
+                self.doDHTWrite(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'shutdown':
@@ -226,11 +229,16 @@ class FamilyMember(automat.Automat):
         """
         return len(self.requests) > 0
 
+    def isFamilyModified(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        return self.transaction is not None
+
     def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.local_customer_meta_info = None
         self.requests = []
         self.current_request = None
         self.known_info = None
@@ -304,11 +312,13 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
+        self.current_request = None
 
     def doNotifyDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
+        self.current_request = None
 
     def doCheckReply(self, *args, **kwargs):
         """
@@ -322,7 +332,8 @@ class FamilyMember(automat.Automat):
         """
         self.requests = []
         self.current_request = None
-        self.local_customer_meta_info = None
+        self.known_info = None
+        self.transaction = None
         delete_family(self.customer_idurl)
         self.destroy()
 
@@ -336,14 +347,17 @@ class FamilyMember(automat.Automat):
 
     def _on_dht_read_failed(self, err):
         lg.err('doDHTRead FAILED: %s' % err)
+        self.known_info = None
         
     def _on_dht_write_success(self, dht_result):
         self.known_info = self.transaction.copy()
+        self.transaction = None
         self.automat('dht-ok', dht_result)
 
     def _on_dht_write_failed(self, err):
         lg.err('doDHTWrite FAILED: %s' % err)
         self.known_info = None
+        self.transaction = None
         self.automat('dht-fail')
 
     def _do_check_reply_incoming_contacts(self, inp):
@@ -419,12 +433,12 @@ class FamilyMember(automat.Automat):
             lg.out(_DebugLevel, 'family_member._do_build_family_transaction  known_info=%s' % self.known_info)
 
         if not self.known_info:
-            self.local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
+            _local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
             self.known_info = {
                 'revision': 1,
                 'publisher': my_id.getLocalIDURL(),
                 'suppliers': [],
-                'ecc_map': self.local_customer_meta_info.get('ecc_map'),
+                'ecc_map': _local_customer_meta_info.get('ecc_map'),
                 'customer_idurl': self.customer_idurl,
             }
             modified = True
