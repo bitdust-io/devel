@@ -36,7 +36,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -314,6 +314,8 @@ def read_customer_suppliers(customer_idurl):
             _ecc_map = dht_value['ecc_map']
             _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
             _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
+            _revision = dht_value.get('revision')
+            _publisher = dht_value.get('publisher')
         except:
             lg.exc()
             result.callback(None)
@@ -322,6 +324,8 @@ def read_customer_suppliers(customer_idurl):
             'suppliers': _suppliers_list,
             'ecc_map': _ecc_map,
             'customer_idurl': _customer_idurl,
+            'revision': _revision,
+            'publisher': _publisher,
         }
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
@@ -340,9 +344,11 @@ def read_customer_suppliers(customer_idurl):
     return result
 
 
-def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None):
+def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher=None, ):
     return dht_records.set_suppliers(
-        customer_idurl,
-        ecc_map,
-        suppliers_list,
+        customer_idurl=customer_idurl,
+        suppliers_list=suppliers_list,
+        ecc_map=ecc_map,
+        revision=revision,
+        publisher=publisher,
     )
