@@ -48,7 +48,7 @@ import sys
 import importlib
 
 from twisted.internet import reactor  # @UnresolvedImport
-from twisted.internet.defer import Deferred, DeferredList, succeed, failure
+from twisted.internet.defer import Deferred, DeferredList, succeed, failure  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -182,14 +182,32 @@ def request(service_name, service_request_payload, request, info):
     svc = services().get(service_name, None)
     if svc is None:
         raise Exception('service %s not found' % service_name)
-    return svc.request(service_request_payload, request, info)
+    try:
+        result = svc.request(service_request_payload, request, info)
+    except RequireSubclass:
+        from p2p import p2p_service
+        lg.warn('service %s can not be requested remotely' % service_name)
+        return p2p_service.SendFail(request, 'refused')
+    except:
+        lg.exc()
+        return None
+    return result
 
 
 def cancel(service_name, service_cancel_payload, request, info):
     svc = services().get(service_name, None)
     if svc is None:
         raise Exception('service %s not found' % service_name)
-    return svc.cancel(service_cancel_payload, request, info)
+    try:
+        result = svc.cancel(service_cancel_payload, request, info)
+    except RequireSubclass:
+        from p2p import p2p_service
+        lg.warn('service %s can not be cancelled remotely' % service_name)
+        return p2p_service.SendFail(request, 'refused')
+    except:
+        lg.exc()
+        return None
+    return result
 
 #------------------------------------------------------------------------------
 
