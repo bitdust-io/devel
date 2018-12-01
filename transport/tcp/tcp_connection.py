@@ -42,7 +42,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ _DebugLevel = 8
 import os
 import time
 
-from twisted.protocols import basic
+from twisted.protocols import basic  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

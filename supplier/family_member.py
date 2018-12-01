@@ -262,19 +262,20 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        for supplier_idurl in self.transaction['suppliers']:
-            if not supplier_idurl:
-                continue
-            p2p_service.SendContacts(
-                remote_idurl=supplier_idurl,
-                json_payload={
-                    'space': 'family_member',
-                    'type': 'suppliers_list',
-                    'customer_idurl': self.customer_idurl,
-                    'suppliers_list': self.transaction['suppliers'],
-                    'ecc_map': self.transaction['ecc_map'],
-                },
-            )
+        if self.transaction:
+            for supplier_idurl in self.transaction['suppliers']:
+                if not supplier_idurl:
+                    continue
+                p2p_service.SendContacts(
+                    remote_idurl=supplier_idurl,
+                    json_payload={
+                        'space': 'family_member',
+                        'type': 'suppliers_list',
+                        'customer_idurl': self.customer_idurl,
+                        'suppliers_list': self.transaction['suppliers'],
+                        'ecc_map': self.transaction['ecc_map'],
+                    },
+                )
         self.automat('suppliers-ok')
 
     def doDHTRead(self, *args, **kwargs):

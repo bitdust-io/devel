@@ -252,11 +252,23 @@ class PacketIn(automat.Automat):
         self.bytes_received = None
         self.status = None
         self.error_message = None
-        self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(
-            self, self.label, 'AT_STARTUP',
-            debug_level=_DebugLevel, log_events=_Debug, publish_events=False, )
+        _counter = get_packets_counter()
         increment_packets_counter()
+        self.label = ''
+        automat.Automat.__init__(
+            self,
+            name='in_%d_%s' % (_counter, self.transfer_id),
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            publish_events=False,
+        )
+
+    def __repr__(self):
+        """
+        Will print something like: "in_4_1315435345[Ack(987654321)](DONE)".
+        """
+        return '%s%s(%s)' % (self.id, self.label, self.state)
 
     def is_timed_out(self):
         return False
@@ -408,7 +420,7 @@ class PacketIn(automat.Automat):
                 lg.exc()
             self.automat('unserialize-failed', None)
             return
-        self.label += '_%s[%s]' % (newpacket.Command, newpacket.PacketID)
+        self.label = '[%s(%s)]' % (newpacket.Command, newpacket.PacketID[:10])
         if _Debug:
             lg.out(_DebugLevel + 2, 'packet_in.doReadAndUnserialize: %s' % newpacket)
         self.automat('valid-inbox-packet', newpacket)
