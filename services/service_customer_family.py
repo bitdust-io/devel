@@ -117,6 +117,9 @@ class SupplierRelationsService(LocalService):
         if customer_idurl == my_id.getLocalIDURL():
             lg.warn('skipping my own identity')
             return
+        if evt.data.get('position') is None:
+            lg.warn('position of supplier in the family is still unclear')
+            return
         fm = family_member.by_customer_idurl(customer_idurl)
         if not fm:
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
@@ -124,7 +127,7 @@ class SupplierRelationsService(LocalService):
         fm.automat('family-join', {
             'supplier_idurl': my_id.getLocalIDURL(),
             'ecc_map': evt.data.get('ecc_map'),
-            'position': evt.data.get('position', -1),
+            'position': evt.data.get('position'),
         })
 
     def _on_existing_customer_terminated(self, evt):

@@ -129,6 +129,8 @@ class FamilyMember(automat.Automat):
         This method intended to catch the moment when some event was fired in the `family_member()`
         but automat state was not changed.
         """
+        if curstate in ['CONNECTED', 'DISCONNECTED', ]:
+            self.automat('instant')
 
     def A(self, event, *args, **kwargs):
         """
@@ -388,15 +390,20 @@ class FamilyMember(automat.Automat):
                 return
             if supplier_idurl != my_id.getLocalIDURL():
                 return p2p_service.SendFail(incoming_packet, 'contacts packet with supplier position not addressed to me')
+            try:
+                _existing_position = self.dht_known_family_info['suppliers'].index(supplier_idurl)
+            except ValueError:
+                _existing_position = -1
             contactsdb.add_customer_meta_info(self.customer_idurl, {
                 'ecc_map': ecc_map,
                 'position': supplier_position,
             })
-            self.automat('family-join', {
-                'supplier_idurl': my_id.getLocalIDURL(),
-                'ecc_map': ecc_map,
-                'position': supplier_position,
-            })
+            if _existing_position >=0 and _existing_position != supplier_position:
+                self.automat('family-join', {
+                    'supplier_idurl': supplier_idurl,
+                    'ecc_map': ecc_map,
+                    'position': supplier_position,
+                })
             return p2p_service.SendAck(incoming_packet)
 
         return p2p_service.SendFail(incoming_packet, 'invalid contacts type')
