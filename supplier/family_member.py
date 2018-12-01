@@ -129,8 +129,6 @@ class FamilyMember(automat.Automat):
         This method intended to catch the moment when some event was fired in the `family_member()`
         but automat state was not changed.
         """
-        if curstate in ['CONNECTED', 'DISCONNECTED', ]:
-            self.automat('instant')
 
     def A(self, event, *args, **kwargs):
         """
