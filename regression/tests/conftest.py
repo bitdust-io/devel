@@ -289,7 +289,7 @@ def global_wrapper():
 
     print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
 
-    stop_all_nodes()
+    # stop_all_nodes()
 
     print('\nFinished. All operations completed in %5.3f seconds\n' % (time.time() - _begin))
 

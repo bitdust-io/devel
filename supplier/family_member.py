@@ -511,9 +511,6 @@ class FamilyMember(automat.Automat):
         elif self.current_request['command'] == 'family-refresh':
             modified = False
 
-        if _Debug:
-            lg.out(_DebugLevel, '    modified=%s' % modified)
-
         if not modified:
             self.transaction = None
         else:
@@ -521,4 +518,4 @@ class FamilyMember(automat.Automat):
             self.transaction['publisher'] = my_id.getLocalIDURL()
 
         if _Debug:
-            lg.out(_DebugLevel, '    transaction=%r' % self.transaction)
+            lg.out(_DebugLevel, 'family_member._do_build_family_transaction   modified=%s  transaction=%r' % (modified, self.transaction, ))

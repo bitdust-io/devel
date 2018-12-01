@@ -316,6 +316,7 @@ def read_customer_suppliers(customer_idurl):
             _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
             _revision = dht_value.get('revision')
             _publisher = dht_value.get('publisher')
+            _timestamp = dht_value.get('timestamp')
         except:
             lg.exc()
             result.callback(None)
@@ -326,6 +327,7 @@ def read_customer_suppliers(customer_idurl):
             'customer_idurl': _customer_idurl,
             'revision': _revision,
             'publisher': _publisher,
+            'timestamp': _timestamp,
         }
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
