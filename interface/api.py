@@ -2007,9 +2007,8 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
         if global_id.IsValidGlobalUser(customer_idurl):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     ret = Deferred()
-    # d = dht_relations.scan_customer_supplier_relations(customer_idurl)
     d = dht_relations.read_customer_suppliers(customer_idurl)
-    d.addCallback(lambda result_list: ret.callback(RESULT(result_list)))
+    d.addCallback(lambda result: ret.callback(RESULT(result)))
     d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
 
