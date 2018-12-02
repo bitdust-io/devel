@@ -804,7 +804,7 @@ class ProxyReceiver(automat.Automat):
         # self.automat('router-disconnected')
 
     def _on_router_session_disconnected(self, oldstate, newstate, event_string, args):
-        lg.warn('router session disconnected: %s->%s' % (oldstate, newstate))
+        lg.warn('router session disconnected: %s->%s' % (oldstate, newstate, ))
         self.automat('router-disconnected')
 
 #------------------------------------------------------------------------------

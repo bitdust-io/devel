@@ -43,14 +43,14 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import os
 import time
 
-from twisted.protocols import basic
+from twisted.protocols import basic  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -365,7 +365,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         from transport.tcp import tcp_node
-        # lg.out(18, 'tcp_connection.doDestroyMe %s' % str(self))
         self.destroy()
         if self.peer_address in tcp_node.opened_connections():
             tcp_node.opened_connections()[self.peer_address].remove(self)
@@ -379,6 +378,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.peer_external_address = None
         self.peer_idurl = None
         self.outboxQueue = []
+
+    #------------------------------------------------------------------------------
 
     def getTransportAddress(self):
         peer = self.transport.getPeer()

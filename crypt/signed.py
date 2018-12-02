@@ -138,7 +138,7 @@ class Packet(object):
                     nameurl.GetName(self.OwnerID),
                     nameurl.GetName(self.CreatorID),
                     nameurl.GetName(self.RemoteID))
-        return 'signed{ %s }' % args
+        return 'signed{%s}' % args
 
     def Sign(self):
         """

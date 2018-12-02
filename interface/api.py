@@ -1983,8 +1983,8 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     Scans DHT network for key-value pairs related to given customer and
     returns a list of his "possible" suppliers.
     """
-    if not driver.is_on('service_customer_family'):
-        return ERROR('service_customer_family() is not started')
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
     from dht import dht_relations
     from userid import my_id
     from userid import global_id

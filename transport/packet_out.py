@@ -348,6 +348,15 @@ class PacketOut(automat.Automat):
         for command, cb in callbacks.items():
             self.set_callback(command, cb)
 
+    def __repr__(self):
+        """
+        Will print something like: "out_123_alice[Data(9999999999)](SENDING)".
+        """
+        packet_label = '?'
+        if self.outpacket:
+            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:10], )
+        return '%s[%s](%s)' % (self.id, packet_label, self.state)
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the

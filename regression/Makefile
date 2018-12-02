@@ -29,6 +29,9 @@ $(RUN_TEST_2): $(BUILD)
 	$(MAKE) NAMESPACE="namespace2" _run
 	@touch $@
 
+build:
+	docker-compose up -d --build --force-recreate --remove-orphans
+
 test_all: $(RUN_ALL)
 	$(MAKE) COMMAND="python -u -m pytest /app/tests/ -v -s" _test_all
 
@@ -52,6 +55,11 @@ clean_2:
 
 clean_unused_images:
 	docker images | grep '<none>' | awk '{ print $3 }' | xargs docker rmi --force
+
+logs:
+	@rm -rf .logs
+	@mkdir .logs
+	@for node in "identity-server" "stun_1" "stun_2" "dht_seed_1" "dht_seed_2" "supplier_1" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2"; do docker-compose exec $$node sh -c "cat /root/.bitdust/logs/main.log" > ".logs/$$node.main.log"; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/automats.log" > .logs/$$node.automats.log; echo $$node; done
 
 _test:
 	docker-compose -p ${NAMESPACE} exec -T tester sh -c "${COMMAND}"

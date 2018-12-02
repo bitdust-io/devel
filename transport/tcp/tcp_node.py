@@ -47,17 +47,15 @@ _DebugLevel = 8
 #------------------------------------------------------------------------------
 
 import sys
-import optparse
-import six
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in tcp_node.py')
 
-from twisted.internet import protocol
-from twisted.internet.defer import Deferred
-from twisted.internet.error import CannotListenError
+from twisted.internet import protocol  # @UnresolvedImport
+from twisted.internet.defer import Deferred  # @UnresolvedImport
+from twisted.internet.error import CannotListenError  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
