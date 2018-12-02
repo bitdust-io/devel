@@ -29,6 +29,9 @@ $(RUN_TEST_2): $(BUILD)
 	$(MAKE) NAMESPACE="namespace2" _run
 	@touch $@
 
+build:
+	docker-compose up -d --build --force-recreate --remove-orphans
+
 test_all: $(RUN_ALL)
 	$(MAKE) COMMAND="python -u -m pytest /app/tests/ -v -s" _test_all
 

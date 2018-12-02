@@ -352,7 +352,10 @@ class PacketOut(automat.Automat):
         """
         Will print something like: "out_123_alice[Data(9999999999)](SENDING)".
         """
-        return '%s[%s:%s](%s)' % (self.id, self.outpacket.Command, self.outpacket.PacketID[:10], self.state)
+        packet_label = '?'
+        if self.outpacket:
+            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:10], )
+        return '%s[%s](%s)' % (self.id, packet_label, self.state)
 
     def init(self):
         """
