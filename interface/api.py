@@ -1870,6 +1870,18 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
+        if not supplier_idurl:
+            r = {
+                'position': pos,
+                'idurl': '',
+                'global_id': '',
+                'supplier_state': None,
+                'connected': None,
+                'contact_status': None,
+                'contact_state': None,
+            }
+            results.append(r)
+            continue
         r = {
             'position': pos,
             'idurl': supplier_idurl,
@@ -2023,6 +2035,16 @@ def customers_list(verbose=False):
     from userid import global_id
     results = []
     for pos, customer_idurl in enumerate(contactsdb.customers()):
+        if not customer_idurl:
+            r = {
+                'position': pos,
+                'global_id': '',
+                'idurl': '',
+                'contact_status': None,
+                'contact_state': None,
+            }
+            results.append(r)
+            continue
         r = {
             'position': pos,
             'global_id': global_id.UrlToGlobalID(customer_idurl),

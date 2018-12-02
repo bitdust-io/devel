@@ -280,7 +280,7 @@ class PrivateMessage(object):
             _recipient = dct['r']
             _sender = dct['s']
             _encrypted_session_key = dct['k']
-            _encrypted_body = dct['b']
+            _encrypted_body = dct['p']
             message_obj = PrivateMessage(
                 recipient_global_id=_recipient,
                 sender=_sender,
