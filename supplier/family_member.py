@@ -428,12 +428,12 @@ class FamilyMember(automat.Automat):
         modified = False
         expected_suppliers_count = None
         self.known_info = dht_info
+        _local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
 
         if _Debug:
             lg.out(_DebugLevel, 'family_member._do_build_family_transaction  known_info=%s' % self.known_info)
 
         if not self.known_info:
-            _local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
             self.known_info = {
                 'revision': 1,
                 'publisher': my_id.getLocalIDURL(),
@@ -456,6 +456,8 @@ class FamilyMember(automat.Automat):
             elif len(self.transaction['suppliers']) > expected_suppliers_count:
                 self.transaction['suppliers'] = self.transaction['suppliers'][:expected_suppliers_count]
                 modified = True
+        else:
+            self.transaction['ecc_map'] = _local_customer_meta_info.get('ecc_map')
 
         if self.current_request['command'] == 'family-join':
             if self.transaction['ecc_map'] and self.current_request['ecc_map']:
