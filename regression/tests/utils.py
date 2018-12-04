@@ -1,6 +1,13 @@
 import subprocess
 import json
 
+#------------------------------------------------------------------------------
+
+_SSHTunnels = {}
+_NodeTunnelPort = {} 
+_NextSSHTunnelPort = 10000
+
+#------------------------------------------------------------------------------
 
 def run_ssh_command_and_wait(host, cmd):
     if host in [None, '', b'', 'localhost', ]:
@@ -37,3 +44,48 @@ def run_ssh_curl_and_wait(host, url, body=None, method='GET', max_time=10, *args
         return None
     print('    returned %d bytes JSON data' % len(output))
     return json_data
+
+
+def open_tunnel(node):
+    global _SSHTunnels
+    global _NodeTunnelPort
+    global _NextSSHTunnelPort
+    local_port = _NextSSHTunnelPort
+    ssh_proc = open_ssh_port_forwarding(node, port1=local_port, port2=8180)
+    _SSHTunnels[node] = ssh_proc
+    _NodeTunnelPort[node] = local_port
+    _NextSSHTunnelPort += 1
+    print('open_tunnel [%s] on port %d with %s\n' % (node, local_port, ssh_proc, ))
+
+
+def close_tunnel(node):
+    global _SSHTunnels
+    if node not in _SSHTunnels:
+        assert False, 'ssh tunnel process for that node was not found'
+    close_ssh_port_forwarding(node, _SSHTunnels[node])
+    print('close_tunnel [%s] OK\n' % node)
+
+
+def open_ssh_port_forwarding(host, port1, port2):
+    cmd_args = ['ssh', '-4', '-o', 'StrictHostKeyChecking=no', '-p', '22', '-N', '-L', '%d:localhost:%d' % (port1, port2, ), 'root@%s' % host, ]
+    print('\n[%s] %s' % (host, ' '.join(cmd_args), ))
+    ssh_proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, shell=False)
+    return ssh_proc
+
+
+def close_ssh_port_forwarding(node, ssh_proc):
+    print('\n[%s] closing %s' % (node, ssh_proc))
+    ssh_proc.kill()
+    return True
+
+
+def close_all_tunnels():
+    global _SSHTunnels
+    for node in _SSHTunnels.keys():
+        close_tunnel(node)
+
+
+def tunnel_port(node):
+    global _NodeTunnelPort
+    return _NodeTunnelPort[node]
+

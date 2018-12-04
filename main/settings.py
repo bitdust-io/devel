@@ -2222,8 +2222,10 @@ def setBackupMaxBlockSize(block_size):
 
 def getPrivateKeySize():
     """
-    Return Private Key size from settings, but typically Private Key is
-    generated only once during install stage.
+    Returns your preferred Private Key size from settings.
+    Your Master Private Key is generated only once during install stage.
+    Other Private Keys also will be generated if necessary:
+    for customer-supplier interactions, for private messages, for blockchain service, etc.
     """
     return config.conf().getInt('personal/private-key-size')
 
