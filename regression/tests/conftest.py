@@ -1,9 +1,8 @@
 import pytest
 import time
-import json
 import requests
 
-from .utils import run_ssh_command_and_wait, run_ssh_curl_and_wait, open_tunnel, close_all_tunnels, tunnel_port
+from .utils import run_ssh_command_and_wait, open_tunnel, close_all_tunnels, tunnel_url
 
 #------------------------------------------------------------------------------
 
@@ -17,12 +16,16 @@ def health_check(node):
     while True:
         if count > 5:
             assert False, 'node %r is not healthy after 5 seconds' % node
-        response = requests.get('http://localhost:%d/process/health/v1' % tunnel_port(node))
-        if response.status_code == 200:
+        try:
+            response = requests.get(tunnel_url(node, 'process/health/v1'))
+        except Exception as exc:
+            print('[%s] retry %d   GET:process/health/v1  :  %s' % (node, count, exc, ))
+            response = None
+        if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
         time.sleep(1)
         count += 1
-    print('health_check [%s] : OK' % node)
+    print('health_check [%s] : OK\n' % node)
 
 
 def create_identity(node, identity_name):
@@ -30,23 +33,19 @@ def create_identity(node, identity_name):
     while True:
         if count > 10:
             assert False, 'node %s failed to create identity after 10 retries' % node
-        identity_create = run_ssh_curl_and_wait(
-            host=node,
-            url='localhost:8180/identity/create/v1',
-            body=json.dumps({
-                'username': identity_name,
-            }),
-            method='POST',
+        response = requests.post(
+            url=tunnel_url(node, 'identity/create/v1'),
+            json={'username': identity_name, },
         )
-        if not identity_create or (identity_create['status'] == 'ERROR' and identity_create['errors'][0] == 'network connection error'):
-            count += 1
-            print('retry %d to create identity %s' % (count, identity_name, ))
-            continue
-        if identity_create['status'] == 'OK':
-            print('\n' + identity_create['result'][0]['xml'] + '\n')
+        if response.json()['status'] == 'OK':
+            print('\n' + response.json()['result'][0]['xml'] + '\n')
             break
-        assert False, 'bad response from /identity/create/v1'
-    print('create_identity [%s] with name %s : OK' % (node, identity_name, ))
+        if not response.status_code == 200 or (response.json()['status'] == 'ERROR' and response.json()['errors'][0] == 'network connection error'):
+            count += 1
+            print('[%s] retry %d   POST:identity/create/v1  username=%s     network connection error' % (node, count, identity_name, ))
+            continue
+        assert False, '[%s] bad response from /identity/create/v1' % node
+    print('create_identity [%s] with name %s : OK\n' % (node, identity_name, ))
 
 
 def connect_network(node):
@@ -54,16 +53,13 @@ def connect_network(node):
     while True:
         if count > 5:
             assert False, 'node %s failed to connect to the network after 5 retries' % node
-        network_connected = run_ssh_curl_and_wait(
-            host=node,
-            url='localhost:8180/network/connected/v1?wait_timeout=1',
-        )
-        if network_connected and network_connected['status'] == 'OK':
+        response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
+        if response.json()['status'] == 'OK':
             break
         count += 1
-        print('retry %d network connect at %s' % (count, node, ))
+        print('[%s] retry %d   GET:network/connected/v1' % (node, count, ))
         time.sleep(1)
-    print('connect_network [%s] : OK' % node)
+    print('connect_network [%s] : OK\n' % node)
 
 #------------------------------------------------------------------------------
 
@@ -96,8 +92,8 @@ def start_identity_server(node):
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-server/host %s' % node)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-server/enabled true')[0].strip())
     # start BitDust daemon
-    open_tunnel(node)
     start_daemon(node)
+    open_tunnel(node)
     health_check(node)
     print('\nSTARTED IDENTITY SERVER [%s]\n' % node)
 

@@ -1,5 +1,5 @@
 
-from ..utils import run_ssh_curl_and_wait
+from ..utils import tunnel_url
 
 
 def test_customer_1_enough_suppliers():

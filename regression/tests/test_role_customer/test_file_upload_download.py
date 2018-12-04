@@ -3,8 +3,9 @@ import os
 import json
 import base64
 import hashlib
+import requests
 
-from ..utils import run_ssh_curl_and_wait, run_ssh_command_and_wait
+from ..utils import tunnel_url, run_ssh_command_and_wait, run_ssh_curl_and_wait
 
 
 def get_hash(path):
@@ -43,15 +44,11 @@ def test_customer_1_upload_download_file_with_master():
 
     assert not os.path.exists(directory_dowloaded_file)
 
-    response = run_ssh_curl_and_wait(
-        host='customer_1',
-        method='POST',
-        url='localhost:8180/file/create/v1',
-        body=json.dumps({
-            'remote_path': remote_path,
-        }),
+    response = requests.post(
+        url=tunnel_url('customer_1', 'file/create/v1'),
+        json={'remote_path': remote_path,}
     )
-    assert response['status'] == 'OK', response
+    assert response.json()['status'] == 'OK', response.json()
 
     response = run_ssh_curl_and_wait(
         host='customer_1',
