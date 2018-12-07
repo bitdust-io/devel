@@ -57,13 +57,14 @@ class CustomerService(LocalService):
         from contacts import contactsdb
         from crypt import my_keys
         from customer import supplier_connector
-        from userid import my_id
         from logs import lg
+        from main import settings
         from raid import eccmap
+        from userid import my_id
         customer_key_id = my_id.getGlobalID(key_alias='customer')
         if not my_keys.is_key_registered(customer_key_id):
             lg.warn('customer key was not found, generate new key: %s' % customer_key_id)
-            my_keys.generate_key(customer_key_id)
+            my_keys.generate_key(customer_key_id, key_size=settings.getPrivateKeySize())
         for pos, supplier_idurl in enumerate(contactsdb.suppliers()):
             if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getLocalID()):
                 supplier_connector.create(

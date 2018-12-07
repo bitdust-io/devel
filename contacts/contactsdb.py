@@ -557,7 +557,9 @@ def save_suppliers(path=None, customer_idurl=None):
             global_id.UrlToGlobalID(customer_idurl),
             'supplierids',
         )
-    bpio._write_list(path, suppliers(customer_idurl=customer_idurl))
+    lst = suppliers(customer_idurl=customer_idurl)
+    lst = list(map(strng.to_text, lst))
+    bpio._write_list(path, lst)
     return True
 
 def load_suppliers(path=None, customer_idurl=None, all_customers=False):
@@ -574,6 +576,7 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
             if lst is None:
                 lg.warn('did not found suppliers ids at %s' % path)
                 continue
+            lst = list(map(strng.to_bin, lst))
             set_suppliers(lst, customer_idurl=global_id.GlobalUserToIDURL(customer_id))
             lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
         return True
@@ -585,6 +588,7 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
+    lst = list(map(strng.to_bin, lst))
     set_suppliers(lst)
     lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
     return True
@@ -599,7 +603,9 @@ def save_customers(path=None, save_meta_info=False):
     global _CustomersMetaInfo
     if path is None:
         path = settings.CustomerIDsFilename()
-    bpio._write_list(path, customers())
+    lst = customers()
+    lst = list(map(strng.to_text, lst))
+    bpio._write_list(path, lst)
     if save_meta_info:
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo))
 
@@ -614,6 +620,7 @@ def load_customers(path=None):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
+    lst = list(map(strng.to_bin, lst))
     set_customers(lst)
     _CustomersMetaInfo = jsn.loads(
         local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}'
@@ -629,9 +636,8 @@ def save_correspondents(path=None):
     """
     if path is None:
         path = settings.CorrespondentIDsFilename()
-    bpio._write_list(path, ["%s %s" % (
-        strng.to_text(t[0]), strng.to_text(t[1]),)
-        for t in correspondents()])
+    lst = ["%s %s" % (strng.to_text(t[0]), strng.to_text(t[1]),) for t in correspondents()]
+    bpio._write_list(path, lst)
 
 
 def load_correspondents(path=None):

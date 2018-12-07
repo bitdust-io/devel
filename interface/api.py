@@ -551,7 +551,7 @@ def keys_list(sort=False, include_private=False):
     return RESULT(r)
 
 
-def key_create(key_alias, key_size=2048, include_private=False):
+def key_create(key_alias, key_size=None, include_private=False):
     """
     Generate new Private Key and add it to the list of known keys with given `key_id`.
 
@@ -572,6 +572,7 @@ def key_create(key_alias, key_size=2048, include_private=False):
         }]}
     """
     from crypt import my_keys
+    from main import settings
     from userid import my_id
     key_alias = str(key_alias)
     key_alias = key_alias.strip().lower()
@@ -580,6 +581,8 @@ def key_create(key_alias, key_size=2048, include_private=False):
         return ERROR('key "%s" is not valid' % key_id)
     if my_keys.is_key_registered(key_id):
         return ERROR('key "%s" already exist' % key_id)
+    if not key_size:
+        key_size = settings.getPrivateKeySize()
     lg.out(4, 'api.key_create id=%s, size=%s' % (key_id, key_size))
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:

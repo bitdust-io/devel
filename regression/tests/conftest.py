@@ -1,8 +1,8 @@
 import pytest
 import time
-import json
+import requests
 
-from .utils import run_ssh_command_and_wait, run_ssh_curl_and_wait
+from .utils import run_ssh_command_and_wait, open_tunnel, close_all_tunnels, tunnel_url
 
 #------------------------------------------------------------------------------
 
@@ -16,15 +16,16 @@ def health_check(node):
     while True:
         if count > 5:
             assert False, 'node %r is not healthy after 5 seconds' % node
-        process_health = run_ssh_curl_and_wait(
-            host=node,
-            url='localhost:8180/process/health/v1',
-        )
-        if process_health and process_health['status'] == 'OK':
+        try:
+            response = requests.get(tunnel_url(node, 'process/health/v1'))
+        except Exception as exc:
+            print('[%s] retry %d   GET:process/health/v1  :  %s' % (node, count, exc, ))
+            response = None
+        if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
         time.sleep(1)
         count += 1
-    print('health_check [%s] : OK' % node)
+    print('health_check [%s] : OK\n' % node)
 
 
 def create_identity(node, identity_name):
@@ -32,23 +33,19 @@ def create_identity(node, identity_name):
     while True:
         if count > 10:
             assert False, 'node %s failed to create identity after 10 retries' % node
-        identity_create = run_ssh_curl_and_wait(
-            host=node,
-            url='localhost:8180/identity/create/v1',
-            body=json.dumps({
-                'username': identity_name,
-            }),
-            method='POST',
+        response = requests.post(
+            url=tunnel_url(node, 'identity/create/v1'),
+            json={'username': identity_name, },
         )
-        if not identity_create or (identity_create['status'] == 'ERROR' and identity_create['errors'][0] == 'network connection error'):
-            count += 1
-            print('retry %d to create identity %s' % (count, identity_name, ))
-            continue
-        if identity_create['status'] == 'OK':
-            print('\n' + identity_create['result'][0]['xml'] + '\n')
+        if response.json()['status'] == 'OK':
+            print('\n' + response.json()['result'][0]['xml'] + '\n')
             break
-        assert False, 'bad response from /identity/create/v1'
-    print('create_identity [%s] with name %s : OK' % (node, identity_name, ))
+        if not response.status_code == 200 or (response.json()['status'] == 'ERROR' and response.json()['errors'][0] == 'network connection error'):
+            count += 1
+            print('[%s] retry %d   POST:identity/create/v1  username=%s     network connection error' % (node, count, identity_name, ))
+            continue
+        assert False, '[%s] bad response from /identity/create/v1' % node
+    print('create_identity [%s] with name %s : OK\n' % (node, identity_name, ))
 
 
 def connect_network(node):
@@ -56,16 +53,13 @@ def connect_network(node):
     while True:
         if count > 5:
             assert False, 'node %s failed to connect to the network after 5 retries' % node
-        network_connected = run_ssh_curl_and_wait(
-            host=node,
-            url='localhost:8180/network/connected/v1?wait_timeout=1',
-        )
-        if network_connected and network_connected['status'] == 'OK':
+        response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
+        if response.json()['status'] == 'OK':
             break
         count += 1
-        print('retry %d network connect at %s' % (count, node, ))
+        print('[%s] retry %d   GET:network/connected/v1' % (node, count, ))
         time.sleep(1)
-    print('connect_network [%s] : OK' % node)
+    print('connect_network [%s] : OK\n' % node)
 
 #------------------------------------------------------------------------------
 
@@ -81,6 +75,8 @@ def start_daemon(node):
 
 def start_identity_server(node):
     print('\nNEW IDENTITY SERVER at [%s]\n' % node)
+    # use short key to run tests faster
+    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
@@ -97,12 +93,15 @@ def start_identity_server(node):
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-server/enabled true')[0].strip())
     # start BitDust daemon
     start_daemon(node)
+    open_tunnel(node)
     health_check(node)
     print('\nSTARTED IDENTITY SERVER [%s]\n' % node)
 
 
 def start_dht_seed(node):
     print('\nNEW DHT SEED at [%s]\n' % node)
+    # use short key to run tests faster
+    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # enable DHT service
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
@@ -118,6 +117,8 @@ def start_dht_seed(node):
 
 def start_stun_server(node):
     print('\nNEW STUN SERVER at [%s]\n' % node)
+    # use short key to run tests faster
+    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
@@ -132,6 +133,7 @@ def start_stun_server(node):
     # enable Stun server
     print(run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')[0].strip())
     # start BitDust daemon
+    open_tunnel(node)
     start_daemon(node)
     health_check(node)
     print('\nSTARTED STUN SERVER [%s]\n' % node)
@@ -139,6 +141,8 @@ def start_stun_server(node):
 
 def start_proxy_server(node, identity_name):
     print('\nNEW PROXY SERVER %r at [%s]\n' % (identity_name, node, ))
+    # use short key to run tests faster
+    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
@@ -153,6 +157,7 @@ def start_proxy_server(node, identity_name):
     # enable ProxyServer service
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled true')[0].strip())
     # start BitDust daemon and create new identity for proxy server
+    open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -162,6 +167,8 @@ def start_proxy_server(node, identity_name):
 
 def start_supplier(node, identity_name):
     print('\nNEW SUPPLIER %r at [%s]\n' % (identity_name, node, ))
+    # use short key to run tests faster
+    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')[0].strip())
@@ -177,6 +184,7 @@ def start_supplier(node, identity_name):
     # enable supplier service
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')[0].strip())
     # start BitDust daemon and create new identity for supplier
+    open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -186,6 +194,8 @@ def start_supplier(node, identity_name):
 
 def start_customer(node, identity_name):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
+    # use short key to run tests faster
+    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # disable unwanted services
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')[0].strip())
@@ -202,6 +212,7 @@ def start_customer(node, identity_name):
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number 2')[0].strip())
     # start BitDust daemon and create new identity for supplier
+    open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -286,6 +297,8 @@ def global_wrapper():
     print('\nStarting all roles and execute tests')
  
     yield
+
+    close_all_tunnels()
 
     print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
 
