@@ -529,7 +529,7 @@ def delete_node_data(key):
 class DHTNode(DistributedTupleSpacePeer):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        super(DHTNode, self).__init__(udpPort, dataStore, routingTable, networkProtocol)
+        super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=None, )
         self.data = {}
         self.expire_task = LoopingCall(self.expire)
         self._counter = count

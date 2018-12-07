@@ -32,7 +32,7 @@ class DistributedTupleSpacePeer(EntangledNode):
     participating in a distributed Tuple Space (aka Object Space)
     """
 
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
+    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
         EntangledNode.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
         self._blockingGetRequests = {}
         self._blockingReadRequests = {}
