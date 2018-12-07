@@ -695,7 +695,7 @@ class Automat(object):
         """
         Compare conditions and execute state changed callback methods.
         """
-        for key, cb_list in (self._state_callbacks.items() + self._callbacks_before_die.items()):
+        for key, cb_list in list(self._state_callbacks.items()) + list(self._callbacks_before_die.items()):
             old, new = key
             catched = False
             if old is None and new is None:
