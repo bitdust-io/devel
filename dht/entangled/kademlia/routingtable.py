@@ -26,7 +26,7 @@ from . import kbucket
 from .protocol import TimeoutError
 
 
-_Debug = True
+_Debug = False
 
 
 class RoutingTable(object):

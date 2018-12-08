@@ -54,7 +54,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -76,8 +76,6 @@ from logs import lg
 from system import bpio
 
 from automats import automat
-
-from main import settings
 
 from raid.worker import Manager
 
