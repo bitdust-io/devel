@@ -33,7 +33,7 @@ from six.moves import range
 from io import open
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):
@@ -773,6 +773,7 @@ class Node(object):
         }
         now = int(time.time())
         self._dataStore.setItem(b'nodeState', state, now, now, self.id)
+        if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
 
     def _joinNetworkFailed(self, err):
         if _Debug: print('failed joining DHT network')
