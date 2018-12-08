@@ -667,6 +667,9 @@ def parseCommandLine():
     oparser.set_default('dhtdb', settings.DHTDBFile())
     oparser.add_option("-s", "--seeds", dest="seeds", help="specify list of DHT seed nodes")
     oparser.set_default('seeds', '')
+    oparser.add_option("-w", "--wait", dest="delayed", type="int", help="wait N seconds before join the network")
+    oparser.set_default('delayed', 0)
+    
     (options, args) = oparser.parse_args()
     return options, args
 
@@ -744,6 +747,11 @@ def main(options=None, args=None):
         seeds = known_nodes.default_nodes()
 
     lg.out(0, 'Seed nodes: %s' % seeds)
+
+    if options.delayed:
+        lg.out(0, 'Wait %d seconds before join the network' % options.delayed)
+        import time
+        time.sleep(options.delayed)
     
     connect(seeds).addBoth(_go)
     reactor.run()  #@UndefinedVariable

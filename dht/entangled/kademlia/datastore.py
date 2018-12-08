@@ -361,6 +361,7 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
         if createDB:
             self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds)')
         self._cursor = self._db.cursor()
+        
 
     def expireSeconds(self, key):
         """
@@ -423,4 +424,19 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
         except:
             return None
         return result
+
+    def getAllItems(self):
+        self._cursor.execute("SELECT * FROM data")
+        rows = self._cursor.fetchall()
+        items = []
+        for row in rows:
+            items.append(dict(
+                key=row[0],
+                value=str(row[1]),
+                lastPublished=row[2],
+                originallyPublished=row[3],
+                originalPublisherID=row[4],
+                expireSeconds=row[5],
+            ))
+        return items
 
