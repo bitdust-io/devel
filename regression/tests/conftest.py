@@ -211,6 +211,8 @@ def start_customer(node, identity_name):
     # enable customer service and prepare tests
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number 2')[0].strip())
+    # create randomized file to test file upload/download
+    print(run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt'))
     # start BitDust daemon and create new identity for supplier
     open_tunnel(node)
     start_daemon(node)
