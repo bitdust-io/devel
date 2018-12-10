@@ -54,7 +54,7 @@ def test_customer_1_upload_download_file_with_master():
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
 
-    for i in range(1):
+    for i in range(20):
         response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),
             json={'remote_path': remote_path, 'destination_folder': download_volume, 'wait_result': 'true'}
