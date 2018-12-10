@@ -263,6 +263,7 @@ def stop_all_nodes():
     nodes = [
         'customer_1',
         'customer_2',
+        'customer_3',
         'supplier_1',
         'supplier_2',
         'supplier_3',
