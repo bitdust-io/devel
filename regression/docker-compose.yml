@@ -249,7 +249,7 @@ services:
       - "stun_2"
       - "identity-server:is"
     volumes:
-      - customer_3/customer_3
+      - customer_3:/customer_3
 
 
 
