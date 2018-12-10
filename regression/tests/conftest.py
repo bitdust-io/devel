@@ -98,13 +98,15 @@ def start_identity_server(node):
     print('\nSTARTED IDENTITY SERVER [%s]\n' % node)
 
 
-def start_dht_seed(node):
+def start_dht_seed(node, wait_seconds):
     print('\nNEW DHT SEED at [%s]\n' % node)
     # use short key to run tests faster
     print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # enable DHT service
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # wait few seconds to give time to other DHT seeds to start
+    time.sleep(wait_seconds)
     # starting DHT node in daemon mode
     bitdust_dhtseed_daemon = run_ssh_command_and_wait(node, 'bitdust dhtseed daemon')
     print(bitdust_dhtseed_daemon[0])
@@ -211,6 +213,8 @@ def start_customer(node, identity_name):
     # enable customer service and prepare tests
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number 2')[0].strip())
+    # create randomized file to test file upload/download
+    print(run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt'))
     # start BitDust daemon and create new identity for supplier
     open_tunnel(node)
     start_daemon(node)
@@ -243,8 +247,9 @@ def start_all_seeds():
  
     print('\nStarting Seed nodes\n') 
 
-    for dhtseed in seeds['dht-seeds']:
-        start_dht_seed(dhtseed)
+    for number, dhtseed in enumerate(seeds['dht-seeds']):
+        # first seed to be started immediately, all other seeds must wait a bit before start
+        start_dht_seed(dhtseed, wait_seconds=(10 if number > 0 else 0))
 
     for idsrv in seeds['identity-servers']:
         start_identity_server(idsrv)
@@ -263,6 +268,7 @@ def stop_all_nodes():
     nodes = [
         'customer_1',
         'customer_2',
+        'customer_3',
         'supplier_1',
         'supplier_2',
         'supplier_3',

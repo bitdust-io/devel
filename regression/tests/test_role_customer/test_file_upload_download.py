@@ -21,55 +21,47 @@ def get_hash(path):
     return sha.hexdigest()
 
 
+
 def test_customer_1_upload_download_file_with_master():
-    # TODO: fix the test
-    assert True
-    return True
+    shared_volume = '/customer_1'
+    origin_filename = 'file_customer_1.txt'
 
-    directory_local_file = '/file_customer_1.txt'
-
-    sample_data = base64.b32encode(os.urandom(20)).decode()
-    run_ssh_command_and_wait('customer_1', 'python -c "open(\'%s\',\'w\').write(\'%s\')"' % (
-        directory_local_file, sample_data, ))
+    directory_local_file = '%s/%s' % (shared_volume, origin_filename)
 
     key_id = 'master$customer_1@is_8084'
     virtual_file = 'virtual_file.txt'
 
     remote_path = '%s:%s' % (key_id, virtual_file)
 
-    download_volume = '/tmp/'
+    download_volume = '/customer_1'
 
     directory_dowloaded_file = '%s/%s' % (download_volume, virtual_file)
 
     assert not os.path.exists(directory_dowloaded_file)
 
+    for i in range(5):
+        response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
+        assert response.status_code == 200
+        if response.json()['status'] == 'OK':
+            break
+        # assert response.json()['status'] == 'OK', response.json()
+    else:
+        assert response.json()['status'] == 'OK', response.json()
+
     response = requests.post(
-        url=tunnel_url('customer_1', 'file/create/v1'),
-        json={
-            'remote_path': remote_path,
-        },
-    )
-    assert response.json()['status'] == 'OK', response.json()
-
-    response = requests.get(
         url=tunnel_url('customer_1', 'file/upload/start/v1'),
-        json={
-            'remote_path': remote_path,
-            'local_path': directory_local_file,
-            'wait_result': 'true',
-        },
+        json={'remote_path': remote_path, 'local_path': directory_local_file, 'wait_result': 'true'}
     )
+    assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
 
-    for _ in range(100):
-        response = requests.get(
+    for i in range(100):
+        response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),
-            json={
-                'remote_path': remote_path,
-                'destination_folder': download_volume,
-                'wait_result': 'true',
-            },
+            json={'remote_path': remote_path, 'destination_folder': download_volume, 'wait_result': 'true'}
         )
+        assert response.status_code == 200
+
         if response.json()['status'] == 'OK':
             break
 
@@ -77,6 +69,7 @@ def test_customer_1_upload_download_file_with_master():
             print('file is not ready for download: retry again in 1 sec')
             time.sleep(1)
         else:
+            print(response.json())
             assert False, response.json()
 
     else:

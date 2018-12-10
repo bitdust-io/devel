@@ -216,6 +216,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+    volumes:
+      - customer_1:/customer_1
 
   customer_2:
     build:
@@ -230,6 +232,24 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+    volumes:
+      - customer_2:/customer_2
+
+  customer_3:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/customer
+    ports:
+      - "22253:22"
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "stun_1"
+      - "stun_2"
+      - "identity-server:is"
+    volumes:
+      - customer_3:/customer_3
 
 
 
@@ -253,8 +273,20 @@ services:
       - "supplier_8"
       - "customer_1"
       - "customer_2"
+      - "customer_3"
     image: bitdust/tester
     cap_add:
       - SYS_PTRACE
     privileged: true
+    volumes:
+      - customer_1:/customer_1
+      - customer_2:/customer_2
+      - customer_3:/customer_3
 
+
+
+
+volumes:
+  customer_1:
+  customer_2:
+  customer_3:
