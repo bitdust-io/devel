@@ -1,10 +1,9 @@
 import time
 import os
-import base64
 import hashlib
 import requests
 
-from ..utils import tunnel_url, run_ssh_command_and_wait
+from ..utils import tunnel_url
 
 
 def get_hash(path):
@@ -39,7 +38,7 @@ def test_customer_1_upload_download_file_with_master():
 
     assert not os.path.exists(directory_dowloaded_file)
 
-    for i in range(5):
+    for i in range(1):
         response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
         assert response.status_code == 200
         if response.json()['status'] == 'OK':
@@ -55,7 +54,7 @@ def test_customer_1_upload_download_file_with_master():
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
 
-    for i in range(100):
+    for i in range(1):
         response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),
             json={'remote_path': remote_path, 'destination_folder': download_volume, 'wait_result': 'true'}
