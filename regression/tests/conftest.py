@@ -340,4 +340,8 @@ def init_customer_1(global_wrapper):
 def init_customer_2(global_wrapper):
     return start_customer('customer_2', 'customer_2')
 
+@pytest.fixture(scope='session', autouse=True)
+def init_customer_3(global_wrapper):
+    return start_customer('customer_3', 'customer_3')
+
 #------------------------------------------------------------------------------
