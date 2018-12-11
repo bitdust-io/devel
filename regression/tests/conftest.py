@@ -194,7 +194,7 @@ def start_supplier(node, identity_name):
     print('\nSTARTED SUPPLIER [%s]\n' % node)
 
 
-def start_customer(node, identity_name):
+def start_customer(node, identity_name, join_network=True):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
@@ -219,8 +219,9 @@ def start_customer(node, identity_name):
     open_tunnel(node)
     start_daemon(node)
     health_check(node)
-    create_identity(node, identity_name)
-    connect_network(node)
+    if join_network:
+        create_identity(node, identity_name)
+        connect_network(node)
     print('\nSTARTED CUSTOMER [%s]\n' % node)
 
 #------------------------------------------------------------------------------
@@ -342,6 +343,6 @@ def init_customer_2(global_wrapper):
 
 @pytest.fixture(scope='session', autouse=True)
 def init_customer_3(global_wrapper):
-    return start_customer('customer_3', 'customer_3')
+    return start_customer('customer_3', 'customer_3', join_network=False)
 
 #------------------------------------------------------------------------------

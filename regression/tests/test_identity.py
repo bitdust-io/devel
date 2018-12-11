@@ -38,4 +38,4 @@ def test_customer_2_backup_restore():
             break
         time.sleep(1)
     else:
-        assert False
+        assert False, 'customer_3 was not able to join the network after identity recover'
