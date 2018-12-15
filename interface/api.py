@@ -2664,7 +2664,7 @@ def queue_list():
 
 #------------------------------------------------------------------------------
 
-def user_ping(idurl_or_global_id, timeout=10):
+def user_ping(idurl_or_global_id, timeout=10, retries=2):
     """
     Sends Identity packet to remote peer and wait for Ack packet to check connection status.
     The "ping" command performs following actions:
@@ -2684,7 +2684,7 @@ def user_ping(idurl_or_global_id, timeout=10):
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
     ret = Deferred()
-    d = propagate.PingContact(idurl, int(timeout))
+    d = propagate.PingContact(idurl, timeout=int(timeout), retries=int(retries))
     d.addCallback(
         lambda resp: ret.callback(
             OK(str(resp))))

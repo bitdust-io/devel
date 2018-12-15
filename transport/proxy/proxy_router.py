@@ -562,7 +562,7 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s' % newpacket)
             lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
             lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
-            lg.out(_DebugLevel, '    routes=%s' % list(self.routes.keys()))
+            lg.out(_DebugLevel, '    routes=%s' % self.routes)
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first
@@ -670,8 +670,9 @@ class ProxyRouter(automat.Automat):
             return False
         if RemoteID not in list(self.routes.keys()):
             return False
-        for ack in self.acks:
-            if PacketID == ack.PacketID:
+        for ack in list(self.acks):
+            if PacketID == ack.PacketID and RemoteID == ack.RemoteID:
+                self.acks.remove(ack)
                 self.automat('request-route-ack-sent', (RemoteID, pkt_out, item, status, size, error_message))
         return True
 
@@ -722,6 +723,7 @@ class ProxyRouter(automat.Automat):
         except:
             dct = {}
         dct[user_id] = self.routes[user_id]
+        # TODO: switch to lib.serialize
         newsrc = pprint.pformat(json.dumps(dct, indent=0))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:

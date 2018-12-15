@@ -485,8 +485,8 @@ def PingContact(idurl, timeout=30, retries=2):
     ping_result = Deferred()
 
     def _ack_handler(response, info, attempts):
-        lg.out(_DebugLevel, "propagate.PingContact [%s] SUCCESS after %d attempts : %s from %s " % (
-            nameurl.GetName(idurl), attempts, response, info, ))
+        lg.out(_DebugLevel, "propagate.PingContact [%s] SUCCESS after %d attempts : %s from %s://%s" % (
+            nameurl.GetName(idurl), attempts, response, info.proto, info.host, ))
         if not ping_result.called:
             ping_result.callback((response, info, ))
         return None
