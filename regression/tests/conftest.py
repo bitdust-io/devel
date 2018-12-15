@@ -216,7 +216,7 @@ def start_supplier(node, identity_name):
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable supplier service
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')[0].strip())
     # start BitDust daemon and create new identity for supplier
@@ -243,7 +243,7 @@ def start_customer(node, identity_name, join_network=True):
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable customer service and prepare tests
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number 2')[0].strip())
