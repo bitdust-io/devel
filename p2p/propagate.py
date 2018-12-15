@@ -263,15 +263,14 @@ def SendServers():
     for idurl in LocalIdentity.sources:
         # sources for out identity are servers we need to send to
         protocol, host, port, filename = nameurl.UrlParse(idurl)
-        # if host == settings.IdentityServerName():
-        #     host = '67.207.147.183'
+        # TODO: rebuild identity-server logic to be able to send my identity via HTTP POST instead of TCP and
+        # get rid of second TCP port at all 
         webport, tcpport = known_servers.by_host().get(host, (
+            # by default use "expected" port numbers
             settings.IdentityWebPort(), settings.IdentityServerPort()))
-        # srvhost = '%s:%d' % (host, int(tcpport))
         dlist.append(tcp_node.send(
             sendfilename, net_misc.normalize_address((host, int(tcpport), )), 'Identity', keep_alive=False,
         ))
-        # dlist.append(gateway.send_file_single('tcp', srvhost, sendfilename, 'Identity'))
     dl = DeferredList(dlist, consumeErrors=True)
     return dl
 

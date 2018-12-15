@@ -322,14 +322,16 @@ def start_all_nodes():
 def clean_all_nodes(skip_checks=False):
     for node in ALL_NODES:
         stop_daemon(node, skip_checks=skip_checks)
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')[0].strip()
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')[0].strip()
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')[0].strip()
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')[0].strip()
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')[0].strip()
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')[0].strip()
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')[0].strip()
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
+    run_ssh_command_and_wait('customer_1', 'rm -rf /customer_1/*')
+    run_ssh_command_and_wait('customer_2', 'rm -rf /customer_2/*')
     print('All nodes cleaned')
  
  
