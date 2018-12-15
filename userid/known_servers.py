@@ -43,7 +43,7 @@ def default_nodes():
     from logs import lg
     networks_json = serialization.BytesToDict(
         local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')))
-    my_network = local_fs.ReadTextFile(settings.NetworkFileName())
+    my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
     if not my_network:
         my_network = 'main'
     if my_network not in networks_json:

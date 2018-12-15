@@ -87,6 +87,8 @@ def connect_network(node):
 #------------------------------------------------------------------------------
 
 def start_daemon(node):
+    run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
+    run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
     bitdust_daemon = run_ssh_command_and_wait(node, 'bitdust daemon')
     print('\n' + bitdust_daemon[0].strip())
     assert (
