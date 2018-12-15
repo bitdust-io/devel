@@ -64,6 +64,10 @@ def close_ssh_port_forwarding(node, ssh_proc):
     return True
 
 
+def open_all_tunnels(nodes):
+    for node in nodes:
+        open_tunnel(node)
+
 def close_all_tunnels():
     global _SSHTunnels
     for node in list(_SSHTunnels.keys()):

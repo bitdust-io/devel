@@ -2,12 +2,35 @@ import pytest
 import time
 import requests
 
-from .utils import run_ssh_command_and_wait, open_tunnel, close_all_tunnels, tunnel_url
+from .utils import run_ssh_command_and_wait, open_all_tunnels, close_all_tunnels, tunnel_url
 
 #------------------------------------------------------------------------------
 
-DHT_SEED_NODES = 'is:14441, stun_1:14441, stun_2:14441, dht_seed_1:14441, dht_seed_2:14441'
+DHT_SEED_NODES = 'dht_seed_1:14441, dht_seed_2:14441, stun_1:14441, stun_2:14441'
+
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
+
+# TODO: keep this list up to date with docker-compose links
+ALL_NODES = [
+    'customer_1',
+    'customer_2',
+    'customer_3',
+    'supplier_1',
+    'supplier_2',
+    'supplier_3',
+    'supplier_4',
+    'supplier_5',
+    'supplier_6',
+    'supplier_7',
+    'supplier_8',
+    'proxy_server_1',
+    'proxy_server_2',
+    'stun_1',
+    'stun_2',
+    'is',
+    'dht_seed_1',
+    'dht_seed_2',
+]
 
 #------------------------------------------------------------------------------
 
@@ -73,6 +96,17 @@ def start_daemon(node):
     print('start_daemon [%s] OK\n' % node)
 
 
+def stop_daemon(node, skip_checks=False):
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
+    print('\n' + bitdust_stop[0].strip())
+    if not skip_checks:
+        assert (
+            bitdust_stop[0].strip().startswith('found main BitDust process:') and
+            bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+        )
+    print('stop_daemon [%s] OK\n' % node)
+
+
 def start_identity_server(node):
     print('\nNEW IDENTITY SERVER at [%s]\n' % node)
     # use short key to run tests faster
@@ -93,7 +127,7 @@ def start_identity_server(node):
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-server/enabled true')[0].strip())
     # start BitDust daemon
     start_daemon(node)
-    open_tunnel(node)
+    # open_tunnel(node)
     health_check(node)
     print('\nSTARTED IDENTITY SERVER [%s]\n' % node)
 
@@ -135,7 +169,7 @@ def start_stun_server(node):
     # enable Stun server
     print(run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')[0].strip())
     # start BitDust daemon
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     print('\nSTARTED STUN SERVER [%s]\n' % node)
@@ -159,7 +193,7 @@ def start_proxy_server(node, identity_name):
     # enable ProxyServer service
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled true')[0].strip())
     # start BitDust daemon and create new identity for proxy server
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -186,7 +220,7 @@ def start_supplier(node, identity_name):
     # enable supplier service
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')[0].strip())
     # start BitDust daemon and create new identity for supplier
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -194,7 +228,7 @@ def start_supplier(node, identity_name):
     print('\nSTARTED SUPPLIER [%s]\n' % node)
 
 
-def start_customer(node, identity_name):
+def start_customer(node, identity_name, join_network=True):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
@@ -216,18 +250,19 @@ def start_customer(node, identity_name):
     # create randomized file to test file upload/download
     print(run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt'))
     # start BitDust daemon and create new identity for supplier
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
-    create_identity(node, identity_name)
-    connect_network(node)
+    if join_network:
+        create_identity(node, identity_name)
+        connect_network(node)
     print('\nSTARTED CUSTOMER [%s]\n' % node)
 
 #------------------------------------------------------------------------------
 
-def start_all_seeds():
+def start_all_nodes():
     # TODO: keep up to date with docker-compose links
-    seeds = {
+    nodes = {
         'dht-seeds': [
             'dht_seed_1',
             'dht_seed_2',
@@ -243,52 +278,64 @@ def start_all_seeds():
             'proxy_server_1',
             'proxy_server_2',
         ],
+        'suppliers': [
+            'supplier_1',
+            'supplier_2',
+            'supplier_3',
+            'supplier_4',
+            'supplier_5',
+            'supplier_6',
+            'supplier_7',
+            'supplier_8',
+        ],
+        'customers': [
+            {'name': 'customer_1', 'join_network': True, },
+            {'name': 'customer_2', 'join_network': True, },
+            {'name': 'customer_3', 'join_network': False, },
+        ],
     }
  
-    print('\nStarting Seed nodes\n') 
+    print('\nStarting nodes\n') 
 
-    for number, dhtseed in enumerate(seeds['dht-seeds']):
+    for number, dhtseed in enumerate(nodes['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        start_dht_seed(dhtseed, wait_seconds=(10 if number > 0 else 0))
+        start_dht_seed(node=dhtseed, wait_seconds=(10 if number > 0 else 0))
 
-    for idsrv in seeds['identity-servers']:
-        start_identity_server(idsrv)
+    for idsrv in nodes['identity-servers']:
+        start_identity_server(node=idsrv)
 
-    for stunsrv in seeds['stun-servers']:
-        start_stun_server(stunsrv)
+    for stunsrv in nodes['stun-servers']:
+        start_stun_server(node=stunsrv)
 
-    for proxysrv in seeds['proxy-servers']:
-        start_proxy_server(proxysrv, proxysrv)
+    for proxysrv in nodes['proxy-servers']:
+        start_proxy_server(node=proxysrv, identity_name=proxysrv)
 
-    print('\nAll Seed nodes ready\n')
+    for supplier in nodes['suppliers']:
+        start_supplier(node=supplier, identity_name=supplier)
+
+    for customer in nodes['customers']:
+        start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
+
+    print('\nAll nodes ready\n')
+
+
+def clean_all_nodes(skip_checks=False):
+    for node in ALL_NODES:
+        stop_daemon(node, skip_checks=skip_checks)
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')[0].strip()
+    print('All nodes cleaned')
  
  
-def stop_all_nodes():
-    # TODO: keep up to date with docker-compose links
-    nodes = [
-        'customer_1',
-        'customer_2',
-        'customer_3',
-        'supplier_1',
-        'supplier_2',
-        'supplier_3',
-        'supplier_4',
-        'supplier_5',
-        'supplier_6',
-        'supplier_7',
-        'supplier_8',
-        'proxy_server_1',
-        'proxy_server_2',
-        'stun_1',
-        'stun_2',
-        'is',
-        'dht_seed_1',
-        'dht_seed_2',
-    ]
-    for node in nodes:
+def kill_all_nodes():
+    for node in ALL_NODES:
         print('Shutdown %s' % node)
-        bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
-        print(bitdust_stop[0].strip())
         run_ssh_command_and_wait(node, 'pkill -e sshd')
     print('All nodes stopped')
 
@@ -298,46 +345,19 @@ def stop_all_nodes():
 def global_wrapper():
     _begin = time.time()
 
-    start_all_seeds()
+    open_all_tunnels(ALL_NODES)
+    clean_all_nodes(skip_checks=True)
+    start_all_nodes()
     
     print('\nStarting all roles and execute tests')
  
     yield
 
+    clean_all_nodes()
     close_all_tunnels()
 
     print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
 
-    # stop_all_nodes()
+    # kill_all_nodes()
 
     print('\nFinished. All operations completed in %5.3f seconds\n' % (time.time() - _begin))
-
-#------------------------------------------------------------------------------
-
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_1(global_wrapper):
-    return start_supplier('supplier_1', 'supplier_1')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_2(global_wrapper):
-    return start_supplier('supplier_2', 'supplier_2')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_3(global_wrapper):
-    return start_supplier('supplier_3', 'supplier_3')
- 
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_4(global_wrapper):
-    return start_supplier('supplier_4', 'supplier_4')
-
-#------------------------------------------------------------------------------
-
-@pytest.fixture(scope='session', autouse=True)
-def init_customer_1(global_wrapper):
-    return start_customer('customer_1', 'customer_1')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_customer_2(global_wrapper):
-    return start_customer('customer_2', 'customer_2')
-
-#------------------------------------------------------------------------------

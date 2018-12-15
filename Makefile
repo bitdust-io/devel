@@ -100,6 +100,31 @@ test_raid: $(VENV_TEST)
 test_regression:
 	make -C regression/ test
 
+regression_test:
+	make -C regression/ test
+
+regression_rerun:
+	make -C regression/ test_all
+
+regression_logs:
+    # TODO: keep up to date with docker-compose links
+	@echo "### [identity-server] #########################################################################"
+	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/main.log
+	@echo "### [stun_1] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec stun_1 cat /root/.bitdust/logs/main.log
+	@echo "### [stun_2] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec stun_2 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_1] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_1 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_2] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_2 cat /root/.bitdust/logs/main.log
+	@echo "### [customer_1] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_1 cat /root/.bitdust/logs/main.log
+	@echo "### [customer_2] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_2 cat /root/.bitdust/logs/main.log
+	@echo "### [customer_3] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_3 cat /root/.bitdust/logs/main.log
+
 lint: venv_install
 	@$(TOX) -e lint
 	@$(TOX) -e isort-check
