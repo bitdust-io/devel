@@ -230,6 +230,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             tcp_node.opened_connections()[self.peer_address] = []
         tcp_node.opened_connections()[self.peer_address].append(self)
         tcp_node.increase_connections_counter()
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.doInit with %s, total connections to that address : %d' % (
+                self.peer_address, len(tcp_node.opened_connections()[self.peer_address]), ))
 
     def doCloseOutgoing(self, arg):
         """
@@ -251,7 +254,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             peeraddress, peeridurl = payload.split(b' ')
             peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
-            peeraddress = (peerip, peerport)
+            peeraddress = net_misc.normalize_address(peerip, peerport)
         except:
             return
         # self.peer_external_address = (self.peer_external_address[0], peerport)
@@ -261,12 +264,14 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             tcp_node.opened_connections()[self.peer_address].remove(self)
             if len(tcp_node.opened_connections()[self.peer_address]) == 0:
                 tcp_node.opened_connections().pop(self.peer_address)
+            old_address = self.peer_address
             self.peer_address = self.peer_external_address
             if self.peer_address not in tcp_node.opened_connections():
                 tcp_node.opened_connections()[self.peer_address] = []
             tcp_node.opened_connections()[self.peer_address].append(self)
-            lg.out(6, '%s : external peer address changed to %s' % (
-                self, self.peer_address))
+            if _Debug:
+                lg.out(_DebugLevel, '%s : external peer address changed from %s to %s' % (
+                    self, old_address, self.peer_address))
         # lg.out(18, 'tcp_connection.doReadHello from %s' % (self.peer_idurl))
 
     def doReadWazap(self, arg):
@@ -458,7 +463,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def failed_outbox_queue_item(self, filename, description='', error_message=''):
         from transport.tcp import tcp_interface
-        lg.out(6, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
         try:
             tcp_interface.interface_cancelled_file_sending(
                 self.getAddress(), filename, 0, description, error_message).addErrback(lambda err: lg.exc(err))
