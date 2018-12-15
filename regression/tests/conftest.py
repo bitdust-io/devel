@@ -2,7 +2,7 @@ import pytest
 import time
 import requests
 
-from .utils import run_ssh_command_and_wait, open_tunnel, close_all_tunnels, tunnel_url
+from .utils import run_ssh_command_and_wait, open_all_tunnels, close_all_tunnels, tunnel_url
 
 #------------------------------------------------------------------------------
 
@@ -96,13 +96,14 @@ def start_daemon(node):
     print('start_daemon [%s] OK\n' % node)
 
 
-def stop_daemon(node):
+def stop_daemon(node, skip_checks=False):
     bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
     print('\n' + bitdust_stop[0].strip())
-    assert (
-        bitdust_stop[0].strip().startswith('found main BitDust process:') and
-        bitdust_stop[0].strip().sendswith('BitDust process finished correctly')
-    )
+    if not skip_checks:
+        assert (
+            bitdust_stop[0].strip().startswith('found main BitDust process:') and
+            bitdust_stop[0].strip().sendswith('BitDust process finished correctly')
+        )
     print('stop_daemon [%s] OK\n' % node)
 
 
@@ -126,7 +127,7 @@ def start_identity_server(node):
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-server/enabled true')[0].strip())
     # start BitDust daemon
     start_daemon(node)
-    open_tunnel(node)
+    # open_tunnel(node)
     health_check(node)
     print('\nSTARTED IDENTITY SERVER [%s]\n' % node)
 
@@ -168,7 +169,7 @@ def start_stun_server(node):
     # enable Stun server
     print(run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')[0].strip())
     # start BitDust daemon
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     print('\nSTARTED STUN SERVER [%s]\n' % node)
@@ -192,7 +193,7 @@ def start_proxy_server(node, identity_name):
     # enable ProxyServer service
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled true')[0].strip())
     # start BitDust daemon and create new identity for proxy server
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -219,7 +220,7 @@ def start_supplier(node, identity_name):
     # enable supplier service
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')[0].strip())
     # start BitDust daemon and create new identity for supplier
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -249,7 +250,7 @@ def start_customer(node, identity_name, join_network=True):
     # create randomized file to test file upload/download
     print(run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt'))
     # start BitDust daemon and create new identity for supplier
-    open_tunnel(node)
+    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     if join_network:
@@ -318,11 +319,17 @@ def start_all_nodes():
     print('\nAll nodes ready\n')
 
 
-def clean_all_nodes():
+def clean_all_nodes(skip_checks=False):
     for node in ALL_NODES:
-        stop_daemon(node)
-        bitdust_stop = run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust')
-        print(bitdust_stop[0].strip())
+        stop_daemon(node, skip_checks=skip_checks)
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')[0].strip())
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')[0].strip())
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')[0].strip())
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')[0].strip())
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')[0].strip())
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')[0].strip())
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')[0].strip())
+        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')[0].strip())
     print('All nodes cleaned')
  
  
@@ -338,17 +345,19 @@ def kill_all_nodes():
 def global_wrapper():
     _begin = time.time()
 
+    open_all_tunnels(ALL_NODES)
+    clean_all_nodes(skip_checks=True)
     start_all_nodes()
     
     print('\nStarting all roles and execute tests')
  
     yield
 
+    clean_all_nodes()
     close_all_tunnels()
 
     print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
 
-    clean_all_nodes()
     # kill_all_nodes()
 
     print('\nFinished. All operations completed in %5.3f seconds\n' % (time.time() - _begin))

@@ -103,6 +103,9 @@ test_regression:
 regression_test:
 	make -C regression/ test
 
+regression_rerun:
+	make -C regression/ test_all
+
 regression_logs:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
