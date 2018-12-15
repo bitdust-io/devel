@@ -250,7 +250,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         from transport.tcp import tcp_node
         try:
-            command, payload = arg
+            _, payload = arg
             peeraddress, peeridurl = payload.split(b' ')
             peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
