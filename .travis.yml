@@ -23,4 +23,7 @@ before_install:
 
 script:
   - make test
-  - make test_regression
+  - make regression_test
+
+after_failure:
+  - make regression_logs

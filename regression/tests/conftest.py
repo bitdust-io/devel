@@ -6,7 +6,7 @@ from .utils import run_ssh_command_and_wait, open_tunnel, close_all_tunnels, tun
 
 #------------------------------------------------------------------------------
 
-DHT_SEED_NODES = 'is:14441, stun_1:14441, stun_2:14441, dht_seed_1:14441, dht_seed_2:14441'
+DHT_SEED_NODES = 'dht_seed_1:14441, dht_seed_2:14441, stun_1:14441, stun_2:14441'
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
 #------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ def start_supplier(node, identity_name):
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
-    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
+    # print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable supplier service
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')[0].strip())
     # start BitDust daemon and create new identity for supplier
@@ -209,7 +209,7 @@ def start_customer(node, identity_name, join_network=True):
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
-    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
+    # print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable customer service and prepare tests
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number 2')[0].strip())
@@ -226,9 +226,9 @@ def start_customer(node, identity_name, join_network=True):
 
 #------------------------------------------------------------------------------
 
-def start_all_seeds():
+def start_all_nodes():
     # TODO: keep up to date with docker-compose links
-    seeds = {
+    nodes = {
         'dht-seeds': [
             'dht_seed_1',
             'dht_seed_2',
@@ -244,24 +244,45 @@ def start_all_seeds():
             'proxy_server_1',
             'proxy_server_2',
         ],
+        'suppliers': [
+            'supplier_1',
+            'supplier_2',
+            'supplier_3',
+            'supplier_4',
+            'supplier_5',
+            'supplier_6',
+            'supplier_7',
+            'supplier_8',
+        ],
+        'customers': [
+            {'name': 'customer_1', 'join_network': True, },
+            {'name': 'customer_2', 'join_network': True, },
+            {'name': 'customer_3', 'join_network': False, },
+        ],
     }
  
-    print('\nStarting Seed nodes\n') 
+    print('\nStarting nodes\n') 
 
-    for number, dhtseed in enumerate(seeds['dht-seeds']):
+    for number, dhtseed in enumerate(nodes['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        start_dht_seed(dhtseed, wait_seconds=(10 if number > 0 else 0))
+        start_dht_seed(node=dhtseed, wait_seconds=(10 if number > 0 else 0))
 
-    for idsrv in seeds['identity-servers']:
-        start_identity_server(idsrv)
+    for idsrv in nodes['identity-servers']:
+        start_identity_server(node=idsrv)
 
-    for stunsrv in seeds['stun-servers']:
-        start_stun_server(stunsrv)
+    for stunsrv in nodes['stun-servers']:
+        start_stun_server(node=stunsrv)
 
-    for proxysrv in seeds['proxy-servers']:
-        start_proxy_server(proxysrv, proxysrv)
+    for proxysrv in nodes['proxy-servers']:
+        start_proxy_server(node=proxysrv, identity_name=proxysrv)
 
-    print('\nAll Seed nodes ready\n')
+    for supplier in nodes['suppliers']:
+        start_supplier(node=supplier, identity_name=supplier)
+
+    for customer in nodes['customers']:
+        start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
+
+    print('\nAll nodes ready\n')
  
  
 def stop_all_nodes():
@@ -299,7 +320,7 @@ def stop_all_nodes():
 def global_wrapper():
     _begin = time.time()
 
-    start_all_seeds()
+    start_all_nodes()
     
     print('\nStarting all roles and execute tests')
  
@@ -312,37 +333,3 @@ def global_wrapper():
     # stop_all_nodes()
 
     print('\nFinished. All operations completed in %5.3f seconds\n' % (time.time() - _begin))
-
-#------------------------------------------------------------------------------
-
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_1(global_wrapper):
-    return start_supplier('supplier_1', 'supplier_1')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_2(global_wrapper):
-    return start_supplier('supplier_2', 'supplier_2')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_3(global_wrapper):
-    return start_supplier('supplier_3', 'supplier_3')
- 
-@pytest.fixture(scope='session', autouse=True)
-def init_supplier_4(global_wrapper):
-    return start_supplier('supplier_4', 'supplier_4')
-
-#------------------------------------------------------------------------------
-
-@pytest.fixture(scope='session', autouse=True)
-def init_customer_1(global_wrapper):
-    return start_customer('customer_1', 'customer_1')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_customer_2(global_wrapper):
-    return start_customer('customer_2', 'customer_2')
-
-@pytest.fixture(scope='session', autouse=True)
-def init_customer_3(global_wrapper):
-    return start_customer('customer_3', 'customer_3', join_network=False)
-
-#------------------------------------------------------------------------------
