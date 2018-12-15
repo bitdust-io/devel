@@ -875,6 +875,18 @@ def BlockchainDir():
 #------------------------------------------------------------------------------
 
 
+def NetworkFileName():
+    """
+    Location of the file where selected network name is stored.
+    It is possible to have multiple independent BitDust networks:
+    Main network, Test network, local Docker network, Private networks, etc...
+    They are defined in networks.json file and each network must have a unique name.
+    NetworkFileName() defines text file location, where network name is stored.
+    If that file is not exists, BitDust will try to connect to the main network by default.    
+    """
+    return os.path.join(MetaDataDir(), "networkname")
+
+
 def KeyFileName():
     """
     Location of user's Private Key file.
