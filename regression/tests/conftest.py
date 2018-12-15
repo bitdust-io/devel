@@ -102,7 +102,7 @@ def stop_daemon(node, skip_checks=False):
     if not skip_checks:
         assert (
             bitdust_stop[0].strip().startswith('found main BitDust process:') and
-            bitdust_stop[0].strip().sendswith('BitDust process finished correctly')
+            bitdust_stop[0].strip().endswith('BitDust process finished correctly')
         )
     print('stop_daemon [%s] OK\n' % node)
 
@@ -322,14 +322,14 @@ def start_all_nodes():
 def clean_all_nodes(skip_checks=False):
     for node in ALL_NODES:
         stop_daemon(node, skip_checks=skip_checks)
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')[0].strip())
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')[0].strip())
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')[0].strip())
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')[0].strip())
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')[0].strip())
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')[0].strip())
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')[0].strip())
-        print(run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')[0].strip())
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')[0].strip()
+        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')[0].strip()
     print('All nodes cleaned')
  
  
