@@ -28,7 +28,7 @@ RUN chmod +x /bin/bitdust
 
 
 
-RUN echo 'docker' > /root/.bitdust/networkname
+RUN echo 'docker' > /root/.bitdust/metadata/networkname
 
 
 
