@@ -7,7 +7,30 @@ from .utils import run_ssh_command_and_wait, open_tunnel, close_all_tunnels, tun
 #------------------------------------------------------------------------------
 
 DHT_SEED_NODES = 'dht_seed_1:14441, dht_seed_2:14441, stun_1:14441, stun_2:14441'
+
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
+
+# TODO: keep this list up to date with docker-compose links
+ALL_NODES = [
+    'customer_1',
+    'customer_2',
+    'customer_3',
+    'supplier_1',
+    'supplier_2',
+    'supplier_3',
+    'supplier_4',
+    'supplier_5',
+    'supplier_6',
+    'supplier_7',
+    'supplier_8',
+    'proxy_server_1',
+    'proxy_server_2',
+    'stun_1',
+    'stun_2',
+    'is',
+    'dht_seed_1',
+    'dht_seed_2',
+]
 
 #------------------------------------------------------------------------------
 
@@ -71,6 +94,16 @@ def start_daemon(node):
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
     print('start_daemon [%s] OK\n' % node)
+
+
+def stop_daemon(node):
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
+    print('\n' + bitdust_stop[0].strip())
+    assert (
+        bitdust_stop[0].strip().startswith('found main BitDust process:') and
+        bitdust_stop[0].strip().sendswith('BitDust process finished correctly')
+    )
+    print('stop_daemon [%s] OK\n' % node)
 
 
 def start_identity_server(node):
@@ -283,34 +316,19 @@ def start_all_nodes():
         start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
 
     print('\nAll nodes ready\n')
- 
- 
-def stop_all_nodes():
-    # TODO: keep up to date with docker-compose links
-    nodes = [
-        'customer_1',
-        'customer_2',
-        'customer_3',
-        'supplier_1',
-        'supplier_2',
-        'supplier_3',
-        'supplier_4',
-        'supplier_5',
-        'supplier_6',
-        'supplier_7',
-        'supplier_8',
-        'proxy_server_1',
-        'proxy_server_2',
-        'stun_1',
-        'stun_2',
-        'is',
-        'dht_seed_1',
-        'dht_seed_2',
-    ]
-    for node in nodes:
-        print('Shutdown %s' % node)
-        bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
+
+
+def clean_all_nodes():
+    for node in ALL_NODES:
+        stop_daemon(node)
+        bitdust_stop = run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust')
         print(bitdust_stop[0].strip())
+    print('All nodes cleaned')
+ 
+ 
+def kill_all_nodes():
+    for node in ALL_NODES:
+        print('Shutdown %s' % node)
         run_ssh_command_and_wait(node, 'pkill -e sshd')
     print('All nodes stopped')
 
@@ -330,6 +348,7 @@ def global_wrapper():
 
     print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
 
-    # stop_all_nodes()
+    clean_all_nodes()
+    # kill_all_nodes()
 
     print('\nFinished. All operations completed in %5.3f seconds\n' % (time.time() - _begin))
