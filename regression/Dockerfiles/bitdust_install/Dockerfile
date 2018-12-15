@@ -28,6 +28,10 @@ RUN chmod +x /bin/bitdust
 
 
 
+RUN echo 'docker' > /root/.bitdust/networkname
+
+
+
 ADD ./regression/ssh/ /app/ssh
 
 EXPOSE 22
