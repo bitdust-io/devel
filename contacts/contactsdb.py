@@ -559,6 +559,8 @@ def save_suppliers(path=None, customer_idurl=None):
         )
     lst = suppliers(customer_idurl=customer_idurl)
     lst = list(map(strng.to_text, lst))
+    if not os.path.exists(os.path.dirname(path)):
+        bpio._dirs_make(os.path.dirname(path))
     bpio._write_list(path, lst)
     return True
 

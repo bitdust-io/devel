@@ -266,7 +266,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, _, item, _, _, _ = arg
-        self.routes[idurl]['address'].append((item.proto, item.host))
+        self.routes[idurl]['address'].append((strng.to_bin(item.proto), item.host))
         self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
@@ -425,6 +425,8 @@ class ProxyRouter(automat.Automat):
         if len(hosts) == 0:
             lg.warn('has no known contacts for route with %s' % receiver_idurl)
             return
+        if len(hosts) > 1:
+            lg.warn('found more then one channel with receiver %s : %r' % (receiver_idurl, hosts, ))
         receiver_proto, receiver_host = hosts[0]
         publickey = route_info['publickey']
         block = encrypted.Block(
@@ -564,10 +566,10 @@ class ProxyRouter(automat.Automat):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s' % newpacket)
+            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s://%s' % (newpacket, info.proto, info.host, ))
             lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
             lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
-            for k, v in self.routes:
+            for k, v in self.routes.items():
                 lg.out(_DebugLevel, '        route with %s :  address=%s  contacts=%s' % (k, v['address'], v['contacts'], ))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():

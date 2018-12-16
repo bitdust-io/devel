@@ -250,12 +250,16 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         from transport.tcp import tcp_node
         try:
-            _, payload = arg
+            command, payload = arg
             peeraddress, peeridurl = payload.split(b' ')
             peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
-            peeraddress = net_misc.normalize_address(peerip, peerport)
+            if not peerip:
+                lg.warn('unknown peer IP from Hello packet: %r' % arg)
+                peerip = self.peer_external_address[0]
+            peeraddress = (peerip, peerport)
         except:
+            lg.exc()
             return
         # self.peer_external_address = (self.peer_external_address[0], peerport)
         self.peer_external_address = peeraddress
@@ -312,6 +316,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         host = strng.to_bin(tcp_node.my_host() or '127.0.0.1:7771')
         idurl = strng.to_bin(tcp_node.my_idurl() or 'None')
         payload = host + b' ' + idurl
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.doSendHello %r to %s' % (payload, net_misc.pack_address(self.getTransportAddress())))
         self.sendData(CMD_HELLO, payload)
 
     def doSendWazap(self, arg):
