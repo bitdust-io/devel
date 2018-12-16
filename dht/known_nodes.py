@@ -34,6 +34,7 @@ module:: known_nodes
 
 from __future__ import absolute_import
 
+import os
 import re
 
 #------------------------------------------------------------------------------
@@ -42,25 +43,24 @@ def default_nodes():
     """
     List of DHT nodes currently maintained : (host, UDP port number)
     """
-    return [
-        # local node (for testing)
-        # ('localhost', 14441, ),
-
-        # by Veselin Penev:
-        # ('datahaven.net', 14441, ),
-        # ('identity.datahaven.net', 14441),
-        ('p2p-id.ru', 14441),
-        ('bitdust.io', 14441),
-        # ('work.offshore.ai', 14441),
-        # ('whmcs.whois.ai', 14441),
-        ('blog.bitdust.io', 14441, ),
-        ('bitdust.ai', 14441, ),
-        # ('veselin-p2p.ru', 14441, ),
-        # ('test.zenaida.ai', 14441, ),
-
-        # by Renato Cardoso:
-        ('bitrex.ai', 14441, ),
-    ]
+    from system import bpio
+    from system import local_fs
+    from lib import serialization
+    from main import settings
+    from logs import lg
+    networks_json = serialization.BytesToDict(
+        local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')))
+    my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
+    if not my_network:
+        my_network = 'main'
+    if my_network not in networks_json:
+        my_network = 'main'
+    network_info = networks_json[my_network]
+    dht_seeds = []
+    for dht_seed in network_info['dht-seeds']:
+        dht_seeds.append((dht_seed['host'], dht_seed['udp_port'], ))
+    lg.info('Active network is [%s]   dht_seeds=%s' % (my_network, dht_seeds, ))
+    return dht_seeds
 
 
 def nodes():
@@ -108,6 +108,8 @@ def nodes():
             overridden_dht_nodes.append((dht_node_host, dht_node_port, ))
 
     if overridden_dht_nodes:
+        from logs import lg
+        lg.info('DHT seeds was overridden in local settings: %s' % overridden_dht_nodes)
         return overridden_dht_nodes
 
     return default_nodes()

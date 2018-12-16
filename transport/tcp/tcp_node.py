@@ -132,6 +132,8 @@ def receive(options):
     global _InternalPort
     global _Listener
     from transport.tcp import tcp_interface
+    if _Debug:
+        lg.out(_DebugLevel, 'tcp_node.receive %r' % options)
     if _Listener:
         lg.warn('listener already exist')
         tcp_interface.interface_receiving_started(_MyHost, options)

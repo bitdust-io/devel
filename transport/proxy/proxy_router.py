@@ -266,7 +266,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, _, item, _, _, _ = arg
-        self.routes[idurl]['address'].append((item.proto, item.host))
+        self.routes[idurl]['address'].append((strng.to_bin(item.proto), item.host))
         self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
@@ -378,16 +378,21 @@ class ProxyRouter(automat.Automat):
                             lambda o, n, e, a: self._on_user_session_disconnected(user_id, o, n, e, a),
                             oldstate='CONNECTED',
                         )
-                        lg.info('connected %s routed user, set active session: %s' % (oldnew.capitalize(), user_connection_info))
+                        if _Debug:
+                            lg.out(_DebugLevel, 'proxy_server.doProcessRequest connected %s routed user, set active session: %s' % (
+                                oldnew.capitalize(), user_connection_info))
                     else:
                         lg.err('not found session state machine: %s' % user_connection_info['index'])
                 else:
-                    lg.warn('active connection with user at %s:%s was not found' % (info.proto, info.host, ))
-                    lg.warn('current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
+                    if _Debug:
+                        lg.out(_DebugLevel, 'proxy_server.doProcessRequest active connection with user %s at %s:%s not yet exist' % (
+                            user_id, info.proto, info.host, ))
+                        lg.out(_DebugLevel, '    current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
                 self.acks.append(
                     p2p_service.SendAck(request, 'accepted', wide=True))
                 if _Debug:
-                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, user_id))
+                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s  contacts=%s' % (
+                        oldnew.capitalize(), user_id, self.routes[user_id]['contacts'], ))
         #--- commands.CancelService()
         elif request.Command == commands.CancelService():
             if user_id in self.routes:
@@ -420,6 +425,8 @@ class ProxyRouter(automat.Automat):
         if len(hosts) == 0:
             lg.warn('has no known contacts for route with %s' % receiver_idurl)
             return
+        if len(hosts) > 1:
+            lg.warn('found more then one channel with receiver %s : %r' % (receiver_idurl, hosts, ))
         receiver_proto, receiver_host = hosts[0]
         publickey = route_info['publickey']
         block = encrypted.Block(
@@ -559,10 +566,11 @@ class ProxyRouter(automat.Automat):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s' % newpacket)
+            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s://%s' % (newpacket, info.proto, info.host, ))
             lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
             lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
-            lg.out(_DebugLevel, '    routes=%s' % list(self.routes.keys()))
+            for k, v in self.routes.items():
+                lg.out(_DebugLevel, '        route with %s :  address=%s  contacts=%s' % (k, v['address'], v['contacts'], ))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first
@@ -670,10 +678,14 @@ class ProxyRouter(automat.Automat):
             return False
         if RemoteID not in list(self.routes.keys()):
             return False
-        for ack in self.acks:
-            if PacketID == ack.PacketID:
+        found = False
+        for ack in list(self.acks):
+            if PacketID.lower() == ack.PacketID.lower() and RemoteID == ack.RemoteID:
+                self.acks.remove(ack)
+                # TODO: clean up self.acks for un-acked requests
                 self.automat('request-route-ack-sent', (RemoteID, pkt_out, item, status, size, error_message))
-        return True
+                found = True
+        return found
 
     def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, args):
         lg.warn('user session disconnected: %s->%s' % (oldstate, newstate))
@@ -722,6 +734,7 @@ class ProxyRouter(automat.Automat):
         except:
             dct = {}
         dct[user_id] = self.routes[user_id]
+        # TODO: switch to lib.serialize
         newsrc = pprint.pformat(json.dumps(dct, indent=0))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:

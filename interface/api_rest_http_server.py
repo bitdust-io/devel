@@ -636,6 +636,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.user_ping(
             idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
             timeout=data.get('timeout', 10),
+            retries=data.get('retries', 2),
         )
 
     @GET('^/us/png$')
@@ -644,6 +645,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.user_ping(
             idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
             timeout=_request_arg(request, 'timeout', 10),
+            retries=_request_arg(request, 'retries', 2),
         )
 
     #------------------------------------------------------------------------------
