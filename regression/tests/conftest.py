@@ -367,7 +367,7 @@ def global_wrapper():
  
     yield
 
-    clean_all_nodes()
+    clean_all_nodes(skip_checks=True)
     close_all_tunnels()
 
     print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
