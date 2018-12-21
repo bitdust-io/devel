@@ -358,8 +358,11 @@ def identity_create(username):
     my_id_registrator = id_registrator.A()
 
     def _id_registrator_state_changed(oldstate, newstate, event_string, args):
+        if not my_id_registrator:
+            return
         if newstate == 'FAILED':
             ret.callback(ERROR(my_id_registrator.last_message))
+            my_id_registrator = None
             return
         if newstate == 'DONE':
             my_id.loadLocalIdentity()

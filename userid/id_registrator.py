@@ -310,8 +310,10 @@ class IdRegistrator(automat.Automat):
         """
         id_from_server = identity.identity(xmlsrc=arg)
         if not id_from_server.isCorrect():
+            lg.warn('my identity is not correct')
             return False
         if not id_from_server.Valid():
+            lg.warn('my identity is not valid')
             return False
         equal = self.new_identity.serialize() == id_from_server.serialize()
         return equal
