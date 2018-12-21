@@ -142,6 +142,8 @@ def start_identity_server(node):
 
 def start_dht_seed(node, wait_seconds):
     print('\nNEW DHT SEED at [%s]\n' % node)
+    run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
+    run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
     # use short key to run tests faster
     print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
     # enable DHT service
