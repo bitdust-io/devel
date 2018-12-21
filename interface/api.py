@@ -358,6 +358,7 @@ def identity_create(username):
     my_id_registrator = id_registrator.A()
 
     def _id_registrator_state_changed(oldstate, newstate, event_string, args):
+        global my_id_registrator
         if not my_id_registrator:
             return
         if newstate == 'FAILED':
