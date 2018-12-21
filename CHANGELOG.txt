@@ -2,6 +2,30 @@ Change Log
 ==========
 
 
+
+2018-12-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* created networks.json file to store info about "genesis" nodes
+* moved p2p-id.ru and bitdust.ai to the main network
+* bug fixes proxy_router()
+* added retries=2 to propagate.PingContact()
+* added check for service_proxy_transport() in network/connected/v1
+* stabilyzing regression tests
+* removed parallelp lib from the repo
+* switched tests from run_ssh_curl_and_wait() to requests.get()/post()
+* added ssh tunnels to regression tests
+* use settings.getPrivateKeySize() in my_keys.generate_key()
+* state machine core event() method will properly trigger state changed callbacks when closing automat instance
+* added revision and publisher fields in dht record of customer family
+* supplier to be notified about his position in the family by customer
+* service_employer() will report supplier position to service_customer_family()
+* rebuilding supplier service in order to reduce DHT queries and build customer family logic
+* added make regression_test target
+* building healt_check() method for every network service
+* added tests for restore identity
+
+
+
 2018-11-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * ported to Python3.6 finally (Python2.7 also supported) !!!

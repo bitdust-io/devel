@@ -342,6 +342,7 @@ def identity_get(include_xml_source=False):
         r['xml'] = my_id.getLocalIdentity().serialize()
     return RESULT([r, ])
 
+
 def identity_create(username):
     from lib import misc
     from userid import my_id
@@ -358,6 +359,8 @@ def identity_create(username):
     my_id_registrator = id_registrator.A()
 
     def _id_registrator_state_changed(oldstate, newstate, event_string, args):
+        if ret.called:
+            return
         if newstate == 'FAILED':
             ret.callback(ERROR(my_id_registrator.last_message))
             return
