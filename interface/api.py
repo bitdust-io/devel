@@ -447,6 +447,8 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer = id_restorer.A()
 
     def _id_restorer_state_changed(oldstate, newstate, event_string, args):
+        if ret.called:
+            return
         if newstate == 'FAILED':
             ret.callback(ERROR(my_id_restorer.last_message))
             return
@@ -459,9 +461,14 @@ def identity_recover(private_key_source, known_idurl=None):
             ret.callback(RESULT([r, ]))
             return
 
-    my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
-    my_id_restorer.A('start', {'idurl': idurl_list[0], 'keysrc': pk_source, })
-    # TODO: iterate over idurl_list to find at least one reliable source
+    try:
+        my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
+        my_id_restorer.A('start', {'idurl': idurl_list[0], 'keysrc': pk_source, })
+        # TODO: iterate over idurl_list to find at least one reliable source
+    except Exception as exc:
+        lg.exc()
+        ret.callback(ERROR(str(exc)))
+
     return ret
 
 def identity_list():
