@@ -342,6 +342,7 @@ def identity_get(include_xml_source=False):
         r['xml'] = my_id.getLocalIdentity().serialize()
     return RESULT([r, ])
 
+
 def identity_create(username):
     from lib import misc
     from userid import my_id

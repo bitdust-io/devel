@@ -777,7 +777,9 @@ def main(executable_path=None):
 
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
-        appList = bpio.find_main_process(pid_file_path=os.path.join(appdata, 'metadata', 'processid'))
+        appList = bpio.find_main_process(
+            pid_file_path=os.path.join(appdata, 'metadata', 'processid'),
+        )
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %r, sending command "exit" ... ' % appList, '')
             try:
@@ -804,7 +806,10 @@ def main(executable_path=None):
                 bpio.shutdown()
                 return ret
         else:
-            appListAllChilds = bpio.find_main_process(check_processid_file=False)
+            appListAllChilds = bpio.find_main_process(
+                check_processid_file=False,
+                extra_lookups=['regexp:^.*python.*bitdust.py.*?$', ],
+            )
             if len(appListAllChilds) > 0:
                 lg.out(0, 'BitDust child processes found: %r, performing "kill process" actions ...\n' % appListAllChilds, '')
                 ret = kill()

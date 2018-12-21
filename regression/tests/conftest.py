@@ -103,8 +103,13 @@ def stop_daemon(node, skip_checks=False):
     print('\n' + bitdust_stop[0].strip())
     if not skip_checks:
         assert (
-            bitdust_stop[0].strip().startswith('found main BitDust process:') and
-            bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+            (
+                bitdust_stop[0].strip().startswith('BitDust child processes found') and
+                bitdust_stop[0].strip().endswith('BitDust stopped')
+            ) or (
+                bitdust_stop[0].strip().startswith('found main BitDust process:') and
+                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+            )
         )
     print('stop_daemon [%s] OK\n' % node)
 
