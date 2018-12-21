@@ -63,10 +63,10 @@ if __name__ == '__main__':
 #------------------------------------------------------------------------------
 
 from dht.entangled.dtuple import DistributedTupleSpacePeer
-from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore
-from dht.entangled.kademlia.node import rpcmethod
-from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
-from dht.entangled.kademlia import constants
+from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
+from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
+from dht.entangled.kademlia import constants  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -86,6 +86,8 @@ KEY_EXPIRE_MIN_SECONDS = 60 * 2
 KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
 RECEIVING_FREQUENCY_SEC = 0.01
 SENDING_FREQUENCY_SEC = 0.02  # must be always slower than receiving frequency!
+RECEIVING_QUEUE_LENGTH_CRITICAL = 100
+SENDING_QUEUE_LENGTH_CRITICAL = 50
 
 #------------------------------------------------------------------------------
 
@@ -623,7 +625,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def datagramReceived(self, datagram, address):
         count('dht_datagramReceived')
-        if len(self.receiving_queue) > 50:
+        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL:
             lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
         self.receiving_queue.append((datagram, address, ))
         if self.receiving_worker is None:
@@ -636,7 +638,10 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         datagram, address = self.receiving_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
-        self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)  #@UndefinedVariable
+        t = 0
+        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL / 2:
+            t = RECEIVING_FREQUENCY_SEC
+        self.receiving_worker = reactor.callLater(t, self._process_incoming)  #@UndefinedVariable
 
     def _send(self, data, rpcID, address):
         count('dht_send')
@@ -654,7 +659,10 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         data, rpcID, address = self.sending_queue.pop(0)
         KademliaProtocol._send(self, data, rpcID, address)
-        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)  #@UndefinedVariable
+        t = 0
+        if len(self.sending_queue) > SENDING_QUEUE_LENGTH_CRITICAL:
+            t = SENDING_FREQUENCY_SEC
+        self.sending_worker = reactor.callLater(t, self._process_outgoing)  #@UndefinedVariable
 
 #------------------------------------------------------------------------------
 
