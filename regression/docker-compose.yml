@@ -319,7 +319,8 @@ services:
       - customer_backup:/customer_backup
       - customer_restore:/customer_restore
 
-
+    stdin_open: true
+    tty: true
 
 
 volumes:

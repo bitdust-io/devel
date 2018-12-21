@@ -1217,7 +1217,7 @@ def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file
         'bitdustnode.exe',
         'BitDustNode.exe',
         # 'bitdust.py',
-        'regexp:^.*python.*bitdust.py.*?$',
+        'regexp:^.*python.*bitdust.py$',
     ] + extra_lookups)
     if not appList:
         return []

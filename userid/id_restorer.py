@@ -37,6 +37,8 @@ EVENTS:
     * :red:`restore-failed`
     * :red:`restore-success`
     * :red:`start`
+    * :red:`stun-failed`
+    * :red:`stun-success`
 
 .. raw:: html
 
@@ -51,9 +53,15 @@ Needed for restoration of the user account information using its Private key and
     * do verification and restoration of his locally identity to be able to start the software
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
+import random
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -62,10 +70,12 @@ except:
 
 #------------------------------------------------------------------------------
 
-from logs import lg
-
 from automats import automat
 from automats import global_state
+
+from logs import lg
+
+from main import settings
 
 from system import bpio
 
@@ -73,10 +83,11 @@ from lib import net_misc
 
 from crypt import key
 
+from stun import stun_client
+
 from userid import identity
 from userid import my_id
 
-from main import settings
 
 #------------------------------------------------------------------------------
 
@@ -87,16 +98,23 @@ _WorkingKey = ''
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _IdRestorer
     if _IdRestorer is None:
         # set automat name and starting state here
-        _IdRestorer = IdRestorer('id_restorer', 'AT_STARTUP', 2, log_events=True, publish_events=True)
+        _IdRestorer = IdRestorer(
+            name='id_restorer',
+            state='AT_STARTUP',
+            debug_level=2,
+            log_transitions=True,
+            log_events=True,
+            publish_events=True,
+        )
     if event is not None:
-        _IdRestorer.automat(event, arg)
+        _IdRestorer.automat(event, *args, **kwargs)
     return _IdRestorer
 
 
@@ -108,17 +126,20 @@ class IdRestorer(automat.Automat):
     """
 
     MESSAGES = {
-        'MSG_01': ['download user identity from remote ID server'],
+        'MSG_01': ['requesting user identity from remote ID server', ],
         'MSG_02': ['key verification failed!', 'red'],
-        'MSG_03': ['download user identity from remote ID server'],
-        'MSG_04': ['incorrect IDURL or user identity not exist', 'red'],
-        'MSG_05': ['verifying user identity and private key'],
-        'MSG_06': ['your identity restored successfully!', 'green'], }
+        'MSG_03': ['downloading user identity from remote ID server', ],
+        'MSG_04': ['incorrect IDURL or user identity file not exist anymore', 'red'],
+        'MSG_05': ['verifying user identity and private key', ],
+        'MSG_06': ['your identity restored successfully!', 'green'],
+        'MSG_07': ['checking network connectivity', ],
+        'MSG_08': ['network connection failed', 'red', ],
+    }
 
     def init(self):
         self.last_message = ''
 
-    def msg(self, msgid, arg=None):
+    def msg(self, msgid, *args, **kwargs):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0]
         color = 'black'
@@ -126,69 +147,109 @@ class IdRestorer(automat.Automat):
             color = msg[1]
         return text, color
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('ID_RESTORE ' + newstate)
         from main import installer
         installer.A('id_restorer.state', newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
+                self.state = 'STUN_MY_IP'
+                self.doPrint(self.msg('MSG_07', *args, **kwargs))
+                self.doSetWorkingIDURL(*args, **kwargs)
+                self.doSetWorkingKey(*args, **kwargs)
+                self.doStunExternalIP(*args, **kwargs)
+        #---STUN_MY_IP---
+        elif self.state == 'STUN_MY_IP':
+            if event == 'stun-failed':
+                self.state = 'FAILED'
+                self.doPrint(self.msg('MSG_08', *args, **kwargs))
+                self.doClearWorkingIDURL(*args, **kwargs)
+                self.doClearWorkingKey(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'stun-success':
                 self.state = 'MY_ID'
-                self.doPrint(self.msg('MSG_01', arg))
-                self.doSetWorkingIDURL(arg)
-                self.doSetWorkingKey(arg)
-                self.doRequestMyIdentity(arg)
+                self.doPrint(self.msg('MSG_01', *args, **kwargs))
+                self.doRequestMyIdentity(*args, **kwargs)
         #---MY_ID---
         elif self.state == 'MY_ID':
             if event == 'my-id-received':
                 self.state = 'VERIFY'
-                self.doPrint(self.msg('MSG_05', arg))
-                self.doVerifyAndRestore(arg)
+                self.doPrint(self.msg('MSG_05', *args, **kwargs))
+                self.doVerifyAndRestore(*args, **kwargs)
             elif event == 'my-id-failed':
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_04', arg))
-                self.doClearWorkingIDURL(arg)
-                self.doClearWorkingKey(arg)
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_04', *args, **kwargs))
+                self.doClearWorkingIDURL(*args, **kwargs)
+                self.doClearWorkingKey(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---VERIFY---
         elif self.state == 'VERIFY':
             if event == 'restore-failed':
                 self.state = 'FAILED'
-                self.doPrint(arg)
-                self.doClearWorkingIDURL(arg)
-                self.doClearWorkingKey(arg)
-                self.doDestroyMe(arg)
+                self.doPrint(*args, **kwargs)
+                self.doClearWorkingIDURL(*args, **kwargs)
+                self.doClearWorkingKey(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'restore-success':
                 self.state = 'RESTORED!'
-                self.doPrint(self.msg('MSG_06', arg))
-                self.doRestoreSave(arg)
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_06', *args, **kwargs))
+                self.doRestoreSave(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---RESTORED!---
         elif self.state == 'RESTORED!':
             pass
         #---FAILED---
         elif self.state == 'FAILED':
             pass
+        return None
 
-    def doSetWorkingIDURL(self, arg):
+    def doStunExternalIP(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        lg.out(4, 'identity_restorer.doStunExternalIP')
+
+        def save(result):
+            lg.out(4, '            external IP : %s' % result)
+            if result['result'] != 'stun-success':
+                self.automat('stun-failed')
+                return
+            ip = result['ip']
+            bpio.WriteTextFile(settings.ExternalIPFilename(), ip)
+            self.automat('stun-success', ip)
+
+        rnd_udp_port = random.randint(
+            settings.DefaultUDPPort(),
+            settings.DefaultUDPPort() + 500,
+        )
+        rnd_dht_port = random.randint(
+            settings.DefaultDHTPort(),
+            settings.DefaultDHTPort() + 500,
+        )
+        d = stun_client.safe_stun(udp_port=rnd_udp_port, dht_port=rnd_dht_port)
+        d.addCallback(save)
+        d.addErrback(lambda _: self.automat('stun-failed'))
+
+    def doSetWorkingIDURL(self, *args, **kwargs):
         global _WorkingIDURL
-        _WorkingIDURL = arg['idurl']
+        _WorkingIDURL = args[0]['idurl']
 
-    def doSetWorkingKey(self, arg):
+    def doSetWorkingKey(self, *args, **kwargs):
         global _WorkingKey
-        _WorkingKey = arg['keysrc']
+        _WorkingKey = args[0]['keysrc']
 
-    def doClearWorkingIDURL(self, arg):
+    def doClearWorkingIDURL(self, *args, **kwargs):
         global _WorkingIDURL
         _WorkingIDURL = ''
 
-    def doClearWorkingKey(self, arg):
+    def doClearWorkingKey(self, *args, **kwargs):
         global _WorkingKey
         _WorkingKey = ''
 
-    def doRequestMyIdentity(self, arg):
+    def doRequestMyIdentity(self, *args, **kwargs):
         global _WorkingIDURL
         idurl = _WorkingIDURL
         lg.out(4, 'identity_restorer.doRequestMyIdentity %s %s' % (idurl, type(idurl)))
@@ -196,11 +257,11 @@ class IdRestorer(automat.Automat):
             lambda src: self.automat('my-id-received', src),
             lambda err: self.automat('my-id-failed', err))
 
-    def doVerifyAndRestore(self, arg):
+    def doVerifyAndRestore(self, *args, **kwargs):
         global _WorkingKey
         lg.out(4, 'identity_restorer.doVerifyAndRestore')
 
-        remote_identity_src = arg
+        remote_identity_src = args[0]
 
         if os.path.isfile(settings.KeyFileName()):
             lg.out(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.KeyFileName())
@@ -215,7 +276,7 @@ class IdRestorer(automat.Automat):
             local_ident = identity.identity(xmlsrc=remote_identity_src)
         except:
             # lg.exc()
-            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity have incorrect format', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity have incorrect format', 'red'))  # @UndefinedVariable
             return
 
         lg.out(4, 'identity_restorer.doVerifyAndRestore checking remote identity')
@@ -226,7 +287,7 @@ class IdRestorer(automat.Automat):
             res = False
         if not res:
             lg.out(4, 'identity_restorer.doVerifyAndRestore remote identity is not correct FAILED!!!!')
-            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity format is not correct', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity format is not correct', 'red'))  # @UndefinedVariable
             return
 
         lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity')
@@ -237,7 +298,7 @@ class IdRestorer(automat.Automat):
             res = False
         if not res:
             lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity FAILED!!!!')
-            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))  # @UndefinedVariable
             return
 
         key.ForgetMyKey()
@@ -251,18 +312,18 @@ class IdRestorer(automat.Automat):
                 os.remove(settings.KeyFileName())
             except:
                 pass
-            reactor.callLater(0.1, self.automat, 'restore-failed', ('private key is not valid', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('private key is not valid', 'red'))  # @UndefinedVariable
             return
 
         try:
             local_ident.sign()
         except:
             # lg.exc()
-            reactor.callLater(0.1, self.automat, 'restore-failed', ('error while signing identity', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('error while signing identity', 'red'))  # @UndefinedVariable
             return
 
         if remote_ident.signature != local_ident.signature:
-            reactor.callLater(0.1, self.automat, 'restore-failed', ('signature did not match, key verification failed!', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('signature did not match, key verification failed!', 'red'))  # @UndefinedVariable
             return
 
         my_id.setLocalIdentity(local_ident)
@@ -279,9 +340,9 @@ class IdRestorer(automat.Automat):
             lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.LocalIdentityFilename())
             bpio.remove_backuped_file(settings.LocalIdentityFilename())
 
-        reactor.callLater(0.1, self.automat, 'restore-success')
+        reactor.callLater(0.1, self.automat, 'restore-success')  # @UndefinedVariable
 
-    def doRestoreSave(self, arg):
+    def doRestoreSave(self, *args, **kwargs):
         """
         TODO: use lib.config here request settings from DHT my suppliers need
         to keep that settings in DHT.
@@ -291,17 +352,18 @@ class IdRestorer(automat.Automat):
         # settings.uconfig().set('storage.donated', '0Mb')
         # settings.uconfig().update()
 
-    def doPrint(self, arg):
+    def doPrint(self, *args, **kwargs):
         from main import installer
-        installer.A().event('print', arg)
-        self.last_message = arg[0]
-        lg.out(6, 'id_restorer.doPrint: %s' % str(arg))
+        installer.A().event('print', args[0])
+        self.last_message = args[0][0]
+        lg.out(6, 'id_restorer.doPrint: %s' % str(args[0]))
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
-        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=arg)
+        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=args)
         self.destroy(dead_state=self.state)
         global _IdRestorer
         _IdRestorer = None
+
