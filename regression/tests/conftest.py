@@ -15,6 +15,8 @@ ALL_NODES = [
     'customer_1',
     'customer_2',
     'customer_3',
+    'customer_backup',
+    'customer_restore',
     'supplier_1',
     'supplier_2',
     'supplier_3',
@@ -293,7 +295,9 @@ def start_all_nodes():
         'customers': [
             {'name': 'customer_1', 'join_network': True, },
             {'name': 'customer_2', 'join_network': True, },
-            {'name': 'customer_3', 'join_network': False, },
+            {'name': 'customer_3', 'join_network': True, },
+            {'name': 'customer_backup', 'join_network': True, },
+            {'name': 'customer_restore', 'join_network': False, },
         ],
     }
  
