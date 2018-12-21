@@ -283,6 +283,9 @@ services:
       - customer_2:/customer_2
       - customer_3:/customer_3
 
+    stdin_open: true
+    tty: true
+
 
 
 
@@ -290,3 +293,6 @@ volumes:
   customer_1:
   customer_2:
   customer_3:
+
+
+
