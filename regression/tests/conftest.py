@@ -74,8 +74,8 @@ def create_identity(node, identity_name):
 def connect_network(node):
     count = 0
     while True:
-        if count > 5:
-            assert False, 'node %s failed to connect to the network after 5 retries' % node
+        if count > 10:
+            assert False, 'node %s failed to connect to the network after 10 retries' % node
         response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
         if response.json()['status'] == 'OK':
             break
@@ -113,6 +113,7 @@ def stop_daemon(node, skip_checks=False):
         )
     print('stop_daemon [%s] OK\n' % node)
 
+#------------------------------------------------------------------------------
 
 def start_identity_server(node):
     print('\nNEW IDENTITY SERVER at [%s]\n' % node)
