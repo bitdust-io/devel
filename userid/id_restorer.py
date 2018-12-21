@@ -126,15 +126,15 @@ class IdRestorer(automat.Automat):
     """
 
     MESSAGES = {
-        'MSG_01': ['download user identity from remote ID server', ],
+        'MSG_01': ['requesting user identity from remote ID server', ],
         'MSG_02': ['key verification failed!', 'red'],
-        'MSG_03': ['download user identity from remote ID server', ],
-        'MSG_04': ['incorrect IDURL or user identity not exist', 'red'],
+        'MSG_03': ['downloading user identity from remote ID server', ],
+        'MSG_04': ['incorrect IDURL or user identity file not exist anymore', 'red'],
         'MSG_05': ['verifying user identity and private key', ],
         'MSG_06': ['your identity restored successfully!', 'green'],
         'MSG_07': ['checking network connectivity', ],
         'MSG_08': ['network connection failed', 'red', ],
-    },
+    }
 
     def init(self):
         self.last_message = ''
@@ -211,10 +211,6 @@ class IdRestorer(automat.Automat):
         Action method.
         """
         lg.out(4, 'identity_restorer.doStunExternalIP')
-        if len(self.free_idurls) == 1:
-            if self.free_idurls[0].count(b'localhost:') or self.free_idurls[0].count(b'127.0.0.1:'):
-                # if you wish to create a local identity you do not need to stun external IP at all
-                self.automat('stun-success', '127.0.0.1')
 
         def save(result):
             lg.out(4, '            external IP : %s' % result)
@@ -366,7 +362,7 @@ class IdRestorer(automat.Automat):
         """
         Action method.
         """
-        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, *args, **kwargs)
+        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=args)
         self.destroy(dead_state=self.state)
         global _IdRestorer
         _IdRestorer = None

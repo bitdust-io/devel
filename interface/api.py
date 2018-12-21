@@ -447,6 +447,8 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer = id_restorer.A()
 
     def _id_restorer_state_changed(oldstate, newstate, event_string, args):
+        if ret.called:
+            return
         if newstate == 'FAILED':
             ret.callback(ERROR(my_id_restorer.last_message))
             return
