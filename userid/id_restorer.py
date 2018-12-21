@@ -53,7 +53,12 @@ Needed for restoration of the user account information using its Private key and
     * do verification and restoration of his locally identity to be able to start the software
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import random
@@ -65,10 +70,12 @@ except:
 
 #------------------------------------------------------------------------------
 
-from logs import lg
-
 from automats import automat
 from automats import global_state
+
+from logs import lg
+
+from main import settings
 
 from system import bpio
 
@@ -81,7 +88,6 @@ from stun import stun_client
 from userid import identity
 from userid import my_id
 
-from main import settings
 
 #------------------------------------------------------------------------------
 
@@ -92,16 +98,23 @@ _WorkingKey = ''
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _IdRestorer
     if _IdRestorer is None:
         # set automat name and starting state here
-        _IdRestorer = IdRestorer('id_restorer', 'AT_STARTUP', 2, log_events=True, publish_events=True)
+        _IdRestorer = IdRestorer(
+            name='id_restorer',
+            state='AT_STARTUP',
+            debug_level=2,
+            log_transitions=True,
+            log_events=True,
+            publish_events=True,
+        )
     if event is not None:
-        _IdRestorer.automat(event, arg)
+        _IdRestorer.automat(event, *args, **kwargs)
     return _IdRestorer
 
 
@@ -126,7 +139,7 @@ class IdRestorer(automat.Automat):
     def init(self):
         self.last_message = ''
 
-    def msg(self, msgid, arg=None):
+    def msg(self, msgid, *args, **kwargs):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0]
         color = 'black'
@@ -134,7 +147,7 @@ class IdRestorer(automat.Automat):
             color = msg[1]
         return text, color
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('ID_RESTORE ' + newstate)
         from main import installer
         installer.A('id_restorer.state', newstate)
@@ -224,23 +237,23 @@ class IdRestorer(automat.Automat):
         d.addCallback(save)
         d.addErrback(lambda _: self.automat('stun-failed'))
 
-    def doSetWorkingIDURL(self, arg):
+    def doSetWorkingIDURL(self, *args, **kwargs):
         global _WorkingIDURL
-        _WorkingIDURL = arg['idurl']
+        _WorkingIDURL = args[0]['idurl']
 
-    def doSetWorkingKey(self, arg):
+    def doSetWorkingKey(self, *args, **kwargs):
         global _WorkingKey
-        _WorkingKey = arg['keysrc']
+        _WorkingKey = args[0]['keysrc']
 
-    def doClearWorkingIDURL(self, arg):
+    def doClearWorkingIDURL(self, *args, **kwargs):
         global _WorkingIDURL
         _WorkingIDURL = ''
 
-    def doClearWorkingKey(self, arg):
+    def doClearWorkingKey(self, *args, **kwargs):
         global _WorkingKey
         _WorkingKey = ''
 
-    def doRequestMyIdentity(self, arg):
+    def doRequestMyIdentity(self, *args, **kwargs):
         global _WorkingIDURL
         idurl = _WorkingIDURL
         lg.out(4, 'identity_restorer.doRequestMyIdentity %s %s' % (idurl, type(idurl)))
@@ -248,11 +261,11 @@ class IdRestorer(automat.Automat):
             lambda src: self.automat('my-id-received', src),
             lambda err: self.automat('my-id-failed', err))
 
-    def doVerifyAndRestore(self, arg):
+    def doVerifyAndRestore(self, *args, **kwargs):
         global _WorkingKey
         lg.out(4, 'identity_restorer.doVerifyAndRestore')
 
-        remote_identity_src = arg
+        remote_identity_src = args[0]
 
         if os.path.isfile(settings.KeyFileName()):
             lg.out(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.KeyFileName())
@@ -333,7 +346,7 @@ class IdRestorer(automat.Automat):
 
         reactor.callLater(0.1, self.automat, 'restore-success')  # @UndefinedVariable
 
-    def doRestoreSave(self, arg):
+    def doRestoreSave(self, *args, **kwargs):
         """
         TODO: use lib.config here request settings from DHT my suppliers need
         to keep that settings in DHT.
@@ -343,17 +356,17 @@ class IdRestorer(automat.Automat):
         # settings.uconfig().set('storage.donated', '0Mb')
         # settings.uconfig().update()
 
-    def doPrint(self, arg):
+    def doPrint(self, *args, **kwargs):
         from main import installer
-        installer.A().event('print', arg)
-        self.last_message = arg[0]
-        lg.out(6, 'id_restorer.doPrint: %s' % str(arg))
+        installer.A().event('print', args[0])
+        self.last_message = args[0][0]
+        lg.out(6, 'id_restorer.doPrint: %s' % str(args[0]))
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
-        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=arg)
+        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, *args, **kwargs)
         self.destroy(dead_state=self.state)
         global _IdRestorer
         _IdRestorer = None
