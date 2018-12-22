@@ -169,10 +169,15 @@ def connect(seed_nodes=[]):
 
     def _on_join_success(live_contacts, live_seed_nodes):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
+            if live_contacts:
+                lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
+            else:
+                lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!')
             lg.out(_DebugLevel, 'alive DHT contacts: %r' % live_contacts)
             lg.out(_DebugLevel, 'alive seed nodes: %r' % live_seed_nodes)
             lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
+        if not live_contacts:
+            lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
         result.callback(live_seed_nodes)
 
     def _on_join_failed(x):

@@ -334,7 +334,7 @@ def start_all_nodes():
 
     for number, dhtseed in enumerate(nodes['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        start_dht_seed(node=dhtseed, wait_seconds=(10 if number > 0 else 0))
+        start_dht_seed(node=dhtseed, wait_seconds=10)  # (10 if number > 0 else 0))
 
     for idsrv in nodes['identity-servers']:
         start_identity_server(node=idsrv)
