@@ -78,7 +78,7 @@ import sys
 #------------------------------------------------------------------------------
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_rebuilder.py')
 
@@ -417,6 +417,7 @@ class BackupRebuilder(automat.Automat):
         """
         Action method.
         """
+        # TODO: make sure to not kill workers for backup jobs....
         raid_worker.A('shutdown')
 
     def doClearStoppedFlag(self, arg):

@@ -39,20 +39,19 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 12
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import sys
-import time
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in events.py')
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -229,7 +228,7 @@ def push_event(event_object):
 def pop_event():
     """
     """
-    for consumer_id in consumers_callbacks().keys():
+    for consumer_id in list(consumers_callbacks().keys()):
         if consumer_id not in event_queue() or len(event_queue()[consumer_id]) == 0:
             continue
         registered_callbacks = consumers_callbacks()[consumer_id]

@@ -56,6 +56,12 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
+from io import open
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import struct
@@ -67,10 +73,11 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
+#------------------------------------------------------------------------------
 
-import raid.eccmap
-from six.moves import range
-from io import open
+from logs import lg
+
+from raid import eccmap
 
 #------------------------------------------------------------------------------
 
@@ -81,7 +88,7 @@ _ECCMAP = {}
 def geteccmap(name):
     global _ECCMAP
     if name not in _ECCMAP:
-        _ECCMAP[name] = raid.eccmap.eccmap(name)
+        _ECCMAP[name] = eccmap.eccmap(name)
     return _ECCMAP[name]
 
 #------------------------------------------------------------------------------
@@ -104,8 +111,6 @@ def ReadBinaryFile(filename):
     data = f.read()
     f.close()
     return data
-
-# RebuildOne_new and RebuildOne_orig are just for debugging purposes
 
 
 def RebuildOne(inlist, listlen, outfilename):
@@ -133,54 +138,19 @@ def RebuildOne(inlist, listlen, outfilename):
         while i < len(raidreads[0]):
             xor = 0
             for j in range(listlen):
-                b1 = ord(raidreads[j][i])
+                b1 = ord(raidreads[j][i:i+1])
                 xor = xor ^ b1
-            rebuildfile.write(chr(xor))
+            if six.PY3:
+                out_byte = bytes([xor, ])
+            else:
+                out_byte = chr(xor)
+            rebuildfile.write(out_byte)
             i += readsize
     for filenum in range(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
     return True
 
-
-def RebuildOne_new(inlist, listlen, outfilename):
-    fds = list(range(0, listlen))   # just need a list of this size
-    wholefile = ReadBinaryFile(inlist[0])
-    seglength = len(wholefile)   # just needed length of file
-    for filenum in range(listlen):
-        fds[filenum] = open(inlist[filenum], "r")
-    fout = open(outfilename, "w")
-    for i in range(seglength):
-        xor = 0
-        for j in range(listlen):
-            b1 = ord(fds[j].read(1))
-            xor = xor ^ b1
-        fout.write(chr(xor))
-    for filenum in range(listlen):
-        fds[filenum].close
-
-# We XOR list of listlen input files and write result to a file named
-# outfilename
-
-
-def RebuildOne_orig(inlist, listlen, outfilename):
-    INTSIZE = 4
-    fds = list(range(0, listlen))   # just need a list of this size
-    wholefile = ReadBinaryFile(inlist[0])
-    seglength = len(wholefile)   # just needed length of file
-    for filenum in range(0, listlen):
-        fds[filenum] = open(inlist[filenum], "rb")
-    fout = open(outfilename, "wb")
-    for i in range(0, seglength / INTSIZE):
-        xor = 0
-        for j in range(0, listlen):
-            bstr1 = fds[j].read(INTSIZE)
-            b1, = struct.unpack(">l", bstr1)
-            xor = xor ^ b1
-        outstr = struct.pack(">l", xor)
-        fout.write(outstr)
-    for filenum in range(0, listlen):
-        fds[filenum].close
 
 # If segment is good, there is a file for it, if not then no file exists.
 # We only rebuild data segments.
@@ -197,61 +167,64 @@ def raidread(
         version,
         blockNumber,
         data_parity_dir):
-    myeccmap = raid.eccmap.eccmap(eccmapname)
-    GoodFiles = list(range(0, 200))
-    MakingProgress = 1
-    while MakingProgress == 1:
-        MakingProgress = 0
-        for PSegNum in range(myeccmap.paritysegments):
-            PFileName = os.path.join(
+    try:
+        myeccmap = eccmap.eccmap(eccmapname)
+        GoodFiles = list(range(0, 200))
+        MakingProgress = 1
+        while MakingProgress == 1:
+            MakingProgress = 0
+            for PSegNum in range(myeccmap.paritysegments):
+                PFileName = os.path.join(
+                    data_parity_dir,
+                    version,
+                    str(blockNumber) +
+                    '-' +
+                    str(PSegNum) +
+                    '-Parity')
+                if os.path.exists(PFileName):
+                    Map = myeccmap.ParityToData[PSegNum]
+                    TotalDSegs = 0
+                    GoodDSegs = 0
+                    for DSegNum in Map:
+                        TotalDSegs += 1
+                        FileName = os.path.join(
+                            data_parity_dir,
+                            version,
+                            str(blockNumber) +
+                            '-' +
+                            str(DSegNum) +
+                            '-Data')
+                        if os.path.exists(FileName):
+                            GoodFiles[GoodDSegs] = FileName
+                            GoodDSegs += 1
+                        else:
+                            BadName = FileName
+                    if GoodDSegs == TotalDSegs - 1:
+                        MakingProgress = 1
+                        GoodFiles[GoodDSegs] = PFileName
+                        GoodDSegs += 1
+                        RebuildOne(GoodFiles, GoodDSegs, BadName)
+        #  Count up the good segments and combine
+        GoodDSegs = 0
+        output = open(OutputFileName, "wb")
+        for DSegNum in range(myeccmap.datasegments):
+            FileName = os.path.join(
                 data_parity_dir,
                 version,
                 str(blockNumber) +
                 '-' +
-                str(PSegNum) +
-                '-Parity')
-            if os.path.exists(PFileName):
-                Map = myeccmap.ParityToData[PSegNum]
-                TotalDSegs = 0
-                GoodDSegs = 0
-                for DSegNum in Map:
-                    TotalDSegs += 1
-                    FileName = os.path.join(
-                        data_parity_dir,
-                        version,
-                        str(blockNumber) +
-                        '-' +
-                        str(DSegNum) +
-                        '-Data')
-                    if os.path.exists(FileName):
-                        GoodFiles[GoodDSegs] = FileName
-                        GoodDSegs += 1
-                    else:
-                        BadName = FileName
-                if GoodDSegs == TotalDSegs - 1:
-                    MakingProgress = 1
-                    GoodFiles[GoodDSegs] = PFileName
-                    GoodDSegs += 1
-                    RebuildOne(GoodFiles, GoodDSegs, BadName)
-    #  Count up the good segments and combine
-    GoodDSegs = 0
-    output = open(OutputFileName, "wb")
-    for DSegNum in range(myeccmap.datasegments):
-        FileName = os.path.join(
-            data_parity_dir,
-            version,
-            str(blockNumber) +
-            '-' +
-            str(DSegNum) +
-            '-Data')
-        if os.path.exists(FileName):
-            GoodDSegs += 1
-            moredata = open(FileName, "rb").read()
-            output.write(moredata)
-    output.close()
-    return GoodDSegs
-    # except:
-    #     return None
+                str(DSegNum) +
+                '-Data')
+            if os.path.exists(FileName):
+                GoodDSegs += 1
+                moredata = open(FileName, "rb").read()
+                output.write(moredata)
+        output.close()
+        return GoodDSegs
+
+    except:
+        lg.exc()
+        return None
 
 
 def main():

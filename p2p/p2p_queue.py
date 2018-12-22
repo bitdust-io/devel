@@ -48,7 +48,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 20
 
 #------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ import json
 from collections import OrderedDict
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in p2p_queue.py')
 
@@ -79,6 +79,8 @@ from logs import lg
 from lib import utime
 from lib import misc
 from lib import packetid
+from lib import strng
+from lib import serialization
 
 from main import events
 
@@ -170,7 +172,7 @@ def producer(producer_id=None):
 def start():
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.start')
-    reactor.callLater(0, process_queues)
+    reactor.callLater(0, process_queues)  # @UndefinedVariable
     return True
 
 
@@ -199,7 +201,7 @@ def process_queues():
             MAX_PROCESS_QUEUES_DELAY,
         )
         # attenuation
-        _ProcessQueuesTask = reactor.callLater(_ProcessQueuesDelay, process_queues)
+        _ProcessQueuesTask = reactor.callLater(_ProcessQueuesDelay, process_queues)  # @UndefinedVariable
 
 
 def touch_queues():
@@ -464,7 +466,7 @@ def push_message(producer_id, queue_id, data, creation_time=None):
     queue(queue_id)[new_message.message_id].state = 'PUSHED'
     if _Debug:
         lg.out(_DebugLevel, 'p2p_queue.push_message  %s added to queue %s' % (new_message.message_id, queue_id, ))
-    reactor.callLater(0, touch_queues)
+    reactor.callLater(0, touch_queues)  # @UndefinedVariable
     return True
 
 
@@ -520,7 +522,7 @@ def push_signed_message(producer_id, queue_id, data, creation_time=None):
             OwnerID=producer_id,
             CreatorID=producer_id,
             PacketID=packetid.UniqueID(),
-            Payload=json.dumps(data),
+            Payload=serialization.DictToBytes(data),
             RemoteID=queue_id,
             KeyID=producer_id,
         )
@@ -558,7 +560,7 @@ def on_notification_succeed(result, consumer_id, queue_id, message_id):
         finish_notification(consumer_id, queue_id, message_id, success=True)
     except:
         lg.exc()
-    reactor.callLater(0, do_cleanup)
+    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
     return result
 
 
@@ -570,22 +572,20 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
         finish_notification(consumer_id, queue_id, message_id, success=False)
     except:
         lg.exc()
-    reactor.callLater(0, do_cleanup)
+    reactor.callLater(0, do_cleanup)  # @UndefinedVariable
     return err
 
 #------------------------------------------------------------------------------
 
 def on_event_packet_received(newpacket, info, status, error_message):
-    if newpacket.Command != commands.Event():
-        return False
     try:
-        e_json = json.loads(newpacket.Payload)
-        event_id = e_json['event_id']
+        e_json = serialization.BytesToDict(newpacket.Payload)
+        event_id = strng.to_text(e_json['event_id'])
         payload = e_json['payload']
-        queue_id = e_json.get('queue_id')
+        queue_id = strng.to_text(e_json.get('queue_id'))
         producer_id = e_json.get('producer_id')
-        message_id = e_json.get('message_id')
-        created = e_json.get('created')
+        message_id = strng.to_text(e_json.get('message_id'))
+        created = strng.to_text(e_json.get('created'))
     except:
         lg.warn("invlid json payload")
         return False
@@ -680,7 +680,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
         except:
             lg.exc()
             result = False
-        reactor.callLater(0, ret.callback, result)
+        reactor.callLater(0, ret.callback, result)  # @UndefinedVariable
 
     return start_notification(consumer_id, queue_id, message_id, ret)
 
@@ -887,7 +887,7 @@ def test():
     events.send('test123', data=dict(abc='abc', counter=20))
     events.send('test123', data=dict(abc='abc', counter=30))
     events.send('test123', data=dict(abc='abc', counter=40))
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == '__main__':

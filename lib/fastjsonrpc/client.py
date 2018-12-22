@@ -32,7 +32,7 @@ from twisted.internet.defer import succeed
 from twisted.web.iweb import IBodyProducer
 
 from twisted.cred.credentials import Anonymous, UsernamePassword
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.protocol import Protocol
 from twisted.internet.defer import Deferred
 from twisted.web.client import (Agent, ContentDecoderAgent, GzipDecoder,

@@ -32,7 +32,7 @@ import sys
 from twisted.web.static import File
 from zope.interface import implementer
 from twisted.python import log
-from twisted.internet import reactor, ssl
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.web import server, resource, guard
 from twisted.cred.portal import IRealm, Portal
 from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse

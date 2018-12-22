@@ -50,7 +50,7 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

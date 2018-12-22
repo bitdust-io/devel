@@ -48,7 +48,7 @@ import time
 import StringIO
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in message_transmitter.py')
 

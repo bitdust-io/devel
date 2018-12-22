@@ -51,7 +51,7 @@ class UDPTransportService(LocalService):
                 ]
 
     def start(self):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
         from transport.udp import udp_interface
         from transport import network_transport

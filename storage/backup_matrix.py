@@ -67,7 +67,7 @@ import os
 import sys
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_matrix.py')
 
@@ -583,10 +583,10 @@ def ReadLocalFiles():
 def DetectSupplierPosition(raw_list_file_text):
     """
     """
-    inpt = BytesIO(raw_list_file_text)
+    inpt = BytesIO(strng.to_bin(raw_list_file_text))
     all_positions = {}
     while True:
-        line = inpt.readline()
+        line = strng.to_text(inpt.readline())
         if line == '':
             break
         typ = line[0]

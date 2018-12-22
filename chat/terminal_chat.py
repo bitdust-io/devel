@@ -40,7 +40,7 @@ import termios
 import tty
 import threading
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

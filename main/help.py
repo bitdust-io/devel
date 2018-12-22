@@ -82,6 +82,7 @@ Commands:
   service list
   service <service name>
   ping <IDURL>
+  dhtseed
   chat
   chat send <IDURL> "<text message>"
   api <method> [params]
@@ -232,6 +233,8 @@ Commands:
 
   ping <IDURL>          send Identity packet to this node
                         and wait Ack packet to check his status
+
+  dhtseed               start stand alone Distributed Hash Table seed node
 
   chat                  start a chat session, send/listen text
                         messages from other users

@@ -19,31 +19,41 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-#
-#
-#
 
+#------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+import os
+
+#------------------------------------------------------------------------------
+
+_KnownServers = None
+
+#------------------------------------------------------------------------------
+
 def default_nodes():
     """
-    A set of identity servers currently maintained.
+    A set of identity servers currently maintained, see file networks.json in the root folder.
     """
-    return {
-        # by Veselin Penev:
-        'p2p-id.ru': (80, 6661),
-        'datahaven.net': (80, 6661),
-        # 'identity.datahaven.net': (80, 6661),
-        'bitdust.io': (8084, 6661),
-        # 'work.offshore.ai': (8084, 6661),
-        'blog.bitdust.io': (8084, 6661),
-        'bitdust.ai': (80, 6661),
-        # 'veselin-p2p.ru': (80, 6661),
-        # 'test.zenaida.ai': (8084, 6661),
-        
-        # by Renato Cardoso:
-        'bitrex.ai': (8084, 6661),
-    }
+    from system import bpio
+    from system import local_fs
+    from lib import serialization
+    from main import settings
+    from logs import lg
+    networks_json = serialization.BytesToDict(
+        local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')))
+    my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
+    if not my_network:
+        my_network = 'main'
+    if my_network not in networks_json:
+        my_network = 'main'
+    network_info = networks_json[my_network]
+    identity_servers = {}
+    for identity_server in network_info['identity-servers']:
+        identity_servers[identity_server['host']] = (identity_server['http_port'], identity_server['tcp_port'], )
+    lg.info('Active network is [%s]   identity_servers=%s' % (my_network, identity_servers, ))
+    return identity_servers
 
 
 def by_host():
@@ -67,14 +77,17 @@ def by_host():
 
     This way you can create your own BitDust network, under your full control.
     """
-
+    global _KnownServers
+    if _KnownServers is not None:
+        return _KnownServers
     try:
         from main import config
         overridden_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
     except:
         overridden_identity_servers_str = ''
     if not overridden_identity_servers_str:
-        return default_nodes()
+        _KnownServers = default_nodes()
+        return _KnownServers
 
     overridden_identity_servers = {}
     for id_server_str in overridden_identity_servers_str.split(','):
@@ -89,6 +102,10 @@ def by_host():
             overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
 
     if overridden_identity_servers:
-        return overridden_identity_servers
+        from logs import lg
+        lg.info('Identity servers was overridden in local settings: %s' % overridden_identity_servers)
+        _KnownServers = overridden_identity_servers
+        return _KnownServers
 
-    return default_nodes()
+    _KnownServers = default_nodes()
+    return _KnownServers

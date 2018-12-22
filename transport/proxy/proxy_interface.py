@@ -159,8 +159,8 @@ class GateInterface():
         # he will receive all packets addressed to me and redirect to me
         result = proxy_receiver.GetRouterIdentity().getContacts()
         if _Debug:
-            lg.out(4, 'proxy_interface.build_contacts %s : %s' % (
-                proxy_receiver.GetRouterIdentity().getIDName(), str(result)))
+            lg.out(4, 'proxy_interface.build_contacts %s : %r' % (
+                proxy_receiver.GetRouterIdentity().getIDName(), result))
         return result
 
     def verify_contacts(self, id_obj):

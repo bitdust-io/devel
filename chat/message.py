@@ -45,7 +45,7 @@ import time
 import json
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in message.py')
 
@@ -189,6 +189,16 @@ class PrivateMessage(object):
         self.recipient = recipient_global_id
         self.encrypted_session = encrypted_session
         self.encrypted_body = encrypted_body
+        if _Debug:
+            lg.out(_DebugLevel, 'message.%s created' % self)
+
+    def __str__(self):
+        return 'PrivateMessage (%r->%r) : %r %r' % (
+            self.sender,
+            self.recipient,
+            type(self.encrypted_session),
+            type(self.encrypted_body),
+        )
 
     def sender_id(self):
         return self.sender
@@ -267,11 +277,15 @@ class PrivateMessage(object):
     def deserialize(input_string):
         try:
             dct = serialization.BytesToDict(input_string)
+            _recipient = dct['r']
+            _sender = dct['s']
+            _encrypted_session_key = dct['k']
+            _encrypted_body = dct['p']
             message_obj = PrivateMessage(
-                recipient_global_id=dct['r'],
-                sender=dct['s'],
-                encrypted_session=dct['k'],
-                encrypted_body=dct['b'],
+                recipient_global_id=_recipient,
+                sender=_sender,
+                encrypted_session=_encrypted_session_key,
+                encrypted_body=_encrypted_body,
             )
         except:
             lg.exc()

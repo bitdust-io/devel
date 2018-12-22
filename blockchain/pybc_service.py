@@ -73,7 +73,7 @@ import json
 import logging
 import time
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -90,9 +90,7 @@ from main import events
 
 #------------------------------------------------------------------------------
 
-from . import pybc.util
-from . import pybc.json_coin
-from . import pybc.token
+from blockchain import pybc
 
 #------------------------------------------------------------------------------
 
@@ -269,7 +267,7 @@ def start_block_explorer(port_number, peer_instance):
         logging.info('Block Explorer already started')
         return False
     logging.info('Starting Block Explorer on port %d, peer network versions is: %s/%s' % (port_number, peer_instance.network, peer_instance.version))
-    from . import pybc.block_explorer
+    # from . import pybc.block_explorer
     _BlockExplorerListener = pybc.block_explorer.start(port_number, peer_instance)
     return True
 
@@ -294,7 +292,7 @@ def start_wallet(port_number, peer_instance, wallet_instance):
         logging.info('Wallet already started')
         return False
     logging.info('Starting Wallet on port %d, peer network versions is: %s/%s' % (port_number, peer_instance.network, peer_instance.version))
-    from . import pybc.wallet
+    # from . import pybc.wallet
     _WalletListener = pybc.wallet.start(port_number, peer_instance, wallet_instance)
     return True
 

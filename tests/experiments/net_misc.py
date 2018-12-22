@@ -24,7 +24,7 @@ from __future__ import print_function
 import os
 import sys
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import Deferred
 
 if __name__ == '__main__':

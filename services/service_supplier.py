@@ -68,9 +68,12 @@ class SupplierService(LocalService):
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
         space_dict = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
+            known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             events.send('existing-customer-accepted', data=dict(
                 idurl=customer_idurl,
                 allocated_bytes=space_dict.get(customer_idurl),
+                ecc_map=known_customer_meta_info.get('ecc_map'),
+                position=known_customer_meta_info.get('position'),
             ))
         return True
 
@@ -88,7 +91,7 @@ class SupplierService(LocalService):
         return True
 
     def request(self, json_payload, newpacket, info):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from main import events
         from crypt import my_keys
@@ -112,6 +115,7 @@ class SupplierService(LocalService):
             customer_public_key_id = None
         data_owner_idurl = None
         target_customer_idurl = None
+        family_position = json_payload.get('position')
         ecc_map = json_payload.get('ecc_map')
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')
@@ -155,7 +159,7 @@ class SupplierService(LocalService):
             lg.out(6, 'service_supplier.request created a new space file')
         space_dict = accounting.read_customers_quotas()
         try:
-            free_bytes = int(space_dict['free'])
+            free_bytes = int(space_dict[b'free'])
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
@@ -167,7 +171,7 @@ class SupplierService(LocalService):
             return p2p_service.SendFail(newpacket, 'broken customers file')
         if customer_idurl in current_customers:
             free_bytes += int(space_dict[customer_idurl])
-            space_dict['free'] = free_bytes
+            space_dict[b'free'] = free_bytes
             current_customers.remove(customer_idurl)
             space_dict.pop(customer_idurl)
             new_customer = False
@@ -189,12 +193,15 @@ class SupplierService(LocalService):
                 lg.out(8, "    OLD CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
                 events.send('existing-customer-denied', dict(idurl=customer_idurl))
             return p2p_service.SendAck(newpacket, 'deny')
-        space_dict['free'] = free_bytes - bytes_for_customer
+        space_dict[b'free'] = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
         space_dict[customer_idurl] = bytes_for_customer
         contactsdb.update_customers(current_customers)
-        contactsdb.add_customer_meta_info(customer_idurl, {'ecc_map': ecc_map, })
         contactsdb.save_customers()
+        contactsdb.add_customer_meta_info(customer_idurl, {
+            'ecc_map': ecc_map,
+            'position': family_position,
+        })
         accounting.write_customers_quotas(space_dict)
         if customer_public_key_id:
             my_keys.erase_key(customer_public_key_id)
@@ -207,28 +214,34 @@ class SupplierService(LocalService):
                 lg.exc()
         else:
             lg.warn('customer public key was not provided in the request')
-        reactor.callLater(0, local_tester.TestUpdateCustomers)
+        reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
             events.send('new-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
                 key_id=customer_public_key_id,
             ))
         else:
             lg.out(8, "    OLD CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
-            events.send('existing-customer-accepted', dict(idurl=customer_idurl))
+            events.send('existing-customer-accepted', dict(
+                idurl=customer_idurl,
+                allocated_bytes=bytes_for_customer,
+                ecc_map=ecc_map,
+                position=family_position,
+                key_id=customer_public_key_id,
+            ))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def cancel(self, json_payload, newpacket, info):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from main import events
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
-        from services import driver
-        # from userid import global_id
         customer_idurl = newpacket.OwnerID
         if not contactsdb.is_customer(customer_idurl):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
@@ -240,8 +253,8 @@ class SupplierService(LocalService):
             lg.warn("got packet from %s, but not found him in space dictionary" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
         try:
-            free_bytes = int(space_dict['free'])
-            space_dict['free'] = free_bytes + int(space_dict[customer_idurl])
+            free_bytes = int(space_dict[b'free'])
+            space_dict[b'free'] = free_bytes + int(space_dict[customer_idurl])
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
@@ -254,9 +267,6 @@ class SupplierService(LocalService):
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
-        # if driver.is_on('service_supplier_relations'):
-        #     from dht import dht_relations
-        #     reactor.callLater(0, dht_relations.close_customer_supplier_relation, customer_idurl)
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
         events.send('existing-customer-terminated', dict(idurl=customer_idurl))
         return p2p_service.SendAck(newpacket, 'accepted')
@@ -330,13 +340,14 @@ class SupplierService(LocalService):
         import os
         from logs import lg
         from system import bpio
+        from lib import strng
         from userid import global_id
         from p2p import p2p_service
         from main import events
         if not newpacket.Payload:
             ids = [newpacket.PacketID, ]
         else:
-            ids = newpacket.Payload.split('\n')
+            ids = strng.to_text(newpacket.Payload).split('\n')
         filescount = 0
         dirscount = 0
         lg.warn('going to erase files: %s' % ids)
@@ -538,7 +549,7 @@ class SupplierService(LocalService):
 
     def _on_data(self, newpacket):
         import os
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from system import bpio
         from main import settings
@@ -579,7 +590,7 @@ class SupplierService(LocalService):
         data = newpacket.Serialize()
         donated_bytes = settings.getDonatedBytes()
         if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes, })
+            bpio._write_dict(settings.CustomersSpaceFile(), {b'free': donated_bytes, })
             lg.warn('created a new space file: %s' % settings.CustomersSpaceFile())
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
         if newpacket.OwnerID not in list(space_dict.keys()):

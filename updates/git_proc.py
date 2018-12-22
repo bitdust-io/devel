@@ -52,7 +52,7 @@ import sys
 import time
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in git_proc.py')
 
@@ -179,7 +179,7 @@ def sync(callback_func=None, update_method='rebase'):
         if retcode != 0:
             result = 'sync-error'
         else:
-            if response.count('Changes from') or response.count('Fast-forwarded'):
+            if response.count(b'Changes from') or response.count(b'Fast-forwarded'):
                 result = 'code-fetched'
             else:
                 result = 'up-to-date'
@@ -191,11 +191,11 @@ def sync(callback_func=None, update_method='rebase'):
                 callback_func('sync-error')
             return
         result = 'sync-error'
-        if response.count('Unpacking') or \
-            (response.count('master') and response.count('->')) or \
-            response.count('Updating') or \
-            response.count('Receiving') or \
-                response.count('Counting'):
+        if response.count(b'Unpacking') or \
+            (response.count(b'master') and response.count(b'->')) or \
+            response.count(b'Updating') or \
+            response.count(b'Receiving') or \
+                response.count(b'Counting'):
             result = 'new-code'
         if update_method == 'reset':
             run(['reset', '--hard', 'origin/master', ],
@@ -283,13 +283,13 @@ class GitProcessProtocol(protocol.ProcessProtocol):
         self.err += inp
         for line in inp.splitlines():
             if _Debug:
-                lg.out(_DebugLevel, '[git:err]: %s' % line)
+                lg.out(_DebugLevel, '[git:err]: %s' % strng.to_text(line))
 
     def outReceived(self, inp):
         self.out += inp
         for line in inp.splitlines():
             if _Debug:
-                lg.out(_DebugLevel, '[git:out]: %s' % line)
+                lg.out(_DebugLevel, '[git:out]: %s' % strng.to_text(line))
 
     def processEnded(self, reason):
         if _Debug:

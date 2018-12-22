@@ -69,7 +69,7 @@ def init():
     message.AddIncomingMessageCallback(on_incoming_message)
     message.AddOutgoingMessageCallback(on_outgoing_message)
     if not my_keys.is_key_registered(messages_key_id()):
-        my_keys.generate_key(messages_key_id())
+        my_keys.generate_key(messages_key_id(), key_size=settings.getPrivateKeySize())
 
 
 def shutdown():

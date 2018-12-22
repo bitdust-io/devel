@@ -2,6 +2,65 @@ Change Log
 ==========
 
 
+2018-12-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* able to restore identity again : added "stun my IP" step in id_restorer()
+* added regression tests for private messages
+* fix in "bitdust stop" command
+* testing main network
+
+
+
+2018-12-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* created networks.json file to store info about "genesis" nodes
+* moved p2p-id.ru and bitdust.ai to the main network
+* bug fixes proxy_router()
+* added retries=2 to propagate.PingContact()
+* added check for service_proxy_transport() in network/connected/v1
+* stabilyzing regression tests
+* removed parallelp lib from the repo
+* switched tests from run_ssh_curl_and_wait() to requests.get()/post()
+* added ssh tunnels to regression tests
+* use settings.getPrivateKeySize() in my_keys.generate_key()
+* state machine core event() method will properly trigger state changed callbacks when closing automat instance
+* added revision and publisher fields in dht record of customer family
+* supplier to be notified about his position in the family by customer
+* service_employer() will report supplier position to service_customer_family()
+* rebuilding supplier service in order to reduce DHT queries and build customer family logic
+* added make regression_test target
+* building healt_check() method for every network service
+* added tests for restore identity
+
+
+
+2018-11-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* ported to Python3.6 finally (Python2.7 also supported) !!!
+* speed up raid workers (Stanislav Evseev)
+* switched from parallelp to the built-in multiprocessing (Stanislav Evseev)
+* turn on proxy server by default for all nodes, updated seed nodes
+* built more unit tests
+* "make test" command will also execute "python bitdust.py install" first
+* use global python to run unit tests
+* run unit tests on travis
+* transition from pickle to json
+* new regression tests based on docker containers (Stanislav Evseev)
+* CI/CD integration with travis
+* detect current python version in deploy script and use it
+* added system.deploy module to isolate everythng related to "python bitdust.py install" command
+* Add chat-history endpoint (Anton Grishun)
+* slow down DHT traffic
+* added space_donated(), space_consumed() and space_local() methods to REST HTTP API
+* added api method identity_backup(), tested recover identity
+* bug fix : correctly load/save list of my suppliers
+* randomize tcp, udp, http, dht and blockchain port numbers during startup
+* Added environment variable to access to internal api interface
+* added bitrex.ai to dht seed nodes (by Renato Cardoso)
+* added CodernityDB3 fork to code base
+
+
+
 2018-07-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added more known id servers

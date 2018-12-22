@@ -43,9 +43,10 @@ _DebugLevel = 10
 
 from logs import lg
 
-from dht import dht_service
-
 from lib import utime
+from lib import strng
+
+from dht import dht_service
 
 #------------------------------------------------------------------------------
 
@@ -70,6 +71,13 @@ _Rules = {
         'index': [{'op': 'exist', }, ],
         'prefix': [{'op': 'exist', }, ],
         'data': [{'op': 'exist', }, ],
+    },
+    'suppliers': {
+        'type': [{'op': 'equal', 'arg': 'suppliers', }, ],
+        'timestamp': [{'op': 'exist', }, ],
+        'customer_idurl': [{'op': 'exist', }, ],
+        'ecc_map': [{'op': 'exist', }, ],
+        'suppliers': [{'op': 'exist', }, ],
     },
 }
 
@@ -136,7 +144,7 @@ def get_relation(key):
         lg.args(_DebugLevel, key)
     return dht_service.get_valid_data(key, rules=get_rules('relation'))
 
-def set_relation(key, idurl, data, prefix, index):
+def set_relation(key, idurl, data, prefix, index, expire=60*60):
     if _Debug:
         lg.args(_DebugLevel, key, idurl, prefix, index)
     return dht_service.set_valid_data(
@@ -150,7 +158,37 @@ def set_relation(key, idurl, data, prefix, index):
             'data': data,
         },
         rules=get_rules('relation'),
-        expire=60 * 60,
+        expire=expire,
     )
 
 #------------------------------------------------------------------------------
+
+def get_suppliers(customer_idurl):
+    if _Debug:
+        lg.args(_DebugLevel, customer_idurl)
+    return dht_service.get_valid_data(
+        key=dht_service.make_key(
+            key=strng.to_text(customer_idurl),
+            prefix='suppliers',
+        ),
+        rules=get_rules('suppliers'),
+    )
+
+def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher=None, expire=60*60):
+    return dht_service.set_valid_data(
+        key=dht_service.make_key(
+            key=strng.to_text(customer_idurl),
+            prefix='suppliers',
+        ),
+        json_data={
+            'type': 'suppliers',
+            'timestamp': utime.get_sec1970(),
+            'revision': revision,
+            'publisher': publisher,
+            'customer_idurl': customer_idurl,
+            'ecc_map': ecc_map,
+            'suppliers': suppliers_list,
+        },
+        rules=get_rules('suppliers'),
+        expire=expire,
+    )

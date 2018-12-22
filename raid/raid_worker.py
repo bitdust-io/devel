@@ -54,7 +54,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -62,11 +62,10 @@ _DebugLevel = 10
 import os
 import sys
 
-from parallelp import pp
 from six.moves import range
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in raid_worker.py')
 
@@ -78,7 +77,7 @@ from system import bpio
 
 from automats import automat
 
-from main import settings
+from raid.worker import Manager
 
 from . import read
 from . import make
@@ -297,12 +296,9 @@ class RaidWorker(automat.Automat):
             # even decided to use only half of CPUs at the moment
             # TODO: make an option in the software settings
             ncpus = int(ncpus / 2.0)
-        self.processor = pp.Server(
-            secret='bitdust',
-            ncpus=ncpus,
-            loglevel=lg.get_loging_level(_DebugLevel),
-            logfile=settings.ParallelPLogFilename(),
-        )
+
+        self.processor = Manager(ncpus=ncpus)
+
         self.automat('process-started')
 
     def doKillProcess(self, arg):
@@ -328,22 +324,28 @@ class RaidWorker(automat.Automat):
         """
         global _VALID_TASKS
         global _MODULES
-        if len(self.activetasks) >= self.processor.get_ncpus():
+
+        if len(self.activetasks) >= self.processor.ncpus:
             lg.out(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
-                len(self.activetasks), self.processor.get_ncpus()))
+                len(self.activetasks), self.processor.ncpus))
             return
+
         try:
             task_id, cmd, params = self.tasks.pop(0)
             func, depfuncs = _VALID_TASKS[cmd]
         except:
             lg.exc()
             return
-        proc = self.processor.submit(func, params,
-                                     modules=_MODULES, depfuncs=depfuncs,
-                                     callback=lambda result: self._job_done(task_id, cmd, params, result))
+
+        proc = self.processor.submit(
+            func,
+            params,
+            callback=lambda result: self._job_done(task_id, cmd, params, result),
+        )
+
         self.activetasks[task_id] = (proc, cmd, params)
         lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
-            task_id, len(self.activetasks), self.processor.get_ncpus()))
+            task_id, len(self.activetasks), self.processor.ncpus))
         reactor.callLater(0.01, self.automat, 'task-started', task_id)
 
     def doReportTaskDone(self, arg):
@@ -386,13 +388,13 @@ class RaidWorker(automat.Automat):
         _RaidWorker = None
 
     def _job_done(self, task_id, cmd, params, result):
-        lg.out(12, 'raid_worker._job_done %r : %r active:%r' % (
+        lg.out(6, 'raid_worker._job_done %r : %r active:%r' % (
             task_id, result, list(self.activetasks.keys())))
         self.automat('task-done', (task_id, cmd, params, result))
 
     def _kill_processor(self):
         if self.processor:
-            self.processor.destroy()
+            self.processor.terminate()
             lg.out(12, 'raid_worker._kill_processor processor was destroyed')
 
 

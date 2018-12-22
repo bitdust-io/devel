@@ -62,8 +62,12 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
+
+#------------------------------------------------------------------------------
+
+import base64
 
 #------------------------------------------------------------------------------
 
@@ -121,7 +125,8 @@ class Block(object):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getLocalID()
-        self.BackupID = str(BackupID)
+        self.CreatorID = strng.to_bin(self.CreatorID)
+        self.BackupID = strng.to_text(BackupID)
         self.BlockNumber = BlockNumber
         self.LastBlock = bool(LastBlock)
         self.SessionKeyType = SessionKeyType or key.SessionKeyType()
@@ -245,7 +250,7 @@ class Block(object):
             'b': self.BackupID,
             'n': self.BlockNumber,
             'e': self.LastBlock,
-            'k': self.EncryptedSessionKey,
+            'k': base64.b64encode(self.EncryptedSessionKey).decode('utf-8'),
             't': self.SessionKeyType,
             'l': self.Length,
             'p': self.EncryptedData,
@@ -260,14 +265,19 @@ def Unserialize(data, decrypt_key=None):
     A method to create a ``encrypted.Block`` instance from input string.
     """
     dct = serialization.BytesToDict(data)
-    newobject = Block(
-        CreatorID=dct['c'],
-        BackupID=dct['b'],
-        BlockNumber=dct['n'],
-        EncryptedSessionKey=dct['k'],
-        SessionKeyType=dct['t'],
-        Length=dct['l'],
-        EncryptedData=dct['p'],
-        Signature=dct['s'],
-    )
+    try:
+        newobject = Block(
+            CreatorID=dct['c'],
+            BackupID=strng.to_text(dct['b']),
+            BlockNumber=dct['n'],
+            EncryptedSessionKey=base64.b64decode(dct['k']),
+            SessionKeyType=dct['t'],
+            Length=dct['l'],
+            EncryptedData=dct['p'],
+            Signature=dct['s'],
+            DecryptKey=decrypt_key,
+        )
+    except:
+        lg.exc()
+        return None
     return newobject

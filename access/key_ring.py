@@ -55,9 +55,9 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from contacts import identitycache
+from lib import strng
 
-from userid import my_id
+from contacts import identitycache
 
 from p2p import propagate
 from p2p import p2p_service
@@ -93,7 +93,7 @@ def _do_request_service_keys_registry(key_id, idurl, include_private, timeout, r
 
 
 def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout):
-    if not response.Payload.startswith('accepted'):
+    if not strng.to_text(response.Payload).startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
         return
     d = transfer_key(

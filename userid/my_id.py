@@ -156,10 +156,10 @@ def getLocalID():
 
 def getLocalIDURL():
     """
-    Return my IDURL.
-    """
-    # just an alias for now
+    Returns my IDURL.
+    Just an alias for now...
     # TODO: deprecate getLocalID() in favor of getLocalIDURL()
+    """
     return getLocalID()
 
 
@@ -576,10 +576,10 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=F
             setLocalIdentity(lid)
     else:
         # no modifications in my identity - cool !!!
-        lg.out(4, '    same revision: %s' % lid.revision)
-    lg.out(4, '    version: %s' % str(lid.version))
-    lg.out(4, '    contacts: %s' % str(lid.contacts))
-    lg.out(4, '    sources: %s' % str(lid.sources))
+        lg.out(4, '    same revision: %r' % lid.revision)
+    lg.out(4, '    version: %r' % lid.version)
+    lg.out(4, '    contacts: %r' % lid.contacts)
+    lg.out(4, '    sources: %r' % lid.sources)
     if changed:
         lg.out(4, '    SAVING new identity #%s' % lid.revision)
         # finally saving modified local identity

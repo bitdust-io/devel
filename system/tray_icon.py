@@ -122,7 +122,7 @@ def init(icons_path, icons_files=None):
 
     import wx
 
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 
     def create_menu_item(menu, label, func, icon=None):
         item = wx.MenuItem(menu, -1, label)
@@ -303,7 +303,7 @@ if __name__ == "__main__":
 
     from twisted.internet import wxreactor
     wxreactor.install()
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     init(sys.argv[1])
     SetControlFunc(test_control)
     reactor.run()
