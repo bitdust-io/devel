@@ -76,13 +76,13 @@ if six.PY2:
     from CodernityDB.database import (
         Database, RecordNotFound, RecordDeleted,
         IndexNotFoundException, DatabaseIsNotOpened,
-        PreconditionsException,
+        PreconditionsException, DatabaseConflict,
     )
 else:
     from CodernityDB3.database import (
         Database, RecordNotFound, RecordDeleted,
         IndexNotFoundException, DatabaseIsNotOpened,
-        PreconditionsException,
+        PreconditionsException, DatabaseConflict,
     )
 
 #------------------------------------------------------------------------------
@@ -111,8 +111,18 @@ def init():
             tmpdb = regenerate_indexes(temp_dir)
             rewrite_indexes(db(), tmpdb)
             bpio._dir_remove(temp_dir)
-            db().open()
-            db().reindex()
+            try:
+                db().open()
+                db().reindex()
+            except:
+                # really bad... we will lose whole data
+                _LocalStorage = Database(chat_history_dir)
+                _LocalStorage.custom_header = message_index.make_custom_header()
+                try:
+                    _LocalStorage.destroy()
+                except DatabaseConflict:
+                    pass
+                _LocalStorage.create()
     else:
         db().create()
     refresh_indexes(db())

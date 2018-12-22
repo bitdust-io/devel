@@ -26,7 +26,7 @@ from __future__ import absolute_import
 from twisted.protocols import basic
 from twisted.python import log
 from twisted.internet.protocol import Factory
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.endpoints import TCP4ClientEndpoint
 from twisted.internet.defer import Deferred
 

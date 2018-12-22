@@ -244,7 +244,6 @@ class TreeRoutingTable(RoutingTable):
                  node is returning all of the contacts that it knows of.
         @rtype: list
         """
-        if _Debug: print('findCloseNodes %r  _rpcNodeID=%r' % (key, _rpcNodeID))
         # if key == self.id:
         #    bucketIndex = 0 #TODO: maybe not allow this to continue?
         # else:
@@ -265,6 +264,7 @@ class TreeRoutingTable(RoutingTable):
                 closestNodes.extend(self._buckets[bucketIndex + i].getContacts(constants.k - len(closestNodes), _rpcNodeID))
                 canGoHigher = bucketIndex + (i + 1) < len(self._buckets)
             i += 1
+        if _Debug: print('findCloseNodes %r  _rpcNodeID=%r   result=%r' % (key, _rpcNodeID, closestNodes, ))
         return closestNodes
 
     def getContact(self, contactID):
@@ -352,13 +352,14 @@ class TreeRoutingTable(RoutingTable):
         # valKey = int(key.encode('hex'), 16)
         # valKey = int(codecs.encode(key, 'hex'), 16)
         valKey = int(encoding.encode_hex(key), 16)
-        if _Debug: print('_kbucketIndex  %r  %r' % (key, valKey, ))
         i = 0
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):
+                if _Debug: print('_kbucketIndex  %r  %r  returning %r' % (key, valKey, i, ))
                 return i
             else:
                 i += 1
+        if _Debug: print('_kbucketIndex  %r  %r  finishing with %r' % (key, valKey, i, ))
         return i
 
     def _randomIDInBucketRange(self, bucketIndex):

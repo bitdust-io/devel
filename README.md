@@ -47,6 +47,7 @@ On MacOSX platform you can install requirements in that way:
 
         brew install git python2
 
+
 And use pip to get all required packages:
 
         pip install --upgrade --user
@@ -57,6 +58,7 @@ And use pip to get all required packages:
 On Raspberry PI you will need to install those packages:
 
         sudo apt-get install git gcc python-dev python-virtualenv libffi-dev libssl-dev
+
 
 
 #### Get BitDust to your local machine

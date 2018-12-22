@@ -52,7 +52,7 @@ EVENTS:
 from __future__ import absolute_import
 import sys
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in install_wizard.py')
 

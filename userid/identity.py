@@ -878,7 +878,7 @@ class identity:
     def setVersion(self, version_string):
         """
         """
-        self.version = strng.to_bin(strng.to_string(version_string).strip())
+        self.version = strng.to_bin(version_string).strip()
 
     def setRevision(self, revision):
         """

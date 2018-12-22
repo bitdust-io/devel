@@ -258,7 +258,8 @@ def exception(level, maxTBlevel, exc_info):
         excTb = traceback.format_tb(trbk, maxTBlevel)
     else:
         excTb = []
-    s = 'Exception: <' + exception_name(value) + '>'
+    exc_name = exception_name(value)
+    s = 'Exception: <' + exc_name + '>'
     if _UseColors is None:
         _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
@@ -280,24 +281,23 @@ def exception(level, maxTBlevel, exc_info):
         else:
             out(level, l.replace('\n', ''))
     if _StoreExceptionsEnabled and _LogFileName:
-        import tempfile
-        fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
-        
+        exc_label = exc_name.lower().replace(' ', '_').replace('-', '_')[:80]
+        exc_label = ''.join([c for c in exc_label if c in '0123456789abcdefghijklmnopqrstuvwxyz_'])
+        exc_filename = os.path.join(os.path.dirname(_LogFileName), 'exception_' + exc_label + '.log')
+        if os.path.isfile(exc_filename):
+            fout = open(exc_filename, 'ab')
+        else:
+            fout = open(exc_filename, 'wb')
         if sys.version_info[0] == 3:
             if not isinstance(s, bytes):
                 s = s.encode('utf-8')
         else:
             if not isinstance(s, str):
                 s = s.encode('utf-8')
-        os.write(fd, s)
-        os.close(fd)
-        out(level, 'saved to: %s' % filename)
-#         try:
-#             fo = open(os.path.join(os.path.dirname(_LogFileName), 'exception.log'), 'w')
-#             fo.write(s)
-#             fo.close()
-#         except:
-#             pass
+        s += b'==========================================================\n\n'
+        fout.write(s)
+        fout.close()
+        out(level, 'saved to: %s' % exc_filename)
     return s
 
 

@@ -41,7 +41,7 @@ from time import strftime
 from six.moves import range
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in weblog.py')
 

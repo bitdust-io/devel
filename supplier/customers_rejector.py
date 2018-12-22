@@ -158,17 +158,17 @@ class CustomersRejector(automat.Automat):
         for idurl in unused_quotas:
             space_dict.pop(idurl, None)
         consumed_bytes = accounting.count_consumed_space(space_dict)
-        space_dict['free'] = donated_bytes - consumed_bytes
+        space_dict[b'free'] = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:
             accounting.write_customers_quotas(space_dict)
             lg.out(8, '        space is OK !!!!!!!!')
             self.automat('space-enough')
             return
         if failed_customers:
-            lg.out(8, '        found FAILED Customers:\n%s' % (
-                '            \n'.join(failed_customers)))
+            lg.out(8, '        found FAILED Customers: %d')
             for idurl in failed_customers:
                 current_customers.remove(idurl)
+                lg.out(8, '            %r' % idurl)
             self.automat('space-overflow', (
                 space_dict, consumed_bytes, current_customers, failed_customers))
             return
@@ -183,7 +183,7 @@ class CustomersRejector(automat.Automat):
             failed_customers.add(idurl)
             current_customers.remove(idurl)
             lg.out(8, '        customer %s will be REMOVED' % idurl)
-        space_dict['free'] = donated_bytes - consumed_bytes
+        space_dict[b'free'] = donated_bytes - consumed_bytes
         lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
         self.automat('space-overflow', (
             space_dict, consumed_bytes, current_customers, failed_customers))
@@ -204,17 +204,17 @@ class CustomersRejector(automat.Automat):
         if os.path.isfile(settings.CustomersSpaceFile()):
             space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
         else:
-            space_dict = {'free': donated_bytes}
+            space_dict = {b'free': donated_bytes}
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
         lg.out(8, 'customers_rejector.doTestMyCapacity donated=%d' % donated_bytes)
         try:
-            int(space_dict['free'])
+            int(space_dict[b'free'])
             for idurl, customer_bytes in space_dict.items():
-                if idurl != 'free':
+                if idurl != b'free':
                     spent_bytes += int(customer_bytes)
         except:
             lg.exc()
-            space_dict = {'free': donated_bytes}
+            space_dict = {b'free': donated_bytes}
             spent_bytes = 0
             removed_customers = list(current_customers)
             current_customers = []
@@ -222,7 +222,7 @@ class CustomersRejector(automat.Automat):
             return
         lg.out(8, '        spent=%d' % spent_bytes)
         if spent_bytes < donated_bytes:
-            space_dict['free'] = donated_bytes - spent_bytes
+            space_dict[b'free'] = donated_bytes - spent_bytes
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
             lg.out(8, '        space is OK !!!!!!!!')
             self.automat('space-enough')
@@ -281,7 +281,7 @@ class CustomersRejector(automat.Automat):
             lg.out(8, '        customer %s REMOVED' % customer_idurl)
             if spent_bytes < donated_bytes:
                 break
-        space_dict['free'] = donated_bytes - spent_bytes
+        space_dict[b'free'] = donated_bytes - spent_bytes
         lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
         self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
 

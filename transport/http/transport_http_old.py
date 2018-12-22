@@ -25,7 +25,7 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in http_node.py')
 

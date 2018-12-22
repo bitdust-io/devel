@@ -43,7 +43,7 @@ import time
 import struct
 import random
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.protocols import basic
 
 #------------------------------------------------------------------------------

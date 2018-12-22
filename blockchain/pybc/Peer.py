@@ -10,7 +10,8 @@ import threading
 import logging
 import socket
 
-from twisted.internet import reactor, endpoints
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet import endpoints
 
 from pybc.ClientFactory import ClientFactory
 from pybc.ServerFactory import ServerFactory

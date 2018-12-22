@@ -34,7 +34,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -47,12 +47,13 @@ import random
 import base64
 import optparse
 import json
+import pprint
 
 #------------------------------------------------------------------------------
 
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
-from twisted.internet.defer import Deferred, fail
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.task import LoopingCall  #@UnresolvedImport
+from twisted.internet.defer import Deferred, fail  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -63,10 +64,10 @@ if __name__ == '__main__':
 #------------------------------------------------------------------------------
 
 from dht.entangled.dtuple import DistributedTupleSpacePeer
-from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore
-from dht.entangled.kademlia.node import rpcmethod
-from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
-from dht.entangled.kademlia import constants
+from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
+from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
+from dht.entangled.kademlia import constants  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -75,8 +76,6 @@ from logs import lg
 from system import bpio
 
 from main import settings
-
-from dht import known_nodes
 
 from lib import strng
 from lib import utime
@@ -88,6 +87,8 @@ KEY_EXPIRE_MIN_SECONDS = 60 * 2
 KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
 RECEIVING_FREQUENCY_SEC = 0.01
 SENDING_FREQUENCY_SEC = 0.02  # must be always slower than receiving frequency!
+RECEIVING_QUEUE_LENGTH_CRITICAL = 100
+SENDING_QUEUE_LENGTH_CRITICAL = 50
 
 #------------------------------------------------------------------------------
 
@@ -145,8 +146,7 @@ def node():
 
 def connect(seed_nodes=[]):
     result = Deferred()
-    if not node().listener:
-        node().listenUDP()
+
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
@@ -154,26 +154,52 @@ def connect(seed_nodes=[]):
         result.callback(True)
         return result
 
-    def _on_join_success(ok):
+    if not seed_nodes:
+        from dht import known_nodes
+        seed_nodes = known_nodes.nodes()
+
+    if not node().listener:
+        node().listenUDP()
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
-        result.callback(True)
+            lg.out(_DebugLevel, 'dht_service.connect opened a new listener : %r' % node().listener)
+
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
+        for onenode in seed_nodes:
+            lg.out(_DebugLevel, '    %s:%s' % onenode)
+
+    def _on_join_success(live_contacts, resolved_seed_nodes):
+        if _Debug:
+            if isinstance(live_contacts, dict):
+                lg.warn('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
+            else: 
+                if len(live_contacts) > 0 and live_contacts[0]:
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
+                else:
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!')
+                    lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
+            lg.out(_DebugLevel, 'alive DHT nodes: %s' % pprint.pformat(live_contacts))
+            lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
+            lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
+        result.callback(resolved_seed_nodes)
+        return live_contacts
 
     def _on_join_failed(x):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT JOIN FAILED : %s' % x)
         result.callback(False)
+        return None
 
-    def _on_hosts_resolved(live_nodes):
+    def _on_hosts_resolved(resolved_seed_nodes):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(live_nodes)))
-            for onenode in live_nodes:
+            lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(resolved_seed_nodes)))
+            for onenode in resolved_seed_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
-        node().joinNetwork(live_nodes)
-        node()._joinDeferred.addCallback(_on_join_success)
-        node()._joinDeferred.addErrback(_on_join_failed)
+        d = node().joinNetwork(resolved_seed_nodes)
+        d.addCallback(_on_join_success, resolved_seed_nodes)
+        d.addErrback(_on_join_failed)
         node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)
-        return live_nodes
+        return resolved_seed_nodes
 
     def _on_hosts_resolve_failed(x):
         if _Debug:
@@ -181,12 +207,6 @@ def connect(seed_nodes=[]):
         result.callback(False)
         return x
 
-    if not seed_nodes:
-        seed_nodes = known_nodes.nodes()
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
-        for onenode in seed_nodes:
-            lg.out(_DebugLevel, '    %s:%s' % onenode)
     d = resolve_hosts(seed_nodes)
     d.addCallback(_on_hosts_resolved)
     d.addErrback(_on_hosts_resolve_failed)
@@ -232,7 +252,7 @@ def drop_counters():
 
 #------------------------------------------------------------------------------
 
-def on_host_resoled(ip, port, host, result_list, total_hosts, result_defer):
+def on_host_resolved(ip, port, host, result_list, total_hosts, result_defer):
     if not isinstance(ip, six.string_types) or port is None:
         result_list.append(None)
         lg.warn('"%s" failed to resolve' % host)
@@ -255,10 +275,9 @@ def resolve_hosts(nodes_list):
     result_defer = Deferred()
     result_list = []
     for node_tuple in nodes_list:
-        d = reactor.resolve(node_tuple[0])
-        d.addCallback(on_host_resoled, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
+        d = reactor.resolve(node_tuple[0])  #@UndefinedVariable
+        d.addCallback(on_host_resolved, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
         d.addErrback(on_host_failed, node_tuple[0], result_list, len(nodes_list), result_defer)
-        # d.addErrback(on_host_resoled, None, node_tuple[0], result_list, len(nodes_list), result_defer)
     return result_defer
 
 #------------------------------------------------------------------------------
@@ -275,7 +294,7 @@ def key_to_hash(key):
 
 #------------------------------------------------------------------------------
 
-def make_key(key, index, prefix, version=None):
+def make_key(key, prefix, index=0, version=None):
     global _ProtocolVersion
     if not version:
         version = _ProtocolVersion
@@ -372,8 +391,6 @@ def read_json_response(response, key, result_defer=None):
 
 
 def get_json_value(key):
-    if not node():
-        return fail(Exception('DHT service is off'))
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_json_value key=[%s]' % key)
     ret = Deferred()
@@ -388,7 +405,6 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
         return fail(Exception('DHT service is off'))
     try:
         value = jsn.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'))
-        # value = json.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'), encoding='utf-8')
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
@@ -434,8 +450,6 @@ def validate_data(value, key, rules, result_defer=None):
 
 
 def get_valid_data(key, rules={}):
-    if not node():
-        return fail(Exception('DHT service is off'))
     ret = Deferred()
     d = get_json_value(key)
     d.addCallback(validate_data, key, rules, ret)
@@ -536,7 +550,7 @@ def delete_node_data(key):
 class DHTNode(DistributedTupleSpacePeer):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        super(DHTNode, self).__init__(udpPort, dataStore, routingTable, networkProtocol)
+        super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=None, )
         self.data = {}
         self.expire_task = LoopingCall(self.expire)
         self._counter = count
@@ -587,7 +601,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def request(self, key):
         count('request')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_string(key, errors='ignore')[:10])
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
         internal_value = get_node_data(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
@@ -630,7 +644,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def datagramReceived(self, datagram, address):
         count('dht_datagramReceived')
-        if len(self.receiving_queue) > 50:
+        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL:
             lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
         self.receiving_queue.append((datagram, address, ))
         if self.receiving_worker is None:
@@ -643,7 +657,10 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         datagram, address = self.receiving_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
-        self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)
+        t = 0
+        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL / 2:
+            t = RECEIVING_FREQUENCY_SEC
+        self.receiving_worker = reactor.callLater(t, self._process_incoming)  #@UndefinedVariable
 
     def _send(self, data, rpcID, address):
         count('dht_send')
@@ -661,7 +678,10 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         data, rpcID, address = self.sending_queue.pop(0)
         KademliaProtocol._send(self, data, rpcID, address)
-        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)
+        t = 0
+        if len(self.sending_queue) > SENDING_QUEUE_LENGTH_CRITICAL:
+            t = SENDING_FREQUENCY_SEC
+        self.sending_worker = reactor.callLater(t, self._process_outgoing)  #@UndefinedVariable
 
 #------------------------------------------------------------------------------
 
@@ -674,46 +694,65 @@ def parseCommandLine():
     oparser.set_default('dhtdb', settings.DHTDBFile())
     oparser.add_option("-s", "--seeds", dest="seeds", help="specify list of DHT seed nodes")
     oparser.set_default('seeds', '')
+    oparser.add_option("-w", "--wait", dest="delayed", type="int", help="wait N seconds before join the network")
+    oparser.set_default('delayed', 0)
+    
     (options, args) = oparser.parse_args()
     return options, args
 
 
-def main():
-    bpio.init()
-    settings.init()
-    lg.set_debug_level(28)
-    (options, args) = parseCommandLine()
-    init(options.udpport, options.dhtdb)
+def main(options=None, args=None):
+    from dht import dht_relations
+
+    if options is None and args is None:
+        (options, args) = parseCommandLine()
+
+    else:
+        (_options, _args) = parseCommandLine()
+        if options is None:
+            options = _options
+        if args is None:
+            args = _args
+
+    init(udp_port=options.udpport, db_file_path=options.dhtdb)
+    lg.out(_DebugLevel, 'Init   udpport=%d   dhtdb=%s   node=%r' % (options.udpport, options.dhtdb, node()))
 
     def _go(nodes):
+#         lg.out(_DebugLevel, 'Connected nodes: %r' % nodes)
+#         lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
         try:
             if len(args) == 0:
-                print('STARTED')
+                pass
+
             elif len(args) > 0:
                 def _r(x):
-                    print(x)
-                    reactor.stop()
+                    lg.info(x)
+                    reactor.stop()  #@UndefinedVariable
                 cmd = args[0]
                 if cmd == 'get':
                     get_value(args[1]).addBoth(_r)
                 elif cmd == 'set':
                     set_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
-                if cmd == 'get_json':
+                elif cmd == 'get_json':
                     get_json_value(args[1]).addBoth(_r)
                 elif cmd == 'set_json':
                     set_json_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
-                if cmd == 'get_valid_data':
+                elif cmd == 'get_valid_data':
                     get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
                 elif cmd == 'set_valid_data':
                     set_valid_data(args[1], json.loads(args[2]),
                                    expire=int(args[3]), rules=json.loads(args[4])).addBoth(_r)
+                elif cmd == 'read_customer_suppliers':
+                    dht_relations.read_customer_suppliers(args[1]).addBoth(_r)
+                elif cmd == 'write_customer_suppliers':
+                    dht_relations.write_customer_suppliers(args[1], args[2].split(',')).addBoth(_r)
                 elif cmd == 'find':
                     find_node(key_to_hash(args[1])).addBoth(_r)
                 elif cmd == 'ping':
                     find_node(random_key()).addBoth(_r)
                 elif cmd == 'discover':
                     def _l(x):
-                        print(x)
+                        lg.info(x)
                         find_node(random_key()).addBoth(_l)
                     _l('')
         except:
@@ -729,13 +768,28 @@ def main():
             except:
                 continue
             seeds.append((dht_node_host, dht_node_port, ))
+    
+    if not seeds:
+        from dht import known_nodes
+        seeds = known_nodes.default_nodes()
 
+    lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
+
+    if options.delayed:
+        lg.out(_DebugLevel, 'Wait %d seconds before join the network' % options.delayed)
+        import time
+        time.sleep(options.delayed)
+    
     connect(seeds).addBoth(_go)
-    reactor.run()
+    reactor.run()  #@UndefinedVariable
 
 #------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
-    # _Debug = True
-    main()
+    from dht import dht_service
+    bpio.init()
+    settings.init()
+    lg.set_debug_level(settings.getDebugLevel())
+    dht_service._Debug = True
+    dht_service.main()

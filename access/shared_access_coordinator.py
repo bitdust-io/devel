@@ -344,15 +344,20 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
-        d = dht_relations.scan_customer_supplier_relations(self.customer_idurl)
-        d.addCallback(lambda result_list: self.automat('dht-lookup-ok', result_list))
+        d = dht_relations.read_customer_suppliers(self.customer_idurl)
+        # TODO: add more validations of dht_result
+        d.addCallback(lambda dht_result: self.automat('dht-lookup-ok', dht_result))
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doConnectCustomerSuppliers(self, arg):
         """
         Action method.
         """
-        self.known_suppliers_list = [_f for _f in arg if _f]
+        try:
+            self.known_suppliers_list = [_f for _f in arg['suppliers'] if _f]
+        except:
+            lg.exc()
+            return
         for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:

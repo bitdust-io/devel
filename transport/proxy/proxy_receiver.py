@@ -67,6 +67,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import re
 import json
 import time
 import random
@@ -76,6 +77,7 @@ import random
 from logs import lg
 
 from lib import packetid
+from lib import strng
 
 from automats import automat
 
@@ -336,7 +338,7 @@ class ProxyReceiver(automat.Automat):
         """
         s = config.conf().getString('services/proxy-transport/current-router').strip()
         try:
-            self.router_idurl, _, _ = s.split(' ')
+            self.router_idurl = strng.to_bin(s.split(' ')[0])
         except:
             lg.exc()
         if _Debug:
@@ -352,8 +354,6 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s' % self.router_idurl)
         self._do_send_identity_to_router(my_id.getLocalIdentity().serialize(), failed_event='fail-received')
         identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if identity_source:
@@ -365,44 +365,18 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self.router_idurl = arg
+        self.router_idurl = strng.to_bin(arg)
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver.doRememberNode %s' % self.router_idurl)
+            lg.out(_DebugLevel, 'proxy_receiver.doRememberNode %r' % self.router_idurl)
 
     def doSendRequestService(self, arg):
         """
         Action method.
         """
-        if len(self.request_service_packet_id) >= 3:
-            if _Debug:
-                lg.warn('too many service requests to %s' % self.router_idurl)
-            self.automat('service-refused', arg)
-            return
-        orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
-        if not orig_identity:
-            orig_identity = my_id.getLocalIdentity().serialize()
-        service_info = {
-            'name': 'service_proxy_server',
-            'payload': {
-                'identity': orig_identity,
-            },
-        }
-        service_info_raw = json.dumps(service_info)
-        newpacket = signed.Packet(
-            commands.RequestService(),
-            my_id.getLocalID(),
-            my_id.getLocalID(),
-            packetid.UniqueID(),
-            service_info_raw,
-            self.router_idurl,)
-        packet_out.create(newpacket, wide=False, callbacks={
-            commands.Ack(): self._on_request_service_ack,
-            commands.Fail(): self._on_request_service_fail,
-        },)
-        self.request_service_packet_id.append(newpacket.PacketID)
+        self._do_send_request_service(arg)
 
     def doSendCancelService(self, arg):
         """
@@ -418,7 +392,8 @@ class ProxyReceiver(automat.Automat):
             my_id.getLocalID(),
             packetid.UniqueID(),
             service_info_raw,
-            self.router_idurl, )
+            self.router_idurl,
+        )
         packet_out.create(newpacket, wide=True, callbacks={
             commands.Ack(): self._on_request_service_ack,
             commands.Fail(): self._on_request_service_fail,
@@ -428,68 +403,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        newpacket, info, _, _ = arg
-        block = encrypted.Unserialize(newpacket.Payload)
-        if block is None:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
-            return
-        try:
-            session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
-            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-            inpt = BytesIO(padded_data[:int(block.Length)])
-            data = inpt.read()
-        except:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
-            lg.exc()
-            try:
-                inpt.close()
-            except:
-                pass
-            return
-        inpt.close()
-        routed_packet = signed.Unserialize(data)
-        if not routed_packet:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet failed from %s' % newpacket.CreatorID)
-            return
-        if _Debug:
-            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
-                str(routed_packet), info.proto, info.host, len(data)))
-        if routed_packet.Command == commands.Identity():
-            if _Debug:
-                lg.out('    found identity in relay packet %s' % routed_packet)
-            newidentity = identity.identity(xmlsrc=routed_packet.Payload)
-            idurl = newidentity.getIDURL()
-            if not identitycache.HasKey(idurl):
-                lg.warn('received new identity: %s' % idurl)
-            if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
-                lg.warn("ERROR has non-Valid identity")
-                return
-        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
-            if _Debug:
-                lg.out('    found routed identity in relay packet %s' % routed_packet)
-            try:
-                routed_identity = signed.Unserialize(routed_packet.Payload)
-                newidentity = identity.identity(xmlsrc=routed_identity.Payload)
-                idurl = newidentity.getIDURL()
-                if not identitycache.HasKey(idurl):
-                    lg.warn('received new "routed" identity: %s' % idurl)
-                if not identitycache.UpdateAfterChecking(idurl, routed_identity.Payload):
-                    lg.warn("ERROR has non-Valid identity")
-                    return
-            except:
-                lg.exc()
-        if not routed_packet.Valid():
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR invalid packet %s from %s' % (
-                routed_packet, newpacket.CreatorID, ))
-            return
-        self.traffic_in += len(data)
-        packet_in.process(routed_packet, info)
-        del block
-        del data
-        del padded_data
-        del inpt
-        del session_key
-        del routed_packet
+        self._do_process_inbox_packet(arg)
 
     def doStartListening(self, arg):
         """
@@ -502,12 +416,15 @@ class ProxyReceiver(automat.Automat):
             try:
                 s = config.conf().getString('services/proxy-transport/current-router').strip()
                 _, router_proto, router_host = s.split(' ')
-                self.router_proto_host = (router_proto, router_host)
+                self.router_proto_host = (router_proto, strng.to_bin(router_host), )
             except:
                 lg.exc()
         self.router_identity = identitycache.FromCache(self.router_idurl)
         config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
-            self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
+            strng.to_text(self.router_idurl),
+            strng.to_text(self.router_proto_host[0]),
+            strng.to_text(self.router_proto_host[1]),
+        ))
         current_identity = my_id.getLocalIdentity().serialize()
         previous_identity = ReadMyOriginalIdentitySource()
         if previous_identity:
@@ -607,8 +524,8 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        proxy_interface.interface_receiving_started(self.router_idurl,
-                                                    {'router_idurl': self.router_idurl, })
+        proxy_interface.interface_receiving_started(
+            self.router_idurl, {'router_idurl': self.router_idurl, },)
 
     def doNotifyDisconnected(self, arg):
         """
@@ -631,6 +548,70 @@ class ProxyReceiver(automat.Automat):
         del _ProxyReceiver
         _ProxyReceiver = None
 
+    def _do_process_inbox_packet(self, arg):
+        newpacket, info, _, _ = arg
+        block = encrypted.Unserialize(newpacket.Payload)
+        if block is None:
+            lg.err('reading data from %s' % newpacket.CreatorID)
+            return
+        try:
+            session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            inpt = BytesIO(padded_data[:int(block.Length)])
+            data = inpt.read()
+        except:
+            lg.err('reading data from %s' % newpacket.CreatorID)
+            lg.exc()
+            try:
+                inpt.close()
+            except:
+                pass
+            return
+        inpt.close()
+        routed_packet = signed.Unserialize(data)
+        if not routed_packet:
+            lg.err('unserialize packet failed from %s' % newpacket.CreatorID)
+            return
+        if _Debug:
+            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
+                str(routed_packet), info.proto, info.host, len(data)))
+        if routed_packet.Command == commands.Identity():
+            if _Debug:
+                lg.out(_DebugLevel, '    found identity in relay packet %s' % routed_packet)
+            newidentity = identity.identity(xmlsrc=routed_packet.Payload)
+            idurl = newidentity.getIDURL()
+            if not identitycache.HasKey(idurl):
+                lg.warn('received new identity: %s' % idurl)
+            if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
+                lg.warn("ERROR has non-Valid identity")
+                return
+        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
+            if _Debug:
+                lg.out(_DebugLevel, '    found routed identity in relay packet %s' % routed_packet)
+            try:
+                routed_identity = signed.Unserialize(routed_packet.Payload)
+                newidentity = identity.identity(xmlsrc=routed_identity.Payload)
+                idurl = newidentity.getIDURL()
+                if not identitycache.HasKey(idurl):
+                    lg.warn('received new "routed" identity: %s' % idurl)
+                if not identitycache.UpdateAfterChecking(idurl, routed_identity.Payload):
+                    lg.warn("ERROR has non-Valid identity")
+                    return
+            except:
+                lg.exc()
+        if not routed_packet.Valid():
+            lg.err('invalid packet %s from %s' % (
+                routed_packet, newpacket.CreatorID, ))
+            return
+        self.traffic_in += len(data)
+        packet_in.process(routed_packet, info)
+        del block
+        del data
+        del padded_data
+        del inpt
+        del session_key
+        del routed_packet
+
     def _do_send_identity_to_router(self, identity_source, failed_event):
         try:
             identity_obj = identity.identity(xmlsrc=identity_source)
@@ -638,12 +619,13 @@ class ProxyReceiver(automat.Automat):
             lg.exc()
             return
         if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s' % self.router_idurl)
             lg.out(_DebugLevel, '        contacts=%s, sources=%s' % (identity_obj.contacts, identity_obj.sources))
         newpacket = signed.Packet(
             commands.Identity(),
             my_id.getLocalID(),
             my_id.getLocalID(),
-            'identity',
+            commands.Identity(),
             identity_source,
             self.router_idurl,
         )
@@ -656,6 +638,36 @@ class ProxyReceiver(automat.Automat):
             },
             keep_alive=True,
         )
+
+    def _do_send_request_service(self, arg):
+        if len(self.request_service_packet_id) >= 3:
+            if _Debug:
+                lg.warn('too many service requests to %r' % self.router_idurl)
+            self.automat('service-refused', arg)
+            return
+        orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
+        if not orig_identity:
+            orig_identity = my_id.getLocalIdentity().serialize()
+        service_info = {
+            'name': 'service_proxy_server',
+            'payload': {
+                'identity': strng.to_text(orig_identity),
+            },
+        }
+        service_info_raw = json.dumps(service_info)
+        newpacket = signed.Packet(
+            commands.RequestService(),
+            my_id.getLocalID(),
+            my_id.getLocalID(),
+            packetid.UniqueID(),
+            service_info_raw,
+            self.router_idurl,
+        )
+        packet_out.create(newpacket, wide=False, callbacks={
+            commands.Ack(): self._on_request_service_ack,
+            commands.Fail(): self._on_request_service_fail,
+        },)
+        self.request_service_packet_id.append(newpacket.PacketID)
 
     def _on_nodes_lookup_finished(self, idurls):
         if _Debug:
@@ -676,10 +688,11 @@ class ProxyReceiver(automat.Automat):
         # self.automat('found-one-node', 'http://datahaven.net/seed2_916e.xml')
         # self.automat('found-one-node', 'http://bitdust.ai/seed1_c2c2.xml')
         # return
-        preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         preferred_routers = []
+        preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         if preferred_routers_raw:
-            preferred_routers.extend(preferred_routers_raw.split('\n'))
+            preferred_routers_list = re.split('\n|,|;| ', preferred_routers_raw)
+            preferred_routers.extend(preferred_routers_list)
         if preferred_routers:
             known_router = random.choice(preferred_routers)
             if _Debug:
@@ -749,7 +762,8 @@ class ProxyReceiver(automat.Automat):
             lg.warn('%s was not found in pending requests: %s' % (response.PacketID, self.request_service_packet_id))
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
-        if not response.Payload.startswith('rejected'):
+        service_ack_info = strng.to_text(response.Payload)
+        if not service_ack_info.startswith('rejected'):
             self.automat('service-accepted', (response, info))
         else:
             self.automat('service-refused', (response, info))
@@ -790,14 +804,14 @@ class ProxyReceiver(automat.Automat):
         # self.automat('router-disconnected')
 
     def _on_router_session_disconnected(self, oldstate, newstate, event_string, args):
-        lg.warn('router session disconnected: %s->%s' % (oldstate, newstate))
+        lg.warn('router session disconnected: %s->%s' % (oldstate, newstate, ))
         self.automat('router-disconnected')
 
 #------------------------------------------------------------------------------
 
 
 def main():
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callWhenRunning(A, 'init')
     reactor.run()
 

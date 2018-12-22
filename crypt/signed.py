@@ -49,12 +49,13 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import sys
+
 from twisted.internet import threads
 
 #------------------------------------------------------------------------------
@@ -101,24 +102,24 @@ class Packet(object):
         Init all fields and sign the packet.
         """
         # Legal Commands are in commands.py
-        self.Command = Command
+        self.Command = strng.to_text(Command)
         # who owns this data and pays bills - http://cate.com/id1.xml
-        self.OwnerID = OwnerID
+        self.OwnerID = strng.to_bin(OwnerID)
         # signer - http://cate.com/id1.xml - might be an authorized scrubber
-        self.CreatorID = CreatorID
+        self.CreatorID = strng.to_bin(CreatorID)
         # string of the above 4 "Number"s with "-" separator to uniquely identify a packet
         # on the local machine.  Can be used for filenames, and to prevent duplicates.
-        self.PacketID = PacketID
+        self.PacketID = strng.to_text(PacketID)
         # create a string to remember current world time
-        self.Date = Date or utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p")
+        self.Date = strng.to_text(Date or utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p"))
         # datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
         # main body of binary data
-        self.Payload = Payload
+        self.Payload = strng.to_bin(Payload)
         # want full IDURL for other party so troublemaker could not
         # use his packets to mess up other nodes by sending it to them
-        self.RemoteID = RemoteID
+        self.RemoteID = strng.to_bin(RemoteID)
         # which private key to use to generate signature
-        self.KeyID = KeyID or my_id.getGlobalID(key_alias='master')
+        self.KeyID = strng.to_text(KeyID or my_id.getGlobalID(key_alias='master'))
         if Signature:
             self.Signature = Signature
         else:
@@ -137,7 +138,7 @@ class Packet(object):
                     nameurl.GetName(self.OwnerID),
                     nameurl.GetName(self.CreatorID),
                     nameurl.GetName(self.RemoteID))
-        return 'signed{ %s }' % args
+        return 'signed{%s}' % args
 
     def Sign(self):
         """
@@ -310,18 +311,18 @@ def Unserialize(data):
     try:
         json_data = serialization.BytesToDict(data)
         newobject = Packet(
-            Command=json_data['m'],
+            Command=strng.to_text(json_data['m']),
             OwnerID=json_data['o'],
             CreatorID=json_data['c'],
-            PacketID=json_data['i'],
-            Date=json_data['d'],
+            PacketID=strng.to_text(json_data['i']),
+            Date=strng.to_text(json_data['d']),
             Payload=json_data['p'],
             RemoteID=json_data['r'],
-            KeyID=json_data['k'],
+            KeyID=strng.to_text(json_data['k']),
             Signature=json_data['s'],
         )
     except:
-        lg.exc(data)
+        lg.exc()
         newobject = None
     
     if newobject is None:

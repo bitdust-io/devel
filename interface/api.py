@@ -38,7 +38,7 @@ from six.moves import map
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -79,6 +79,8 @@ def OK(result='', message=None, status='OK', extra_fields=None):
         o.update(extra_fields)
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
+    if api_method.count('lambda'):
+        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
         lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
@@ -95,6 +97,8 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
         o['errors'] = errors
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
+    if api_method.count('lambda'):
+        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
         lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
@@ -109,6 +113,8 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
         o.update(extra_fields)
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
+    if api_method.count('lambda'):
+        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
         lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
@@ -124,10 +130,10 @@ def process_stop():
 
         {'status': 'OK', 'result': 'stopped'}
     """
-    lg.out(4, 'api.process_stop sending event "stop" to the shutdowner() machine')
-    from twisted.internet import reactor
+    lg.out(_DebugLevel, 'api.process_stop sending event "stop" to the shutdowner() machine')
+    from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
-    reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')
+    reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
     # shutdowner.A('stop', 'exit')
     return OK('stopped')
 
@@ -141,16 +147,16 @@ def process_restart(showgui=False):
 
         {'status': 'OK', 'result': 'restarted'}
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
     if showgui:
-        lg.out(4, 'api.process_restart sending event "stop" to the shutdowner() machine')
-        reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')
+        lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
+        reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')  # @UndefinedVariable
         # shutdowner.A('stop', 'restartnshow')
         return OK('restarted with GUI')
-    lg.out(4, 'api.process_restart sending event "stop" to the shutdowner() machine')
+    lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
     # shutdowner.A('stop', 'restart')
-    reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')
+    reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')  # @UndefinedVariable
     return OK('restarted')
 
 
@@ -163,7 +169,7 @@ def process_show():
 
         {'status': 'OK',   'result': '"show" event has been sent to the main process'}
     """
-    lg.out(4, 'api.process_show')
+    lg.out(_DebugLevel, 'api.process_show')
     # TODO: raise up electron window ?
     return OK('"show" event has been sent to the main process')
 
@@ -176,7 +182,7 @@ def process_health():
 
         {'status': 'OK' }
     """
-    lg.out(4, 'api.process_health')
+    lg.out(_DebugLevel, 'api.process_health')
     return OK()
 
 
@@ -202,7 +208,7 @@ def config_get(key):
         key = str(key).strip('/')
     except:
         return ERROR('wrong key')
-    lg.out(4, 'api.config_get [%s]' % key)
+    lg.out(_DebugLevel, 'api.config_get [%s]' % key)
     from main import config
     from main import config_types
     if key and not config.conf().exist(key):
@@ -265,14 +271,14 @@ def config_set(key, value):
         v['old_value'] = config.conf().getData(key)
     typ = config.conf().getType(key)
     typ_label = config.conf().getTypeLabel(key)
-    lg.out(4, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
+    lg.out(_DebugLevel, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
     if not typ or typ in [config_types.TYPE_STRING,
                           config_types.TYPE_TEXT,
                           config_types.TYPE_UNDEFINED, ]:
         config.conf().setData(key, strng.text_type(value))
     elif typ in [config_types.TYPE_BOOLEAN, ]:
-        if isinstance(value, strng.string_types):
-            vl = value.strip().lower() == 'true'
+        if strng.is_string(value):
+            vl = strng.to_text(value).strip().lower() == 'true'
         else:
             vl = bool(value)
         config.conf().setBool(key, vl)
@@ -318,7 +324,7 @@ def config_list(sort=False):
             'key': 'services/backups/max-block-size'
         }]}
     """
-    lg.out(4, 'api.config_list')
+    lg.out(_DebugLevel, 'api.config_list')
     from main import config
     r = config.conf().cache()
     r = [{
@@ -342,6 +348,7 @@ def identity_get(include_xml_source=False):
         r['xml'] = my_id.getLocalIdentity().serialize()
     return RESULT([r, ])
 
+
 def identity_create(username):
     from lib import misc
     from userid import my_id
@@ -358,6 +365,8 @@ def identity_create(username):
     my_id_registrator = id_registrator.A()
 
     def _id_registrator_state_changed(oldstate, newstate, event_string, args):
+        if ret.called:
+            return
         if newstate == 'FAILED':
             ret.callback(ERROR(my_id_registrator.last_message))
             return
@@ -377,7 +386,6 @@ def identity_create(username):
 
 def identity_backup(destination_filepath):
     from userid import my_id
-    from lib import strng
     from crypt import key
     from system import bpio
     if not my_id.isLocalIdentityReady():
@@ -445,6 +453,8 @@ def identity_recover(private_key_source, known_idurl=None):
     my_id_restorer = id_restorer.A()
 
     def _id_restorer_state_changed(oldstate, newstate, event_string, args):
+        if ret.called:
+            return
         if newstate == 'FAILED':
             ret.callback(ERROR(my_id_restorer.last_message))
             return
@@ -457,9 +467,14 @@ def identity_recover(private_key_source, known_idurl=None):
             ret.callback(RESULT([r, ]))
             return
 
-    my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
-    my_id_restorer.A('start', {'idurl': idurl_list[0], 'keysrc': pk_source, })
-    # TODO: iterate over idurl_list to find at least one reliable source
+    try:
+        my_id_restorer.addStateChangedCallback(_id_restorer_state_changed)
+        my_id_restorer.A('start', {'idurl': idurl_list[0], 'keysrc': pk_source, })
+        # TODO: iterate over idurl_list to find at least one reliable source
+    except Exception as exc:
+        lg.exc()
+        ret.callback(ERROR(str(exc)))
+
     return ret
 
 def identity_list():
@@ -495,7 +510,7 @@ def key_get(key_id, include_private=False):
             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
         }]}
     """
-    lg.out(4, 'api.key_get')
+    lg.out(_DebugLevel, 'api.key_get')
     from crypt import my_keys
     try:
         r = my_keys.get_key_info(key_id=key_id, include_private=include_private)
@@ -533,7 +548,7 @@ def keys_list(sort=False, include_private=False):
              'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
         }]}
     """
-    lg.out(4, 'api.keys_list')
+    lg.out(_DebugLevel, 'api.keys_list')
     from crypt import my_keys
     r = []
     for key_id, key_object in my_keys.known_keys().items():
@@ -552,7 +567,7 @@ def keys_list(sort=False, include_private=False):
     return RESULT(r)
 
 
-def key_create(key_alias, key_size=2048, include_private=False):
+def key_create(key_alias, key_size=None, include_private=False):
     """
     Generate new Private Key and add it to the list of known keys with given `key_id`.
 
@@ -573,6 +588,7 @@ def key_create(key_alias, key_size=2048, include_private=False):
         }]}
     """
     from crypt import my_keys
+    from main import settings
     from userid import my_id
     key_alias = str(key_alias)
     key_alias = key_alias.strip().lower()
@@ -581,7 +597,9 @@ def key_create(key_alias, key_size=2048, include_private=False):
         return ERROR('key "%s" is not valid' % key_id)
     if my_keys.is_key_registered(key_id):
         return ERROR('key "%s" already exist' % key_id)
-    lg.out(4, 'api.key_create id=%s, size=%s' % (key_id, key_size))
+    if not key_size:
+        key_size = settings.getPrivateKeySize()
+    lg.out(_DebugLevel, 'api.key_create id=%s, size=%s' % (key_id, key_size))
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
@@ -604,7 +622,7 @@ def key_erase(key_id):
     """
     from crypt import my_keys
     key_id = str(key_id)
-    lg.out(4, 'api.keys_list')
+    lg.out(_DebugLevel, 'api.keys_list')
     if key_id == 'master':
         return ERROR('"master" key can not be removed')
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
@@ -750,7 +768,7 @@ def files_sync():
         lg.out(_DebugLevel, 'api.files_sync')
     from storage import backup_monitor
     backup_monitor.A('restart')
-    lg.out(4, 'api.files_sync')
+    lg.out(_DebugLevel, 'api.files_sync')
     return OK('the main files sync loop has been restarted')
 
 
@@ -982,7 +1000,7 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
                     'eccmap': '' if not r.EccMap else r.EccMap.name,
                 })
         r['downloads'] = downloads
-    lg.out(4, 'api.file_info : "%s"' % pathID)
+    lg.out(_DebugLevel, 'api.file_info : "%s"' % pathID)
     return RESULT([r, ])
 
 
@@ -1029,7 +1047,7 @@ def file_create(remote_path, as_folder=False):
                 iterID=backup_fs.fsID(parts['idurl']),
                 key_id=keyID,
             )
-            lg.out(4, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
+            lg.out(_DebugLevel, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
         id_iter_iterID = backup_fs.GetIteratorsByPath(
             parent_path,
             iter=backup_fs.fs(parts['idurl']),
@@ -1052,7 +1070,7 @@ def file_create(remote_path, as_folder=False):
     control.request_update([('pathID', newPathID), ])
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=keyAlias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
-    lg.out(4, 'api.file_create : "%s"' % full_glob_id)
+    lg.out(_DebugLevel, 'api.file_create : "%s"' % full_glob_id)
     return OK(
         'new %s was created in "%s"' % (('folder' if as_folder else 'file'), full_glob_id),
         extra_fields={
@@ -1104,7 +1122,7 @@ def file_delete(remote_path):
     backup_control.Save()
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
-    lg.out(4, 'api.file_delete %s' % parts)
+    lg.out(_DebugLevel, 'api.file_delete %s' % parts)
     return OK('item "%s" was deleted from remote suppliers' % pathIDfull, extra_fields={
         'path_id': pathIDfull,
         'path': path,
@@ -1208,9 +1226,9 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         return ERROR('invalid "remote_path" format')
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
-    keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     if not pathID:
-        return ERROR('path "%s" not registered yet' % path)
+        return ERROR('path "%s" not registered yet' % remote_path)
+    keyID = my_keys.make_key_id(alias=parts['key_alias'], creator_glob_id=parts['customer'])
     customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=parts['key_alias'])
     pathIDfull = packetid.MakeBackupID(customerID, pathID)
     if open_share and parts['key_alias'] != 'master':
@@ -1243,7 +1261,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         backup_fs.Calculate()
         backup_control.Save()
         control.request_update([('pathID', pathIDfull), ])
-        lg.out(4, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
+        lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
         return d
     tsk = backup_control.StartSingle(
         pathID=pathIDfull,
@@ -1257,7 +1275,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathIDfull), ])
-    lg.out(4, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
+    lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
         'uploading "%s" started, local path is: "%s"' % (remote_path, local_path),
         extra_fields={
@@ -1301,7 +1319,7 @@ def file_upload_stop(remote_path):
             msg.append('backup "%s" aborted' % backupID)
     if not r:
         return ERROR('no running or pending tasks for "%s" found' % pathIDfull)
-    lg.out(4, 'api.file_upload_stop %s' % r)
+    lg.out(_DebugLevel, 'api.file_upload_stop %s' % r)
     return RESULT(r, message=(', '.join(msg)))
 
 
@@ -1456,11 +1474,11 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     
     def _start_restore():
         if wait_result:
-            lg.out(4, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
+            lg.out(_DebugLevel, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
             restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
             control.request_update([('pathID', knownPath), ])
             return ret
-        lg.out(4, 'api.download_start %s to %s' % (backupID, destination_path))
+        lg.out(_DebugLevel, 'api.download_start %s to %s' % (backupID, destination_path))
         restore_monitor.Start(backupID, destination_path, keyID=key_id, )
         control.request_update([('pathID', knownPath), ])
         ret.callback(OK(
@@ -1478,13 +1496,13 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     
     def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, args):
         if oldstate != newstate and newstate == 'CONNECTED':
-            lg.out(4, 'api.download_start share %s is CONNECTED, removing callback %s' % (
+            lg.out(_DebugLevel, 'api.download_start share %s is CONNECTED, removing callback %s' % (
                 active_share.key_id, callback_id,))
             active_share.removeStateChangedCallback(callback_id=callback_id)
             _start_restore()
             return True
         if oldstate != newstate and newstate == 'DISCONNECTED':
-            lg.out(4, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
+            lg.out(_DebugLevel, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
                 active_share.key_id, callback_id,))
             active_share.removeStateChangedCallback(callback_id=callback_id)
             ret.callback(ERROR(
@@ -1506,9 +1524,9 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
                 key_id, log_events=True, publish_events=True, )
-            lg.out(4, 'api.download_start opened new share : %s' % active_share.key_id)
+            lg.out(_DebugLevel, 'api.download_start opened new share : %s' % active_share.key_id)
         else:
-            lg.out(4, 'api.download_start found existing share : %s' % active_share.key_id)
+            lg.out(_DebugLevel, 'api.download_start found existing share : %s' % active_share.key_id)
         if active_share.state != 'CONNECTED':
             cb_id = 'file_download_start_' + str(time.time())
             active_share.addStateChangedCallback(
@@ -1516,9 +1534,9 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                 callback_id=cb_id,
             )
             active_share.automat('restart')
-            lg.out(4, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
+            lg.out(_DebugLevel, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
         else:
-            lg.out(4, 'api.download_start existing share %s is currently CONNECTED' % active_share.key_id)
+            lg.out(_DebugLevel, 'api.download_start existing share %s is currently CONNECTED' % active_share.key_id)
             _start_restore()
         return True
 
@@ -1663,7 +1681,7 @@ def share_create(owner_id=None, key_size=2048):
     key_id = None
     while True:
         random_sample = os.urandom(24)
-        key_alias = 'share_%s' % key.HashMD5(random_sample, hexdigest=True)
+        key_alias = 'share_%s' % strng.to_text(key.HashMD5(random_sample, hexdigest=True))
         key_id = my_keys.make_key_id(alias=key_alias, creator_glob_id=owner_id)
         if my_keys.is_key_registered(key_id):
             continue
@@ -1871,6 +1889,18 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
+        if not supplier_idurl:
+            r = {
+                'position': pos,
+                'idurl': '',
+                'global_id': '',
+                'supplier_state': None,
+                'connected': None,
+                'contact_status': None,
+                'contact_state': None,
+            }
+            results.append(r)
+            continue
         r = {
             'position': pos,
             'idurl': supplier_idurl,
@@ -1915,7 +1945,7 @@ def supplier_replace(index_or_idurl_or_global_id):
     from userid import my_id
     from userid import global_id
     customer_idurl = my_id.getLocalID()
-    supplier_idurl = index_or_idurl_or_global_id
+    supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
     if supplier_idurl.isdigit():
         supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
     else:
@@ -1943,7 +1973,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     from userid import my_id
     from userid import global_id
     customer_idurl = my_id.getLocalID()
-    supplier_idurl = index_or_idurl_or_global_id
+    supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
     if supplier_idurl.isdigit():
         supplier_idurl = contactsdb.supplier(int(supplier_idurl), customer_idurl=customer_idurl)
     else:
@@ -1984,8 +2014,8 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     Scans DHT network for key-value pairs related to given customer and
     returns a list of his "possible" suppliers.
     """
-    if not driver.is_on('service_supplier_relations'):
-        return ERROR('service_supplier_relations() is not started')
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
     from dht import dht_relations
     from userid import my_id
     from userid import global_id
@@ -1996,8 +2026,8 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
         if global_id.IsValidGlobalUser(customer_idurl):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
     ret = Deferred()
-    d = dht_relations.scan_customer_supplier_relations(customer_idurl)
-    d.addCallback(lambda result_list: ret.callback(RESULT(result_list)))
+    d = dht_relations.read_customer_suppliers(customer_idurl)
+    d.addCallback(lambda result: ret.callback(RESULT(result)))
     d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
 
@@ -2023,6 +2053,16 @@ def customers_list(verbose=False):
     from userid import global_id
     results = []
     for pos, customer_idurl in enumerate(contactsdb.customers()):
+        if not customer_idurl:
+            r = {
+                'position': pos,
+                'global_id': '',
+                'idurl': '',
+                'contact_status': None,
+                'contact_state': None,
+            }
+            results.append(r)
+            continue
         r = {
             'position': pos,
             'global_id': global_id.UrlToGlobalID(customer_idurl),
@@ -2074,7 +2114,7 @@ def customer_reject(idurl_or_global_id):
     space_dict = accounting.read_customers_quotas()
     consumed_by_cutomer = space_dict.pop(customer_idurl, None)
     consumed_space = accounting.count_consumed_space(space_dict)
-    space_dict['free'] = settings.getDonatedBytes() - int(consumed_space)
+    space_dict[b'free'] = settings.getDonatedBytes() - int(consumed_space)
     accounting.write_customers_quotas(space_dict)
     events.send('existing-customer-terminated', dict(idurl=customer_idurl))
     # restart local tester
@@ -2125,10 +2165,10 @@ def space_donated():
     """
     from storage import accounting
     result = accounting.report_donated_storage()
-    lg.out(4, 'api.space_donated finished with %d customers and %d errors' % (
+    lg.out(_DebugLevel, 'api.space_donated finished with %d customers and %d errors' % (
         len(result['customers']), len(result['errors']),))
     for err in result['errors']:
-        lg.out(4, '    %s' % err)
+        lg.out(_DebugLevel, '    %s' % err)
     errors = result.pop('errors', [])
     return RESULT([result, ], errors=errors,)
 
@@ -2159,7 +2199,7 @@ def space_consumed():
     """
     from storage import accounting
     result = accounting.report_consumed_storage()
-    lg.out(4, 'api.space_consumed finished')
+    lg.out(_DebugLevel, 'api.space_consumed finished')
     return RESULT([result, ])
 
 
@@ -2189,7 +2229,7 @@ def space_local():
     """
     from storage import accounting
     result = accounting.report_local_storage()
-    lg.out(4, 'api.space_local finished')
+    lg.out(_DebugLevel, 'api.space_local finished')
     return RESULT([result, ],)
 
 #------------------------------------------------------------------------------
@@ -2220,7 +2260,7 @@ def automats_list():
         'state': a.state,
         'timers': (','.join(list(a.getTimers().keys()))),
     } for a in automat.objects().values()]
-    lg.out(4, 'api.automats_list responded with %d items' % len(result))
+    lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
     return RESULT(result)
 
 #------------------------------------------------------------------------------
@@ -2260,7 +2300,7 @@ def services_list():
         'config_path': svc.config_path,
         'depends': svc.dependent_on()
     } for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0])]
-    lg.out(4, 'api.services_list responded with %d items' % len(result))
+    lg.out(_DebugLevel, 'api.services_list responded with %d items' % len(result))
     return RESULT(result)
 
 
@@ -2318,14 +2358,14 @@ def service_start(service_name):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.out(4, 'api.service_start %s not found' % service_name)
+        lg.out(_DebugLevel, 'api.service_start %s not found' % service_name)
         return ERROR('service "%s" was not found' % service_name)
     if svc.state == 'ON':
-        lg.out(4, 'api.service_start %s already started' % service_name)
+        lg.out(_DebugLevel, 'api.service_start %s already started' % service_name)
         return ERROR('service "%s" already started' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config:
-        lg.out(4, 'api.service_start %s already enabled' % service_name)
+        lg.out(_DebugLevel, 'api.service_start %s already enabled' % service_name)
         return ERROR('service "%s" already enabled' % service_name)
     config.conf().setBool(svc.config_path, True)
     return OK('"%s" was switched on' % service_name)
@@ -2350,14 +2390,14 @@ def service_stop(service_name):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.out(4, 'api.service_stop %s not found' % service_name)
+        lg.out(_DebugLevel, 'api.service_stop %s not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config is None:
-        lg.out(4, 'api.service_stop config item %s was not found' % svc.config_path)
+        lg.out(_DebugLevel, 'api.service_stop config item %s was not found' % svc.config_path)
         return ERROR('config item "%s" was not found' % svc.config_path)
     if current_config is False:
-        lg.out(4, 'api.service_stop %s already disabled' % service_name)
+        lg.out(_DebugLevel, 'api.service_stop %s already disabled' % service_name)
         return ERROR('service "%s" already disabled' % service_name)
     config.conf().setBool(svc.config_path, False)
     return OK('"%s" was switched off' % service_name)
@@ -2377,7 +2417,7 @@ def service_restart(service_name, wait_timeout=10):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.out(4, 'api.service_restart %s not found' % service_name)
+        lg.out(_DebugLevel, 'api.service_restart %s not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=wait_timeout)
@@ -2640,7 +2680,7 @@ def queue_list():
 
 #------------------------------------------------------------------------------
 
-def user_ping(idurl_or_global_id, timeout=10):
+def user_ping(idurl_or_global_id, timeout=10, retries=2):
     """
     Sends Identity packet to remote peer and wait for Ack packet to check connection status.
     The "ping" command performs following actions:
@@ -2660,7 +2700,7 @@ def user_ping(idurl_or_global_id, timeout=10):
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
     ret = Deferred()
-    d = propagate.PingContact(idurl, int(timeout))
+    d = propagate.PingContact(idurl, timeout=int(timeout), retries=int(retries))
     d.addCallback(
         lambda resp: ret.callback(
             OK(str(resp))))
@@ -2799,8 +2839,8 @@ def user_observe(nickname, attempts=3):
         ret.callback(RESULT(results, ))
         return None
 
-    from twisted.internet import reactor
-    reactor.callLater(0.05, nickname_observer.observe_many,
+    from twisted.internet import reactor  # @UnresolvedImport
+    reactor.callLater(0.05, nickname_observer.observe_many,  # @UndefinedVariable
         nickname,
         attempts=attempts,
         results_callback=_result,
@@ -2869,7 +2909,7 @@ def message_history(user):
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
-    lg.out(4, 'api.message_history with "%s"' % target_glob_id)
+    lg.out(_DebugLevel, 'api.message_history with "%s"' % target_glob_id)
     key = '{}:{}'.format(my_id.getGlobalID(key_alias='master'), target_glob_id)
     messages = [m for m in message_db.get_many(index_name='sender_recipient_glob_id', key=key)]
     messages.reverse()
@@ -2903,7 +2943,7 @@ def message_send(recipient, json_data, timeout=5):
         return ERROR('invalid key_id: %s' % target_glob_id)
 #     if not my_keys.is_key_registered(target_glob_id):
 #         return ERROR('unknown key_id: %s' % target_glob_id)
-    lg.out(4, 'api.message_send to "%s"' % target_glob_id)
+    lg.out(_DebugLevel, 'api.message_send to "%s"' % target_glob_id)
     result = message.send_message(
         json_data=json_data,
         recipient_global_id=target_glob_id,
@@ -2962,14 +3002,14 @@ def message_receive(consumer_id):
                 'message_id': msg['id'],
                 'dir': msg['dir'],
             })
-        lg.out(4, 'api.message_receive._on_pending_messages returning : %s' % result)
+        lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %s' % result)
         ret.callback(OK(result))
         return len(result) > 0
 
     d = message.consume_messages(consumer_id)
     d.addCallback(_on_pending_messages)
     d.addErrback(lambda err: ret.callback(ERROR(str(err))))
-    lg.out(4, 'api.message_receive "%s"' % consumer_id)
+    lg.out(_DebugLevel, 'api.message_receive "%s"' % consumer_id)
     return ret
 
 
@@ -3004,7 +3044,7 @@ def broadcast_send_message(payload):
         current_states[broadcaster_node.A().name] = broadcaster_node.A().state
     if broadcast_listener.A():
         current_states[broadcast_listener.A().name] = broadcast_listener.A().state
-    lg.out(4, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
+    lg.out(_DebugLevel, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
     return RESULT([msg, current_states, ])
 
 #------------------------------------------------------------------------------
@@ -3013,14 +3053,14 @@ def event_send(event_id, json_data=None):
     from main import events
     json_payload = None
     json_length = 0
-    if json_data and isinstance(json_data, strng.string_types):
+    if json_data and strng.is_string(json_data):
         json_length = len(json_data)
         try:
-            json_payload = json.loads(json_data or '{}')
+            json_payload = json.loads(strng.to_text(json_data or '{}'))
         except:
             return ERROR('json data payload is not correct')
     evt = events.send(event_id, data=json_payload)
-    lg.out(4, 'api.event_send "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
+    lg.out(_DebugLevel, 'api.event_send "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
     return OK({'event_id': event_id, 'created': evt.created, })
 
 def events_listen(consumer_id):
@@ -3037,14 +3077,14 @@ def events_listen(consumer_id):
                 'data': evt['data'],
                 'time': evt['time'],
             })
-        # lg.out(4, 'api.events_listen._on_pending_events returning : %s' % result)
+        # lg.out(_DebugLevel, 'api.events_listen._on_pending_events returning : %s' % result)
         ret.callback(OK(result))
         return len(result) > 0
 
     d = events.consume_events(consumer_id)
     d.addCallback(_on_pending_events)
     d.addErrback(lambda err: ret.callback(ERROR(str(err))))
-    # lg.out(4, 'api.events_listen "%s"' % consumer_id)
+    # lg.out(_DebugLevel, 'api.events_listen "%s"' % consumer_id)
     return ret
 
 #------------------------------------------------------------------------------
@@ -3071,7 +3111,7 @@ def network_reconnect():
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
     from p2p import network_connector
-    lg.out(4, 'api.network_reconnect')
+    lg.out(_DebugLevel, 'api.network_reconnect')
     network_connector.A('reconnect')
     return OK('reconnected')
 
@@ -3082,9 +3122,10 @@ def network_connected(wait_timeout=5):
     If all is good this method will block for `wait_timeout` seconds.
     In case of some network issues method will return result asap.
     """
+    lg.out(_DebugLevel, 'api.network_connected  wait_timeout=%r' % wait_timeout)
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from userid import my_id
     from automats import automat
     ret = Deferred()
@@ -3093,10 +3134,31 @@ def network_connected(wait_timeout=5):
     if p2p_connector_lookup:
         p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
         if p2p_connector_machine and p2p_connector_machine.state == 'CONNECTED':
-            wait_timeout_defer = Deferred()
-            wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-            wait_timeout_defer.addBoth(lambda _: ret.callback(OK('connected')))
-            return ret
+            proxy_receiver_lookup = automat.find('proxy_receiver')
+            if proxy_receiver_lookup:
+                proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
+                if proxy_receiver_machine and proxy_receiver_machine.state == 'LISTEN':
+                    wait_timeout_defer = Deferred()
+                    wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+                    wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
+                        'service_network': 'started',
+                        'service_gateway': 'started',
+                        'service_p2p_hookups': 'started',
+                        'service_proxy_transport': 'started',
+                        'proxy_receiver_state': proxy_receiver_machine.state,
+                    })))
+                    return ret
+            else:
+                wait_timeout_defer = Deferred()
+                wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+                wait_timeout_defer.addBoth(lambda _: ret.callback(OK({
+                    'service_network': 'started',
+                    'service_gateway': 'started',
+                    'service_p2p_hookups': 'started',
+                    'service_proxy_transport': 'disabled',
+                    'p2p_connector_state': p2p_connector_machine.state,
+                })))
+                return ret
 
     if not my_id.isLocalIdentityReady():
         lg.warn('local identity is not valid or not exist')
@@ -3128,10 +3190,48 @@ def network_connected(wait_timeout=5):
                 p2p_connector_machine.automat('check-synchronize')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
                 return None
-            ret.callback(OK('connected'))
+            # ret.callback(OK('connected'))
+            _do_service_proxy_transport_test()
         except:
             lg.exc()
             ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_error'}))
+        return None
+
+    def _do_service_proxy_transport_test():
+        if not driver.is_enabled('service_proxy_transport'):
+            ret.callback(OK({
+                'service_network': 'started',
+                'service_gateway': 'started',
+                'service_p2p_hookups': 'started',
+                'service_proxy_transport': 'disabled',
+            }))
+            return None
+        try:
+            proxy_receiver_lookup = automat.find('proxy_receiver')
+            if not proxy_receiver_lookup:
+                lg.warn('disconnected, reason is "proxy_receiver_not_found"')
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_found'}))
+                return None
+            proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
+            if not proxy_receiver_machine:
+                lg.warn('disconnected, reason is "proxy_receiver_not_exist"')
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_exist'}))
+                return None
+            if proxy_receiver_machine.state != 'LISTEN':
+                lg.warn('disconnected, reason is "proxy_receiver_disconnected", sending "start" event to proxy_receiver()')
+                proxy_receiver_machine.automat('start')
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_disconnected'}))
+                return None
+            ret.callback(OK({
+                'service_network': 'started',
+                'service_gateway': 'started',
+                'service_p2p_hookups': 'started',
+                'service_proxy_transport': 'started',
+                'proxy_receiver_state': proxy_receiver_machine.state,
+            }))
+        except:
+            lg.exc()
+            ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_error'}))
         return None
 
     def _on_service_restarted(resp, service_name):
@@ -3162,11 +3262,15 @@ def network_connected(wait_timeout=5):
             _do_service_restart(service_name)
             return None
         if service_name == 'service_network':
-            reactor.callLater(0, _do_service_test, 'service_gateway')
+            reactor.callLater(0, _do_service_test, 'service_gateway')  # @UndefinedVariable
         elif service_name == 'service_gateway':
-            reactor.callLater(0, _do_service_test, 'service_p2p_hookups')
+            reactor.callLater(0, _do_service_test, 'service_p2p_hookups')  # @UndefinedVariable
+        elif service_name == 'service_p2p_hookups':
+            reactor.callLater(0, _do_p2p_connector_test)  # @UndefinedVariable
+        elif service_name == 'service_proxy_transport':
+            reactor.callLater(0, _do_service_proxy_transport_test)  # @UndefinedVariable
         else:
-            reactor.callLater(0, _do_p2p_connector_test)
+            raise Exception('unknown service to test %s' % service_name)
         return None
 
     _do_service_test('service_network')

@@ -407,7 +407,7 @@ def _unpack_list(src):
         return words, None
     res = words[1:]
     if len(res) < length:
-        res += [u''] * (length - len(res))
+        res += [u'', ] * (length - len(res))
     elif len(res) > length:
         return res[:length], res[length:]
     return res, None
@@ -1210,16 +1210,19 @@ def kill_process_win32(pid):
     return True
 
 
-def find_main_process(pid_file_path=None):
+def find_main_process(pid_file_path=None, extra_lookups=[], check_processid_file=True):
     """
     """
     appList = find_process([
         'bitdustnode.exe',
         'BitDustNode.exe',
+        # 'bitdust.py',
         'regexp:^.*python.*bitdust.py$',
-    ])
+    ] + extra_lookups)
     if not appList:
         return []
+    if not check_processid_file:
+        return appList
     try:
         if not pid_file_path:
             from main import settings

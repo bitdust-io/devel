@@ -127,6 +127,10 @@ class BroadcastingService(LocalService):
             return p2p_service.SendAck(newpacket, 'accepted')
         return p2p_service.SendAck(newpacket, 'bad request')
 
+    def health_check(self):
+        from broadcast import broadcaster_node
+        return broadcaster_node.A().state in ['BROADCASTING', ]
+
     def _on_broadcast_routing_enabled_disabled(self, path, value, oldvalue, result):
         from logs import lg
         from broadcast import broadcaster_node
@@ -154,7 +158,7 @@ class BroadcastingService(LocalService):
 
     def _on_broadcast_listener_switched(self, oldstate, newstate, evt, args):
         from logs import lg
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcast_listener
         if self.starting_deferred:
             if newstate in ['LISTENING', 'OFFLINE', ]:
@@ -166,7 +170,7 @@ class BroadcastingService(LocalService):
 
     def _on_broadcaster_node_switched(self, oldstate, newstate, evt, args):
         from logs import lg
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcaster_node
         if self.starting_deferred:
             if newstate in ['BROADCASTING', 'OFFLINE', ]:

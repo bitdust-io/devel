@@ -54,7 +54,7 @@ class HTTPTransportService(LocalService):
                 ]
 
     def start(self):
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred
         from transport.http import http_interface
         from transport import network_transport

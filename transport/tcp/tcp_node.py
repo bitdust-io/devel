@@ -47,17 +47,15 @@ _DebugLevel = 8
 #------------------------------------------------------------------------------
 
 import sys
-import optparse
-import six
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in tcp_node.py')
 
-from twisted.internet import protocol
-from twisted.internet.defer import Deferred
-from twisted.internet.error import CannotListenError
+from twisted.internet import protocol  # @UnresolvedImport
+from twisted.internet.defer import Deferred  # @UnresolvedImport
+from twisted.internet.error import CannotListenError  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -134,6 +132,8 @@ def receive(options):
     global _InternalPort
     global _Listener
     from transport.tcp import tcp_interface
+    if _Debug:
+        lg.out(_DebugLevel, 'tcp_node.receive %r' % options)
     if _Listener:
         lg.warn('listener already exist')
         tcp_interface.interface_receiving_started(_MyHost, options)
