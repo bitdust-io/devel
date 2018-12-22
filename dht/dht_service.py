@@ -35,7 +35,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -145,8 +145,7 @@ def node():
 
 def connect(seed_nodes=[]):
     result = Deferred()
-    if not node().listener:
-        node().listenUDP()
+
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
@@ -154,10 +153,27 @@ def connect(seed_nodes=[]):
         result.callback(True)
         return result
 
-    def _on_join_success(ok, live_nodes):
+    if not seed_nodes:
+        from dht import known_nodes
+        seed_nodes = known_nodes.nodes()
+
+    if not node().listener:
+        node().listenUDP()
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.connect opened a new listener : %r' % node().listener)
+
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
+        for onenode in seed_nodes:
+            lg.out(_DebugLevel, '    %s:%s' % onenode)
+
+    def _on_join_success(live_contacts, live_seed_nodes):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
-        result.callback(live_nodes)
+            lg.out(_DebugLevel, 'alive DHT contacts: %r' % live_contacts)
+            lg.out(_DebugLevel, 'alive seed nodes: %r' % live_seed_nodes)
+            lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
+        result.callback(live_seed_nodes)
 
     def _on_join_failed(x):
         if _Debug:
@@ -169,9 +185,9 @@ def connect(seed_nodes=[]):
             lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(live_nodes)))
             for onenode in live_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
-        node().joinNetwork(live_nodes)
-        node()._joinDeferred.addCallback(_on_join_success, live_nodes)
-        node()._joinDeferred.addErrback(_on_join_failed)
+        d = node().joinNetwork(live_nodes)
+        d.addCallback(_on_join_success, live_nodes)
+        d.addErrback(_on_join_failed)
         node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)
         return live_nodes
 
@@ -181,13 +197,6 @@ def connect(seed_nodes=[]):
         result.callback(False)
         return x
 
-    if not seed_nodes:
-        from dht import known_nodes
-        seed_nodes = known_nodes.nodes()
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
-        for onenode in seed_nodes:
-            lg.out(_DebugLevel, '    %s:%s' % onenode)
     d = resolve_hosts(seed_nodes)
     d.addCallback(_on_hosts_resolved)
     d.addErrback(_on_hosts_resolve_failed)
@@ -695,15 +704,15 @@ def main(options=None, args=None):
         if args is None:
             args = _args
 
-    init(options.udpport, options.dhtdb)
-    lg.out(0, 'Init   udpport=%d   dhtdb=%s   node=%r' % (options.udpport, options.dhtdb, node()))
+    init(udp_port=options.udpport, db_file_path=options.dhtdb)
+    lg.out(_DebugLevel, 'Init   udpport=%d   dhtdb=%s   node=%r' % (options.udpport, options.dhtdb, node()))
 
     def _go(nodes):
-        lg.out(0, 'Connected: %s' % nodes)
+#         lg.out(_DebugLevel, 'Connected nodes: %r' % nodes)
+#         lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
         try:
             if len(args) == 0:
-                lg.out(0, 'known nodes: %r' % nodes)
-                lg.out(0, 'DHT node is active, ID=%r' % node().id)
+                pass
 
             elif len(args) > 0:
                 def _r(x):
@@ -754,10 +763,10 @@ def main(options=None, args=None):
         from dht import known_nodes
         seeds = known_nodes.default_nodes()
 
-    lg.out(0, 'Seed nodes: %s' % seeds)
+    lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
 
     if options.delayed:
-        lg.out(0, 'Wait %d seconds before join the network' % options.delayed)
+        lg.out(_DebugLevel, 'Wait %d seconds before join the network' % options.delayed)
         import time
         time.sleep(options.delayed)
     

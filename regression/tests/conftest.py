@@ -140,7 +140,7 @@ def start_identity_server(node):
     print('\nSTARTED IDENTITY SERVER [%s]\n' % node)
 
 
-def start_dht_seed(node, wait_seconds):
+def start_dht_seed_old(node, wait_seconds):
     print('\nNEW DHT SEED at [%s]\n' % node)
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
@@ -159,6 +159,31 @@ def start_dht_seed(node, wait_seconds):
         bitdust_dhtseed_daemon[0].strip().startswith('BitDust is running at the moment, need to stop the software first')
     )
     print('\nSTARTED DHT SEED [%s]\n' % node)
+
+
+def start_dht_seed(node, wait_seconds=0):
+    print('\nNEW DHT SEED (with STUN SERVER) at [%s]\n' % node)
+    # use short key to run tests faster
+    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
+    # disable unwanted services
+    print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/enabled false')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/private-messages/enabled false')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')[0].strip())
+    # enable DHT service
+    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
+    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # enable Stun server
+    print(run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')[0].strip())
+    # start BitDust daemon
+    # open_tunnel(node)
+    time.sleep(wait_seconds)
+    start_daemon(node)
+    health_check(node)
+    print('\nSTARTED DHT SEED (with STUN SERVER) [%s]\n' % node)
 
 
 def start_stun_server(node):
