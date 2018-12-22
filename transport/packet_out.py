@@ -123,9 +123,9 @@ def create(outpacket, wide, callbacks, target=None, route=None, response_timeout
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%s route=%s' % (
+        lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%r route=%r callbacks=%s' % (
             nameurl.GetName(outpacket.OwnerID), nameurl.GetName(outpacket.CreatorID), nameurl.GetName(outpacket.RemoteID),
-            outpacket.Command, outpacket.PacketID, target, route, ))
+            outpacket.Command, outpacket.PacketID, target, route, list(callbacks.keys())))
     p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     queue().append(p)
     p.automat('run')
@@ -217,9 +217,13 @@ def search_by_response_packet(newpacket, proto=None, host=None):
             newpacket.Command, newpacket.PacketID, proto, host, ))
         lg.out(_DebugLevel, '    [%s]' % (','.join([str(p.outpacket) for p in queue()])))
     for p in queue():
-        if p.outpacket.PacketID != newpacket.PacketID:
+        # TODO: investigate 
+        if p.outpacket.PacketID.lower() != newpacket.PacketID.lower():
             # PacketID of incoming packet not matching with that outgoing packet
             continue
+        if p.outpacket.PacketID != newpacket.PacketID:
+            lg.warn('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
+                p.outpacket.PacketID, newpacket.PacketID, ))
         if not commands.IsCommandAck(p.outpacket.Command, newpacket.Command):
             # this command must not be in the reply
             continue
@@ -250,7 +254,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     if len(result) == 0:
         if _Debug:
             lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
-        if newpacket.Command == commands.Ack() and newpacket.PacketID != commands.Identity():
+        if newpacket.Command == commands.Ack() and newpacket.PacketID not in [commands.Identity(), commands.Identity().lower()]:
             lg.warn('received %s was not a "good reply" from %s://%s' % (newpacket, proto, host, ))
     return result
 
@@ -343,6 +347,15 @@ class PacketOut(automat.Automat):
         increment_packets_counter()
         for command, cb in callbacks.items():
             self.set_callback(command, cb)
+
+    def __repr__(self):
+        """
+        Will print something like: "out_123_alice[Data(9999999999)](SENDING)".
+        """
+        packet_label = '?'
+        if self.outpacket:
+            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:10], )
+        return '%s[%s](%s)' % (self.id, packet_label, self.state)
 
     def init(self):
         """

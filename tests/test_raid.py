@@ -61,7 +61,7 @@ class Test(TestCase):
         self.assertEqual(r, 0, 'ERROR %s' % r)
 
     def test_small_file(self):
-        self._test_file('1.jpg')
+        self._test_file('bitdust.png')
 
     # def test_big_file(self):
     #     self._test_file('book.pdf')

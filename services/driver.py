@@ -47,8 +47,8 @@ import os
 import sys
 import importlib
 
-from twisted.internet import reactor
-from twisted.internet.defer import Deferred, DeferredList, succeed, failure, fail
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.defer import Deferred, DeferredList, succeed, failure  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -135,6 +135,25 @@ def is_exist(name):
     return name in services()
 
 
+def is_healthy(service_name):
+    result = Deferred()
+    svc = services().get(service_name, None)
+    if svc is None:
+        result.errback(Exception('service %s not found' % service_name))
+        return result
+    if not svc.enabled():
+        result.errback(Exception('service %s is disabled' % service_name))
+        return result
+    service_health = svc.health_check()
+    if isinstance(service_health, Deferred):
+        return service_health
+    if service_health is True:
+        result.callback(True)
+    else:
+        result.callback(False)
+    return result
+
+
 def dependent(name):
     svc = services().get(name, None)
     if svc is None:
@@ -163,14 +182,32 @@ def request(service_name, service_request_payload, request, info):
     svc = services().get(service_name, None)
     if svc is None:
         raise Exception('service %s not found' % service_name)
-    return svc.request(service_request_payload, request, info)
+    try:
+        result = svc.request(service_request_payload, request, info)
+    except RequireSubclass:
+        from p2p import p2p_service
+        lg.warn('service %s can not be requested remotely' % service_name)
+        return p2p_service.SendFail(request, 'refused')
+    except:
+        lg.exc()
+        return None
+    return result
 
 
 def cancel(service_name, service_cancel_payload, request, info):
     svc = services().get(service_name, None)
     if svc is None:
         raise Exception('service %s not found' % service_name)
-    return svc.cancel(service_cancel_payload, request, info)
+    try:
+        result = svc.cancel(service_cancel_payload, request, info)
+    except RequireSubclass:
+        from p2p import p2p_service
+        lg.warn('service %s can not be cancelled remotely' % service_name)
+        return p2p_service.SendFail(request, 'refused')
+    except:
+        lg.exc()
+        return None
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -484,6 +521,26 @@ def stop_single(service_name):
     svc.automat('stop', _stopping)
     return result
 
+
+def health_check(services_list=[]):
+    if not services_list:
+        services_list.extend(reversed(boot_up_order()))
+    if _Debug:
+        lg.out(_DebugLevel - 6, 'driver.health_check with %d services' % len(services_list))
+    dl = []
+    for name in services_list:
+        svc = services().get(name, None)
+        if not svc:
+            continue
+        service_health = svc.health_check()
+        if isinstance(service_health, Deferred):
+            dl.append(service_health)
+        else:
+            d = Deferred()
+            d.callback(bool(service_health))
+            dl.append(service_health)
+    health_result = DeferredList(dl, consumeErrors=True)
+    return health_result
 
 
 #     def _on_started(start_result):

@@ -65,6 +65,9 @@ class CustomerContractsService(LocalService):
             customer_contract_executor.shutdown_contract(supplier_idurl)
         return True
 
+    def health_check(self):
+        return True
+
     def _on_supplier_modified(self, evt):
         from coins import customer_contract_executor
         if evt.data['old_idurl']:

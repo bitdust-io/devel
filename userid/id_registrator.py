@@ -310,11 +310,15 @@ class IdRegistrator(automat.Automat):
         """
         id_from_server = identity.identity(xmlsrc=arg)
         if not id_from_server.isCorrect():
+            lg.warn('my identity is not correct')
             return False
         if not id_from_server.Valid():
+            lg.warn('my identity is not valid')
             return False
-        equal = self.new_identity.serialize() == id_from_server.serialize()
-        return equal
+        if self.new_identity.serialize() != id_from_server.serialize():
+            lg.warn('my identity source is different than copy received from id server')
+            return False
+        return True
 
     def isSomeAlive(self, arg):
         """
@@ -640,7 +644,7 @@ def main():
     bpio.init()
     settings.init()
     lg.set_debug_level(20)
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     if len(sys.argv) > 2:
         args = (sys.argv[1], sys.argv[2])
     else:

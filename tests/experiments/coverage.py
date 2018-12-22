@@ -22,7 +22,7 @@
 
 from __future__ import absolute_import
 from twisted.internet.defer import Deferred
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 try:
     from logs import lg

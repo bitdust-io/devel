@@ -53,9 +53,7 @@ _DebugLevel = 2
 
 #------------------------------------------------------------------------------
 
-import json
-
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -73,7 +71,7 @@ from p2p import commands
 
 from lib import packetid
 from lib import nameurl
-from lib import strng
+from lib import serialization
 
 from crypt import signed
 
@@ -102,83 +100,86 @@ def inbox(newpacket, info, status, error_message):
     if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
         # packet is NOT for us, skip
         return False
-    commandhandled = False
+
     if newpacket.Command == commands.Ack():
         # a response from remote node, typically handled in other places
         Ack(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Fail():
         # some operation was failed on other side
         Fail(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.Retrieve():
         # retrieve some packet customer stored with us
         # handled by service_supplier()
         Retrieve(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.RequestService():
         # other node send us a request to get some service
         # handled by service_p2p_hookups()
         RequestService(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.CancelService():
         # other node wants to stop the service we gave him
         # handled by service_p2p_hookups()
         CancelService(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Data():
         # new packet to store for customer, or data coming back from supplier
         # handled by service_backups() and service_supplier()
         Data(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.ListFiles():
         # customer wants list of their files
         # handled by service_supplier()
         ListFiles(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Files():
         # supplier sent us list of files
         # handled by service_backups()
         Files(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.DeleteFile():
         # handled by service_supplier()
         DeleteFile(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.DeleteBackup():
         # handled by service_supplier()
         DeleteBackup(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.Correspondent():
         # TODO: contact asking for our current identity, not implemented yet
         Correspondent(newpacket)
-        commandhandled = False
+
     elif newpacket.Command == commands.Broadcast():
         # handled by service_broadcasting()
         Broadcast(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Coin():
         # handled by service_accountant()
         Coin(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.RetrieveCoin():
         # handled by service_accountant()
         RetrieveCoin(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Key():
         # handled by service_keys_registry()
         Key(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Event():
         # handled by service_p2p_hookups()
         Event(newpacket, info)
-        commandhandled = False
+
     elif newpacket.Command == commands.Message():
         # handled by service_private_messages()
         Message(newpacket, info)
-        commandhandled = False
 
-    return commandhandled
+    elif newpacket.Command == commands.Contacts():
+        # handled by service_customer_family()
+        Contacts(newpacket, info)
+
+    return False
 
 
 def outbox(outpacket):
@@ -269,7 +270,7 @@ def SendFailNoRequest(remoteID, packetID, response=''):
 #------------------------------------------------------------------------------
 
 
-def Identity(newpacket):
+def Identity(newpacket, send_ack=True):
     """
     Normal node or Identity server is sending us a new copy of an identity for a contact of ours.
     Checks that identity is signed correctly.
@@ -293,6 +294,16 @@ def Identity(newpacket):
         # If not valid do nothing
         lg.warn("not Valid packet from %s" % idurl)
         return False
+    # TODO: after receiving full list of identity sources we can call ALL OF THEM or those which are not cached yet.
+    # this way we can be sure that even if first source (server holding your public key) is not responding
+    # other sources still can give you required user info: public key, contacts, etc..
+    # TODO: we can also consolidate few "idurl" sources for every public key - basically identify user by public key
+    # something like:
+    # for source in identitycache.FromCache(idurl).getSources():
+    #     if source not in identitycache.FromCache(idurl):
+    #         d = identitycache.immediatelyCaching(source)
+    #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))
+    #         d.addErrback(lambda err: lg.warn('caching filed: %s' % err))
     if newpacket.OwnerID == idurl:
         # TODO: this needs to be moved to a service
         # wide=True : a small trick to respond to all contacts if we receive pings
@@ -302,17 +313,9 @@ def Identity(newpacket):
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity idurl=%s, but packet ownerID=%s  ... also sent WIDE Acks" % (
                 nameurl.GetName(idurl), newpacket.OwnerID, ))
+    if not send_ack:
+        return True
     reactor.callLater(0, SendAck, newpacket, wide=True)
-    # SendAck(newpacket, wide=True)
-    # TODO: after receiving the full identity sources we can call ALL OF them if some are not cached yet.
-    # this way we can be sure that even if first source (server holding your public key) is not availabble
-    # other sources still can give you required user info: public key, contacts, etc..
-    # something like:
-    # for source in identitycache.FromCache(idurl).getSources():
-    #     if source not in identitycache.FromCache(idurl):
-    #         d = identitycache.immediatelyCaching(source)
-    #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))
-    #         d.addErrback(lambda err: lg.warn('caching filed: %s' % err))
     return True
 
 
@@ -349,10 +352,10 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
         'name': service_name,
         'payload': json_payload,
     }
-    service_info_raw = json.dumps(service_info)
+    service_info_raw = serialization.DictToBytes(service_info)
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %d bytes payload' % (
-            service_name, remote_idurl, len(service_info_raw)))
+        lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %r' % (
+            service_name, remote_idurl, service_info))
     result = signed.Packet(
         commands.RequestService(),
         my_id.getLocalID(),
@@ -376,7 +379,7 @@ def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, c
         'name': service_name,
         'payload': json_payload,
     }
-    service_info_raw = json.dumps(service_info)
+    service_info_raw = serialization.DictToBytes(service_info)
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.SendCancelService "%s" to %s with %d bytes payload' % (
             service_name, remote_idurl, len(service_info_raw)))
@@ -686,7 +689,7 @@ def SendBroadcastMessage(outpacket):
 def Coin(request, info):
     if _Debug:
         try:
-            input_coins = json.loads(request.Payload)
+            input_coins = serialization.BytesToDict(request.Payload)
         except:
             lg.exc()
             input_coins = []
@@ -702,7 +705,7 @@ def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
     outpacket = signed.Packet(
         commands.Coin(), my_id.getLocalID(),
         my_id.getLocalID(), packet_id,
-        json.dumps(coins), remote_idurl)
+        serialization.DictToBytes(coins), remote_idurl)
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
 
@@ -717,9 +720,13 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendRetrieveCoin to %s" % remote_idurl)
     outpacket = signed.Packet(
-        commands.RetrieveCoin(), my_id.getLocalID(),
-        my_id.getLocalID(), packetid.UniqueID(),
-        json.dumps(query), remote_idurl)
+        commands.RetrieveCoin(),
+        my_id.getLocalID(),
+        my_id.getLocalID(),
+        packetid.UniqueID(),
+        serialization.DictToBytes(query),
+        remote_idurl,
+    )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
 
@@ -785,7 +792,7 @@ def Event(request, info):
     """
     if _Debug:
         try:
-            e_json = json.loads(request.Payload)
+            e_json = serialization.BytesToDict(request.Payload)
             e_json['event_id']
             e_json['payload']
         except:
@@ -809,7 +816,7 @@ def SendEvent(remote_idurl, event_id, payload=None,
         e_json['message_id'] = message_id
     if created:
         e_json['created'] = created
-    e_json_src = json.dumps(e_json)
+    e_json_src = serialization.DictToBytes(e_json)
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendEvent to %s with %d bytes message json data" % (
             remote_idurl, len(e_json_src)))
@@ -833,5 +840,42 @@ def Message(request, info):
         lg.out(_DebugLevel, 'p2p_service.Message %d bytes in [%s]' % (len(request.Payload), request.PacketID))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
+
+#------------------------------------------------------------------------------
+
+def Contacts(request, info):
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s] : %r' % (
+            len(request.Payload), request.PacketID, serialization.BytesToDict(request.Payload)))
+        lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
+            request.RemoteID, request.OwnerID, request.CreatorID))
+
+
+def SendContacts(remote_idurl, json_payload={}, wide=False, callbacks={}):
+    """
+    """
+    MyID = my_id.getLocalID()
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendContacts to %s" % nameurl.GetName(remote_idurl))
+    PacketID = packetid.UniqueID()
+    try:
+        json_payload['type']
+        json_payload['space']
+    except:
+        lg.err()
+        return None
+    Payload = serialization.DictToBytes(json_payload)
+    result = signed.Packet(
+        Command=commands.Contacts(),
+        OwnerID=MyID,
+        CreatorID=MyID,
+        PacketID=PacketID,
+        Payload=Payload,
+        RemoteID=remote_idurl,
+    )
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
+    return result
 
 #------------------------------------------------------------------------------

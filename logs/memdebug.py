@@ -49,7 +49,7 @@ def stop():
 
 
 #from twisted.web.wsgi import WSGIResource
-#from twisted.internet import reactor
+#from twisted.internet import reactor  # @UnresolvedImport
 #
 #from dozer import Dozer
 #

@@ -310,7 +310,7 @@ def main():
     if len(sys.argv) < 3:
         print('usage: nickname_observer.py <"many"|"one"> <nickname> <attempts>')
         return
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     lg.set_debug_level(24)
     settings.init()
     my_id.init()

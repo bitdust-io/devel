@@ -74,10 +74,10 @@ import time
 import traceback
 from io import open
 
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
-from twisted.internet.defer import Deferred, fail
-from twisted.python.failure import Failure
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.task import LoopingCall  #@UnresolvedImport
+from twisted.internet.defer import Deferred, fail  #@UnresolvedImport
+from twisted.python.failure import Failure  #@UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -336,6 +336,7 @@ class Automat(object):
         self.publish_events = publish_events
         self._timers = {}
         self._state_callbacks = {}
+        self._callbacks_before_die = {}
         self.init(**kwargs)
         self.startTimers()
         self.register()
@@ -421,9 +422,10 @@ class Automat(object):
         Be sure to not have any existing references on that instance so
         destructor will be called immediately.
         """
+        self.state = dead_state
+        self._callbacks_before_die = self._state_callbacks.copy()
         self._state_callbacks.clear()
         self.stopTimers()
-        self.state = dead_state
         objects().pop(self.index)
 
     def state_changed(self, oldstate, newstate, event_string, arg):
@@ -452,7 +454,7 @@ class Automat(object):
         d = Deferred()
         args = arg
         if not args:
-            args = ()
+            args = tuple()
         args = tuple(list(args) + [d, ])
         self.automat(event_string, args)
         return d
@@ -623,7 +625,7 @@ class Automat(object):
                 if not isinstance(s, str):
                     s = s.decode('utf-8')
             else:
-                if not isinstance(s, unicode):
+                if not isinstance(s, unicode):  # @UndefinedVariable
                     s = s.decode('utf-8')
             _LogFile.write(s)
             _LogFile.flush()
@@ -652,18 +654,19 @@ class Automat(object):
             machineB.addStateChangedCallback(method_B)
 
         """
-        key = (oldstate, newstate)
+        key = (oldstate, newstate, )
         if key not in self._state_callbacks:
             self._state_callbacks[key] = []
         if cb not in self._state_callbacks[key]:
-            self._state_callbacks[key].append((callback_id, cb))
+            self._state_callbacks[key].append((callback_id, cb, ))
 
     def removeStateChangedCallback(self, cb=None, callback_id=None):
         """
         Remove given callback from the state machine.
         """
         removed_count = 0
-        for key, cb_list in self._state_callbacks.items():
+        for key in list(self._state_callbacks.keys()):
+            cb_list = self._state_callbacks[key]
             for cb_tupl in cb_list:
                 cb_id_, cb_ = cb_tupl
                 if cb and cb == cb_:
@@ -683,8 +686,8 @@ class Automat(object):
         This is useful if you use ``lambda x: do_somethig()`` to catch
         the moment when state gets changed.
         """
-        for key in self._state_callbacks.keys():
-            if key == (oldstate, newstate):
+        for key in list(self._state_callbacks.keys()):
+            if key == (oldstate, newstate, ):
                 self._state_callbacks.pop(key)
                 break
 
@@ -692,7 +695,7 @@ class Automat(object):
         """
         Compare conditions and execute state changed callback methods.
         """
-        for key, cb_list in self._state_callbacks.items():
+        for key, cb_list in list(self._state_callbacks.items()) + list(self._callbacks_before_die.items()):
             old, new = key
             catched = False
             if old is None and new is None:
@@ -707,3 +710,4 @@ class Automat(object):
                 for cb_tupl in cb_list:
                     cb_id, cb = cb_tupl
                     cb(oldstate, newstate, event_string, args)
+        self._callbacks_before_die.clear()

@@ -236,13 +236,6 @@ def TransportLog():
     return os.path.join(LogsDir(), 'transport.log')
 
 
-def ParallelPLogFilename():
-    """
-    Log from parallelp workers goes here, raid code is executed inside child processes.
-    """
-    return os.path.join(LogsDir(), 'parallelp.log')
-
-
 def LocalTesterLogFilename():
     """
     A file name path where bptester.py will write its logs.
@@ -882,6 +875,18 @@ def BlockchainDir():
 #------------------------------------------------------------------------------
 
 
+def NetworkFileName():
+    """
+    Location of the file where selected network name is stored.
+    It is possible to have multiple independent BitDust networks:
+    Main network, Test network, local Docker network, Private networks, etc...
+    They are defined in networks.json file and each network must have a unique name.
+    NetworkFileName() defines text file location, where network name is stored.
+    If that file is not exists, BitDust will try to connect to the main network by default.    
+    """
+    return os.path.join(MetaDataDir(), "networkname")
+
+
 def KeyFileName():
     """
     Location of user's Private Key file.
@@ -906,6 +911,13 @@ def CustomerIDsFilename():
     IDs for places we store data for, keeps a list of IDURLs of our customers.
     """
     return os.path.join(MetaDataDir(), "customerids")
+
+
+def CustomersMetaInfoFilename():
+    """
+    Keeps a list of known ECCMaps and other info of my customers.
+    """
+    return os.path.join(MetaDataDir(), "customersmetainfo")
 
 
 def CorrespondentIDsFilename():
@@ -2215,8 +2227,10 @@ def setBackupMaxBlockSize(block_size):
 
 def getPrivateKeySize():
     """
-    Return Private Key size from settings, but typically Private Key is
-    generated only once during install stage.
+    Returns your preferred Private Key size from settings.
+    Your Master Private Key is generated only once during install stage.
+    Other Private Keys also will be generated if necessary:
+    for customer-supplier interactions, for private messages, for blockchain service, etc.
     """
     return config.conf().getInt('personal/private-key-size')
 
@@ -2359,10 +2373,8 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backup-db/enabled', 'true')
 
     config.conf().setDefaultValue('services/backups/enabled', 'true')
-    config.conf().setDefaultValue('services/backups/block-size',
-                                  diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
-    config.conf().setDefaultValue('services/backups/max-block-size',
-                                  diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
+    config.conf().setDefaultValue('services/backups/block-size', diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
+    config.conf().setDefaultValue('services/backups/max-block-size', diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
     config.conf().setDefaultValue('services/backups/max-copies', '2')
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'false')
@@ -2384,15 +2396,16 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/contract-chain/enabled', 'false')
 
     config.conf().setDefaultValue('services/customer/enabled', 'true')
-    config.conf().setDefaultValue('services/customer/needed-space',
-                                  diskspace.MakeStringFromBytes(DefaultNeededBytes()))
+    config.conf().setDefaultValue('services/customer/needed-space', diskspace.MakeStringFromBytes(DefaultNeededBytes()))
     config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
+
+    config.conf().setDefaultValue('services/customer-contracts/enabled', 'false')
+
+    config.conf().setDefaultValue('services/customer-family/enabled', 'true')
 
     config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
 
     config.conf().setDefaultValue('services/customer-support/enabled', 'true')
-
-    config.conf().setDefaultValue('services/customer-contracts/enabled', 'false')
 
     config.conf().setDefaultValue('services/data-motion/enabled', 'true')
 
@@ -2451,7 +2464,7 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/private-messages/enabled', 'true')
 
-    config.conf().setDefaultValue('services/proxy-server/enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-server/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-server/routes-limit', 10)
     config.conf().setDefaultValue('services/proxy-server/current-routes', '{}')
 
@@ -2471,12 +2484,11 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/shared-data/enabled', 'true')
 
     config.conf().setDefaultValue('services/supplier/enabled', 'true')
-    config.conf().setDefaultValue('services/supplier/donated-space',
-                                  diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
+    config.conf().setDefaultValue('services/supplier/donated-space', diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
 
     config.conf().setDefaultValue('services/supplier-contracts/enabled', 'false')
 
-    config.conf().setDefaultValue('services/supplier-relations/enabled', 'true')
+    config.conf().setDefaultValue('services/supplier-relations/enabled', 'false')
 
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())

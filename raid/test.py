@@ -36,7 +36,7 @@ except:
     except:
         sys.exit()
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 import pp
 

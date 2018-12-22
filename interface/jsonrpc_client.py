@@ -40,7 +40,7 @@ if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 from main import settings
 

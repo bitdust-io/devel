@@ -55,7 +55,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -65,6 +65,7 @@ from logs import lg
 
 from lib import nameurl
 from lib import serialization
+from lib import strng
 
 from crypt import encrypted
 from crypt import key
@@ -191,13 +192,13 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
-        callback.insert_outbox_filter_callback(0, self._on_outbox_packet)
+        callback.insert_outbox_filter_callback(0, self._on_first_outbox_packet)
 
     def doStopFilterOutgoingTraffic(self, arg):
         """
         Action method.
         """
-        callback.remove_finish_file_sending_callback(self._on_outbox_packet)
+        callback.remove_finish_file_sending_callback(self._on_first_outbox_packet)
 
     def doCountTraffic(self, arg):
         """
@@ -213,7 +214,10 @@ class ProxySender(automat.Automat):
         def _do_send():
             while len(self.pending_packets):
                 outpacket, wide, callbacks, pending_result = self.pending_packets.pop(0)
-                result_packet = self._on_outbox_packet(outpacket, wide, callbacks)
+                if _Debug:
+                    lg.out(_DebugLevel, 'proxy_sender.doSendAllPendingPackets populate one more item, %d more in the queue' % (
+                        len(self.pending_packets)))
+                result_packet = self._on_first_outbox_packet(outpacket, wide, callbacks)
                 if not isinstance(result_packet, packet_out.PacketOut):
                     lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
                     self.pending_packets = []
@@ -241,16 +245,19 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
         return pending_result
 
-    def _on_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
+    def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
+        Will be called first for every outgoing packet.
+        Must to return None if that packet should be send normal way.
+        Otherwise will create another "routerd" packet instead and return it.
         """
         if not driver.is_on('service_proxy_transport'):
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP because service_proxy_transport is not started')
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP because service_proxy_transport is not started')
             return None
         if proxy_receiver.A() and proxy_receiver.A().state != 'LISTEN':
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP because proxy_receiver state is not LISTEN')
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP because proxy_receiver state is not LISTEN')
             return self._add_pending_packet(outpacket, wide, callbacks)
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
@@ -260,25 +267,25 @@ class ProxySender(automat.Automat):
         my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
         if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP because remote router not ready')
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP because remote router not ready')
             return self._add_pending_packet(outpacket, wide, callbacks)
         if outpacket.RemoteID == router_idurl:
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet SKIP, packet addressed to router and must be sent in a usual way')
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP, packet addressed to router and must be sent in a usual way')
             return None
         try:
             raw_data = outpacket.Serialize()
         except:
             lg.exc('failed to Serialize %s' % outpacket)
             return None
-        # see proxy_router: doForwardOutboxPacket() for receiving part
-        payload = {
-            'f': my_id.getLocalID(),  # from
-            't': outpacket.RemoteID,  # to
-            'w': wide,                # wide
-            'p': raw_data,            # payload
+        # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
+        json_payload = {
+            'f': my_id.getLocalID(),    # from
+            't': outpacket.RemoteID,    # to
+            'w': wide,                  # wide
+            'p': raw_data,              # payload
         }
-        raw_bytes = serialization.DictToBytes(payload)
+        raw_bytes = serialization.DictToBytes(json_payload)
         block = encrypted.Block(
             CreatorID=my_id.getLocalID(),
             BackupID='routed outgoing data',
@@ -298,12 +305,13 @@ class ProxySender(automat.Automat):
             block_encrypted,
             router_idurl,
         )
-        result_packet = packet_out.create(
+        routed_packet = packet_out.create(
             outpacket,
             wide=wide,
             callbacks=callbacks,
             route={
                 'packet': newpacket,
+                # pointing "newpacket" to another node
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,
@@ -312,7 +320,7 @@ class ProxySender(automat.Automat):
             response_timeout=response_timeout,
             keep_alive=keep_alive,
         )
-        self.event('outbox-packet-sent', (outpacket, newpacket, result_packet))
+        self.event('outbox-packet-sent', (outpacket, newpacket, routed_packet))
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
             lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
@@ -324,13 +332,13 @@ class ProxySender(automat.Automat):
         del router_identity_obj
         del router_idurl
         del router_proto_host
-        return result_packet
+        return routed_packet
 
 #------------------------------------------------------------------------------
 
 
 def main():
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callWhenRunning(A, 'init')
     reactor.run()
 

@@ -146,10 +146,10 @@ def print_and_stop(result):
     """
     Print text to console and stop the reactor.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     import pprint
     pprint.pprint(result, indent=2,)
-    reactor.stop()
+    reactor.stop()  # @UndefinedVariable
 
 
 def print_template(result, template):
@@ -168,21 +168,21 @@ def print_template_and_stop(result, template):
     """
     Print text with json template formatting and stop the reactor.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     print_template(result, template)
-    reactor.stop()
+    reactor.stop()  # @UndefinedVariable
 
 
 def fail_and_stop(err):
     """
     Send error message to STDOUT and stop the reactor.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     try:
         print_text(err.getErrorMessage())
     except:
         print(err)
-    reactor.stop()
+    reactor.stop()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 
@@ -197,7 +197,7 @@ def call_rest_http_method(path, method=b'GET', params=None, data=None):
     )
     
     
-#     from twisted.internet import reactor
+#     from twisted.internet import reactor  # @UnresolvedImport
 #     from twisted.web import client, http_headers
 #     from main import settings
 #     # TODO: add body and params handling
@@ -216,11 +216,11 @@ def call_rest_http_method(path, method=b'GET', params=None, data=None):
 
 
 def call_rest_http_method_and_stop(path, method=b'GET', params=None, data=None):
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_rest_http_method(path=path, method=method, params=params, data=data)
     d.addCallback(print_and_stop)
     d.addErrback(fail_and_stop)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
     return 0
 
 #------------------------------------------------------------------------------
@@ -245,33 +245,33 @@ def call_jsonrpc_method(method, *args, **kwargs):
 def call_jsonrpc_method_and_stop(method, *args, **kwargs):
     """
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(print_and_stop)
     d.addErrback(fail_and_stop)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
     return 0
 
 
 def call_jsonrpc_method_template_and_stop(method, template, *args, **kwargs):
     """
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(print_template_and_stop, template)
     d.addErrback(fail_and_stop)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
     return 0
 
 
 def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args, **kwargs):
     """
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     d = call_jsonrpc_method(method, *args, **kwargs)
     d.addCallback(lambda result: print_template_and_stop(transform(result), template))
     d.addErrback(fail_and_stop)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
     return 0
 
 #------------------------------------------------------------------------------
@@ -287,7 +287,7 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
-            'regexp:^.*python.*bitdust.py$',
+            'regexp:^.*python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
@@ -324,13 +324,13 @@ def wait_then_kill(x):
     ``kill()``.
     """
     import time
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from logs import lg
     from system import bpio
     total_count = 0
     while True:
         appList = bpio.find_process([
-            'regexp:^.*python.*bitdust.py$',
+            'regexp:^.*python.*bitdust.py.*?$',
             'bitdustnode.exe',
             'BitDustNode.exe',
             'bpmain.py',
@@ -339,13 +339,13 @@ def wait_then_kill(x):
         ])
         if len(appList) == 0:
             print_text('DONE')
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return 0
         total_count += 1
         if total_count > 10:
             print_text('not responding, KILLING ...')
             ret = kill()
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return ret
         time.sleep(1)
 
@@ -411,7 +411,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             print_text('local identity is not valid or not exist')
         return 0
 
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 
     if args[1] in ['server', 'srv', ]:
         def _run_stand_alone_id_server():
@@ -419,11 +419,11 @@ def cmd_identity(opts, args, overDict, running, executablePath):
             from userid import id_server
             lg.open_log_file(os.path.join(settings.LogsDir(), 'idserver.log'))
             lg.set_debug_level(settings.getDebugLevel())
-            reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')
-            reactor.callWhenRunning(
+            reactor.addSystemEventTrigger('before', 'shutdown', id_server.A().automat, 'shutdown')  # @UndefinedVariable
+            reactor.callWhenRunning(  # @UndefinedVariable
                 id_server.A, 'init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
-            reactor.callLater(0, id_server.A, 'start')
-            reactor.run()
+            reactor.callLater(0, id_server.A, 'start')  # @UndefinedVariable
+            reactor.run()  # @UndefinedVariable
 
         if len(args) <= 2:
             if not running:
@@ -465,7 +465,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         automat.LifeBegins(lg.when_life_begins())
         automat.OpenLogFile(settings.AutomatsLog())
         initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         automat.objects().clear()
         my_id.loadLocalIdentity()
         if my_id.isLocalIdentityReady():
@@ -504,7 +504,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         automat.LifeBegins(lg.when_life_begins())
         automat.OpenLogFile(settings.AutomatsLog())
         initializer.A('run-cmd-line-recover', {'idurl': idurl, 'keysrc': txt})
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         automat.objects().clear()
         my_id.loadLocalIdentity()
         if my_id.isLocalIdentityReady():
@@ -589,7 +589,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
         return call_jsonrpc_method_template_and_stop('key_create', tpl, key_id, key_sz)
 
     if len(args) >= 2 and args[1] in ['copy', 'cp', 'bk', 'backup', 'save', ]:
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
 
         def _on_key(key_json):
             TextToSave = key_json['result'][0]['creator'] + u"\n" + key_json['result'][0]['private']
@@ -602,7 +602,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
                 if not bpio.WriteTextFile(filenameto, TextToSave):
                     del TextToSave
                     print_text('error writing to %s\n' % filenameto)
-                    reactor.stop()
+                    reactor.stop()  # @UndefinedVariable
                     return 1
                 print_text('private key "%s" was stored in "%s"' % (key_json['result'][0]['key_id'], filenameto))
             else:
@@ -612,14 +612,14 @@ def cmd_key(opts, args, overDict, running, executablePath):
             del TextToSave
             if key_json['result'][0]['alias'] == 'master':
                 print_text('WARNING! keep your "master" key in safe place, do not publish it!\n')
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return
 
         key_id = 'master' if len(args) < 3 else args[2]
         d = call_jsonrpc_method('key_get', key_id=key_id, include_private=True)
         d.addCallback(_on_key)
         d.addErrback(fail_and_stop)
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         return 0
 
     if len(args) >= 2 and args[1] in ['print', 'get', 'show', ]:
@@ -961,7 +961,7 @@ def cmd_customers(opts, args, overDict):
 
 def cmd_storage(opts, args, overDict):
     if len(args) < 2:
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
 
         def _got_local(result3, result2, result1):
             result = {
@@ -974,7 +974,7 @@ def cmd_storage(opts, args, overDict):
                 }]
             }
             print_template(result, jsontemplate.Template(templ.TPL_STORAGE))
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
 
         def _got_needed(result2, result1):
             d2 = call_jsonrpc_method('space_local')
@@ -989,7 +989,7 @@ def cmd_storage(opts, args, overDict):
         d1 = call_jsonrpc_method('space_donated')
         d1.addCallback(_got_donated)
         d1.addErrback(fail_and_stop)
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         return 0
     return 2
 
@@ -1003,7 +1003,7 @@ def cmd_automats(opts, args, overDict):
         # return call_rest_http_method_and_stop('/automat/list/v1')
 #     if len(args) == 2 and args[1] in ['log', 'monitor', 'watch',]:\
 #         reactor.
-#         reactor.run()
+#         reactor.run()  # @UndefinedVariable
     return 2
 
 #------------------------------------------------------------------------------
@@ -1041,7 +1041,7 @@ def cmd_services(opts, args, overDict):
 
 
 def cmd_message(opts, args, overDict):
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
     from logs import lg
     #     if len(args) < 2 or args[1] == 'list':
     #         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -1066,8 +1066,8 @@ def cmd_message(opts, args, overDict):
         errors = []
 
         def _stop(x=None):
-            reactor.callInThread(terminal_chat.stop)
-            reactor.stop()
+            reactor.callInThread(terminal_chat.stop)  # @UndefinedVariable
+            reactor.stop()  # @UndefinedVariable
             return True
 
         def _error(x):
@@ -1093,8 +1093,8 @@ def cmd_message(opts, args, overDict):
             return x
 
         _consume()
-        reactor.callInThread(terminal_chat.run)
-        reactor.run()
+        reactor.callInThread(terminal_chat.run)  # @UndefinedVariable
+        reactor.run()  # @UndefinedVariable
         terminal_chat.shutdown()
         if len(errors):
             print('\n'.join(errors))
@@ -1136,9 +1136,37 @@ def cmd_friend(opts, args, overDict):
         d = call_jsonrpc_method('find_peer_by_nickname', inp)
         d.addCallback(_lookup)
         d.addErrback(fail_and_stop)
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         return 0
     return 2
+
+#------------------------------------------------------------------------------
+
+
+def cmd_dhtseed(opts, args, overDict):
+    from lib import misc
+    from system import bpio
+    if len(args) > 1 and args[1] in ['daemon', 'background', 'detach', 'spawn', ]:
+        appList = bpio.find_main_process()
+        if len(appList) > 0:
+            print_text('main BitDust process already started: %s' % str(appList))
+            return 0
+        print_text('starting Distributed Hash Table seed node and detach main BitDust process')
+        result = misc.DoRestart(param='dhtseed', detach=True)
+        try:
+            result = result.pid
+        except:
+            result = str(result)
+        return 0
+
+    from main import settings
+    from dht import dht_service
+    from logs import lg
+    settings.init()
+    # lg.open_log_file(os.path.join(settings.LogsDir(), 'dhtseed.log'))
+    lg.set_debug_level(settings.getDebugLevel())
+    dht_service.main(args=args[1:])
+    return 0
 
 #------------------------------------------------------------------------------
 
@@ -1175,7 +1203,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         try:
             result = result.pid
         except:
-            pass
+            result = str(result)
         print_text(result)
         return 0
 
@@ -1191,9 +1219,9 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
         def done(x):
             print_text('DONE\n', '')
-            from twisted.internet import reactor
-            if reactor.running and not reactor._stopped:
-                reactor.stop()
+            from twisted.internet import reactor  # @UnresolvedImport
+            if reactor.running and not reactor._stopped:  # @UndefinedVariable
+                reactor.stop()  # @UndefinedVariable
 
         def failed(x):
             print_text('soft restart FAILED, now killing previous process and do restart')
@@ -1201,14 +1229,14 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 kill()
             except:
                 print_exception()
-            from twisted.internet import reactor
+            from twisted.internet import reactor  # @UnresolvedImport
             from lib import misc
-            reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
-            reactor.stop()
+            reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)  # @UndefinedVariable
+            reactor.stop()  # @UndefinedVariable
         try:
-            from twisted.internet import reactor
+            from twisted.internet import reactor  # @UnresolvedImport
             call_jsonrpc_method('restart', ui).addCallbacks(done, failed)
-            reactor.run()
+            reactor.run()  # @UndefinedVariable
         except:
             print_exception()
             return 1
@@ -1246,18 +1274,27 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = bpio.find_main_process()
-        if len(appList) > 0:
+        if appList:
             print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
-                from twisted.internet import reactor
+                from twisted.internet import reactor  # @UnresolvedImport
                 call_jsonrpc_method('stop').addBoth(wait_then_kill)
-                reactor.run()
+                reactor.run()  # @UndefinedVariable
                 return 0
             except:
                 print_exception()
                 ret = kill()
                 return ret
         else:
+            appListAllChilds = bpio.find_main_process(
+                check_processid_file=False,
+                extra_lookups=['regexp:^.*python.*bitdust.py.*?$', ],
+            )
+            if appListAllChilds:
+                print_text('found child BitDust processes: %s, perform "kill process" action ... ' % str(appList), '')
+                ret = kill()
+                return ret
+                
             print_text('BitDust is not running at the moment')
             return 0
 
@@ -1376,6 +1413,18 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_file(opts, args, overDict, executablePath)
+
+    #---dhtseed---
+    elif cmd == 'dhtseed':
+        appList = bpio.find_main_process(
+            check_processid_file=False,
+            extra_lookups=['regexp:^.*python.*bitdust.py.*?$', ],
+        )
+        running = (len(appList) > 0)
+        if running:
+            print_text('BitDust is running at the moment, need to stop the software first\n')
+            return 0
+        return cmd_dhtseed(opts, args, overDict)
 
     #---version---
     elif cmd in ['version', 'v', 'ver']:

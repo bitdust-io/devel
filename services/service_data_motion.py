@@ -65,3 +65,6 @@ class DataMotionService(LocalService):
         data_sender.Destroy()
         io_throttle.shutdown()
         return True
+
+    def health_check(self):
+        return True

@@ -90,6 +90,10 @@ class BackupsService(LocalService):
         conf().removeCallback('services/backups/keep-local-copies-enabled')
         return True
 
+    def health_check(self):
+        from storage import backup_monitor
+        return backup_monitor.A().state in ['READY', 'FIRE_HIRE', 'LIST_FILES', 'LIST_BACKUPS', 'REBUILDING', ]
+
     def _on_keep_local_copies_modified(self, path, value, oldvalue, result):
         from storage import backup_monitor
         from logs import lg

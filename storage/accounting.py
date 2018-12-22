@@ -53,6 +53,7 @@ from system import diskusage
 
 from lib import diskspace
 from lib import misc
+from lib import strng
 
 from main import settings
 
@@ -70,15 +71,17 @@ def init():
 
 
 def read_customers_quotas():
-    return bpio._read_dict(settings.CustomersSpaceFile(), {})
-
+    space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
+    space_dict_bin = {strng.to_bin(k): v for k, v in space_dict.items()}
+    return space_dict_bin
 
 def write_customers_quotas(new_space_dict):
-    return bpio._write_dict(settings.CustomersSpaceFile(), new_space_dict)
+    new_space_dict_text = {strng.to_text(k): v for k, v in new_space_dict.items()}
+    return bpio._write_dict(settings.CustomersSpaceFile(), new_space_dict_text)
 
 
 def get_customer_quota(customer_idurl):
-    assert customer_idurl != 'free'
+    assert customer_idurl != b'free'
     try:
         return int(read_customers_quotas().get(customer_idurl, None))
     except:
@@ -88,7 +91,7 @@ def get_customer_quota(customer_idurl):
 def check_create_customers_quotas():
     if not os.path.isfile(settings.CustomersSpaceFile()):
         bpio._write_dict(settings.CustomersSpaceFile(),
-                         {'free': settings.getDonatedBytes()})
+                         {b'free': settings.getDonatedBytes()})
         return True
     return False
 
@@ -98,7 +101,7 @@ def count_consumed_space(space_dict=None):
         space_dict = read_customers_quotas()
     consumed_bytes = 0
     for idurl, customer_consumed in space_dict.items():
-        if idurl != 'free':
+        if idurl != b'free':
             consumed_bytes += int(customer_consumed)
     return consumed_bytes
 
@@ -107,22 +110,24 @@ def validate_customers_quotas(space_dict=None):
     unknown_customers = set()
     unused_quotas = set()
     if space_dict is None:
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
+        # space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
+        space_dict = read_customers_quotas()
     for idurl in list(space_dict.keys()):
+        idurl = strng.to_bin(idurl)
         try:
             space_dict[idurl] = int(space_dict[idurl])
         except:
-            if idurl != 'free':
+            if idurl != b'free':
                 unknown_customers.add(idurl)
             continue
-        if idurl != 'free' and space_dict[idurl] <= 0:
+        if idurl != b'free' and space_dict[idurl] <= 0:
             unknown_customers.add(idurl)
             continue
     for idurl in contactsdb.customers():
         if idurl not in list(space_dict.keys()):
             unknown_customers.add(idurl)
     for idurl in space_dict.keys():
-        if idurl != 'free':
+        if idurl != b'free':
             if idurl not in contactsdb.customers():
                 unused_quotas.add(idurl)
     return unknown_customers, unused_quotas
@@ -200,7 +205,7 @@ def report_donated_storage():
     r['donated_str'] = diskspace.MakeStringFromBytes(r['donated'])
     r['real'] = bpio.getDirectorySize(settings.getCustomersFilesDir())
     try:
-        r['free'] = int(space_dict.pop('free'))
+        r['free'] = int(space_dict.pop(b'free'))
     except:
         r['free'] = 0
     used = 0

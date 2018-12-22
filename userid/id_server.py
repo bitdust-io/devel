@@ -47,7 +47,7 @@ import os
 import sys
 import struct
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.protocol import ServerFactory
 from twisted.internet.defer import Deferred, DeferredList
 from twisted.protocols import basic
@@ -187,7 +187,8 @@ class IdServer(automat.Automat):
             lg.exc()
         try:
             self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))
-            lg.out(4, "            have started web server at http://%s:%d " % (strng.to_text(self.hostname), self.web_port))
+            lg.out(4, "            have started web server at port %d   hostname=%s" % (
+                self.web_port, strng.to_text(self.hostname), ))
         except:
             lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
             lg.exc()

@@ -73,8 +73,6 @@ from supplier import list_files
 
 from storage import accounting
 
-from userid import global_id
-
 #------------------------------------------------------------------------------
 
 _CustomerAssistants = {}
@@ -91,7 +89,8 @@ def assistants():
 def create(customer_idurl):
     """
     """
-    assert customer_idurl not in assistants()
+    if customer_idurl in assistants():
+        raise Exception('CustomerAssistant for %s already exists' % customer_idurl)
     assistants()[customer_idurl] = CustomerAssistant(customer_idurl)
     return assistants()[customer_idurl]
 

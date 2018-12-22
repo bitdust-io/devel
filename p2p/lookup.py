@@ -45,7 +45,7 @@ import sys
 import time
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in lookup.py')
 
@@ -429,7 +429,7 @@ class DiscoveryTask(object):
         try:
             self.failed += 1
             if _Debug:
-                lg.warn('%r : %s' % (arg, strng.to_string(repr(err), errors='ignore')))
+                lg.warn('%r : %s' % (arg, strng.to_text(err, errors='ignore')))
         except:
             lg.exc()
         return None

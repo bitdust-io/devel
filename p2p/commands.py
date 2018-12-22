@@ -67,9 +67,6 @@ def init():
     P2PCommandAcks[ListFiles()] = [Files(), Fail(), ]
     # Ack Files with Ack or Fail
     P2PCommandAcks[Files()] = [Ack(), Fail(), ]
-    # Ack ListContacts with Contacts or Fail
-    P2PCommandAcks[ListContacts()] = [Contacts(), Fail(), ]
-    P2PCommandAcks[Contacts()] = []
     # If identity comes in and no interested party then transport sends an Ack
     P2PCommandAcks[Identity()] = [Ack(), ]
     # Ack with Ack (maybe should be Files)
@@ -88,10 +85,11 @@ def init():
     P2PCommandAcks[Broadcast()] = []
     P2PCommandAcks[Relay()] = []
     P2PCommandAcks[Coin()] = []
-    P2PCommandAcks[RetrieveCoin()] = [Coin(), ]
+    P2PCommandAcks[RetrieveCoin()] = [Coin(), Fail(), ]
     P2PCommandAcks[Key()] = [Ack(), Fail(), ]
     P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]
     P2PCommandAcks[Event()] = [Ack(), Fail(), ]
+    P2PCommandAcks[Contacts()] = [Contacts(), Fail(), ]
 
 
 def IsCommand(s):
@@ -176,17 +174,12 @@ def Files():
     return "Files"
 
 
-def ListContacts():
-    """
-    Response with a list of my contacts, may be suppliers, customers or
-    correspondents.
-    """
-    return "ListContacts"
-
-
 def Contacts():
     """
-    Request a list of my contacts.
+    Packet with a list of my contacts, may be suppliers, customers or
+    correspondents or list of suppliers of another customer.
+    Can also be an empty packet with a request to provide some other contacts
+    from remote peer.
     """
     return "Contacts"
 

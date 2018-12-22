@@ -47,7 +47,7 @@ import os
 import sys
 
 try:
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in tcp_interface.py')
 
@@ -149,7 +149,7 @@ class GateInterface():
         #        lg.out(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
         #        lid.pushProtoContact('tcp')
         if _Debug:
-            lg.out(4, 'tcp_interface.build_contacts : %r' % str(result))
+            lg.out(4, 'tcp_interface.build_contacts : %r' % result)
         return result
 
     def verify_contacts(self, id_obj):

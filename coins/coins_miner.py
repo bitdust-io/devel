@@ -59,7 +59,7 @@ import random
 import string
 import hashlib
 
-from twisted.internet import reactor
+from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet import threads
 from twisted.internet.defer import Deferred
 

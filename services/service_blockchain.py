@@ -65,7 +65,7 @@ class BlockchainService(LocalService):
 
     def start(self):
         import os
-        from twisted.internet import reactor
+        from twisted.internet import reactor  # @UnresolvedImport
         from main import config
         from main import settings
         from main import events
@@ -111,6 +111,10 @@ class BlockchainService(LocalService):
         self.flag_public_key_registered = False
         self.flag_public_key_transaction_sent = False
         return True
+
+    def health_check(self):
+        from blockchain import pybc_service
+        return len(pybc_service.node().connections) > 0
 
     def _on_blockchain_forward(self, evt):
         self._do_check_register_my_identity()

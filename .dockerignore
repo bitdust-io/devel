@@ -3,3 +3,4 @@ temp*
 **/Makefile
 **/*.pyc
 **/.git
+venv
