@@ -73,15 +73,17 @@ def create_identity(node, identity_name):
 
 def connect_network(node):
     count = 0
+    response = requests.get(url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
+    assert response.json()['status'] == 'ERROR'
     while True:
-        if count > 20:
-            assert False, 'node %s failed to connect to the network after 20 retries' % node
-        response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
+        if count > 5:
+            assert False, 'node %s failed to connect to the network after few retries' % node
+        response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=5'))
         if response.json()['status'] == 'OK':
             break
         count += 1
         print('[%s] retry %d   GET:network/connected/v1' % (node, count, ))
-        time.sleep(0.01)
+        time.sleep(5)
     print('connect_network [%s] : OK\n' % node)
 
 #------------------------------------------------------------------------------
