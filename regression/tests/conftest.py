@@ -127,38 +127,15 @@ def start_identity_server(node):
     print(run_ssh_command_and_wait(node, 'bitdust set services/private-messages/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')[0].strip())
-    # enable DHT service
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # configure DHT udp port
+    print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # configure and enable ID server
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-server/host %s' % node)[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-server/enabled true')[0].strip())
     # start BitDust daemon
     start_daemon(node)
-    # open_tunnel(node)
     health_check(node)
     print('\nSTARTED IDENTITY SERVER [%s]\n' % node)
-
-
-def start_dht_seed_old(node, wait_seconds):
-    print('\nNEW DHT SEED at [%s]\n' % node)
-    run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
-    run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
-    # use short key to run tests faster
-    print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
-    # enable DHT service
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
-    # wait few seconds to give time to other DHT seeds to start
-    time.sleep(wait_seconds)
-    # starting DHT node in daemon mode
-    bitdust_dhtseed_daemon = run_ssh_command_and_wait(node, 'bitdust dhtseed daemon')
-    print(bitdust_dhtseed_daemon[0])
-    assert (
-        bitdust_dhtseed_daemon[0].strip().startswith('starting Distributed Hash Table seed node and detach main BitDust process') or
-        bitdust_dhtseed_daemon[0].strip().startswith('BitDust is running at the moment, need to stop the software first')
-    )
-    print('\nSTARTED DHT SEED [%s]\n' % node)
 
 
 def start_dht_seed(node, wait_seconds=0):
@@ -173,13 +150,12 @@ def start_dht_seed(node, wait_seconds=0):
     print(run_ssh_command_and_wait(node, 'bitdust set services/private-messages/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')[0].strip())
-    # enable DHT service
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # configure DHT udp port
+    print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # enable Stun server
     print(run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')[0].strip())
     # start BitDust daemon
-    # open_tunnel(node)
+    print('sleep %d seconds' % wait_seconds)
     time.sleep(wait_seconds)
     start_daemon(node)
     health_check(node)
@@ -198,13 +174,11 @@ def start_stun_server(node):
     print(run_ssh_command_and_wait(node, 'bitdust set services/private-messages/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')[0].strip())
-    # enable DHT service
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # configure DHT udp port
+    print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # enable Stun server
     print(run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')[0].strip())
     # start BitDust daemon
-    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     print('\nSTARTED STUN SERVER [%s]\n' % node)
@@ -221,14 +195,11 @@ def start_proxy_server(node, identity_name):
     # configure ID servers
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/max-servers 1')[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/known-servers "is:8084:6661"')[0].strip())
-    # configure DHT seed nodes
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # configure DHT udp port
+    print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # enable ProxyServer service
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled true')[0].strip())
     # start BitDust daemon and create new identity for proxy server
-    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -246,16 +217,13 @@ def start_supplier(node, identity_name):
     # configure ID servers
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/max-servers 1')[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/known-servers "is:8084:6661"')[0].strip())
-    # configure DHT seed nodes
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # configure DHT udp port
+    print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable supplier service
     print(run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')[0].strip())
     # start BitDust daemon and create new identity for supplier
-    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     create_identity(node, identity_name)
@@ -273,10 +241,8 @@ def start_customer(node, identity_name, join_network=True):
     # configure ID servers
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')[0].strip())
     print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/max-servers 1')[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/known-servers "is:8084:6661"')[0].strip())
-    # configure DHT seed nodes
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % DHT_SEED_NODES)[0].strip())
-    # print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
+    # configure DHT udp port
+    print(run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')[0].strip())
     # set desired Proxy router
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable customer service and prepare tests
@@ -285,7 +251,6 @@ def start_customer(node, identity_name, join_network=True):
     # create randomized file to test file upload/download
     print(run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt'))
     # start BitDust daemon and create new identity for supplier
-    # open_tunnel(node)
     start_daemon(node)
     health_check(node)
     if join_network:
@@ -334,7 +299,7 @@ def start_all_nodes():
 
     for number, dhtseed in enumerate(nodes['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        start_dht_seed(node=dhtseed, wait_seconds=10)  # (10 if number > 0 else 0))
+        start_dht_seed(node=dhtseed, wait_seconds=(10 if number > 0 else 0))
 
     for idsrv in nodes['identity-servers']:
         start_identity_server(node=idsrv)
@@ -352,6 +317,12 @@ def start_all_nodes():
         start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
 
     print('\nAll nodes ready\n')
+
+
+def report_all_nodes():
+    for node in ALL_NODES:
+        main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+        print('[%s]  Warnings: %d' % (node, main_log.count(' WARNING '), ))
 
 
 def clean_all_nodes(skip_checks=False):
@@ -391,6 +362,7 @@ def global_wrapper():
  
     yield
 
+    report_all_nodes()
     # clean_all_nodes()
     # close_all_tunnels()
 

@@ -35,7 +35,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 6
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -47,6 +47,7 @@ import random
 import base64
 import optparse
 import json
+import pprint
 
 #------------------------------------------------------------------------------
 
@@ -167,34 +168,38 @@ def connect(seed_nodes=[]):
         for onenode in seed_nodes:
             lg.out(_DebugLevel, '    %s:%s' % onenode)
 
-    def _on_join_success(live_contacts, live_seed_nodes):
+    def _on_join_success(live_contacts, resolved_seed_nodes):
         if _Debug:
-            if live_contacts:
-                lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
-            else:
-                lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!')
-            lg.out(_DebugLevel, 'alive DHT contacts: %r' % live_contacts)
-            lg.out(_DebugLevel, 'alive seed nodes: %r' % live_seed_nodes)
+            if isinstance(live_contacts, dict):
+                lg.warn('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
+            else: 
+                if len(live_contacts) > 0 and live_contacts[0]:
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
+                else:
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!')
+                    lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
+            lg.out(_DebugLevel, 'alive DHT nodes: %s' % pprint.pformat(live_contacts))
+            lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
             lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
-        if not live_contacts:
-            lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
-        result.callback(live_seed_nodes)
+        result.callback(resolved_seed_nodes)
+        return live_contacts
 
     def _on_join_failed(x):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT JOIN FAILED : %s' % x)
         result.callback(False)
+        return None
 
-    def _on_hosts_resolved(live_nodes):
+    def _on_hosts_resolved(resolved_seed_nodes):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(live_nodes)))
-            for onenode in live_nodes:
+            lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(resolved_seed_nodes)))
+            for onenode in resolved_seed_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
-        d = node().joinNetwork(live_nodes)
-        d.addCallback(_on_join_success, live_nodes)
+        d = node().joinNetwork(resolved_seed_nodes)
+        d.addCallback(_on_join_success, resolved_seed_nodes)
         d.addErrback(_on_join_failed)
         node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)
-        return live_nodes
+        return resolved_seed_nodes
 
     def _on_hosts_resolve_failed(x):
         if _Debug:

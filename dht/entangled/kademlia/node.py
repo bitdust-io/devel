@@ -527,6 +527,7 @@ class Node(object):
                     # Update the "last accessed" timestamp for the appropriate k-bucket
                     self._routingTable.touchKBucket(key)
                 if len(shortlist) == 0:
+                    if _Debug: print("This node doesn't know of any other nodes !!!!!")
                     # This node doesn't know of any other nodes
                     fakeDf = defer.Deferred()
                     fakeDf.callback([])
