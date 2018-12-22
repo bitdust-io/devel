@@ -47,6 +47,7 @@ import random
 import base64
 import optparse
 import json
+import pprint
 
 #------------------------------------------------------------------------------
 
@@ -63,10 +64,10 @@ if __name__ == '__main__':
 #------------------------------------------------------------------------------
 
 from dht.entangled.dtuple import DistributedTupleSpacePeer
-from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore
-from dht.entangled.kademlia.node import rpcmethod
-from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
-from dht.entangled.kademlia import constants
+from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
+from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
+from dht.entangled.kademlia import constants  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -86,6 +87,8 @@ KEY_EXPIRE_MIN_SECONDS = 60 * 2
 KEY_EXPIRE_MAX_SECONDS = constants.dataExpireSecondsDefaut
 RECEIVING_FREQUENCY_SEC = 0.01
 SENDING_FREQUENCY_SEC = 0.02  # must be always slower than receiving frequency!
+RECEIVING_QUEUE_LENGTH_CRITICAL = 100
+SENDING_QUEUE_LENGTH_CRITICAL = 50
 
 #------------------------------------------------------------------------------
 
@@ -143,8 +146,7 @@ def node():
 
 def connect(seed_nodes=[]):
     result = Deferred()
-    if not node().listener:
-        node().listenUDP()
+
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
@@ -152,26 +154,52 @@ def connect(seed_nodes=[]):
         result.callback(True)
         return result
 
-    def _on_join_success(ok, live_nodes):
+    if not seed_nodes:
+        from dht import known_nodes
+        seed_nodes = known_nodes.nodes()
+
+    if not node().listener:
+        node().listenUDP()
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
-        result.callback(live_nodes)
+            lg.out(_DebugLevel, 'dht_service.connect opened a new listener : %r' % node().listener)
+
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
+        for onenode in seed_nodes:
+            lg.out(_DebugLevel, '    %s:%s' % onenode)
+
+    def _on_join_success(live_contacts, resolved_seed_nodes):
+        if _Debug:
+            if isinstance(live_contacts, dict):
+                lg.warn('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
+            else: 
+                if len(live_contacts) > 0 and live_contacts[0]:
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
+                else:
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!')
+                    lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
+            lg.out(_DebugLevel, 'alive DHT nodes: %s' % pprint.pformat(live_contacts))
+            lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
+            lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
+        result.callback(resolved_seed_nodes)
+        return live_contacts
 
     def _on_join_failed(x):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT JOIN FAILED : %s' % x)
         result.callback(False)
+        return None
 
-    def _on_hosts_resolved(live_nodes):
+    def _on_hosts_resolved(resolved_seed_nodes):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(live_nodes)))
-            for onenode in live_nodes:
+            lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(resolved_seed_nodes)))
+            for onenode in resolved_seed_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
-        node().joinNetwork(live_nodes)
-        node()._joinDeferred.addCallback(_on_join_success, live_nodes)
-        node()._joinDeferred.addErrback(_on_join_failed)
+        d = node().joinNetwork(resolved_seed_nodes)
+        d.addCallback(_on_join_success, resolved_seed_nodes)
+        d.addErrback(_on_join_failed)
         node().expire_task.start(int(KEY_EXPIRE_MIN_SECONDS / 2), now=True)
-        return live_nodes
+        return resolved_seed_nodes
 
     def _on_hosts_resolve_failed(x):
         if _Debug:
@@ -179,13 +207,6 @@ def connect(seed_nodes=[]):
         result.callback(False)
         return x
 
-    if not seed_nodes:
-        from dht import known_nodes
-        seed_nodes = known_nodes.nodes()
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
-        for onenode in seed_nodes:
-            lg.out(_DebugLevel, '    %s:%s' % onenode)
     d = resolve_hosts(seed_nodes)
     d.addCallback(_on_hosts_resolved)
     d.addErrback(_on_hosts_resolve_failed)
@@ -623,7 +644,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
     def datagramReceived(self, datagram, address):
         count('dht_datagramReceived')
-        if len(self.receiving_queue) > 50:
+        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL:
             lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
         self.receiving_queue.append((datagram, address, ))
         if self.receiving_worker is None:
@@ -636,7 +657,10 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         datagram, address = self.receiving_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
-        self.receiving_worker = reactor.callLater(RECEIVING_FREQUENCY_SEC, self._process_incoming)  #@UndefinedVariable
+        t = 0
+        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL / 2:
+            t = RECEIVING_FREQUENCY_SEC
+        self.receiving_worker = reactor.callLater(t, self._process_incoming)  #@UndefinedVariable
 
     def _send(self, data, rpcID, address):
         count('dht_send')
@@ -654,7 +678,10 @@ class KademliaProtocolConveyor(KademliaProtocol):
             return
         data, rpcID, address = self.sending_queue.pop(0)
         KademliaProtocol._send(self, data, rpcID, address)
-        self.sending_worker = reactor.callLater(SENDING_FREQUENCY_SEC, self._process_outgoing)  #@UndefinedVariable
+        t = 0
+        if len(self.sending_queue) > SENDING_QUEUE_LENGTH_CRITICAL:
+            t = SENDING_FREQUENCY_SEC
+        self.sending_worker = reactor.callLater(t, self._process_outgoing)  #@UndefinedVariable
 
 #------------------------------------------------------------------------------
 
@@ -687,15 +714,15 @@ def main(options=None, args=None):
         if args is None:
             args = _args
 
-    init(options.udpport, options.dhtdb)
-    lg.out(0, 'Init   udpport=%d   dhtdb=%s   node=%r' % (options.udpport, options.dhtdb, node()))
+    init(udp_port=options.udpport, db_file_path=options.dhtdb)
+    lg.out(_DebugLevel, 'Init   udpport=%d   dhtdb=%s   node=%r' % (options.udpport, options.dhtdb, node()))
 
     def _go(nodes):
-        lg.out(0, 'Connected: %s' % nodes)
+#         lg.out(_DebugLevel, 'Connected nodes: %r' % nodes)
+#         lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
         try:
             if len(args) == 0:
-                lg.out(0, 'known nodes: %r' % nodes)
-                lg.out(0, 'DHT node is active, ID=%r' % node().id)
+                pass
 
             elif len(args) > 0:
                 def _r(x):
@@ -746,10 +773,10 @@ def main(options=None, args=None):
         from dht import known_nodes
         seeds = known_nodes.default_nodes()
 
-    lg.out(0, 'Seed nodes: %s' % seeds)
+    lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
 
     if options.delayed:
-        lg.out(0, 'Wait %d seconds before join the network' % options.delayed)
+        lg.out(_DebugLevel, 'Wait %d seconds before join the network' % options.delayed)
         import time
         time.sleep(options.delayed)
     

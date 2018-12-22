@@ -142,6 +142,9 @@ class JsonAPIResource(Resource):
                     return cb, result.groupdict()
         return None, None
 
+    def log_request(self, request, callback, args):
+        return None
+
     def register(self, method, regex, callback):
         if not isinstance(regex, six.text_type):
             regex = regex.decode()
@@ -163,6 +166,7 @@ class JsonAPIResource(Resource):
         if r is None:
             # Go into the thing
             callback, args = self._get_callback(request)
+            self.log_request(request, callback, args)
             if callback is None:
                 return _JsonResource(dict(status='ERROR', errors=['path %r not found' % name, ]), time.time())
             else:
