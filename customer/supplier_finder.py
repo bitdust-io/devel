@@ -53,6 +53,8 @@ from logs import lg
 
 from automats import automat
 
+from lib import strng
+
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
@@ -269,7 +271,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        self.target_idurl = arg
+        self.target_idurl = strng.to_bin(arg)
 
     def doPopCandidate(self, arg):
         """

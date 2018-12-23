@@ -551,10 +551,11 @@ def save_suppliers(path=None, customer_idurl=None):
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path is None:
         path = os.path.join(
             settings.SuppliersDir(),
-            global_id.UrlToGlobalID(customer_idurl),
+            customer_id,
             'supplierids',
         )
     lst = suppliers(customer_idurl=customer_idurl)
@@ -562,6 +563,8 @@ def save_suppliers(path=None, customer_idurl=None):
     if not os.path.exists(os.path.dirname(path)):
         bpio._dirs_make(os.path.dirname(path))
     bpio._write_list(path, lst)
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.save_suppliers for customer [%s]:\n%r' % (customer_id, lst, ))
     return True
 
 def load_suppliers(path=None, customer_idurl=None, all_customers=False):
@@ -610,6 +613,8 @@ def save_customers(path=None, save_meta_info=False):
     bpio._write_list(path, lst)
     if save_meta_info:
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.save_customers : %r' % lst)
 
 
 def load_customers(path=None):
