@@ -125,8 +125,8 @@ from automats import global_state
 from automats import automat
 
 from lib import misc
-
 from lib import diskspace
+from lib import strng
 
 from main import settings
 from main import events
@@ -328,7 +328,7 @@ class FireHire(automat.Automat):
         # settings.getSuppliersNumberDesired()))
         if '' in contactsdb.suppliers():
             if _Debug:
-                lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty suppliers!!!')
+                lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty supplier!!!')
             return True
         if isinstance(arg, list):
             dismissed = arg
@@ -385,8 +385,7 @@ class FireHire(automat.Automat):
         s = set(needed_suppliers)
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))
-        result = len(s) - \
-            empty_suppliers < settings.getSuppliersNumberDesired()
+        result = len(s) - empty_suppliers < settings.getSuppliersNumberDesired()
         # lg.out(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
         #     contactsdb.num_suppliers(), len(needed_suppliers), len(self.dismiss_list),
         #     len(s), settings.getSuppliersNumberDesired(), result))
@@ -557,7 +556,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        new_idurl = arg
+        new_idurl = strng.to_bin(arg)
         current_suppliers = list(contactsdb.suppliers())
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)

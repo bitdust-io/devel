@@ -52,6 +52,8 @@ from dht import dht_records
 
 from contacts import contactsdb
 
+from userid import my_id
+
 #------------------------------------------------------------------------------
 
 def read_customer_suppliers(customer_idurl):
@@ -77,8 +79,11 @@ def read_customer_suppliers(customer_idurl):
             'publisher': _publisher,
             'timestamp': _timestamp,
         }
-        contactsdb.set_suppliers(_suppliers_list, customer_idurl=customer_idurl)
-        contactsdb.save_suppliers(customer_idurl=customer_idurl)
+        if customer_idurl == my_id.getLocalIDURL():
+            lg.warn('skip writing my own suppliers list received from DHT')
+        else:
+            contactsdb.set_suppliers(_suppliers_list, customer_idurl=customer_idurl)
+            contactsdb.save_suppliers(customer_idurl=customer_idurl)
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
         result.callback(ret)
@@ -97,8 +102,11 @@ def read_customer_suppliers(customer_idurl):
 
 
 def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher=None, ):
-    contactsdb.set_suppliers(suppliers_list, customer_idurl=customer_idurl)
-    contactsdb.save_suppliers(customer_idurl=customer_idurl)
+    if customer_idurl == my_id.getLocalIDURL():
+        lg.warn('skip writing my own suppliers list which suppose to be written to DHT')
+    else:
+        contactsdb.set_suppliers(suppliers_list, customer_idurl=customer_idurl)
+        contactsdb.save_suppliers(customer_idurl=customer_idurl)
     return dht_records.set_suppliers(
         customer_idurl=customer_idurl,
         suppliers_list=suppliers_list,
