@@ -270,20 +270,21 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        if self.transaction:
-            for supplier_idurl in self.transaction['suppliers']:
-                if not supplier_idurl:
-                    continue
-                p2p_service.SendContacts(
-                    remote_idurl=supplier_idurl,
-                    json_payload={
-                        'space': 'family_member',
-                        'type': 'suppliers_list',
-                        'customer_idurl': self.customer_idurl,
-                        'suppliers_list': self.transaction['suppliers'],
-                        'ecc_map': self.transaction['ecc_map'],
-                    },
-                )
+        if not self.transaction:
+            return
+        for supplier_idurl in self.transaction['suppliers']:
+            if not supplier_idurl:
+                continue
+            p2p_service.SendContacts(
+                remote_idurl=supplier_idurl,
+                json_payload={
+                    'space': 'family_member',
+                    'type': 'suppliers_list',
+                    'customer_idurl': self.customer_idurl,
+                    'suppliers_list': self.transaction['suppliers'],
+                    'ecc_map': self.transaction['ecc_map'],
+                },
+            )
         self.automat('suppliers-ok')
 
     def doDHTRead(self, *args, **kwargs):
@@ -425,13 +426,20 @@ class FamilyMember(automat.Automat):
         return p2p_service.SendFail(incoming_packet, 'invalid contacts type')
 
     def _do_build_family_transaction(self, dht_info):
+        try:
+            dht_revision = int(dht_info.get('revision', 0))
+        except:
+            lg.exc()
+            self.transaction = None
+            return
+
         modified = False
         expected_suppliers_count = None
-        self.known_info = dht_info
         _local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
 
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._do_build_family_transaction  known_info=%s' % self.known_info)
+            lg.out(_DebugLevel, 'family_member._do_build_family_transaction  known_info=%r dht_info=%r' % (
+                self.known_info, dht_info, ))
 
         if not self.known_info:
             self.known_info = {
@@ -445,6 +453,12 @@ class FamilyMember(automat.Automat):
 
         if not self.known_info.get('revision'):
             self.known_info['revision'] = 1
+
+        if self.known_info['revision'] > dht_revision:
+            # TODO: need to find a solution to prevent cheating here
+            lg.warn('known DHT info for customer %s is more fresh than currently stored in DHT record, will rewrite' % self.customer_idurl)
+        else:
+            self.known_info = dht_info
 
         self.transaction = self.known_info.copy()
 
@@ -462,14 +476,26 @@ class FamilyMember(automat.Automat):
         if self.current_request['command'] == 'family-join':
             if self.transaction['ecc_map'] and self.current_request['ecc_map']:
                 if self.current_request['ecc_map'] != self.transaction['ecc_map']:
-                    lg.warn('family-join request must not change ecc_map')
-                    self.transaction = None
-                    modified = False
-                    return
+                    modified = True
+                    lg.warn('detected ecc_map change %s -> %s for customer %s' % (
+                        self.transaction['ecc_map'], self.current_request['ecc_map'], self.customer_idurl))
+                    new_suppliers_count = eccmap.GetEccMapSuppliersNumber(self.current_request['ecc_map'])
+                    if len(self.transaction['suppliers']) < new_suppliers_count:
+                        self.transaction['suppliers'] += [b'', ] * (new_suppliers_count - len(self.transaction['suppliers']))
+                    else:
+                        self.transaction['suppliers'] = self.transaction['suppliers'][:new_suppliers_count]
+                    if new_suppliers_count > expected_suppliers_count:
+                        expected_suppliers_count = new_suppliers_count
+                        lg.warn('customer family increased')
+                    else:
+                        expected_suppliers_count = new_suppliers_count
+                        lg.warn('customer family decreased')
+
             try:
                 _existing_position = self.transaction['suppliers'].index(self.current_request['supplier_idurl'])
             except ValueError:
                 _existing_position = -1
+
             if self.current_request['position'] is not None and self.current_request['position'] >= 0:
                 if expected_suppliers_count and self.current_request['position'] >= expected_suppliers_count:
                     lg.warn('family-join request is not valid, supplier position greater than expected suppliers count')
@@ -486,6 +512,7 @@ class FamilyMember(automat.Automat):
                 if self.transaction['suppliers'][self.current_request['position']] != self.current_request['supplier_idurl']:
                     self.transaction['suppliers'][self.current_request['position']] = self.current_request['supplier_idurl']
                     modified = True
+
             else:
                 if self.current_request['supplier_idurl'] not in self.transaction['suppliers']:
                     if b'' in self.transaction['suppliers']:

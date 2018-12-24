@@ -104,7 +104,7 @@ def connectors(customer_idurl=None):
 
 
 def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
-           key_id=None, queue_subscribe=True, family_position=None, ecc_map=None):
+           key_id=None, queue_subscribe=True):
     """
     """
     if customer_idurl is None:
@@ -116,8 +116,6 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
         needed_bytes=needed_bytes,
         key_id=key_id,
         queue_subscribe=queue_subscribe,
-        family_position=family_position,
-        ecc_map=ecc_map,
     )
     return connectors(customer_idurl)[supplier_idurl]
 

@@ -200,16 +200,6 @@ class SupplierFinder(automat.Automat):
         global _SuppliersToHire
         return len(_SuppliersToHire) > 0
 
-#    def isServiceAccepted(self, arg):
-#        """
-#        Condition method.
-#        """
-#        newpacket, info, status, error_message = arg
-#        if newpacket.Command == commands.Ack():
-#            if newpacket.Payload.startswith('accepted'):
-#                return True
-#        return False
-
     def doInit(self, arg):
         """
         Action method.
