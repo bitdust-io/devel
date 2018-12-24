@@ -157,15 +157,13 @@ class SupplierConnector(automat.Automat):
     }
 
     def __init__(self, supplier_idurl, customer_idurl, needed_bytes,
-                 key_id=None, queue_subscribe=True, family_position=None, ecc_map=None):
+                 key_id=None, queue_subscribe=True):
         """
         """
         self.supplier_idurl = supplier_idurl
         self.customer_idurl = customer_idurl
         self.needed_bytes = needed_bytes
         self.key_id = key_id
-        self.family_position = family_position
-        self.ecc_map = ecc_map
         self.queue_subscribe = queue_subscribe
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
@@ -232,116 +230,117 @@ class SupplierConnector(automat.Automat):
         if name in list(self.callbacks.keys()):
             self.callbacks.pop(name)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---NO_SERVICE---
         if self.state == 'NO_SERVICE':
             if event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(arg)
-            elif event == 'ack' and self.isServiceAccepted(arg):
-                self.state = 'CONNECTED'
-                self.doReportConnect(arg)
+                self.doRequestService(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect':
-                self.doReportNoService(arg)
+                self.doReportNoService(*args, **kwargs)
+            elif event == 'ack' and self.isServiceAccepted(*args, **kwargs):
+                self.state = 'CONNECTED'
+                self.doReportConnect(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'close':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect':
                 self.state = 'REFUSE'
-                self.doCancelService(arg)
+                self.doCancelServiceQueue(*args, **kwargs)
+                self.doCancelService(*args, **kwargs)
             elif event == 'fail' or event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(arg)
+                self.doRequestService(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
-            if event == 'ack' and self.isServiceAccepted(arg):
-                self.state = 'CONNECTED'
-                self.doReportConnect(arg)
-            elif event == 'shutdown':
+            if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect':
                 self.state = 'REFUSE'
-                self.doCancelService(arg)
+                self.doCancelService(*args, **kwargs)
             elif event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(arg)
+                self.doRequestService(*args, **kwargs)
             elif event == 'fail':
                 self.state = 'NO_SERVICE'
-                self.doReportNoService(arg)
+                self.doReportNoService(*args, **kwargs)
+            elif event == 'ack' and self.isServiceAccepted(*args, **kwargs):
+                self.state = 'CONNECTED'
+                self.doReportConnect(*args, **kwargs)
         #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'disconnect':
                 self.GoDisconnect=True
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif self.GoDisconnect and event == 'ack' and self.isServiceAccepted(arg):
-                self.state = 'REFUSE'
-                self.doCancelService(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-20sec':
                 self.state = 'DISCONNECTED'
-                self.doCleanRequest(arg)
-                self.doReportDisconnect(arg)
-            elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(arg) and not self.GoDisconnect ):
+                self.doCleanRequest(*args, **kwargs)
+                self.doReportDisconnect(*args, **kwargs)
+            elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(*args, **kwargs) and not self.GoDisconnect ):
                 self.state = 'NO_SERVICE'
-                self.doReportNoService(arg)
-            elif event == 'ack' and not self.GoDisconnect and self.isServiceAccepted(arg):
+                self.doReportNoService(*args, **kwargs)
+            elif event == 'ack' and not self.GoDisconnect and self.isServiceAccepted(*args, **kwargs):
                 self.state = 'QUEUE?'
-                self.doRequestQueueService(arg)
+                self.doRequestQueueService(*args, **kwargs)
+            elif self.GoDisconnect and event == 'ack' and self.isServiceAccepted(*args, **kwargs):
+                self.state = 'REFUSE'
+                self.doCancelService(*args, **kwargs)
         #---REFUSE---
         elif self.state == 'REFUSE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doCleanRequest(arg)
-                self.doDestroyMe(arg)
-            elif event == 'timer-10sec' or event == 'fail' or ( event == 'ack' and self.isServiceCancelled(arg) ):
+                self.doCleanRequest(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'timer-10sec' or event == 'fail' or ( event == 'ack' and self.isServiceCancelled(*args, **kwargs) ):
                 self.state = 'NO_SERVICE'
-                self.doCleanRequest(arg)
-                self.doReportNoService(arg)
+                self.doCleanRequest(*args, **kwargs)
+                self.doReportNoService(*args, **kwargs)
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'disconnect':
                 self.GoDisconnect=True
             elif self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
                 self.state = 'REFUSE'
-                self.doCancelServiceQueue(arg)
-                self.doCancelService(arg)
+                self.doCancelServiceQueue(*args, **kwargs)
+                self.doCancelService(*args, **kwargs)
             elif event == 'close':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif not self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
                 self.state = 'CONNECTED'
-                self.doReportConnect(arg)
+                self.doReportConnect(*args, **kwargs)
         return None
 
-    def isServiceAccepted(self, arg):
+    def isServiceAccepted(self, *args, **kwargs):
         """
         Condition method.
         """
-        newpacket = arg
+        newpacket = args[0]
         if strng.to_text(newpacket.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.supplier_idurl)
             return True
         return False
 
-    def isServiceCancelled(self, arg):
+    def isServiceCancelled(self, *args, **kwargs):
         """
         Condition method.
         """
-        newpacket = arg
+        newpacket = args[0]
         if newpacket.Command == commands.Ack():
             if strng.to_text(newpacket.Payload).startswith('accepted'):
                 if _Debug:
@@ -349,7 +348,7 @@ class SupplierConnector(automat.Automat):
                 return True
         return False
 
-    def doRequestService(self, arg):
+    def doRequestService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -365,10 +364,12 @@ class SupplierConnector(automat.Automat):
             )
         if self.key_id:
             service_info['key_id'] = self.key_id
-        if self.ecc_map:
-            service_info['ecc_map'] = self.ecc_map
-        if self.family_position:
-            service_info['position'] = self.family_position
+        ecc_map = kwargs.get('ecc_map')
+        if ecc_map:
+            service_info['ecc_map'] = ecc_map
+        family_position = kwargs.get('family_position')
+        if family_position:
+            service_info['position'] = family_position
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
@@ -380,7 +381,7 @@ class SupplierConnector(automat.Automat):
         )
         self.request_packet_id = request.PacketID
 
-    def doCancelService(self, arg):
+    def doCancelService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -393,8 +394,9 @@ class SupplierConnector(automat.Automat):
             },
         )
         self.request_packet_id = request.PacketID
+        
 
-    def doRequestQueueService(self, arg):
+    def doRequestQueueService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -430,7 +432,7 @@ class SupplierConnector(automat.Automat):
             },
         )
 
-    def doCancelServiceQueue(self, arg):
+    def doCancelServiceQueue(self, *args, **kwargs):
         """
         Action method.
         """
@@ -463,13 +465,13 @@ class SupplierConnector(automat.Automat):
             },
         )
 
-    def doCleanRequest(self, arg):
+    def doCleanRequest(self, *args, **kwargs):
         """
         Action method.
         """
         self.request_packet_id = None
 
-    def doReportConnect(self, arg):
+    def doReportConnect(self, *args, **kwargs):
         """
         Action method.
         """
@@ -490,7 +492,7 @@ class SupplierConnector(automat.Automat):
                 },
             )
 
-    def doReportNoService(self, arg):
+    def doReportNoService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -499,7 +501,7 @@ class SupplierConnector(automat.Automat):
         for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'NO_SERVICE')
 
-    def doReportDisconnect(self, arg):
+    def doReportDisconnect(self, *args, **kwargs):
         """
         Action method.
         """
@@ -508,7 +510,7 @@ class SupplierConnector(automat.Automat):
         for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'DISCONNECTED')
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -535,7 +537,7 @@ class SupplierConnector(automat.Automat):
         else:
             self.automat('fail', None)
 
-    def _on_contact_status_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_contact_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
             if _Debug:
                 lg.out(12, 'supplier_connector._on_contact_status_state_changed %s : %s->%s, reconnecting now' % (

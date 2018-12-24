@@ -431,12 +431,10 @@ class FireHire(automat.Automat):
                 sc = supplier_connector.create(
                     supplier_idurl=supplier_idurl,
                     customer_idurl=my_id.getLocalID(),
-                    family_position=pos,
-                    ecc_map=eccmap.Current().name,
                 )
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
-            sc.automat('connect')
+            sc.automat('connect', family_position=pos, ecc_map=eccmap.Current().name)
             supplier_contact_status = contact_status.getInstance(supplier_idurl)
             if supplier_contact_status:
                 supplier_contact_status.addStateChangedCallback(
@@ -692,16 +690,13 @@ class FireHire(automat.Automat):
         Action method.
         """
         if not self.restart_task:
-            self.restart_task = reactor.callLater(
+            self.restart_task = reactor.callLater(  # @UndefinedVariable
                 self.restart_interval, self._scheduled_restart)
-            lg.out(
-                10, 'fire_hire.doScheduleNextRestart after %r sec.' %
-                self.restart_interval)
+            lg.out(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
             self.restart_interval *= 1.1
         else:
-            lg.out(
-                10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' %
-                (time.time() - self.restart_task.getTime()))
+            lg.out(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
+                time.time() - self.restart_task.getTime()))
 
     def doNotifySuppliersChanged(self, arg):
         if driver.is_on('service_backups'):

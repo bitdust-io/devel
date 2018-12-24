@@ -38,14 +38,9 @@ def test_customer_1_upload_download_file_with_master():
 
     assert not os.path.exists(directory_dowloaded_file)
 
-    for i in range(1):
-        response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
-        assert response.status_code == 200
-        if response.json()['status'] == 'OK':
-            break
-        # assert response.json()['status'] == 'OK', response.json()
-    else:
-        assert response.json()['status'] == 'OK', response.json()
+    response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
+    assert response.status_code == 200
+    assert response.json()['status'] == 'OK', response.json()
 
     response = requests.post(
         url=tunnel_url('customer_1', 'file/upload/start/v1'),

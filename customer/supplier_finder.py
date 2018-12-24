@@ -243,10 +243,8 @@ class SupplierFinder(automat.Automat):
             sc = supplier_connector.create(
                 supplier_idurl=self.target_idurl,
                 customer_idurl=my_id.getLocalID(),
-                family_position=position,
-                ecc_map=eccmap.Current().name,
             )
-        sc.automat('connect')
+        sc.automat('connect', family_position=position, ecc_map=eccmap.Current().name)
         sc.set_callback('supplier_finder', self._supplier_connector_state)
 
     def doDHTFindRandomUser(self, arg):
