@@ -151,7 +151,7 @@ class EmployerService(LocalService):
                 'space': 'family_member',
                 'type': 'supplier_position',
                 'customer_idurl': my_id.getLocalIDURL(),
-                'ecc_map': eccmap.Current().name,
+                'customer_ecc_map': eccmap.Current().name,
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,
             },

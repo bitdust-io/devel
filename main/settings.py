@@ -432,6 +432,14 @@ def DefaultNeedSuppliersPacketTimeOut():
     return 60
 
 
+def DefaultEccMapName():
+    """
+    This is a ecc map name used by default.
+    Must comply with ``DefaultDesiredSuppliers()``.
+    """
+    return 'ecc/4x4'
+
+
 def DefaultDesiredSuppliers():
     """
     A starting number of suppliers for new users.
@@ -587,13 +595,6 @@ def ListFilesFormat():
     Can be "Text" or "Compressed". TODO: add "Encrypted" format
     """
     return "Compressed"
-
-
-def DefaultEccMapName():
-    """
-    This is a ecc map name used by default - must comply with ``DefaultDesiredSuppliers()``.
-    """
-    return 'ecc/4x4'
 
 
 def DefaultRepo():

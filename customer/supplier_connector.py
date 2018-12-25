@@ -484,7 +484,7 @@ class SupplierConnector(automat.Automat):
                     'space': 'family_member',
                     'type': 'supplier_position',
                     'customer_idurl': my_id.getLocalIDURL(),
-                    'ecc_map': eccmap.Current().name,
+                    'customer_ecc_map': eccmap.Current().name,
                     'supplier_idurl': self.supplier_idurl,
                     'supplier_position': self.family_position,
                 },
