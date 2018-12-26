@@ -405,7 +405,7 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
-        if args[0]:
+        if args and args[0]:
             key = self.my_id + ':incoming' + str(self.IncomingPosition)
             dht_service.delete_key(key)
 

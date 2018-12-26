@@ -269,14 +269,14 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         callback.append_inbox_callback(self._on_inbox_packet)
-        if args[0]:
+        if args and args[0]:
             self.new_coin_filter_method, self.offline_mode = args[0]
 
     def doAddAccountant(self, *args, **kwargs):
         """
         Action method.
         """
-        if args[0]:
+        if args and args[0]:
             if args[0] not in self.connected_accountants:
                 self.connected_accountants.append(*args, **kwargs)
             else:

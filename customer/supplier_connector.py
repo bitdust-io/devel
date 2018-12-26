@@ -199,6 +199,8 @@ class SupplierConnector(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
+        self._last_known_family_position = None
+        self._last_known_ecc_map = None
         contact_peer = contact_status.getInstance(self.supplier_idurl)
         if contact_peer:
             contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
@@ -362,12 +364,12 @@ class SupplierConnector(automat.Automat):
             )
         if self.key_id:
             service_info['key_id'] = self.key_id
-        ecc_map = kwargs.get('ecc_map')
-        if ecc_map:
-            service_info['ecc_map'] = ecc_map
-        family_position = kwargs.get('family_position')
-        if family_position:
-            service_info['position'] = family_position
+        self._last_known_ecc_map = kwargs.get('ecc_map')
+        if self._last_known_ecc_map is not None:
+            service_info['ecc_map'] = self._last_known_ecc_map
+        self._last_known_family_position = kwargs.get('family_position')
+        if self._last_known_family_position is not None:
+            service_info['position'] = self._last_known_family_position
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
@@ -477,16 +479,16 @@ class SupplierConnector(automat.Automat):
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'CONNECTED')
-        if self.family_position is not None:
+        if self._last_known_family_position is not None:
             p2p_service.SendContacts(
                 remote_idurl=self.supplier_idurl,
                 json_payload={
                     'space': 'family_member',
                     'type': 'supplier_position',
                     'customer_idurl': my_id.getLocalIDURL(),
-                    'customer_ecc_map': eccmap.Current().name,
+                    'customer_ecc_map': self._last_known_ecc_map,
                     'supplier_idurl': self.supplier_idurl,
-                    'supplier_position': self.family_position,
+                    'supplier_position': self._last_known_family_position,
                 },
             )
 

@@ -729,7 +729,7 @@ class FireHire(automat.Automat):
             return
         self.automat('supplier-state-changed', (idurl, newstate))
 
-    def _on_supplier_contact_status_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_supplier_contact_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.out(6, 'fire_hire._on_supplier_contact_status_state_changed  %s -> %s, own state is %s' % (
             oldstate, newstate, self.state))
 #         if newstate == 'OFFLINE' and oldstate != 'OFFLINE':

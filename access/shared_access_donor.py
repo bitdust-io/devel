@@ -357,7 +357,7 @@ class SharedAccessDonor(automat.Automat):
         Action method.
         """
         if self.result_defer:
-            if args[0]:
+            if args and args[0]:
                 events.send('private-key-share-failed', dict(
                     global_id=global_id.UrlToGlobalID(self.remote_idurl),
                     remote_idurl=self.remote_idurl,

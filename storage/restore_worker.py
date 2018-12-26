@@ -663,7 +663,7 @@ class RestoreWorker(automat.Automat):
                 self.RequestFails.append(getattr(NewPacketOrPacketID, 'PacketID', None))
                 self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
 
-    def _on_data_receiver_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_data_receiver_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if newstate == 'RECEIVING' and oldstate != 'RECEIVING':
             self.automat('data-receiving-started', newstate)
         elif oldstate == 'RECEIVING' and newstate != 'RECEIVING':

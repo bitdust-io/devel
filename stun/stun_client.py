@@ -272,7 +272,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        if args[0]:
+        if args and args[0]:
             self.callbacks.append(*args, **kwargs)
 
     def doDHTFindRandomNode(self, *args, **kwargs):

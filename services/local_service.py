@@ -322,7 +322,7 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
-        if args[0]:
+        if args and args[0]:
             self.add_callback(*args, **kwargs)
 
     def doStopDependentServices(self, *args, **kwargs):

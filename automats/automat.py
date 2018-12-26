@@ -193,8 +193,8 @@ def communicate(index, event, *args, **kwargs):
     if not A:
         return fail(Failure(Exception('state machine with index %d not exist' % index)))
     d = Deferred()
-    args = (d, *args, **kwargs)
-    A.automat(event, *args)
+    args = tuple(list(args) + [d, ])
+    A.automat(event, *args, **kwargs)
     return d
 
 #------------------------------------------------------------------------------
@@ -345,7 +345,7 @@ class Automat(object):
                      'CREATED AUTOMAT %s with index %d, %d running' % (
                 str(self), self.index, len(objects())))
 
-    def _on_state_change(self, oldstate, newstate, event_string, args):
+    def _on_state_change(self, oldstate, newstate, event_string, *args, **kwargs):
         from main import events
         if oldstate != newstate:
             events.send('%s-state-change' % self.name, dict(
@@ -452,7 +452,6 @@ class Automat(object):
         See ``addStateChangedCallback()`` for more advanced interactions/callbacks.
         """
         d = Deferred()
-        args = arg
         if not args:
             args = tuple()
         args = tuple(list(args) + [d, ])

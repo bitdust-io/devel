@@ -799,14 +799,14 @@ class ProxyReceiver(automat.Automat):
             return True
         return False
 
-    def _on_router_contact_status_connected(self, oldstate, newstate, event_string, args):
+    def _on_router_contact_status_connected(self, oldstate, newstate, event_string, *args, **kwargs):
         pass
 
-    def _on_router_contact_status_offline(self, oldstate, newstate, event_string, args):
+    def _on_router_contact_status_offline(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('router contact status offline: %s->%s after "%s"' % (oldstate, newstate, event_string, ))
         # self.automat('router-disconnected')
 
-    def _on_router_session_disconnected(self, oldstate, newstate, event_string, args):
+    def _on_router_session_disconnected(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('router session disconnected: %s->%s' % (oldstate, newstate, ))
         self.automat('router-disconnected')
 

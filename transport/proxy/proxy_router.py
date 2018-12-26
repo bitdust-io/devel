@@ -693,7 +693,7 @@ class ProxyRouter(automat.Automat):
                 found = True
         return found
 
-    def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, args):
+    def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('user session disconnected: %s->%s' % (oldstate, newstate))
         self.automat('routed-session-disconnected', user_id)
 

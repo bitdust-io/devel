@@ -456,7 +456,7 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        if args[0]:
+        if args and args[0]:
             status, bytes_received, _ = args[0]
             p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
