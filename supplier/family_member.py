@@ -416,10 +416,11 @@ class FamilyMember(automat.Automat):
         }
 
     def _do_detect_latest_revision(self, dht_info, my_info):
-        if dht_info is None or not isinstance(dht_info, dict):
-            return my_info
-        dht_revision = int(dht_info['revision'])
         my_revision = int(my_info['revision'])
+        if dht_info is None or not isinstance(dht_info, dict):
+            lg.warn('DHT info is unknown, assume my info is correct and return revision %d' % my_revision)
+            return my_revision
+        dht_revision = int(dht_info['revision'])
         if _Debug:
             lg.out(_DebugLevel, 'family_member._do_detect_latest_revision   my_revision=%r dht_revision=%r' % (
                 my_revision, dht_revision, ))
@@ -436,16 +437,19 @@ class FamilyMember(automat.Automat):
         return dht_revision
 
     def _do_merge_info(self, dht_info, my_info, latest_revision):
-        if latest_revision == dht_info['revision']:
-            if latest_revision == my_info['revision']:
-                # I have same revision as info from DHT
-                merged_info = dht_info
-            else:
-                # here my revision is lower, I need to take info from DHT 
-                merged_info = dht_info
-        else:
-            # here my revision is higher, so I have some changes that needs to be published already
+        if dht_info is None or not isinstance(dht_info, dict):
             merged_info = my_info
+        else:
+            if latest_revision == dht_info['revision']:
+                if latest_revision == my_info['revision']:
+                    # I have same revision as info from DHT
+                    merged_info = dht_info
+                else:
+                    # here my revision is lower, I need to take info from DHT 
+                    merged_info = dht_info
+            else:
+                # here my revision is higher, so I have some changes that needs to be published already
+                merged_info = my_info
         # make sure list of suppliers have correct length according to ecc_map
         if not merged_info['ecc_map']:
             known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map', eccmap.DefaultName())
