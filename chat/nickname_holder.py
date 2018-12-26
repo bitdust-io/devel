@@ -197,15 +197,13 @@ class NicknameHolder(automat.Automat):
         """
         Condition method.
         """
-        return arg == my_id.getLocalID()
+        return args[0] == my_id.getLocalID()
 
     def doSetNickname(self, *args, **kwargs):
         """
         Action method.
         """
-        self.nickname = arg or \
-            settings.getNickName() or \
-            my_id.getLocalIdentity().getIDName()
+        self.nickname = args[0] if (args and args[0]) else (settings.getNickName() or my_id.getLocalIdentity().getIDName())
         settings.setNickName(self.nickname)
 
     def doMakeKey(self, *args, **kwargs):
@@ -271,7 +269,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, arg, ))
+        lg.out(8, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, args[0], ))
         for cb in self.result_callbacks:
             cb('my own', self.key)
 
@@ -279,7 +277,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s with %s' % (self.key, arg, ))
+        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s with %s' % (self.key, args[0], ))
         for cb in self.result_callbacks:
             cb('registered', self.key)
 
@@ -287,7 +285,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameExist : %s with %s' % (self.key, arg, ))
+        lg.out(8, 'nickname_holder.doReportNicknameExist : %s with %s' % (self.key, args[0], ))
         for cb in self.result_callbacks:
             cb('exist', self.key)
 
@@ -295,7 +293,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s with %s' % (self.key, arg, ))
+        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s with %s' % (self.key, args[0], ))
         for cb in self.result_callbacks:
             cb('failed', self.key)
 
@@ -335,8 +333,8 @@ def main():
     settings.init()
     my_id.init()
     dht_service.init(settings.getDHTPort())
-    reactor.callWhenRunning(A, 'init', sys.argv[1])
-    reactor.run()
+    reactor.callWhenRunning(A, 'init', sys.argv[1])  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":
