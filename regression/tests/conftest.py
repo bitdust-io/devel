@@ -2,6 +2,9 @@ import pytest
 import time
 import requests
 
+import asyncio
+import aiohttp
+
 from .utils import run_ssh_command_and_wait, open_all_tunnels, close_all_tunnels, tunnel_url
 
 #------------------------------------------------------------------------------
@@ -328,6 +331,26 @@ def report_all_nodes():
 
 
 def clean_all_nodes(skip_checks=False):
+
+# TODO:
+#     async def parallel_method(node):
+#         url = f'/v1'
+#         print('GET: ', url, flush=True)
+#         async with aiohttp.ClientSession() as session:
+#             for i in range(5):
+#                 try:
+#                     response = await session.get(url)
+#                 except Exception as e:
+#                     print(f'Exception {url} {e}. Try again in sec.', flush=True)
+#                     await asyncio.sleep(1)
+#                 else:
+#                     print(f'Done: {response.url} ({response.status})', flush=True)
+#                     break
+#     tasks = [
+#         asyncio.ensure_future(parallel_method(node)) for node in nodes
+#     ]
+#     event_loop.run_until_complete(asyncio.wait(tasks))
+    
     for node in ALL_NODES:
         stop_daemon(node, skip_checks=skip_checks)
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
@@ -352,7 +375,16 @@ def kill_all_nodes():
 
 #------------------------------------------------------------------------------
 
+# @pytest.yield_fixture(scope='session')
+# def event_loop():
+#     loop = asyncio.get_event_loop()
+#     yield loop
+#     loop.close()
+
+#------------------------------------------------------------------------------
+
 @pytest.yield_fixture(scope='session', autouse=True)
+# def global_wrapper(event_loop):
 def global_wrapper():
     _begin = time.time()
 
