@@ -416,6 +416,8 @@ class FamilyMember(automat.Automat):
         }
 
     def _do_detect_latest_revision(self, dht_info, my_info):
+        if dht_info is None or not isinstance(dht_info, dict):
+            return my_info
         dht_revision = int(dht_info['revision'])
         my_revision = int(my_info['revision'])
         if _Debug:
