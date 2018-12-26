@@ -571,7 +571,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, *args, **kwargs)
+        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=args)
         self.destroy(dead_state=self.state)
         global _IdRegistrator
         _IdRegistrator = None
