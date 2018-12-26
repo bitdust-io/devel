@@ -52,7 +52,6 @@ EVENTS:
 
 from __future__ import absolute_import
 import six
-import os
 import sys
 
 try:
@@ -69,7 +68,7 @@ from logs import lg
 from automats import automat
 from automats import global_state
 
-from . import initializer
+from main import initializer
 
 #------------------------------------------------------------------------------
 
@@ -126,12 +125,12 @@ def shutdown(x=None):
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     global _Shutdowner
     if _Shutdowner is None:
         _Shutdowner = Shutdowner('shutdowner', 'AT_STARTUP', 2, True)
     if event is not None:
-        _Shutdowner.event(event, arg)
+        _Shutdowner.event(event, *args, **kwargs)
     return _Shutdowner
 
 
@@ -148,11 +147,11 @@ class Shutdowner(automat.Automat):
         self.flagReactor = False
         self.shutdown_param = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('SHUTDOWN ' + newstate)
         initializer.A('shutdowner.state', newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
@@ -162,32 +161,32 @@ class Shutdowner(automat.Automat):
         #---INIT---
         elif self.state == 'INIT':
             if event == 'stop':
-                self.doSaveParam(arg)
+                self.doSaveParam(*args, **kwargs)
                 self.flagApp = True
             elif event == 'reactor-stopped':
                 self.flagReactor = True
             elif event == 'ready' and self.flagReactor:
                 self.state = 'FINISHED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'ready' and not self.flagReactor and self.flagApp:
                 self.state = 'STOPPING'
-                self.doShutdown(arg)
+                self.doShutdown(*args, **kwargs)
             elif event == 'ready' and not self.flagReactor and not self.flagApp:
                 self.state = 'READY'
         #---READY---
         elif self.state == 'READY':
             if event == 'stop':
                 self.state = 'STOPPING'
-                self.doShutdown(arg)
+                self.doShutdown(*args, **kwargs)
             elif event == 'reactor-stopped':
                 self.state = 'FINISHED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'block':
                 self.state = 'BLOCKED'
         #---BLOCKED---
         elif self.state == 'BLOCKED':
             if event == 'stop':
-                self.doSaveParam(arg)
+                self.doSaveParam(*args, **kwargs)
                 self.flagApp = True
             elif event == 'reactor-stopped':
                 self.flagReactor = True
@@ -195,10 +194,10 @@ class Shutdowner(automat.Automat):
                 self.state = 'READY'
             elif event == 'unblock' and not self.flagReactor and self.flagApp:
                 self.state = 'STOPPING'
-                self.doShutdown(arg)
+                self.doShutdown(*args, **kwargs)
             elif event == 'unblock' and self.flagReactor:
                 self.state = 'FINISHED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---FINISHED---
         elif self.state == 'FINISHED':
             pass
@@ -206,22 +205,22 @@ class Shutdowner(automat.Automat):
         elif self.state == 'STOPPING':
             if event == 'reactor-stopped':
                 self.state = 'FINISHED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def doSaveParam(self, arg):
-        self.shutdown_param = arg
+    def doSaveParam(self, *args, **kwargs):
+        self.shutdown_param = args[0]
         lg.out(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
 
-    def doShutdown(self, arg):
+    def doShutdown(self, *args, **kwargs):
         lg.out(2, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
-        param = arg
+        param = args[0]
         if self.shutdown_param is not None:
             param = self.shutdown_param
-        if arg is None:
+        if args[0] is None:
             param = 'exit'
-        elif isinstance(arg, six.string_types):
-            param = arg
+        elif isinstance(args[0], six.string_types):
+            param = args[0]
         if param not in ['exit', 'restart', 'restartnshow']:
             param = 'exit'
         if param == 'exit':
@@ -231,7 +230,7 @@ class Shutdowner(automat.Automat):
         elif param == 'restartnshow':
             self._shutdown_restart('show')
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -262,8 +261,8 @@ class Shutdowner(automat.Automat):
 
         def shutdown_finished(x, param):
             lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")
-            reactor.addSystemEventTrigger('after', 'shutdown', do_restart, param)
-            reactor.stop()
+            reactor.addSystemEventTrigger('after', 'shutdown', do_restart, param)  # @UndefinedVariable
+            reactor.stop()  # @UndefinedVariable
         d = shutdown('restart')
         d.addBoth(shutdown_finished, param)
 
@@ -276,6 +275,6 @@ class Shutdowner(automat.Automat):
 
         def shutdown_reactor_stop(x=None):
             lg.out(2, "shutdowner.shutdown_reactor_stop want to stop the reactor")
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
         d = shutdown(x)
         d.addBoth(shutdown_reactor_stop)

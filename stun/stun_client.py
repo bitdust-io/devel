@@ -84,7 +84,7 @@ _StunClient = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -99,7 +99,7 @@ def A(event=None, arg=None):
             log_transitions=_Debug,
         )
     if event is not None:
-        _StunClient.automat(event, arg)
+        _StunClient.automat(event, *args, **kwargs)
     return _StunClient
 
 
@@ -122,7 +122,7 @@ class StunClient(automat.Automat):
         'MSG_03': 'timeout responding from stun servers',
     }
 
-    def msg(self, msgid, arg=None):
+    def msg(self, msgid, *args, **kwargs):
         return self.MESSAGES.get(msgid, '')
 
     def init(self):
@@ -143,53 +143,53 @@ class StunClient(automat.Automat):
     def dropMyExternalAddress(self):
         self.my_address = None
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---STOPPED---
         if self.state == 'STOPPED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'start':
                 self.state = 'RANDOM_NODES'
-                self.doAddCallback(arg)
-                self.doDHTFindRandomNode(arg)
+                self.doAddCallback(*args, **kwargs)
+                self.doDHTFindRandomNode(*args, **kwargs)
         #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-2sec':
-                self.doStun(arg)
-            elif event == 'timer-10sec' and not self.isSomeServersResponded(arg):
+                self.doStun(*args, **kwargs)
+            elif event == 'timer-10sec' and not self.isSomeServersResponded(*args, **kwargs):
                 self.state = 'STOPPED'
-                self.doReportFailed(self.msg('MSG_03', arg))
-                self.doClearResults(arg)
+                self.doReportFailed(self.msg('MSG_03', *args, **kwargs))
+                self.doClearResults(*args, **kwargs)
             elif event == 'start':
-                self.doAddCallback(arg)
-            elif event == 'datagram-received' and self.isMyIPPort(arg) and self.isNeedMoreResults(arg):
-                self.doRecordResult(arg)
+                self.doAddCallback(*args, **kwargs)
+            elif event == 'datagram-received' and self.isMyIPPort(*args, **kwargs) and self.isNeedMoreResults(*args, **kwargs):
+                self.doRecordResult(*args, **kwargs)
             elif event == 'port-number-received':
-                self.doAddStunServer(arg)
-                self.doStun(arg)
-            elif ( event == 'timer-1sec' and self.isSomeServersResponded(arg) ) or ( event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg) ):
+                self.doAddStunServer(*args, **kwargs)
+                self.doStun(*args, **kwargs)
+            elif ( event == 'timer-1sec' and self.isSomeServersResponded(*args, **kwargs) ) or ( event == 'datagram-received' and self.isMyIPPort(*args, **kwargs) and not self.isNeedMoreResults(*args, **kwargs) ):
                 self.state = 'KNOW_MY_IP'
-                self.doRecordResult(arg)
-                self.doReportSuccess(arg)
-                self.doClearResults(arg)
+                self.doRecordResult(*args, **kwargs)
+                self.doReportSuccess(*args, **kwargs)
+                self.doClearResults(*args, **kwargs)
         #---KNOW_MY_IP---
         elif self.state == 'KNOW_MY_IP':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'start':
                 self.state = 'RANDOM_NODES'
-                self.doAddCallback(arg)
-                self.doDHTFindRandomNode(arg)
+                self.doAddCallback(*args, **kwargs)
+                self.doDHTFindRandomNode(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -197,70 +197,70 @@ class StunClient(automat.Automat):
         elif self.state == 'RANDOM_NODES':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'dht-nodes-not-found':
                 self.state = 'STOPPED'
-                self.doReportFailed(self.msg('MSG_01', arg))
+                self.doReportFailed(self.msg('MSG_01', *args, **kwargs))
             elif event == 'start':
-                self.doAddCallback(arg)
-            elif event == 'found-some-nodes' and self.isNeedMoreNodes(arg):
-                self.doRememberStunNodes(arg)
-                self.doDHTFindRandomNode(arg)
-            elif event == 'found-some-nodes' and not self.isNeedMoreNodes(arg):
+                self.doAddCallback(*args, **kwargs)
+            elif event == 'found-some-nodes' and self.isNeedMoreNodes(*args, **kwargs):
+                self.doRememberStunNodes(*args, **kwargs)
+                self.doDHTFindRandomNode(*args, **kwargs)
+            elif event == 'found-some-nodes' and not self.isNeedMoreNodes(*args, **kwargs):
                 self.state = 'PORT_NUM?'
-                self.doRememberStunNodes(arg)
-                self.doRequestStunPortNumbers(arg)
+                self.doRememberStunNodes(*args, **kwargs)
+                self.doRequestStunPortNumbers(*args, **kwargs)
         #---PORT_NUM?---
         elif self.state == 'PORT_NUM?':
             if event == 'start':
-                self.doAddCallback(arg)
+                self.doAddCallback(*args, **kwargs)
             elif event == 'timer-10sec':
                 self.state = 'STOPPED'
-                self.doReportFailed(self.msg('MSG_02', arg))
-                self.doClearResults(arg)
+                self.doReportFailed(self.msg('MSG_02', *args, **kwargs))
+                self.doClearResults(*args, **kwargs)
             elif event == 'port-number-received':
                 self.state = 'REQUEST'
-                self.doAddStunServer(arg)
-                self.doStun(arg)
+                self.doAddStunServer(*args, **kwargs)
+                self.doStun(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def isMyIPPort(self, arg):
+    def isMyIPPort(self, *args, **kwargs):
         """
         Condition method.
         """
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             return False
         return command == udp.CMD_MYIPPORT
 
-    def isSomeServersResponded(self, arg):
+    def isSomeServersResponded(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.stun_results) > 0
 
-    def isNeedMoreResults(self, arg):
+    def isNeedMoreResults(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.stun_results) <= self.minimum_needed_results
 
-    def isNeedMoreNodes(self, arg):
+    def isNeedMoreNodes(self, *args, **kwargs):
         """
         Condition method.
         """
-        return len(self.stun_nodes) + len(arg) < self.minimum_needed_servers
+        return len(self.stun_nodes) + len(*args, **kwargs) < self.minimum_needed_servers
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.listen_port = arg
+        self.listen_port = args[0]
         if _Debug:
             lg.out(_DebugLevel, 'stun_client.doInit on port %d' % self.listen_port)
         if udp.proto(self.listen_port):
@@ -268,29 +268,29 @@ class StunClient(automat.Automat):
         else:
             lg.warn('udp port %s is not opened' % self.listen_port)
 
-    def doAddCallback(self, arg):
+    def doAddCallback(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg:
-            self.callbacks.append(arg)
+        if args[0]:
+            self.callbacks.append(*args, **kwargs)
 
-    def doDHTFindRandomNode(self, arg):
+    def doDHTFindRandomNode(self, *args, **kwargs):
         """
         Action method.
         """
         self._find_random_node()
 
-    def doRememberStunNodes(self, arg):
+    def doRememberStunNodes(self, *args, **kwargs):
         """
         Action method.
         """
-        nodes = arg
+        nodes = args[0]
         for node in nodes:
             if node not in self.stun_nodes:
                 self.stun_nodes.append(node)
 
-    def doRequestStunPortNumbers(self, arg):
+    def doRequestStunPortNumbers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -306,22 +306,22 @@ class StunClient(automat.Automat):
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node.id] = d
 
-    def doAddStunServer(self, arg):
+    def doAddStunServer(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client.doAddStunServer %s' % str(arg))
-        self.stun_servers.append(arg)
+            lg.out(_DebugLevel + 10, 'stun_client.doAddStunServer %s' % str(*args, **kwargs))
+        self.stun_servers.append(*args, **kwargs)
 
-    def doStun(self, arg):
+    def doStun(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg is not None:
+        if args[0] is not None:
             if _Debug:
-                lg.out(_DebugLevel + 10, 'stun_client.doStun to one stun_server: %s' % str(arg))
-            udp.send_command(self.listen_port, udp.CMD_STUN, b'', arg)
+                lg.out(_DebugLevel + 10, 'stun_client.doStun to one stun_server: %s' % str(*args, **kwargs))
+            udp.send_command(self.listen_port, udp.CMD_STUN, b'', *args, **kwargs)
             return
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doStun to %d stun_servers' % (
@@ -333,14 +333,14 @@ class StunClient(automat.Automat):
                 continue
             udp.send_command(self.listen_port, udp.CMD_STUN, b'', address)
 
-    def doRecordResult(self, arg):
+    def doRecordResult(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg is None:
+        if args[0] is None:
             return
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
             ip, port = payload.split(b':')
             port = int(port)
@@ -350,7 +350,7 @@ class StunClient(automat.Automat):
         # if len(self.stun_results) >= len(self.stun_servers):
         #     self.automat('all-responded')
 
-    def doClearResults(self, arg):
+    def doClearResults(self, *args, **kwargs):
         """
         Action method.
         """
@@ -358,7 +358,7 @@ class StunClient(automat.Automat):
         self.stun_servers = []
         self.stun_results = {}
 
-    def doReportSuccess(self, arg):
+    def doReportSuccess(self, *args, **kwargs):
         """
         Action method.
         """
@@ -387,18 +387,18 @@ class StunClient(automat.Automat):
             cb(result[0], result[1], result[2], result[3])
         self.callbacks = []
 
-    def doReportFailed(self, arg):
+    def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
         self.my_address = None
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doReportFailed : %s' % arg)
+            lg.out(_DebugLevel, 'stun_client.doReportFailed : %s' % args[0])
         for cb in self.callbacks:
             cb('stun-failed', None, None, [])
         self.callbacks = []
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -513,15 +513,15 @@ def test_safe_stun():
 
     def _cb(res):
         print(res)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
     def _eb(err):
         print(err)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
     lg.set_debug_level(30)
     safe_stun().addCallbacks(_cb, _eb)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 
@@ -542,11 +542,11 @@ def main():
     def _cb(result, typ, ip, details):
         print(result, typ, ip, details)
         A('shutdown')
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
     A('init', (udp_port))
     A('start', _cb)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 

@@ -89,19 +89,19 @@ _ProxySender = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with proxy_sender machine.
     """
     global _ProxySender
-    if event is None and arg is None:
+    if event is None and not args:
         return _ProxySender
     if _ProxySender is None:
         # set automat name and starting state here
         _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP',
                                    debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
     if event is not None:
-        _ProxySender.automat(event, arg)
+        _ProxySender.automat(event, *args, **kwargs)
     return _ProxySender
 
 #------------------------------------------------------------------------------
@@ -119,18 +119,18 @@ class ProxySender(automat.Automat):
         of proxy_sender machine.
         """
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when proxy_sender state were changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in
         the proxy_sender but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <http://code.google.com/p/visio2python/>`_ tool.
@@ -139,7 +139,7 @@ class ProxySender(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -147,40 +147,40 @@ class ProxySender(automat.Automat):
         elif self.state == 'STOPPED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'start' and proxy_receiver.A().state is not 'LISTEN':
                 self.state = 'ROUTER?'
-                self.doStartFilterOutgoingTraffic(arg)
+                self.doStartFilterOutgoingTraffic(*args, **kwargs)
             elif event == 'start' and proxy_receiver.A().state is 'LISTEN':
                 self.state = 'REDIRECTING'
-                self.doStartFilterOutgoingTraffic(arg)
+                self.doStartFilterOutgoingTraffic(*args, **kwargs)
         #---ROUTER?---
         elif self.state == 'ROUTER?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopFilterOutgoingTraffic(arg)
-                self.doDestroyMe(arg)
-            elif (event == 'proxy_receiver.state' and arg == 'OFFLINE'):
+                self.doStopFilterOutgoingTraffic(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif (event == 'proxy_receiver.state' and args[0] == 'OFFLINE'):
                 self.state = 'STOPPED'
-            elif (event == 'proxy_receiver.state' and arg == 'LISTEN'):
+            elif (event == 'proxy_receiver.state' and args[0] == 'LISTEN'):
                 self.state = 'REDIRECTING'
-                self.doSendAllPendingPackets(arg)
+                self.doSendAllPendingPackets(*args, **kwargs)
         #---REDIRECTING---
         elif self.state == 'REDIRECTING':
             if event == 'outbox-packet-sent':
-                self.doCountTraffic(arg)
+                self.doCountTraffic(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'STOPPED'
-                self.doStopFilterOutgoingTraffic(arg)
+                self.doStopFilterOutgoingTraffic(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopFilterOutgoingTraffic(arg)
-                self.doDestroyMe(arg)
+                self.doStopFilterOutgoingTraffic(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'proxy_receiver.state' is not 'LISTEN':
                 self.state = 'ROUTER?'
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
@@ -188,26 +188,26 @@ class ProxySender(automat.Automat):
         self.pending_packets = []
         self.max_pending_packets = 100  # TODO: read from settings
 
-    def doStartFilterOutgoingTraffic(self, arg):
+    def doStartFilterOutgoingTraffic(self, *args, **kwargs):
         """
         Action method.
         """
         callback.insert_outbox_filter_callback(0, self._on_first_outbox_packet)
 
-    def doStopFilterOutgoingTraffic(self, arg):
+    def doStopFilterOutgoingTraffic(self, *args, **kwargs):
         """
         Action method.
         """
         callback.remove_finish_file_sending_callback(self._on_first_outbox_packet)
 
-    def doCountTraffic(self, arg):
+    def doCountTraffic(self, *args, **kwargs):
         """
         Action method.
         """
-        _, newpacket, _ = arg
+        _, newpacket, _ = args[0]
         self.traffic_out += len(newpacket.Payload)
 
-    def doSendAllPendingPackets(self, arg):
+    def doSendAllPendingPackets(self, *args, **kwargs):
         """
         Action method.
         """
@@ -223,9 +223,9 @@ class ProxySender(automat.Automat):
                     self.pending_packets = []
                     break
                 pending_result.callback(result_packet)
-        reactor.callLater(0.2, _do_send)
+        reactor.callLater(0, _do_send)  # @UndefinedVariable
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
@@ -339,8 +339,8 @@ class ProxySender(automat.Automat):
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
-    reactor.callWhenRunning(A, 'init')
-    reactor.run()
+    reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 

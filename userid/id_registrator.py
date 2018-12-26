@@ -131,7 +131,7 @@ _IdRegistrator = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -147,7 +147,7 @@ def A(event=None, arg=None):
             publish_events=True,
         )
     if event is not None:
-        _IdRegistrator.automat(event, arg)
+        _IdRegistrator.automat(event, *args, **kwargs)
     return _IdRegistrator
 
 
@@ -182,7 +182,7 @@ class IdRegistrator(automat.Automat):
         'MSG_14': ['generating your Private Key'],
     }
 
-    def msg(self, msgid, arg=None):
+    def msg(self, msgid, *args, **kwargs):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0] % {
             'login': strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename())),
@@ -210,7 +210,7 @@ class IdRegistrator(automat.Automat):
         self.new_identity = None
         self.last_message = ''
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when automat's state were
         changed.
@@ -218,15 +218,15 @@ class IdRegistrator(automat.Automat):
         from main import installer
         installer.A('id_registrator.state', newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'ID_SERVERS?'
-                self.doSaveMyName(arg)
-                self.doSelectRandomServers(arg)
-                self.doPingServers(arg)
-                self.doPrint(self.msg('MSG_0', arg))
+                self.doSaveMyName(*args, **kwargs)
+                self.doSelectRandomServers(*args, **kwargs)
+                self.doPingServers(*args, **kwargs)
+                self.doPrint(self.msg('MSG_0', *args, **kwargs))
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -235,80 +235,80 @@ class IdRegistrator(automat.Automat):
             pass
         #---ID_SERVERS?---
         elif self.state == 'ID_SERVERS?':
-            if (event == 'id-server-response' or event == 'id-server-failed') and self.isAllTested(arg) and self.isSomeAlive(arg):
+            if (event == 'id-server-response' or event == 'id-server-failed') and self.isAllTested(*args, **kwargs) and self.isSomeAlive(*args, **kwargs):
                 self.state = 'NAME_FREE?'
-                self.doRequestServers(arg)
-                self.doPrint(self.msg('MSG_1', arg))
-            elif (event == 'id-server-response' or event == 'id-server-failed') and self.isAllTested(arg) and not self.isSomeAlive(arg):
+                self.doRequestServers(*args, **kwargs)
+                self.doPrint(self.msg('MSG_1', *args, **kwargs))
+            elif (event == 'id-server-response' or event == 'id-server-failed') and self.isAllTested(*args, **kwargs) and not self.isSomeAlive(*args, **kwargs):
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_7', arg))
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_7', *args, **kwargs))
+                self.doDestroyMe(*args, **kwargs)
         #---NAME_FREE?---
         elif self.state == 'NAME_FREE?':
-            if event == 'id-not-exist' and self.isAllResponded(arg) and self.isFreeIDURLs(arg):
+            if event == 'id-not-exist' and self.isAllResponded(*args, **kwargs) and self.isFreeIDURLs(*args, **kwargs):
                 self.state = 'LOCAL_IP'
-                self.doDetectLocalIP(arg)
-                self.doPrint(self.msg('MSG_2', arg))
-            elif event == 'timer-30sec' or (event == 'id-exist' and self.isAllResponded(arg) and not self.isFreeIDURLs(arg)):
+                self.doDetectLocalIP(*args, **kwargs)
+                self.doPrint(self.msg('MSG_2', *args, **kwargs))
+            elif event == 'timer-30sec' or (event == 'id-exist' and self.isAllResponded(*args, **kwargs) and not self.isFreeIDURLs(*args, **kwargs)):
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_8', arg))
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_8', *args, **kwargs))
+                self.doDestroyMe(*args, **kwargs)
         #---LOCAL_IP---
         elif self.state == 'LOCAL_IP':
             if event == 'local-ip-detected':
                 self.state = 'EXTERNAL_IP'
-                self.doStunExternalIP(arg)
-                self.doPrint(self.msg('MSG_3', arg))
+                self.doStunExternalIP(*args, **kwargs)
+                self.doPrint(self.msg('MSG_3', *args, **kwargs))
         #---EXTERNAL_IP---
         elif self.state == 'EXTERNAL_IP':
             if event == 'stun-success':
                 self.state = 'SEND_ID'
-                self.doPrint(self.msg('MSG_14', arg))
-                self.doCreateMyIdentity(arg)
-                self.doPrint(self.msg('MSG_4', arg))
-                self.doSendMyIdentity(arg)
+                self.doPrint(self.msg('MSG_14', *args, **kwargs))
+                self.doCreateMyIdentity(*args, **kwargs)
+                self.doPrint(self.msg('MSG_4', *args, **kwargs))
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'stun-failed':
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_9', arg))
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_9', *args, **kwargs))
+                self.doDestroyMe(*args, **kwargs)
         #---SEND_ID---
         elif self.state == 'SEND_ID':
             if event == 'my-id-sent':
                 self.state = 'REQUEST_ID'
-                self.doRequestMyIdentity(arg)
-                self.doPrint(self.msg('MSG_5', arg))
+                self.doRequestMyIdentity(*args, **kwargs)
+                self.doPrint(self.msg('MSG_5', *args, **kwargs))
             elif event == 'my-id-failed':
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_10', arg))
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_10', *args, **kwargs))
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-2min':
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_13', arg))
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_13', *args, **kwargs))
+                self.doDestroyMe(*args, **kwargs)
         #---REQUEST_ID---
         elif self.state == 'REQUEST_ID':
-            if event == 'my-id-exist' and self.isMyIdentityValid(arg):
+            if event == 'my-id-exist' and self.isMyIdentityValid(*args, **kwargs):
                 self.state = 'DONE'
-                self.doSaveMyIdentity(arg)
-                self.doDestroyMe(arg)
-                self.doPrint(self.msg('MSG_6', arg))
+                self.doSaveMyIdentity(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+                self.doPrint(self.msg('MSG_6', *args, **kwargs))
             elif event == 'timer-5sec':
-                self.doRequestMyIdentity(arg)
-            elif event == 'my-id-exist' and not self.isMyIdentityValid(arg):
+                self.doRequestMyIdentity(*args, **kwargs)
+            elif event == 'my-id-exist' and not self.isMyIdentityValid(*args, **kwargs):
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_11', arg))
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_11', *args, **kwargs))
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-15sec':
                 self.state = 'FAILED'
-                self.doPrint(self.msg('MSG_12', arg))
-                self.doDestroyMe(arg)
+                self.doPrint(self.msg('MSG_12', *args, **kwargs))
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def isMyIdentityValid(self, arg):
+    def isMyIdentityValid(self, *args, **kwargs):
         """
         Condition method.
         """
-        id_from_server = identity.identity(xmlsrc=arg)
+        id_from_server = identity.identity(xmlsrc=args[0])
         if not id_from_server.isCorrect():
             lg.warn('my identity is not correct')
             return False
@@ -320,40 +320,40 @@ class IdRegistrator(automat.Automat):
             return False
         return True
 
-    def isSomeAlive(self, arg):
+    def isSomeAlive(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.good_servers) > 0
 
-    def isAllResponded(self, arg):
+    def isAllResponded(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.registrations) == 0
 
-    def isAllTested(self, arg):
+    def isAllTested(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.discovered_servers) == 0
 
-    def isFreeIDURLs(self, arg):
+    def isFreeIDURLs(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.free_idurls) > 0
 
-    def doSaveMyName(self, arg):
+    def doSaveMyName(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            login = arg['username']
+            login = args[0]['username']
         except:
-            login = arg[0]
-            if len(arg) > 1:
-                self.preferred_servers = [s.strip() for s in arg[1].split(',')]
+            login = args[0][0]
+            if len(*args, **kwargs) > 1:
+                self.preferred_servers = [s.strip() for s in args[0][1].split(',')]
         if not self.known_servers:
             self.known_servers = known_servers.by_host()
         if not self.preferred_servers:
@@ -376,7 +376,7 @@ class IdRegistrator(automat.Automat):
         lg.out(4, '    max_servers=%s' % self.max_servers)
         bpio.WriteTextFile(settings.UserNameFilename(), login)
 
-    def doSelectRandomServers(self, arg):
+    def doSelectRandomServers(self, *args, **kwargs):
         """
         Action method.
         TODO: we also can search available id servers in DHT network as well
@@ -395,7 +395,7 @@ class IdRegistrator(automat.Automat):
                 self.discovered_servers.append(random.choice(list(s)))
         lg.out(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))
 
-    def doPingServers(self, arg):
+    def doPingServers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -429,7 +429,7 @@ class IdRegistrator(automat.Automat):
             d.addCallback(_cb, host)
             d.addErrback(_eb, host)
 
-    def doRequestServers(self, arg):
+    def doRequestServers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -470,7 +470,7 @@ class IdRegistrator(automat.Automat):
             self.registrations.append(idurl)
         lg.out(4, 'id_registrator.doRequestServers login=%s registrations=%d' % (login, len(self.registrations)))
 
-    def doDetectLocalIP(self, arg):
+    def doDetectLocalIP(self, *args, **kwargs):
         """
         Action method.
         """
@@ -479,7 +479,7 @@ class IdRegistrator(automat.Automat):
         lg.out(4, 'id_registrator.doDetectLocalIP [%s]' % localip)
         self.automat('local-ip-detected')
 
-    def doStunExternalIP(self, arg):
+    def doStunExternalIP(self, *args, **kwargs):
         """
         Action method.
         """
@@ -510,13 +510,13 @@ class IdRegistrator(automat.Automat):
         d.addCallback(save)
         d.addErrback(lambda _: self.automat('stun-failed'))
 
-    def doCreateMyIdentity(self, arg):
+    def doCreateMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
         self._create_new_identity()
 
-    def doSendMyIdentity(self, arg):
+    def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
@@ -541,7 +541,7 @@ class IdRegistrator(automat.Automat):
         dl.addCallback(_cb)
         dl.addErrback(_eb)
 
-    def doRequestMyIdentity(self, arg):
+    def doRequestMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
@@ -559,7 +559,7 @@ class IdRegistrator(automat.Automat):
             d.addCallback(_cb)
             d.addErrback(_eb)
 
-    def doSaveMyIdentity(self, arg):
+    def doSaveMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
@@ -567,23 +567,23 @@ class IdRegistrator(automat.Automat):
         my_id.setLocalIdentity(self.new_identity)
         my_id.saveLocalIdentity()
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
-        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, args=arg)
+        self.executeStateChangedCallbacks(oldstate=None, newstate=self.state, event_string=None, *args, **kwargs)
         self.destroy(dead_state=self.state)
         global _IdRegistrator
         _IdRegistrator = None
 
-    def doPrint(self, arg):
+    def doPrint(self, *args, **kwargs):
         """
         Action method.
         """
         from main import installer
-        installer.A().event('print', arg)
-        self.last_message = arg[0]
-        lg.out(6, 'id_registrator.doPrint: %s' % str(arg))
+        installer.A().event('print', *args, **kwargs)
+        self.last_message = args[0][0]
+        lg.out(6, 'id_registrator.doPrint: %s' % str(*args, **kwargs))
 
     def _create_new_identity(self):
         """
@@ -649,10 +649,10 @@ def main():
         args = (sys.argv[1], sys.argv[2])
     else:
         args = (sys.argv[1])
-    A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='DONE')
-    A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='FAILED')
-    reactor.callWhenRunning(A, 'start', args)
-    reactor.run()
+    A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='DONE')  # @UndefinedVariable
+    A().addStateChangedCallback(lambda *a: reactor.stop(), oldstate=None, newstate='FAILED')  # @UndefinedVariable
+    reactor.callWhenRunning(A, 'start', args)  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 

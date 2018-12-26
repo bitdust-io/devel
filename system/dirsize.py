@@ -59,7 +59,7 @@ _Dirs = {}
 #------------------------------------------------------------------------------
 
 
-def ask(dirpath, callback=None, arg=None):
+def ask(dirpath, callback=None, *args, **kwargs):
     """
     Start a thread to scan all sub folders and calculate total size of given
     directory.
@@ -75,11 +75,11 @@ def ask(dirpath, callback=None, arg=None):
     if not os.path.isdir(dirpath):
         _Dirs[dirpath] = 'not exist'
         if callback:
-            reactor.callLater(0, callback, 'not exist', arg)
+            reactor.callLater(0, callback, 'not exist', *args, **kwargs)
         return 'not exist'
     d = threads.deferToThread(bpio.getDirectorySize, dirpath)
     d.addCallback(done, dirpath)
-    _Jobs[dirpath] = (d, callback, arg)
+    _Jobs[dirpath] = (d, callback, *args, **kwargs)
     _Dirs[dirpath] = 'counting size'
     return 'counting size'
 
@@ -93,9 +93,9 @@ def done(size, dirpath):
     lg.out(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
     _Dirs[dirpath] = str(size)
     try:
-        (d, cb, arg) = _Jobs.pop(dirpath, (None, None, None))
+        (d, cb, *args, **kwargs) = _Jobs.pop(dirpath, (None, None, None))
         if cb:
-            cb(dirpath, size, arg)
+            cb(dirpath, size, *args, **kwargs)
     except:
         lg.exc()
 
@@ -144,7 +144,7 @@ def main():
     """
     Run the test - use command line to pass a location.
     """
-    def _done(path, sz, arg):
+    def _done(path, sz, *args, **kwargs):
         print(path, sz)
         reactor.stop()
     bpio.init()

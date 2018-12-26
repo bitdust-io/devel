@@ -419,13 +419,13 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup._on_succeed %s info: %s' % (node, info))
         return node
 
-    def _on_node_proces_failed(self, err, arg=None):
+    def _on_node_proces_failed(self, err, *args, **kwargs):
         self.failed += 1
         if _Debug:
             lg.warn('%r : %r' % (arg, err))
         return None
 
-    def _on_node_observe_failed(self, err, arg=None):
+    def _on_node_observe_failed(self, err, *args, **kwargs):
         try:
             self.failed += 1
             if _Debug:

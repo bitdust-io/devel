@@ -181,7 +181,7 @@ def find(name):
     return results
 
 
-def communicate(index, event, arg=None):
+def communicate(index, event, *args, **kwargs):
     """
     You can pass an event to any state machine - select by its ``index``.
     Use ``arg`` to pass extra data the conditions and actions methods.
@@ -193,7 +193,7 @@ def communicate(index, event, arg=None):
     if not A:
         return fail(Failure(Exception('state machine with index %d not exist' % index)))
     d = Deferred()
-    args = (d, arg)
+    args = (d, *args, **kwargs)
     A.automat(event, *args)
     return d
 
@@ -269,7 +269,7 @@ class Automat(object):
     """
     Base class of the State Machine Object.
 
-    You need to subclass this class and override the method ``A(event, arg)``.
+    You need to subclass this class and override the method ``A(event, *args, **kwargs)``.
     Constructor needs the ``name`` of the state machine and the
     beginning ``state``. At first it generate an unique ``id`` and new
     ``index`` value. You can use ``init()`` method in the subclass to
@@ -441,7 +441,7 @@ class Automat(object):
         automat's state.
         """
 
-    def communicate(self, event_string, arg=None):
+    def communicate(self, event_string, *args, **kwargs):
         """
         Use ``arg`` to pass extra data the conditions and actions methods. This
         method creates a Deferred object, pass it as a parameter with ``event``

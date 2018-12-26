@@ -95,7 +95,7 @@ _ShutdownFlag = False
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -109,7 +109,7 @@ def A(event=None, arg=None):
             log_transitions=_Debug,
         )
     if event is not None:
-        _DataSender.automat(event, arg)
+        _DataSender.automat(event, *args, **kwargs)
     return _DataSender
 
 
@@ -136,38 +136,38 @@ class DataSender(automat.Automat):
     }
     statistic = {}
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('DATASEND ' + newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
             if event == 'new-data' or event == 'timer-1min' or event == 'restart':
                 self.state = 'SCAN_BLOCKS'
-                self.doScanAndQueue(arg)
+                self.doScanAndQueue(*args, **kwargs)
             elif event == 'init':
                 pass
         #---SCAN_BLOCKS---
         elif self.state == 'SCAN_BLOCKS':
-            if event == 'scan-done' and self.isQueueEmpty(arg):
+            if event == 'scan-done' and self.isQueueEmpty(*args, **kwargs):
                 self.state = 'READY'
-                self.doRemoveUnusedFiles(arg)
-            elif event == 'scan-done' and not self.isQueueEmpty(arg):
+                self.doRemoveUnusedFiles(*args, **kwargs)
+            elif event == 'scan-done' and not self.isQueueEmpty(*args, **kwargs):
                 self.state = 'SENDING'
         #---SENDING---
         elif self.state == 'SENDING':
-            if event == 'restart' or ( ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data' ) and self.isQueueEmpty(arg) ):
+            if event == 'restart' or ( ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data' ) and self.isQueueEmpty(*args, **kwargs) ):
                 self.state = 'SCAN_BLOCKS'
-                self.doScanAndQueue(arg)
+                self.doScanAndQueue(*args, **kwargs)
         return None
 
-    def isQueueEmpty(self, arg):
-        if not arg:
+    def isQueueEmpty(self, *args, **kwargs):
+        if not args[0]:
             return io_throttle.IsSendingQueueEmpty()
-        remoteID, _ = arg
+        remoteID, _ = args[0]
         return io_throttle.OkToSend(remoteID)
 
-    def doScanAndQueue(self, arg):
+    def doScanAndQueue(self, *args, **kwargs):
         global _ShutdownFlag
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
@@ -255,7 +255,7 @@ class DataSender(automat.Automat):
             log.flush()
             log.close()
 
-#     def doPrintStats(self, arg):
+#     def doPrintStats(self, *args, **kwargs):
 #         """
 #         """
 #        if lg.is_debug(18):
@@ -266,7 +266,7 @@ class DataSender(automat.Automat):
 #                s += '%s ' % (diskspace.MakeStringFromBytes(bytes_stats[info.transfer_id]).replace(' ', '').replace('bytes', 'b'))
 #            lg.out(0, 'transfers: ' + s[:120])
 
-    def doRemoveUnusedFiles(self, arg):
+    def doRemoveUnusedFiles(self, *args, **kwargs):
         # we want to remove files for this block
         # because we only need them during rebuilding
         if settings.getBackupsKeepLocalCopies() is True:

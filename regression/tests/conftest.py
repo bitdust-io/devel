@@ -357,7 +357,7 @@ def global_wrapper():
     _begin = time.time()
 
     open_all_tunnels(ALL_NODES)
-    clean_all_nodes(skip_checks=True)
+    # clean_all_nodes(skip_checks=True)
     start_all_nodes()
     
     print('\nStarting all roles and execute tests')

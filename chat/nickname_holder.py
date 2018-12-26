@@ -71,7 +71,7 @@ _NicknameHolder = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -80,7 +80,7 @@ def A(event=None, arg=None):
         # set automat name and starting state here
         _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 4, True)
     if event is not None:
-        _NicknameHolder.automat(event, arg)
+        _NicknameHolder.automat(event, *args, **kwargs)
     return _NicknameHolder
 
 
@@ -124,82 +124,82 @@ class NicknameHolder(automat.Automat):
     def remove_result_callback(self, cb):
         self.result_callbacks.remove(cb)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'set':
                 self.state = 'DHT_READ'
                 self.Attempts = 0
-                self.doSetNickname(arg)
-                self.doMakeKey(arg)
-                self.doDHTReadKey(arg)
+                self.doSetNickname(*args, **kwargs)
+                self.doMakeKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
         #---READY---
         elif self.state == 'READY':
             if event == 'timer-5min':
                 self.state = 'DHT_READ'
-                self.doSetNickname(arg)
-                self.doMakeKey(arg)
-                self.doDHTReadKey(arg)
+                self.doSetNickname(*args, **kwargs)
+                self.doMakeKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
             elif event == 'set':
                 self.state = 'DHT_ERASE'
-                self.doDHTEraseKey(arg)
-                self.doSetNickname(arg)
+                self.doDHTEraseKey(*args, **kwargs)
+                self.doSetNickname(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
-            if event == 'dht-read-success' and self.isMyOwnKey(arg):
+            if event == 'dht-read-success' and self.isMyOwnKey(*args, **kwargs):
                 self.state = 'READY'
-                self.doReportNicknameOwn(arg)
+                self.doReportNicknameOwn(*args, **kwargs)
             elif event == 'dht-read-failed':
                 self.state = 'DHT_WRITE'
-                self.doDHTWriteKey(arg)
-            elif event == 'dht-read-success' and not self.isMyOwnKey(arg):
-                self.doReportNicknameExist(arg)
-                self.doNextKey(arg)
-                self.doDHTReadKey(arg)
+                self.doDHTWriteKey(*args, **kwargs)
+            elif event == 'dht-read-success' and not self.isMyOwnKey(*args, **kwargs):
+                self.doReportNicknameExist(*args, **kwargs)
+                self.doNextKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
             elif event == 'set':
-                self.doSetNickname(arg)
-                self.doMakeKey(arg)
-                self.doDHTReadKey(arg)
+                self.doSetNickname(*args, **kwargs)
+                self.doMakeKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'dht-write-failed' and self.Attempts > 5:
                 self.state = 'READY'
                 self.Attempts = 0
-                self.doReportNicknameFailed(arg)
+                self.doReportNicknameFailed(*args, **kwargs)
             elif event == 'dht-write-failed' and self.Attempts <= 5:
                 self.state = 'DHT_READ'
                 self.Attempts += 1
-                self.doNextKey(arg)
-                self.doDHTReadKey(arg)
+                self.doNextKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
             elif event == 'dht-write-success':
                 self.state = 'READY'
                 self.Attempts = 0
-                self.doReportNicknameRegistered(arg)
+                self.doReportNicknameRegistered(*args, **kwargs)
             elif event == 'set':
                 self.state = 'DHT_READ'
-                self.doSetNickname(arg)
-                self.doMakeKey(arg)
-                self.doDHTReadKey(arg)
+                self.doSetNickname(*args, **kwargs)
+                self.doMakeKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
         #---DHT_ERASE---
         elif self.state == 'DHT_ERASE':
             if event == 'dht-erase-success' or event == 'dht-erase-failed':
                 self.state = 'DHT_READ'
-                self.doMakeKey(arg)
-                self.doDHTReadKey(arg)
+                self.doMakeKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
             elif event == 'set':
                 self.state = 'DHT_READ'
-                self.doSetNickname(arg)
-                self.doMakeKey(arg)
-                self.doDHTReadKey(arg)
+                self.doSetNickname(*args, **kwargs)
+                self.doMakeKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
         return None
 
-    def isMyOwnKey(self, arg):
+    def isMyOwnKey(self, *args, **kwargs):
         """
         Condition method.
         """
         return arg == my_id.getLocalID()
 
-    def doSetNickname(self, arg):
+    def doSetNickname(self, *args, **kwargs):
         """
         Action method.
         """
@@ -208,7 +208,7 @@ class NicknameHolder(automat.Automat):
             my_id.getLocalIdentity().getIDName()
         settings.setNickName(self.nickname)
 
-    def doMakeKey(self, arg):
+    def doMakeKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -219,7 +219,7 @@ class NicknameHolder(automat.Automat):
             prefix='nickname',
         )
 
-    def doNextKey(self, arg):
+    def doNextKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -238,7 +238,7 @@ class NicknameHolder(automat.Automat):
             prefix='nickname',
         )
 
-    def doDHTReadKey(self, arg):
+    def doDHTReadKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -251,7 +251,7 @@ class NicknameHolder(automat.Automat):
         d.addErrback(self._dht_read_failed)
         self.dht_read_defer = d
 
-    def doDHTWriteKey(self, arg):
+    def doDHTWriteKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -259,7 +259,7 @@ class NicknameHolder(automat.Automat):
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
-    def doDHTEraseKey(self, arg):
+    def doDHTEraseKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -267,7 +267,7 @@ class NicknameHolder(automat.Automat):
         d.addCallback(self._dht_erase_result)
         d.addErrback(lambda x: self.automat('dht-erase-failed'))
 
-    def doReportNicknameOwn(self, arg):
+    def doReportNicknameOwn(self, *args, **kwargs):
         """
         Action method.
         """
@@ -275,7 +275,7 @@ class NicknameHolder(automat.Automat):
         for cb in self.result_callbacks:
             cb('my own', self.key)
 
-    def doReportNicknameRegistered(self, arg):
+    def doReportNicknameRegistered(self, *args, **kwargs):
         """
         Action method.
         """
@@ -283,7 +283,7 @@ class NicknameHolder(automat.Automat):
         for cb in self.result_callbacks:
             cb('registered', self.key)
 
-    def doReportNicknameExist(self, arg):
+    def doReportNicknameExist(self, *args, **kwargs):
         """
         Action method.
         """
@@ -291,7 +291,7 @@ class NicknameHolder(automat.Automat):
         for cb in self.result_callbacks:
             cb('exist', self.key)
 
-    def doReportNicknameFailed(self, arg):
+    def doReportNicknameFailed(self, *args, **kwargs):
         """
         Action method.
         """

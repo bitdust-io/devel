@@ -313,7 +313,7 @@ def split_key(key_str):
 
 #------------------------------------------------------------------------------
 
-def on_success(result, method, key, arg=None):
+def on_success(result, method, key, *args, **kwargs):
     if isinstance(result, dict):
         sz_bytes = len(str(result))
     else:

@@ -203,7 +203,7 @@ class SupplierConnector(automat.Automat):
         if contact_peer:
             contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when automat's state were
         changed.
