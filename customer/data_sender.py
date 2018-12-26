@@ -162,7 +162,7 @@ class DataSender(automat.Automat):
         return None
 
     def isQueueEmpty(self, *args, **kwargs):
-        if not args[0]:
+        if not args or not args[0]:
             return io_throttle.IsSendingQueueEmpty()
         remoteID, _ = args[0]
         return io_throttle.OkToSend(remoteID)

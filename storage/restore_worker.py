@@ -484,7 +484,7 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
-        if not args[0]:
+        if not args or not args[0]:
             return
         NewPacket, PacketID = args[0]
         glob_path = global_id.ParseGlobalID(PacketID, detect_version=True)
