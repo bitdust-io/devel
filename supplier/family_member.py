@@ -250,7 +250,7 @@ class FamilyMember(automat.Automat):
         """
         if event not in _ValidRequests:
             raise Exception('Invalid request: %r' % args)
-        request = args[0] or {}
+        request = (args[0] if args else {}) or {}
         request['command'] = event
         self.requests.append(request)
 

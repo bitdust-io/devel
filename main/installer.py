@@ -306,15 +306,15 @@ class Installer(automat.Automat):
         lg.out(8, 'installer.doPrint %s %s' % (self.state, str(*args, **kwargs)))
         if self.state not in self.output:
             self.output[self.state] = {'data': [('', 'black')]}
-        if args[0] is None:
+        if not args or args[0] is None:
             self.output[self.state]['data'] = [('', 'black')]
         else:
-            self.output[self.state]['data'].append(*args, **kwargs)
+            self.output[self.state]['data'].append(args[0])
         if self.flagCmdLine:
             ch = '+'
-            if args[0][1] == 'red':
+            if args and args[0][1] == 'red':
                 ch = '!'
-            lg.out(0, '  %s %s' % (ch, args[0][0]))
+            lg.out(0, '  %s %s' % (ch, args[0][0] if args else ''))
 
     def doShowOutput(self, *args, **kwargs):
         """

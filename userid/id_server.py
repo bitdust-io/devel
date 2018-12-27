@@ -226,7 +226,7 @@ class IdServer(automat.Automat):
         self.destroy()
         global _IdServer
         _IdServer = None
-        if args[0] and len(*args, **kwargs) > 0 and isinstance(args[0][-1], Deferred):
+        if args and args[0] and len(args[0]) > 0 and isinstance(args[0][-1], Deferred):
             args[0][-1].callback(True)
 
     def _save_identity(self, inputfilename):

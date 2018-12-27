@@ -318,7 +318,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        if args[0] is not None:
+        if args and args[0] is not None:
             if _Debug:
                 lg.out(_DebugLevel + 10, 'stun_client.doStun to one stun_server: %s' % str(*args, **kwargs))
             udp.send_command(self.listen_port, udp.CMD_STUN, b'', *args, **kwargs)
@@ -337,7 +337,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        if args[0] is None:
+        if not args or args[0] is None:
             return
         try:
             datagram, address = args[0]
