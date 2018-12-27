@@ -330,28 +330,9 @@ def report_all_nodes():
         print('[%s]  Warnings: %d' % (node, main_log.count('WARNING'), ))
 
 
-def clean_all_nodes(skip_checks=False):
+def clean_all_nodes(event_loop, skip_checks=False):
 
-# TODO:
-#     async def parallel_method(node):
-#         url = f'/v1'
-#         print('GET: ', url, flush=True)
-#         async with aiohttp.ClientSession() as session:
-#             for i in range(5):
-#                 try:
-#                     response = await session.get(url)
-#                 except Exception as e:
-#                     print(f'Exception {url} {e}. Try again in sec.', flush=True)
-#                     await asyncio.sleep(1)
-#                 else:
-#                     print(f'Done: {response.url} ({response.status})', flush=True)
-#                     break
-#     tasks = [
-#         asyncio.ensure_future(parallel_method(node)) for node in nodes
-#     ]
-#     event_loop.run_until_complete(asyncio.wait(tasks))
-    
-    for node in ALL_NODES:
+    async def parallel_method(node):
         stop_daemon(node, skip_checks=skip_checks)
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
@@ -361,6 +342,22 @@ def clean_all_nodes(skip_checks=False):
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
+    tasks = [
+        asyncio.ensure_future(parallel_method(node)) for node in ALL_NODES
+    ]
+    event_loop.run_until_complete(asyncio.wait(tasks))
+    
+#     for node in ALL_NODES:
+#         stop_daemon(node, skip_checks=skip_checks)
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
+#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
+
     run_ssh_command_and_wait('customer_1', 'rm -rf /customer_1/*')
     run_ssh_command_and_wait('customer_2', 'rm -rf /customer_2/*')
     run_ssh_command_and_wait('customer_3', 'rm -rf /customer_3/*')
