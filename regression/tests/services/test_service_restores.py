@@ -44,7 +44,11 @@ def test_customer_1_upload_download_file_with_master():
 
     response = requests.post(
         url=tunnel_url('customer_1', 'file/upload/start/v1'),
-        json={'remote_path': remote_path, 'local_path': directory_local_file, 'wait_result': 'true'}
+        json={
+            'remote_path': remote_path,
+            'local_path': directory_local_file,
+            'wait_result': True,
+        }
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
@@ -52,7 +56,11 @@ def test_customer_1_upload_download_file_with_master():
     for i in range(20):
         response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),
-            json={'remote_path': remote_path, 'destination_folder': download_volume, 'wait_result': 'true'}
+            json={
+                'remote_path': remote_path,
+                'destination_folder': download_volume,
+                'wait_result': True,
+            },
         )
         assert response.status_code == 200
 
@@ -60,16 +68,12 @@ def test_customer_1_upload_download_file_with_master():
             break
 
         if response.json()['errors'][0].startswith('download not possible, uploading'):
-            print('file is not ready for download: retry again in 1 sec')
             time.sleep(1)
         else:
-            print(response.json())
             assert False, response.json()
 
     else:
-        print('download was not successful')
-        assert False, response.json()
+        assert False, 'download was not successful: ' + response.json()
 
     assert os.path.exists(directory_dowloaded_file)
-
     assert get_hash(directory_local_file) == get_hash(directory_dowloaded_file)
