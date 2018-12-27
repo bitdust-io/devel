@@ -160,8 +160,9 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def log_request(self, request, callback, args):
         if _Debug:
             try:
+                _args = request.args or _request_data(request)
                 lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
-                    request.method, request.uri, callback.im_func.func_name, args))
+                    request.method, request.uri, callback.im_func.func_name, _args))
             except:
                 pass
         return None

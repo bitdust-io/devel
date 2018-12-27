@@ -255,7 +255,7 @@ class NicknameHolder(automat.Automat):
         """
         d = dht_records.set_nickname(self.key, my_id.getLocalID())
         d.addCallback(self._dht_write_result)
-        d.addErrback(lambda x: self.automat('dht-write-failed'))
+        d.addErrback(lambda err: self.automat('dht-write-failed', err))
 
     def doDHTEraseKey(self, *args, **kwargs):
         """
@@ -277,7 +277,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s with %s' % (self.key, args[0], ))
+        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
         for cb in self.result_callbacks:
             cb('registered', self.key)
 
@@ -285,7 +285,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameExist : %s with %s' % (self.key, args[0], ))
+        lg.out(8, 'nickname_holder.doReportNicknameExist : %s' % self.key)
         for cb in self.result_callbacks:
             cb('exist', self.key)
 
@@ -293,7 +293,8 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s with %s' % (self.key, args[0], ))
+        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s with %s' % (
+            self.key, args[0] if args else None, ))
         for cb in self.result_callbacks:
             cb('failed', self.key)
 
@@ -316,7 +317,7 @@ class NicknameHolder(automat.Automat):
         if len(nodes) > 0:
             self.automat('dht-write-success')
         else:
-            self.automat('dht-write-failed')
+            self.automat('dht-write-failed', nodes)
 
     def _dht_erase_result(self, result):
         if result is None:

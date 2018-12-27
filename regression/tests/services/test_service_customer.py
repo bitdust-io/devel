@@ -4,7 +4,7 @@ import requests
 from ..utils import tunnel_url
 
 
-def test_customer_1_enough_suppliers():
+def test_hire_suppliers_by_customer_1():
     count = 0
     while True:
         if count > 10:

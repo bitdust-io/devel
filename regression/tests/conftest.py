@@ -327,7 +327,8 @@ def start_all_nodes():
 def report_all_nodes():
     for node in ALL_NODES:
         main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
-        print('[%s]  Warnings: %d' % (node, main_log.count('WARNING'), ))
+        print('[%s]  Warnings: %d   Exceptions: %d' % (
+            node, main_log.count('WARNING'), main_log.count('Exception:'), ))
 
 
 def clean_all_nodes(event_loop, skip_checks=False):
