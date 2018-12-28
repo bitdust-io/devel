@@ -63,9 +63,9 @@ def read_customer_suppliers(customer_idurl):
         try:
             _ecc_map = dht_value['ecc_map']
             _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
+            _publisher_idurl = dht_value.get('publisher_idurl')
             _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
             _revision = dht_value.get('revision')
-            _publisher = dht_value.get('publisher')
             _timestamp = dht_value.get('timestamp')
         except:
             lg.exc()
@@ -76,7 +76,7 @@ def read_customer_suppliers(customer_idurl):
             'ecc_map': _ecc_map,
             'customer_idurl': _customer_idurl,
             'revision': _revision,
-            'publisher': _publisher,
+            'publisher_idurl': _publisher_idurl,
             'timestamp': _timestamp,
         }
         if customer_idurl == my_id.getLocalIDURL():
@@ -90,8 +90,13 @@ def read_customer_suppliers(customer_idurl):
         return None
 
     def _on_error(err):
+        try:
+            msg = err.getErrorMessage()
+        except:
+            msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (customer_idurl, err, ))
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (
+                customer_idurl, msg, ))
         result.callback(None)
         return None
 
@@ -101,7 +106,7 @@ def read_customer_suppliers(customer_idurl):
     return result
 
 
-def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher=None, ):
+def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher_idurl=None, ):
     if customer_idurl == my_id.getLocalIDURL():
         lg.warn('skip writing my own suppliers list which suppose to be written to DHT')
     else:
@@ -112,5 +117,5 @@ def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revis
         suppliers_list=suppliers_list,
         ecc_map=ecc_map,
         revision=revision,
-        publisher=publisher,
+        publisher_idurl=publisher_idurl,
     )

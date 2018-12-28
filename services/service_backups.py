@@ -106,7 +106,7 @@ class BackupsService(LocalService):
         lg.warn('restarting backup_monitor() machine')
         backup_monitor.A('restart')
 
-    def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         from storage import backup_monitor
         from logs import lg
         lg.warn('restarting backup_monitor() machine because p2p_connector state changed')

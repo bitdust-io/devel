@@ -292,7 +292,7 @@ def countOnlineAmong(idurls_list):
 #------------------------------------------------------------------------------
 
 
-def A(idurl, event=None, arg=None):
+def A(idurl, event=None, *args, **kwargs):
     """
     Access method to interact with a state machine created for given contact.
     """
@@ -311,7 +311,7 @@ def A(idurl, event=None, arg=None):
             log_transitions=_Debug,
         )
     if event is not None:
-        _ContactsStatusDict[idurl].automat(event, arg)
+        _ContactsStatusDict[idurl].automat(event, *args, **kwargs)
     return _ContactsStatusDict[idurl]
 
 
@@ -336,42 +336,42 @@ class ContactStatus(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel + 2, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if _Debug:
             lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate, newstate))
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'sent-failed' and self.isDataPacket(arg) and self.Fails<3:
+            if event == 'sent-failed' and self.isDataPacket(*args, **kwargs) and self.Fails<3:
                 self.Fails+=1
-            elif event == 'ping-failed' or ( event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(arg) ):
+            elif event == 'ping-failed' or ( event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(*args, **kwargs) ):
                 self.state = 'OFFLINE'
                 self.PingRequired=False
-                self.doRepaint(arg)
+                self.doRepaint(*args, **kwargs)
             elif event == 'ping':
                 self.PingRequired=True
-                self.doPing(arg)
-            elif event == 'outbox-packet' and self.isPingPacket(arg) and self.PingRequired:
+                self.doPing(*args, **kwargs)
+            elif event == 'outbox-packet' and self.isPingPacket(*args, **kwargs) and self.PingRequired:
                 self.state = 'PING'
                 self.AckCounter=0
                 self.PingRequired=False
-                self.doRepaint(arg)
+                self.doRepaint(*args, **kwargs)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
-            if event == 'outbox-packet' and self.isPingPacket(arg):
+            if event == 'outbox-packet' and self.isPingPacket(*args, **kwargs):
                 self.state = 'PING'
                 self.PingRequired=False
                 self.AckCounter=0
-                self.doRepaint(arg)
+                self.doRepaint(*args, **kwargs)
             elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
                 self.PingRequired=False
                 self.Fails=0
-                self.doRememberTime(arg)
-                self.doRepaint(arg)
+                self.doRememberTime(*args, **kwargs)
+                self.doRepaint(*args, **kwargs)
             elif event == 'ping':
-                self.doPing(arg)
+                self.doPing(*args, **kwargs)
         #---PING---
         elif self.state == 'PING':
             if event == 'sent-done':
@@ -380,63 +380,63 @@ class ContactStatus(automat.Automat):
             elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
                 self.Fails=0
-                self.doRememberTime(arg)
-                self.doRepaint(arg)
+                self.doRememberTime(*args, **kwargs)
+                self.doRepaint(*args, **kwargs)
             elif event == 'file-sent':
                 self.AckCounter+=1
             elif event == 'sent-failed' and self.AckCounter>1:
                 self.AckCounter-=1
             elif event == 'ping-failed' or event == 'timer-10sec' or ( event == 'sent-failed' and self.AckCounter==1 ):
                 self.state = 'OFFLINE'
-                self.doRepaint(arg)
+                self.doRepaint(*args, **kwargs)
         #---ACK?---
         elif self.state == 'ACK?':
             if event == 'inbox-packet':
                 self.state = 'CONNECTED'
                 self.Fails=0
-                self.doRememberTime(arg)
-                self.doRepaint(arg)
-            elif event == 'outbox-packet' and self.isPingPacket(arg):
+                self.doRememberTime(*args, **kwargs)
+                self.doRepaint(*args, **kwargs)
+            elif event == 'outbox-packet' and self.isPingPacket(*args, **kwargs):
                 self.state = 'PING'
                 self.AckCounter=0
-                self.doRepaint(arg)
+                self.doRepaint(*args, **kwargs)
             elif event == 'ping-failed' or event == 'timer-10sec':
                 self.state = 'OFFLINE'
         return None
 
-    def isPingPacket(self, arg):
+    def isPingPacket(self, *args, **kwargs):
         """
         Condition method.
         """
-        pkt_out = arg
+        pkt_out = args[0]
         return pkt_out.outpacket and pkt_out.outpacket.Command == commands.Identity() and pkt_out.wide is True
 
-    def isDataPacket(self, arg):
+    def isDataPacket(self, *args, **kwargs):
         """
         Condition method.
         """
-        pkt_out, _, _ = arg
+        pkt_out, _, _ = args[0]
         return pkt_out.outpacket.Command not in [ commands.Ack(), ]
 
-    def doPing(self, arg):
+    def doPing(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            timeout = int(arg)
+            timeout = int(*args, **kwargs)
         except:
             timeout = 10
         d = propagate.PingContact(self.idurl, timeout=timeout)
         d.addCallback(self._on_ping_success)
         d.addErrback(self._on_ping_failed)
 
-    def doRememberTime(self, arg):
+    def doRememberTime(self, *args, **kwargs):
         """
         Action method.
         """
         self.time_connected = time.time()
 
-    def doRepaint(self, arg):
+    def doRepaint(self, *args, **kwargs):
         """
         Action method.
         """

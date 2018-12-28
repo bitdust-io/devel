@@ -385,7 +385,7 @@ class PacketOut(automat.Automat):
         if self.response_timeout:
             self.timers['response-timeout'] = (self.response_timeout, ['RESPONSE?'])
 
-    def msg(self, msgid, arg=None):
+    def msg(self, msgid, *args, **kwargs):
         return self.MESSAGES.get(msgid, '')
 
     def is_timed_out(self):
@@ -403,68 +403,68 @@ class PacketOut(automat.Automat):
             lg.out(_DebugLevel, '%s : new callback for [%s] added, expecting: %r' % (
                 self, command, list(self.callbacks.keys())))
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---SENDING---
         if self.state == 'SENDING':
             if event == 'register-item':
-                self.doSetTransferID(arg)
+                self.doSetTransferID(*args, **kwargs)
             elif event == 'cancel':
                 self.state = 'CANCEL'
-                self.doCancelItems(arg)
-                self.doErrMsg(event,self.msg('MSG_2', arg))
-                self.doReportCancelItems(arg)
-                self.doPopItems(arg)
-                self.doReportCancelled(arg)
-                self.doDestroyMe(arg)
-            elif event == 'unregister-item' and self.isAckNeeded(arg):
+                self.doCancelItems(*args, **kwargs)
+                self.doErrMsg(event,self.msg('MSG_2', *args, **kwargs))
+                self.doReportCancelItems(*args, **kwargs)
+                self.doPopItems(*args, **kwargs)
+                self.doReportCancelled(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'unregister-item' and self.isAckNeeded(*args, **kwargs):
                 self.state = 'RESPONSE?'
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-            elif event == 'item-cancelled' and self.isMoreItems(arg):
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-            elif event == 'unregister-item' and not self.isAckNeeded(arg):
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+            elif event == 'item-cancelled' and self.isMoreItems(*args, **kwargs):
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+            elif event == 'unregister-item' and not self.isAckNeeded(*args, **kwargs):
                 self.state = 'SENT'
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-                self.doReportDoneNoAck(arg)
-                self.doDestroyMe(arg)
-            elif event == 'item-cancelled' and not self.isMoreItems(arg):
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+                self.doReportDoneNoAck(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'item-cancelled' and not self.isMoreItems(*args, **kwargs):
                 self.state = 'FAILED'
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'run' and self.isRemoteIdentityKnown(arg):
+            if event == 'run' and self.isRemoteIdentityKnown(*args, **kwargs):
                 self.state = 'ITEMS?'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
                 self.Cancelled=False
-                self.doReportStarted(arg)
-                self.doSerializeAndWrite(arg)
-                self.doPushItems(arg)
-            elif event == 'run' and not self.isRemoteIdentityKnown(arg):
+                self.doReportStarted(*args, **kwargs)
+                self.doSerializeAndWrite(*args, **kwargs)
+                self.doPushItems(*args, **kwargs)
+            elif event == 'run' and not self.isRemoteIdentityKnown(*args, **kwargs):
                 self.state = 'CACHING'
-                self.doInit(arg)
-                self.doCacheRemoteIdentity(arg)
+                self.doInit(*args, **kwargs)
+                self.doCacheRemoteIdentity(*args, **kwargs)
         #---CACHING---
         elif self.state == 'CACHING':
             if event == 'remote-identity-on-hand':
                 self.state = 'ITEMS?'
                 self.Cancelled=False
-                self.doReportStarted(arg)
-                self.doSerializeAndWrite(arg)
-                self.doPushItems(arg)
+                self.doReportStarted(*args, **kwargs)
+                self.doSerializeAndWrite(*args, **kwargs)
+                self.doPushItems(*args, **kwargs)
             elif event == 'failed':
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'cancel':
                 self.state = 'CANCEL'
-                self.doErrMsg(event,self.msg('MSG_4', arg))
-                self.doReportCancelled(arg)
-                self.doDestroyMe(arg)
+                self.doErrMsg(event,self.msg('MSG_4', *args, **kwargs))
+                self.doReportCancelled(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---FAILED---
         elif self.state == 'FAILED':
             pass
@@ -472,41 +472,41 @@ class PacketOut(automat.Automat):
         elif self.state == 'ITEMS?':
             if event == 'nothing-to-send' or event == 'write-error':
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'items-sent' and not self.Cancelled:
                 self.state = 'IN_QUEUE'
             elif event == 'cancel':
                 self.Cancelled=True
             elif event == 'items-sent' and self.Cancelled:
                 self.state = 'CANCEL'
-                self.doCancelItems(arg)
-                self.doErrMsg(event,self.msg('MSG_5', arg))
-                self.doReportCancelItems(arg)
-                self.doPopItems(arg)
-                self.doReportCancelled(arg)
-                self.doDestroyMe(arg)
+                self.doCancelItems(*args, **kwargs)
+                self.doErrMsg(event,self.msg('MSG_5', *args, **kwargs))
+                self.doReportCancelItems(*args, **kwargs)
+                self.doPopItems(*args, **kwargs)
+                self.doReportCancelled(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---IN_QUEUE---
         elif self.state == 'IN_QUEUE':
-            if event == 'item-cancelled' and self.isMoreItems(arg):
-                self.doPopItem(arg)
+            if event == 'item-cancelled' and self.isMoreItems(*args, **kwargs):
+                self.doPopItem(*args, **kwargs)
             elif event == 'register-item':
                 self.state = 'SENDING'
-                self.doSetTransferID(arg)
+                self.doSetTransferID(*args, **kwargs)
             elif event == 'cancel':
                 self.state = 'CANCEL'
-                self.doCancelItems(arg)
-                self.doErrMsg(event,self.msg('MSG_1', arg))
-                self.doReportCancelItems(arg)
-                self.doPopItems(arg)
-                self.doReportCancelled(arg)
-                self.doDestroyMe(arg)
-            elif event == 'item-cancelled' and not self.isMoreItems(arg):
+                self.doCancelItems(*args, **kwargs)
+                self.doErrMsg(event,self.msg('MSG_1', *args, **kwargs))
+                self.doReportCancelItems(*args, **kwargs)
+                self.doPopItems(*args, **kwargs)
+                self.doReportCancelled(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'item-cancelled' and not self.isMoreItems(*args, **kwargs):
                 self.state = 'FAILED'
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---SENT---
         elif self.state == 'SENT':
             pass
@@ -517,58 +517,58 @@ class PacketOut(automat.Automat):
         elif self.state == 'RESPONSE?':
             if event == 'cancel':
                 self.state = 'CANCEL'
-                self.doErrMsg(event,self.msg('MSG_3', arg))
-                self.doReportCancelItems(arg)
-                self.doReportCancelled(arg)
-                self.doDestroyMe(arg)
-            elif event == 'inbox-packet' and self.isResponse(arg):
+                self.doErrMsg(event,self.msg('MSG_3', *args, **kwargs))
+                self.doReportCancelItems(*args, **kwargs)
+                self.doReportCancelled(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'inbox-packet' and self.isResponse(*args, **kwargs):
                 self.state = 'SENT'
-                self.doSaveResponse(arg)
-                self.doReportResponse(arg)
-                self.doReportDoneWithAck(arg)
-                self.doDestroyMe(arg)
+                self.doSaveResponse(*args, **kwargs)
+                self.doReportResponse(*args, **kwargs)
+                self.doReportDoneWithAck(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'unregister-item' or event == 'item-cancelled':
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-            elif ( event == 'response-timeout' or event == 'timer-30sec' ) and not self.isDataExpected(arg):
+                self.doPopItem(*args, **kwargs)
+                self.doReportItem(*args, **kwargs)
+            elif ( event == 'response-timeout' or event == 'timer-30sec' ) and not self.isDataExpected(*args, **kwargs):
                 self.state = 'SENT'
-                self.doReportTimeOut(arg)
-                self.doReportDoneNoAck(arg)
-                self.doDestroyMe(arg)
+                self.doReportTimeOut(*args, **kwargs)
+                self.doReportDoneNoAck(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def isRemoteIdentityKnown(self, arg):
+    def isRemoteIdentityKnown(self, *args, **kwargs):
         """
         Condition method.
         """
         return self.remote_identity is not None
 
-    def isAckNeeded(self, arg):
+    def isAckNeeded(self, *args, **kwargs):
         """
         Condition method.
         """
         return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
 
-    def isMoreItems(self, arg):
+    def isMoreItems(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.items) > 1
 
-    def isResponse(self, arg):
+    def isResponse(self, *args, **kwargs):
         """
         Condition method.
         """
-        newpacket, _ = arg
+        newpacket, _ = args[0]
         return newpacket.Command in list(self.callbacks.keys())
 
-    def isDataExpected(self, arg):
+    def isDataExpected(self, *args, **kwargs):
         """
         Condition method.
         """
         return commands.Data() in list(self.callbacks.keys())
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
@@ -577,7 +577,7 @@ class PacketOut(automat.Automat):
         else:
             self.outpacket.Packets.append(self)
 
-    def doCacheRemoteIdentity(self, arg):
+    def doCacheRemoteIdentity(self, *args, **kwargs):
         """
         Action method.
         """
@@ -585,7 +585,7 @@ class PacketOut(automat.Automat):
         self.caching_deferred.addCallback(self._on_remote_identity_cached)
         self.caching_deferred.addErrback(self._on_remote_identity_cache_failed)
 
-    def doSerializeAndWrite(self, arg):
+    def doSerializeAndWrite(self, *args, **kwargs):
         """
         Action method.
         """
@@ -614,30 +614,30 @@ class PacketOut(automat.Automat):
             self.packetdata = None
             self.automat('write-error')
 
-    def doPushItems(self, arg):
+    def doPushItems(self, *args, **kwargs):
         """
         Action method.
         """
         self._push()
 
-    def doPopItem(self, arg):
+    def doPopItem(self, *args, **kwargs):
         """
         Action method.
         """
-        self._pop(arg)
+        self._pop(*args, **kwargs)
 
-    def doPopItems(self, arg):
+    def doPopItems(self, *args, **kwargs):
         """
         Action method.
         """
         self.items = []
 
-    def doSetTransferID(self, arg):
+    def doSetTransferID(self, *args, **kwargs):
         """
         Action method.
         """
         ok = False
-        proto, host, filename, transfer_id = arg
+        proto, host, filename, transfer_id = args[0]
         for i in range(len(self.items)):
             if self.items[i].proto == proto:  # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
@@ -647,13 +647,13 @@ class PacketOut(automat.Automat):
         if not ok:
             lg.warn('not found item for %r:%r' % (proto, host))
 
-    def doSaveResponse(self, arg):
+    def doSaveResponse(self, *args, **kwargs):
         """
         Action method.
         """
-        self.response_packet, self.response_info = arg
+        self.response_packet, self.response_info = args[0]
 
-    def doCancelItems(self, arg):
+    def doCancelItems(self, *args, **kwargs):
         """
         Action method.
         """
@@ -665,7 +665,7 @@ class PacketOut(automat.Automat):
                     t.call('cancel_file_sending', i.transfer_id)
                 t.call('cancel_outbox_file', i.host, self.filename)
 
-    def doReportStarted(self, arg):
+    def doReportStarted(self, *args, **kwargs):
         """
         Action method.
         """
@@ -673,7 +673,7 @@ class PacketOut(automat.Automat):
         if not handled:
             pass
 
-    def doReportItem(self, arg):
+    def doReportItem(self, *args, **kwargs):
         """
         Action method.
         """
@@ -687,7 +687,7 @@ class PacketOut(automat.Automat):
             self.popped_item.bytes_sent, self.popped_item.error_message)
         self.popped_item = None
 
-    def doReportCancelItems(self, arg):
+    def doReportCancelItems(self, *args, **kwargs):
         """
         Action method.
         """
@@ -696,7 +696,7 @@ class PacketOut(automat.Automat):
             callback.run_finish_file_sending_callbacks(
                 self, item, 'failed', 0, self.error_message)
 
-    def doReportResponse(self, arg):
+    def doReportResponse(self, *args, **kwargs):
         """
         Action method.
         """
@@ -707,7 +707,7 @@ class PacketOut(automat.Automat):
                 except:
                     lg.exc()
 
-    def doReportTimeOut(self, arg):
+    def doReportTimeOut(self, *args, **kwargs):
         """
         Action method.
         """
@@ -715,47 +715,47 @@ class PacketOut(automat.Automat):
             for cb in self.callbacks[None]:
                 cb(self)
 
-    def doReportDoneWithAck(self, arg):
+    def doReportDoneWithAck(self, *args, **kwargs):
         """
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
 
-    def doReportDoneNoAck(self, arg):
+    def doReportDoneNoAck(self, *args, **kwargs):
         """
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
 
-    def doReportFailed(self, arg):
+    def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            msg = str(arg[-1])
+            msg = str(args[0][-1])
         except:
             msg = 'failed'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
 
-    def doReportCancelled(self, arg):
+    def doReportCancelled(self, *args, **kwargs):
         """
         Action method.
         """
-        msg = arg
+        msg = args[0]
         if not isinstance(msg, six.string_types):
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
 
-    def doErrMsg(self, event, arg):
+    def doErrMsg(self, event, *args, **kwargs):
         """
         Action method.
         """
         if event.count('timer'):
             self.error_message = 'timeout responding from remote side'
         else:
-            self.error_message = arg
+            self.error_message = args[0]
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

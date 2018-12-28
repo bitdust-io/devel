@@ -1096,8 +1096,8 @@ def main():
             globals()['num_out'] += 1
         old_state_changed = transport('udp').state_changed
 
-        def new_state_changed(oldstate, newstate, event, arg):
-            old_state_changed(oldstate, newstate, event, arg)
+        def new_state_changed(oldstate, newstate, event, *args, **kwargs):
+            old_state_changed(oldstate, newstate, event, *args, **kwargs)
             if newstate == 'LISTENING':
                 reactor.callLater(1, _s)
         transport('udp').state_changed = new_state_changed

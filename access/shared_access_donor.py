@@ -123,18 +123,18 @@ class SharedAccessDonor(automat.Automat):
         self.suppliers_responses = {}
         self.suppliers_acks = 0
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when shared_access_donor() state were changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in the shared_access_donor()
         but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
@@ -142,29 +142,29 @@ class SharedAccessDonor(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'CACHE'
-                self.doInit(arg)
-                self.doInsertInboxCallback(arg)
-                self.doCacheRemoteIdentity(arg)
+                self.doInit(*args, **kwargs)
+                self.doInsertInboxCallback(*args, **kwargs)
+                self.doCacheRemoteIdentity(*args, **kwargs)
         #---PRIV_KEY---
         elif self.state == 'PRIV_KEY':
             if event == 'priv-key-ok':
                 self.state = 'LIST_FILES'
-                self.doSendMyListFiles(arg)
+                self.doSendMyListFiles(*args, **kwargs)
             elif event == 'fail' or event == 'timer-10sec':
                 self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---PUB_KEY---
         elif self.state == 'PUB_KEY':
             if event == 'ack':
-                self.doCheckAllAcked(arg)
-            elif event == 'all-suppliers-acked' or ( event == 'timer-5sec' and self.isSomeSuppliersAcked(arg) ):
+                self.doCheckAllAcked(*args, **kwargs)
+            elif event == 'all-suppliers-acked' or ( event == 'timer-5sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
                 self.state = 'PRIV_KEY'
-                self.doSendPrivKeyToUser(arg)
-            elif event == 'fail' or ( event == 'timer-5sec' and not self.isSomeSuppliersAcked(arg) ):
+                self.doSendPrivKeyToUser(*args, **kwargs)
+            elif event == 'fail' or ( event == 'timer-5sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
                 self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -172,68 +172,68 @@ class SharedAccessDonor(automat.Automat):
         elif self.state == 'PING':
             if event == 'ack':
                 self.state = 'BLOCKCHAIN'
-                self.doBlockchainLookupVerifyUserPubKey(arg)
+                self.doBlockchainLookupVerifyUserPubKey(*args, **kwargs)
             elif event == 'fail' or event == 'timer-5sec':
                 self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---CACHE---
         elif self.state == 'CACHE':
             if event == 'user-identity-cached':
                 self.state = 'PING'
-                self.doSendMyIdentityToUser(arg)
+                self.doSendMyIdentityToUser(*args, **kwargs)
             elif event == 'fail' or event == 'timer-5sec':
                 self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---BLOCKCHAIN---
         elif self.state == 'BLOCKCHAIN':
             if event == 'fail':
                 self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'blockchain-ok':
                 self.state = 'AUDIT'
-                self.doAuditUserMasterKey(arg)
+                self.doAuditUserMasterKey(*args, **kwargs)
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
             if event == 'list-files-ok':
                 self.state = 'CLOSED'
-                self.doReportDone(arg)
-                self.doDestroyMe(arg)
+                self.doReportDone(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'fail' or event == 'timer-10sec':
                 self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---AUDIT---
         elif self.state == 'AUDIT':
             if event == 'fail' or event == 'timer-5sec':
                 self.state = 'CLOSED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'audit-ok':
                 self.state = 'PUB_KEY'
-                self.doSendPubKeyToSuppliers(arg)
+                self.doSendPubKeyToSuppliers(*args, **kwargs)
         return None
 
-    def isSomeSuppliersAcked(self, arg):
+    def isSomeSuppliersAcked(self, *args, **kwargs):
         """
         Condition method.
         """
         return self.suppliers_acks > 0
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.remote_idurl, self.key_id, self.result_defer = arg
+        self.remote_idurl, self.key_id, self.result_defer = args[0]
 
-    def doInsertInboxCallback(self, arg):
+    def doInsertInboxCallback(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doCacheRemoteIdentity(self, arg):
+    def doCacheRemoteIdentity(self, *args, **kwargs):
         """
         Action method.
         """
@@ -241,7 +241,7 @@ class SharedAccessDonor(automat.Automat):
         self.caching_deferred.addCallback(self._on_remote_identity_cached)
         self.caching_deferred.addErrback(lambda err: self.automat('fail', err))
 
-    def doSendMyIdentityToUser(self, arg):
+    def doSendMyIdentityToUser(self, *args, **kwargs):
         """
         Action method.
         """
@@ -260,14 +260,14 @@ class SharedAccessDonor(automat.Automat):
             },
         )
 
-    def doBlockchainLookupVerifyUserPubKey(self, arg):
+    def doBlockchainLookupVerifyUserPubKey(self, *args, **kwargs):
         """
         Action method.
         """
         # TODO:
         self.automat('blockchain-ok')
 
-    def doAuditUserMasterKey(self, arg):
+    def doAuditUserMasterKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -279,7 +279,7 @@ class SharedAccessDonor(automat.Automat):
         ))
         d.addErrback(lambda err: self.automat('fail', err))
 
-    def doSendPubKeyToSuppliers(self, arg):
+    def doSendPubKeyToSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -293,14 +293,14 @@ class SharedAccessDonor(automat.Automat):
             d.addErrback(self._on_supplier_pub_key_failed, supplier_idurl)
             self.suppliers_responses[supplier_idurl] = d
 
-    def doCheckAllAcked(self, arg):
+    def doCheckAllAcked(self, *args, **kwargs):
         """
         Action method.
         """
         if len(self.suppliers_responses) == 0:
             self.automat('all-suppliers-acked')
 
-    def doSendPrivKeyToUser(self, arg):
+    def doSendPrivKeyToUser(self, *args, **kwargs):
         """
         Action method.
         """
@@ -308,7 +308,7 @@ class SharedAccessDonor(automat.Automat):
         d.addCallback(self._on_user_priv_key_shared)
         d.addErrback(self._on_user_priv_key_failed)
 
-    def doSendMyListFiles(self, arg):
+    def doSendMyListFiles(self, *args, **kwargs):
         """
         Action method.
         """
@@ -340,7 +340,7 @@ class SharedAccessDonor(automat.Automat):
             },
         )
 
-    def doReportDone(self, arg):
+    def doReportDone(self, *args, **kwargs):
         """
         Action method.
         """
@@ -352,19 +352,19 @@ class SharedAccessDonor(automat.Automat):
         if self.result_defer:
             self.result_defer.callback(True)
 
-    def doReportFailed(self, arg):
+    def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
         if self.result_defer:
-            if arg:
+            if args and args[0]:
                 events.send('private-key-share-failed', dict(
                     global_id=global_id.UrlToGlobalID(self.remote_idurl),
                     remote_idurl=self.remote_idurl,
                     key_id=self.key_id,
-                    reason=arg,
+                    reason=args[0],
                 ))
-                self.result_defer.errback(Exception(arg))
+                self.result_defer.errback(Exception(*args, **kwargs))
             else:
                 if self.remote_identity is None:
                     events.send('private-key-share-failed', dict(
@@ -392,7 +392,7 @@ class SharedAccessDonor(automat.Automat):
                         ))
                         self.result_defer.errback(Exception('failed'))
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

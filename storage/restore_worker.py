@@ -191,14 +191,14 @@ class RestoreWorker(automat.Automat):
     def set_block_restored_callback(self, cb):
         self.blockRestoredCallback = cb
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when `restore_worker()` state were changed.
         """
         if newstate == 'REQUESTED':
             self.automat('instant')
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
@@ -206,89 +206,89 @@ class RestoreWorker(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'REQUESTED'
-                self.doInit(arg)
-                self.doStartNewBlock(arg)
-                self.doScanExistingPackets(arg)
-                self.doRequestPackets(arg)
+                self.doInit(*args, **kwargs)
+                self.doStartNewBlock(*args, **kwargs)
+                self.doScanExistingPackets(*args, **kwargs)
+                self.doRequestPackets(*args, **kwargs)
                 self.Attempts=1
         #---REQUESTED---
         elif self.state == 'REQUESTED':
             if event == 'data-receiving-started':
                 self.state = 'RECEIVING'
-            elif event == 'data-received' and not self.isBlockFixable(arg):
-                self.doSavePacket(arg)
+            elif event == 'data-received' and not self.isBlockFixable(*args, **kwargs):
+                self.doSavePacket(*args, **kwargs)
             elif event == 'timer-5sec' and self.Attempts==1:
-                self.doPingSuppliers(arg)
-            elif ( event == 'instant' or event == 'data-received' ) and self.isBlockFixable(arg):
+                self.doPingSuppliers(*args, **kwargs)
+            elif ( event == 'instant' or event == 'data-received' ) and self.isBlockFixable(*args, **kwargs):
                 self.state = 'RAID'
-                self.doSavePacket(arg)
-                self.doReadRaid(arg)
-            elif event == 'abort' or ( ( event == 'request-failed' ) and ( not self.isStillCorrectable(arg) or self.Attempts>=3 ) ):
+                self.doSavePacket(*args, **kwargs)
+                self.doReadRaid(*args, **kwargs)
+            elif event == 'abort' or ( ( event == 'request-failed' ) and ( not self.isStillCorrectable(*args, **kwargs) or self.Attempts>=3 ) ):
                 self.state = 'FAILED'
-                self.doDeleteAllRequests(arg)
-                self.doRemoveTempFile(arg)
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif ( event == 'request-failed' ) and self.isStillCorrectable(arg) and self.Attempts<3:
-                self.doScanExistingPackets(arg)
-                self.doRequestPackets(arg)
+                self.doDeleteAllRequests(*args, **kwargs)
+                self.doRemoveTempFile(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif ( event == 'request-failed' ) and self.isStillCorrectable(*args, **kwargs) and self.Attempts<3:
+                self.doScanExistingPackets(*args, **kwargs)
+                self.doRequestPackets(*args, **kwargs)
                 self.Attempts+=1
         #---RECEIVING---
         elif self.state == 'RECEIVING':
-            if event == 'data-received' and self.isBlockFixable(arg):
+            if event == 'data-received' and self.isBlockFixable(*args, **kwargs):
                 self.state = 'RAID'
-                self.doSavePacket(arg)
-                self.doReadRaid(arg)
-            elif event == 'data-received' and not self.isBlockFixable(arg):
-                self.doSavePacket(arg)
-            elif event == 'abort' or ( ( event == 'request-failed' or event == 'data-receiving-stopped' ) and not self.isStillCorrectable(arg) ):
+                self.doSavePacket(*args, **kwargs)
+                self.doReadRaid(*args, **kwargs)
+            elif event == 'data-received' and not self.isBlockFixable(*args, **kwargs):
+                self.doSavePacket(*args, **kwargs)
+            elif event == 'abort' or ( ( event == 'request-failed' or event == 'data-receiving-stopped' ) and not self.isStillCorrectable(*args, **kwargs) ):
                 self.state = 'FAILED'
-                self.doDeleteAllRequests(arg)
-                self.doRemoveTempFile(arg)
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'data-receiving-stopped' and self.isStillCorrectable(arg):
+                self.doDeleteAllRequests(*args, **kwargs)
+                self.doRemoveTempFile(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'data-receiving-stopped' and self.isStillCorrectable(*args, **kwargs):
                 self.state = 'REQUESTED'
-                self.doScanExistingPackets(arg)
-                self.doRequestPackets(arg)
+                self.doScanExistingPackets(*args, **kwargs)
+                self.doRequestPackets(*args, **kwargs)
         #---RAID---
         elif self.state == 'RAID':
             if event == 'raid-done':
                 self.state = 'BLOCK'
-                self.doRestoreBlock(arg)
+                self.doRestoreBlock(*args, **kwargs)
             elif event == 'data-received':
                 pass
             elif event == 'raid-failed' or event == 'abort':
                 self.state = 'FAILED'
-                self.doDeleteAllRequests(arg)
-                self.doRemoveTempFile(arg)
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doDeleteAllRequests(*args, **kwargs)
+                self.doRemoveTempFile(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---BLOCK---
         elif self.state == 'BLOCK':
-            if event == 'block-restored' and not self.isLastBlock(arg):
+            if event == 'block-restored' and not self.isLastBlock(*args, **kwargs):
                 self.state = 'REQUESTED'
-                self.doWriteRestoredData(arg)
-                self.doRemoveTempFile(arg)
-                self.doStartNewBlock(arg)
-                self.doScanExistingPackets(arg)
-                self.doRequestPackets(arg)
+                self.doWriteRestoredData(*args, **kwargs)
+                self.doRemoveTempFile(*args, **kwargs)
+                self.doStartNewBlock(*args, **kwargs)
+                self.doScanExistingPackets(*args, **kwargs)
+                self.doRequestPackets(*args, **kwargs)
                 self.Attempts=1
-            elif event == 'block-restored' and self.isLastBlock(arg):
+            elif event == 'block-restored' and self.isLastBlock(*args, **kwargs):
                 self.state = 'DONE'
-                self.doWriteRestoredData(arg)
-                self.doDeleteAllRequests(arg)
-                self.doRemoveTempFile(arg)
-                self.doReportDone(arg)
-                self.doDestroyMe(arg)
+                self.doWriteRestoredData(*args, **kwargs)
+                self.doDeleteAllRequests(*args, **kwargs)
+                self.doRemoveTempFile(*args, **kwargs)
+                self.doReportDone(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'data-received':
                 pass
             elif event == 'block-failed' or event == 'abort':
                 self.state = 'FAILED'
-                self.doDeleteAllRequests(arg)
-                self.doRemoveTempFile(arg)
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doDeleteAllRequests(*args, **kwargs)
+                self.doRemoveTempFile(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -297,14 +297,14 @@ class RestoreWorker(automat.Automat):
             pass
         return None
 
-    def isLastBlock(self, arg):
+    def isLastBlock(self, *args, **kwargs):
         """
         Condition method.
         """
-        NewBlock = arg[0]
+        NewBlock = args[0][0]
         return NewBlock.LastBlock
 
-    def isStillCorrectable(self, arg):
+    def isStillCorrectable(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -315,7 +315,7 @@ class RestoreWorker(automat.Automat):
                 max_errors, len(self.RequestFails), ))
         return result
 
-    def isBlockFixable(self, arg):
+    def isBlockFixable(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -326,7 +326,7 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, '    OnHandParity: %s' % self.OnHandParity)
         return result
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
@@ -352,7 +352,7 @@ class RestoreWorker(automat.Automat):
             lg.warn('no meta info found, guessed eccmap %s from %d known suppliers' % (
                 self.EccMap, len(self.known_suppliers)))
 
-    def doStartNewBlock(self, arg):
+    def doStartNewBlock(self, *args, **kwargs):
         """
         Action method.
         """
@@ -365,13 +365,13 @@ class RestoreWorker(automat.Automat):
         self.RequestFails = []
         self.AlreadyRequestedCounts = {}
 
-    def doPingSuppliers(self, arg):
+    def doPingSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
         propagate.SendSuppliers()
 
-    def doScanExistingPackets(self, arg):
+    def doScanExistingPackets(self, *args, **kwargs):
         """
         Action method.
         """
@@ -386,11 +386,11 @@ class RestoreWorker(automat.Automat):
             self.OnHandParity[SupplierNumber] = bool(os.path.exists(os.path.join(
                 settings.getLocalBackupsDir(), customerID, remotePath)))
 
-    def doRestoreBlock(self, arg):
+    def doRestoreBlock(self, *args, **kwargs):
         """
         Action method.
         """
-        filename = arg
+        filename = args[0]
         blockbits = bpio.ReadBinaryFile(filename)
         if not blockbits:
             self.automat('block-failed')
@@ -407,7 +407,7 @@ class RestoreWorker(automat.Automat):
             return
         self.automat('block-restored', (newblock, filename, ))
 
-    def doRequestPackets(self, arg):
+    def doRequestPackets(self, *args, **kwargs):
         """
         Action method.
         """
@@ -480,13 +480,13 @@ class RestoreWorker(automat.Automat):
                         lg.warn('too much requests made for block %d' % self.block_number)
                         self.automat('request-failed', None)
 
-    def doSavePacket(self, arg):
+    def doSavePacket(self, *args, **kwargs):
         """
         Action method.
         """
-        if not arg:
+        if not args or not args[0]:
             return
-        NewPacket, PacketID = arg
+        NewPacket, PacketID = args[0]
         glob_path = global_id.ParseGlobalID(PacketID, detect_version=True)
         packetID = global_id.CanonicalID(PacketID)
         customer_id, _, _, _, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
@@ -513,7 +513,7 @@ class RestoreWorker(automat.Automat):
         else:
             lg.warn('new packet is None, probably already exists locally')
 
-    def doReadRaid(self, arg):
+    def doReadRaid(self, *args, **kwargs):
         """
         Action method.
         """
@@ -530,12 +530,12 @@ class RestoreWorker(automat.Automat):
             task_params,
             lambda cmd, params, result: self._on_block_restored(result, outfilename))
 
-    def doRemoveTempFile(self, arg):
+    def doRemoveTempFile(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            filename = arg[1]
+            filename = args[0][1]
         except:
             return
         tmpfile.throw_out(filename, 'block restored')
@@ -566,15 +566,15 @@ class RestoreWorker(automat.Automat):
                         lg.exc()
                         continue
                     count += 1
-        backup_matrix.LocalBlockReport(self.backup_id, self.block_number, arg)
+        backup_matrix.LocalBlockReport(self.backup_id, self.block_number, *args, **kwargs)
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker.doRemoveTempFile %d files were removed' % count)
 
-    def doWriteRestoredData(self, arg):
+    def doWriteRestoredData(self, *args, **kwargs):
         """
         Action method.
         """
-        NewBlock = arg[0]
+        NewBlock = args[0][0]
         data = NewBlock.Data()
         # Add to the file where all the data is going
         try:
@@ -587,14 +587,14 @@ class RestoreWorker(automat.Automat):
         if self.blockRestoredCallback is not None:
             self.blockRestoredCallback(self.backup_id, NewBlock)
 
-    def doDeleteAllRequests(self, arg):
+    def doDeleteAllRequests(self, *args, **kwargs):
         """
         Action method.
         """
         from customer import io_throttle
         io_throttle.DeleteBackupRequests(self.backup_id)
 
-    def doReportDone(self, arg):
+    def doReportDone(self, *args, **kwargs):
         """
         Action method.
         """
@@ -604,7 +604,7 @@ class RestoreWorker(automat.Automat):
         self.MyDeferred.callback('done')
         events.send('restore-done', dict(backup_id=self.backup_id))
 
-    def doReportFailed(self, arg):
+    def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
@@ -612,9 +612,9 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doReportFailed')
         self.done_flag = True
         self.MyDeferred.callback('failed')
-        events.send('restore-failed', dict(backup_id=self.backup_id, block_number=self.block_number, reason=arg))
+        events.send('restore-failed', dict(backup_id=self.backup_id, block_number=self.block_number, reason=args[0]))
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
@@ -663,7 +663,7 @@ class RestoreWorker(automat.Automat):
                 self.RequestFails.append(getattr(NewPacketOrPacketID, 'PacketID', None))
                 self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
 
-    def _on_data_receiver_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_data_receiver_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if newstate == 'RECEIVING' and oldstate != 'RECEIVING':
             self.automat('data-receiving-started', newstate)
         elif oldstate == 'RECEIVING' and newstate != 'RECEIVING':

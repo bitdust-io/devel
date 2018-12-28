@@ -282,39 +282,39 @@ class PacketIn(automat.Automat):
         state machine.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'register-item':
                 self.state = 'RECEIVING'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---RECEIVING---
         elif self.state == 'RECEIVING':
             if event == 'cancel':
-                self.doCancelItem(arg)
-            elif event == 'unregister-item' and not self.isTransferFinished(arg):
+                self.doCancelItem(*args, **kwargs)
+            elif event == 'unregister-item' and not self.isTransferFinished(*args, **kwargs):
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doEraseInputFile(arg)
-                self.doDestroyMe(arg)
-            elif event == 'unregister-item' and self.isTransferFinished(arg) and not self.isRemoteIdentityCached(arg):
+                self.doReportFailed(*args, **kwargs)
+                self.doEraseInputFile(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'unregister-item' and self.isTransferFinished(*args, **kwargs) and not self.isRemoteIdentityCached(*args, **kwargs):
                 self.state = 'CACHING'
-                self.doCacheRemoteIdentity(arg)
-            elif event == 'unregister-item' and self.isTransferFinished(arg) and self.isRemoteIdentityCached(arg):
+                self.doCacheRemoteIdentity(*args, **kwargs)
+            elif event == 'unregister-item' and self.isTransferFinished(*args, **kwargs) and self.isRemoteIdentityCached(*args, **kwargs):
                 self.state = 'INBOX?'
-                self.doReadAndUnserialize(arg)
+                self.doReadAndUnserialize(*args, **kwargs)
         #---INBOX?---
         elif self.state == 'INBOX?':
             if event == 'valid-inbox-packet':
                 self.state = 'DONE'
-                self.doReportReceived(arg)
-                self.doEraseInputFile(arg)
-                self.doDestroyMe(arg)
+                self.doReportReceived(*args, **kwargs)
+                self.doEraseInputFile(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'unserialize-failed':
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doEraseInputFile(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doEraseInputFile(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---FAILED---
         elif self.state == 'FAILED':
             pass
@@ -325,26 +325,26 @@ class PacketIn(automat.Automat):
         elif self.state == 'CACHING':
             if event == 'failed':
                 self.state = 'FAILED'
-                self.doReportCacheFailed(arg)
-                self.doEraseInputFile(arg)
-                self.doDestroyMe(arg)
+                self.doReportCacheFailed(*args, **kwargs)
+                self.doEraseInputFile(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'remote-id-cached':
                 self.state = 'INBOX?'
-                self.doReadAndUnserialize(arg)
+                self.doReadAndUnserialize(*args, **kwargs)
         return None
 
-    def isTransferFinished(self, arg):
+    def isTransferFinished(self, *args, **kwargs):
         """
         Condition method.
         """
-        status, bytes_received, _ = arg
+        status, bytes_received, _ = args[0]
         if status != 'finished':
             return False
         if self.size and self.size > 0 and self.size != bytes_received:
             return False
         return True
 
-    def isRemoteIdentityCached(self, arg):
+    def isRemoteIdentityCached(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -352,11 +352,11 @@ class PacketIn(automat.Automat):
             return True
         return self.sender_idurl and identitycache.HasKey(self.sender_idurl)
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
+        self.proto, self.host, self.sender_idurl, self.filename, self.size = args[0]
         self.time = time.time()
         # 300  # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
         if self.size < 1024 * 10:
@@ -366,16 +366,16 @@ class PacketIn(automat.Automat):
         else:
             self.timeout = 300
         if not self.sender_idurl:
-            lg.warn('sender_idurl is None: %s' % str(arg))
-        reactor.callLater(0, callback.run_begin_file_receiving_callbacks, self)
+            lg.warn('sender_idurl is None: %s' % str(*args, **kwargs))
+        reactor.callLater(0, callback.run_begin_file_receiving_callbacks, self)  # @UndefinedVariable
 
-    def doEraseInputFile(self, arg):
+    def doEraseInputFile(self, *args, **kwargs):
         """
         Action method.
         """
-        reactor.callLater(1, tmpfile.throw_out, self.filename, 'received')
+        reactor.callLater(1, tmpfile.throw_out, self.filename, 'received')  # @UndefinedVariable
 
-    def doCancelItem(self, arg):
+    def doCancelItem(self, *args, **kwargs):
         """
         Action method.
         """
@@ -384,20 +384,20 @@ class PacketIn(automat.Automat):
         if t:
             t.call('cancel_file_receiving', self.transfer_id)
 
-    def doCacheRemoteIdentity(self, arg):
+    def doCacheRemoteIdentity(self, *args, **kwargs):
         """
         Action method.
         """
         d = identitycache.immediatelyCaching(self.sender_idurl)
-        d.addCallback(self._remote_identity_cached, arg)
-        d.addErrback(lambda err: self.automat('failed', arg))
+        d.addCallback(self._remote_identity_cached, *args, **kwargs)
+        d.addErrback(lambda err: self.automat('failed', *args, **kwargs))
 
-    def doReadAndUnserialize(self, arg):
+    def doReadAndUnserialize(self, *args, **kwargs):
         """
         Action method.
         """
         from transport import gateway
-        self.status, self.bytes_received, self.error_message = arg
+        self.status, self.bytes_received, self.error_message = args[0]
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
         if newpacket is None:
@@ -433,44 +433,44 @@ class PacketIn(automat.Automat):
             remote_id=newpacket.RemoteID,
         ))
 
-    def doReportReceived(self, arg):
+    def doReportReceived(self, *args, **kwargs):
         """
         Action method.
         """
-        newpacket = arg
+        newpacket = args[0]
         p2p_stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
         process(newpacket, self)
 
-    def doReportFailed(self, arg):
+    def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            status, bytes_received, _ = arg
+            status, bytes_received, _ = args[0]
         except:
             status = 'failed'
             bytes_received = 0
         p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
 
-    def doReportCacheFailed(self, arg):
+    def doReportCacheFailed(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg:
-            status, bytes_received, _ = arg
+        if args and args[0]:
+            status, bytes_received, _ = args[0]
             p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
         inbox_items().pop(self.transfer_id)
         self.destroy()
 
-    def _remote_identity_cached(self, xmlsrc, arg):
+    def _remote_identity_cached(self, xmlsrc, *args, **kwargs):
         sender_identity = contactsdb.get_contact_identity(self.sender_idurl)
         if sender_identity is None:
             self.automat('failed')
         else:
-            self.automat('remote-id-cached', arg)
+            self.automat('remote-id-cached', *args, **kwargs)

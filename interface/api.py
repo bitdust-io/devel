@@ -364,7 +364,7 @@ def identity_create(username):
     ret = Deferred()
     my_id_registrator = id_registrator.A()
 
-    def _id_registrator_state_changed(oldstate, newstate, event_string, args):
+    def _id_registrator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if ret.called:
             return
         if newstate == 'FAILED':
@@ -452,7 +452,7 @@ def identity_recover(private_key_source, known_idurl=None):
     ret = Deferred()
     my_id_restorer = id_restorer.A()
 
-    def _id_restorer_state_changed(oldstate, newstate, event_string, args):
+    def _id_restorer_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if ret.called:
             return
         if newstate == 'FAILED':
@@ -1494,7 +1494,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         ))
         return True
     
-    def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, args):
+    def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate == 'CONNECTED':
             lg.out(_DebugLevel, 'api.download_start share %s is CONNECTED, removing callback %s' % (
                 active_share.key_id, callback_id,))
@@ -1744,7 +1744,7 @@ def share_open(key_id):
         active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=True, )
     ret = Deferred()
 
-    def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, args):
+    def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
         if newstate == 'CONNECTED':
             if new_share:
@@ -2748,7 +2748,7 @@ def user_status_check(idurl_or_global_id, timeout=5):
         return ERROR('failed to check peer status')
     ret = Deferred()
 
-    def _on_peer_status_state_changed(oldstate, newstate, event_string, args):
+    def _on_peer_status_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if newstate not in ['CONNECTED', 'OFFLINE', ]:
             return None
         if newstate == 'OFFLINE' and oldstate == 'OFFLINE' and not event_string == 'ping-failed':

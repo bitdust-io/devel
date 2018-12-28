@@ -165,21 +165,24 @@ def LatestPacketReceived():
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with proxy_receiver machine.
     """
     global _ProxyReceiver
-    if event is None and arg is None:
+    if event is None and not args:
         return _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP',
-                                       debug_level=_DebugLevel,
-                                       log_events=(_Debug and _DebugLevel>12),
-                                       log_transitions=_Debug, )
+        _ProxyReceiver = ProxyReceiver(
+            name='proxy_receiver',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=(_Debug and _DebugLevel>12),
+            log_transitions=_Debug,
+        )
     if event is not None:
-        _ProxyReceiver.automat(event, arg)
+        _ProxyReceiver.automat(event, *args, **kwargs)
     return _ProxyReceiver
 
 #------------------------------------------------------------------------------
@@ -212,7 +215,7 @@ class ProxyReceiver(automat.Automat):
         self.router_connection_info = None
         self.traffic_in = 0
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when proxy_receiver() state were changed.
         """
@@ -220,13 +223,13 @@ class ProxyReceiver(automat.Automat):
             from transport.proxy import proxy_sender
             proxy_sender.A('proxy_receiver.state', newstate)
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in
         the proxy_receiver() but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The core proxy_receiver() code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -235,7 +238,7 @@ class ProxyReceiver(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -243,83 +246,83 @@ class ProxyReceiver(automat.Automat):
         elif self.state == 'ACK?':
             if event == 'ack-received':
                 self.state = 'SERVICE?'
-                self.doSendRequestService(arg)
+                self.doSendRequestService(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'OFFLINE'
-                self.doNotifyFailed(arg)
+                self.doNotifyFailed(*args, **kwargs)
             elif event == 'timer-1sec':
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'timer-4sec' or event == 'fail-received':
                 self.state = 'FIND_NODE?'
-                self.doLookupRandomNode(arg)
+                self.doLookupRandomNode(*args, **kwargs)
         #---LISTEN---
         elif self.state == 'LISTEN':
             if event == 'router-id-received':
-                self.doUpdateRouterID(arg)
+                self.doUpdateRouterID(*args, **kwargs)
             elif event == 'inbox-packet':
-                self.doProcessInboxPacket(arg)
+                self.doProcessInboxPacket(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopListening(arg)
-                self.doDestroyMe(arg)
+                self.doStopListening(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'OFFLINE'
-                self.doSendCancelService(arg)
-                self.doStopListening(arg)
-                self.doNotifyDisconnected(arg)
+                self.doSendCancelService(*args, **kwargs)
+                self.doStopListening(*args, **kwargs)
+                self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'timer-10sec':
-                self.doCheckPingRouter(arg)
+                self.doCheckPingRouter(*args, **kwargs)
             elif event == 'service-refused' or event == 'router-disconnected':
                 self.state = 'FIND_NODE?'
-                self.doStopListening(arg)
-                self.doNotifyDisconnected(arg)
-                self.doLookupRandomNode(arg)
+                self.doStopListening(*args, **kwargs)
+                self.doNotifyDisconnected(*args, **kwargs)
+                self.doLookupRandomNode(*args, **kwargs)
         #---FIND_NODE?---
         elif self.state == 'FIND_NODE?':
             if event == 'found-one-node':
                 self.state = 'ACK?'
-                self.doRememberNode(arg)
-                self.doSendMyIdentity(arg)
+                self.doRememberNode(*args, **kwargs)
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop' or event == 'nodes-not-found' or event == 'timer-20sec':
                 self.state = 'OFFLINE'
-                self.doNotifyFailed(arg)
+                self.doNotifyFailed(*args, **kwargs)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted':
                 self.state = 'LISTEN'
-                self.doStartListening(arg)
-                self.doNotifyConnected(arg)
+                self.doStartListening(*args, **kwargs)
+                self.doNotifyConnected(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'OFFLINE'
-                self.doSendCancelService(arg)
-                self.doNotifyFailed(arg)
+                self.doSendCancelService(*args, **kwargs)
+                self.doNotifyFailed(*args, **kwargs)
             elif event == 'timer-5sec' or event == 'service-refused':
                 self.state = 'FIND_NODE?'
-                self.doLookupRandomNode(arg)
+                self.doLookupRandomNode(*args, **kwargs)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
-            if event == 'start' and self.isCurrentRouterExist(arg):
+            if event == 'start' and self.isCurrentRouterExist(*args, **kwargs):
                 self.state = 'ACK?'
-                self.doLoadRouterInfo(arg)
-                self.doSendMyIdentity(arg)
-            elif event == 'start' and not self.isCurrentRouterExist(arg):
+                self.doLoadRouterInfo(*args, **kwargs)
+                self.doSendMyIdentity(*args, **kwargs)
+            elif event == 'start' and not self.isCurrentRouterExist(*args, **kwargs):
                 self.state = 'FIND_NODE?'
-                self.doLookupRandomNode(arg)
+                self.doLookupRandomNode(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def isCurrentRouterExist(self, arg):
+    def isCurrentRouterExist(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -327,12 +330,12 @@ class ProxyReceiver(automat.Automat):
             return False
         return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doLoadRouterInfo(self, arg):
+    def doLoadRouterInfo(self, *args, **kwargs):
         """
         Action method.
         """
@@ -344,13 +347,13 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver.doLoadRouterInfo : %s' % self.router_idurl)
 
-    def doLookupRandomNode(self, arg):
+    def doLookupRandomNode(self, *args, **kwargs):
         """
         Action method.
         """
         self._find_random_node()
 
-    def doSendMyIdentity(self, arg):
+    def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
@@ -361,24 +364,24 @@ class ProxyReceiver(automat.Automat):
                 lg.out(_DebugLevel, '    also sending identity loaded from "my-original-identity" config')
             self._do_send_identity_to_router(identity_source, failed_event='fail-received')
 
-    def doRememberNode(self, arg):
+    def doRememberNode(self, *args, **kwargs):
         """
         Action method.
         """
-        self.router_idurl = strng.to_bin(arg)
+        self.router_idurl = strng.to_bin(*args, **kwargs)
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver.doRememberNode %r' % self.router_idurl)
 
-    def doSendRequestService(self, arg):
+    def doSendRequestService(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_send_request_service(arg)
+        self._do_send_request_service(*args, **kwargs)
 
-    def doSendCancelService(self, arg):
+    def doSendCancelService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -399,18 +402,18 @@ class ProxyReceiver(automat.Automat):
             commands.Fail(): self._on_request_service_fail,
         },)
 
-    def doProcessInboxPacket(self, arg):
+    def doProcessInboxPacket(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_process_inbox_packet(arg)
+        self._do_process_inbox_packet(*args, **kwargs)
 
-    def doStartListening(self, arg):
+    def doStartListening(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            _, info = arg
+            _, info = args[0]
             self.router_proto_host = (info.proto, info.host)
         except:
             try:
@@ -463,7 +466,7 @@ class ProxyReceiver(automat.Automat):
             lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
                 self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
 
-    def doStopListening(self, arg):
+    def doStopListening(self, *args, **kwargs):
         """
         Action method.
         """
@@ -482,11 +485,11 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(2, 'proxy_receiver.doStopListening')
 
-    def doUpdateRouterID(self, arg):
+    def doUpdateRouterID(self, *args, **kwargs):
         """
         Action method.
         """
-        newpacket, _ = arg
+        newpacket, _ = args[0]
         newxml = newpacket.Payload
         newidentity = identity.identity(xmlsrc=newxml)
         cachedidentity = identitycache.FromCache(self.router_idurl)
@@ -497,7 +500,7 @@ class ProxyReceiver(automat.Automat):
             lg.warn('cached identity is not same, router identity changed')
         self.router_identity = newidentity
 
-    def doCheckPingRouter(self, arg):
+    def doCheckPingRouter(self, *args, **kwargs):
         """
         Action method.
         """
@@ -520,26 +523,26 @@ class ProxyReceiver(automat.Automat):
                 lg.out(_DebugLevel, '    local identity prepared for sending')
         self._do_send_identity_to_router(identity_source, failed_event='router-disconnected')
 
-    def doNotifyConnected(self, arg):
+    def doNotifyConnected(self, *args, **kwargs):
         """
         Action method.
         """
         proxy_interface.interface_receiving_started(
             self.router_idurl, {'router_idurl': self.router_idurl, },)
 
-    def doNotifyDisconnected(self, arg):
+    def doNotifyDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
         proxy_interface.interface_disconnected().addErrback(lambda _: None)
 
-    def doNotifyFailed(self, arg):
+    def doNotifyFailed(self, *args, **kwargs):
         """
         Action method.
         """
         proxy_interface.interface_receiving_failed()
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
@@ -548,8 +551,8 @@ class ProxyReceiver(automat.Automat):
         del _ProxyReceiver
         _ProxyReceiver = None
 
-    def _do_process_inbox_packet(self, arg):
-        newpacket, info, _, _ = arg
+    def _do_process_inbox_packet(self, *args, **kwargs):
+        newpacket, info, _, _ = args[0]
         block = encrypted.Unserialize(newpacket.Payload)
         if block is None:
             lg.err('reading data from %s' % newpacket.CreatorID)
@@ -639,11 +642,11 @@ class ProxyReceiver(automat.Automat):
             keep_alive=True,
         )
 
-    def _do_send_request_service(self, arg):
+    def _do_send_request_service(self, *args, **kwargs):
         if len(self.request_service_packet_id) >= 3:
             if _Debug:
                 lg.warn('too many service requests to %r' % self.router_idurl)
-            self.automat('service-refused', arg)
+            self.automat('service-refused', *args, **kwargs)
             return
         orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if not orig_identity:
@@ -796,14 +799,14 @@ class ProxyReceiver(automat.Automat):
             return True
         return False
 
-    def _on_router_contact_status_connected(self, oldstate, newstate, event_string, args):
+    def _on_router_contact_status_connected(self, oldstate, newstate, event_string, *args, **kwargs):
         pass
 
-    def _on_router_contact_status_offline(self, oldstate, newstate, event_string, args):
+    def _on_router_contact_status_offline(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('router contact status offline: %s->%s after "%s"' % (oldstate, newstate, event_string, ))
         # self.automat('router-disconnected')
 
-    def _on_router_session_disconnected(self, oldstate, newstate, event_string, args):
+    def _on_router_session_disconnected(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('router session disconnected: %s->%s' % (oldstate, newstate, ))
         self.automat('router-disconnected')
 
@@ -812,8 +815,8 @@ class ProxyReceiver(automat.Automat):
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
-    reactor.callWhenRunning(A, 'init')
-    reactor.run()
+    reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":

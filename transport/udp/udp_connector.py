@@ -118,39 +118,39 @@ class DHTUDPConnector(automat.Automat):
         self.my_address = None
         self.working_deferred = None
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'DHT_LOOP'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
                 self.KeyPosition = 0
-                self.doDHTReadIncoming(arg)
+                self.doDHTReadIncoming(*args, **kwargs)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
             if event == 'dht-write-success':
                 self.state = 'DHT_READ'
-                self.doDHTReadPeerAddress(arg)
+                self.doDHTReadPeerAddress(*args, **kwargs)
             elif event == 'dht-write-failed':
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'abort':
                 self.state = 'ABORTED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'dht-read-success':
                 self.state = 'DONE'
-                self.doStartNewSession(arg)
-                self.doDestroyMe(arg)
+                self.doStartNewSession(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'dht-read-failed':
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'abort':
                 self.state = 'ABORTED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -161,39 +161,39 @@ class DHTUDPConnector(automat.Automat):
         elif self.state == 'DHT_LOOP':
             if event == 'dht-read-failed':
                 self.state = 'DHT_WRITE'
-                self.doDHTWriteIncoming(arg)
+                self.doDHTWriteIncoming(*args, **kwargs)
             elif event == 'dht-read-success' and self.KeyPosition >= 10:
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'dht-read-success' and self.KeyPosition < 10 and not self.isMyIncoming(arg):
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-read-success' and self.KeyPosition < 10 and not self.isMyIncoming(*args, **kwargs):
                 self.KeyPosition += 1
-                self.doDHTReadIncoming(arg)
-            elif event == 'dht-read-success' and self.isMyIncoming(arg):
+                self.doDHTReadIncoming(*args, **kwargs)
+            elif event == 'dht-read-success' and self.isMyIncoming(*args, **kwargs):
                 self.state = 'DHT_READ'
-                self.doDHTReadPeerAddress(arg)
+                self.doDHTReadPeerAddress(*args, **kwargs)
             elif event == 'abort':
                 self.state = 'ABORTED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---ABORTED---
         elif self.state == 'ABORTED':
             pass
         return None
 
-    def isMyIncoming(self, arg):
+    def isMyIncoming(self, *args, **kwargs):
         """
         Condition method.
         """
-        incoming_peer_id, incoming_user_address = arg
+        incoming_peer_id, incoming_user_address = args[0]
         return incoming_peer_id == self.my_id and incoming_user_address == self.my_address
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.listen_port, self.my_id, self.my_address = arg
+        self.listen_port, self.my_id, self.my_address = args[0]
 
-    def doDHTReadIncoming(self, arg):
+    def doDHTReadIncoming(self, *args, **kwargs):
         """
         Action method.
         """
@@ -207,7 +207,7 @@ class DHTUDPConnector(automat.Automat):
             self.working_deferred.addErrback(
                 lambda x: self.automat('dht-read-failed'))
 
-    def doDHTWriteIncoming(self, arg):
+    def doDHTWriteIncoming(self, *args, **kwargs):
         """
         Action method.
         """
@@ -226,12 +226,12 @@ class DHTUDPConnector(automat.Automat):
             except:
                 self.automat('dht-write-failed')
 
-    def doStartNewSession(self, arg):
+    def doStartNewSession(self, *args, **kwargs):
         """
         Action method.
         """
         from transport.udp import udp_session
-        peer_address = arg
+        peer_address = args[0]
         if self.node.my_address is None:
             if _Debug:
                 lg.out(
@@ -255,7 +255,7 @@ class DHTUDPConnector(automat.Automat):
         s = udp_session.create(self.node, peer_address, self.peer_id)
         s.automat('init', (self.listen_port, self.my_id, self.my_address))
 
-    def doDHTReadPeerAddress(self, arg):
+    def doDHTReadPeerAddress(self, *args, **kwargs):
         """
         Action method.
         """
@@ -268,7 +268,7 @@ class DHTUDPConnector(automat.Automat):
             self.working_deferred.addErrback(
                 lambda x: self.automat('dht-read-failed'))
 
-    def doReportFailed(self, arg):
+    def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
@@ -276,7 +276,7 @@ class DHTUDPConnector(automat.Automat):
         udp_session.report_and_remove_pending_outbox_files_to_host(
             self.peer_id, 'unable to establish connection')
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """

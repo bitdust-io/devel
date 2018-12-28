@@ -114,60 +114,60 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         state machine.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'connection-made' and not self.isOutgoing(arg):
+            if event == 'connection-made' and not self.isOutgoing(*args, **kwargs):
                 self.state = 'SERVER?'
-                self.doInit(arg)
-            elif event == 'connection-made' and self.isOutgoing(arg):
+                self.doInit(*args, **kwargs)
+            elif event == 'connection-made' and self.isOutgoing(*args, **kwargs):
                 self.state = 'CLIENT?'
-                self.doInit(arg)
-                self.doCloseOutgoing(arg)
-                self.doSendHello(arg)
+                self.doInit(*args, **kwargs)
+                self.doCloseOutgoing(*args, **kwargs)
+                self.doSendHello(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'data-received':
-                self.doReceiveData(arg)
+                self.doReceiveData(*args, **kwargs)
             elif event == 'connection-lost':
                 self.state = 'CLOSED'
-                self.doStopInOutFiles(arg)
-                self.doCloseStream(arg)
-                self.doDestroyMe(arg)
+                self.doStopInOutFiles(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect':
                 self.state = 'DISCONNECT'
-                self.doStopInOutFiles(arg)
-                self.doCloseStream(arg)
-                self.doDisconnect(arg)
+                self.doStopInOutFiles(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
+                self.doDisconnect(*args, **kwargs)
             elif event == 'send-keep-alive':
-                self.doSendWazap(arg)
+                self.doSendWazap(*args, **kwargs)
         #---CLIENT?---
         elif self.state == 'CLIENT?':
             if event == 'connection-lost':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'data-received' and self.isWazap(arg) and self.isSomePendingFiles(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'data-received' and self.isWazap(*args, **kwargs) and self.isSomePendingFiles(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doReadWazap(arg)
-                self.doOpenStream(arg)
-                self.doStartPendingFiles(arg)
-            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not ( self.isWazap(arg) and self.isSomePendingFiles(arg) ) ):
+                self.doReadWazap(*args, **kwargs)
+                self.doOpenStream(*args, **kwargs)
+                self.doStartPendingFiles(*args, **kwargs)
+            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not ( self.isWazap(*args, **kwargs) and self.isSomePendingFiles(*args, **kwargs) ) ):
                 self.state = 'DISCONNECT'
-                self.doDisconnect(arg)
+                self.doDisconnect(*args, **kwargs)
         #---SERVER?---
         elif self.state == 'SERVER?':
             if event == 'connection-lost':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'data-received' and self.isHello(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'data-received' and self.isHello(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doReadHello(arg)
-                self.doSendWazap(arg)
-                self.doOpenStream(arg)
-                self.doStartPendingFiles(arg)
-            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not self.isHello(arg) ):
+                self.doReadHello(*args, **kwargs)
+                self.doSendWazap(*args, **kwargs)
+                self.doOpenStream(*args, **kwargs)
+                self.doStartPendingFiles(*args, **kwargs)
+            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not self.isHello(*args, **kwargs) ):
                 self.state = 'DISCONNECT'
-                self.doDisconnect(arg)
+                self.doDisconnect(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -175,15 +175,15 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         elif self.state == 'DISCONNECT':
             if event == 'connection-lost':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def isHello(self, arg):
+    def isHello(self, *args, **kwargs):
         """
         Condition method.
         """
         try:
-            command, payload = arg
+            command, payload = args[0]
             peeraddress, peeridurl = payload.split(b' ')
             peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
@@ -192,17 +192,17 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             return False
         return command == CMD_HELLO
 
-    def isWazap(self, arg):
+    def isWazap(self, *args, **kwargs):
         """
         Condition method.
         """
         try:
-            command, payload = arg
+            command, payload = args[0]
         except:
             return False
         return command == CMD_WAZAP
 
-    def isOutgoing(self, arg):
+    def isOutgoing(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -212,13 +212,13 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 return True
         return False
 
-    def isSomePendingFiles(self, arg):
+    def isSomePendingFiles(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.factory.pendingoutboxfiles) > 0
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
@@ -234,7 +234,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             lg.out(_DebugLevel, 'tcp_connection.doInit with %s, total connections to that address : %d' % (
                 self.peer_address, len(tcp_node.opened_connections()[self.peer_address]), ))
 
-    def doCloseOutgoing(self, arg):
+    def doCloseOutgoing(self, *args, **kwargs):
         """
         Action method.
         """
@@ -244,18 +244,18 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         # lg.out(18, 'tcp_connection.doCloseOutgoing    %s closed, %d more started' % (
         #     str(self.peer_address), len(tcp_node.started_connections())))
 
-    def doReadHello(self, arg):
+    def doReadHello(self, *args, **kwargs):
         """
         Action method.
         """
         from transport.tcp import tcp_node
         try:
-            command, payload = arg
+            command, payload = args[0]
             peeraddress, peeridurl = payload.split(b' ')
             peerip, peerport = peeraddress.split(b':')
             peerport = int(peerport)
             if not peerip:
-                lg.warn('unknown peer IP from Hello packet: %r' % arg)
+                lg.warn('unknown peer IP from Hello packet: %r' % args[0])
                 peerip = self.peer_external_address[0]
             peeraddress = (peerip, peerport)
         except:
@@ -278,23 +278,23 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                     self, old_address, self.peer_address))
         # lg.out(18, 'tcp_connection.doReadHello from %s' % (self.peer_idurl))
 
-    def doReadWazap(self, arg):
+    def doReadWazap(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            command, payload = arg
+            command, payload = args[0]
         except:
             return
         self.peer_idurl = payload
         # lg.out(18, 'tcp_connection.doReadWazap from %s' % (self.peer_idurl))
 
-    def doReceiveData(self, arg):
+    def doReceiveData(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            command, payload = arg
+            command, payload = args[0]
         except:
             return
         if command == CMD_DATA:
@@ -308,7 +308,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         else:
             pass
 
-    def doSendHello(self, arg):
+    def doSendHello(self, *args, **kwargs):
         """
         Action method.
         """
@@ -320,7 +320,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             lg.out(_DebugLevel, 'tcp_connection.doSendHello %r to %s' % (payload, net_misc.pack_address(self.getTransportAddress())))
         self.sendData(CMD_HELLO, payload)
 
-    def doSendWazap(self, arg):
+    def doSendWazap(self, *args, **kwargs):
         """
         Action method.
         """
@@ -328,7 +328,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         payload = strng.to_bin(tcp_node.my_idurl() or 'None')
         self.sendData(CMD_WAZAP, payload)
 
-    def doStartPendingFiles(self, arg):
+    def doStartPendingFiles(self, *args, **kwargs):
         """
         Action method.
         """
@@ -336,20 +336,20 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             self.append_outbox_file(filename, description, result_defer, keep_alive)
         self.factory.pendingoutboxfiles = []
 
-    def doStopInOutFiles(self, arg):
+    def doStopInOutFiles(self, *args, **kwargs):
         """
         Action method.
         """
         self.stream.abort_files('disconnecting')
 
-    def doOpenStream(self, arg):
+    def doOpenStream(self, *args, **kwargs):
         """
         Action method.
         """
         from transport.tcp import tcp_stream
         self.stream = tcp_stream.TCPFileStream(self)
 
-    def doCloseStream(self, arg):
+    def doCloseStream(self, *args, **kwargs):
         """
         Action method.
         """
@@ -357,7 +357,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         del self.stream
         self.stream = None
 
-    def doDisconnect(self, arg):
+    def doDisconnect(self, *args, **kwargs):
         """
         Action method.
         """
@@ -371,7 +371,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             except:
                 lg.exc()
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """

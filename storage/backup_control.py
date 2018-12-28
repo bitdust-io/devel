@@ -828,7 +828,7 @@ def AbortPendingTask(pathID):
 
 #------------------------------------------------------------------------------
 
-def OnFoundFolderSize(pth, sz, arg):
+def OnFoundFolderSize(pth, sz, *args, **kwargs):
     """
     This is a callback, fired from ``lib.dirsize.ask()`` method after finish
     calculating of folder size.

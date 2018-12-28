@@ -128,18 +128,18 @@ class CustomerAssistant(automat.Automat):
         at creation phase of customer_assistant() machine.
         """
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when customer_assistant() state were changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in the customer_assistant()
         but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
@@ -147,25 +147,25 @@ class CustomerAssistant(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'connect':
                 self.state = 'PING?'
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'propagate':
                 self.state = 'PING?'
         #---PING?---
         elif self.state == 'PING?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'ack':
                 self.state = 'CONNECTED'
-                self.doSendHisFiles(arg)
+                self.doSendHisFiles(*args, **kwargs)
             elif event == 'timer-10sec' or event == 'disconnect' or event == 'fail':
                 self.state = 'OFFLINE'
         #---CONNECTED---
@@ -174,10 +174,10 @@ class CustomerAssistant(automat.Automat):
                 self.state = 'OFFLINE'
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-5min':
                 self.state = 'PING?'
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'propagate':
                 self.state = 'PING?'
         #---CLOSED---
@@ -185,12 +185,12 @@ class CustomerAssistant(automat.Automat):
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doSendMyIdentity(self, arg):
+    def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
@@ -199,7 +199,7 @@ class CustomerAssistant(automat.Automat):
             commands.Fail(): self._customer_failed,
         })
 
-    def doSendHisFiles(self, arg):
+    def doSendHisFiles(self, *args, **kwargs):
         """
         Action method.
         """
@@ -215,7 +215,7 @@ class CustomerAssistant(automat.Automat):
         else:
             lg.err('key %s is not registered, not able to send his files' % customer_key_id)
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

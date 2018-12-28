@@ -75,18 +75,18 @@ _AccountantsFinder = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _AccountantsFinder
-    if event is None and arg is None:
+    if event is None and not args:
         return _AccountantsFinder
     if _AccountantsFinder is None:
         # set automat name and starting state here
         _AccountantsFinder = AccountantsFinder('accountants_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _AccountantsFinder.automat(event, arg)
+        _AccountantsFinder.automat(event, *args, **kwargs)
     return _AccountantsFinder
 
 #------------------------------------------------------------------------------
@@ -112,19 +112,19 @@ class AccountantsFinder(automat.Automat):
         self.requested_packet_id = None
         self.request_service_params = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when accountants_finder() state were
         changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in
         the accountants_finder() but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -132,70 +132,70 @@ class AccountantsFinder(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         elif self.state == 'RANDOM_USER':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'found-one-user':
                 self.state = 'ACK?'
-                self.doRememberUser(arg)
+                self.doRememberUser(*args, **kwargs)
                 self.Attempts += 1
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'users-not-found':
                 self.state = 'READY'
-                self.doNotifyLookupFailed(arg)
+                self.doNotifyLookupFailed(*args, **kwargs)
         elif self.state == 'ACK?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
-                self.doSendRequestService(arg)
+                self.doSendRequestService(*args, **kwargs)
             elif event == 'timer-10sec' and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomUser(*args, **kwargs)
             elif event == 'timer-3sec':
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
         elif self.state == 'SERVICE?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'service-accepted':
                 self.state = 'READY'
-                self.doNotifyLookupSuccess(arg)
+                self.doNotifyLookupSuccess(*args, **kwargs)
             elif self.Attempts == 5 and (event == 'timer-10sec' or event == 'service-denied'):
                 self.state = 'READY'
-                self.doNotifyLookupFailed(arg)
+                self.doNotifyLookupFailed(*args, **kwargs)
             elif (event == 'timer-10sec' or event == 'service-denied') and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomUser(*args, **kwargs)
         elif self.state == 'READY':
             if event == 'start':
                 self.state = 'RANDOM_USER'
-                self.doSetNotifyCallback(arg)
+                self.doSetNotifyCallback(*args, **kwargs)
                 self.Attempts = 0
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomUser(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         callback.append_inbox_callback(self._inbox_packet_received)
 
-    def doSetNotifyCallback(self, arg):
+    def doSetNotifyCallback(self, *args, **kwargs):
         """
         Action method.
         """
-        self.result_callback, self.request_service_params = arg
+        self.result_callback, self.request_service_params = args[0]
 
-    def doLookupRandomUser(self, arg):
+    def doLookupRandomUser(self, *args, **kwargs):
         """
         Action method.
         """
@@ -203,19 +203,19 @@ class AccountantsFinder(automat.Automat):
         t.result_defer.addCallback(self._nodes_lookup_finished)
         t.result_defer.addErrback(lambda err: self.automat('users-not-found'))
 
-    def doRememberUser(self, arg):
+    def doRememberUser(self, *args, **kwargs):
         """
         Action method.
         """
-        self.target_idurl = arg
+        self.target_idurl = args[0]
 
-    def doSendMyIdentity(self, arg):
+    def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
         p2p_service.SendIdentity(self.target_idurl, wide=True)
 
-    def doSendRequestService(self, arg):
+    def doSendRequestService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -227,27 +227,27 @@ class AccountantsFinder(automat.Automat):
         )
         self.requested_packet_id = out_packet.PacketID
 
-    def doNotifyLookupSuccess(self, arg):
+    def doNotifyLookupSuccess(self, *args, **kwargs):
         """
         Action method.
         """
         if self.result_callback:
-            self.result_callback('accountant-connected', arg)
+            self.result_callback('accountant-connected', *args, **kwargs)
         self.result_callback = None
         self.request_service_params = None
 
-    def doNotifyLookupFailed(self, arg):
+    def doNotifyLookupFailed(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
             lg.out(_DebugLevel, 'accountants_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
-            self.result_callback('lookup-failed', arg)
+            self.result_callback('lookup-failed', *args, **kwargs)
         self.result_callback = None
         self.request_service_params = None
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
