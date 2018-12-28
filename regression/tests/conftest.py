@@ -325,6 +325,7 @@ def start_all_nodes():
 
 
 def report_all_nodes():
+    print('\n\nTest report:')
     for node in ALL_NODES:
         main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
         print('[%s]  Warnings: %d   Exceptions: %d' % (
@@ -333,7 +334,7 @@ def report_all_nodes():
 
 def clean_all_nodes(event_loop, skip_checks=False):
 
-    async def parallel_method(node):
+    async def parallel_method_1(node):
         stop_daemon(node, skip_checks=skip_checks)
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
@@ -344,10 +345,10 @@ def clean_all_nodes(event_loop, skip_checks=False):
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
     tasks = [
-        asyncio.ensure_future(parallel_method(node)) for node in ALL_NODES
+        asyncio.ensure_future(parallel_method_1(node)) for node in ALL_NODES
     ]
     event_loop.run_until_complete(asyncio.wait(tasks))
-    
+
 #     for node in ALL_NODES:
 #         stop_daemon(node, skip_checks=skip_checks)
 #         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
@@ -359,9 +360,17 @@ def clean_all_nodes(event_loop, skip_checks=False):
 #         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
 #         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
 
-    run_ssh_command_and_wait('customer_1', 'rm -rf /customer_1/*')
-    run_ssh_command_and_wait('customer_2', 'rm -rf /customer_2/*')
-    run_ssh_command_and_wait('customer_3', 'rm -rf /customer_3/*')
+    async def parallel_method_2(node):
+        run_ssh_command_and_wait(node, 'rm -rf /%s/*' % node)
+    tasks = [
+        asyncio.ensure_future(parallel_method_2(node)) for node in [
+            'customer_1', 'customer_2', 'customer_3', ]
+    ]
+    event_loop.run_until_complete(asyncio.wait(tasks))
+
+#     run_ssh_command_and_wait('customer_1', 'rm -rf /customer_1/*')
+#     run_ssh_command_and_wait('customer_2', 'rm -rf /customer_2/*')
+#     run_ssh_command_and_wait('customer_3', 'rm -rf /customer_3/*')
     print('All nodes cleaned')
  
  
@@ -373,21 +382,20 @@ def kill_all_nodes():
 
 #------------------------------------------------------------------------------
 
-# @pytest.yield_fixture(scope='session')
-# def event_loop():
-#     loop = asyncio.get_event_loop()
-#     yield loop
-#     loop.close()
+@pytest.yield_fixture(scope='session')
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
 
 #------------------------------------------------------------------------------
 
 @pytest.yield_fixture(scope='session', autouse=True)
-# def global_wrapper(event_loop):
-def global_wrapper():
+def global_wrapper(event_loop):
     _begin = time.time()
 
     open_all_tunnels(ALL_NODES)
-    # clean_all_nodes(skip_checks=True)
+    clean_all_nodes(event_loop, skip_checks=True)
     start_all_nodes()
     
     print('\nStarting all roles and execute tests')

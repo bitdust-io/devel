@@ -90,8 +90,13 @@ def read_customer_suppliers(customer_idurl):
         return None
 
     def _on_error(err):
+        try:
+            msg = err.getErrorMessage()
+        except:
+            msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (customer_idurl, err, ))
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (
+                customer_idurl, msg, ))
         result.callback(None)
         return None
 

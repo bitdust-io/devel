@@ -535,7 +535,7 @@ class FamilyMember(automat.Automat):
         
         return merged_info
 
-    def _do_increase_next_revision(self, merged_info):
+    def _do_increase_next_revision(self):
         self.transaction['revision'] += 1
         self.transaction['publisher_idurl'] = my_id.getLocalIDURL()
 
