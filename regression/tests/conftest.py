@@ -265,7 +265,7 @@ def start_customer(node, identity_name, join_network=True):
 
 #------------------------------------------------------------------------------
 
-def start_all_nodes():
+def start_all_nodes(event_loop):
     # TODO: keep up to date with docker-compose links
     nodes = {
         'dht-seeds': [
@@ -315,11 +315,29 @@ def start_all_nodes():
     for proxysrv in nodes['proxy-servers']:
         start_proxy_server(node=proxysrv, identity_name=proxysrv)
 
-    for supplier in nodes['suppliers']:
+    async def start_one_supplier(supplier):
         start_supplier(node=supplier, identity_name=supplier)
 
-    for customer in nodes['customers']:
-        start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(start_one_supplier(supplier)) for supplier in nodes['suppliers']
+    ]))
+
+    # for supplier in nodes['suppliers']:
+    #     start_supplier(node=supplier, identity_name=supplier)
+
+    async def start_one_customer(customer):
+        start_customer(
+            node=customer['name'],
+            identity_name=customer['name'],
+            join_network=customer['join_network'],
+        )
+
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(start_one_customer(customer)) for customer in nodes['customers']
+    ]))
+
+    # for customer in nodes['customers']:
+    #     start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
 
     print('\nAll nodes ready\n')
 
@@ -396,7 +414,7 @@ def global_wrapper(event_loop):
 
     open_all_tunnels(ALL_NODES)
     clean_all_nodes(event_loop, skip_checks=True)
-    start_all_nodes()
+    start_all_nodes(event_loop)
     
     print('\nStarting all roles and execute tests')
  
