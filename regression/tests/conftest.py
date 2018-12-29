@@ -5,7 +5,7 @@ import requests
 import asyncio
 import aiohttp  # @UnresolvedImport
 
-from .utils import run_ssh_command_and_wait, open_all_tunnels, close_all_tunnels, tunnel_url
+from .utils import run_ssh_command_and_wait, open_tunnel, tunnel_url
 
 #------------------------------------------------------------------------------
 
@@ -265,7 +265,19 @@ def start_customer(node, identity_name, join_network=True):
 
 #------------------------------------------------------------------------------
 
-def start_all_nodes():
+def open_all_tunnels(event_loop, nodes):
+    async def open_one_tunnel(node):
+        open_tunnel(node)
+
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(open_one_tunnel(node)) for node in nodes
+    ]))
+
+    # for node in nodes:
+    #     open_tunnel(node)
+
+
+def start_all_nodes(event_loop):
     # TODO: keep up to date with docker-compose links
     nodes = {
         'dht-seeds': [
@@ -315,21 +327,49 @@ def start_all_nodes():
     for proxysrv in nodes['proxy-servers']:
         start_proxy_server(node=proxysrv, identity_name=proxysrv)
 
-    for supplier in nodes['suppliers']:
+    async def start_one_supplier(supplier):
         start_supplier(node=supplier, identity_name=supplier)
 
-    for customer in nodes['customers']:
-        start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(start_one_supplier(supplier)) for supplier in nodes['suppliers']
+    ]))
+
+    # for supplier in nodes['suppliers']:
+    #     start_supplier(node=supplier, identity_name=supplier)
+
+    async def start_one_customer(customer):
+        start_customer(
+            node=customer['name'],
+            identity_name=customer['name'],
+            join_network=customer['join_network'],
+        )
+
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(start_one_customer(customer)) for customer in nodes['customers']
+    ]))
+
+    # for customer in nodes['customers']:
+    #     start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
 
     print('\nAll nodes ready\n')
 
 
-def report_all_nodes():
+def report_all_nodes(event_loop):
     print('\n\nTest report:')
-    for node in ALL_NODES:
+
+    async def report_one_node(node):
         main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
         print('[%s]  Warnings: %d   Exceptions: %d' % (
             node, main_log.count('WARNING'), main_log.count('Exception:'), ))
+
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
+    ]))
+
+    # for node in ALL_NODES:
+    #     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+    #     print('[%s]  Warnings: %d   Exceptions: %d' % (
+    #         node, main_log.count('WARNING'), main_log.count('Exception:'), ))
 
 
 def clean_all_nodes(event_loop, skip_checks=False):
@@ -344,10 +384,10 @@ def clean_all_nodes(event_loop, skip_checks=False):
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
-    tasks = [
+
+    event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(parallel_method_1(node)) for node in ALL_NODES
-    ]
-    event_loop.run_until_complete(asyncio.wait(tasks))
+    ]))
 
 #     for node in ALL_NODES:
 #         stop_daemon(node, skip_checks=skip_checks)
@@ -362,11 +402,11 @@ def clean_all_nodes(event_loop, skip_checks=False):
 
     async def parallel_method_2(node):
         run_ssh_command_and_wait(node, 'rm -rf /%s/*' % node)
-    tasks = [
+    event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(parallel_method_2(node)) for node in [
-            'customer_1', 'customer_2', 'customer_3', ]
-    ]
-    event_loop.run_until_complete(asyncio.wait(tasks))
+            'customer_1', 'customer_2', 'customer_3',
+        ]
+    ]))
 
 #     run_ssh_command_and_wait('customer_1', 'rm -rf /customer_1/*')
 #     run_ssh_command_and_wait('customer_2', 'rm -rf /customer_2/*')
@@ -394,15 +434,15 @@ def event_loop():
 def global_wrapper(event_loop):
     _begin = time.time()
 
-    open_all_tunnels(ALL_NODES)
+    open_all_tunnels(event_loop, ALL_NODES)
     clean_all_nodes(event_loop, skip_checks=True)
-    start_all_nodes()
+    start_all_nodes(event_loop)
     
     print('\nStarting all roles and execute tests')
  
     yield
 
-    report_all_nodes()
+    report_all_nodes(event_loop)
     # clean_all_nodes()
     # close_all_tunnels()
 

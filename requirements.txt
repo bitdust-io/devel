@@ -3,6 +3,6 @@ service_identity
 pycryptodomex
 pyparsing
 appdirs
-six
-psutil
 cffi
+psutil
+six
