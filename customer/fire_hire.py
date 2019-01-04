@@ -125,8 +125,8 @@ from automats import global_state
 from automats import automat
 
 from lib import misc
-
 from lib import diskspace
+from lib import strng
 
 from main import settings
 from main import events
@@ -177,16 +177,21 @@ def AddSupplierToFire(idurl):
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _FireHire
     if _FireHire is None:
-        _FireHire = FireHire('fire_hire', 'READY',
-                             debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug)
+        _FireHire = FireHire(
+            name='fire_hire',
+            state='READY',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
-        _FireHire.automat(event, arg)
+        _FireHire.automat(event, *args, **kwargs)
     return _FireHire
 
 
@@ -228,7 +233,7 @@ class FireHire(automat.Automat):
         self.restart_interval = 1.0
         self.restart_task = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when automat's state were
         changed.
@@ -237,81 +242,81 @@ class FireHire(automat.Automat):
         if newstate == 'READY':
             self.automat('instant')
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
             if (event == 'restart' or (event == 'instant' and self.NeedRestart)) and not (
-                    self.isConfigChanged(arg) and self.isExistSomeSuppliers(arg)):
+                    self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs)):
                 self.state = 'DECISION?'
                 self.NeedRestart = False
-                self.doDecideToDismiss(arg)
-            elif (event == 'restart' or (event == 'instant' and self.NeedRestart)) and self.isConfigChanged(arg) and self.isExistSomeSuppliers(arg):
+                self.doDecideToDismiss(*args, **kwargs)
+            elif (event == 'restart' or (event == 'instant' and self.NeedRestart)) and self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs):
                 self.state = 'SUPPLIERS?'
                 self.NeedRestart = False
-                self.doSaveConfig(arg)
-                self.doConnectSuppliers(arg)
+                self.doSaveConfig(*args, **kwargs)
+                self.doConnectSuppliers(*args, **kwargs)
         #---DECISION?---
         elif self.state == 'DECISION?':
-            if event == 'made-decision' and self.isSomeoneToDismiss(arg) and not self.isMoreNeeded(arg):
+            if event == 'made-decision' and self.isSomeoneToDismiss(*args, **kwargs) and not self.isMoreNeeded(*args, **kwargs):
                 self.state = 'FIRE_MANY'
-                self.doRememberSuppliers(arg)
-                self.doRemoveSuppliers(arg)
-                self.doDisconnectSuppliers(arg)
+                self.doRememberSuppliers(*args, **kwargs)
+                self.doRemoveSuppliers(*args, **kwargs)
+                self.doDisconnectSuppliers(*args, **kwargs)
             elif event == 'restart':
                 self.NeedRestart = True
-            elif event == 'made-decision' and not self.isMoreNeeded(arg) and not self.isSomeoneToDismiss(arg):
+            elif event == 'made-decision' and not self.isMoreNeeded(*args, **kwargs) and not self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'READY'
-                self.doNotifyFinished(arg)
-            elif event == 'made-decision' and self.isMoreNeeded(arg):
+                self.doNotifyFinished(*args, **kwargs)
+            elif event == 'made-decision' and self.isMoreNeeded(*args, **kwargs):
                 self.state = 'HIRE_ONE'
-                self.doRememberSuppliers(arg)
+                self.doRememberSuppliers(*args, **kwargs)
                 supplier_finder.A('start')
         #---HIRE_ONE---
         elif self.state == 'HIRE_ONE':
             if event == 'restart':
                 self.NeedRestart = True
-            elif event == 'supplier-connected' and not self.isStillNeeded(arg) and self.isSomeoneToDismiss(arg):
+            elif event == 'supplier-connected' and not self.isStillNeeded(*args, **kwargs) and self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'FIRE_MANY'
-                self.doSubstituteSupplier(arg)
-                self.doDisconnectSuppliers(arg)
-            elif event == 'supplier-connected' and not self.isStillNeeded(arg) and not self.isSomeoneToDismiss(arg):
+                self.doSubstituteSupplier(*args, **kwargs)
+                self.doDisconnectSuppliers(*args, **kwargs)
+            elif event == 'supplier-connected' and not self.isStillNeeded(*args, **kwargs) and not self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'READY'
-                self.doSubstituteSupplier(arg)
-                self.doNotifySuppliersChanged(arg)
-            elif event == 'supplier-connected' and self.isStillNeeded(arg):
-                self.doSubstituteSupplier(arg)
+                self.doSubstituteSupplier(*args, **kwargs)
+                self.doNotifySuppliersChanged(*args, **kwargs)
+            elif event == 'supplier-connected' and self.isStillNeeded(*args, **kwargs):
+                self.doSubstituteSupplier(*args, **kwargs)
                 supplier_finder.A('start')
-            elif event == 'search-failed' and not self.isSomeoneToDismiss(arg):
+            elif event == 'search-failed' and not self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'READY'
-                self.doScheduleNextRestart(arg)
-            elif event == 'search-failed' and self.isSomeoneToDismiss(arg):
+                self.doScheduleNextRestart(*args, **kwargs)
+            elif event == 'search-failed' and self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'FIRE_MANY'
-                self.doDisconnectSuppliers(arg)
-                self.doRemoveSuppliers(arg)
-                self.doScheduleNextRestart(arg)
+                self.doDisconnectSuppliers(*args, **kwargs)
+                self.doRemoveSuppliers(*args, **kwargs)
+                self.doScheduleNextRestart(*args, **kwargs)
         #---FIRE_MANY---
         elif self.state == 'FIRE_MANY':
             if event == 'timer-15sec':
                 self.state = 'READY'
-                self.doCloseConnectors(arg)
-                self.doClearDismissList(arg)
-                self.doNotifySuppliersChanged(arg)
-            elif event == 'supplier-state-changed' and not self.isAllDismissed(arg):
-                self.doCloseConnector(arg)
+                self.doCloseConnectors(*args, **kwargs)
+                self.doClearDismissList(*args, **kwargs)
+                self.doNotifySuppliersChanged(*args, **kwargs)
+            elif event == 'supplier-state-changed' and not self.isAllDismissed(*args, **kwargs):
+                self.doCloseConnector(*args, **kwargs)
             elif event == 'restart':
                 self.NeedRestart = True
-            elif event == 'supplier-state-changed' and self.isAllDismissed(arg):
+            elif event == 'supplier-state-changed' and self.isAllDismissed(*args, **kwargs):
                 self.state = 'READY'
-                self.doCloseConnector(arg)
-                self.doClearDismissList(arg)
-                self.doNotifySuppliersChanged(arg)
+                self.doCloseConnector(*args, **kwargs)
+                self.doClearDismissList(*args, **kwargs)
+                self.doNotifySuppliersChanged(*args, **kwargs)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'restart':
                 self.NeedRestart = True
-            elif (event == 'supplier-state-changed' and self.isAllReady(arg)) or event == 'timer-15sec':
+            elif (event == 'supplier-state-changed' and self.isAllReady(*args, **kwargs)) or event == 'timer-15sec':
                 self.state = 'DECISION?'
-                self.doDecideToDismiss(arg)
+                self.doDecideToDismiss(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
@@ -319,7 +324,7 @@ class FireHire(automat.Automat):
                 self.NeedRestart = False
         return None
 
-    def isMoreNeeded(self, arg):
+    def isMoreNeeded(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -328,10 +333,10 @@ class FireHire(automat.Automat):
         # settings.getSuppliersNumberDesired()))
         if '' in contactsdb.suppliers():
             if _Debug:
-                lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty suppliers!!!')
+                lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty supplier!!!')
             return True
-        if isinstance(arg, list):
-            dismissed = arg
+        if isinstance(args[0], list):
+            dismissed = args[0]
         else:
             dismissed = self.dismiss_list
         s = set(contactsdb.suppliers())
@@ -343,7 +348,7 @@ class FireHire(automat.Automat):
                 settings.getSuppliersNumberDesired(), result))
         return result
 
-    def isAllReady(self, arg):
+    def isAllReady(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -351,27 +356,27 @@ class FireHire(automat.Automat):
             len(self.connect_list), contactsdb.num_suppliers()))
         return len(self.connect_list) == 0  # contactsdb.num_suppliers()
 
-    def isAllDismissed(self, arg):
+    def isAllDismissed(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.dismiss_list) == len(self.dismiss_results)
 
-    def isSomeoneToDismiss(self, arg):
+    def isSomeoneToDismiss(self, *args, **kwargs):
         """
         Condition method.
         """
-        if isinstance(arg, list):
-            dismissed = arg
+        if isinstance(args[0], list):
+            dismissed = args[0]
         else:
             dismissed = self.dismiss_list
         return len(dismissed) > 0
 
-    def isStillNeeded(self, arg):
+    def isStillNeeded(self, *args, **kwargs):
         """
         Condition method.
         """
-        supplier_idurl = arg
+        supplier_idurl = args[0]
         current_suppliers = contactsdb.suppliers()
         if supplier_idurl in current_suppliers:
             # this guy is already a supplier, we still need more then
@@ -385,14 +390,13 @@ class FireHire(automat.Automat):
         s = set(needed_suppliers)
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))
-        result = len(s) - \
-            empty_suppliers < settings.getSuppliersNumberDesired()
+        result = len(s) - empty_suppliers < settings.getSuppliersNumberDesired()
         # lg.out(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
         #     contactsdb.num_suppliers(), len(needed_suppliers), len(self.dismiss_list),
         #     len(s), settings.getSuppliersNumberDesired(), result))
         return result
 
-    def isConfigChanged(self, arg):
+    def isConfigChanged(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -403,14 +407,14 @@ class FireHire(automat.Automat):
         return self.configs[0] != curconfigs[
             0] or self.configs[1] != curconfigs[1]
 
-    def isExistSomeSuppliers(self, arg):
+    def isExistSomeSuppliers(self, *args, **kwargs):
         """
         Condition method.
         """
         return contactsdb.num_suppliers() > 0 and contactsdb.suppliers().count(
             '') < contactsdb.num_suppliers()
 
-    def doSaveConfig(self, arg):
+    def doSaveConfig(self, *args, **kwargs):
         """
         Action method.
         """
@@ -419,7 +423,7 @@ class FireHire(automat.Automat):
             diskspace.GetBytesFromString(
                 settings.getNeededString()))
 
-    def doConnectSuppliers(self, arg):
+    def doConnectSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -432,12 +436,10 @@ class FireHire(automat.Automat):
                 sc = supplier_connector.create(
                     supplier_idurl=supplier_idurl,
                     customer_idurl=my_id.getLocalID(),
-                    family_position=pos,
-                    ecc_map=eccmap.Current().name,
                 )
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
-            sc.automat('connect')
+            sc.automat('connect', family_position=pos, ecc_map=eccmap.Current().name)
             supplier_contact_status = contact_status.getInstance(supplier_idurl)
             if supplier_contact_status:
                 supplier_contact_status.addStateChangedCallback(
@@ -445,7 +447,7 @@ class FireHire(automat.Automat):
                     newstate='OFFLINE',
                 )
 
-    def doDecideToDismiss(self, arg):
+    def doDecideToDismiss(self, *args, **kwargs):
         """
         Action method.
         """
@@ -547,17 +549,17 @@ class FireHire(automat.Automat):
         lg.info('will replace supplier %s' % result[0])
         self.automat('made-decision', [result[0], ])
 
-    def doRememberSuppliers(self, arg):
+    def doRememberSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
-        self.dismiss_list = arg
+        self.dismiss_list = args[0]
 
-    def doSubstituteSupplier(self, arg):
+    def doSubstituteSupplier(self, *args, **kwargs):
         """
         Action method.
         """
-        new_idurl = arg
+        new_idurl = strng.to_bin(*args, **kwargs)
         current_suppliers = list(contactsdb.suppliers())
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)
@@ -605,7 +607,7 @@ class FireHire(automat.Automat):
                 ))
         self.restart_interval = 1.0
 
-    def doRemoveSuppliers(self, arg):
+    def doRemoveSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -640,7 +642,7 @@ class FireHire(automat.Automat):
             ))
         lg.out(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
 
-    def doDisconnectSuppliers(self, arg):
+    def doDisconnectSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -658,11 +660,11 @@ class FireHire(automat.Automat):
             if supplier_contact_status:
                 supplier_contact_status.removeStateChangedCallback(self._on_supplier_contact_status_state_changed)
 
-    def doCloseConnector(self, arg):
+    def doCloseConnector(self, *args, **kwargs):
         """
         Action method.
         """
-        supplier_idurl, _ = arg
+        supplier_idurl, _ = args[0]
         sc = supplier_connector.by_idurl(supplier_idurl)
         if supplier_idurl in self.dismiss_list:
             self.dismiss_list.remove(supplier_idurl)
@@ -671,7 +673,7 @@ class FireHire(automat.Automat):
         else:
             raise Exception('supplier_connector must exist')
 
-    def doCloseConnectors(self, arg):
+    def doCloseConnectors(self, *args, **kwargs):
         """
         Action method.
         """
@@ -682,34 +684,31 @@ class FireHire(automat.Automat):
             if sc:
                 sc.automat('shutdown')
 
-    def doClearDismissList(self, arg):
+    def doClearDismissList(self, *args, **kwargs):
         """
         Action method.
         """
         self.dismiss_list = []
 
-    def doScheduleNextRestart(self, arg):
+    def doScheduleNextRestart(self, *args, **kwargs):
         """
         Action method.
         """
         if not self.restart_task:
-            self.restart_task = reactor.callLater(
+            self.restart_task = reactor.callLater(  # @UndefinedVariable
                 self.restart_interval, self._scheduled_restart)
-            lg.out(
-                10, 'fire_hire.doScheduleNextRestart after %r sec.' %
-                self.restart_interval)
+            lg.out(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
             self.restart_interval *= 1.1
         else:
-            lg.out(
-                10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' %
-                (time.time() - self.restart_task.getTime()))
+            lg.out(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
+                time.time() - self.restart_task.getTime()))
 
-    def doNotifySuppliersChanged(self, arg):
+    def doNotifySuppliersChanged(self, *args, **kwargs):
         if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('suppliers-changed')
 
-    def doNotifyFinished(self, arg):
+    def doNotifyFinished(self, *args, **kwargs):
         if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('fire-hire-finished')
@@ -730,7 +729,7 @@ class FireHire(automat.Automat):
             return
         self.automat('supplier-state-changed', (idurl, newstate))
 
-    def _on_supplier_contact_status_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_supplier_contact_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.out(6, 'fire_hire._on_supplier_contact_status_state_changed  %s -> %s, own state is %s' % (
             oldstate, newstate, self.state))
 #         if newstate == 'OFFLINE' and oldstate != 'OFFLINE':

@@ -162,18 +162,19 @@ def cancel_task(cmd, first_parameter):
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _RaidWorker
     if _RaidWorker is None:
+        # small workaround to not create a new instance during shutdown process
         if event is None or event != 'init':
             return None
         # set automat name and starting state here
         _RaidWorker = RaidWorker('raid_worker', 'AT_STARTUP', 6, True)
     if event is not None:
-        _RaidWorker.automat(event, arg)
+        _RaidWorker.automat(event, *args, **kwargs)
     return _RaidWorker
 
 
@@ -198,93 +199,93 @@ class RaidWorker(automat.Automat):
         self.processor = None
         self.callbacks = {}
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFF'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---OFF---
         elif self.state == 'OFF':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doKillProcess(arg)
-                self.doDestroyMe(arg)
+                self.doKillProcess(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'new-task':
-                self.doAddTask(arg)
-                self.doStartProcess(arg)
-            elif event == 'process-started' and self.isMoreTasks(arg):
+                self.doAddTask(*args, **kwargs)
+                self.doStartProcess(*args, **kwargs)
+            elif event == 'process-started' and self.isMoreTasks(*args, **kwargs):
                 self.state = 'WORK'
-                self.doStartTask(arg)
-            elif event == 'process-started' and not self.isMoreTasks(arg):
+                self.doStartTask(*args, **kwargs)
+            elif event == 'process-started' and not self.isMoreTasks(*args, **kwargs):
                 self.state = 'READY'
         #---READY---
         elif self.state == 'READY':
             if event == 'new-task':
                 self.state = 'WORK'
-                self.doAddTask(arg)
-                self.doStartTask(arg)
+                self.doAddTask(*args, **kwargs)
+                self.doStartTask(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doKillProcess(arg)
-                self.doDestroyMe(arg)
+                self.doKillProcess(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-1min':
                 self.state = 'OFF'
-                self.doKillProcess(arg)
+                self.doKillProcess(*args, **kwargs)
         #---WORK---
         elif self.state == 'WORK':
             if event == 'new-task':
-                self.doAddTask(arg)
-                self.doStartTask(arg)
+                self.doAddTask(*args, **kwargs)
+                self.doStartTask(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doReportTasksFailed(arg)
-                self.doKillProcess(arg)
-                self.doDestroyMe(arg)
-            elif event == 'task-done' and self.isMoreTasks(arg):
-                self.doReportTaskDone(arg)
-                self.doPopTask(arg)
-                self.doStartTask(arg)
-            elif event == 'task-started' and self.isMoreTasks(arg):
-                self.doStartTask(arg)
-            elif event == 'task-done' and not self.isMoreActive(arg) and not self.isMoreTasks(arg):
+                self.doReportTasksFailed(*args, **kwargs)
+                self.doKillProcess(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'task-done' and self.isMoreTasks(*args, **kwargs):
+                self.doReportTaskDone(*args, **kwargs)
+                self.doPopTask(*args, **kwargs)
+                self.doStartTask(*args, **kwargs)
+            elif event == 'task-started' and self.isMoreTasks(*args, **kwargs):
+                self.doStartTask(*args, **kwargs)
+            elif event == 'task-done' and not self.isMoreActive(*args, **kwargs) and not self.isMoreTasks(*args, **kwargs):
                 self.state = 'READY'
-                self.doReportTaskDone(arg)
-                self.doPopTask(arg)
-            elif event == 'task-done' and self.isMoreActive(arg) and not self.isMoreTasks(arg):
-                self.doReportTaskDone(arg)
-                self.doPopTask(arg)
+                self.doReportTaskDone(*args, **kwargs)
+                self.doPopTask(*args, **kwargs)
+            elif event == 'task-done' and self.isMoreActive(*args, **kwargs) and not self.isMoreTasks(*args, **kwargs):
+                self.doReportTaskDone(*args, **kwargs)
+                self.doPopTask(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def isMoreTasks(self, arg):
+    def isMoreTasks(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.tasks) > 0
 
-    def isMoreActive(self, arg):
+    def isMoreActive(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.activetasks) > 1
 
-    def doPopTask(self, arg):
+    def doPopTask(self, *args, **kwargs):
         """
         Action method.
         """
-        task_id, cmd, params, result = arg
+        task_id, cmd, params, result = args[0]
         self.activetasks.pop(task_id)
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        reactor.addSystemEventTrigger('after', 'shutdown', self._kill_processor)
+        reactor.addSystemEventTrigger('after', 'shutdown', self._kill_processor)  # @UndefinedVariable
 
-    def doStartProcess(self, arg):
+    def doStartProcess(self, *args, **kwargs):
         """
         Action method.
         """
@@ -301,7 +302,7 @@ class RaidWorker(automat.Automat):
 
         self.automat('process-started')
 
-    def doKillProcess(self, arg):
+    def doKillProcess(self, *args, **kwargs):
         """
         Action method.
         """
@@ -309,16 +310,16 @@ class RaidWorker(automat.Automat):
         self.processor = None
         self.automat('process-finished')
 
-    def doAddTask(self, arg):
+    def doAddTask(self, *args, **kwargs):
         """
         Action method.
         """
-        cmd, params, callback = arg
+        cmd, params, callback = args[0]
         self.task_id += 1
         self.tasks.append((self.task_id, cmd, params))
         self.callbacks[self.task_id] = callback
 
-    def doStartTask(self, arg):
+    def doStartTask(self, *args, **kwargs):
         """
         Action method.
         """
@@ -346,16 +347,16 @@ class RaidWorker(automat.Automat):
         self.activetasks[task_id] = (proc, cmd, params)
         lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
             task_id, len(self.activetasks), self.processor.ncpus))
-        reactor.callLater(0.01, self.automat, 'task-started', task_id)
+        reactor.callLater(0.01, self.automat, 'task-started', task_id)  # @UndefinedVariable
 
-    def doReportTaskDone(self, arg):
+    def doReportTaskDone(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            task_id, cmd, params, result = arg
+            task_id, cmd, params, result = args[0]
             cb = self.callbacks.pop(task_id)
-            reactor.callLater(0, cb, cmd, params, result)
+            reactor.callLater(0, cb, cmd, params, result)  # @UndefinedVariable
             if result is not None:
                 lg.out(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
                     len(self.callbacks), len(self.tasks), len(self.activetasks)))
@@ -365,20 +366,20 @@ class RaidWorker(automat.Automat):
         except:
             lg.exc()
 
-    def doReportTasksFailed(self, arg):
+    def doReportTasksFailed(self, *args, **kwargs):
         """
         Action method.
         """
         for i in range(len(self.tasks)):
             task_id, cmd, params = self.tasks[i]
             cb = self.callbacks.pop(task_id)
-            reactor.callLater(0, cb, cmd, params, None)
+            reactor.callLater(0, cb, cmd, params, None)  # @UndefinedVariable
         for task_id, task_data in self.activetasks.items():
             cb = self.callbacks.pop(task_id)
             _, cmd, params = task_data
-            reactor.callLater(0, cb, cmd, params, None)
+            reactor.callLater(0, cb, cmd, params, None)  # @UndefinedVariable
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
@@ -406,9 +407,9 @@ def main():
         print(cmd, taskdata, result)
     bpio.init()
     lg.set_debug_level(20)
-    reactor.callWhenRunning(A, 'init')
-    reactor.callLater(0.5, A, 'new-task', ('make', _cb, ('sdfsdf', '45', '324', '45')))
-    reactor.run()
+    reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
+    reactor.callLater(0.5, A, 'new-task', ('make', _cb, ('sdfsdf', '45', '324', '45')))  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 if __name__ == "__main__":
     main()

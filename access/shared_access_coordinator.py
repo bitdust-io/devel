@@ -188,12 +188,12 @@ class SharedAccessCoordinator(automat.Automat):
         """
         self.result_defer = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when shared_access_coordinator() state were changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in the shared_access_coordinator()
         but its state was not changed.
@@ -212,7 +212,7 @@ class SharedAccessCoordinator(automat.Automat):
         unregister_share(self)
         return automat.Automat.unregister(self)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
@@ -220,104 +220,104 @@ class SharedAccessCoordinator(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'restart' or event == 'new-private-key-registered':
                 self.state = 'DHT_LOOKUP'
-                self.doInit(arg)
-                self.doDHTLookupSuppliers(arg)
+                self.doInit(*args, **kwargs)
+                self.doDHTLookupSuppliers(*args, **kwargs)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'supplier-connected':
-                self.doRequestSupplierFiles(arg)
-                self.doCheckAllConnected(arg)
+                self.doRequestSupplierFiles(*args, **kwargs)
+                self.doCheckAllConnected(*args, **kwargs)
             elif event == 'customer-list-files-received':
-                self.doProcessCustomerListFiles(arg)
+                self.doProcessCustomerListFiles(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-10sec':
                 self.state = 'DISCONNECTED'
-                self.doReportDisconnected(arg)
-            elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(arg) ) ) and not self.isAnyFilesShared(arg):
+                self.doReportDisconnected(*args, **kwargs)
+            elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(*args, **kwargs) ) ) and not self.isAnyFilesShared(*args, **kwargs):
                 self.state = 'LIST_FILES?'
-            elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(arg) ) ) and self.isAnyFilesShared(arg):
+            elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(*args, **kwargs) ) ) and self.isAnyFilesShared(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doRequestRandomPacket(arg)
+                self.doRequestRandomPacket(*args, **kwargs)
         #---LIST_FILES?---
         elif self.state == 'LIST_FILES?':
             if event == 'supplier-connected':
-                self.doRequestSupplierFiles(arg)
+                self.doRequestSupplierFiles(*args, **kwargs)
             elif event == 'customer-list-files-received':
                 self.state = 'VERIFY?'
-                self.doProcessCustomerListFiles(arg)
-                self.doRequestRandomPacket(arg)
+                self.doProcessCustomerListFiles(*args, **kwargs)
+                self.doRequestRandomPacket(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-10sec':
                 self.state = 'DISCONNECTED'
-                self.doReportDisconnected(arg)
+                self.doReportDisconnected(*args, **kwargs)
         #---VERIFY?---
         elif self.state == 'VERIFY?':
             if event == 'supplier-connected':
-                self.doRequestSupplierFiles(arg)
+                self.doRequestSupplierFiles(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'ack' and self.isPacketValid(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'ack' and self.isPacketValid(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doReportSuccess(arg)
-                self.doDestroyMe(arg)
-            elif event == 'fail' or ( event == 'ack' and not self.isPacketValid(arg) ):
+                self.doReportSuccess(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'fail' or ( event == 'ack' and not self.isPacketValid(*args, **kwargs) ):
                 self.state = 'DISCONNECTED'
-                self.doReportDisconnected(arg)
+                self.doReportDisconnected(*args, **kwargs)
             elif event == 'customer-list-files-received':
-                self.doProcessCustomerListFiles(arg)
+                self.doProcessCustomerListFiles(*args, **kwargs)
         #---DHT_LOOKUP---
         elif self.state == 'DHT_LOOKUP':
             if event == 'customer-list-files-received':
-                self.doProcessCustomerListFiles(arg)
+                self.doProcessCustomerListFiles(*args, **kwargs)
             elif event == 'dht-lookup-ok':
                 self.state = 'SUPPLIERS?'
-                self.doConnectCustomerSuppliers(arg)
+                self.doConnectCustomerSuppliers(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'fail' or event == 'timer-1min':
                 self.state = 'DISCONNECTED'
-                self.doReportDisconnected(arg)
+                self.doReportDisconnected(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'restart':
                 self.state = 'DHT_LOOKUP'
-                self.doDHTLookupSuppliers(arg)
+                self.doDHTLookupSuppliers(*args, **kwargs)
             elif event == 'customer-list-files-received':
-                self.doProcessCustomerListFiles(arg)
+                self.doProcessCustomerListFiles(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'customer-list-files-received':
-                self.doProcessCustomerListFiles(arg)
+                self.doProcessCustomerListFiles(*args, **kwargs)
             elif event == 'timer-1min':
-                self.doCheckReconnectSuppliers(arg)
+                self.doCheckReconnectSuppliers(*args, **kwargs)
             elif event == 'supplier-failed' or event == 'restart':
                 self.state = 'DHT_LOOKUP'
-                self.doDHTLookupSuppliers(arg)
+                self.doDHTLookupSuppliers(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def isPacketValid(self, arg):
+    def isPacketValid(self, *args, **kwargs):
         """
         Condition method.
         """
         # TODO:
         return True
 
-    def isAnySupplierConnected(self, arg):
+    def isAnySupplierConnected(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -327,20 +327,20 @@ class SharedAccessCoordinator(automat.Automat):
                 return True
         return False
 
-    def isAnyFilesShared(self, arg):
+    def isAnyFilesShared(self, *args, **kwargs):
         """
         Condition method.
         """
         return backup_fs.HasChilds('', iter=backup_fs.fs(self.customer_idurl))
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         # TODO : put in a seprate state in the state machine
         identitycache.immediatelyCaching(self.customer_idurl)
 
-    def doDHTLookupSuppliers(self, arg):
+    def doDHTLookupSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -349,12 +349,12 @@ class SharedAccessCoordinator(automat.Automat):
         d.addCallback(lambda dht_result: self.automat('dht-lookup-ok', dht_result))
         d.addErrback(lambda err: self.automat('fail', err))
 
-    def doConnectCustomerSuppliers(self, arg):
+    def doConnectCustomerSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            self.known_suppliers_list = [_f for _f in arg['suppliers'] if _f]
+            self.known_suppliers_list = [_f for _f in args[0]['suppliers'] if _f]
         except:
             lg.exc()
             return
@@ -373,22 +373,22 @@ class SharedAccessCoordinator(automat.Automat):
             sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
             sc.automat('connect')
 
-    def doRequestSupplierFiles(self, arg):
+    def doRequestSupplierFiles(self, *args, **kwargs):
         """
         Action method.
         """
         p2p_service.SendListFiles(
-            target_supplier=arg,
+            target_supplier=args[0],
             customer_idurl=self.customer_idurl,
             key_id=self.key_id,
         )
 
-    def doProcessCustomerListFiles(self, arg):
+    def doProcessCustomerListFiles(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doCheckAllConnected(self, arg):
+    def doCheckAllConnected(self, *args, **kwargs):
         """
         Action method.
         """
@@ -398,13 +398,13 @@ class SharedAccessCoordinator(automat.Automat):
                 return
         self.automat('all-suppliers-connected')
 
-    def doCheckReconnectSuppliers(self, arg):
+    def doCheckReconnectSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
         # TODO:
 
-    def doRequestRandomPacket(self, arg):
+    def doRequestRandomPacket(self, *args, **kwargs):
         """
         Action method.
         """
@@ -412,7 +412,7 @@ class SharedAccessCoordinator(automat.Automat):
         # to one of suppliers - this way we can be sure that shared data is available
         self.automat('ack')
 
-    def doReportSuccess(self, arg):
+    def doReportSuccess(self, *args, **kwargs):
         """
         Action method.
         """
@@ -420,7 +420,7 @@ class SharedAccessCoordinator(automat.Automat):
         if self.result_defer:
             self.result_defer.callback(True)
 
-    def doReportDisconnected(self, arg):
+    def doReportDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
@@ -428,7 +428,7 @@ class SharedAccessCoordinator(automat.Automat):
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

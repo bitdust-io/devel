@@ -129,6 +129,7 @@ def UrlFilename(url):
     nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
     'http###id.bitdust.io#veselin.xml'
     """
+    # TODO: switch all that to global ID format
     if not url:
         return None
     result = strng.to_text(url)

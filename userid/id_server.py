@@ -85,7 +85,7 @@ _IdServer = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -95,7 +95,7 @@ def A(event=None, arg=None):
         _IdServer = IdServer('id_server', 'AT_STARTUP', 2, True)
     if event is None:
         return _IdServer
-    _IdServer.automat(event, arg)
+    _IdServer.automat(event, *args, **kwargs)
 
 
 class IdServer(automat.Automat):
@@ -115,32 +115,32 @@ class IdServer(automat.Automat):
         self.tcp_port = settings.IdentityServerPort()
         self.hostname = ''
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---LISTEN---
         elif self.state == 'LISTEN':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doSetDown(arg)
-                self.doDestroyMe(arg)
+                self.doSetDown(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'incoming-identity-file':
-                self.doCheckAndSaveIdentity(arg)
+                self.doCheckAndSaveIdentity(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'DOWN'
                 self.Restart = False
-                self.doSetDown(arg)
+                self.doSetDown(*args, **kwargs)
         #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'LISTEN'
-                self.doSetUp(arg)
+                self.doSetUp(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -148,23 +148,23 @@ class IdServer(automat.Automat):
         elif self.state == 'DOWN':
             if event == 'server-down' and self.Restart:
                 self.state = 'LISTEN'
-                self.doSetUp(arg)
+                self.doSetUp(*args, **kwargs)
             elif event == 'start':
                 self.Restart = True
             elif event == 'server-down' and not self.Restart:
                 self.state = 'STOPPED'
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.web_port, self.tcp_port = arg
+        self.web_port, self.tcp_port = args[0]
 
-    def doSetUp(self, arg):
+    def doSetUp(self, *args, **kwargs):
         """
         Action method.
         """
@@ -180,20 +180,20 @@ class IdServer(automat.Automat):
         root = WebRoot()
         root.putChild(b'', WebMainPage())
         try:
-            self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())
+            self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())  # @UndefinedVariable
             lg.out(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
         except:
             lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.tcp_port))
             lg.exc()
         try:
-            self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))
+            self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))  # @UndefinedVariable
             lg.out(4, "            have started web server at port %d   hostname=%s" % (
                 self.web_port, strng.to_text(self.hostname), ))
         except:
             lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
             lg.exc()
 
-    def doSetDown(self, arg):
+    def doSetDown(self, *args, **kwargs):
         """
         Action method.
         """
@@ -213,21 +213,21 @@ class IdServer(automat.Automat):
         self.tcp_listener = None
         DeferredList(shutlist).addBoth(lambda x: self.automat('server-down'))
 
-    def doCheckAndSaveIdentity(self, arg):
+    def doCheckAndSaveIdentity(self, *args, **kwargs):
         """
         Action method.
         """
-        self._save_identity(arg)
+        self._save_identity(*args, **kwargs)
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
         self.destroy()
         global _IdServer
         _IdServer = None
-        if arg and len(arg) > 0 and isinstance(arg[-1], Deferred):
-            arg[-1].callback(True)
+        if args and args[0] and len(args[0]) > 0 and isinstance(args[0][-1], Deferred):
+            args[0][-1].callback(True)
 
     def _save_identity(self, inputfilename):
         """
@@ -474,11 +474,11 @@ def main():
         tcp_port = settings.getIdServerTCPPort()
     lg.set_debug_level(20)
     lg.out(2, 'starting ID server ...')
-    reactor.addSystemEventTrigger('before', 'shutdown',
+    reactor.addSystemEventTrigger('before', 'shutdown',  # @UndefinedVariable
                                   A().automat, 'shutdown')
-    reactor.callWhenRunning(A, 'init', (web_port, tcp_port))
-    reactor.callLater(0, A, 'start')
-    reactor.run()
+    reactor.callWhenRunning(A, 'init', (web_port, tcp_port))  # @UndefinedVariable
+    reactor.callLater(0, A, 'start')  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
     lg.out(2, 'reactor stopped, EXIT')
 
 #------------------------------------------------------------------------------

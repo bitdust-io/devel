@@ -43,9 +43,9 @@ def test_identity_backup_restore():
     assert response.json()['status'] == 'ERROR'
 
     for i in range(5):
-        response = requests.get(url=tunnel_url('customer_restore', 'network/connected/v1?wait_timeout=1'))
+        response = requests.get(url=tunnel_url('customer_restore', 'network/connected/v1?wait_timeout=5'))
         if response.json()['status'] == 'OK':
             break
-        time.sleep(1)
+        time.sleep(5)
     else:
         assert False, 'customer_restore was not able to join the network after identity recover'

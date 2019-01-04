@@ -154,6 +154,7 @@ class Node(object):
         # Start refreshing k-buckets periodically, if necessary
         self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode)  # IGNORE:E1101
         # twisted.internet.reactor.run()
+        return self._joinDeferred
 
     def printContacts(self):
         if _Debug: print('\n\nNODE CONTACTS\n===============')
@@ -526,6 +527,7 @@ class Node(object):
                     # Update the "last accessed" timestamp for the appropriate k-bucket
                     self._routingTable.touchKBucket(key)
                 if len(shortlist) == 0:
+                    if _Debug: print("This node doesn't know of any other nodes !!!!!")
                     # This node doesn't know of any other nodes
                     fakeDf = defer.Deferred()
                     fakeDf.callback([])
@@ -774,6 +776,7 @@ class Node(object):
         now = int(time.time())
         self._dataStore.setItem(b'nodeState', state, now, now, self.id)
         if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
+        return args
 
     def _joinNetworkFailed(self, err):
         if _Debug: print('failed joining DHT network')

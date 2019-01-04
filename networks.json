@@ -1,9 +1,15 @@
 {
     "main": {
         "description": "BitDust Main network",
+        "repository": "https://github.com/bitdust-io/public.git",
         "dht-seeds": [
             {
                 "host": "p2p-id.ru",
+                "udp_port": 14441,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
+            },
+            {
+                "host": "p2p-alice.ai",
                 "udp_port": 14441,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
             },
@@ -19,6 +25,11 @@
             },
         	{
                 "host": "new-vennep.ai",
+                "udp_port": 14441,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
+            },
+            {
+                "host": "seed.bitdust.io",
                 "udp_port": 14441,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
             }
@@ -31,6 +42,12 @@
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
             },
             {
+                "host": "p2p-alice.ai",
+                "http_port": 80,
+                "tcp_port": 6661,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
+            },
+            {
                 "host": "bitdust.ai",
                 "http_port": 80,
                 "tcp_port": 6661,
@@ -44,6 +61,12 @@
             },
             {
                 "host": "new-vennep.ai",
+                "http_port": 80,
+                "tcp_port": 6661,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
+            },
+            {
+                "host": "seed.bitdust.io",
                 "http_port": 80,
                 "tcp_port": 6661,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
@@ -52,12 +75,8 @@
     },
     "development": {
         "description": "BitDust Test network",
+        "repository": "https://github.com/bitdust-io/devel.git",
         "dht-seeds": [
-            {
-                "host": "bitdust.io",
-                "udp_port": 14441,
-                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
-            },
             {
                 "host": "blog.bitdust.io",
                 "udp_port": 14441,
@@ -65,12 +84,6 @@
             }
         ],
         "identity-servers": [
-            {
-                "host": "bitdust.io",
-                "http_port": 8084,
-                "tcp_port": 6661,
-                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
-            },
             {
                 "host": "blog.bitdust.io",
                 "http_port": 80,
@@ -81,6 +94,7 @@
     },
     "docker": {
         "description": "BitDust Docker network for regression tests",
+        "repository": null,
         "dht-seeds": [
             {
                 "host": "dht_seed_1",

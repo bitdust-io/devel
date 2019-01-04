@@ -174,7 +174,7 @@ def get_suppliers(customer_idurl):
         rules=get_rules('suppliers'),
     )
 
-def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher=None, expire=60*60):
+def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60*60):
     return dht_service.set_valid_data(
         key=dht_service.make_key(
             key=strng.to_text(customer_idurl),
@@ -184,7 +184,7 @@ def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publis
             'type': 'suppliers',
             'timestamp': utime.get_sec1970(),
             'revision': revision,
-            'publisher': publisher,
+            'publisher_idurl': publisher_idurl,
             'customer_idurl': customer_idurl,
             'ecc_map': ecc_map,
             'suppliers': suppliers_list,

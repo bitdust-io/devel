@@ -20,7 +20,7 @@ def send_message(random_message):
     assert response.json()['status'] == 'OK', response.json()
 
 
-def test_customer_1_send_message_to_customer_2():
+def test_send_message_customer_1_to_customer_2():
     random_message = base64.b32encode(os.urandom(20)).decode()
 
     #: send message in different thread to get one in blocked `receive` call

@@ -121,7 +121,7 @@ _BackupMonitor = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -134,7 +134,7 @@ def A(event=None, arg=None):
             log_transitions=_Debug,
         )
     if event is not None:
-        _BackupMonitor.automat(event, arg)
+        _BackupMonitor.automat(event, *args, **kwargs)
     return _BackupMonitor
 
 
@@ -164,7 +164,7 @@ class BackupMonitor(automat.Automat):
         self.backups_progress_last_iteration = 0
         self.last_execution_time = 0
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         This method is called every time when my state is changed.
         """
@@ -172,7 +172,7 @@ class BackupMonitor(automat.Automat):
         if newstate == 'READY':
             self.automat('instant')
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         from customer import fire_hire
         from customer import data_sender
         from customer import list_files_orator
@@ -181,21 +181,21 @@ class BackupMonitor(automat.Automat):
         #---READY---
         if self.state == 'READY':
             if event == 'timer-5sec':
-                self.doOverallCheckUp(arg)
+                self.doOverallCheckUp(*args, **kwargs)
             elif event == 'restart' or event == 'suppliers-changed' or (event == 'instant' and self.RestartAgain):
                 self.state = 'FIRE_HIRE'
                 self.RestartAgain = False
-                self.doRememberSuppliers(arg)
+                self.doRememberSuppliers(*args, **kwargs)
                 fire_hire.A('restart')
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
-            if (event == 'list_files_orator.state' and arg == 'NO_FILES'):
+            if (event == 'list_files_orator.state' and args[0] == 'NO_FILES'):
                 self.state = 'READY'
-            elif (event == 'list_files_orator.state' and arg == 'SAW_FILES'):
+            elif (event == 'list_files_orator.state' and args[0] == 'SAW_FILES'):
                 self.state = 'LIST_BACKUPS'
                 index_synchronizer.A('pull')
                 data_sender.A('restart')
-                self.doPrepareListBackups(arg)
+                self.doPrepareListBackups(*args, **kwargs)
             elif event == 'restart':
                 self.RestartAgain = True
             elif event == 'suppliers-changed':
@@ -216,9 +216,9 @@ class BackupMonitor(automat.Automat):
                 fire_hire.A('restart')
         #---REBUILDING---
         elif self.state == 'REBUILDING':
-            if (event == 'backup_rebuilder.state' and arg in ['DONE', 'STOPPED']):
+            if (event == 'backup_rebuilder.state' and args[0] in ['DONE', 'STOPPED']):
                 self.state = 'READY'
-                self.doCleanUpBackups(arg)
+                self.doCleanUpBackups(*args, **kwargs)
                 data_sender.A('restart')
             elif event == 'restart' or event == 'suppliers-changed':
                 self.state = 'FIRE_HIRE'
@@ -226,18 +226,18 @@ class BackupMonitor(automat.Automat):
                 fire_hire.A('restart')
         #---FIRE_HIRE---
         elif self.state == 'FIRE_HIRE':
-            if event == 'suppliers-changed' and self.isSuppliersNumberChanged(arg):
+            if event == 'suppliers-changed' and self.isSuppliersNumberChanged(*args, **kwargs):
                 self.state = 'LIST_FILES'
-                self.doDeleteAllBackups(arg)
-                self.doRememberSuppliers(arg)
+                self.doDeleteAllBackups(*args, **kwargs)
+                self.doRememberSuppliers(*args, **kwargs)
                 list_files_orator.A('need-files')
             elif event == 'fire-hire-finished':
                 self.state = 'LIST_FILES'
                 list_files_orator.A('need-files')
-            elif event == 'suppliers-changed' and not self.isSuppliersNumberChanged(arg):
+            elif event == 'suppliers-changed' and not self.isSuppliersNumberChanged(*args, **kwargs):
                 self.state = 'LIST_FILES'
-                self.doUpdateSuppliers(arg)
-                self.doRememberSuppliers(arg)
+                self.doUpdateSuppliers(*args, **kwargs)
+                self.doRememberSuppliers(*args, **kwargs)
                 list_files_orator.A('need-files')
             elif event == 'restart':
                 self.RestartAgain = True
@@ -248,13 +248,13 @@ class BackupMonitor(automat.Automat):
                 self.RestartAgain = False
         return None
 
-    def isSuppliersNumberChanged(self, arg):
+    def isSuppliersNumberChanged(self, *args, **kwargs):
         """
         Condition method.
         """
         return contactsdb.num_suppliers() != len(self.current_suppliers)
 
-    def doRememberSuppliers(self, arg):
+    def doRememberSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -262,7 +262,7 @@ class BackupMonitor(automat.Automat):
         self.backups_progress_last_iteration = 0
         self.last_execution_time = time.time()
 
-    def doDeleteAllBackups(self, arg):
+    def doDeleteAllBackups(self, *args, **kwargs):
         """
         Action method.
         """
@@ -281,7 +281,7 @@ class BackupMonitor(automat.Automat):
         from customer import io_throttle
         io_throttle.DeleteAllSuppliers()
 
-    def doUpdateSuppliers(self, arg):
+    def doUpdateSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
@@ -302,7 +302,7 @@ class BackupMonitor(automat.Automat):
         # finally save the list of current suppliers and clear all stats
         # backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
 
-    def doPrepareListBackups(self, arg):
+    def doPrepareListBackups(self, *args, **kwargs):
         from storage import backup_rebuilder
         if backup_control.HasRunningBackup():
             # if some backups are running right now no need to rebuild something - too much use of CPU
@@ -324,7 +324,7 @@ class BackupMonitor(automat.Automat):
         lg.out(6, '    %s' % allBackupIDs)
         self.automat('list-backups-done', allBackupIDs)
 
-    def doCleanUpBackups(self, arg):
+    def doCleanUpBackups(self, *args, **kwargs):
         # here we check all backups we have and remove the old one
         # user can set how many versions of that file or folder to keep
         # other versions (older) will be removed here
@@ -394,11 +394,11 @@ class BackupMonitor(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups  sending "restart", backups_progress_last_iteration=%s' % 
                     self.backups_progress_last_iteration)
-            reactor.callLater(1, self.automat, 'restart')
+            reactor.callLater(1, self.automat, 'restart')  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
-    def doOverallCheckUp(self, arg):
+    def doOverallCheckUp(self, *args, **kwargs):
         """
         Action method.
         """

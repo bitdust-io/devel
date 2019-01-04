@@ -37,7 +37,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ def init(port=None):
     try:
         api_resource = BitDustRESTHTTPServer()
         site = BitDustAPISite(api_resource, timeout=None)
-        _APIListener = reactor.listenTCP(port, site)
+        _APIListener = reactor.listenTCP(port, site)  # @UndefinedVariable
     except:
         lg.exc()
     lg.out(4, 'api_rest_http_server.init')
@@ -154,6 +154,18 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     """
     A set of API method to interract and control locally running BitDust process.
     """
+
+    #------------------------------------------------------------------------------
+
+    def log_request(self, request, callback, args):
+        if _Debug:
+            try:
+                _args = request.args or _request_data(request)
+                lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
+                    request.method, request.uri, callback.im_func.func_name, _args))
+            except:
+                pass
+        return None
 
     #------------------------------------------------------------------------------
 

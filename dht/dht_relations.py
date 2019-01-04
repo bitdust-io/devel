@@ -52,6 +52,8 @@ from dht import dht_records
 
 from contacts import contactsdb
 
+from userid import my_id
+
 #------------------------------------------------------------------------------
 
 def read_customer_suppliers(customer_idurl):
@@ -61,9 +63,9 @@ def read_customer_suppliers(customer_idurl):
         try:
             _ecc_map = dht_value['ecc_map']
             _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
+            _publisher_idurl = dht_value.get('publisher_idurl')
             _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
             _revision = dht_value.get('revision')
-            _publisher = dht_value.get('publisher')
             _timestamp = dht_value.get('timestamp')
         except:
             lg.exc()
@@ -74,19 +76,27 @@ def read_customer_suppliers(customer_idurl):
             'ecc_map': _ecc_map,
             'customer_idurl': _customer_idurl,
             'revision': _revision,
-            'publisher': _publisher,
+            'publisher_idurl': _publisher_idurl,
             'timestamp': _timestamp,
         }
-        contactsdb.set_suppliers(_suppliers_list, customer_idurl=customer_idurl)
-        contactsdb.save_suppliers(customer_idurl=customer_idurl)
+        if customer_idurl == my_id.getLocalIDURL():
+            lg.warn('skip writing my own suppliers list received from DHT')
+        else:
+            contactsdb.set_suppliers(_suppliers_list, customer_idurl=customer_idurl)
+            contactsdb.save_suppliers(customer_idurl=customer_idurl)
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
         result.callback(ret)
         return None
 
     def _on_error(err):
+        try:
+            msg = err.getErrorMessage()
+        except:
+            msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (customer_idurl, err, ))
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (
+                customer_idurl, msg, ))
         result.callback(None)
         return None
 
@@ -96,13 +106,16 @@ def read_customer_suppliers(customer_idurl):
     return result
 
 
-def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher=None, ):
-    contactsdb.set_suppliers(suppliers_list, customer_idurl=customer_idurl)
-    contactsdb.save_suppliers(customer_idurl=customer_idurl)
+def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher_idurl=None, ):
+    if customer_idurl == my_id.getLocalIDURL():
+        lg.warn('skip writing my own suppliers list which suppose to be written to DHT')
+    else:
+        contactsdb.set_suppliers(suppliers_list, customer_idurl=customer_idurl)
+        contactsdb.save_suppliers(customer_idurl=customer_idurl)
     return dht_records.set_suppliers(
         customer_idurl=customer_idurl,
         suppliers_list=suppliers_list,
         ecc_map=ecc_map,
         revision=revision,
-        publisher=publisher,
+        publisher_idurl=publisher_idurl,
     )

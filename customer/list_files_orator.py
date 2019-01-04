@@ -74,7 +74,7 @@ _RequestedListFilesCounter = 0
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -82,7 +82,7 @@ def A(event=None, arg=None):
     if _ListFilesOrator is None:
         _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4)
     if event is not None:
-        _ListFilesOrator.automat(event, arg)
+        _ListFilesOrator.automat(event, *args, **kwargs)
     return _ListFilesOrator
 
 
@@ -111,56 +111,56 @@ class ListFilesOrator(automat.Automat):
     def init(self):
         self.log_transitions = True
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         #global_state.set_global_state('ORATOR ' + newstate)
         if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('list_files_orator.state', newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---NO_FILES---
         if self.state == 'NO_FILES':
             if event == 'need-files':
                 self.state = 'LOCAL_FILES'
-                self.doReadLocalFiles(arg)
+                self.doReadLocalFiles(*args, **kwargs)
             elif event == 'init':
                 pass
         #---LOCAL_FILES---
         elif self.state == 'LOCAL_FILES':
             if event == 'local-files-done' and p2p_connector.A().state is 'CONNECTED':
                 self.state = 'REMOTE_FILES'
-                self.doRequestRemoteFiles(arg)
+                self.doRequestRemoteFiles(*args, **kwargs)
             elif event == 'local-files-done' and p2p_connector.A().state is not 'CONNECTED':
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
-            if (event == 'timer-10sec' and self.isSomeListFilesReceived(arg)) or (event == 'inbox-files' and self.isAllListFilesReceived(arg)):
+            if (event == 'timer-10sec' and self.isSomeListFilesReceived(*args, **kwargs)) or (event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs)):
                 self.state = 'SAW_FILES'
-            elif event == 'timer-10sec' and not self.isSomeListFilesReceived(arg):
+            elif event == 'timer-10sec' and not self.isSomeListFilesReceived(*args, **kwargs):
                 self.state = 'NO_FILES'
         #---SAW_FILES---
         elif self.state == 'SAW_FILES':
             if event == 'need-files':
                 self.state = 'LOCAL_FILES'
-                self.doReadLocalFiles(arg)
+                self.doReadLocalFiles(*args, **kwargs)
         return None
 
-    def isAllListFilesReceived(self, arg):
+    def isAllListFilesReceived(self, *args, **kwargs):
         global _RequestedListFilesPacketIDs
         lg.out(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
         return len(_RequestedListFilesPacketIDs) == 0
 
-    def isSomeListFilesReceived(self, arg):
+    def isSomeListFilesReceived(self, *args, **kwargs):
         global _RequestedListFilesCounter
         lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
         return _RequestedListFilesCounter > 0
 
-    def doReadLocalFiles(self, arg):
+    def doReadLocalFiles(self, *args, **kwargs):
         from storage import backup_matrix
         maybeDeferred(backup_matrix.ReadLocalFiles).addBoth(
             lambda x: self.automat('local-files-done'))
 
-    def doRequestRemoteFiles(self, arg):
+    def doRequestRemoteFiles(self, *args, **kwargs):
         global _RequestedListFilesCounter
         global _RequestedListFilesPacketIDs
         _RequestedListFilesCounter = 0

@@ -181,7 +181,7 @@ def find(name):
     return results
 
 
-def communicate(index, event, arg=None):
+def communicate(index, event, *args, **kwargs):
     """
     You can pass an event to any state machine - select by its ``index``.
     Use ``arg`` to pass extra data the conditions and actions methods.
@@ -193,8 +193,8 @@ def communicate(index, event, arg=None):
     if not A:
         return fail(Failure(Exception('state machine with index %d not exist' % index)))
     d = Deferred()
-    args = (d, arg)
-    A.automat(event, args)
+    args = tuple(list(args) + [d, ])
+    A.automat(event, *args, **kwargs)
     return d
 
 #------------------------------------------------------------------------------
@@ -269,8 +269,8 @@ class Automat(object):
     """
     Base class of the State Machine Object.
 
-    You need to subclass this class and override the method ``A(event,
-    arg)``. Constructor needs the ``name`` of the state machine and the
+    You need to subclass this class and override the method ``A(event, *args, **kwargs)``.
+    Constructor needs the ``name`` of the state machine and the
     beginning ``state``. At first it generate an unique ``id`` and new
     ``index`` value. You can use ``init()`` method in the subclass to
     call some code at start. Finally put the new object into the memory
@@ -345,7 +345,7 @@ class Automat(object):
                      'CREATED AUTOMAT %s with index %d, %d running' % (
                 str(self), self.index, len(objects())))
 
-    def _on_state_change(self, oldstate, newstate, event_string, args):
+    def _on_state_change(self, oldstate, newstate, event_string, *args, **kwargs):
         from main import events
         if oldstate != newstate:
             events.send('%s-state-change' % self.name, dict(
@@ -398,7 +398,7 @@ class Automat(object):
         """
         return '%s(%s)' % (self.id, self.state)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         Must define this method in subclass.
 
@@ -428,20 +428,20 @@ class Automat(object):
         self.stopTimers()
         objects().pop(self.index)
 
-    def state_changed(self, oldstate, newstate, event_string, arg):
+    def state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         """
         Redefine this method in subclass to be able to catch the moment
         immediately after automat's state were changed.
         """
 
-    def state_not_changed(self, curstate, event_string, arg):
+    def state_not_changed(self, curstate, event_string, *args, **kwargs):
         """
         Redefine this method in subclass if you want to do some actions
         immediately after processing the event, which did not change the
         automat's state.
         """
 
-    def communicate(self, event_string, arg=None):
+    def communicate(self, event_string, *args, **kwargs):
         """
         Use ``arg`` to pass extra data the conditions and actions methods. This
         method creates a Deferred object, pass it as a parameter with ``event``
@@ -452,14 +452,13 @@ class Automat(object):
         See ``addStateChangedCallback()`` for more advanced interactions/callbacks.
         """
         d = Deferred()
-        args = arg
         if not args:
             args = tuple()
         args = tuple(list(args) + [d, ])
         self.automat(event_string, args)
         return d
 
-    def automat(self, event_string, arg=None):
+    def automat(self, event_string, *args, **kwargs):
         """
         Call it like this::
 
@@ -470,12 +469,12 @@ class Automat(object):
         If ``self.fast=False`` - the ``self.A()`` method will be executed in delayed call.
         """
         if self.fast:
-            self.event(event_string, arg)
+            self.event(event_string, *args, **kwargs)
         else:
-            reactor.callLater(0, self.event, event_string, arg)  # @UndefinedVariable
+            reactor.callLater(0, self.event, event_string, *args, **kwargs)  # @UndefinedVariable
         return self
 
-    def event(self, event_string, arg=None):
+    def event(self, event_string, *args, **kwargs):
         """
         You can call ``event()`` directly to execute ``self.A()`` immediately,
         but preferred way is too call ``automat()`` method.
@@ -492,20 +491,20 @@ class Automat(object):
         old_state = self.state
         if self.post:
             try:
-                new_state = self.A(event_string, arg)
+                new_state = self.A(event_string, *args, **kwargs)
             except:
                 if _Debug:
-                    self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
-                        self.id, self.name, self.state, event_string, arg))
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}"'.format(
+                        self.id, self.name, self.state, event_string))
                 return self
             self.state = new_state
         else:
             try:
-                self.A(event_string, arg)
+                self.A(event_string, *args, **kwargs)
             except:
                 if _Debug:
-                    self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
-                        self.id, self.name, self.state, event_string, arg))
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}"'.format(
+                        self.id, self.name, self.state, event_string))
                 return self
             new_state = self.state
         if old_state != new_state:
@@ -515,13 +514,13 @@ class Automat(object):
                     '%s(%s): (%s)->(%s)' % (
                         repr(self), event_string, old_state, new_state))
             self.stopTimers()
-            self.state_changed(old_state, new_state, event_string, arg)
+            self.state_changed(old_state, new_state, event_string, *args, **kwargs)
             self.startTimers()
             if _StateChangedCallback is not None:
                 _StateChangedCallback(self.index, self.id, self.name, new_state)
         else:
-            self.state_not_changed(self.state, event_string, arg)
-        self.executeStateChangedCallbacks(old_state, new_state, event_string, arg)
+            self.state_not_changed(self.state, event_string, *args, **kwargs)
+        self.executeStateChangedCallbacks(old_state, new_state, event_string, *args, **kwargs)
         return self
 
     def timerEvent(self, name, interval):
@@ -691,7 +690,7 @@ class Automat(object):
                 self._state_callbacks.pop(key)
                 break
 
-    def executeStateChangedCallbacks(self, oldstate, newstate, event_string, args):
+    def executeStateChangedCallbacks(self, oldstate, newstate, event_string, *args, **kwargs):
         """
         Compare conditions and execute state changed callback methods.
         """
@@ -709,5 +708,5 @@ class Automat(object):
             if catched:
                 for cb_tupl in cb_list:
                     cb_id, cb = cb_tupl
-                    cb(oldstate, newstate, event_string, args)
+                    cb(oldstate, newstate, event_string, *args, **kwargs)
         self._callbacks_before_die.clear()

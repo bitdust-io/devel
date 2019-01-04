@@ -85,7 +85,7 @@ _UDPNode = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -94,7 +94,7 @@ def A(event=None, arg=None):
         # set automat name and starting state here
         _UDPNode = UDPNode('udp_node', 'AT_STARTUP', 24)
     if event is not None:
-        _UDPNode.automat(event, arg)
+        _UDPNode.automat(event, *args, **kwargs)
     return _UDPNode
 
 
@@ -137,99 +137,99 @@ class UDPNode(automat.Automat):
         self.notified = False
         self.IncomingPosition = -1
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---LISTEN---
         if self.state == 'LISTEN':
-            if event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg):
-                self.doStartNewSession(arg)
+            if event == 'datagram-received' and self.isPacketValid(*args, **kwargs) and not self.isStun(*args, **kwargs) and not self.isKnownPeer(*args, **kwargs):
+                self.doStartNewSession(*args, **kwargs)
             elif event == 'go-offline':
                 self.state = 'DISCONNECTING'
-                self.doDisconnect(arg)
-            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg):
-                self.doStartNewConnector(arg)
-            elif event == 'timer-10sec' and not self.isKnowMyAddress(arg):
+                self.doDisconnect(*args, **kwargs)
+            elif event == 'connect' and self.isKnowMyAddress(*args, **kwargs) and not self.isKnownUser(*args, **kwargs):
+                self.doStartNewConnector(*args, **kwargs)
+            elif event == 'timer-10sec' and not self.isKnowMyAddress(*args, **kwargs):
                 self.state = 'STUN'
-                self.doStartStunClient(arg)
-            elif event == 'timer-10sec' and self.isKnowMyAddress(arg):
+                self.doStartStunClient(*args, **kwargs)
+            elif event == 'timer-10sec' and self.isKnowMyAddress(*args, **kwargs):
                 self.state = 'WRITE_MY_IP'
-                self.doDHTWtiteMyAddress(arg)
+                self.doDHTWtiteMyAddress(*args, **kwargs)
             elif event == 'dht-read-result':
-                self.doCheckAndStartNewSession(arg)
-                self.doDHTRemoveMyIncoming(arg)
-                self.doNotifyConnected(arg)
-            elif event == 'connect' and not self.isKnowMyAddress(arg):
+                self.doCheckAndStartNewSession(*args, **kwargs)
+                self.doDHTRemoveMyIncoming(*args, **kwargs)
+                self.doNotifyConnected(*args, **kwargs)
+            elif event == 'connect' and not self.isKnowMyAddress(*args, **kwargs):
                 self.state = 'STUN'
-                self.doStartStunClient(arg)
+                self.doStartStunClient(*args, **kwargs)
             elif event == 'timer-1sec':
-                self.doDHTReadNextIncoming(arg)
+                self.doDHTReadNextIncoming(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'go-online' and not self.isKnowMyAddress(arg):
+            if event == 'go-online' and not self.isKnowMyAddress(*args, **kwargs):
                 self.state = 'STUN'
                 self.GoOn = False
-                self.doInit(arg)
-                self.doStartStunClient(arg)
-            elif event == 'go-online' and self.isKnowMyAddress(arg):
+                self.doInit(*args, **kwargs)
+                self.doStartStunClient(*args, **kwargs)
+            elif event == 'go-online' and self.isKnowMyAddress(*args, **kwargs):
                 self.state = 'WRITE_MY_IP'
                 self.GoOn = False
-                self.doInit(arg)
-                self.doDHTWtiteMyAddress(arg)
+                self.doInit(*args, **kwargs)
+                self.doDHTWtiteMyAddress(*args, **kwargs)
         #---STUN---
         elif self.state == 'STUN':
             if event == 'stun-success':
                 self.state = 'WRITE_MY_IP'
-                self.doUpdateMyAddress(arg)
-                self.doDHTWtiteMyAddress(arg)
+                self.doUpdateMyAddress(*args, **kwargs)
+                self.doDHTWtiteMyAddress(*args, **kwargs)
             elif event == 'go-offline':
                 self.state = 'DISCONNECTING'
-                self.doDisconnect(arg)
+                self.doDisconnect(*args, **kwargs)
             elif event == 'stun-failed':
                 self.state = 'OFFLINE'
-                self.doUpdateMyAddress(arg)
-                self.doNotifyFailed(arg)
+                self.doUpdateMyAddress(*args, **kwargs)
+                self.doNotifyFailed(*args, **kwargs)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'go-online':
                 self.state = 'STUN'
-                self.doStartStunClient(arg)
+                self.doStartStunClient(*args, **kwargs)
             elif event == 'go-offline':
-                self.doNotifyDisconnected(arg)
+                self.doNotifyDisconnected(*args, **kwargs)
         #---WRITE_MY_IP---
         elif self.state == 'WRITE_MY_IP':
             if event == 'go-offline':
                 self.state = 'DISCONNECTING'
-                self.doDisconnect(arg)
-            elif event == 'connect' and not self.isKnowMyAddress(arg):
+                self.doDisconnect(*args, **kwargs)
+            elif event == 'connect' and not self.isKnowMyAddress(*args, **kwargs):
                 self.state = 'STUN'
-                self.doStartStunClient(arg)
-            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg):
-                self.doStartNewConnector(arg)
+                self.doStartStunClient(*args, **kwargs)
+            elif event == 'connect' and self.isKnowMyAddress(*args, **kwargs) and not self.isKnownUser(*args, **kwargs):
+                self.doStartNewConnector(*args, **kwargs)
             elif event == 'dht-write-failed':
                 self.state = 'OFFLINE'
-                self.doNotifyFailed(arg)
+                self.doNotifyFailed(*args, **kwargs)
             elif event == 'dht-write-success':
                 self.state = 'LISTEN'
-                self.doDHTReadNextIncoming(arg)
+                self.doDHTReadNextIncoming(*args, **kwargs)
         #---DISCONNECTING---
         elif self.state == 'DISCONNECTING':
             if event == 'go-online':
                 self.GoOn = True
             elif event == 'disconnected' and not self.GoOn:
                 self.state = 'OFFLINE'
-                self.doNotifyDisconnected(arg)
+                self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'disconnected' and self.GoOn:
                 self.state = 'STUN'
                 self.GoOn = False
-                self.doNotifyDisconnected(arg)
-                self.doStartStunClient(arg)
+                self.doNotifyDisconnected(*args, **kwargs)
+                self.doStartStunClient(*args, **kwargs)
         return None
 
-    def isKnownPeer(self, arg):
+    def isKnownPeer(self, *args, **kwargs):
         """
         Condition method.
         """
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             lg.exc()
@@ -239,11 +239,11 @@ class UDPNode(automat.Automat):
         active_sessions = udp_session.get(address)
         return len(active_sessions) > 0
 
-    def isKnownUser(self, arg):
+    def isKnownUser(self, *args, **kwargs):
         """
         Condition method.
         """
-        user_id = arg
+        user_id = args[0]
         if udp_session.get_by_peer_id(user_id):
             return True
         if udp_connector.get(user_id) is not None:
@@ -253,37 +253,37 @@ class UDPNode(automat.Automat):
                 user_id, list(udp_session.sessions_by_peer_id().keys())))
         return False
 
-    def isKnowMyAddress(self, arg):
+    def isKnowMyAddress(self, *args, **kwargs):
         """
         Condition method.
         """
         return self.my_address is not None
 
-    def isPacketValid(self, arg):
+    def isPacketValid(self, *args, **kwargs):
         """
         Condition method.
         """
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             return False
         return True
 
-    def isStun(self, arg):
+    def isStun(self, *args, **kwargs):
         """
         Condition method.
         """
-        command = arg[0][0]
+        command = args[0][0][0]
         return command == udp.CMD_STUN
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         from transport.udp import udp_interface
         from transport.udp import udp_stream
-        self.options = arg
+        self.options = args[0]
         self.my_idurl = strng.to_text(self.options['idurl'])
         self.listen_port = int(self.options['udp_port'])
         self.my_id = udp_interface.idurl_to_id(self.my_idurl)
@@ -292,28 +292,28 @@ class UDPNode(automat.Automat):
         bandinlimit = settings.getBandInLimit()
         udp_stream.set_global_output_limit_bytes_per_sec(bandoutlimit)
         udp_stream.set_global_input_limit_bytes_per_sec(bandinlimit)
-        reactor.callLater(0, udp_session.process_sessions)
-        reactor.callLater(0, udp_stream.process_streams)
+        reactor.callLater(0, udp_session.process_sessions)  # @UndefinedVariable
+        reactor.callLater(0, udp_stream.process_streams)  # @UndefinedVariable
 
-    def doStartStunClient(self, arg):
+    def doStartStunClient(self, *args, **kwargs):
         """
         Action method.
         """
         stun_client.A('start', self._stun_finished)
 
-    def doStartNewConnector(self, arg):
+    def doStartNewConnector(self, *args, **kwargs):
         """
         Action method.
         """
-        c = udp_connector.create(self, arg)
+        c = udp_connector.create(self, *args, **kwargs)
         c.automat('start', (self.listen_port, self.my_id, self.my_address))
 
-    def doStartNewSession(self, arg):
+    def doStartNewSession(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             lg.exc()
@@ -325,9 +325,9 @@ class UDPNode(automat.Automat):
                 str(address))
         s = udp_session.create(self, address)
         s.automat('init')
-        s.automat('datagram-received', arg)
+        s.automat('datagram-received', *args, **kwargs)
 
-    def doCheckAndStartNewSession(self, arg):
+    def doCheckAndStartNewSession(self, *args, **kwargs):
         """
         Action method.
         """
@@ -337,7 +337,7 @@ class UDPNode(automat.Automat):
                     _DebugLevel,
                     'dp_node.doCheckAndStartNewSession SKIP because my_address is None')
             return
-        incoming_str = arg
+        incoming_str = args[0]
         if incoming_str is None:
             return
         try:
@@ -368,12 +368,12 @@ class UDPNode(automat.Automat):
         s = udp_session.create(self, incoming_user_address, incoming_user_id)
         s.automat('init')
 
-    def doUpdateMyAddress(self, arg):
+    def doUpdateMyAddress(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            typ, new_ip, new_port = arg
+            typ, new_ip, new_port = args[0]
             new_addr = (new_ip, new_port)
         except:
             lg.exc()
@@ -387,7 +387,7 @@ class UDPNode(automat.Automat):
                 lg.out(4, '    new=%s' % str(new_addr))
         self.my_address = new_addr
 
-    def doDHTReadNextIncoming(self, arg):
+    def doDHTReadNextIncoming(self, *args, **kwargs):
         """
         Action method.
         """
@@ -401,15 +401,15 @@ class UDPNode(automat.Automat):
         d.addCallback(self._got_my_incoming, key, self.IncomingPosition)
         d.addErrback(self._failed_my_incoming, key, self.IncomingPosition)
 
-    def doDHTRemoveMyIncoming(self, arg):
+    def doDHTRemoveMyIncoming(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg:
+        if args and args[0]:
             key = self.my_id + ':incoming' + str(self.IncomingPosition)
             dht_service.delete_key(key)
 
-    def doDHTWtiteMyAddress(self, arg):
+    def doDHTWtiteMyAddress(self, *args, **kwargs):
         """
         Action method.
         """
@@ -421,7 +421,7 @@ class UDPNode(automat.Automat):
         d.addCallback(self._wrote_my_address)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
-    def doDisconnect(self, arg):
+    def doDisconnect(self, *args, **kwargs):
         """
         Action method.
         """
@@ -444,15 +444,15 @@ class UDPNode(automat.Automat):
             c.automat('abort')
         self.automat('disconnected')
 
-    def doNotifyDisconnected(self, arg):
+    def doNotifyDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
         from transport.udp import udp_interface
         self.notified = False
-        udp_interface.interface_disconnected(arg)
+        udp_interface.interface_disconnected(*args, **kwargs)
 
-    def doNotifyConnected(self, arg):
+    def doNotifyConnected(self, *args, **kwargs):
         """
         Action method.
         """
@@ -465,7 +465,7 @@ class UDPNode(automat.Automat):
                     4, 'udp_node.doNotifyConnected my host is %s' %
                     self.my_id)
 
-    def doNotifyFailed(self, arg):
+    def doNotifyFailed(self, *args, **kwargs):
         """
         Action method.
         """

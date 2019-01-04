@@ -184,53 +184,53 @@ class backup(automat.Automat):
         """
         self.log_transitions = _Debug
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         from customer import data_sender
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start':
                 self.state = 'READ'
-                self.doInit(arg)
-                self.doFirstBlock(arg)
+                self.doInit(*args, **kwargs)
+                self.doFirstBlock(*args, **kwargs)
         #---READ---
         elif self.state == 'READ':
-            if event == 'read-success' and not self.isReadingNow(arg) and ( self.isBlockReady(arg) or self.isEOF(arg) ):
+            if event == 'read-success' and not self.isReadingNow(*args, **kwargs) and ( self.isBlockReady(*args, **kwargs) or self.isEOF(*args, **kwargs) ):
                 self.state = 'ENCRYPT'
-                self.doEncryptBlock(arg)
-            elif event == 'fail' or ( ( event == 'read-success' or event == 'timer-001sec' ) and self.isAborted(arg) ):
+                self.doEncryptBlock(*args, **kwargs)
+            elif event == 'fail' or ( ( event == 'read-success' or event == 'timer-001sec' ) and self.isAborted(*args, **kwargs) ):
                 self.state = 'ABORTED'
-                self.doClose(arg)
-                self.doReport(arg)
-                self.doDestroyMe(arg)
-            elif ( event == 'read-success' or event == 'timer-001sec' ) and not self.isAborted(arg) and self.isPipeReady(arg) and not self.isEOF(arg) and not self.isReadingNow(arg) and not self.isBlockReady(arg):
-                self.doRead(arg)
-            elif event == 'block-raid-done' and not self.isAborted(arg):
-                self.doPopBlock(arg)
-                self.doBlockReport(arg)
+                self.doClose(*args, **kwargs)
+                self.doReport(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif ( event == 'read-success' or event == 'timer-001sec' ) and not self.isAborted(*args, **kwargs) and self.isPipeReady(*args, **kwargs) and not self.isEOF(*args, **kwargs) and not self.isReadingNow(*args, **kwargs) and not self.isBlockReady(*args, **kwargs):
+                self.doRead(*args, **kwargs)
+            elif event == 'block-raid-done' and not self.isAborted(*args, **kwargs):
+                self.doPopBlock(*args, **kwargs)
+                self.doBlockReport(*args, **kwargs)
                 data_sender.A('new-data')
         #---RAID---
         elif self.state == 'RAID':
-            if event == 'block-raid-done' and not self.isMoreBlocks(arg) and not self.isAborted(arg):
+            if event == 'block-raid-done' and not self.isMoreBlocks(*args, **kwargs) and not self.isAborted(*args, **kwargs):
                 self.state = 'DONE'
-                self.doPopBlock(arg)
-                self.doBlockReport(arg)
+                self.doPopBlock(*args, **kwargs)
+                self.doBlockReport(*args, **kwargs)
                 data_sender.A('new-data')
-                self.doClose(arg)
-                self.doReport(arg)
-                self.doDestroyMe(arg)
-            elif event == 'block-raid-started' and not self.isEOF(arg) and not self.isAborted(arg):
+                self.doClose(*args, **kwargs)
+                self.doReport(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'block-raid-started' and not self.isEOF(*args, **kwargs) and not self.isAborted(*args, **kwargs):
                 self.state = 'READ'
-                self.doNextBlock(arg)
-                self.doRead(arg)
-            elif event == 'block-raid-done' and self.isMoreBlocks(arg) and not self.isAborted(arg):
-                self.doPopBlock(arg)
-                self.doBlockReport(arg)
+                self.doNextBlock(*args, **kwargs)
+                self.doRead(*args, **kwargs)
+            elif event == 'block-raid-done' and self.isMoreBlocks(*args, **kwargs) and not self.isAborted(*args, **kwargs):
+                self.doPopBlock(*args, **kwargs)
+                self.doBlockReport(*args, **kwargs)
                 data_sender.A('new-data')
-            elif event == 'fail' or ( ( event == 'timer-01sec' or event == 'block-raid-done' or event == 'block-raid-started' ) and self.isAborted(arg) ):
+            elif event == 'fail' or ( ( event == 'timer-01sec' or event == 'block-raid-done' or event == 'block-raid-started' ) and self.isAborted(*args, **kwargs) ):
                 self.state = 'ABORTED'
-                self.doClose(arg)
-                self.doReport(arg)
-                self.doDestroyMe(arg)
+                self.doClose(*args, **kwargs)
+                self.doReport(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -241,53 +241,53 @@ class backup(automat.Automat):
         elif self.state == 'ENCRYPT':
             if event == 'block-encrypted':
                 self.state = 'RAID'
-                self.doBlockPushAndRaid(arg)
+                self.doBlockPushAndRaid(*args, **kwargs)
             elif event == 'fail':
                 self.state = 'ABORTED'
-                self.doClose(arg)
-                self.doReport(arg)
-                self.doDestroyMe(arg)
-            elif event == 'block-raid-done' and not self.isAborted(arg):
-                self.doPopBlock(arg)
-                self.doBlockReport(arg)
+                self.doClose(*args, **kwargs)
+                self.doReport(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'block-raid-done' and not self.isAborted(*args, **kwargs):
+                self.doPopBlock(*args, **kwargs)
+                self.doBlockReport(*args, **kwargs)
                 data_sender.A('new-data')
         return None
 
-    def isAborted(self, arg):
+    def isAborted(self, *args, **kwargs):
         """
         Return current value of ``ask4abort`` flag.
         """
         return self.ask4abort
 
-    def isPipeReady(self, arg):
+    def isPipeReady(self, *args, **kwargs):
         """
         Return True if ``pipe`` object exist and is ready for reading a the new
         chunk of data.
         """
         return self.pipe is not None and self.pipe.state() in [nonblocking.PIPE_CLOSED, nonblocking.PIPE_READY2READ]
 
-    def isBlockReady(self, arg):
+    def isBlockReady(self, *args, **kwargs):
         return self.currentBlockSize >= self.blockSize
 
-    def isEOF(self, arg):
+    def isEOF(self, *args, **kwargs):
         return self.stateEOF
 
-    def isReadingNow(self, arg):
+    def isReadingNow(self, *args, **kwargs):
         return self.stateReading
 
-    def isMoreBlocks(self, arg):
+    def isMoreBlocks(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.workBlocks) > 1
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         events.send('backup-started', dict(backup_id=self.backupID))
 
-    def doRead(self, arg):
+    def doRead(self, *args, **kwargs):
         """
         Action method.
         """
@@ -337,7 +337,7 @@ class backup(automat.Automat):
                 self.stateEOF = True
             if _Debug:
                 lg.out(_DebugLevel + 4, 'backup.readDone %d bytes' % len(data))
-            reactor.callLater(0, self.automat, 'read-success')
+            reactor.callLater(0, self.automat, 'read-success')  # @UndefinedVariable
             return data
 
         def readFailed(err):
@@ -350,7 +350,7 @@ class backup(automat.Automat):
         d.addCallback(readDone)
         d.addErrback(readFailed)
 
-    def doEncryptBlock(self, arg):
+    def doEncryptBlock(self, *args, **kwargs):
         """
         Action method.
         """
@@ -378,11 +378,11 @@ class backup(automat.Automat):
         d.addCallback(lambda block: self.automat('block-encrypted', block))
         d.addErrback(lambda err: self.automat('fail', err))
 
-    def doBlockPushAndRaid(self, arg):
+    def doBlockPushAndRaid(self, *args, **kwargs):
         """
         Action method.
         """
-        newblock = arg
+        newblock = args[0]
         if newblock is None:
             self.abort()
             self.automat('fail')
@@ -411,15 +411,15 @@ class backup(automat.Automat):
             lg.out(_DebugLevel, 'backup.doBlockPushAndRaid %s : start process data from %s to %s, %d' % (
                 newblock.BlockNumber, filename, outputpath, id(self.terminating)))
 
-    def doPopBlock(self, arg):
+    def doPopBlock(self, *args, **kwargs):
         """
         Action method.
         """
-        blockNumber, _ = arg
+        blockNumber, _ = args[0]
         filename = self.workBlocks.pop(blockNumber)
         tmpfile.throw_out(filename, 'block raid done')
 
-    def doFirstBlock(self, arg):
+    def doFirstBlock(self, *args, **kwargs):
         """
         Action method.
         """
@@ -429,7 +429,7 @@ class backup(automat.Automat):
         self.currentBlockSize = 0
         self.currentBlockData = BytesIO()
 
-    def doNextBlock(self, arg):
+    def doNextBlock(self, *args, **kwargs):
         """
         Action method.
         """
@@ -440,15 +440,15 @@ class backup(automat.Automat):
         self.currentBlockData.close()
         self.currentBlockData = BytesIO()
 
-    def doBlockReport(self, arg):
+    def doBlockReport(self, *args, **kwargs):
         """
         Action method.
         """
-        BlockNumber, result = arg
+        BlockNumber, result = args[0]
         if self.blockResultCallback:
             self.blockResultCallback(self.backupID, BlockNumber, result)
 
-    def doClose(self, arg):
+    def doClose(self, *args, **kwargs):
         """
         Action method.
         """
@@ -456,7 +456,7 @@ class backup(automat.Automat):
         for filename in self.workBlocks.values():
             tmpfile.throw_out(filename, 'backup aborted')
 
-    def doReport(self, arg):
+    def doReport(self, *args, **kwargs):
         """
         Action method.
         """
@@ -469,7 +469,7 @@ class backup(automat.Automat):
                 self.finishCallback(self.backupID, 'done')
             events.send('backup-done', dict(backup_id=self.backupID))
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -562,10 +562,10 @@ def main():
                 'http://megafaq.ru/cvps1010.xml')
             newfilepath = os.path.join(settings.getLocalBackupsDir(), customer, remotePath + '.out', filename)
             bpio.WriteBinaryFile(newfilepath, newpacket.Serialize())
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
     job = backup(backupID, backupPipe, _bk_done)
-    reactor.callLater(1, job.automat, 'start')
-    reactor.run()
+    reactor.callLater(1, job.automat, 'start')  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":

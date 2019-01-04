@@ -157,17 +157,19 @@ class SupplierRelationsService(LocalService):
             contacts_type = strng.to_text(json_payload['type'])
             contacts_space = strng.to_text(json_payload['space'])
         except:
-            lg.warn("invalid json payload")
+            lg.exc()
             return False
+
         if contacts_space != 'family_member':
             return False
+
         if contacts_type == 'suppliers_list':
             try:
                 customer_idurl = strng.to_bin(json_payload['customer_idurl'])
+                ecc_map = strng.to_text(json_payload['customer_ecc_map'])
                 suppliers_list = list(map(strng.to_bin, json_payload['suppliers_list']))
-                ecc_map = strng.to_text(json_payload['ecc_map'])
             except:
-                lg.warn("invalid json payload")
+                lg.exc()
                 return False
             if customer_idurl == my_id.getLocalIDURL():
                 lg.warn('received contacts for my own customer family')
@@ -179,18 +181,20 @@ class SupplierRelationsService(LocalService):
                 return False
             fm.automat('contacts-received', {
                 'type': contacts_type,
-                'suppliers': suppliers_list,
-                'ecc_map': ecc_map,
                 'packet': newpacket,
+                'customer_idurl': customer_idurl,
+                'customer_ecc_map': ecc_map,
+                'suppliers_list': suppliers_list,
             })
+
         elif contacts_type == 'supplier_position':
             try:
                 customer_idurl = strng.to_bin(json_payload['customer_idurl'])
-                ecc_map = strng.to_text(json_payload['ecc_map'])
+                ecc_map = strng.to_text(json_payload['customer_ecc_map'])
                 supplier_idurl = strng.to_bin(json_payload['supplier_idurl'])
                 supplier_position = json_payload['supplier_position']
             except:
-                lg.warn("invalid json payload")
+                lg.exc()
                 return False
             if customer_idurl == my_id.getLocalIDURL():
                 lg.warn('received contacts for my own customer family')
@@ -202,11 +206,13 @@ class SupplierRelationsService(LocalService):
                 return False
             fm.automat('contacts-received', {
                 'type': contacts_type,
+                'packet': newpacket,
+                'customer_idurl': customer_idurl,
+                'customer_ecc_map': ecc_map,
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,
-                'ecc_map': ecc_map,
-                'packet': newpacket,
             })
+
         return False
 
     def _on_inbox_packet_received(self, newpacket, info, *args):
