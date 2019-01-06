@@ -199,15 +199,18 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
     idurl = strng.to_bin(idurl.strip())
-    if position is None:
+    if position is None or position == -1:
+        lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (idurl, customer_idurl, ))
         _SuppliersList[customer_idurl].append(idurl)
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
         current_suppliers += [b'', ] * (1 + position - len(current_suppliers))
     if current_suppliers[position] and current_suppliers[position] != idurl:
-        lg.warn('replacing known supplier %s by %s at position %d for customer %s' % (
-            current_suppliers[position], idurl, position, customer_idurl))
+        lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
+            current_suppliers[position], idurl, position, customer_idurl, ))
+    else:
+        lg.info('added supplier "%s" at position %d for customer %s' % (idurl, position, customer_idurl, ))
     current_suppliers[position] = idurl
     _SuppliersList[customer_idurl] = current_suppliers
     return position

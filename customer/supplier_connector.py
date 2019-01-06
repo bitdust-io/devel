@@ -394,7 +394,6 @@ class SupplierConnector(automat.Automat):
             },
         )
         self.request_packet_id = request.PacketID
-        
 
     def doRequestQueueService(self, *args, **kwargs):
         """
@@ -478,7 +477,7 @@ class SupplierConnector(automat.Automat):
         if _Debug:
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in list(self.callbacks.values()):
-            cb(self.supplier_idurl, 'CONNECTED')
+            cb(self.supplier_idurl, 'CONNECTED', family_position=self._last_known_family_position, ecc_map=self._last_known_ecc_map, )
         if self._last_known_family_position is not None:
             p2p_service.SendContacts(
                 remote_idurl=self.supplier_idurl,
