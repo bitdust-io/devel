@@ -1,0 +1,24 @@
+#!/bin/bash
+
+IFS=$'\n' read -d '' -r -a nodes < nodes.txt
+
+echo "target nodes:"
+echo "${nodes[@]}"
+
+copy_files="./grepnkill ./deploy ./random_identity ./see ./states ./monitor"
+echo "will copy those file with scp to each node: $copy_files"
+
+for node in ${nodes[@]}
+do
+  echo ""
+  echo "----------------------------------------------------"
+  echo "[$node] RUNNING ..."
+  echo ""
+  echo "scp files to $node ..."
+  scp -q ${copy_files[@]} "$node:"
+  echo ""
+  echo "will set executable permissions ..."
+  ssh $node "chmod +x $copy_files"
+  echo "DONE"
+  echo ""
+done

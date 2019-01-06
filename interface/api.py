@@ -1401,6 +1401,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if packetid.Valid(glob_path['path']):
         _, pathID, version = packetid.SplitBackupID(remote_path)
+        if not pathID and version:
+            pathID, version = version, ''
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
         if not item:
             return ERROR('path "%s" is not found in catalog' % remote_path)
