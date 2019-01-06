@@ -227,8 +227,8 @@ class FireHire(automat.Automat):
         # self.lastFireTime = 0 # time.time()
         self.connect_list = []
         self.dismiss_list = []
+        self.hire_list = []
         self.dismiss_results = []
-        self.new_suppliers = []
         self.configs = (None, None)
         self.restart_interval = 1.0
         self.restart_task = None
@@ -245,16 +245,15 @@ class FireHire(automat.Automat):
     def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
-            if (event == 'restart' or (event == 'instant' and self.NeedRestart)) and not (
-                    self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs)):
-                self.state = 'DECISION?'
-                self.NeedRestart = False
-                self.doDecideToDismiss(*args, **kwargs)
-            elif (event == 'restart' or (event == 'instant' and self.NeedRestart)) and self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs):
+            if ( event == 'restart' or ( event == 'instant' and self.NeedRestart ) ) and self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs):
                 self.state = 'SUPPLIERS?'
-                self.NeedRestart = False
+                self.NeedRestart=False
                 self.doSaveConfig(*args, **kwargs)
                 self.doConnectSuppliers(*args, **kwargs)
+            elif ( event == 'restart' or ( event == 'instant' and self.NeedRestart ) ) and not ( self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs) ):
+                self.state = 'DECISION?'
+                self.NeedRestart=False
+                self.doDecideToDismiss(*args, **kwargs)
         #---DECISION?---
         elif self.state == 'DECISION?':
             if event == 'made-decision' and self.isSomeoneToDismiss(*args, **kwargs) and not self.isMoreNeeded(*args, **kwargs):
@@ -263,18 +262,18 @@ class FireHire(automat.Automat):
                 self.doRemoveSuppliers(*args, **kwargs)
                 self.doDisconnectSuppliers(*args, **kwargs)
             elif event == 'restart':
-                self.NeedRestart = True
+                self.NeedRestart=True
             elif event == 'made-decision' and not self.isMoreNeeded(*args, **kwargs) and not self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'READY'
                 self.doNotifyFinished(*args, **kwargs)
             elif event == 'made-decision' and self.isMoreNeeded(*args, **kwargs):
                 self.state = 'HIRE_ONE'
                 self.doRememberSuppliers(*args, **kwargs)
-                supplier_finder.A('start')
+                self.doFindNewSupplier(*args, **kwargs)
         #---HIRE_ONE---
         elif self.state == 'HIRE_ONE':
             if event == 'restart':
-                self.NeedRestart = True
+                self.NeedRestart=True
             elif event == 'supplier-connected' and not self.isStillNeeded(*args, **kwargs) and self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'FIRE_MANY'
                 self.doSubstituteSupplier(*args, **kwargs)
@@ -285,10 +284,11 @@ class FireHire(automat.Automat):
                 self.doNotifySuppliersChanged(*args, **kwargs)
             elif event == 'supplier-connected' and self.isStillNeeded(*args, **kwargs):
                 self.doSubstituteSupplier(*args, **kwargs)
-                supplier_finder.A('start')
+                self.doFindNewSupplier(*args, **kwargs)
             elif event == 'search-failed' and not self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'READY'
                 self.doScheduleNextRestart(*args, **kwargs)
+                self.doNotifySuppliersChanged(*args, **kwargs)
             elif event == 'search-failed' and self.isSomeoneToDismiss(*args, **kwargs):
                 self.state = 'FIRE_MANY'
                 self.doDisconnectSuppliers(*args, **kwargs)
@@ -304,7 +304,7 @@ class FireHire(automat.Automat):
             elif event == 'supplier-state-changed' and not self.isAllDismissed(*args, **kwargs):
                 self.doCloseConnector(*args, **kwargs)
             elif event == 'restart':
-                self.NeedRestart = True
+                self.NeedRestart=True
             elif event == 'supplier-state-changed' and self.isAllDismissed(*args, **kwargs):
                 self.state = 'READY'
                 self.doCloseConnector(*args, **kwargs)
@@ -313,15 +313,15 @@ class FireHire(automat.Automat):
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'restart':
-                self.NeedRestart = True
-            elif (event == 'supplier-state-changed' and self.isAllReady(*args, **kwargs)) or event == 'timer-15sec':
+                self.NeedRestart=True
+            elif ( event == 'supplier-state-changed' and self.isAllReady(*args, **kwargs) ) or event == 'timer-15sec':
                 self.state = 'DECISION?'
                 self.doDecideToDismiss(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
-                self.NeedRestart = False
+                self.NeedRestart=False
         return None
 
     def isMoreNeeded(self, *args, **kwargs):
@@ -555,11 +555,18 @@ class FireHire(automat.Automat):
         """
         self.dismiss_list = args[0]
 
+    def doFindNewSupplier(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        # TODO: need to detect position in the family where to put new supplier
+        supplier_finder.A('start')
+
     def doSubstituteSupplier(self, *args, **kwargs):
         """
         Action method.
         """
-        new_idurl = strng.to_bin(*args, **kwargs)
+        new_idurl = strng.to_bin(args[0])
         current_suppliers = list(contactsdb.suppliers())
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)

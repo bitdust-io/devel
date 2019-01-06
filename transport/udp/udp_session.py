@@ -482,7 +482,7 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        address, command, payload = self._dispatch_datagram(*args, **kwargs)
+        address, command, payload = self._dispatch_datagram(args[0])
         self.peer_rtt_id = payload.strip()
         # print 'doAcceptPing', self.peer_rtt_id
 
@@ -490,7 +490,7 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        address, command, payload = self._dispatch_datagram(*args, **kwargs)
+        address, command, payload = self._dispatch_datagram(args[0])
         parts = payload.split(' ')
         try:
             new_peer_id = parts[0]
@@ -565,7 +565,7 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        address, command, payload = self._dispatch_datagram(*args, **kwargs)
+        address, command, payload = self._dispatch_datagram(args[0])
         self.my_rtt_id = payload.strip()
         # print 'doAcceptAlive', self.my_rtt_id
 

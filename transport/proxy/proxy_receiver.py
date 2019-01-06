@@ -368,7 +368,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self.router_idurl = strng.to_bin(*args, **kwargs)
+        self.router_idurl = strng.to_bin(args[0])
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []
@@ -379,7 +379,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self._do_send_request_service(*args, **kwargs)
+        self._do_send_request_service(args[0])
 
     def doSendCancelService(self, *args, **kwargs):
         """
@@ -406,7 +406,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self._do_process_inbox_packet(*args, **kwargs)
+        self._do_process_inbox_packet(args[0])
 
     def doStartListening(self, *args, **kwargs):
         """

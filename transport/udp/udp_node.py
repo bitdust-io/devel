@@ -450,7 +450,7 @@ class UDPNode(automat.Automat):
         """
         from transport.udp import udp_interface
         self.notified = False
-        udp_interface.interface_disconnected(*args, **kwargs)
+        udp_interface.interface_disconnected(args[0])
 
     def doNotifyConnected(self, *args, **kwargs):
         """
