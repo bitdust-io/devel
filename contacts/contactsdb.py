@@ -170,7 +170,7 @@ def set_suppliers(idlist, customer_idurl=None):
     _SuppliersList[customer_idurl] = [strng.to_bin(idurl.strip()) for idurl in idlist]
 
 
-def update_suppliers(idslist, customer_idurl=None):
+def update_suppliers(idlist, customer_idurl=None):
     """
     High-level method to set suppliers ID's list.
     Executes required callbacks.
@@ -179,7 +179,7 @@ def update_suppliers(idslist, customer_idurl=None):
     global _ContactsChangedCallbacks
     oldsuppliers = list(suppliers(customer_idurl=customer_idurl))
     oldcontacts = list(contacts())
-    set_suppliers(idslist, customer_idurl=customer_idurl)
+    set_suppliers(idlist, customer_idurl=customer_idurl)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
     for cb in _ContactsChangedCallbacks:
@@ -212,7 +212,7 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     else:
         lg.info('added supplier "%s" at position %d for customer %s' % (idurl, position, customer_idurl, ))
     current_suppliers[position] = idurl
-    _SuppliersList[customer_idurl] = current_suppliers
+    update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
     return position
 
 
@@ -237,7 +237,7 @@ def erase_supplier(idurl=None, position=None, customer_idurl=None):
         current_suppliers[position] = b''
     else:
         return False
-    _SuppliersList[customer_idurl] = current_suppliers
+    update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
     return True
 
 

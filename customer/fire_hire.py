@@ -581,6 +581,7 @@ class FireHire(automat.Automat):
         new_idurl = strng.to_bin(args[0])
         family_position = kwargs.get('family_position')
         current_suppliers = list(contactsdb.suppliers())
+        old_idurl = None
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)
         if not family_position:
@@ -598,18 +599,6 @@ class FireHire(automat.Automat):
                     break
             family_position = position
         lg.out(10, 'fire_hire.doSubstituteSupplier family_position=%d' % family_position)
-        # if ecc_map:
-        #     missing_suppliers = eccmap.GetEccMapSuppliersNumber(ecc_map) - len(current_suppliers)
-        #     if missing_suppliers > 0:
-        #         current_suppliers += [b'', ] * missing_suppliers
-        # if family_position < 0:
-        #     lg.info('added supplier "%s" to the end of the list' % new_idurl)
-        #     current_suppliers.append(new_idurl)
-        # else:
-        #     lg.info('substitute current supplier "%s" at position %d by %s' % (
-        #         current_suppliers[family_position], family_position, new_idurl, ))
-        #     current_suppliers[family_position] = new_idurl
-        # contactsdb.update_suppliers(current_suppliers)
         contactsdb.add_supplier(idurl=new_idurl, position=family_position)
         contactsdb.save_suppliers()
         misc.writeSupplierData(
@@ -621,7 +610,7 @@ class FireHire(automat.Automat):
         from main import control
         control.on_suppliers_changed(current_suppliers)
         if family_position < 0:
-            lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % (new_idurl))
+            lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % new_idurl)
             events.send('supplier-modified', dict(
                 new_idurl=new_idurl, old_idurl=None, position=family_position,
             ))
@@ -748,7 +737,7 @@ class FireHire(automat.Automat):
         self.restart_task = None
         self.automat('restart')
 
-    def _on_supplier_connector_state_changed(self, idurl, newstate):
+    def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
         lg.out(14, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
@@ -758,7 +747,7 @@ class FireHire(automat.Automat):
             self.dismiss_results.append(idurl)
         else:
             return
-        self.automat('supplier-state-changed', (idurl, newstate))
+        self.automat('supplier-state-changed', (idurl, newstate, ))
 
     def _on_supplier_contact_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.out(6, 'fire_hire._on_supplier_contact_status_state_changed  %s -> %s, own state is %s' % (
