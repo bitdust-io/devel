@@ -227,7 +227,6 @@ class FireHire(automat.Automat):
         # self.lastFireTime = 0 # time.time()
         self.connect_list = []
         self.dismiss_list = []
-        self.hire_list = []
         self.dismiss_results = []
         self.configs = (None, None)
         self.restart_interval = 1.0
@@ -411,8 +410,7 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        return contactsdb.num_suppliers() > 0 and contactsdb.suppliers().count(
-            '') < contactsdb.num_suppliers()
+        return contactsdb.num_suppliers() > 0 and contactsdb.suppliers().count(b'') < contactsdb.num_suppliers()
 
     def doSaveConfig(self, *args, **kwargs):
         """
@@ -526,7 +524,6 @@ class FireHire(automat.Automat):
                 offline_suppliers, online_suppliers, number_desired))
             self.automat('made-decision', [])
             return
-        from raid import eccmap
         max_offline_suppliers_count = eccmap.GetCorrectableErrors(number_desired)
         if len(offline_suppliers) > max_offline_suppliers_count:
             lg.warn('SKIP, too many OFFLINE suppliers at the moment : %d > %d' % (
@@ -559,34 +556,50 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        # TODO: need to detect position in the family where to put new supplier
-        supplier_finder.A('start')
+        position_for_new_supplier = None
+        for pos in range(settings.getSuppliersNumberDesired()):
+            supplier_idurl = contactsdb.supplier(pos)
+            if not supplier_idurl:
+                lg.info('found empty supplier at position %d and going to find new supplier on that position' % pos)
+                position_for_new_supplier = pos
+                break
+            if supplier_idurl in self.dismiss_list:
+                lg.info('going to find new supplier on existing position %d to replace supplier %s' % (
+                    pos, supplier_idurl, ))
+                position_for_new_supplier = pos
+                break
+        if position_for_new_supplier is None:
+            lg.err('did not found position for new supplier')
+            self.automat('search-failed')
+            return
+        supplier_finder.A('start', family_position=position_for_new_supplier, ecc_map=eccmap.Current().name)
 
     def doSubstituteSupplier(self, *args, **kwargs):
         """
         Action method.
         """
         new_idurl = strng.to_bin(args[0])
+        family_position = kwargs.get('family_position')
         current_suppliers = list(contactsdb.suppliers())
+        old_idurl = None
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)
-        position = -1
-        old_idurl = None
-        for i in range(len(current_suppliers)):
-            if not current_suppliers[i].strip():
-                position = i
-                break
-            if current_suppliers[i] in self.dismiss_list:
-                # self.dismiss_list.remove(current_suppliers[i])
-                position = i
-                old_idurl = current_suppliers[i]
-                break
-        lg.out(10, 'fire_hire.doSubstituteSupplier position=%d' % position)
-        if position < 0:
-            current_suppliers.append(new_idurl)
-        else:
-            current_suppliers[position] = new_idurl
-        contactsdb.update_suppliers(current_suppliers)
+        if not family_position:
+            lg.warn('unknown family_position from supplier results, will pick first empty spot')
+            position = -1
+            old_idurl = None
+            for i in range(len(current_suppliers)):
+                if not current_suppliers[i].strip():
+                    position = i
+                    break
+                if current_suppliers[i] in self.dismiss_list:
+                    # self.dismiss_list.remove(current_suppliers[i])
+                    position = i
+                    old_idurl = current_suppliers[i]
+                    break
+            family_position = position
+        lg.out(10, 'fire_hire.doSubstituteSupplier family_position=%d' % family_position)
+        contactsdb.add_supplier(idurl=new_idurl, position=family_position)
         contactsdb.save_suppliers()
         misc.writeSupplierData(
             new_idurl,
@@ -596,21 +609,21 @@ class FireHire(automat.Automat):
         )
         from main import control
         control.on_suppliers_changed(current_suppliers)
-        if position < 0:
-            lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % (new_idurl))
+        if family_position < 0:
+            lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % new_idurl)
             events.send('supplier-modified', dict(
-                new_idurl=new_idurl, old_idurl=None, position=(len(current_suppliers) - 1),
+                new_idurl=new_idurl, old_idurl=None, position=family_position,
             ))
         else:
             if old_idurl:
-                lg.out(2, '!!!!!!!!!!! SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (position, old_idurl, new_idurl))
+                lg.out(2, '!!!!!!!!!!! SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (family_position, old_idurl, new_idurl))
                 events.send('supplier-modified', dict(
-                    new_idurl=new_idurl, old_idurl=old_idurl, position=position,
+                    new_idurl=new_idurl, old_idurl=old_idurl, position=family_position,
                 ))
             else:
-                lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (position, new_idurl))
+                lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
                 events.send('supplier-modified', dict(
-                    new_idurl=new_idurl, old_idurl=None, position=position,
+                    new_idurl=new_idurl, old_idurl=None, position=family_position,
                 ))
         self.restart_interval = 1.0
 
@@ -724,7 +737,7 @@ class FireHire(automat.Automat):
         self.restart_task = None
         self.automat('restart')
 
-    def _on_supplier_connector_state_changed(self, idurl, newstate):
+    def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
         lg.out(14, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
@@ -734,7 +747,7 @@ class FireHire(automat.Automat):
             self.dismiss_results.append(idurl)
         else:
             return
-        self.automat('supplier-state-changed', (idurl, newstate))
+        self.automat('supplier-state-changed', (idurl, newstate, ))
 
     def _on_supplier_contact_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.out(6, 'fire_hire._on_supplier_contact_status_state_changed  %s -> %s, own state is %s' % (
