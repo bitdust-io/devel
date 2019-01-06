@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# test_ok.py
+# test_service_employer.py
 #
 # Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
 #
-# This file (test_ok.py) is part of BitDust Software.
+# This file (test_service_employer.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -20,6 +20,23 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-def test_ok():
-    print('TEST OK')
-    assert True
+import time
+import requests
+
+from ..testsupport import tunnel_url
+
+
+def test_hire_suppliers_by_customer_1():
+    count = 0
+    while True:
+        if count > 10:
+            assert False, 'customer failed to hire enough suppliers after many attempts'
+            return 
+        response = requests.get(url=tunnel_url('customer_1', 'supplier/list/v1'))
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        if len(response.json()['result']) == 2:
+            assert True
+            break
+        count += 1
+        time.sleep(5)

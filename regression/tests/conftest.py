@@ -1,11 +1,32 @@
+#!/usr/bin/env python
+# conftest.py
+#
+# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
+#
+# This file (conftest.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+
 import pytest
 import time
 import requests
 
 import asyncio
-import aiohttp  # @UnresolvedImport
 
-from .utils import run_ssh_command_and_wait, open_tunnel, tunnel_url
+from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url
 
 #------------------------------------------------------------------------------
 
@@ -265,16 +286,27 @@ def start_customer(node, identity_name, join_network=True):
 
 #------------------------------------------------------------------------------
 
-def open_all_tunnels(event_loop, nodes):
-    async def open_one_tunnel(node):
-        open_tunnel(node)
+async def open_one_tunnel(node):
+    open_tunnel(node)
 
+
+def open_all_tunnels(event_loop, nodes):
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(open_one_tunnel(node)) for node in nodes
     ]))
 
-    # for node in nodes:
-    #     open_tunnel(node)
+#------------------------------------------------------------------------------
+
+async def start_one_supplier(supplier):
+    start_supplier(node=supplier, identity_name=supplier)
+
+
+async def start_one_customer(customer):
+    start_customer(
+        node=customer['name'],
+        identity_name=customer['name'],
+        join_network=customer['join_network'],
+    )
 
 
 def start_all_nodes(event_loop):
@@ -327,93 +359,61 @@ def start_all_nodes(event_loop):
     for proxysrv in nodes['proxy-servers']:
         start_proxy_server(node=proxysrv, identity_name=proxysrv)
 
-    async def start_one_supplier(supplier):
-        start_supplier(node=supplier, identity_name=supplier)
-
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(start_one_supplier(supplier)) for supplier in nodes['suppliers']
     ]))
-
-    # for supplier in nodes['suppliers']:
-    #     start_supplier(node=supplier, identity_name=supplier)
-
-    async def start_one_customer(customer):
-        start_customer(
-            node=customer['name'],
-            identity_name=customer['name'],
-            join_network=customer['join_network'],
-        )
 
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(start_one_customer(customer)) for customer in nodes['customers']
     ]))
 
-    # for customer in nodes['customers']:
-    #     start_customer(node=customer['name'], identity_name=customer['name'], join_network=customer['join_network'])
-
     print('\nAll nodes ready\n')
+
+#------------------------------------------------------------------------------
+
+async def report_one_node(node):
+    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+    print('[%s]  Warnings: %d   Exceptions: %d' % (
+        node, main_log.count('WARNING'), main_log.count('Exception:'), ))
 
 
 def report_all_nodes(event_loop):
     print('\n\nTest report:')
 
-    async def report_one_node(node):
-        main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
-        print('[%s]  Warnings: %d   Exceptions: %d' % (
-            node, main_log.count('WARNING'), main_log.count('Exception:'), ))
-
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
     ]))
 
-    # for node in ALL_NODES:
-    #     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
-    #     print('[%s]  Warnings: %d   Exceptions: %d' % (
-    #         node, main_log.count('WARNING'), main_log.count('Exception:'), ))
+#------------------------------------------------------------------------------
+
+async def clean_one_node(node, skip_checks=False):
+    stop_daemon(node, skip_checks=skip_checks)
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
+
+
+async def clean_one_customer(node):
+    run_ssh_command_and_wait(node, 'rm -rf /%s/*' % node)
 
 
 def clean_all_nodes(event_loop, skip_checks=False):
-
-    async def parallel_method_1(node):
-        stop_daemon(node, skip_checks=skip_checks)
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
-        run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
-
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(parallel_method_1(node)) for node in ALL_NODES
+        asyncio.ensure_future(clean_one_node(node, skip_checks=skip_checks)) for node in ALL_NODES
     ]))
-
-#     for node in ALL_NODES:
-#         stop_daemon(node, skip_checks=skip_checks)
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
-#         run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
-
-    async def parallel_method_2(node):
-        run_ssh_command_and_wait(node, 'rm -rf /%s/*' % node)
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(parallel_method_2(node)) for node in [
-            'customer_1', 'customer_2', 'customer_3',
-        ]
-    ]))
-
-#     run_ssh_command_and_wait('customer_1', 'rm -rf /customer_1/*')
-#     run_ssh_command_and_wait('customer_2', 'rm -rf /customer_2/*')
-#     run_ssh_command_and_wait('customer_3', 'rm -rf /customer_3/*')
+        asyncio.ensure_future(clean_one_customer(node)) for node in [
+        'customer_1', 'customer_2', 'customer_3',
+    ]]))
     print('All nodes cleaned')
  
- 
+#------------------------------------------------------------------------------
+
 def kill_all_nodes():
     for node in ALL_NODES:
         print('Shutdown %s' % node)
@@ -443,11 +443,9 @@ def global_wrapper(event_loop):
     yield
 
     report_all_nodes(event_loop)
+    # TODO: use ENV variables to control cleanup
     # clean_all_nodes()
     # close_all_tunnels()
-
-    print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
-
     # kill_all_nodes()
 
-    print('\nFinished. All operations completed in %5.3f seconds\n' % (time.time() - _begin))
+    print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
