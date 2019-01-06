@@ -217,7 +217,7 @@ class IdServer(automat.Automat):
         """
         Action method.
         """
-        self._save_identity(*args, **kwargs)
+        self._save_identity(args[0])
 
     def doDestroyMe(self, *args, **kwargs):
         """

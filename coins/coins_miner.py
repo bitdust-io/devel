@@ -278,7 +278,7 @@ class CoinsMiner(automat.Automat):
         """
         if args and args[0]:
             if args[0] not in self.connected_accountants:
-                self.connected_accountants.append(*args, **kwargs)
+                self.connected_accountants.append(args[0])
             else:
                 lg.warn('%s already connected as accountant' % args[0])
 
@@ -296,7 +296,7 @@ class CoinsMiner(automat.Automat):
         """
         Action method.
         """
-        self.input_data.append(*args, **kwargs)
+        self.input_data.append(args[0])
 
     def doPullInputData(self, *args, **kwargs):
         """
@@ -310,7 +310,7 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         self.mining_started = utime.get_sec1970()
-        d = self._start(*args, **kwargs)
+        d = self._start(args[0])
         d.addCallback(self._on_coin_mined)
         d.addErrback(lambda err: self.automat('stop'))
         d.addErrback(lambda err: lg.exc(exc_value=err))

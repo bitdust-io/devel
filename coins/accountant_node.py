@@ -297,7 +297,7 @@ class AccountantNode(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'accountant_node.doAddAccountant SKIP, %s already connected, skip' % args[0])
             return
-        self.connected_accountants.append(*args, **kwargs)
+        self.connected_accountants.append(args[0])
         if _Debug:
             lg.out(_DebugLevel, 'accountant_node.doAddAccountant NEW %s connected, %d total accountants' % (
                 args[0], len(self.connected_accountants)))
@@ -330,7 +330,7 @@ class AccountantNode(automat.Automat):
         """
         Action method.
         """
-        self.pending_coins.append(*args, **kwargs)
+        self.pending_coins.append(args[0])
 
     def doPullCoin(self, *args, **kwargs):
         """
@@ -367,7 +367,7 @@ class AccountantNode(automat.Automat):
         """
         Action method.
         """
-        coins_db.insert(*args, **kwargs)
+        coins_db.insert(args[0])
 
     def doDestroyMe(self, *args, **kwargs):
         """

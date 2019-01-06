@@ -278,7 +278,7 @@ class NetworkTransport(automat.Automat):
         Action method.
         """
         if args and args[0]:
-            self.interface.create_proxy(*args, **kwargs)
+            self.interface.create_proxy(args[0])
 
     def doSaveOptions(self, *args, **kwargs):
         """
