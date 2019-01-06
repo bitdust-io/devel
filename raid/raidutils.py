@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# eccmap.py
+# raidutils.py
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
-# This file (eccmap.py) is part of BitDust Software.
+# This file (raidutils.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
