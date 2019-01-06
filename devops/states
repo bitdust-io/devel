@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# shows bitdust state machines log in real time
+tail -f ~/.bitdust/logs/automats.log
