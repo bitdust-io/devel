@@ -522,6 +522,9 @@ class FamilyMember(automat.Automat):
                     if _Debug:
                         lg.out(_DebugLevel, '    found my IDURL on %d position and will move it on %d position in the family of customer %s' % (
                         _existing_position, current_request['position'], self.customer_idurl))
+                if len(merged_info['suppliers']) <= current_request['position']:
+                    lg.warn('stretching customer family because supplier position is larger than known family size')
+                    merged_info['suppliers'] += [b'', ] * (current_request['position'] + 1 - len(merged_info['suppliers']))
                 if merged_info['suppliers'][current_request['position']] != current_request['supplier_idurl']:
                     if merged_info['suppliers'][current_request['position']] not in [b'', '', None]:
                         # TODO: SECURITY need to implement a signature verification and
