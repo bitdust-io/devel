@@ -46,7 +46,6 @@ def test_identity_backup_restore():
     )
     assert response.json()['status'] == 'OK', response.json()
 
-    run_
     # shutil.move(backup_file_directory_c2, backup_file_directory_c3)
 
     response = requests.get(url=tunnel_url('customer_backup', 'process/stop/v1'))

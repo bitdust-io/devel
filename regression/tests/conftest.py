@@ -410,7 +410,7 @@ def clean_all_nodes(event_loop, skip_checks=False):
     ]))
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(clean_one_customer(node)) for node in [
-        'customer_1', 'customer_2', 'customer_3',
+        'customer_1', 'customer_2', 'customer_3', 'customer_4',
     ]]))
     print('All nodes cleaned')
  
