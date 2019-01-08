@@ -500,6 +500,7 @@ class FamilyMember(automat.Automat):
                         merged_info['suppliers'] += [b'', ] * (new_suppliers_count - len(merged_info['suppliers']))
                     else:
                         merged_info['suppliers'] = merged_info['suppliers'][:new_suppliers_count]
+                    merged_info['ecc_map'] = current_request['ecc_map']
                     if not expected_suppliers_count:
                         expected_suppliers_count = new_suppliers_count
                     if new_suppliers_count > expected_suppliers_count:
