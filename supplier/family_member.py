@@ -33,6 +33,10 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+DHT_RECORD_REFRESH_INTERVAL = 2 * 60
+
+#------------------------------------------------------------------------------
+
 from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
@@ -40,6 +44,8 @@ from twisted.internet.task import LoopingCall
 from logs import lg
 
 from automats import automat
+
+from main import settings
 
 from lib import nameurl
 
@@ -270,6 +276,12 @@ class FamilyMember(automat.Automat):
         Action method.
         """
         self._do_build_family_transaction(args[0])
+        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
+        if self.transaction:
+            known_ecc_map = self.transaction.get('ecc_map')
+            if known_ecc_map:
+                expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
+                self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * expected_suppliers_count
 
     def doSendContactsToSuppliers(self, *args, **kwargs):
         """
@@ -311,13 +323,16 @@ class FamilyMember(automat.Automat):
         Action method.
         """
         self.current_request = None
-        self.refresh_task.start(5 * 60, now=False)
+        if self.refresh_task.running:
+            self.refresh_task.stop()
+        self.refresh_task.start(self.refresh_period, now=False)
 
     def doNotifyDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
-        self.refresh_task.stop()
+        if self.refresh_task.running:
+            self.refresh_task.stop()
         self.current_request = None
 
     def doCheckReply(self, *args, **kwargs):
@@ -419,7 +434,7 @@ class FamilyMember(automat.Automat):
             'publisher_idurl': my_id.getLocalIDURL(),
             # I am the supplier and need to put myself on the first position, but I do know other suppliers yet
             'suppliers': [my_id.getLocalIDURL(), ],
-            'ecc_map': contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map', eccmap.DefaultName()),
+            'ecc_map': contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map', None),
             'customer_idurl': self.customer_idurl,
         }
 
@@ -460,18 +475,21 @@ class FamilyMember(automat.Automat):
                 merged_info = my_info
         # make sure list of suppliers have correct length according to ecc_map
         if not merged_info['ecc_map']:
-            known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map', eccmap.DefaultName())
+            known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map', None)
             lg.warn('unknown ecc_map, will populate known value: %s' % known_ecc_map)
             merged_info['ecc_map'] = known_ecc_map
-        expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
-        if len(merged_info['suppliers']) < expected_suppliers_count:
-            merged_info['suppliers'] += [b'', ] * (expected_suppliers_count - len(merged_info['suppliers']))
-        elif len(merged_info['suppliers']) > expected_suppliers_count:
-            merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
+        if merged_info['ecc_map']:
+            expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
+            if len(merged_info['suppliers']) < expected_suppliers_count:
+                merged_info['suppliers'] += [b'', ] * (expected_suppliers_count - len(merged_info['suppliers']))
+            elif len(merged_info['suppliers']) > expected_suppliers_count:
+                merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
         return merged_info
 
     def _do_process_request(self, merged_info, current_request):
-        expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
+        expected_suppliers_count = None
+        if merged_info['ecc_map']:
+            expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
         if current_request['command'] == 'family-join':
             if merged_info['ecc_map'] and current_request['ecc_map']:
                 if current_request['ecc_map'] != merged_info['ecc_map']:
@@ -482,6 +500,8 @@ class FamilyMember(automat.Automat):
                         merged_info['suppliers'] += [b'', ] * (new_suppliers_count - len(merged_info['suppliers']))
                     else:
                         merged_info['suppliers'] = merged_info['suppliers'][:new_suppliers_count]
+                    if not expected_suppliers_count:
+                        expected_suppliers_count = new_suppliers_count
                     if new_suppliers_count > expected_suppliers_count:
                         expected_suppliers_count = new_suppliers_count
                     else:
@@ -502,6 +522,9 @@ class FamilyMember(automat.Automat):
                     if _Debug:
                         lg.out(_DebugLevel, '    found my IDURL on %d position and will move it on %d position in the family of customer %s' % (
                         _existing_position, current_request['position'], self.customer_idurl))
+                if len(merged_info['suppliers']) <= current_request['position']:
+                    lg.warn('stretching customer family because supplier position is larger than known family size')
+                    merged_info['suppliers'] += [b'', ] * (current_request['position'] + 1 - len(merged_info['suppliers']))
                 if merged_info['suppliers'][current_request['position']] != current_request['supplier_idurl']:
                     if merged_info['suppliers'][current_request['position']] not in [b'', '', None]:
                         # TODO: SECURITY need to implement a signature verification and

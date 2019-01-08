@@ -74,6 +74,8 @@ from lib import strng
 from lib import nameurl
 from lib import diskspace
 
+from contacts import contactsdb
+
 from userid import global_id
 
 from crypt import my_keys
@@ -165,11 +167,18 @@ class SupplierConnector(automat.Automat):
         self.queue_subscribe = queue_subscribe
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
-            num_suppliers = settings.getSuppliersNumberDesired()
+            num_suppliers = -1
+            if self.customer_idurl == my_id.getLocalIDURL():
+                num_suppliers = settings.getSuppliersNumberDesired()
+            else:
+                known_ecc_map = contactsdb.get_customer_meta_info(customer_idurl).get('ecc_map')
+                if known_ecc_map:
+                    num_suppliers = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
             if num_suppliers > 0:
                 self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
             else:
-                self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
+                raise Exception('not possible to determine needed_bytes value to be requested from that supplier')
+                # self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
         name = 'supplier_%s_%s' % (
             nameurl.GetName(self.supplier_idurl),
             diskspace.MakeStringFromBytes(self.needed_bytes).replace(' ', ''),

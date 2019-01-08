@@ -365,7 +365,7 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        if isinstance(args[0], list):
+        if args and isinstance(args[0], list):
             dismissed = args[0]
         else:
             dismissed = self.dismiss_list
