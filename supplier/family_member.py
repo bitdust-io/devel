@@ -33,6 +33,10 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+from twisted.internet.task import LoopingCall
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -243,6 +247,7 @@ class FamilyMember(automat.Automat):
         self.current_request = None
         self.my_info = None
         self.transaction = None
+        self.refresh_task = LoopingCall(self._on_family_refresh_task)
 
     def doPush(self, event, *args, **kwargs):
         """
@@ -306,11 +311,13 @@ class FamilyMember(automat.Automat):
         Action method.
         """
         self.current_request = None
+        self.refresh_task.start(5 * 60, now=False)
 
     def doNotifyDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
+        self.refresh_task.stop()
         self.current_request = None
 
     def doCheckReply(self, *args, **kwargs):
@@ -327,6 +334,7 @@ class FamilyMember(automat.Automat):
         self.current_request = None
         self.my_info = None
         self.transaction = None
+        self.refresh_task = None
         delete_family(self.customer_idurl)
         self.destroy()
 
@@ -551,6 +559,9 @@ class FamilyMember(automat.Automat):
                 'suppliers_list': self.transaction['suppliers'],
             },
         )
+
+    def _on_family_refresh_task(self):
+        self.automat('family-refresh')
 
     def _on_dht_read_success(self, dht_result):
         if dht_result:
