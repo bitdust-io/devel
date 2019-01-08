@@ -30,7 +30,7 @@ def test_customer_family_published_for_customer_1():
     count = 0
     while True:
         if count > 10:
-            assert False, 'customer failed to hire enough suppliers after many attempts'
+            assert False, 'customer family was not published correctly in DHT after many attempts'
             return 
         response = requests.get(url=tunnel_url('customer_1', 'supplier/list/dht/v1'))
         assert response.status_code == 200
