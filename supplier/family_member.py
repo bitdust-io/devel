@@ -487,7 +487,9 @@ class FamilyMember(automat.Automat):
         return merged_info
 
     def _do_process_request(self, merged_info, current_request):
-        expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
+        expected_suppliers_count = None
+        if merged_info['ecc_map']:
+            expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
         if current_request['command'] == 'family-join':
             if merged_info['ecc_map'] and current_request['ecc_map']:
                 if current_request['ecc_map'] != merged_info['ecc_map']:
@@ -498,6 +500,8 @@ class FamilyMember(automat.Automat):
                         merged_info['suppliers'] += [b'', ] * (new_suppliers_count - len(merged_info['suppliers']))
                     else:
                         merged_info['suppliers'] = merged_info['suppliers'][:new_suppliers_count]
+                    if not expected_suppliers_count:
+                        expected_suppliers_count = new_suppliers_count
                     if new_suppliers_count > expected_suppliers_count:
                         expected_suppliers_count = new_suppliers_count
                     else:
