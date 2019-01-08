@@ -39,6 +39,7 @@ ALL_NODES = [
     'customer_1',
     'customer_2',
     'customer_3',
+    'customer_4',
     'supplier_1',
     'supplier_2',
     'supplier_3',
@@ -341,6 +342,7 @@ def start_all_nodes(event_loop):
             {'name': 'customer_1', 'join_network': True, },
             {'name': 'customer_2', 'join_network': True, },
             {'name': 'customer_3', 'join_network': False, },
+            {'name': 'customer_4', 'join_network': True, },
         ],
     }
  

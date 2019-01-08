@@ -275,6 +275,22 @@ services:
     volumes:
       - customer_3:/customer_3
 
+  customer_4:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/customer
+    ports:
+      - "22254:22"
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "stun_1"
+      - "stun_2"
+      - "identity-server:is"
+    volumes:
+      - customer_4:/customer_4
+
 
 
   tester:
@@ -298,6 +314,7 @@ services:
       - "customer_1"
       - "customer_2"
       - "customer_3"
+      - "customer_4"
     image: bitdust/tester
     cap_add:
       - SYS_PTRACE
@@ -306,6 +323,7 @@ services:
       - customer_1:/customer_1
       - customer_2:/customer_2
       - customer_3:/customer_3
+      - customer_4:/customer_4
 
     stdin_open: true
     tty: true
@@ -317,6 +335,5 @@ volumes:
   customer_1:
   customer_2:
   customer_3:
-
-
+  customer_4:
 
