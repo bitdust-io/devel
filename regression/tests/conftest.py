@@ -375,8 +375,8 @@ def start_all_nodes(event_loop):
 
 async def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
-    print('[%s]  Warnings: %d   Exceptions: %d' % (
-        node, main_log.count('WARNING'), main_log.count('Exception:'), ))
+    print('[%s]  Warnings: %d     Errors: %d     Exceptions: %d  ' % (
+        node, main_log.count('WARNING'), main_log.count('ERROR!!!'), main_log.count('Exception:'), ))
 
 
 def report_all_nodes(event_loop):

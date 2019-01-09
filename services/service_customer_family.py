@@ -186,6 +186,7 @@ class SupplierRelationsService(LocalService):
                 'customer_ecc_map': ecc_map,
                 'suppliers_list': suppliers_list,
             })
+            return True
 
         elif contacts_type == 'supplier_position':
             try:
@@ -212,6 +213,7 @@ class SupplierRelationsService(LocalService):
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,
             })
+            return True
 
         return False
 

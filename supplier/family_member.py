@@ -275,7 +275,7 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        self._do_build_family_transaction(args[0])
+        self._do_build_transaction(args[0])
         self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         if self.transaction:
             known_ecc_map = self.transaction.get('ecc_map')
@@ -357,16 +357,22 @@ class FamilyMember(automat.Automat):
 
     #------------------------------------------------------------------------------
 
-    def _do_build_family_transaction(self, dht_info):
+    def _do_build_transaction(self, dht_info):
         dht_info_valid = self._do_validate_dht_info(dht_info)
         my_info_valid = self._do_validate_my_info(self.my_info)
         latest_revision = self._do_detect_latest_revision(dht_info_valid, my_info_valid)
         merged_info = self._do_merge_info(dht_info_valid, my_info_valid, latest_revision)
+        if not merged_info:
+            lg.err('failed to merge customer family info after reading from DHT, skip transaction')
+            self.transaction = None
+            return
         self.transaction = self._do_process_request(merged_info, self.current_request) 
-        if self.transaction:
-            self._do_increase_next_revision()
+        if not self.transaction:
+            lg.err('failed to process customer family change request, skip transaction')
+            return
+        self._do_revision_increment()
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._do_build_family_transaction     result transaction is %r' % self.transaction)
+            lg.out(_DebugLevel, 'family_member._do_build_transaction : %r' % self.transaction)
 
     def _do_validate_dht_info(self, inp):
         if not inp or not isinstance(inp, dict):
@@ -388,7 +394,7 @@ class FamilyMember(automat.Automat):
             # TODO: add customer_signature and Validate method to check customer signature
         except:
             lg.exc()
-            lg.warn('skip invalid DHT info and assume DHT record not exist')
+            lg.warn('skip invalid DHT info and assume DHT record is not exist')
             return None
         return out
 
@@ -488,104 +494,99 @@ class FamilyMember(automat.Automat):
                 merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
         return merged_info
 
-    def _do_process_request(self, merged_info, current_request):
-        expected_suppliers_count = None
-        if merged_info['ecc_map']:
-            expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
-        if current_request['command'] == 'family-join':
-            if merged_info['ecc_map'] and current_request['ecc_map']:
-                if current_request['ecc_map'] != merged_info['ecc_map']:
-                    lg.info('from "family-join" request, detected ecc_map change %s -> %s for customer %s' % (
-                        merged_info['ecc_map'], current_request['ecc_map'], self.customer_idurl))
-                    new_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
-                    if len(merged_info['suppliers']) < new_suppliers_count:
-                        merged_info['suppliers'] += [b'', ] * (new_suppliers_count - len(merged_info['suppliers']))
-                    else:
-                        merged_info['suppliers'] = merged_info['suppliers'][:new_suppliers_count]
-                    merged_info['ecc_map'] = current_request['ecc_map']
-                    if not expected_suppliers_count:
-                        expected_suppliers_count = new_suppliers_count
-                    if new_suppliers_count > expected_suppliers_count:
-                        expected_suppliers_count = new_suppliers_count
-                    else:
-                        expected_suppliers_count = new_suppliers_count
-            else:
-                if current_request['ecc_map'] and not merged_info['ecc_map']:
-                    lg.info('from "family-join" request, detected ecc_map was set to %s for the first time for customer %s' % (
-                        current_request['ecc_map'], self.customer_idurl))
-                    new_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
-                    if len(merged_info['suppliers']) < new_suppliers_count:
-                        merged_info['suppliers'] += [b'', ] * (new_suppliers_count - len(merged_info['suppliers']))
-                    else:
-                        merged_info['suppliers'] = merged_info['suppliers'][:new_suppliers_count]
-                    merged_info['ecc_map'] = current_request['ecc_map']
-                    if not expected_suppliers_count:
-                        expected_suppliers_count = new_suppliers_count
-                    if new_suppliers_count > expected_suppliers_count:
-                        expected_suppliers_count = new_suppliers_count
-                    else:
-                        expected_suppliers_count = new_suppliers_count
+    def _do_process_family_join_request(self, merged_info, current_request):
+        current_request_expected_suppliers_count = None
+        if current_request['ecc_map']:
+            current_request_expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
+        if current_request_expected_suppliers_count and current_request['position'] >= current_request_expected_suppliers_count:
+            lg.warn('"family-join" request is not valid, supplier position greater than expected suppliers count')
+            return None
 
-            try:
-                _existing_position = merged_info['suppliers'].index(current_request['supplier_idurl'])
-            except ValueError:
-                _existing_position = -1
+        if merged_info['ecc_map'] and current_request['ecc_map'] and current_request['ecc_map'] != merged_info['ecc_map']:
+            lg.info('from "family-join" request, detected ecc_map change %s -> %s for customer %s' % (
+                merged_info['ecc_map'], current_request['ecc_map'], self.customer_idurl))
+            merged_info['ecc_map'] = current_request['ecc_map']
+        if not merged_info['ecc_map'] and current_request['ecc_map']:
+            lg.info('from "family-join" request, detected ecc_map was set to %s for the first time for customer %s' % (
+                current_request['ecc_map'], self.customer_idurl))
+            merged_info['ecc_map'] = current_request['ecc_map']
+        if not merged_info['ecc_map']:
+            lg.warn('still did not found actual ecc_map from DHT or from the request')
+            return None
 
-            if current_request['position'] is not None and current_request['position'] >= 0:
-                if expected_suppliers_count and current_request['position'] >= expected_suppliers_count:
-                    lg.warn('"family-join" request is not valid, supplier position greater than expected suppliers count')
-                    return None
-                if len(merged_info['suppliers']) <= current_request['position']:
-                    lg.warn('stretching customer family because supplier position is larger than known family size')
-                    merged_info['suppliers'] += [b'', ] * (current_request['position'] + 1 - len(merged_info['suppliers']))
-                if _existing_position >= 0 and _existing_position != current_request['position']:
-                    merged_info['suppliers'][_existing_position] = b''
-                    merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
-                    if _Debug:
-                        lg.out(_DebugLevel, '    found my IDURL on %d position and will move it on %d position in the family of customer %s' % (
-                        _existing_position, current_request['position'], self.customer_idurl))
-                if merged_info['suppliers'][current_request['position']] != current_request['supplier_idurl']:
-                    if merged_info['suppliers'][current_request['position']] not in [b'', '', None]:
-                        # TODO: SECURITY need to implement a signature verification and
-                        # also build solution to validate that change was approved by customer 
-                        lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (
-                            merged_info['suppliers'][current_request['position']], current_request['position'], self.customer_idurl, ))
-                    merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
-                    if _Debug:
-                        lg.out(_DebugLevel, '    placed supplier %s at known position %d in the family of customer %s' % (
-                            current_request['supplier_idurl'], current_request['position'], self.customer_idurl))
+        expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
+        if len(merged_info['suppliers']) < expected_suppliers_count:
+            merged_info['suppliers'] += [b'', ] * (expected_suppliers_count - len(merged_info['suppliers']))
+        else:
+            merged_info['suppliers'] = merged_info['suppliers'][:expected_suppliers_count]
 
-            else:
-                if current_request['supplier_idurl'] not in merged_info['suppliers']:
-                    if b'' in merged_info['suppliers']:
-                        _empty_position = merged_info['suppliers'].index(b'')
-                        merged_info['suppliers'][_empty_position] = current_request['supplier_idurl']
-                        if _Debug:
-                            lg.out(_DebugLevel, '    placed supplier %s at empty position %d in family of customer %s' % (
-                                current_request['supplier_idurl'], _empty_position, self.customer_idurl))
-                    else:
-                        merged_info['suppliers'].append(current_request['supplier_idurl'])
-                        if _Debug:
-                            lg.out(_DebugLevel, '    added supplier %s to family of customer %s' % (
-                                current_request['supplier_idurl'], self.customer_idurl))
+        try:
+            existing_position = merged_info['suppliers'].index(current_request['supplier_idurl'])
+        except ValueError:
+            existing_position = -1
 
-        elif current_request['command'] == 'family-leave':
-            try:
-                _existing_position = merged_info['suppliers'].index(current_request['supplier_idurl'])
-            except ValueError:
-                _existing_position = -1
-            if _existing_position < 0:
-                lg.warn('skip "family-leave" request, did not found supplier %r in customer family %r' % (
-                    current_request['supplier_idurl'], self.customer_idurl, ))
+        if current_request['position'] is not None and current_request['position'] >= 0:
+            if current_request['position'] >= expected_suppliers_count:
+                lg.warn('"family-join" request is not valid, supplier position greater than expected suppliers count')
                 return None
-            merged_info['suppliers'][_existing_position] = b''
+            if existing_position >= 0 and existing_position != current_request['position']:
+                merged_info['suppliers'][existing_position] = b''
+                merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
+                if _Debug:
+                    lg.out(_DebugLevel, '    found my IDURL on %d position and will move it on %d position in the family of customer %s' % (
+                    existing_position, current_request['position'], self.customer_idurl))
+            if merged_info['suppliers'][current_request['position']] != current_request['supplier_idurl']:
+                if merged_info['suppliers'][current_request['position']] not in [b'', '', None]:
+                    # TODO: SECURITY need to implement a signature verification and
+                    # also build solution to validate that change was approved by customer 
+                    lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (
+                        merged_info['suppliers'][current_request['position']], current_request['position'], self.customer_idurl, ))
+                merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
+                if _Debug:
+                    lg.out(_DebugLevel, '    placed supplier %s at known position %d in the family of customer %s' % (
+                        current_request['supplier_idurl'], current_request['position'], self.customer_idurl))
 
-        elif current_request['command'] == 'family-refresh':
-            pass
-        
+        if current_request['supplier_idurl'] not in merged_info['suppliers']:
+            if b'' in merged_info['suppliers']:
+                first_empty_position = merged_info['suppliers'].index(b'')
+                merged_info['suppliers'][first_empty_position] = current_request['supplier_idurl']
+                if _Debug:
+                    lg.out(_DebugLevel, '    placed supplier %s at first empty position %d in family of customer %s' % (
+                        current_request['supplier_idurl'], first_empty_position, self.customer_idurl))
+            else:
+                merged_info['suppliers'].append(current_request['supplier_idurl'])
+                if _Debug:
+                    lg.out(_DebugLevel, '    added supplier %s to family of customer %s' % (
+                        current_request['supplier_idurl'], self.customer_idurl))
         return merged_info
 
-    def _do_increase_next_revision(self):
+    def _do_process_family_leave_request(self, merged_info, current_request):
+        try:
+            existing_position = merged_info['suppliers'].index(current_request['supplier_idurl'])
+        except ValueError:
+            existing_position = -1
+        if existing_position < 0:
+            lg.warn('skip "family-leave" request, did not found supplier %r in customer family %r' % (
+                current_request['supplier_idurl'], self.customer_idurl, ))
+            return None
+        merged_info['suppliers'][existing_position] = b''
+        return merged_info
+
+    def _do_process_family_refresh_request(self, merged_info):
+        # TODO: need to check/validate self.my_info against merged_info
+        return merged_info
+
+    def _do_process_request(self, merged_info, current_request):
+        if current_request['command'] == 'family-join':
+            return self._do_process_family_join_request(merged_info, current_request)
+        if current_request['command'] == 'family-leave':
+            return self._do_process_family_leave_request(merged_info, current_request)
+        if current_request['command'] == 'family-refresh':
+            return self._do_process_family_refresh_request(merged_info)
+        lg.err('invalid request command')
+        return None
+
+    def _do_revision_increment(self):
         self.transaction['revision'] += 1
         self.transaction['publisher_idurl'] = my_id.getLocalIDURL()
 
@@ -635,17 +636,20 @@ class FamilyMember(automat.Automat):
             return
 
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_incoming_contacts_packet   type=%s')
+            lg.out(_DebugLevel, 'family_member._on_incoming_contacts_packet   type=%s' % contacts_type)
 
         if self.state != 'CONNECTED':  # in ['DISCONNECTED', 'DHT_READ', ]:
-            # currently this family member is not ready yet, skip
+            if _Debug:
+                lg.out(_DebugLevel, '    currently family_member() is not yet connected, skip')
             return p2p_service.SendAck(incoming_packet)
 
         if not self.my_info:
-            # current DHT info is not yet known, skip
+            if _Debug:
+                lg.out(_DebugLevel, '    current DHT info is not yet known, skip')
             return p2p_service.SendAck(incoming_packet)
 
         if contacts_type == 'suppliers_list':
+            # this packet came from another supplier who belongs to that family
             try:
                 # TODO: check revision with my_info
                 # transaction_revision = int.get('transaction_revision', -1)
@@ -656,20 +660,24 @@ class FamilyMember(automat.Automat):
                 return
             if my_id.getLocalIDURL() not in suppliers_list:
                 lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
+                self.automat('family-refresh')
                 return p2p_service.SendFail(incoming_packet, 'contacts list from remote user does not include my identity')
             if self.my_info['ecc_map'] and ecc_map and self.my_info['ecc_map'] != ecc_map:
                 lg.warn('known ecc_map not matching with contacts list received from remote user')
-                # TODO: check this later
+                # TODO: check this later... actually when customer is changing ecc_map he will notify me also...
                 # return p2p_service.SendFail(incoming_packet, 'known ecc_map not matching with contacts list received from remote user')
-                return p2p_service.SendAck(incoming_packet)
+                self.automat('family-refresh')
+                return p2p_service.SendFail(incoming_packet)
             if len(suppliers_list) != len(self.my_info['suppliers']):
                 lg.warn('known number of suppliers not matching with contacts list received from remote user')
                 # TODO: check this later
                 # return p2p_service.SendFail(incoming_packet, 'known number of suppliers not matching with contacts list received from remote user')
-                return p2p_service.SendAck(incoming_packet)
+                self.automat('family-refresh')
+                return p2p_service.SendFail(incoming_packet)
             return p2p_service.SendAck(incoming_packet)
 
         elif contacts_type == 'supplier_position':
+            # this packet came from the customer, godfather :-)))
             try:
                 ecc_map = inp['customer_ecc_map']
                 supplier_idurl = inp['supplier_idurl']
