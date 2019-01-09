@@ -34,6 +34,7 @@ def test_customer_family_published_for_customer_1():
             return 
         response = requests.get(url=tunnel_url('customer_1', 'supplier/list/dht/v1'))
         assert response.status_code == 200
+        print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1

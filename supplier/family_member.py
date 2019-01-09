@@ -292,6 +292,8 @@ class FamilyMember(automat.Automat):
         for supplier_idurl in self.transaction['suppliers']:
             if not supplier_idurl:
                 continue
+            if supplier_idurl == my_id.getLocalIDURL():
+                continue
             outpacket = self._do_send_transaction_to_another_supplier(supplier_idurl)
             # TODO: wait Ack()/Fail() responses from other suppliers and decide to write to DHT or not 
         self.automat('suppliers-ok')
@@ -495,6 +497,22 @@ class FamilyMember(automat.Automat):
                 if current_request['ecc_map'] != merged_info['ecc_map']:
                     lg.info('from "family-join" request, detected ecc_map change %s -> %s for customer %s' % (
                         merged_info['ecc_map'], current_request['ecc_map'], self.customer_idurl))
+                    new_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
+                    if len(merged_info['suppliers']) < new_suppliers_count:
+                        merged_info['suppliers'] += [b'', ] * (new_suppliers_count - len(merged_info['suppliers']))
+                    else:
+                        merged_info['suppliers'] = merged_info['suppliers'][:new_suppliers_count]
+                    merged_info['ecc_map'] = current_request['ecc_map']
+                    if not expected_suppliers_count:
+                        expected_suppliers_count = new_suppliers_count
+                    if new_suppliers_count > expected_suppliers_count:
+                        expected_suppliers_count = new_suppliers_count
+                    else:
+                        expected_suppliers_count = new_suppliers_count
+            else:
+                if current_request['ecc_map'] and not merged_info['ecc_map']:
+                    lg.info('from "family-join" request, detected ecc_map was set to %s for the first time for customer %s' % (
+                        current_request['ecc_map'], self.customer_idurl))
                     new_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
                     if len(merged_info['suppliers']) < new_suppliers_count:
                         merged_info['suppliers'] += [b'', ] * (new_suppliers_count - len(merged_info['suppliers']))
