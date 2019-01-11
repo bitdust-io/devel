@@ -41,5 +41,5 @@ module for documentation on what these values control.
 """
 
 from __future__ import absolute_import
-from .node import Node
-from .datastore import DictDataStore, SQLiteDataStore
+from . node import Node  # @UnresolvedImport
+from . datastore import DictDataStore, SQLiteDataStore  # @UnresolvedImport

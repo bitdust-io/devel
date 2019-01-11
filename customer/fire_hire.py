@@ -426,7 +426,8 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        for pos, supplier_idurl in enumerate(contactsdb.suppliers()):
+        my_current_family = list(contactsdb.suppliers())
+        for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -437,7 +438,12 @@ class FireHire(automat.Automat):
                 )
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
-            sc.automat('connect', family_position=pos, ecc_map=eccmap.Current().name)
+            sc.automat(
+                'connect',
+                family_position=pos,
+                ecc_map=eccmap.Current().name,
+                family_snapshot=my_current_family,
+            )
             supplier_contact_status = contact_status.getInstance(supplier_idurl)
             if supplier_contact_status:
                 supplier_contact_status.addStateChangedCallback(
@@ -572,7 +578,12 @@ class FireHire(automat.Automat):
             lg.err('did not found position for new supplier')
             self.automat('search-failed')
             return
-        supplier_finder.A('start', family_position=position_for_new_supplier, ecc_map=eccmap.Current().name)
+        supplier_finder.A(
+            'start',
+            family_position=position_for_new_supplier,
+            ecc_map=eccmap.Current().name,
+            family_snapshot=contactsdb.suppliers(),
+        )
 
     def doSubstituteSupplier(self, *args, **kwargs):
         """
@@ -612,18 +623,30 @@ class FireHire(automat.Automat):
         if family_position < 0:
             lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % new_idurl)
             events.send('supplier-modified', dict(
-                new_idurl=new_idurl, old_idurl=None, position=family_position,
+                new_idurl=new_idurl,
+                old_idurl=None,
+                position=family_position,
+                ecc_map=eccmap.Current().name,
+                family_snapshot=contactsdb.suppliers(),
             ))
         else:
             if old_idurl:
                 lg.out(2, '!!!!!!!!!!! SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (family_position, old_idurl, new_idurl))
                 events.send('supplier-modified', dict(
-                    new_idurl=new_idurl, old_idurl=old_idurl, position=family_position,
+                    new_idurl=new_idurl,
+                    old_idurl=old_idurl,
+                    position=family_position,
+                    ecc_map=eccmap.Current().name,
+                    family_snapshot=contactsdb.suppliers(),
                 ))
             else:
                 lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
                 events.send('supplier-modified', dict(
-                    new_idurl=new_idurl, old_idurl=None, position=family_position,
+                    new_idurl=new_idurl,
+                    old_idurl=None,
+                    position=family_position,
+                    ecc_map=eccmap.Current().name,
+                    family_snapshot=contactsdb.suppliers(),
                 ))
         self.restart_interval = 1.0
 

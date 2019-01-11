@@ -16,18 +16,18 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+
 from twisted.internet import protocol, defer
 from twisted.python import failure
+
 import twisted.internet.reactor
-
-from . import constants
-from . import encoding
-from . import msgtypes
-from . import msgformat
-from .contact import Contact
-
 reactor = twisted.internet.reactor
 
+from . import constants  # @UnresolvedImport
+from . import encoding  # @UnresolvedImport
+from . import msgtypes  # @UnresolvedImport
+from . import msgformat  # @UnresolvedImport
+from .contact import Contact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 

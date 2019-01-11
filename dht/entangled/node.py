@@ -21,8 +21,8 @@ import hashlib
 
 from twisted.internet import defer
 
-from .kademlia.node import Node
-from .kademlia.node import rpcmethod
+from kademlia.node import Node  # @UnresolvedImport
+from kademlia.node import rpcmethod  # @UnresolvedImport
 from io import open
 
 
@@ -297,7 +297,7 @@ class EntangledNode(Node):
 
 if __name__ == '__main__':
     import twisted.internet.reactor
-    from .kademlia.datastore import SQLiteDataStore
+    from kademlia.datastore import SQLiteDataStore  # @UnresolvedImport
     import sys
     import os
     if len(sys.argv) < 2:
@@ -333,4 +333,4 @@ if __name__ == '__main__':
     node = EntangledNode(udpPort=int(sys.argv[1]), dataStore=dataStore)
     #node = EntangledNode( udpPort=int(sys.argv[1]) )
     node.joinNetwork(knownNodes)
-    twisted.internet.reactor.run()
+    twisted.internet.reactor.run()  # @UndefinedVariable

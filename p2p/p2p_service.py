@@ -201,12 +201,13 @@ def SendAck(packettoack, response='', wide=False, callbacks={}, remote_idurl=Non
     if remote_idurl is None:
         remote_idurl = packettoack.OwnerID
     result = signed.Packet(
-        commands.Ack(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        packettoack.PacketID,
-        response,
-        remote_idurl, )
+        Command=commands.Ack(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packettoack.PacketID,
+        Payload=response,
+        RemoteID=remote_idurl,
+    )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAck %s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
@@ -216,12 +217,13 @@ def SendAck(packettoack, response='', wide=False, callbacks={}, remote_idurl=Non
 
 def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
     result = signed.Packet(
-        commands.Ack(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        packetid,
-        response,
-        remoteID, )
+        Command=commands.Ack(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packetid,
+        Payload=response,
+        RemoteID=remoteID,
+    )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendAckNoRequest packetID=%s to %s  with %d bytes" % (
             result.PacketID, result.RemoteID, len(response)))
@@ -239,12 +241,12 @@ def SendFail(request, response='', remote_idurl=None, wide=False):
     if remote_idurl is None:
         remote_idurl = request.OwnerID
     result = signed.Packet(
-        commands.Fail(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        request.PacketID,  # This is needed to identify Fail on remote side
-        response,
-        remote_idurl,
+        Command=commands.Fail(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=request.PacketID,  # This is needed to identify Fail on remote side
+        Payload=response,
+        RemoteID=remote_idurl,
     )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendFail packetID=%s to %s  with %d bytes" % (
@@ -255,12 +257,12 @@ def SendFail(request, response='', remote_idurl=None, wide=False):
 
 def SendFailNoRequest(remoteID, packetID, response=''):
     result = signed.Packet(
-        commands.Fail(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        packetID,
-        response,
-        remoteID,
+        Command=commands.Fail(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packetID,
+        Payload=response,
+        RemoteID=remoteID,
     )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendFailNoRequest packetID=%s to %s" % (result.PacketID, result.RemoteID))

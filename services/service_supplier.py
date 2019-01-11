@@ -117,6 +117,7 @@ class SupplierService(LocalService):
         target_customer_idurl = None
         family_position = json_payload.get('position')
         ecc_map = json_payload.get('ecc_map')
+        family_snapshot = json_payload.get('family_snapshot')
         key_id = json_payload.get('key_id')
         target_customer_id = json_payload.get('customer_id')
         if key_id:
@@ -185,7 +186,7 @@ class SupplierService(LocalService):
             accounting.write_customers_quotas(space_dict)
             if customer_public_key_id:
                 my_keys.erase_key(customer_public_key_id)
-            reactor.callLater(0, local_tester.TestUpdateCustomers)
+            reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
             if new_customer:
                 lg.out(8, "    NEW CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
                 events.send('new-customer-denied', dict(idurl=customer_idurl))
@@ -201,6 +202,7 @@ class SupplierService(LocalService):
         contactsdb.add_customer_meta_info(customer_idurl, {
             'ecc_map': ecc_map,
             'position': family_position,
+            'family_snapshot': family_snapshot,
         })
         accounting.write_customers_quotas(space_dict)
         if customer_public_key_id:
@@ -223,6 +225,7 @@ class SupplierService(LocalService):
                 allocated_bytes=bytes_for_customer,
                 ecc_map=ecc_map,
                 position=family_position,
+                family_snapshot=family_snapshot,
                 key_id=customer_public_key_id,
             ))
         else:
@@ -234,6 +237,7 @@ class SupplierService(LocalService):
                 ecc_map=ecc_map,
                 position=family_position,
                 key_id=customer_public_key_id,
+                family_snapshot=family_snapshot,
             ))
         return p2p_service.SendAck(newpacket, 'accepted')
 
@@ -268,7 +272,7 @@ class SupplierService(LocalService):
         space_dict.pop(customer_idurl)
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
-        reactor.callLater(0, local_tester.TestUpdateCustomers)
+        reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
         events.send('existing-customer-terminated', dict(idurl=customer_idurl))
         return p2p_service.SendAck(newpacket, 'accepted')
@@ -621,7 +625,7 @@ class SupplierService(LocalService):
             newpacket, newpacket.OwnerID, newpacket.CreatorID, filename, sz, ))
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
-        reactor.callLater(0, local_tester.TestSpaceTime)
+        reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
         if self.publish_event_supplier_file_modified:
             from main import events
             events.send('supplier-file-modified', data=dict(

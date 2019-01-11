@@ -314,13 +314,9 @@ def split_key(key_str):
 #------------------------------------------------------------------------------
 
 def on_success(result, method, key, *args, **kwargs):
-    if isinstance(result, dict):
-        sz_bytes = len(str(result))
-    else:
-        sz_bytes = 0
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   with %d bytes' % (
-            method, key, sz_bytes))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   with : %r' % (
+            method, key, result, ))
     return result
 
 
@@ -413,6 +409,19 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     return set_value(key=key, value=value, age=age, expire=expire)
 
 #------------------------------------------------------------------------------
+
+def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] with %d bytes' % (
+            key, len(str(value))))
+    return True
+
+
+def validate_before_request(key, **kwargs):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_before_request key=[%s]' % key)
+    return True
+
 
 def validate_data(value, key, rules, result_defer=None):
     if not isinstance(value, dict):
@@ -547,13 +556,21 @@ def delete_node_data(key):
 
 #------------------------------------------------------------------------------
 
+
 class DHTNode(DistributedTupleSpacePeer):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
         super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=None, )
+        self._counter = count
         self.data = {}
         self.expire_task = LoopingCall(self.expire)
-        self._counter = count
+        self.rpc_callbacks = {}
+
+    def add_rpc_callback(self, rpc_method_name, cb):
+        self.rpc_callbacks[rpc_method_name] = cb
+
+    def remove_rpc_callback(self, rpc_method_name):
+        self.rpc_callbacks.pop(rpc_method_name, None)
 
     def expire(self):
         now = utime.get_sec1970()
@@ -579,11 +596,22 @@ class DHTNode(DistributedTupleSpacePeer):
     @rpcmethod
     def store(self, key, value, originalPublisherID=None,
               age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
-        # TODO: add signature validation to be sure this is the owner of that key:value pair
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
                 base64.b64encode(key), expireSeconds, counter('store')))
+
+        if 'store' in self.rpc_callbacks:
+            # TODO: add signature validation to be sure this is the owner of that key:value pair
+            self.rpc_callbacks['store'](
+                key=key,
+                value=value,
+                originalPublisherID=originalPublisherID,
+                age=age,
+                expireSeconds=expireSeconds,
+                **kwargs
+            )
+
         try:
             return super(DHTNode, self).store(
                 key=key,
@@ -602,6 +630,12 @@ class DHTNode(DistributedTupleSpacePeer):
         count('request')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
+
+        if 'request' in self.rpc_callbacks:
+            self.rpc_callbacks['request'](
+                key=key,
+            )
+
         internal_value = get_node_data(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]

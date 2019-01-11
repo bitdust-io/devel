@@ -23,7 +23,7 @@
 import pytest
 import time
 import requests
-
+import traceback
 import asyncio
 
 from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url
@@ -374,9 +374,16 @@ def start_all_nodes(event_loop):
 #------------------------------------------------------------------------------
 
 async def report_one_node(node):
-    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
-    print('[%s]  Warnings: %d     Errors: %d     Exceptions: %d  ' % (
-        node, main_log.count('WARNING'), main_log.count('ERROR!!!'), main_log.count('Exception:'), ))
+    try:
+        main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+        num_warnings = main_log.count('WARNING')
+        num_errors = main_log.count('ERROR!!!')
+        num_exceptions = main_log.count('Exception:')
+        assert num_exceptions == 0
+        print('[%s]  Warnings: %d     Errors: %d     Exceptions: %d  ' % (
+            node, num_warnings, num_errors, num_exceptions, ))
+    except:
+        traceback.print_exc()
 
 
 def report_all_nodes(event_loop):

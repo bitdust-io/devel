@@ -210,6 +210,7 @@ class SupplierConnector(automat.Automat):
         """
         self._last_known_family_position = None
         self._last_known_ecc_map = None
+        self._last_known_family_snapshot = None
         contact_peer = contact_status.getInstance(self.supplier_idurl)
         if contact_peer:
             contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
@@ -379,6 +380,9 @@ class SupplierConnector(automat.Automat):
         self._last_known_family_position = kwargs.get('family_position')
         if self._last_known_family_position is not None:
             service_info['position'] = self._last_known_family_position
+        self._last_known_family_snapshot = kwargs.get('family_snapshot')
+        if self._last_known_family_snapshot is not None:
+            service_info['family_snapshot'] = self._last_known_family_snapshot
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
@@ -486,19 +490,26 @@ class SupplierConnector(automat.Automat):
         if _Debug:
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in list(self.callbacks.values()):
-            cb(self.supplier_idurl, 'CONNECTED', family_position=self._last_known_family_position, ecc_map=self._last_known_ecc_map, )
-        if self._last_known_family_position is not None:
-            p2p_service.SendContacts(
-                remote_idurl=self.supplier_idurl,
-                json_payload={
-                    'space': 'family_member',
-                    'type': 'supplier_position',
-                    'customer_idurl': my_id.getLocalIDURL(),
-                    'customer_ecc_map': self._last_known_ecc_map,
-                    'supplier_idurl': self.supplier_idurl,
-                    'supplier_position': self._last_known_family_position,
-                },
+            cb(
+                self.supplier_idurl,
+                'CONNECTED',
+                family_position=self._last_known_family_position,
+                ecc_map=self._last_known_ecc_map,
+                family_snapshot=self._last_known_family_snapshot,
             )
+#         if self._last_known_family_position is not None:
+#             p2p_service.SendContacts(
+#                 remote_idurl=self.supplier_idurl,
+#                 json_payload={
+#                     'space': 'family_member',
+#                     'type': 'supplier_position',
+#                     'customer_idurl': my_id.getLocalIDURL(),
+#                     'customer_ecc_map': self._last_known_ecc_map,
+#                     'supplier_idurl': self.supplier_idurl,
+#                     'supplier_position': self._last_known_family_position,
+#                     'family_snapshot': self._last_known_family_snapshot,
+#                 },
+#             )
 
     def doReportNoService(self, *args, **kwargs):
         """

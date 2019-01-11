@@ -62,7 +62,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -602,10 +602,10 @@ class ProxyReceiver(automat.Automat):
                     return
             except:
                 lg.exc()
-        if not routed_packet.Valid():
-            lg.err('invalid packet %s from %s' % (
-                routed_packet, newpacket.CreatorID, ))
-            return
+#         if not routed_packet.Valid():
+#             lg.err('invalid packet %s from %s' % (
+#                 routed_packet, newpacket.CreatorID, ))
+#             return
         self.traffic_in += len(data)
         packet_in.process(routed_packet, info)
         del block

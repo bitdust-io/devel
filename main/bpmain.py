@@ -601,7 +601,7 @@ def main(executable_path=None):
         AppDataDir = appdata
 
     # ask to count time for each log line from that moment, not absolute time
-    lg.life_begins()
+    # lg.life_begins()
     # try to read debug level value at the early stage - no problem if fail here
     try:
         if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':

@@ -84,7 +84,7 @@ def test_customer_family_increase_for_customer_4():
 
     count = 0
     while True:
-        if count > 10:
+        if count > 20:
             assert False, 'customer family was not published correctly in DHT after many attempts'
             return 
         response = requests.get(url=tunnel_url('customer_4', 'supplier/list/dht/v1'))

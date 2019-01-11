@@ -106,8 +106,8 @@ class EmployerService(LocalService):
         fire_hire.A('restart')
 
     def _on_supplier_modified(self, evt):
-        if evt.data['new_idurl']:
-            self._do_notify_supplier_position(evt.data['new_idurl'], evt.data['position'], )
+        # if evt.data['new_idurl']:
+        #     self._do_notify_supplier_position(evt.data['new_idurl'], evt.data['position'], )
         self._do_cleanup_dht_suppliers()
 
     def _on_my_dht_relations_discovered(self, discovered_suppliers_list):
