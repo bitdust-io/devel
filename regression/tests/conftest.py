@@ -369,7 +369,14 @@ def start_all_nodes(event_loop):
         asyncio.ensure_future(start_one_customer(customer)) for customer in nodes['customers']
     ]))
 
-    print('\nAll nodes ready\n')
+    print('\nALL NODES STARTED\n')
+
+
+def stop_all_nodes(event_loop):
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(stop_daemon(node, skip_checks=True)) for node in ALL_NODES
+    ]))
+    print('\nALL NODES STOPPED\n')
 
 #------------------------------------------------------------------------------
 
@@ -395,7 +402,7 @@ def report_all_nodes(event_loop):
 #------------------------------------------------------------------------------
 
 async def clean_one_node(node, skip_checks=False):
-    stop_daemon(node, skip_checks=skip_checks)
+    # stop_daemon(node, skip_checks=skip_checks)
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
@@ -450,6 +457,7 @@ def global_wrapper(event_loop):
  
     yield
 
+    stop_all_nodes(event_loop)
     report_all_nodes(event_loop)
     # TODO: use ENV variables to control cleanup
     # clean_all_nodes()

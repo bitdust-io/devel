@@ -463,8 +463,19 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
                 lg.out(_DebugLevel, '        new json data must increment revision number, store operation FAILED')
             return False
         if new_revision == prev_revision:
-            # TODO: need to check that new data is exactly the same
-            pass
+            if prev_record_type == 'suppliers':
+                prev_ecc_map = json_prev_value.get('ecc_map')
+                new_ecc_map = json_new_value.get('ecc_map')
+                if prev_ecc_map and new_ecc_map != prev_ecc_map:
+                    if _Debug:
+                        lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
+                    return False
+                prev_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_prev_value.get('suppliers', [])]
+                new_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_new_value.get('suppliers', [])]
+                if prev_suppliers != new_suppliers:
+                    if _Debug:
+                        lg.out(_DebugLevel, '        new json data have same revision but different suppliers, store operation FAILED')
+                    return False
     if _Debug:
         lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
     return True

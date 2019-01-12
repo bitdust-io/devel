@@ -53,11 +53,11 @@ def test_customer_family_increase_for_customer_4():
     count = 0
     while True:
         if count > 10:
-            assert False, 'customer family was not published correctly in DHT after many attempts'
+            assert False, 'customer family 2x2 was not published correctly in DHT after many attempts'
             return 
         response = requests.get(url=tunnel_url('customer_4', 'supplier/list/dht/v1'))
         assert response.status_code == 200
-        # print('\n\n%r' % response.json())
+        print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1
@@ -79,17 +79,17 @@ def test_customer_family_increase_for_customer_4():
         },
     )
     assert response.status_code == 200
-    # print('\n\n%r' % response.json())
+    print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
     count = 0
     while True:
         if count > 60:
-            assert False, 'customer family was not published correctly in DHT after many attempts'
+            assert False, 'customer family 4x4 was not published correctly in DHT after many attempts'
             return 
         response = requests.get(url=tunnel_url('customer_4', 'supplier/list/dht/v1'))
         assert response.status_code == 200
-        # print('\n\n%r' % response.json())
+        print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1

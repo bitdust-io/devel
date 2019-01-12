@@ -12,10 +12,11 @@ BitDust family_member() Automat
 EVENTS:
     * :red:`all-suppliers-agree`
     * :red:`contacts-received`
-    * :red:`dht-fail`
-    * :red:`dht-ok`
+    * :red:`dht-read-fail`
     * :red:`dht-value-exist`
     * :red:`dht-value-not-exist`
+    * :red:`dht-write-fail`
+    * :red:`dht-write-ok`
     * :red:`disconnect`
     * :red:`family-join`
     * :red:`family-leave`
@@ -182,14 +183,14 @@ class FamilyMember(automat.Automat):
                 self.Attempts+=1
                 self.doRebuildFamily(*args, **kwargs)
                 self.doRequestSuppliersReview(*args, **kwargs)
-            elif event == 'dht-fail':
-                self.state = 'DISCONNECTED'
-                self.Attempts=0
-                self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
             elif event == 'contacts-received':
                 self.doCheckReply(*args, **kwargs)
+            elif event == 'dht-read-fail':
+                self.state = 'DISCONNECTED'
+                self.Attempts=0
+                self.doNotifyDisconnected(*args, **kwargs)
         #---SUPPLIERS---
         elif self.state == 'SUPPLIERS':
             if event == 'shutdown':
@@ -214,21 +215,21 @@ class FamilyMember(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'dht-ok':
-                self.state = 'CONNECTED'
-                self.Attempts=0
-                self.doNotifyConnected(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
             elif event == 'contacts-received':
                 self.doCheckReply(*args, **kwargs)
-            elif event == 'dht-fail' and self.Attempts>3:
+            elif event == 'dht-write-fail' and self.Attempts>3:
                 self.state = 'DISCONNECTED'
                 self.Attempts=0
                 self.doNotifyDisconnected(*args, **kwargs)
-            elif event == 'dht-fail' and self.Attempts<=3:
+            elif event == 'dht-write-fail' and self.Attempts<=3:
                 self.state = 'DHT_READ'
                 self.doDHTRead(*args, **kwargs)
+            elif event == 'dht-write-ok':
+                self.state = 'CONNECTED'
+                self.Attempts=0
+                self.doNotifyConnected(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -761,6 +762,8 @@ class FamilyMember(automat.Automat):
         self.automat('family-refresh')
 
     def _on_dht_read_success(self, dht_result):
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_dht_read_success  result: %r' % dht_result)
         if dht_result:
             self.dht_info = dht_result
             self.automat('dht-value-exist', dht_result)
@@ -770,20 +773,25 @@ class FamilyMember(automat.Automat):
 
     def _on_dht_read_failed(self, err):
         self.dht_info = None
-        lg.err('doDHTRead FAILED: %s' % err)
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_dht_read_failed : %r' % err)
+        self.automat('dht-read-fail')
         
     def _on_dht_write_success(self, dht_result):
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_dht_write_success  result: %r' % dht_result)
         self.my_info = self.transaction.copy()
         self.dht_info = None
         self.transaction = None
-        self.automat('dht-ok', dht_result)
+        self.automat('dht-write-ok', dht_result)
 
     def _on_dht_write_failed(self, err):
-        lg.err('doDHTWrite FAILED: %s' % err)
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %r' % err)
         # self.my_info = None
         self.transaction = None
         self.dht_info = None
-        self.automat('dht-fail')
+        self.automat('dht-write-fail')
 
     def _on_incoming_contacts_packet(self, inp):
         try:
