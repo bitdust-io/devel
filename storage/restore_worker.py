@@ -308,6 +308,8 @@ class RestoreWorker(automat.Automat):
         """
         Condition method.
         """
+        if not self.EccMap:
+            return False
         max_errors = eccmap.GetCorrectableErrors(self.EccMap.NumSuppliers())
         result = bool(len(self.RequestFails) <= max_errors)
         if _Debug:
@@ -330,8 +332,6 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
-        if data_receiver.A():
-            data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
         self.known_suppliers = [_f for _f in contactsdb.suppliers(customer_idurl=self.customer_idurl) if _f]
         known_eccmap_dict = {}
         for supplier_idurl in self.known_suppliers:
@@ -351,6 +351,8 @@ class RestoreWorker(automat.Automat):
             self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(len(self.known_suppliers)))
             lg.warn('no meta info found, guessed eccmap %s from %d known suppliers' % (
                 self.EccMap, len(self.known_suppliers)))
+        if data_receiver.A():
+            data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
 
     def doStartNewBlock(self, *args, **kwargs):
         """

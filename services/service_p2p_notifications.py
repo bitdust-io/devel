@@ -149,7 +149,7 @@ class P2PNotificationsService(LocalService):
                 resp['reason'] = str(exc)
             service_responses_list.append(resp)
             lg.out(self.debug_level, 'service_p2p_notifications.request  %s:%s  is  [%s] : %s' % (
-                r_scope, r_action, resp['result'], resp['reason'], ))
+                r_scope, r_action, resp['result'], resp.get('reason', 'OK'), ))
         return p2p_service.SendAck(newpacket, json.dumps({'items': service_responses_list}))
 
     def cancel(self, json_payload, newpacket, info):
