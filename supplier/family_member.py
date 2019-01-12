@@ -567,7 +567,7 @@ class FamilyMember(automat.Automat):
                 'family_snapshot': another_suppliers,
             })
         return {
-            'revision': int(another_revision) + 1,
+            'revision': int(another_revision),
             'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
             'suppliers': another_suppliers,
             'ecc_map': another_ecc_map,
