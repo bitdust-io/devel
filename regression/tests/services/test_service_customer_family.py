@@ -48,6 +48,16 @@ def test_customer_family_published_for_customer_1():
         assert response.json()['result']['ecc_map'] == 'ecc/2x2', response.json()['result']['ecc_map']
         break
 
+    response = requests.get(url=tunnel_url('customer_2', 'supplier/list/dht/v1?id=customer_1@is_8084'))
+    assert response.status_code == 200
+    print('\n\n%r' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+    assert len(response.json()['result']) > 0
+    assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_1.xml', response.json()['result']['customer_idurl']
+    assert response.json()['result']['ecc_map'] == 'ecc/2x2', response.json()['result']['ecc_map']
+    assert len(response.json()['result']['suppliers']) == 2
+    assert '' not in response.json()['result']['suppliers']
+
 
 def test_customer_family_increase_for_customer_4():
     count = 0
@@ -103,4 +113,97 @@ def test_customer_family_increase_for_customer_4():
         assert response.json()['result']['ecc_map'] == 'ecc/4x4', response.json()['result']['ecc_map']
         break
 
+    response = requests.get(url=tunnel_url('customer_1', 'supplier/list/dht/v1?id=customer_4@is_8084'))
+    assert response.status_code == 200
+    print('\n\n%r' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+    assert len(response.json()['result']) > 0
+    assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_4.xml', response.json()['result']['customer_idurl']
+    assert response.json()['result']['ecc_map'] == 'ecc/4x4', response.json()['result']['ecc_map']
+    assert len(response.json()['result']['suppliers']) == 4
+    assert '' not in response.json()['result']['suppliers']
 
+    response = requests.get(url=tunnel_url('customer_2', 'supplier/list/dht/v1?id=customer_4@is_8084'))
+    assert response.status_code == 200
+    print('\n\n%r' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+    assert len(response.json()['result']) > 0
+    assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_4.xml', response.json()['result']['customer_idurl']
+    assert response.json()['result']['ecc_map'] == 'ecc/4x4', response.json()['result']['ecc_map']
+    assert len(response.json()['result']['suppliers']) == 4
+    assert '' not in response.json()['result']['suppliers']
+
+
+def test_customer_family_decrease_for_customer_5():
+    count = 0
+    while True:
+        if count > 10:
+            assert False, 'customer family 4x4 was not published correctly in DHT after many attempts'
+            return 
+        response = requests.get(url=tunnel_url('customer_5', 'supplier/list/dht/v1'))
+        assert response.status_code == 200
+        print('\n\n%r' % response.json())
+        assert response.json()['status'] == 'OK', response.json()
+        if not response.json()['result']:
+            count += 1
+            time.sleep(5)
+            continue
+        if len(response.json()['result']['suppliers']) < 4 or '' in response.json()['result']['suppliers']:
+            count += 1
+            time.sleep(5)
+            continue
+        assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_5.xml', response.json()['result']['customer_idurl']
+        assert response.json()['result']['ecc_map'] == 'ecc/4x4', response.json()['result']['ecc_map']
+        break
+
+    response = requests.post(
+        url=tunnel_url('customer_5', '/config/set/v1'),
+        json={
+            'key': 'services/customer/suppliers-number',
+            'value': '2',
+        },
+    )
+    assert response.status_code == 200
+    print('\n\n%r' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+
+    count = 0
+    while True:
+        if count > 60:
+            assert False, 'customer family 2x2 was not re-published again after many attempts'
+            return 
+        response = requests.get(url=tunnel_url('customer_5', 'supplier/list/dht/v1'))
+        assert response.status_code == 200
+        print('\n\n%r' % response.json())
+        assert response.json()['status'] == 'OK', response.json()
+        if not response.json()['result']:
+            count += 1
+            time.sleep(5)
+            continue
+        if len(response.json()['result']['suppliers']) < 2 or '' in response.json()['result']['suppliers']:
+            count += 1
+            time.sleep(5)
+            continue
+        assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_5.xml', response.json()['result']['customer_idurl']
+        assert response.json()['result']['ecc_map'] == 'ecc/2x2', response.json()['result']['ecc_map']
+        break
+
+    response = requests.get(url=tunnel_url('customer_1', 'supplier/list/dht/v1?id=customer_5@is_8084'))
+    assert response.status_code == 200
+    print('\n\n%r' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+    assert len(response.json()['result']) > 0
+    assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_5.xml', response.json()['result']['customer_idurl']
+    assert response.json()['result']['ecc_map'] == 'ecc/2x2', response.json()['result']['ecc_map']
+    assert len(response.json()['result']['suppliers']) == 2
+    assert '' not in response.json()['result']['suppliers']
+
+    response = requests.get(url=tunnel_url('customer_2', 'supplier/list/dht/v1?id=customer_5@is_8084'))
+    assert response.status_code == 200
+    print('\n\n%r' % response.json())
+    assert response.json()['status'] == 'OK', response.json()
+    assert len(response.json()['result']) > 0
+    assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_5.xml', response.json()['result']['customer_idurl']
+    assert response.json()['result']['ecc_map'] == 'ecc/2x2', response.json()['result']['ecc_map']
+    assert len(response.json()['result']['suppliers']) == 2
+    assert '' not in response.json()['result']['suppliers']

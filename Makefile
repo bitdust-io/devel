@@ -176,6 +176,8 @@ regression_logs_all:
 	docker-compose -f regression/docker-compose.yml exec customer_3 cat /root/.bitdust/logs/main.log
 	@echo "### [customer_4] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/main.log
+	@echo "### [customer_5] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/main.log
 
 regression_logs_all_states:
     # TODO: keep up to date with docker-compose links
@@ -217,6 +219,8 @@ regression_logs_all_states:
 	docker-compose -f regression/docker-compose.yml exec customer_3 cat /root/.bitdust/logs/automats.log
 	@echo "### [customer_4] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_5] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/automats.log
 
 lint: venv_install
 	@$(TOX) -e lint
