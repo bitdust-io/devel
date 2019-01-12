@@ -857,8 +857,7 @@ class FamilyMember(automat.Automat):
             lg.out(_DebugLevel, '    another_revision=%d   another_ecc_map=%s   another_suppliers_list=%r' % (
                 another_revision, another_ecc_map, another_suppliers_list))
         if another_revision >= int(self.my_info['revision']):
-            if not self.my_info:                
-                self.my_info = self._do_create_revision_from_another_supplier(another_revision, another_suppliers_list, another_ecc_map)
+            self.my_info = self._do_create_revision_from_another_supplier(another_revision, another_suppliers_list, another_ecc_map)
             lg.info('another supplier have more fresh revision, update my info and raise "family-refresh" event')
             self.automat('family-refresh')
             return p2p_service.SendAck(incoming_packet)

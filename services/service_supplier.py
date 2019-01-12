@@ -218,8 +218,8 @@ class SupplierService(LocalService):
             lg.warn('customer public key was not provided in the request')
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
-            lg.out(8, "    NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s !!!!!!!!!!!!!!" % (
-                customer_idurl, family_position, ecc_map, ))
+            lg.out(8, "    NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s family_snapshot=%r !!!!!!!!!!!!!!" % (
+                customer_idurl, family_position, ecc_map, family_snapshot, ))
             events.send('new-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
@@ -229,8 +229,8 @@ class SupplierService(LocalService):
                 key_id=customer_public_key_id,
             ))
         else:
-            lg.out(8, "    OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s !!!!!!!!!!!!!!" % (
-                customer_idurl, family_position, ecc_map, ))
+            lg.out(8, "    OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s family_snapshot=%r !!!!!!!!!!!!!!" % (
+                customer_idurl, family_position, ecc_map, family_snapshot, ))
             events.send('existing-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
