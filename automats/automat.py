@@ -613,13 +613,13 @@ class Automat(object):
                 _LogsCount = 0
 
             s = ' ' * level + text + '\n'
+            tm_str = time.strftime('%H:%M:%S')
             if _LifeBeginsTime != 0:
                 dt = time.time() - _LifeBeginsTime
                 mn = dt // 60
                 sc = dt - mn * 60
-                s = ('%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100)) + s
-            else:
-                s = time.strftime('%H:%M:%S') + s
+                tm_str += ('/%02d:%02d.%02d' % (mn, sc, (sc - int(sc)) * 100))
+            s = tm_str + s
             if sys.version_info[0] == 3:
                 if not isinstance(s, str):
                     s = s.decode('utf-8')

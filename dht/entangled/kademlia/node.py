@@ -16,24 +16,26 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-import hashlib
-import random
-import time
-
-from twisted.internet import defer
-
-from . import constants
-from . import routingtable
-from . import datastore
-from . import protocol
-import twisted.internet.reactor
-import twisted.internet.threads
-from .contact import Contact
 from six.moves import range
 from io import open
 
+import hashlib
+import random
+import time
+import traceback
 
-_Debug = False
+from twisted.internet import defer
+import twisted.internet.reactor
+import twisted.internet.threads
+
+from . import constants  # @UnresolvedImport
+from . import routingtable  # @UnresolvedImport
+from . import datastore  # @UnresolvedImport
+from . import protocol  # @UnresolvedImport
+from .contact import Contact  # @UnresolvedImport
+
+
+_Debug = True
 
 
 def rpcmethod(func):
@@ -59,7 +61,7 @@ class Node(object):
     application is performed via this class (or a subclass).
     """
 
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
+    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
         """
         @param dataStore: The data store to use. This must be class inheriting
                           from the C{DataStore} interface (or providing the
@@ -79,7 +81,9 @@ class Node(object):
                                 being transmitted.
         @type networkProtocol: entangled.kademlia.protocol.KademliaProtocol
         """
-        self.id = self._generateID()
+        self.id = kwargs.get('id')
+        if not self.id:
+            self.id = self._generateID()
         self.port = udpPort
         self.listener = None
         self.refresher = None
@@ -98,7 +102,7 @@ class Node(object):
             self._protocol = networkProtocol(self)
         # Initialize the data storage mechanism used by this node
         if dataStore is None:
-            self._dataStore = datastore.DictDataStore()
+            self._dataStore = datastore.DictDataStore()  # in memory only
         else:
             self._dataStore = dataStore
             # Try to restore the node's state...
@@ -114,7 +118,7 @@ class Node(object):
         self._persistState()
 
     def listenUDP(self):
-        self.listener = twisted.internet.reactor.listenUDP(self.port, self._protocol)  # IGNORE:E1101
+        self.listener = twisted.internet.reactor.listenUDP(self.port, self._protocol)  # IGNORE:E1101   @UndefinedVariable
 
     def joinNetwork(self, knownNodeAddresses=None):
         """
@@ -152,7 +156,7 @@ class Node(object):
         self._joinDeferred.addCallback(self._persistState)
         self._joinDeferred.addErrback(self._joinNetworkFailed)
         # Start refreshing k-buckets periodically, if necessary
-        self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode)  # IGNORE:E1101
+        self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode)  # IGNORE:E1101  @UndefinedVariable
         # twisted.internet.reactor.run()
         return self._joinDeferred
 
@@ -188,27 +192,51 @@ class Node(object):
             self._counter('iterativeStore')
         if originalPublisherID is None:
             originalPublisherID = self.id
+        collect_results = kwargs.pop('collect_results', False)
+
+        def storeSuccess(ok):
+            if _Debug: print('storeSuccess', ok)
+            return ok
 
         def storeFailed(x):
-            pass
+            if _Debug: print('storeFailed', x)
+            return x
+
         # Prepare a callback for doing "STORE" RPC calls
 
         def executeStoreRPCs(nodes):
             # print '        .....execStoreRPCs called'
+            l = []
             if len(nodes) >= constants.k:
                 # If this node itself is closer to the key than the last (furthest) node in the list,
                 # we should store the value at ourselves as well
                 if self._routingTable.distance(key, self.id) < self._routingTable.distance(key, nodes[-1].id):
                     nodes.pop()
-                    self.store(key, value, originalPublisherID=originalPublisherID,
-                               age=age, expireSeconds=expireSeconds, **kwargs)
+                    try:
+                        ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                        age=age, expireSeconds=expireSeconds, **kwargs)
+                        l.append(defer.succeed(ok))
+                    except Exception as exc:
+                        if _Debug: traceback.print_exc()
+                        l.append(defer.fail(exc))
             else:
-                self.store(key, value, originalPublisherID=originalPublisherID,
-                           age=age, expireSeconds=expireSeconds, **kwargs)
+                try:
+                    ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                    age=age, expireSeconds=expireSeconds, **kwargs)
+                    l.append(defer.succeed(ok))
+                except Exception as exc:
+                    if _Debug: traceback.print_exc()
+                    l.append(defer.fail(exc))
+                    
             for contact in nodes:
                 d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
+                d.addCallback(storeSuccess)
                 d.addErrback(storeFailed)
-            return nodes
+                l.append(d)
+            if not collect_results:
+                return nodes
+            dl = defer.DeferredList(l, fireOnOneErrback=True)
+            return dl
         # Find k nodes closest to the key...
         df = self.iterativeFindNode(key)
         # ...and send them STORE RPCs as soon as they've been found
@@ -671,7 +699,7 @@ class Node(object):
                         or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
                     if _Debug: print('----------- scheduling next call -------------')
                     # Schedule the next iteration if there are any active calls (Kademlia uses loose parallelism)
-                    call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101
+                    call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101  @UndefinedVariable
                     pendingIterationCalls.append(call)
                 # Check for a quick contact response that made an update to the shortList
                 elif prevShortlistLength < len(shortlist):
@@ -821,7 +849,7 @@ class Node(object):
 
     def _scheduleNextNodeRefresh(self, *args):
         # print '==== sheduling next refresh'
-        self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode)
+        self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode)  # @UndefinedVariable
 
     def _threadedRepublishData(self, *args):
         """
@@ -853,7 +881,7 @@ class Node(object):
                 # the data before it expires (24 hours in basic Kademlia)
                 if age >= constants.dataExpireTimeout:
                     # print '    REPUBLISHING key:', key
-                    twisted.internet.reactor.callFromThread(
+                    twisted.internet.reactor.callFromThread(  # @UndefinedVariable
                         self.iterativeStore,
                         key=key,
                         value=self._dataStore[key],
@@ -870,7 +898,7 @@ class Node(object):
                 elif now - lastPublished >= constants.replicateInterval:
                     # ...data has not yet expired, and we need to replicate it
                     # print '    replicating key:', key,'age:',age
-                    twisted.internet.reactor.callFromThread(
+                    twisted.internet.reactor.callFromThread(  # @UndefinedVariable
                         self.iterativeStore,
                         key=key,
                         value=self._dataStore[key],
@@ -915,4 +943,4 @@ if __name__ == '__main__':
 
     node = Node(udpPort=usePort)
     node.joinNetwork(knownNodes)
-    twisted.internet.reactor.run()
+    twisted.internet.reactor.run()  # @UndefinedVariable

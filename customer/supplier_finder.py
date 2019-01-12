@@ -206,6 +206,7 @@ class SupplierFinder(automat.Automat):
         callback.append_inbox_callback(self._inbox_packet_received)
         self.family_position = kwargs.get('family_position')
         self.ecc_map = kwargs.get('ecc_map')
+        self.family_snapshot = kwargs.get('family_snapshot')
 
     def doSendMyIdentity(self, *args, **kwargs):
         """
@@ -237,7 +238,12 @@ class SupplierFinder(automat.Automat):
                 supplier_idurl=self.target_idurl,
                 customer_idurl=my_id.getLocalID(),
             )
-        sc.automat('connect', family_position=position, ecc_map=eccmap.Current().name)
+        sc.automat(
+            'connect',
+            family_position=position,
+            ecc_map=(self.ecc_map or eccmap.Current().name),
+            family_snapshot=self.family_snapshot,
+        )
         sc.set_callback('supplier_finder', self._supplier_connector_state)
 
     def doDHTFindRandomUser(self, *args, **kwargs):
@@ -339,4 +345,4 @@ class SupplierFinder(automat.Automat):
             return
         family_position = kwargs.get('family_position')
         ecc_map = kwargs.get('ecc_map')
-        self.automat('supplier-connected', self.target_idurl, family_position=family_position, ecc_map=ecc_map)
+        self.automat('supplier-connected', self.target_idurl, family_position=family_position, ecc_map=ecc_map, family_snapshot=self.family_snapshot)

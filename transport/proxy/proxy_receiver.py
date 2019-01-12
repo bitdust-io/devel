@@ -62,7 +62,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -584,7 +584,7 @@ class ProxyReceiver(automat.Automat):
             newidentity = identity.identity(xmlsrc=routed_packet.Payload)
             idurl = newidentity.getIDURL()
             if not identitycache.HasKey(idurl):
-                lg.warn('received new identity: %s' % idurl)
+                lg.info('received new identity: %s' % idurl)
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
@@ -602,10 +602,10 @@ class ProxyReceiver(automat.Automat):
                     return
             except:
                 lg.exc()
-        if not routed_packet.Valid():
-            lg.err('invalid packet %s from %s' % (
-                routed_packet, newpacket.CreatorID, ))
-            return
+#         if not routed_packet.Valid():
+#             lg.err('invalid packet %s from %s' % (
+#                 routed_packet, newpacket.CreatorID, ))
+#             return
         self.traffic_in += len(data)
         packet_in.process(routed_packet, info)
         del block

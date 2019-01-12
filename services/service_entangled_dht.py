@@ -63,6 +63,8 @@ class EntangledDHTService(LocalService):
     def stop(self):
         from dht import dht_service
         from main.config import conf
+        dht_service.node().remove_rpc_callback('request')
+        dht_service.node().remove_rpc_callback('store')
         conf().removeCallback('services/entangled-dht/udp-port')
         dht_service.disconnect()
         dht_service.shutdown()
@@ -72,11 +74,13 @@ class EntangledDHTService(LocalService):
         return True
 
     def _on_connected(self, nodes):
-        # import base64
-        # from logs import lg
-        # from dht import dht_service
-        # lg.out(self.debug_level, 'service_entangled_dht._on_connected    nodes: %r' % nodes)
-        # lg.out(self.debug_level, '        DHT node is active, ID=[%s]' % base64.b64encode(dht_service.node().id))
+        from dht import dht_service
+        import base64
+        from logs import lg
+        lg.out(self.debug_level, 'service_entangled_dht._on_connected    nodes: %r' % nodes)
+        lg.out(self.debug_level, '        DHT node is active, ID=[%s]' % base64.b64encode(dht_service.node().id))
+        dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
+        dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
         return nodes
 
     def _on_connect_failed(self, err):
@@ -91,3 +95,15 @@ class EntangledDHTService(LocalService):
             oldvalue, value, path))
         if network_connector.A():
             network_connector.A('reconnect')
+
+    def _on_dht_rpc_store(self, key, value, originalPublisherID, age, expireSeconds, **kwargs):
+        from dht import dht_service
+        if not dht_service.validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
+            raise ValueError('store value validation failed')
+        return None
+    
+    def _on_dht_rpc_request(self, key, **kwargs):
+        from dht import dht_service
+        if not dht_service.validate_before_request(key, **kwargs):
+            raise ValueError('request key validation failed')
+        return None

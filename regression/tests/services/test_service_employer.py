@@ -41,4 +41,3 @@ def test_hire_suppliers_by_customer_1():
             break
         count += 1
         time.sleep(5)
-

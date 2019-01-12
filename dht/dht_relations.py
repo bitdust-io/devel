@@ -56,6 +56,10 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
+def validate_customer_suppliers():
+    pass
+
+
 def read_customer_suppliers(customer_idurl):
     result = Deferred()
 

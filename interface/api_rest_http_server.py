@@ -241,7 +241,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/c/s$')
     @POST('^/config/set/v1$')
     def config_set_v1(self, request):
-        data = _request_data(request, mandatory_keys=['value', ])
+        data = _request_data(request, mandatory_keys=['key', 'value', ])
         return api.config_set(key=data['key'], value=data['value'])
 
     #------------------------------------------------------------------------------

@@ -24,14 +24,14 @@ import sqlite3
 import six.moves.cPickle as pickle
 # import pickle
 import os
-import codecs
+# import codecs
 
-from . import constants
-from . import encoding
+from . import constants  # @UnresolvedImport
+from . import encoding  # @UnresolvedImport
 
 
 try:
-    buffer = buffer
+    buffer = buffer  # @UndefinedVariable
 except:
     buffer = memoryview
 

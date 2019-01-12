@@ -23,7 +23,7 @@
 import pytest
 import time
 import requests
-
+import traceback
 import asyncio
 
 from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url
@@ -369,19 +369,36 @@ def start_all_nodes(event_loop):
         asyncio.ensure_future(start_one_customer(customer)) for customer in nodes['customers']
     ]))
 
-    print('\nAll nodes ready\n')
+    print('\nALL NODES STARTED\n')
+
+
+async def stop_one_node(node):
+    stop_daemon(node, skip_checks=True)
+
+
+def stop_all_nodes(event_loop):
+    print('\nstop all nodes\n')
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(stop_one_node(node)) for node in ALL_NODES
+    ]))
+    print('\nALL NODES STOPPED\n')
 
 #------------------------------------------------------------------------------
 
 async def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
-    print('[%s]  Warnings: %d   Exceptions: %d' % (
-        node, main_log.count('WARNING'), main_log.count('Exception:'), ))
+    num_warnings = main_log.count('WARNING')
+    num_errors = main_log.count('ERROR!!!')
+    num_exceptions = main_log.count('Exception:')
+    num_tracebacks = main_log.count('Traceback')
+    num_failures = main_log.count('Failure')
+    # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
+    print('[%s]  Warnings: %d     Errors: %d     Tracebacks: %d     Failures: %d    Exceptions: %d' % (
+        node, num_warnings, num_errors, num_tracebacks, num_failures, num_exceptions, ))
 
 
 def report_all_nodes(event_loop):
     print('\n\nTest report:')
-
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
     ]))
@@ -389,7 +406,7 @@ def report_all_nodes(event_loop):
 #------------------------------------------------------------------------------
 
 async def clean_one_node(node, skip_checks=False):
-    stop_daemon(node, skip_checks=skip_checks)
+    # stop_daemon(node, skip_checks=skip_checks)
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
@@ -410,7 +427,7 @@ def clean_all_nodes(event_loop, skip_checks=False):
     ]))
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(clean_one_customer(node)) for node in [
-        'customer_1', 'customer_2', 'customer_3',
+        'customer_1', 'customer_2', 'customer_3', 'customer_4',
     ]]))
     print('All nodes cleaned')
  
@@ -444,6 +461,7 @@ def global_wrapper(event_loop):
  
     yield
 
+    # stop_all_nodes(event_loop)
     report_all_nodes(event_loop)
     # TODO: use ENV variables to control cleanup
     # clean_all_nodes()

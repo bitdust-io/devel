@@ -35,7 +35,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -63,11 +63,11 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.dtuple import DistributedTupleSpacePeer
 from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
 from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
 from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
+from dht.entangled.node import EntangledNode  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ SENDING_QUEUE_LENGTH_CRITICAL = 50
 _MyNode = None
 _ActiveLookup = None
 _Counters = {}
-_ProtocolVersion = 6
+_ProtocolVersion = 7
 
 #------------------------------------------------------------------------------
 
@@ -314,20 +314,20 @@ def split_key(key_str):
 #------------------------------------------------------------------------------
 
 def on_success(result, method, key, *args, **kwargs):
-    if isinstance(result, dict):
-        sz_bytes = len(str(result))
-    else:
-        sz_bytes = 0
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   with %d bytes' % (
-            method, key, sz_bytes))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   with : %r' % (
+            method, key, result, ))
     return result
 
 
 def on_error(err, method, key):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%s' % (
-            method, key, str(err)))
+        try:
+            _err = str(err)
+        except:
+            _err = 'unknown error' 
+        lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%r' % (
+            method, key, _err))
     return err
 
 #------------------------------------------------------------------------------
@@ -356,7 +356,7 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
         expire = KEY_EXPIRE_MIN_SECONDS
     if expire > KEY_EXPIRE_MAX_SECONDS:
         expire = KEY_EXPIRE_MAX_SECONDS
-    d = node().iterativeStore(key_to_hash(key), value, age=age, expireSeconds=expire)
+    d = node().iterativeStore(key_to_hash(key), value, age=age, expireSeconds=expire, collect_results=True)
     d.addCallback(on_success, 'set_value', key, value)
     d.addErrback(on_error, 'set_value', key)
     return d
@@ -414,6 +414,79 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
 
 #------------------------------------------------------------------------------
 
+def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
+    try:
+        json_new_value = json.loads(value)
+    except:
+        # not a json data to be written - this is not valid
+        lg.exc()
+        return False
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (
+            base64.b64encode(key), json_new_value, ))
+    new_record_type = json_new_value.get('type')
+    if not new_record_type:
+        if _Debug:
+            lg.out(_DebugLevel, '        new json data did not have type field, store operation FAILED')
+        return False
+    if key not in node()._dataStore:
+        if _Debug:
+            lg.out(_DebugLevel, '        previous value not exists yet, store OK')
+        return True
+    prev_value = node()._dataStore[key]
+    try:
+        json_prev_value = json.loads(prev_value)
+    except:
+        if _Debug:
+            lg.out(_DebugLevel, '        current value in DHT is not a json data, will be overwritten, store OK')
+        return True
+    prev_record_type = json_prev_value.get('type')
+    if prev_record_type and prev_record_type != new_record_type:
+        if _Debug:
+            lg.out(_DebugLevel, '        new json data type did not match to existing record type, store operation FAILED')
+        return False
+    try:
+        prev_revision = int(json_prev_value['revision'])
+    except:
+        prev_revision = -1
+    try:
+        new_revision = int(json_new_value['revision'])
+    except:
+        new_revision = -1
+    if prev_revision >= 0:
+        if new_revision < 0:
+            if _Debug:
+                lg.out(_DebugLevel, '        new json data must have a revision, store operation FAILED')
+            return False
+        if new_revision < prev_revision:
+            if _Debug:
+                lg.out(_DebugLevel, '        new json data must increment revision number, store operation FAILED')
+            return False
+        if new_revision == prev_revision:
+            if prev_record_type == 'suppliers':
+                prev_ecc_map = json_prev_value.get('ecc_map')
+                new_ecc_map = json_new_value.get('ecc_map')
+                if prev_ecc_map and new_ecc_map != prev_ecc_map:
+                    if _Debug:
+                        lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
+                    return False
+                prev_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_prev_value.get('suppliers', [])]
+                new_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_new_value.get('suppliers', [])]
+                if prev_suppliers != new_suppliers:
+                    if _Debug:
+                        lg.out(_DebugLevel, '        new json data have same revision but different suppliers, store operation FAILED')
+                    return False
+    if _Debug:
+        lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
+    return True
+
+
+def validate_before_request(key, **kwargs):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_before_request key=[%s]' % key)
+    return True
+
+
 def validate_data(value, key, rules, result_defer=None):
     if not isinstance(value, dict):
         if _Debug:
@@ -449,6 +522,18 @@ def validate_data(value, key, rules, result_defer=None):
     return value
 
 
+def validate_data_written(store_results, key, json_data, result_defer):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  store_results=%r' % (
+            base64.b64encode(key), store_results, ))
+    for result in store_results:
+        if not result[0]:
+            result_defer.errback(store_results)
+            return None
+    result_defer.callback(store_results)
+    return None
+
+
 def get_valid_data(key, rules={}):
     ret = Deferred()
     d = get_json_value(key)
@@ -460,7 +545,11 @@ def get_valid_data(key, rules={}):
 def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}):
     if validate_data(json_data, key, rules) is None:
         return fail(Exception('invalid data, validation failed'))
-    return set_json_value(key, json_data=json_data, age=age, expire=expire)
+    ret = Deferred()
+    d = set_json_value(key, json_data=json_data, age=age, expire=expire)
+    d.addCallback(validate_data_written, key, json_data, ret)
+    d.addErrback(ret.errback)
+    return ret
 
 #------------------------------------------------------------------------------
 
@@ -547,13 +636,21 @@ def delete_node_data(key):
 
 #------------------------------------------------------------------------------
 
-class DHTNode(DistributedTupleSpacePeer):
+
+class DHTNode(EntangledNode):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
         super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=None, )
+        self._counter = count
         self.data = {}
         self.expire_task = LoopingCall(self.expire)
-        self._counter = count
+        self.rpc_callbacks = {}
+
+    def add_rpc_callback(self, rpc_method_name, cb):
+        self.rpc_callbacks[rpc_method_name] = cb
+
+    def remove_rpc_callback(self, rpc_method_name):
+        self.rpc_callbacks.pop(rpc_method_name, None)
 
     def expire(self):
         now = utime.get_sec1970()
@@ -579,13 +676,14 @@ class DHTNode(DistributedTupleSpacePeer):
     @rpcmethod
     def store(self, key, value, originalPublisherID=None,
               age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
-        # TODO: add signature validation to be sure this is the owner of that key:value pair
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
                 base64.b64encode(key), expireSeconds, counter('store')))
-        try:
-            return super(DHTNode, self).store(
+
+        if 'store' in self.rpc_callbacks:
+            # TODO: add signature validation to be sure this is the owner of that key:value pair
+            self.rpc_callbacks['store'](
                 key=key,
                 value=value,
                 originalPublisherID=originalPublisherID,
@@ -593,15 +691,27 @@ class DHTNode(DistributedTupleSpacePeer):
                 expireSeconds=expireSeconds,
                 **kwargs
             )
-        except:
-            lg.exc()
-            return 'OK'
+
+        return super(DHTNode, self).store(
+            key=key,
+            value=value,
+            originalPublisherID=originalPublisherID,
+            age=age,
+            expireSeconds=expireSeconds,
+            **kwargs
+        )
 
     @rpcmethod
     def request(self, key):
         count('request')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
+
+        if 'request' in self.rpc_callbacks:
+            self.rpc_callbacks['request'](
+                key=key,
+            )
+
         internal_value = get_node_data(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
