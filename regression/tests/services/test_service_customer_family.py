@@ -34,7 +34,7 @@ def test_customer_family_published_for_customer_1():
             return 
         response = requests.get(url=tunnel_url('customer_1', 'supplier/list/dht/v1'))
         assert response.status_code == 200
-        # print('\n\n%r' % response.json())
+        # # print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1
@@ -50,7 +50,7 @@ def test_customer_family_published_for_customer_1():
 
     response = requests.get(url=tunnel_url('customer_2', 'supplier/list/dht/v1?id=customer_1@is_8084'))
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    # print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0
     assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_1.xml', response.json()['result']['customer_idurl']
@@ -67,7 +67,7 @@ def test_customer_family_increase_for_customer_4():
             return 
         response = requests.get(url=tunnel_url('customer_4', 'supplier/list/dht/v1'))
         assert response.status_code == 200
-        print('\n\n%r' % response.json())
+        # print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1
@@ -89,7 +89,7 @@ def test_customer_family_increase_for_customer_4():
         },
     )
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    # print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
     count = 0
@@ -99,7 +99,7 @@ def test_customer_family_increase_for_customer_4():
             return 
         response = requests.get(url=tunnel_url('customer_4', 'supplier/list/dht/v1'))
         assert response.status_code == 200
-        print('\n\n%r' % response.json())
+        # print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1
@@ -115,7 +115,7 @@ def test_customer_family_increase_for_customer_4():
 
     response = requests.get(url=tunnel_url('customer_1', 'supplier/list/dht/v1?id=customer_4@is_8084'))
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    # print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0
     assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_4.xml', response.json()['result']['customer_idurl']
@@ -125,7 +125,7 @@ def test_customer_family_increase_for_customer_4():
 
     response = requests.get(url=tunnel_url('customer_2', 'supplier/list/dht/v1?id=customer_4@is_8084'))
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    # print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0
     assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_4.xml', response.json()['result']['customer_idurl']
@@ -142,7 +142,7 @@ def test_customer_family_decrease_for_customer_5():
             return 
         response = requests.get(url=tunnel_url('customer_5', 'supplier/list/dht/v1'))
         assert response.status_code == 200
-        print('\n\n%r' % response.json())
+        # print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1
@@ -164,7 +164,7 @@ def test_customer_family_decrease_for_customer_5():
         },
     )
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    # print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
 
     count = 0
@@ -174,7 +174,7 @@ def test_customer_family_decrease_for_customer_5():
             return 
         response = requests.get(url=tunnel_url('customer_5', 'supplier/list/dht/v1'))
         assert response.status_code == 200
-        print('\n\n%r' % response.json())
+        # print('\n\n%r' % response.json())
         assert response.json()['status'] == 'OK', response.json()
         if not response.json()['result']:
             count += 1
@@ -190,7 +190,7 @@ def test_customer_family_decrease_for_customer_5():
 
     response = requests.get(url=tunnel_url('customer_1', 'supplier/list/dht/v1?id=customer_5@is_8084'))
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    # print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0
     assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_5.xml', response.json()['result']['customer_idurl']
@@ -200,7 +200,7 @@ def test_customer_family_decrease_for_customer_5():
 
     response = requests.get(url=tunnel_url('customer_2', 'supplier/list/dht/v1?id=customer_5@is_8084'))
     assert response.status_code == 200
-    print('\n\n%r' % response.json())
+    # print('\n\n%r' % response.json())
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0
     assert response.json()['result']['customer_idurl'] == 'http://is:8084/customer_5.xml', response.json()['result']['customer_idurl']
