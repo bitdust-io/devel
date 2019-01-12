@@ -34,7 +34,7 @@ class DistributedTupleSpacePeer(EntangledNode):
     """
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
-        EntangledNode.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+        EntangledNode.__init__(self, udpPort, dataStore, routingTable, networkProtocol, **kwargs)
         self._blockingGetRequests = {}
         self._blockingReadRequests = {}
 

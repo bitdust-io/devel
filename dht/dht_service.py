@@ -34,7 +34,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -63,11 +63,11 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.dtuple import DistributedTupleSpacePeer
 from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
 from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
 from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
+from dht.entangled.node import EntangledNode  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -637,7 +637,7 @@ def delete_node_data(key):
 #------------------------------------------------------------------------------
 
 
-class DHTNode(DistributedTupleSpacePeer):
+class DHTNode(EntangledNode):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
         super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=None, )

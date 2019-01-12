@@ -538,6 +538,36 @@ class FamilyMember(automat.Automat):
             'customer_idurl': self.customer_idurl,
         }
 
+    def _do_create_possible_revision(self, latest_revision):
+        local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
+        possible_position = local_customer_meta_info.get('position', -1)
+        possible_suppliers = local_customer_meta_info.get('family_snapshot')
+        if possible_position > 0 and my_id.getLocalIDURL() not in possible_suppliers:
+            if len(possible_suppliers) > possible_position:
+                possible_suppliers[possible_position] = my_id.getLocalIDURL()
+        return {
+            'revision': latest_revision,
+            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
+            'suppliers': possible_suppliers,
+            'ecc_map': local_customer_meta_info.get('ecc_map'),
+            'customer_idurl': self.customer_idurl,
+        }
+
+    def _do_create_revision_from_another_supplier(self, another_revision, another_suppliers, another_ecc_map):
+        local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
+        possible_position = local_customer_meta_info.get('position', -1)
+        try:
+            another_suppliers[possible_position] = my_id.getLocalIDURL()
+        except:
+            lg.exc()
+        return {
+            'revision': int(another_revision),
+            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
+            'suppliers': another_suppliers,
+            'ecc_map': another_ecc_map,
+            'customer_idurl': self.customer_idurl,
+        }
+
     def _do_detect_latest_revision(self, dht_info, my_info):
         try:
             my_revision = int(my_info['revision'])
@@ -698,6 +728,10 @@ class FamilyMember(automat.Automat):
         return merged_info
 
     def _do_process_family_refresh_request(self, merged_info):
+        if not self.my_info:
+            self.my_info = self._do_create_possible_revision(int(merged_info['revision']))
+            lg.warn('"family-refresh" request will use "possible" customer meta info')
+
         if int(self.my_info['revision']) > int(merged_info['revision']):
             lg.info('"family-refresh" request will overwrite DHT record with my info because my revision is higher than record in DHT')
             return self.my_info.copy()
@@ -787,11 +821,85 @@ class FamilyMember(automat.Automat):
 
     def _on_dht_write_failed(self, err):
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %r' % err)
+            lg.out(_DebugLevel, 'family_member._on_dht_write_failed')
         # self.my_info = None
         self.transaction = None
         self.dht_info = None
         self.automat('dht-write-fail')
+
+    def _on_incoming_suppliers_list(self, inp):
+        # this packet came from another supplier who belongs to that family also
+        incoming_packet = inp['packet']
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_incoming_suppliers_list with %s' % incoming_packet)
+        # if self.state != 'CONNECTED':  # in ['DISCONNECTED', 'DHT_READ', ]:
+        #     if _Debug:
+        #         lg.out(_DebugLevel, '    currently family_member() is not yet connected, skip')
+        #     return p2p_service.SendAck(incoming_packet)
+        if not self.my_info:
+            if _Debug:
+                lg.out(_DebugLevel, '    current DHT info is not yet known, skip')
+            return p2p_service.SendAck(incoming_packet)    
+        try:
+            another_ecc_map = inp['customer_ecc_map']
+            another_suppliers_list = inp['suppliers_list']
+            another_revision = int(inp['transaction_revision'])
+        except:
+            lg.exc()
+            return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
+        if _Debug:
+            lg.out(_DebugLevel, '    another_revision=%d   another_ecc_map=%s   another_suppliers_list=%r' % (
+                another_revision, another_ecc_map, another_suppliers_list))
+        if another_revision >= int(self.my_info['revision']):
+            if not self.my_info:
+                self.my_info = self._do_create_revision_from_another_supplier(another_revision, another_suppliers_list, another_ecc_map)
+            lg.info('another supplier have more fresh revision, update my info and raise "family-refresh" event')
+            self.automat('family-refresh')
+            return p2p_service.SendAck(incoming_packet)
+        if my_id.getLocalIDURL() not in another_suppliers_list:
+            lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
+            return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
+        my_position_in_transaction = another_suppliers_list.index(my_id.getLocalIDURL())
+        my_known_position = self.my_info['suppliers'].index(my_id.getLocalIDURL())
+        if my_position_in_transaction != my_known_position:
+            lg.warn('another supplier is trying to put my IDURL on another position in the family of customer %s' % self.customer_idurl)
+            return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
+        return p2p_service.SendAck(incoming_packet)
+
+    def _on_incoming_supplier_position(self, inp):
+        # this packet came from the customer, a godfather of the family ;)))
+        incoming_packet = inp['packet']
+        try:
+            ecc_map = inp['customer_ecc_map']
+            supplier_idurl = inp['supplier_idurl']
+            supplier_position = inp['supplier_position']
+            family_snapshot = inp.get('family_snapshot')
+        except:
+            lg.exc()
+            return None
+        if supplier_idurl != my_id.getLocalIDURL():
+            return p2p_service.SendFail(incoming_packet, 'contacts packet with supplier position not addressed to me')
+        try:
+            _existing_position = self.my_info['suppliers'].index(supplier_idurl)
+        except:
+            _existing_position = -1
+        contactsdb.add_customer_meta_info(self.customer_idurl, {
+            'ecc_map': ecc_map,
+            'position': supplier_position,
+            'family_snapshot': family_snapshot,
+        })
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_incoming_supplier_position stored new meta info for customer %s:\n' % self.customer_idurl)
+            lg.out(_DebugLevel, '    ecc_map=%s position=%s family_snapshot=%s' % (ecc_map, supplier_position, family_snapshot, ))
+#         if _existing_position != supplier_position:
+#             lg.warn('will re-raise "family-join" after receiving my supplier_position from customer')
+#             self.automat('family-join', {
+#                 'supplier_idurl': supplier_idurl,
+#                 'ecc_map': ecc_map,
+#                 'position': supplier_position,
+#                 'family_snapshot': family_snapshot,
+#             })
+        return p2p_service.SendAck(incoming_packet)
 
     def _on_incoming_contacts_packet(self, inp):
         try:
@@ -799,85 +907,11 @@ class FamilyMember(automat.Automat):
             incoming_packet = inp['packet']
         except:
             lg.exc()
-            return
-
-        if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_incoming_contacts_packet   type=%s' % contacts_type)
-
+            return None
         if contacts_type == 'suppliers_list':
-            # this packet came from another supplier who belongs to that family also
-            if self.state != 'CONNECTED':  # in ['DISCONNECTED', 'DHT_READ', ]:
-                if _Debug:
-                    lg.out(_DebugLevel, '    currently family_member() is not yet connected, skip')
-                return p2p_service.SendAck(incoming_packet)
-    
-            if not self.my_info:
-                if _Debug:
-                    lg.out(_DebugLevel, '    current DHT info is not yet known, skip')
-                return p2p_service.SendAck(incoming_packet)    
-
-            try:
-                ecc_map = inp['customer_ecc_map']
-                suppliers_list = inp['suppliers_list']
-                transaction_revision = int(inp['transaction_revision'])
-            except:
-                lg.exc()
-                return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
-
-            if transaction_revision > int(self.my_info['revision']):
-                lg.warn('another supplier have more fresh revision, raising "family-refresh" event')
-                self.automat('family-refresh')
-                return p2p_service.SendAck(incoming_packet)
-
-            if my_id.getLocalIDURL() not in suppliers_list:
-                lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
-                return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
-
-            my_position_in_transaction = suppliers_list.index(my_id.getLocalIDURL())
-            my_known_position = self.my_info['suppliers'].index(my_id.getLocalIDURL())
-            if my_position_in_transaction != my_known_position:
-                lg.warn('another supplier is trying to put my IDURL on another position in the family of customer %s' % self.customer_idurl)
-                return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
-
-            return p2p_service.SendAck(incoming_packet)
-
+            return self._on_incoming_suppliers_list(inp)
         elif contacts_type == 'supplier_position':
-            # disabled temporary
-            return p2p_service.SendAck(incoming_packet)
-            
-            # this packet came from the customer, a godfather of the family ;)))
-            try:
-                ecc_map = inp['customer_ecc_map']
-                supplier_idurl = inp['supplier_idurl']
-                supplier_position = inp['supplier_position']
-                family_snapshot = inp.get('family_snapshot')
-            except:
-                lg.exc()
-                return None
-
-            if supplier_idurl != my_id.getLocalIDURL():
-                return p2p_service.SendFail(incoming_packet, 'contacts packet with supplier position not addressed to me')
-
-            try:
-                _existing_position = self.my_info['suppliers'].index(supplier_idurl)
-            except:
-                _existing_position = -1
-            contactsdb.add_customer_meta_info(self.customer_idurl, {
-                'ecc_map': ecc_map,
-                'position': supplier_position,
-                'family_snapshot': family_snapshot,
-            })
-            if _existing_position != supplier_position:
-                lg.warn('will re-raise "family-join" after receiving my supplier_position from customer')
-                self.automat('family-join', {
-                    'supplier_idurl': supplier_idurl,
-                    'ecc_map': ecc_map,
-                    'position': supplier_position,
-                    'family_snapshot': family_snapshot,
-                })
-
-            return p2p_service.SendAck(incoming_packet)
-
+            return self._on_incoming_supplier_position(inp)
         return p2p_service.SendFail(incoming_packet, 'invalid contacts type')
 
     def _on_supplier_ack(self, response, info):

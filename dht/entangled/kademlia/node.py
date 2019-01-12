@@ -61,7 +61,7 @@ class Node(object):
     application is performed via this class (or a subclass).
     """
 
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
+    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
         """
         @param dataStore: The data store to use. This must be class inheriting
                           from the C{DataStore} interface (or providing the
@@ -81,7 +81,9 @@ class Node(object):
                                 being transmitted.
         @type networkProtocol: entangled.kademlia.protocol.KademliaProtocol
         """
-        self.id = self._generateID()
+        self.id = kwargs.get('id')
+        if not self.id:
+            self.id = self._generateID()
         self.port = udpPort
         self.listener = None
         self.refresher = None

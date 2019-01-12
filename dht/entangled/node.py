@@ -35,8 +35,8 @@ class EntangledNode(Node):
     standard, but useful) RPCs defined.
     """
 
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
+        Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol, **kwargs)
         self.invalidKeywords = []
         self.keywordSplitters = ['_', '.', '/']
 

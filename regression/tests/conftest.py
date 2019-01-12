@@ -372,9 +372,14 @@ def start_all_nodes(event_loop):
     print('\nALL NODES STARTED\n')
 
 
+async def stop_one_node(node):
+    stop_daemon(node, skip_checks=True)
+
+
 def stop_all_nodes(event_loop):
+    print('\nstop all nodes\n')
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(stop_daemon(node, skip_checks=True)) for node in ALL_NODES
+        asyncio.ensure_future(stop_one_node(node)) for node in ALL_NODES
     ]))
     print('\nALL NODES STOPPED\n')
 
@@ -388,13 +393,12 @@ async def report_one_node(node):
     num_tracebacks = main_log.count('Traceback')
     num_failures = main_log.count('Failure')
     # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
-    print('[%s]  Warnings: %d     Errors: %d     Exceptions: %d     Tracebacks: %d     Failures: %d' % (
-        node, num_warnings, num_errors, num_exceptions, num_tracebacks, num_failures, ))
+    print('[%s]  Warnings: %d     Errors: %d     Tracebacks: %d     Failures: %d    Exceptions: %d' % (
+        node, num_warnings, num_errors, num_tracebacks, num_failures, num_exceptions, ))
 
 
 def report_all_nodes(event_loop):
     print('\n\nTest report:')
-
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
     ]))
@@ -457,7 +461,7 @@ def global_wrapper(event_loop):
  
     yield
 
-    stop_all_nodes(event_loop)
+    # stop_all_nodes(event_loop)
     report_all_nodes(event_loop)
     # TODO: use ENV variables to control cleanup
     # clean_all_nodes()
