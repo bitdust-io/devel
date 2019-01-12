@@ -145,10 +145,11 @@ class P2PNotificationsService(LocalService):
                                 queue_id=r_json.get('queue_id'),
                             ) else 'OK'
             except Exception as exc:
-                lg.warn(str(exc))
                 resp['result'] = 'denied'
                 resp['reason'] = str(exc)
             service_responses_list.append(resp)
+            lg.out(self.debug_level, 'service_p2p_notifications.request  %s:%s  is  [%s] : %s' % (
+                r_scope, r_action, resp['result'], resp['reason'], ))
         return p2p_service.SendAck(newpacket, json.dumps({'items': service_responses_list}))
 
     def cancel(self, json_payload, newpacket, info):

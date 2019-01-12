@@ -22,6 +22,7 @@ from io import open
 import hashlib
 import random
 import time
+import traceback
 
 from twisted.internet import defer
 import twisted.internet.reactor
@@ -99,7 +100,7 @@ class Node(object):
             self._protocol = networkProtocol(self)
         # Initialize the data storage mechanism used by this node
         if dataStore is None:
-            self._dataStore = datastore.DictDataStore()
+            self._dataStore = datastore.DictDataStore()  # in memory only
         else:
             self._dataStore = dataStore
             # Try to restore the node's state...
@@ -189,12 +190,15 @@ class Node(object):
             self._counter('iterativeStore')
         if originalPublisherID is None:
             originalPublisherID = self.id
+        collect_results = kwargs.pop('collect_results', False)
 
         def storeSuccess(ok):
             if _Debug: print('storeSuccess', ok)
+            return ok
 
         def storeFailed(x):
             if _Debug: print('storeFailed', x)
+            return x
 
         # Prepare a callback for doing "STORE" RPC calls
 
@@ -206,20 +210,31 @@ class Node(object):
                 # we should store the value at ourselves as well
                 if self._routingTable.distance(key, self.id) < self._routingTable.distance(key, nodes[-1].id):
                     nodes.pop()
-                    d = self.store(key, value, originalPublisherID=originalPublisherID,
-                                   age=age, expireSeconds=expireSeconds, **kwargs)
-                    l.append(d)
+                    try:
+                        ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                        age=age, expireSeconds=expireSeconds, **kwargs)
+                        l.append(defer.succeed(ok))
+                    except Exception as exc:
+                        if _Debug: traceback.print_exc()
+                        l.append(defer.fail(exc))
             else:
-                d = self.store(key, value, originalPublisherID=originalPublisherID,
-                           age=age, expireSeconds=expireSeconds, **kwargs)
-                l.append(d)
+                try:
+                    ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                    age=age, expireSeconds=expireSeconds, **kwargs)
+                    l.append(defer.succeed(ok))
+                except Exception as exc:
+                    if _Debug: traceback.print_exc()
+                    l.append(defer.fail(exc))
+                    
             for contact in nodes:
                 d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
-                d.addErrback(storeFailed)
                 d.addCallback(storeSuccess)
+                d.addErrback(storeFailed)
                 l.append(d)
-            # dl = defer.DeferredList(l, fireOnOneErrback=True)
-            return (nodes, l, )
+            if not collect_results:
+                return nodes
+            dl = defer.DeferredList(l, fireOnOneErrback=True)
+            return dl
         # Find k nodes closest to the key...
         df = self.iterativeFindNode(key)
         # ...and send them STORE RPCs as soon as they've been found

@@ -591,4 +591,4 @@ if __name__ == '__main__':
 
     node = DistributedTupleSpacePeer(udpPort=int(sys.argv[1]))
     node.joinNetwork(knownNodes)
-    twisted.internet.reactor.run()
+    twisted.internet.reactor.run()  # @UndefinedVariable

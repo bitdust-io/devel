@@ -287,8 +287,7 @@ def Identity(newpacket, send_ack=True):
     # this is done in `UpdateAfterChecking()`
     idurl = newidentity.getIDURL()
     if not identitycache.HasKey(idurl):
-        if _Debug:
-            lg.out(_DebugLevel, 'p2p_service.Identity   received new identity: %s' % idurl)
+        lg.info('received new identity: %s' % idurl)
     if not identitycache.UpdateAfterChecking(idurl, newxml):
         lg.warn("ERROR has non-Valid identity")
         return False

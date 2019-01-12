@@ -59,7 +59,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._partialMessages = {}
         self._partialMessagesProgress = {}
 
-    def sendRPC(self, contact, method, args, rawResponse=False):
+    def sendRPC(self, contact, method, args, rawResponse=False, **kwargs):
         """
         Sends an RPC to the specified contact.
 

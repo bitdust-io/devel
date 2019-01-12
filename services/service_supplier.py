@@ -544,11 +544,11 @@ class SupplierService(LocalService):
             RemoteID=recipient_idurl,
         )
         if recipient_idurl == stored_packet.OwnerID:
-            lg.info('from request %r : sending %r back to owner: %s' % (
+            lg.out(self.debug_level, 'service_supplier._on_retreive   from request %r : sending %r back to owner: %s' % (
                 newpacket, stored_packet, recipient_idurl))
             gateway.outbox(routed_packet)  # , target=recipient_idurl)
             return True
-        lg.info('from request %r : returning data owned by %s to %s' % (
+        lg.out(self.debug_level, 'service_supplier._on_retreive   from request %r : returning data owned by %s to %s' % (
             newpacket, stored_packet.OwnerID, recipient_idurl))
         gateway.outbox(routed_packet)
         return True

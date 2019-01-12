@@ -158,6 +158,20 @@ class FamilyMember(automat.Automat):
             if event == 'init':
                 self.state = 'DISCONNECTED'
                 self.doInit(*args, **kwargs)
+        #---DISCONNECTED---
+        elif self.state == 'DISCONNECTED':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'instant' and self.isAnyRequests(*args, **kwargs):
+                self.state = 'DHT_READ'
+                self.Attempts=0
+                self.doPull(*args, **kwargs)
+                self.doDHTRead(*args, **kwargs)
+            elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
+                self.doPush(event, *args, **kwargs)
+            elif event == 'contacts-received':
+                self.doCheckReply(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'shutdown':
@@ -165,10 +179,12 @@ class FamilyMember(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'dht-value-exist' or event == 'dht-value-not-exist':
                 self.state = 'SUPPLIERS'
+                self.Attempts+=1
                 self.doRebuildFamily(*args, **kwargs)
                 self.doRequestSuppliersReview(*args, **kwargs)
             elif event == 'dht-fail':
                 self.state = 'DISCONNECTED'
+                self.Attempts=0
                 self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
@@ -185,6 +201,7 @@ class FamilyMember(automat.Automat):
                 self.doCheckReply(*args, **kwargs)
             elif ( event == 'all-suppliers-agree' or event == 'timer-10sec' ) and not self.isFamilyModified(*args, **kwargs):
                 self.state = 'CONNECTED'
+                self.Attempts=0
                 self.doNotifyConnected(*args, **kwargs)
             elif ( event == 'timer-10sec' or event == 'all-suppliers-agree' ) and self.isFamilyModified(*args, **kwargs):
                 self.state = 'DHT_WRITE'
@@ -199,14 +216,19 @@ class FamilyMember(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'dht-ok':
                 self.state = 'CONNECTED'
+                self.Attempts=0
                 self.doNotifyConnected(*args, **kwargs)
-            elif event == 'dht-fail':
-                self.state = 'DISCONNECTED'
-                self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
             elif event == 'contacts-received':
                 self.doCheckReply(*args, **kwargs)
+            elif event == 'dht-fail' and self.Attempts>3:
+                self.state = 'DISCONNECTED'
+                self.Attempts=0
+                self.doNotifyDisconnected(*args, **kwargs)
+            elif event == 'dht-fail' and self.Attempts<=3:
+                self.state = 'DHT_READ'
+                self.doDHTRead(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -220,19 +242,7 @@ class FamilyMember(automat.Automat):
                 self.doNotifyDisconnected(*args, **kwargs)
             elif event == 'instant' and self.isAnyRequests(*args, **kwargs):
                 self.state = 'DHT_READ'
-                self.doPull(*args, **kwargs)
-                self.doDHTRead(*args, **kwargs)
-            elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
-                self.doPush(event, *args, **kwargs)
-            elif event == 'contacts-received':
-                self.doCheckReply(*args, **kwargs)
-        #---DISCONNECTED---
-        elif self.state == 'DISCONNECTED':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'instant' and self.isAnyRequests(*args, **kwargs):
-                self.state = 'DHT_READ'
+                self.Attempts=0
                 self.doPull(*args, **kwargs)
                 self.doDHTRead(*args, **kwargs)
             elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
@@ -296,14 +306,13 @@ class FamilyMember(automat.Automat):
 #             lg.err('failed to merge customer family info after reading from DHT, skip transaction')
 #             self.transaction = None
 #             return
-        self.transaction = self._do_process_request(merged_info, self.current_request) 
-        if not self.transaction:
+        possible_transaction = self._do_process_request(merged_info, self.current_request) 
+        if not possible_transaction:
             lg.err('failed to process customer family change request, skip transaction')
             return
-        self._do_increment_revision()
+        self.transaction = self._do_increment_revision(possible_transaction)
         if _Debug:
             lg.out(_DebugLevel, 'family_member._do_build_transaction : %r' % self.transaction)
-
         self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         if self.transaction:
             known_ecc_map = self.transaction.get('ecc_map')
@@ -340,6 +349,11 @@ class FamilyMember(automat.Automat):
                 },
             )
             self.suppliers_requests.append(outpacket.PacketID)
+        if not self.suppliers_requests:
+            self.automat('all-suppliers-agree')
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, 'family_member.doRequestSuppliersReview sent to transaction for review to %d suppliers' % len(self.suppliers_requests))
 
     def doSolveConflict(self, *args, **kwargs):
         """
@@ -405,6 +419,9 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.out(_DebugLevel, 'family_memeber.doNotifyConnected\n    my_info=%r\n    dht_info=%r\n    requests=%r' % (
+                self.my_info, self.dht_info, self.requests, ))
         self.current_request = None
         if self.refresh_task.running:
             self.refresh_task.stop()
@@ -431,6 +448,7 @@ class FamilyMember(automat.Automat):
         self.requests = []
         self.current_request = None
         self.my_info = None
+        self.dht_info = None
         self.transaction = None
         self.refresh_task = None
         delete_family(self.customer_idurl)
@@ -589,9 +607,16 @@ class FamilyMember(automat.Automat):
         merged_info['revision'] = latest_revision
         return merged_info
 
-    def _do_increment_revision(self):
-        self.transaction['revision'] += 1
-        self.transaction['publisher_idurl'] = my_id.getLocalIDURL()
+    def _do_increment_revision(self, possible_transaction):
+        if self.dht_info:
+            if self.dht_info['suppliers'] == possible_transaction['suppliers']:
+                if self.dht_info['ecc_map'] == possible_transaction['ecc_map']:
+                    if _Debug:
+                        lg.out(_DebugLevel, 'family_member._do_increment_revision did not found any changes, skip transaction')
+                    return None 
+        possible_transaction['revision'] += 1
+        possible_transaction['publisher_idurl'] = my_id.getLocalIDURL()
+        return possible_transaction
 
     def _do_process_family_join_request(self, merged_info, current_request):
         current_request_expected_suppliers_count = None
@@ -674,7 +699,7 @@ class FamilyMember(automat.Automat):
     def _do_process_family_refresh_request(self, merged_info):
         if int(self.my_info['revision']) > int(merged_info['revision']):
             lg.info('"family-refresh" request will overwrite DHT record with my info because my revision is higher than record in DHT')
-            return self.my_info
+            return self.my_info.copy()
 
         try:
             my_position = self.my_info['suppliers'].index(my_id.getLocalIDURL())
@@ -755,7 +780,7 @@ class FamilyMember(automat.Automat):
 
     def _on_dht_write_failed(self, err):
         lg.err('doDHTWrite FAILED: %s' % err)
-        self.my_info = None
+        # self.my_info = None
         self.transaction = None
         self.dht_info = None
         self.automat('dht-fail')
@@ -848,12 +873,16 @@ class FamilyMember(automat.Automat):
         return p2p_service.SendFail(incoming_packet, 'invalid contacts type')
 
     def _on_supplier_ack(self, response, info):
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_supplier_ack with %r' % response)
         if response.PacketID in self.suppliers_requests:
             self.suppliers_requests.remove(response.PacketID)
         if not self.suppliers_requests:
             self.automat('all-suppliers-agree')
 
     def _on_supplier_fail(self, response, info):
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_supplier_fail with %r' % response)
         if response.PacketID in self.suppliers_requests:
             self.suppliers_requests.remove(response.PacketID)
         try:

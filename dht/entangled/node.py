@@ -16,14 +16,15 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+from io import open
 import six
+
 import hashlib
 
 from twisted.internet import defer
 
-from kademlia.node import Node  # @UnresolvedImport
-from kademlia.node import rpcmethod  # @UnresolvedImport
-from io import open
+from .kademlia.node import Node  # @UnresolvedImport
+from .kademlia.node import rpcmethod  # @UnresolvedImport
 
 
 class EntangledNode(Node):

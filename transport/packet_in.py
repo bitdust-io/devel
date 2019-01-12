@@ -192,7 +192,8 @@ def process(newpacket, info):
             lg.warn('non-valid identity received')
             return None
     if not identitycache.HasKey(newpacket.CreatorID):
-        lg.warn('will cache remote identity %s before processing incoming packet %s' % (newpacket.CreatorID, newpacket))
+        if _Debug:
+            lg.out(_DebugLevel, '    will cache remote identity %s before processing incoming packet %s' % (newpacket.CreatorID, newpacket))
         d = identitycache.immediatelyCaching(newpacket.CreatorID)
         d.addCallback(lambda _: handle(newpacket, info))
         d.addErrback(lambda err: lg.err('failed caching remote %s identity: %s' % (newpacket.CreatorID, str(err))))
