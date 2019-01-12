@@ -556,12 +556,18 @@ class FamilyMember(automat.Automat):
     def _do_create_revision_from_another_supplier(self, another_revision, another_suppliers, another_ecc_map):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
         possible_position = local_customer_meta_info.get('position', -1)
-        try:
-            another_suppliers[possible_position] = my_id.getLocalIDURL()
-        except:
-            lg.exc()
+        if possible_position >= 0:
+            try:
+                another_suppliers[possible_position] = my_id.getLocalIDURL()
+            except:
+                lg.exc()
+            contactsdb.add_customer_meta_info(self.customer_idurl, {
+                'ecc_map': another_ecc_map,
+                'position': possible_position,
+                'family_snapshot': another_suppliers,
+            })
         return {
-            'revision': int(another_revision),
+            'revision': int(another_revision) + 1,
             'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
             'suppliers': another_suppliers,
             'ecc_map': another_ecc_map,
@@ -851,7 +857,7 @@ class FamilyMember(automat.Automat):
             lg.out(_DebugLevel, '    another_revision=%d   another_ecc_map=%s   another_suppliers_list=%r' % (
                 another_revision, another_ecc_map, another_suppliers_list))
         if another_revision >= int(self.my_info['revision']):
-            if not self.my_info:
+            if not self.my_info:                
                 self.my_info = self._do_create_revision_from_another_supplier(another_revision, another_suppliers_list, another_ecc_map)
             lg.info('another supplier have more fresh revision, update my info and raise "family-refresh" event')
             self.automat('family-refresh')
