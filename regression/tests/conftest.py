@@ -40,6 +40,7 @@ ALL_NODES = [
     'customer_2',
     'customer_3',
     'customer_4',
+    'customer_5',
     'supplier_1',
     'supplier_2',
     'supplier_3',
@@ -258,7 +259,7 @@ def start_supplier(node, identity_name):
     print('\nSTARTED SUPPLIER [%s]\n' % node)
 
 
-def start_customer(node, identity_name, join_network=True):
+def start_customer(node, identity_name, join_network=True, num_suppliers=2):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     print(run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')[0].strip())
@@ -274,7 +275,7 @@ def start_customer(node, identity_name, join_network=True):
     print(run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/preferred-routers "%s"' % PROXY_ROUTERS)[0].strip())
     # enable customer service and prepare tests
     print(run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')[0].strip())
-    print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number 2')[0].strip())
+    print(run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number %d' % num_suppliers)[0].strip())
     # create randomized file to test file upload/download
     print(run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt'))
     # start BitDust daemon and create new identity for supplier
@@ -307,6 +308,7 @@ async def start_one_customer(customer):
         node=customer['name'],
         identity_name=customer['name'],
         join_network=customer['join_network'],
+        num_suppliers=customer['num_suppliers'],
     )
 
 
@@ -339,10 +341,11 @@ def start_all_nodes(event_loop):
             'supplier_8',
         ],
         'customers': [
-            {'name': 'customer_1', 'join_network': True, },
-            {'name': 'customer_2', 'join_network': True, },
-            {'name': 'customer_3', 'join_network': False, },
-            {'name': 'customer_4', 'join_network': True, },
+            {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, },
+            {'name': 'customer_2', 'join_network': True, 'num_suppliers': 2, },
+            {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
+            {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
+            {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
         ],
     }
  
@@ -427,7 +430,7 @@ def clean_all_nodes(event_loop, skip_checks=False):
     ]))
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(clean_one_customer(node)) for node in [
-        'customer_1', 'customer_2', 'customer_3', 'customer_4',
+        'customer_1', 'customer_2', 'customer_3', 'customer_4', 'customer_5',
     ]]))
     print('All nodes cleaned')
  

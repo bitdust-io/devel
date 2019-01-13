@@ -372,15 +372,8 @@ class FamilyMember(automat.Automat):
             # this must never happen actually... only if another supplier is really uncooperative
             # this is dangerous because can lead to infinite loop between me and another supplier
             lg.info('found uncooperative supplier %s who raised the conflict but replied with invalid response' % another_supplier_idurl)
-            # TODO: colve later
+            # TODO: solve later
             self.transaction = None
-#             if b'' in self.transaction['suppliers']:
-#                 empty_spot = self.transaction['suppliers'].index(b'')
-#                 self.transaction['suppliers'][empty_spot] = another_supplier_idurl
-#                 lg.info('found empty sport %d in the family and solved conflict with supplier %s' % (empty_spot, another_supplier_idurl, ))
-#             else:
-#                 lg.warn('did not found empty spot, failed to solve family conflict with supplier %s' % another_supplier_idurl)
-#                 self.transaction = None
         else:
             if len(self.transaction['suppliers']) <= another_supplier_position:
                 lg.warn('another supplier position larger than family size, failed to solve family conflict with supplier %s' % another_supplier_idurl)
@@ -495,14 +488,12 @@ class FamilyMember(automat.Automat):
             lg.exc()
             # out['revision'] = 0
             return None
-        # default_info = self._do_prepare_my_default_info()
         try:
             suppliers = out['suppliers']
             if not isinstance(suppliers, list) or len(suppliers) < 1:
                 raise Exception('must include some suppliers')
         except:
             lg.exc()
-            # out['suppliers'] = default_info['suppliers']
             return None
         try:
             ecc_map = out['ecc_map']
@@ -510,21 +501,17 @@ class FamilyMember(automat.Automat):
                 raise Exception('invalid ecc_map name')
         except:
             lg.exc()
-            # out['ecc_map'] = default_info['ecc_map']
             return None
         try:
             out['publisher_idurl']
             # TODO: if I am a publisher - revision number must be the same as my info
         except:
-            # out['publisher_idurl'] = default_info['publisher_idurl']
             return None
         try:
             customer_idurl = out['customer_idurl']
             if customer_idurl != self.customer_idurl:
                 raise Exception('invalid customer_idurl')
-                # out['customer_idurl'] = default_info['customer_idurl']
         except:
-            # out['customer_idurl'] = default_info['customer_idurl']
             return None
 
         return out
@@ -585,14 +572,6 @@ class FamilyMember(automat.Automat):
         except:
             lg.warn('DHT info is unknown or invalid, assume DHT revision is 0')
             dht_revision = 0
-#         my_revision = int(my_info['revision'])
-#         if dht_info is None or not isinstance(dht_info, dict):
-#             lg.warn('DHT info is unknown, assume my info is correct and return revision %d' % my_revision)
-#             return my_revision
-#         dht_revision = int(dht_info['revision'])
-#         if _Debug:
-#             lg.out(_DebugLevel, 'family_member._do_detect_latest_revision   my_revision=%r dht_revision=%r' % (
-#                 my_revision, dht_revision, ))
         if my_revision == dht_revision:
             return dht_revision
         if my_revision > dht_revision:
@@ -828,7 +807,6 @@ class FamilyMember(automat.Automat):
     def _on_dht_write_failed(self, err):
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_dht_write_failed')
-        # self.my_info = None
         self.transaction = None
         self.dht_info = None
         self.automat('dht-write-fail')
@@ -838,10 +816,6 @@ class FamilyMember(automat.Automat):
         incoming_packet = inp['packet']
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_incoming_suppliers_list with %s' % incoming_packet)
-        # if self.state != 'CONNECTED':  # in ['DISCONNECTED', 'DHT_READ', ]:
-        #     if _Debug:
-        #         lg.out(_DebugLevel, '    currently family_member() is not yet connected, skip')
-        #     return p2p_service.SendAck(incoming_packet)
         if not self.my_info:
             if _Debug:
                 lg.out(_DebugLevel, '    current DHT info is not yet known, skip')
@@ -896,14 +870,6 @@ class FamilyMember(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_incoming_supplier_position stored new meta info for customer %s:\n' % self.customer_idurl)
             lg.out(_DebugLevel, '    ecc_map=%s position=%s family_snapshot=%s' % (ecc_map, supplier_position, family_snapshot, ))
-#         if _existing_position != supplier_position:
-#             lg.warn('will re-raise "family-join" after receiving my supplier_position from customer')
-#             self.automat('family-join', {
-#                 'supplier_idurl': supplier_idurl,
-#                 'ecc_map': ecc_map,
-#                 'position': supplier_position,
-#                 'family_snapshot': family_snapshot,
-#             })
         return p2p_service.SendAck(incoming_packet)
 
     def _on_incoming_contacts_packet(self, inp):
