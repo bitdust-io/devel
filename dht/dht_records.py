@@ -64,20 +64,16 @@ _Rules = {
         'idurl': [{'op': 'exist', }, ],
         'identity': [{'op': 'exist', }, ],
     },
-    'relation': {
-        'type': [{'op': 'equal', 'arg': 'relation', }, ],
-        'timestamp': [{'op': 'exist', }, ],
-        'idurl': [{'op': 'exist', }, ],
-        'index': [{'op': 'exist', }, ],
-        'prefix': [{'op': 'exist', }, ],
-        'data': [{'op': 'exist', }, ],
-    },
     'suppliers': {
         'type': [{'op': 'equal', 'arg': 'suppliers', }, ],
         'timestamp': [{'op': 'exist', }, ],
         'customer_idurl': [{'op': 'exist', }, ],
         'ecc_map': [{'op': 'exist', }, ],
         'suppliers': [{'op': 'exist', }, ],
+        'revision': [{'op': 'exist', }, ],
+    },
+    'random': {
+        'type': [{'op': 'equal', 'arg': 'random', }, ],
     },
 }
 

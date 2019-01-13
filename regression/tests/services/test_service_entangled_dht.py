@@ -21,19 +21,24 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import requests
+import pprint
 
 from ..testsupport import tunnel_url
 
 
-def read_value(node, key, expected_value, ):
+def read_value(node, key, expected_value):
     response = requests.get(tunnel_url(node, 'dht/value/get/v1?key=%s' % key))
+    assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
+    print('\n\ndht/value/get/v1?key=%s from %s\n%s\n' % (key, node, pprint.pformat(response.json())))
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['key'] == key, response.json()
     if expected_value == 'not_exist':
+        assert response.json()['result'][0]['read'] == 'failed', response.json()
         assert 'value' not in response.json()['result'][0], response.json()
-        assert len(response.json()['result'][0]['nodes']) > 0, response.json()
+        assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
     else:
+        assert response.json()['result'][0]['read'] == 'success', response.json()
         assert 'value' in response.json()['result'][0], response.json()
         assert response.json()['result'][0]['value'] == expected_value, response.json()
 
@@ -46,12 +51,14 @@ def write_value(node, key, value):
             'value': value,
         },
     )
+    assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
+    print('\n\ndht/value/set/v1 key=%s value=%s from %s\n%s\n' % (key, value, node, pprint.pformat(response.json())))
     assert len(response.json()['result']) > 0, response.json()
+    assert response.json()['result'][0]['write'] == 'success', response.json()
     assert response.json()['result'][0]['key'] == key, response.json()
-    assert 'value' in response.json()['result'][0], response.json()
     assert response.json()['result'][0]['value'] == value, response.json()
-    assert len(response.json()['result'][0]['nodes']) > 0, response.json()
+    assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
 
 
 def test_get_value_not_exist_customer_1():
@@ -71,7 +78,7 @@ def test_set_value_customer_1_and_get_value_customer_1():
     read_value(
         node='customer_1',
         key='test_key_1_customer_1',
-        expected_value={'data': 'test_data_1_customer_1', },
+        expected_value={'data': 'test_data_1_customer_1', 'type': 'random', },
     )
 
 
@@ -84,5 +91,5 @@ def test_set_value_customer_2_and_get_value_customer_3():
     read_value(
         node='customer_3',
         key='test_key_1_customer_2',
-        expected_value={'data': 'test_data_1_customer_2', },
+        expected_value={'data': 'test_data_1_customer_2', 'type': 'random', },
     )

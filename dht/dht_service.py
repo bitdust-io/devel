@@ -344,7 +344,7 @@ def get_value(key):
     return d
 
 
-def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=False):
+def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=True):
     if not node():
         return fail(Exception('DHT service is off'))
     count('set_value_%s' % key)
@@ -377,14 +377,18 @@ def delete_key(key):
 
 def read_json_response(response, key, result_defer=None):
     value = None
+    if isinstance(response, list):
+        if result_defer:
+            result_defer.callback(response)
+        return None
     if isinstance(response, dict):
         try:
             value = jsn.loads(response[key])
         except:
             lg.exc()
             if result_defer:
-                result_defer.errback(Exception('invalid json value'))
-            return
+                result_defer.errback(Exception('invalid json value found in DHT'))
+            return None
     if result_defer:
         result_defer.callback(value)
     return value
@@ -400,7 +404,7 @@ def get_json_value(key):
     return ret
 
 
-def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=False):
+def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=True):
     if not node():
         return fail(Exception('DHT service is off'))
     try:
@@ -487,12 +491,20 @@ def validate_before_request(key, **kwargs):
     return True
 
 
-def validate_data(value, key, rules, result_defer=None):
+def validate_data(value, key, rules, result_defer=None, raise_for_result=True):
+    if not rules:
+        lg.err('data must have validation rules applied')
+        if result_defer:
+            result_defer.errback(Exception('data must have validation rules applied'))
+        return None
     if not isinstance(value, dict):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
         if result_defer:
-            result_defer.errback(Exception('value not found'))
+            if not raise_for_result:
+                result_defer.callback(value)
+            else:
+                result_defer.errback(Exception('value not found'))
         return None
     passed = True
     errors = []
@@ -511,7 +523,7 @@ def validate_data(value, key, rules, result_defer=None):
         if not passed:
             break
     if not passed:
-        lg.warn('invalid data in response, validation rules failed, errors: %s' % errors)
+        lg.err('invalid data in response, validation failed, errors: %s' % errors)
         if result_defer:
             result_defer.errback(Exception('invalid value in response'))
         return None
@@ -523,28 +535,40 @@ def validate_data(value, key, rules, result_defer=None):
 
 
 def validate_data_written(store_results, key, json_data, result_defer):
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  store_results=%r' % (
-            base64.b64encode(key), store_results, ))
     try:
-        if isinstance(store_results, list): 
-            for result in store_results:
-                if isinstance(result, list) or isinstance(result, tuple) and result:
-                    if not result[0]:
-                        result_defer.errback(store_results)
-                        return None
+        nodes = store_results
+        results_collected = False
+        if isinstance(store_results, tuple):
+            results_collected = True
+            nodes = store_results[0]
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  collected=%s  nodes=%r' % (
+                base64.b64encode(key), results_collected, nodes, ))
+        if results_collected:
+            for result in store_results[1]:
+                if not result or not (isinstance(result, list) or isinstance(result, tuple)):
+                    result_defer.errback(store_results)
+                    return None
+                if not result[0] or not result[1] == 'OK':
+                    if _Debug:
+                        lg.out(_DebugLevel, '    store operation failed on one of the nodes: %r' % result[1])
+                    result_defer.errback(nodes)
+                    return None
+            result_defer.callback(nodes)
+            return None
+        if isinstance(store_results, list):
+            result_defer.callback(nodes)
+            return None
     except:
         lg.exc()
-        result_defer.callback(store_results)
-        return None
-    result_defer.callback(store_results)
+        result_defer.errback(store_results)
     return None
 
 
-def get_valid_data(key, rules={}):
+def get_valid_data(key, rules={}, raise_for_result=True):
     ret = Deferred()
     d = get_json_value(key)
-    d.addCallback(validate_data, key, rules, ret)
+    d.addCallback(validate_data, key, rules, ret, raise_for_result=raise_for_result)
     d.addErrback(ret.errback)
     return ret
 

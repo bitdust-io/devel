@@ -193,6 +193,7 @@ class Node(object):
         if originalPublisherID is None:
             originalPublisherID = self.id
         collect_results = kwargs.pop('collect_results', False)
+        ret = defer.Deferred()
 
         def storeSuccess(ok):
             if _Debug:
@@ -222,6 +223,21 @@ class Node(object):
                     o = 'Unknown Error'
                 print('findNodeFailed', o)
             return x
+
+        def storeRPCsCollected(store_results, store_nodes):
+            if _Debug: print('storeRPCsCollected', store_results, store_nodes)
+            ret.callback((store_nodes, store_results, ))
+            return None
+
+        def storeRPCsFailed(x):
+            if _Debug:
+                try:
+                    o = repr(x)
+                except:
+                    o = 'Unknown Error'
+                print('storeRPCsFailed', o)
+            ret.errback(x)
+            return None
 
         def executeStoreRPCs(nodes):
             # print '        .....execStoreRPCs called'
@@ -256,9 +272,13 @@ class Node(object):
                 if not collect_results:
                     return nodes
                 dl = defer.DeferredList(l, fireOnOneErrback=True, consumeErrors=True)
+                dl.addCallback(storeRPCsCollected, nodes)
+                dl.addErrback(storeRPCsFailed)
                 return dl
-            except:
+            except Exception as exc:
                 traceback.print_exc()
+                if collect_results:
+                    return defer.fail([])
                 return []
  
         # Find k nodes closest to the key...
@@ -266,7 +286,11 @@ class Node(object):
         # ...and send them STORE RPCs as soon as they've been found
         df.addCallback(executeStoreRPCs)
         df.addErrback(findNodeFailed)
-        return df
+        
+        if not collect_results:
+            return df
+
+        return ret
 
     def iterativeFindNode(self, key):
         """

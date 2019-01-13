@@ -847,12 +847,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/d/v/g$')
     @GET('^/dht/node/find/v1$')
     def dht_node_find_v1(self, request):
-        return api.dht_node_find(node_id=_request_arg(request, 'node_id', mandatory=False, default=None))
+        return api.dht_node_find(node_id_64=_request_arg(request, 'dht_id', mandatory=False, default=None))
 
     @GET('^/d/v/g$')
     @GET('^/dht/value/get/v1$')
     def dht_value_get_v1(self, request):
-        return api.dht_value_get(key=_request_arg(request, 'key', mandatory=True))
+        return api.dht_value_get(
+            key=_request_arg(request, 'key', mandatory=True),
+            record_type=_request_arg(request, 'record_type', mandatory=False, default='random'),
+        )
 
     @POST('^/d/v/s$')
     @POST('^/dht/value/set/v1$')
@@ -862,6 +865,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key=data['key'],
             value=data['value'],
             expire=data.get('expire', None),
+            record_type=data.get('record_type', 'random'),
         )
 
     #------------------------------------------------------------------------------

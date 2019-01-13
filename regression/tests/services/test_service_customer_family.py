@@ -37,7 +37,7 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
         response = requests.get(url=tunnel_url(observer_node, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print('\nsupplier/list/dht/v1?id=%s from %s\n%sgs' % (customer_node, observer_node, pprint.pformat(response.json())))
+        print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_node, observer_node, pprint.pformat(response.json())))
         if not response.json()['result']:
             count += 1
             time.sleep(sleep_sec)
