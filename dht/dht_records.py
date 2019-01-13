@@ -191,4 +191,5 @@ def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publis
         },
         rules=get_rules('suppliers'),
         expire=expire,
+        collect_results=True,
     )
