@@ -55,7 +55,7 @@ def test_upload_download_file_with_master_customer_1():
             'remote_path': remote_path,
             'local_path': local_file,
             'wait_result': True,
-        }
+        },
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()

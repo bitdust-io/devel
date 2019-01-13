@@ -84,7 +84,9 @@ def create_identity(node, identity_name):
             assert False, 'node %s failed to create identity after 10 retries' % node
         response = requests.post(
             url=tunnel_url(node, 'identity/create/v1'),
-            json={'username': identity_name, },
+            json={
+                'username': identity_name,
+            },
         )
         if response.json()['status'] == 'OK':
             print('\n' + response.json()['result'][0]['xml'] + '\n')

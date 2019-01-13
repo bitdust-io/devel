@@ -3476,3 +3476,130 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
     return RESULT([r, ])
 
 #------------------------------------------------------------------------------
+
+def dht_node_find(node_id_64=None):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    import base64
+    from dht import dht_service
+    if node_id_64 is None:
+        node_id = dht_service.random_key()
+        node_id_64 = base64.b64encode(node_id)
+    else:
+        node_id = base64.b64decode(node_id_64)
+    ret = Deferred()
+
+    def _cb(response):
+        try:
+            if isinstance(response, list):
+                return ret.callback(OK({
+                    'my_dht_id_64': base64.b64encode(dht_service.node().id),
+                    'lookup': node_id_64, 
+                    'nodes': [{
+                        'dht_id_64': base64.b64encode(c.id),
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }))
+            return ret.callback(ERROR('unexpected DHT response'))
+        except Exception as exc:
+            lg.exc()
+            return ret.callback(ERROR(exc))
+
+    d = dht_service.find_node(node_id)
+    d.addCallback(_cb)
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
+    return ret
+
+
+def dht_value_get(key):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    import base64
+    from dht import dht_service
+    ret = Deferred()
+
+    def _cb(response):
+        try:
+            if isinstance(response, dict):
+                value = None
+                error = None
+                try:
+                    value = jsn.loads(response[dht_service.key_to_hash(key)])
+                except Exception as exc:
+                    lg.exc()
+                    error = str(exc)
+                if error is not None:
+                    return ret.callback(ERROR(error, extra_fields={
+                        'my_dht_id_64': base64.b64encode(dht_service.node().id),
+                        'key': strng.to_text(key, errors='ignore'),
+                        'key_64': base64.b64encode(key),
+                    }))
+                return ret.callback(OK({
+                    'my_dht_id_64': base64.b64encode(dht_service.node().id),
+                    'key': strng.to_text(key, errors='ignore'),
+                    'key_64': base64.b64encode(key),
+                    'value': value,
+                }))
+            if isinstance(response, list):
+                return ret.callback(OK({
+                    'my_dht_id_64': base64.b64encode(dht_service.node().id),
+                    'key': strng.to_text(key, errors='ignore'),
+                    'key_64': base64.b64encode(key),
+                    'nodes': [{
+                        'dht_id': base64.b64encode(c.id),
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }))
+            return ret.callback(ERROR('unexpected DHT response'))
+        except Exception as exc:
+            lg.exc()
+            return ret.callback(ERROR(exc))
+    
+    d = dht_service.get_value(key)
+    d.addCallback(_cb)
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
+    return ret
+
+
+def dht_value_set(key, value, expire=None):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    if not isinstance(value, dict):
+        try:
+            value = json.loads(value)
+        except Exception as exc:
+            lg.exc()
+            return ERROR('input value must be a json')
+    try:
+        raw_value = jsn.dumps(value, indent=0, sort_keys=True, separators=(',', ':'))
+    except Exception as exc:
+        return ERROR(exc)
+
+    import base64
+    from dht import dht_service
+    ret = Deferred()
+
+    def _cb(response):
+        try:
+            if isinstance(response, list):
+                return ret.callback(OK({
+                    'my_dht_id_64': base64.b64encode(dht_service.node().id),
+                    'key': strng.to_text(key, errors='ignore'),
+                    'key_64': base64.b64encode(key),
+                    'value': value,
+                    'nodes': [{
+                        'dht_id_64': base64.b64encode(c.id),
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }))
+            return ret.callback(ERROR('unexpected DHT response'))
+        except Exception as exc:
+            lg.exc()
+            return ret.callback(ERROR(exc))
+        
+    d = dht_service.set_value(key, raw_value, expire=expire or dht_service.KEY_EXPIRE_MAX_SECONDS)
+    d.addCallback(_cb)
+    d.addErrback(lambda err: ret.callback(ERROR(err)))
+    return ret
+
+#------------------------------------------------------------------------------

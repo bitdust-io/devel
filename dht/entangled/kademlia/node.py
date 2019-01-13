@@ -35,7 +35,7 @@ from . import protocol  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = True
+_Debug = False
 
 
 def rpcmethod(func):
@@ -195,23 +195,51 @@ class Node(object):
         collect_results = kwargs.pop('collect_results', False)
 
         def storeSuccess(ok):
-            if _Debug: print('storeSuccess', ok)
+            if _Debug:
+                try:
+                    o = repr(ok)
+                except:
+                    o = 'Unknown Error'
+                print('storeSuccess', o)
             return ok
 
         def storeFailed(x):
-            if _Debug: print('storeFailed', x)
-            return x
+            if _Debug:
+                try:
+                    o = repr(x)
+                except:
+                    o = 'Unknown Error'
+                print('storeFailed', o)
+            return None
 
         # Prepare a callback for doing "STORE" RPC calls
 
+        def findNodeFailed(x):
+            if _Debug:
+                try:
+                    o = repr(x)
+                except:
+                    o = 'Unknown Error'
+                print('findNodeFailed', o)
+            return x
+
         def executeStoreRPCs(nodes):
             # print '        .....execStoreRPCs called'
-            l = []
-            if len(nodes) >= constants.k:
-                # If this node itself is closer to the key than the last (furthest) node in the list,
-                # we should store the value at ourselves as well
-                if self._routingTable.distance(key, self.id) < self._routingTable.distance(key, nodes[-1].id):
-                    nodes.pop()
+            try:
+                l = []
+                if len(nodes) >= constants.k:
+                    # If this node itself is closer to the key than the last (furthest) node in the list,
+                    # we should store the value at ourselves as well
+                    if self._routingTable.distance(key, self.id) < self._routingTable.distance(key, nodes[-1].id):
+                        nodes.pop()
+                        try:
+                            ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                            age=age, expireSeconds=expireSeconds, **kwargs)
+                            l.append(defer.succeed(ok))
+                        except Exception as exc:
+                            if _Debug: traceback.print_exc()
+                            l.append(defer.fail(exc))
+                else:
                     try:
                         ok = self.store(key, value, originalPublisherID=originalPublisherID,
                                         age=age, expireSeconds=expireSeconds, **kwargs)
@@ -219,28 +247,25 @@ class Node(object):
                     except Exception as exc:
                         if _Debug: traceback.print_exc()
                         l.append(defer.fail(exc))
-            else:
-                try:
-                    ok = self.store(key, value, originalPublisherID=originalPublisherID,
-                                    age=age, expireSeconds=expireSeconds, **kwargs)
-                    l.append(defer.succeed(ok))
-                except Exception as exc:
-                    if _Debug: traceback.print_exc()
-                    l.append(defer.fail(exc))
-                    
-            for contact in nodes:
-                d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
-                d.addCallback(storeSuccess)
-                d.addErrback(storeFailed)
-                l.append(d)
-            if not collect_results:
-                return nodes
-            dl = defer.DeferredList(l, fireOnOneErrback=True)
-            return dl
+                        
+                for contact in nodes:
+                    d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
+                    d.addCallback(storeSuccess)
+                    d.addErrback(storeFailed)
+                    l.append(d)
+                if not collect_results:
+                    return nodes
+                dl = defer.DeferredList(l, fireOnOneErrback=True, consumeErrors=True)
+                return dl
+            except:
+                traceback.print_exc()
+                return []
+ 
         # Find k nodes closest to the key...
         df = self.iterativeFindNode(key)
         # ...and send them STORE RPCs as soon as they've been found
         df.addCallback(executeStoreRPCs)
+        df.addErrback(findNodeFailed)
         return df
 
     def iterativeFindNode(self, key):

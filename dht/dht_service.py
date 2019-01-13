@@ -379,7 +379,7 @@ def read_json_response(response, key, result_defer=None):
     value = None
     if isinstance(response, dict):
         try:
-            value = json.loads(response[key])
+            value = jsn.loads(response[key])
         except:
             lg.exc()
             if result_defer:
@@ -526,10 +526,17 @@ def validate_data_written(store_results, key, json_data, result_defer):
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  store_results=%r' % (
             base64.b64encode(key), store_results, ))
-    for result in store_results:
-        if not result[0]:
-            result_defer.errback(store_results)
-            return None
+    try:
+        if isinstance(store_results, list): 
+            for result in store_results:
+                if isinstance(result, list) or isinstance(result, tuple) and result:
+                    if not result[0]:
+                        result_defer.errback(store_results)
+                        return None
+    except:
+        lg.exc()
+        result_defer.callback(store_results)
+        return None
     result_defer.callback(store_results)
     return None
 
