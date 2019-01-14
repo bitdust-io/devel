@@ -151,8 +151,8 @@ def test_get_value_all_nodes():
     )
     write_value(
         node='supplier_1',
-        key='test_key_4_supplier_1',
-        new_data='test_data_4_supplier_1',
+        key='test_key_5_supplier_1',
+        new_data='test_data_5_supplier_1',
     )
     for node in VALIDATORS_NODES:
         read_value(
