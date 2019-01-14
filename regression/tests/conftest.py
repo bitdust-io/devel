@@ -359,7 +359,7 @@ def start_all_nodes(event_loop):
         start_dht_seed(
             node=dhtseed,
             # wait_seconds=(10 if number > 0 else 0),
-            wait_seconds=10,
+            wait_seconds=15,
         )
 
     for idsrv in ALL_ROLES['identity-servers']:

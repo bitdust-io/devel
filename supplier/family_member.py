@@ -715,7 +715,7 @@ class FamilyMember(automat.Automat):
     def _do_process_family_refresh_request(self, merged_info):
         if not self.my_info:
             self.my_info = self._do_create_possible_revision(int(merged_info['revision']))
-            lg.warn('"family-refresh" request will use "possible" customer meta info')
+            lg.warn('"family-refresh" request will use "possible" customer meta info: %r' % self.my_info)
 
         if int(self.my_info['revision']) > int(merged_info['revision']):
             lg.info('"family-refresh" request will overwrite DHT record with my info because my revision is higher than record in DHT')
@@ -723,10 +723,10 @@ class FamilyMember(automat.Automat):
 
         try:
             my_position = self.my_info['suppliers'].index(my_id.getLocalIDURL())
-        except ValueError:
+        except:
             my_position = -1
         if my_position < 0:
-            lg.warn('"family-refresh" request failed because my info is not valid, my own position in the family is unknown')
+            lg.warn('"family-refresh" request failed because my info not exist or not valid, my own position in the family is unknown')
             return None
 
         my_expected_suppliers_count = None

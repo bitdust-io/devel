@@ -681,6 +681,7 @@ class Node(object):
                 failure.trap(protocol.TimeoutError)
                 deadContactID = failure.getErrorMessage()
                 if deadContactID in shortlist:
+                    if _Debug: print('removing')
                     shortlist.remove(deadContactID)
                 return deadContactID
     
