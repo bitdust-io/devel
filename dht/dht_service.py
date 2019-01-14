@@ -560,15 +560,22 @@ def validate_data_written(store_results, key, json_data, result_defer):
                 base64.b64encode(key), results_collected, nodes, ))
         if results_collected:
             for result in store_results[1]:
-                if not result or not (isinstance(result, list) or isinstance(result, tuple)):
-                    if _Debug:
-                        lg.out(_DebugLevel, '    store operation failed because of unexpected result received: %r' % store_results)
-                    result_defer.errback(ValueError(nodes))
+                try:
+                    success = result[0]
+                    response = result[1]
+                except Exception as exc:
+                    lg.exc()
+                    result_defer.errback(exc)
                     return None
-                if not result[0] or not result[1] == 'OK':
+                if not success:
                     if _Debug:
-                        lg.out(_DebugLevel, '    store operation failed on one of the nodes: %r' % result[1])
-                    result_defer.errback(ValueError(result[1]))
+                        lg.out(_DebugLevel, '    store operation failed: %r' % response)
+                    result_defer.errback(ValueError(response))
+                    return None
+                if not (response == 'OK' or response.count('TimeoutError')):
+                    if _Debug:
+                        lg.out(_DebugLevel, '    store operation failed, unexpected response received: %r' % response)
+                    result_defer.errback(ValueError(response))
                     return None
             result_defer.callback(nodes)
             return None

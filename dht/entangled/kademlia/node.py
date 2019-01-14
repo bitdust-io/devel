@@ -207,9 +207,12 @@ class Node(object):
         def storeFailed(x, key):
             if _Debug:
                 try:
-                    o = repr(x)
+                    o = x.getErrorMessage()
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        o = repr(x)
+                    except:
+                        o = 'Unknown Error'
                 print('storeFailed', key, o)
             return o
 
@@ -218,9 +221,12 @@ class Node(object):
         def findNodeFailed(x):
             if _Debug:
                 try:
-                    o = repr(x)
+                    o = x.getErrorMessage()
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        o = repr(x)
+                    except:
+                        o = 'Unknown Error'
                 print('findNodeFailed', o)
             return x
 
@@ -232,9 +238,12 @@ class Node(object):
         def storeRPCsFailed(x):
             if _Debug:
                 try:
-                    o = repr(x)
+                    o = x.getErrorMessage()
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        o = repr(x)
+                    except:
+                        o = 'Unknown Error'
                 print('storeRPCsFailed', o)
             ret.errback(x)
             return None
