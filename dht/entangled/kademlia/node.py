@@ -195,22 +195,22 @@ class Node(object):
         collect_results = kwargs.pop('collect_results', False)
         ret = defer.Deferred()
 
-        def storeSuccess(ok):
+        def storeSuccess(ok, key):
             if _Debug:
                 try:
                     o = repr(ok)
                 except:
                     o = 'Unknown Error'
-                print('storeSuccess', o)
+                print('storeSuccess', key, o)
             return ok
 
-        def storeFailed(x):
+        def storeFailed(x, key):
             if _Debug:
                 try:
                     o = repr(x)
                 except:
                     o = 'Unknown Error'
-                print('storeFailed', o)
+                print('storeFailed', key, o)
             return o
 
         # Prepare a callback for doing "STORE" RPC calls
@@ -266,8 +266,8 @@ class Node(object):
                         
                 for contact in nodes:
                     d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
-                    d.addCallback(storeSuccess)
-                    d.addErrback(storeFailed)
+                    d.addCallback(storeSuccess, key)
+                    d.addErrback(storeFailed, key)
                     l.append(d)
                 if not collect_results:
                     return nodes

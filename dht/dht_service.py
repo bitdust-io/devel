@@ -563,12 +563,12 @@ def validate_data_written(store_results, key, json_data, result_defer):
                 if not result or not (isinstance(result, list) or isinstance(result, tuple)):
                     if _Debug:
                         lg.out(_DebugLevel, '    store operation failed because of unexpected result received: %r' % store_results)
-                    result_defer.errback(nodes)
+                    result_defer.errback(ValueError(nodes))
                     return None
                 if not result[0] or not result[1] == 'OK':
                     if _Debug:
                         lg.out(_DebugLevel, '    store operation failed on one of the nodes: %r' % result[1])
-                    result_defer.errback(result[1])
+                    result_defer.errback(ValueError(result[1]))
                     return None
             result_defer.callback(nodes)
             return None
