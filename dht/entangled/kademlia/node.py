@@ -207,7 +207,7 @@ class Node(object):
         def storeFailed(x, key):
             if _Debug:
                 try:
-                    o = x.getErrorMessage()
+                    o = repr(x.value)
                 except:
                     try:
                         o = repr(x)
@@ -221,7 +221,7 @@ class Node(object):
         def findNodeFailed(x):
             if _Debug:
                 try:
-                    o = x.getErrorMessage()
+                    o = repr(x.value)
                 except:
                     try:
                         o = repr(x)
@@ -238,7 +238,7 @@ class Node(object):
         def storeRPCsFailed(x):
             if _Debug:
                 try:
-                    o = x.getErrorMessage()
+                    o = repr(x.value)
                 except:
                     try:
                         o = repr(x)

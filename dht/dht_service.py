@@ -564,11 +564,12 @@ def validate_data_written(store_results, key, json_data, result_defer):
                     success = result[0]
                     response = result[1]
                     success_str = repr(success)
+                    response_str = repr(response)
                 except Exception as exc:
                     lg.exc()
                     result_defer.errback(exc)
                     return None
-                if success_str.count('TimeoutError'):
+                if success_str.count('TimeoutError') or response_str.count('TimeoutError'):
                     continue
                 if not success:
                     if _Debug:
