@@ -563,16 +563,19 @@ def validate_data_written(store_results, key, json_data, result_defer):
                 try:
                     success = result[0]
                     response = result[1]
+                    success_str = repr(success)
                 except Exception as exc:
                     lg.exc()
                     result_defer.errback(exc)
                     return None
+                if success_str.count('TimeoutError'):
+                    continue
                 if not success:
                     if _Debug:
                         lg.out(_DebugLevel, '    store operation failed: %r' % response)
                     result_defer.errback(ValueError(response))
                     return None
-                if not (response == 'OK' or response.count('TimeoutError')):
+                if response != 'OK':
                     if _Debug:
                         lg.out(_DebugLevel, '    store operation failed, unexpected response received: %r' % response)
                     result_defer.errback(ValueError(response))
