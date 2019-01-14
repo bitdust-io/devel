@@ -36,7 +36,7 @@ def send_message(random_message):
             'data': {
                 'random_message': random_message,
             },
-        }
+        },
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()

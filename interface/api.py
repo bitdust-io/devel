@@ -49,6 +49,7 @@ import json
 import gc
 
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -105,6 +106,16 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
 
 
 def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
+    if isinstance(errors, Exception):
+        try:
+            errors = str(errors)
+        except:
+            errors = 'unknown exception'
+    elif isinstance(errors, Failure):
+        try:
+            errors = errors.getErrorMessage()
+        except:
+            errors = 'unknown failure'
     o = {'status': status,
          'errors': errors if isinstance(errors, list) else [errors, ]}
     if message is not None:
@@ -3474,5 +3485,173 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     sessions.append(i)
                 r['proxy']['sessions' ] = sessions
     return RESULT([r, ])
+
+#------------------------------------------------------------------------------
+
+def dht_node_find(node_id_64=None):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    import base64
+    from dht import dht_service
+    if node_id_64 is None:
+        node_id = dht_service.random_key()
+        node_id_64 = base64.b64encode(node_id)
+    else:
+        try:
+            node_id = base64.b64decode(node_id_64)
+        except:
+            node_id = node_id_64
+    ret = Deferred()
+
+    def _cb(response):
+        try:
+            if isinstance(response, list):
+                return ret.callback(OK({
+                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'lookup': node_id_64, 
+                    'closest_nodes': [{
+                        'dht_id': base64.b64encode(c.id),
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }))
+            return ret.callback(ERROR('unexpected DHT response'))
+        except Exception as exc:
+            lg.exc()
+            return ret.callback(ERROR(exc))
+
+    def _eb(err):
+        lg.err(str(err))
+        ret.callback(ERROR(str(err)))
+        return None
+
+    d = dht_service.find_node(node_id)
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
+
+
+def dht_value_get(key, record_type='skip_validation'):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    import base64
+    from dht import dht_service
+    from dht import dht_records
+    ret = Deferred()
+
+    def _cb(value):
+        if isinstance(value, list):
+            return ret.callback(OK({
+                'read': 'failed',
+                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'key': strng.to_text(key, errors='ignore'),
+                'key_64': base64.b64encode(key),
+                'closest_nodes': [{
+                    'dht_id': base64.b64encode(c.id),
+                    'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                } for c in value],
+            }))
+        return ret.callback(OK({
+            'read': 'success',
+            'my_dht_id': base64.b64encode(dht_service.node().id),
+            'key': strng.to_text(key, errors='ignore'),
+            'key_64': base64.b64encode(key),
+            'value': value,
+        }))
+
+    def _eb(err):
+        lg.err(str(err))
+        ret.callback(ERROR(err))
+        return None
+
+    d = dht_service.get_valid_data(
+        key=key,
+        rules=dht_records.get_rules(record_type),
+        raise_for_result=False,
+    )
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
+
+
+def dht_value_set(key, value, expire=None, record_type='skip_validation'):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    if not isinstance(value, dict):
+        try:
+            value = json.loads(value)
+        except Exception as exc:
+            lg.exc()
+            return ERROR('input value must be a json')
+    try:
+        jsn.dumps(value, indent=0, sort_keys=True, separators=(',', ':'))
+    except Exception as exc:
+        return ERROR(exc)
+
+    if value.get('type') != record_type:
+        lg.warn('invalid json data going to be written, "type" field was not populated')
+        value['type'] = record_type
+
+    import base64
+    from dht import dht_service
+    from dht import dht_records
+    ret = Deferred()
+
+    def _cb(response):
+        try:
+            if isinstance(response, list):
+                return ret.callback(OK({
+                    'write': 'success',
+                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'key': strng.to_text(key, errors='ignore'),
+                    'key_64': base64.b64encode(key),
+                    'value': value,
+                    'closest_nodes': [{
+                        'dht_id': base64.b64encode(c.id),
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }))
+            return ret.callback(ERROR('unexpected DHT response'))
+        except Exception as exc:
+            lg.exc()
+            return ret.callback(ERROR(exc))
+
+    def _eb(err):
+        try:
+            nodes = []
+            try:
+                errmsg = err.value.subFailure.getErrorMessage()
+            except:
+                errmsg = 'store operation failed'
+            try:
+                nodes = err.value
+            except:
+                pass
+            closest_nodes = []
+            if nodes and isinstance(nodes, list) and hasattr(nodes[0], 'address') and hasattr(nodes[0], 'port'):
+                closest_nodes = [{
+                    'dht_id': base64.b64encode(c.id),
+                    'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                } for c in nodes]
+            return ret.callback(ERROR(errmsg, extra_fields={
+                'write': 'failed',
+                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'key': strng.to_text(key, errors='ignore'),
+                'key_64': base64.b64encode(key),
+                'closest_nodes': closest_nodes,
+            }))
+        except Exception as exc:
+            lg.exc()
+            return ERROR(exc)
+
+    d = dht_service.set_valid_data(
+        key=key,
+        json_data=value,
+        expire=expire or dht_service.KEY_EXPIRE_MAX_SECONDS,
+        rules=dht_records.get_rules(record_type),
+        collect_results=True,
+    )
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
 
 #------------------------------------------------------------------------------
