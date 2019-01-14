@@ -3530,7 +3530,7 @@ def dht_node_find(node_id_64=None):
     return ret
 
 
-def dht_value_get(key, record_type='random'):
+def dht_value_get(key, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     import base64
@@ -3563,13 +3563,17 @@ def dht_value_get(key, record_type='random'):
         ret.callback(ERROR(err))
         return None
 
-    d = dht_service.get_valid_data(key, rules=dht_records.get_rules(record_type), raise_for_result=False)
+    d = dht_service.get_valid_data(
+        key=key,
+        rules=dht_records.get_rules(record_type),
+        raise_for_result=False,
+    )
     d.addCallback(_cb)
     d.addErrback(_eb)
     return ret
 
 
-def dht_value_set(key, value, expire=None, record_type='random'):
+def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
     if not isinstance(value, dict):

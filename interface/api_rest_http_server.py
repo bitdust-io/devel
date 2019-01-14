@@ -854,7 +854,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def dht_value_get_v1(self, request):
         return api.dht_value_get(
             key=_request_arg(request, 'key', mandatory=True),
-            record_type=_request_arg(request, 'record_type', mandatory=False, default='random'),
+            record_type=_request_arg(request, 'record_type', mandatory=False, default='skip_validation'),
         )
 
     @POST('^/d/v/s$')
@@ -865,7 +865,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key=data['key'],
             value=data['value'],
             expire=data.get('expire', None),
-            record_type=data.get('record_type', 'random'),
+            record_type=data.get('record_type', 'skip_validation'),
         )
 
     #------------------------------------------------------------------------------

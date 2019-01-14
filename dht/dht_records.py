@@ -72,8 +72,8 @@ _Rules = {
         'suppliers': [{'op': 'exist', }, ],
         'revision': [{'op': 'exist', }, ],
     },
-    'random': {
-        'type': [{'op': 'equal', 'arg': 'random', }, ],
+    'skip_validation': {
+        'type': [{'op': 'equal', 'arg': 'skip_validation', }, ],
     },
 }
 
@@ -135,12 +135,18 @@ def set_udp_incoming():
 
 #------------------------------------------------------------------------------
 
+
 def get_relation(key):
     if _Debug:
         lg.args(_DebugLevel, key)
     return dht_service.get_valid_data(key, rules=get_rules('relation'))
 
 def set_relation(key, idurl, data, prefix, index, expire=60*60):
+    # TODO: set_relation() is OBSOLETE...
+    # because of performance reasonse it is better to maintain only one DHT record for each relation exclusively
+    # need to use another solution here instead of storing multiple records...  
+    # check out family_memeber()
+
     if _Debug:
         lg.args(_DebugLevel, key, idurl, prefix, index)
     return dht_service.set_valid_data(
