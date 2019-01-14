@@ -416,10 +416,16 @@ class FamilyMember(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'family_memeber.doNotifyConnected\n    my_info=%r\n    dht_info=%r\n    requests=%r' % (
                 self.my_info, self.dht_info, self.requests, ))
+        to_be_closed = False
+        if self.current_request['command'] == 'family-leave':
+            to_be_closed = True
         self.current_request = None
         if self.refresh_task.running:
             self.refresh_task.stop()
         self.refresh_task.start(self.refresh_period, now=False)
+        if to_be_closed:
+            self.requests = []
+            self.automat('shutdown')
 
     def doNotifyDisconnected(self, *args, **kwargs):
         """
@@ -638,8 +644,9 @@ class FamilyMember(automat.Automat):
         current_request_expected_suppliers_count = None
         if current_request['ecc_map']:
             current_request_expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
-        if current_request_expected_suppliers_count and current_request['position'] >= current_request_expected_suppliers_count:
-            lg.warn('"family-join" request is not valid, supplier position greater than expected suppliers count')
+        if current_request_expected_suppliers_count and current_request['position'] > current_request_expected_suppliers_count:
+            lg.warn('"family-join" request is not valid, supplier position %d greater than expected suppliers count %d for %s' % (
+                current_request['position'], current_request_expected_suppliers_count, current_request['ecc_map']))
             return None
 
         if merged_info['ecc_map'] and current_request['ecc_map'] and current_request['ecc_map'] != merged_info['ecc_map']:
