@@ -26,39 +26,71 @@ import pprint
 from ..testsupport import tunnel_url
 
 
-def read_value(node, key, record_type, expected_value):
+# TODO: keep this list up to date with docker-compose links
+VALIDATORS_NODES = [
+    'customer_1',
+    'customer_2',
+    'customer_3',
+    'customer_4',
+    'customer_5',
+    'supplier_1',
+    'supplier_2',
+    'supplier_3',
+    'supplier_4',
+    'supplier_5',
+    'supplier_6',
+    'supplier_7',
+    'supplier_8',
+    'proxy_server_1',
+    'proxy_server_2',
+    'stun_1',
+    'stun_2',
+    'dht_seed_1',
+    'dht_seed_2',
+]
+
+
+def read_value(node, key, expected_data, record_type='skip_validation', ):
     response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )))
     assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
     print('\n\ndht/value/get/v1?key=%s from %s\n%s\n' % (key, node, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['key'] == key, response.json()
-    if expected_value == 'not_exist':
+    if expected_data == 'not_exist':
         assert response.json()['result'][0]['read'] == 'failed', response.json()
         assert 'value' not in response.json()['result'][0], response.json()
         assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
     else:
         assert response.json()['result'][0]['read'] == 'success', response.json()
         assert 'value' in response.json()['result'][0], response.json()
-        assert response.json()['result'][0]['value'] == expected_value, response.json()
+        assert response.json()['result'][0]['value']['data'] == expected_data, response.json()
+        assert response.json()['result'][0]['value']['key'] == key, response.json()
+        assert response.json()['result'][0]['value']['type'] == record_type, response.json()
 
 
-def write_value(node, key, value, record_type):
+def write_value(node, key, new_data, record_type='skip_validation', ):
     response = requests.post(
         url=tunnel_url(node, 'dht/value/set/v1'),
         json={
             'key': key,
             'record_type': record_type,
-            'value': value,
+            'value': {
+                'data': new_data,
+                'type': record_type,
+                'key': key,
+            },
         },
     )
     assert response.status_code == 200
+    print('\n\ndht/value/set/v1 key=%s value=%s from %s\n%s\n' % (key, new_data, node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
-    print('\n\ndht/value/set/v1 key=%s value=%s from %s\n%s\n' % (key, value, node, pprint.pformat(response.json())))
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['write'] == 'success', response.json()
     assert response.json()['result'][0]['key'] == key, response.json()
-    assert response.json()['result'][0]['value'] == value, response.json()
+    assert response.json()['result'][0]['value']['data'] == new_data, response.json()
+    assert response.json()['result'][0]['value']['key'] == key, response.json()
+    assert response.json()['result'][0]['value']['type'] == record_type, response.json()
     assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
 
 
@@ -66,8 +98,7 @@ def test_get_value_not_exist_customer_1():
     read_value(
         node='customer_1',
         key='value_not_exist_customer_1',
-        record_type='skip_validation', 
-        expected_value='not_exist',
+        expected_data='not_exist',
     )
 
 
@@ -75,14 +106,12 @@ def test_set_value_customer_1_and_get_value_customer_1():
     write_value(
         node='customer_1',
         key='test_key_1_customer_1',
-        record_type='skip_validation',
-        value={'data': 'test_data_1_customer_1', 'type': 'skip_validation', },
+        new_data='test_data_1_customer_1',
     )
     read_value(
         node='customer_1',
         key='test_key_1_customer_1',
-        record_type='skip_validation',
-        expected_value={'data': 'test_data_1_customer_1', 'type': 'skip_validation', },
+        expected_data='test_data_1_customer_1',
     )
 
 
@@ -90,12 +119,24 @@ def test_set_value_customer_2_and_get_value_customer_3():
     write_value(
         node='customer_2',
         key='test_key_1_customer_2',
-        record_type='skip_validation', 
-        value={'data': 'test_data_1_customer_2', 'type': 'skip_validation', },
+        new_data='test_data_1_customer_2',
     )
     read_value(
         node='customer_3',
         key='test_key_1_customer_2',
-        record_type='skip_validation',
-        expected_value={'data': 'test_data_1_customer_2', 'type': 'skip_validation', },
+        expected_data='test_data_1_customer_2',
     )
+
+
+def test_get_value_all_nodes():
+    write_value(
+        node='supplier_1',
+        key='test_key_1_supplier_1',
+        new_data='test_data_1_supplier_1',
+    )
+    for node in VALIDATORS_NODES:
+        read_value(
+            node=node,
+            key='test_key_1_supplier_1',
+            expected_data='test_data_1_supplier_1',
+        )

@@ -431,7 +431,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
     new_record_type = json_new_value.get('type')
     if not new_record_type:
         if _Debug:
-            lg.out(_DebugLevel, '        new json data did not have type field, store operation FAILED')
+            lg.out(_DebugLevel, '        new json data do not have "type" field present, store operation FAILED')
         return False
     if key not in node()._dataStore:
         if _Debug:
@@ -449,6 +449,21 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         if _Debug:
             lg.out(_DebugLevel, '        new json data type did not match to existing record type, store operation FAILED')
         return False
+    # TODO: need to include "key" field into DHT record and validate it as well 
+    # new_record_key = json_new_value.get('key')
+    # if not new_record_key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data do not have "key" field present, store operation FAILED')
+    #     return False
+    # if new_record_key != key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data do not have "key" field set properly, store operation FAILED')
+    #     return False
+    # prev_record_key = json_prev_value.get('key')
+    # if prev_record_key and prev_record_key != new_record_key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data "key" field do not match to existing record "key", store operation FAILED')
+    #     return False
     try:
         prev_revision = int(json_prev_value['revision'])
     except:
@@ -547,7 +562,9 @@ def validate_data_written(store_results, key, json_data, result_defer):
         if results_collected:
             for result in store_results[1]:
                 if not result or not (isinstance(result, list) or isinstance(result, tuple)):
-                    result_defer.errback(store_results)
+                    if _Debug:
+                        lg.out(_DebugLevel, '    store operation failed because of unexpected result received: %r' % store_results)
+                    result_defer.errback(nodes)
                     return None
                 if not result[0] or not result[1] == 'OK':
                     if _Debug:

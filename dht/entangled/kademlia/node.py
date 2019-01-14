@@ -35,7 +35,7 @@ from . import protocol  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):
@@ -211,7 +211,7 @@ class Node(object):
                 except:
                     o = 'Unknown Error'
                 print('storeFailed', o)
-            return None
+            return o
 
         # Prepare a callback for doing "STORE" RPC calls
 
