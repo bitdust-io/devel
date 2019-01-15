@@ -3600,6 +3600,9 @@ def dht_value_get(key, record_type='skip_validation'):
                 'key_64': base64.b64encode(key),
                 'value': value,
             }))
+        closest_nodes = []
+        if isinstance(value, list):
+            closest_nodes = value
         if _Debug:
             lg.out(_DebugLevel, 'api.dht_value_get ERROR: %r' % value)
         return ret.callback(OK({
@@ -3610,7 +3613,7 @@ def dht_value_get(key, record_type='skip_validation'):
             'closest_nodes': [{
                 'dht_id': base64.b64encode(c.id),
                 'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
-            } for c in value],
+            } for c in closest_nodes],
         }))
 
     def _eb(err):
