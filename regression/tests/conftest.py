@@ -316,6 +316,7 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2):
     run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number %d' % num_suppliers)
     # create randomized file to test file upload/download
     run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt')
+    run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/second_file_{node}.txt')
     # start BitDust daemon and create new identity for supplier
     start_daemon(node)
     health_check(node)

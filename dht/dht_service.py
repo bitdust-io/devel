@@ -511,6 +511,7 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True, p
         if result_defer:
             result_defer.errback(Exception('data must have validation rules applied'))
         return None
+
     if not isinstance(value, dict):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
@@ -525,11 +526,11 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True, p
         value['key'] = key
 
     try:
-        record_type = rules['type']['arg']
+        record_type = rules['type'][0]['arg']
     except:
         lg.exc()
         if result_defer:
-            result_defer.errback(Exception('bad rules applied'))
+            result_defer.errback(Exception('validation rules can not be applied'))
         return None
     if value.get('type') != record_type and populate_meta_fields:
         value['type'] = record_type
@@ -539,6 +540,7 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True, p
     for field, field_rules in rules.items():
         for rule in field_rules:
             if 'op' not in rule:
+                lg.warn('incorrect validation rule found: %r' % rule)
                 continue
             if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
                 passed = False

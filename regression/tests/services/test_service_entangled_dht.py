@@ -21,7 +21,6 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import requests
-import pprint
 
 from ..testsupport import tunnel_url
 

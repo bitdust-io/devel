@@ -22,7 +22,6 @@
 
 import time
 import requests
-import pprint
 
 from ..testsupport import tunnel_url
 
