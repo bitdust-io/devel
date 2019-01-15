@@ -3588,8 +3588,12 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
         return ERROR(exc)
 
     if value.get('type') != record_type:
-        lg.warn('invalid json data going to be written, "type" field was not populated')
+        lg.warn('invalid json data was going to be written, "type" field updated properly')
         value['type'] = record_type
+
+    if value.get('key') != key:
+        lg.warn('invalid json data was going to be written, "key" field updated properly')
+        value['key'] = key
 
     import base64
     from dht import dht_service

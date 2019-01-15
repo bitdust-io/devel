@@ -315,8 +315,7 @@ def split_key(key_str):
 
 def on_success(result, method, key, *args, **kwargs):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   with : %r' % (
-            method, key, result, ))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)' % (method, key, ))
     return result
 
 
@@ -424,15 +423,15 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
     except:
         # not a json data to be written - this is not valid
         lg.exc()
-        return False
+        raise ValueError('input data is not a json value')
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (
             base64.b64encode(key), json_new_value, ))
     new_record_type = json_new_value.get('type')
     if not new_record_type:
         if _Debug:
-            lg.out(_DebugLevel, '        new json data did not have type field, store operation FAILED')
-        return False
+            lg.out(_DebugLevel, '        new json data do not have "type" field present, store operation FAILED')
+        raise ValueError('input data do not have "type" field present')
     if key not in node()._dataStore:
         if _Debug:
             lg.out(_DebugLevel, '        previous value not exists yet, store OK')
@@ -448,7 +447,22 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
     if prev_record_type and prev_record_type != new_record_type:
         if _Debug:
             lg.out(_DebugLevel, '        new json data type did not match to existing record type, store operation FAILED')
-        return False
+        raise ValueError('new json data type do not match to existing record type')
+    # TODO: need to include "key" field into DHT record and validate it as well 
+    # new_record_key = json_new_value.get('key')
+    # if not new_record_key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data do not have "key" field present, store operation FAILED')
+    #     return False
+    # if new_record_key != key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data do not have "key" field set properly, store operation FAILED')
+    #     return False
+    # prev_record_key = json_prev_value.get('key')
+    # if prev_record_key and prev_record_key != new_record_key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data "key" field do not match to existing record "key", store operation FAILED')
+    #     return False
     try:
         prev_revision = int(json_prev_value['revision'])
     except:
@@ -461,11 +475,11 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         if new_revision < 0:
             if _Debug:
                 lg.out(_DebugLevel, '        new json data must have a revision, store operation FAILED')
-            return False
+            raise ValueError('new json data must have a revision')
         if new_revision < prev_revision:
             if _Debug:
                 lg.out(_DebugLevel, '        new json data must increment revision number, store operation FAILED')
-            return False
+            raise ValueError('new json data must increment revision number')
         if new_revision == prev_revision:
             if prev_record_type == 'suppliers':
                 prev_ecc_map = json_prev_value.get('ecc_map')
@@ -473,13 +487,13 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
                 if prev_ecc_map and new_ecc_map != prev_ecc_map:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
-                    return False
+                    raise ValueError('new json data have same revision but different ecc_map')
                 prev_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_prev_value.get('suppliers', [])]
                 new_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_new_value.get('suppliers', [])]
                 if prev_suppliers != new_suppliers:
                     if _Debug:
-                        lg.out(_DebugLevel, '        new json data have same revision but different suppliers, store operation FAILED')
-                    return False
+                        lg.out(_DebugLevel, '        new json data have same revision but different suppliers list, store operation FAILED')
+                    raise ValueError('new json data have same revision but different suppliers list')
     if _Debug:
         lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
     return True
@@ -546,13 +560,26 @@ def validate_data_written(store_results, key, json_data, result_defer):
                 base64.b64encode(key), results_collected, nodes, ))
         if results_collected:
             for result in store_results[1]:
-                if not result or not (isinstance(result, list) or isinstance(result, tuple)):
-                    result_defer.errback(store_results)
+                try:
+                    success = result[0]
+                    response = result[1]
+                    success_str = repr(success)
+                    response_str = repr(response)
+                except Exception as exc:
+                    lg.exc()
+                    result_defer.errback(exc)
                     return None
-                if not result[0] or not result[1] == 'OK':
+                if success_str.count('TimeoutError') or response_str.count('TimeoutError'):
+                    continue
+                if not success:
                     if _Debug:
-                        lg.out(_DebugLevel, '    store operation failed on one of the nodes: %r' % result[1])
-                    result_defer.errback(nodes)
+                        lg.out(_DebugLevel, '    store operation failed: %r' % response)
+                    result_defer.errback(ValueError(response))
+                    return None
+                if response != 'OK':
+                    if _Debug:
+                        lg.out(_DebugLevel, '    store operation failed, unexpected response received: %r' % response)
+                    result_defer.errback(ValueError(response))
                     return None
             result_defer.callback(nodes)
             return None

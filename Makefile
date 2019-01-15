@@ -136,6 +136,10 @@ regression_log_one/%:
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/main.log
 
+regression_log_states_one/%:
+	@echo "### [identity-server] #########################################################################"
+	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/automats.log
+
 regression_logs_all:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
@@ -221,6 +225,29 @@ regression_logs_all_states:
 	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/automats.log
 	@echo "### [customer_5] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/automats.log
+
+
+dht_network_up:
+	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
+
+dht_network_run_producer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 5"
+
+dht_network_run_producer/%:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 $*"
+
+dht_network_run_consumer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 5"
+
+dht_network_run_consumer/%:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 $*"
+
+dht_network_ssh_producer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash
+
+dht_network_ssh_consumer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash
+
 
 lint: venv_install
 	@$(TOX) -e lint

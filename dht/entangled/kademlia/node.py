@@ -35,7 +35,7 @@ from . import protocol  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):
@@ -195,32 +195,38 @@ class Node(object):
         collect_results = kwargs.pop('collect_results', False)
         ret = defer.Deferred()
 
-        def storeSuccess(ok):
+        def storeSuccess(ok, key):
             if _Debug:
                 try:
                     o = repr(ok)
                 except:
                     o = 'Unknown Error'
-                print('storeSuccess', o)
+                print('storeSuccess', key, o)
             return ok
 
-        def storeFailed(x):
+        def storeFailed(x, key):
             if _Debug:
                 try:
-                    o = repr(x)
+                    o = repr(x.value)
                 except:
-                    o = 'Unknown Error'
-                print('storeFailed', o)
-            return None
+                    try:
+                        o = repr(x)
+                    except:
+                        o = 'Unknown Error'
+                print('storeFailed', key, o)
+            return o
 
         # Prepare a callback for doing "STORE" RPC calls
 
         def findNodeFailed(x):
             if _Debug:
                 try:
-                    o = repr(x)
+                    o = repr(x.value)
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        o = repr(x)
+                    except:
+                        o = 'Unknown Error'
                 print('findNodeFailed', o)
             return x
 
@@ -232,9 +238,12 @@ class Node(object):
         def storeRPCsFailed(x):
             if _Debug:
                 try:
-                    o = repr(x)
+                    o = repr(x.value)
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        o = repr(x)
+                    except:
+                        o = 'Unknown Error'
                 print('storeRPCsFailed', o)
             ret.errback(x)
             return None
@@ -266,8 +275,8 @@ class Node(object):
                         
                 for contact in nodes:
                     d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
-                    d.addCallback(storeSuccess)
-                    d.addErrback(storeFailed)
+                    d.addCallback(storeSuccess, key)
+                    d.addErrback(storeFailed, key)
                     l.append(d)
                 if not collect_results:
                     return nodes
@@ -681,6 +690,7 @@ class Node(object):
                 failure.trap(protocol.TimeoutError)
                 deadContactID = failure.getErrorMessage()
                 if deadContactID in shortlist:
+                    if _Debug: print('removing')
                     shortlist.remove(deadContactID)
                 return deadContactID
     
