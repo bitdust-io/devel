@@ -408,11 +408,23 @@ async def report_one_node(node):
         node, num_warnings, num_errors, num_tracebacks, num_failures, num_exceptions, ))
 
 
+async def print_exceptions_one_node(node):
+    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log')[0].strip()
+    if exceptions_out:
+        print('\n[%s]:\n\n%s\n\n' % (node, exceptions_out, ))
+
+
 def report_all_nodes(event_loop):
     print('\n\nTest report:')
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
     ]))
+    print('\n\ALL EXCEPTIONS:')
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(print_exceptions_one_node(node)) for node in ALL_NODES
+    ]))
+
+
 
 #------------------------------------------------------------------------------
 
