@@ -103,10 +103,10 @@ class CoinsAccountantService(LocalService):
         return accountant_node.A().state in [
             'READY', 'READ_COINS', 'VALID_COIN?', 'WRITE_COIN!', ]
 
-    def _on_accountant_node_switched(self, oldstate, newstate, evt, args):
+    def _on_accountant_node_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
         from coins import accountant_node
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
-            reactor.callLater(10 * 60, accountant_node.A, 'start')
+            reactor.callLater(10 * 60, accountant_node.A, 'start')  # @UndefinedVariable
             lg.out(8, 'service_broadcasting._on_accountant_node_switched will try to reconnect again after 10 minutes')

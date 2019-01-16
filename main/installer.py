@@ -113,7 +113,7 @@ def IsExist():
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -121,7 +121,7 @@ def A(event=None, arg=None):
     if _Installer is None:
         _Installer = Installer('installer', 'AT_STARTUP', 2, True)
     if event is not None:
-        _Installer.automat(event, arg)
+        _Installer.automat(event, *args, **kwargs)
     return _Installer
 
 
@@ -153,11 +153,11 @@ class Installer(automat.Automat):
         self.log_events = True
         self.flagCmdLine = False
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('INSTALL ' + newstate)
         initializer.A('installer.state', newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
@@ -166,157 +166,157 @@ class Installer(automat.Automat):
             elif event == 'register-cmd-line':
                 self.state = 'REGISTER'
                 self.flagCmdLine=True
-                self.doInit(arg)
-                id_registrator.A('start', arg)
+                self.doInit(*args, **kwargs)
+                id_registrator.A('start', *args, **kwargs)
             elif event == 'recover-cmd-line':
                 self.state = 'RECOVER'
                 self.flagCmdLine=True
-                self.doInit(arg)
-                id_restorer.A('start', arg)
+                self.doInit(*args, **kwargs)
+                id_restorer.A('start', *args, **kwargs)
         #---WHAT_TO_DO?---
         elif self.state == 'WHAT_TO_DO?':
             if event == 'register-selected':
                 self.state = 'INPUT_NAME'
-                self.doUpdate(arg)
+                self.doUpdate(*args, **kwargs)
             elif event == 'recover-selected':
                 self.state = 'LOAD_KEY'
-                self.doUpdate(arg)
+                self.doUpdate(*args, **kwargs)
         #---INPUT_NAME---
         elif self.state == 'INPUT_NAME':
             if event == 'back':
                 self.state = 'WHAT_TO_DO?'
-                self.doClearOutput(arg)
-                self.doUpdate(arg)
-            elif event == 'register-start' and self.isNameValid(arg):
+                self.doClearOutput(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif event == 'register-start' and self.isNameValid(*args, **kwargs):
                 self.state = 'REGISTER'
-                self.doClearOutput(arg)
-                self.doSaveName(arg)
-                id_registrator.A('start', arg)
-                self.doUpdate(arg)
-            elif event == 'register-start' and not self.isNameValid(arg):
-                self.doClearOutput(arg)
-                self.doPrintIncorrectName(arg)
-                self.doUpdate(arg)
+                self.doClearOutput(*args, **kwargs)
+                self.doSaveName(*args, **kwargs)
+                id_registrator.A('start', *args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif event == 'register-start' and not self.isNameValid(*args, **kwargs):
+                self.doClearOutput(*args, **kwargs)
+                self.doPrintIncorrectName(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
             elif event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
         #---LOAD_KEY---
         elif self.state == 'LOAD_KEY':
             if event == 'back':
                 self.state = 'WHAT_TO_DO?'
-                self.doClearOutput(arg)
-                self.doUpdate(arg)
+                self.doClearOutput(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
             elif event == 'load-from-file':
-                self.doReadKey(arg)
-                self.doUpdate(arg)
+                self.doReadKey(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
             elif event == 'paste-from-clipboard':
-                self.doPasteKey(arg)
-                self.doUpdate(arg)
+                self.doPasteKey(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
             elif event == 'restore-start':
                 self.state = 'RECOVER'
-                self.doClearOutput(arg)
-                id_restorer.A('start', arg)
-                self.doUpdate(arg)
+                self.doClearOutput(*args, **kwargs)
+                id_restorer.A('start', *args, **kwargs)
+                self.doUpdate(*args, **kwargs)
             elif event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
         #---REGISTER---
         elif self.state == 'REGISTER':
             if event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
-            elif ( event == 'id_registrator.state' and arg == 'FAILED' ) and not self.flagCmdLine:
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'id_registrator.state' and args[0] == 'FAILED' ) and not self.flagCmdLine:
                 self.state = 'INPUT_NAME'
-                self.doShowOutput(arg)
-                self.doUpdate(arg)
-            elif ( event == 'id_registrator.state' and arg == 'DONE' ) and not self.flagCmdLine:
+                self.doShowOutput(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'id_registrator.state' and args[0] == 'DONE' ) and not self.flagCmdLine:
                 self.state = 'AUTHORIZED'
-                self.doPrepareSettings(arg)
-                self.doUpdate(arg)
-            elif ( event == 'id_registrator.state' and arg in [ 'DONE' , 'FAILED' ] ) and self.flagCmdLine:
+                self.doPrepareSettings(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'id_registrator.state' and args[0] in [ 'DONE' , 'FAILED' ] ) and self.flagCmdLine:
                 self.state = 'DONE'
-                self.doUpdate(arg)
+                self.doUpdate(*args, **kwargs)
         #---AUTHORIZED---
         elif self.state == 'AUTHORIZED':
             if event == 'next':
                 self.state = 'WIZARD'
-                self.doUpdate(arg)
+                self.doUpdate(*args, **kwargs)
             elif event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
         #---RECOVER---
         elif self.state == 'RECOVER':
             if event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
-            elif ( event == 'id_restorer.state' and arg in [ 'RESTORED!' , 'FAILED' ] ) and self.flagCmdLine:
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'id_restorer.state' and args[0] in [ 'RESTORED!' , 'FAILED' ] ) and self.flagCmdLine:
                 self.state = 'DONE'
-                self.doUpdate(arg)
-            elif ( event == 'id_restorer.state' and arg == 'RESTORED!' ) and not self.flagCmdLine:
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'id_restorer.state' and args[0] == 'RESTORED!' ) and not self.flagCmdLine:
                 self.state = 'RESTORED'
-                self.doRestoreSettings(arg)
-                self.doUpdate(arg)
-            elif ( event == 'id_restorer.state' and arg == 'FAILED' ) and not self.flagCmdLine:
+                self.doRestoreSettings(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'id_restorer.state' and args[0] == 'FAILED' ) and not self.flagCmdLine:
                 self.state = 'LOAD_KEY'
-                self.doUpdate(arg)
+                self.doUpdate(*args, **kwargs)
         #---DONE---
         elif self.state == 'DONE':
             if event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
         #---WIZARD---
         elif self.state == 'WIZARD':
             if event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
-            elif ( event == 'install_wizard.state' and arg == 'DONE' ):
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'install_wizard.state' and args[0] == 'DONE' ):
                 self.state = 'DONE'
-                self.doUpdate(arg)
+                self.doUpdate(*args, **kwargs)
         #---RESTORED---
         elif self.state == 'RESTORED':
             if event == 'print':
-                self.doPrint(arg)
-                self.doUpdate(arg)
+                self.doPrint(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
             elif event == 'next':
                 self.state = 'WIZARD'
-                self.doUpdate(arg)
+                self.doUpdate(*args, **kwargs)
         return None
 
-    def isNameValid(self, arg):
-        if not misc.ValidUserName(arg['username']):
+    def isNameValid(self, *args, **kwargs):
+        if not misc.ValidUserName(args[0]['username']):
             return False
         return True
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doUpdate(self, arg):
+    def doUpdate(self, *args, **kwargs):
         # lg.out(4, 'installer.doUpdate')
         from main import control
         control.request_update([{'state': self.state}, ])
 
-    def doClearOutput(self, arg):
+    def doClearOutput(self, *args, **kwargs):
         # lg.out(4, 'installer.doClearOutput')
         for state in self.output.keys():
             self.output[state] = {'data': [('', 'black')]}
 
-    def doPrint(self, arg):
-        lg.out(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
+    def doPrint(self, *args, **kwargs):
+        lg.out(8, 'installer.doPrint %s %s' % (self.state, str(*args, **kwargs)))
         if self.state not in self.output:
             self.output[self.state] = {'data': [('', 'black')]}
-        if arg is None:
+        if not args or args[0] is None:
             self.output[self.state]['data'] = [('', 'black')]
         else:
-            self.output[self.state]['data'].append(arg)
+            self.output[self.state]['data'].append(args[0])
         if self.flagCmdLine:
             ch = '+'
-            if arg[1] == 'red':
+            if args and args[0][1] == 'red':
                 ch = '!'
-            lg.out(0, '  %s %s' % (ch, arg[0]))
+            lg.out(0, '  %s %s' % (ch, args[0][0] if args else ''))
 
-    def doShowOutput(self, arg):
+    def doShowOutput(self, *args, **kwargs):
         """
         Action method.
         """
@@ -324,20 +324,20 @@ class Installer(automat.Automat):
             self.output['INPUT_NAME'] = {'data': [('', 'black')]}
         self.output['INPUT_NAME']['data'] = self.output['REGISTER']['data']
 
-    def doPrintIncorrectName(self, arg):
+    def doPrintIncorrectName(self, *args, **kwargs):
         text, color = ('incorrect user name', 'red')
         if self.state not in self.output:
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['data'].append((text, color))
         # lg.out(0, '  [%s]' % text)
 
-    def doSaveName(self, arg):
-        settings.setPrivateKeySize(arg['pksize'])
-        bpio.WriteTextFile(settings.UserNameFilename(), arg['username'])
+    def doSaveName(self, *args, **kwargs):
+        settings.setPrivateKeySize(args[0]['pksize'])
+        bpio.WriteTextFile(settings.UserNameFilename(), args[0]['username'])
 
-    def doReadKey(self, arg):
+    def doReadKey(self, *args, **kwargs):
         # keyfn = arg['keyfilename']
-        src = arg['keysrc']
+        src = args[0]['keysrc']
         lg.out(2, 'installer.doReadKey length=%s' % len(src))
         # src = bpio.ReadBinaryFile(keyfn)
         if len(src) > 1024 * 10:
@@ -366,7 +366,7 @@ class Installer(automat.Automat):
         elif not idurl and keysrc:
             self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
 
-    def doPasteKey(self, arg):
+    def doPasteKey(self, *args, **kwargs):
         src = misc.getClipboardText()
         try:
             lines = src.split('\n')
@@ -390,17 +390,17 @@ class Installer(automat.Automat):
         elif not idurl and keysrc:
             self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
 
-    def doPrepareSettings(self, arg):
+    def doPrepareSettings(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doRestoreSettings(self, arg):
+    def doRestoreSettings(self, *args, **kwargs):
         """
         Action method.
         """
 
-#    def doIncreaseDebugLevel(self, arg):
+#    def doIncreaseDebugLevel(self, *args, **kwargs):
 #        """
 #        """
 #        if self.flagCmdLine and not lg.is_debug(10):

@@ -27,6 +27,11 @@
                 "host": "new-vennep.ai",
                 "udp_port": 14441,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
+            },
+            {
+                "host": "seed.bitdust.io",
+                "udp_port": 14441,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
             }
         ],
         "identity-servers": [
@@ -59,6 +64,12 @@
                 "http_port": 80,
                 "tcp_port": 6661,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
+            },
+            {
+                "host": "seed.bitdust.io",
+                "http_port": 80,
+                "tcp_port": 6661,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
             }
         ]
     },
@@ -67,23 +78,12 @@
         "repository": "https://github.com/bitdust-io/devel.git",
         "dht-seeds": [
             {
-                "host": "bitdust.io",
-                "udp_port": 14441,
-                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
-            },
-            {
                 "host": "blog.bitdust.io",
                 "udp_port": 14441,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
             }
         ],
         "identity-servers": [
-            {
-                "host": "bitdust.io",
-                "http_port": 8084,
-                "tcp_port": 6661,
-                "maintainer": "Veselin Penev (penev.veselin@gmail.com)"
-            },
             {
                 "host": "blog.bitdust.io",
                 "http_port": 80,

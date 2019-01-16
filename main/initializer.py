@@ -94,7 +94,7 @@ _Initializer = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None, use_reactor=True):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -102,10 +102,10 @@ def A(event=None, arg=None, use_reactor=True):
     if _Initializer is None:
         _Initializer = Initializer('initializer', 'AT_STARTUP', 2, True)
     if event is not None:
-        if use_reactor:
-            _Initializer.automat(event, arg)
+        if kwargs.get('use_reactor', True):
+            _Initializer.automat(event, *args, **kwargs)
         else:
-            _Initializer.event(event, arg)
+            _Initializer.event(event, *args, **kwargs)
     return _Initializer
 
 
@@ -133,10 +133,10 @@ class Initializer(automat.Automat):
         self.flagGUI = False
         self.is_installed = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('INIT ' + newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         from main import installer
         from main import shutdowner
         #---AT_STARTUP---
@@ -144,67 +144,67 @@ class Initializer(automat.Automat):
             if event == 'run':
                 self.state = 'LOCAL'
                 shutdowner.A('init')
-                self.doInitLocal(arg)
+                self.doInitLocal(*args, **kwargs)
                 self.flagCmdLine=False
             elif event == 'run-cmd-line-register':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
                 self.flagCmdLine=True
-                installer.A('register-cmd-line', arg)
+                installer.A('register-cmd-line', *args, **kwargs)
                 shutdowner.A('ready')
             elif event == 'run-cmd-line-recover':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
                 self.flagCmdLine=True
-                installer.A('recover-cmd-line', arg)
+                installer.A('recover-cmd-line', *args, **kwargs)
                 shutdowner.A('ready')
         #---LOCAL---
         elif self.state == 'LOCAL':
-            if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg):
+            if event == 'init-local-done' and not self.isInstalled(*args, **kwargs) and self.isGUIPossible(*args, **kwargs):
                 self.state = 'INSTALL'
                 installer.A('init')
                 shutdowner.A('ready')
-                self.doInitInterfaces(arg)
-                self.doShowGUI(arg)
-                self.doUpdate(arg)
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.doInitInterfaces(*args, **kwargs)
+                self.doShowGUI(*args, **kwargs)
+                self.doUpdate(*args, **kwargs)
+            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
                 self.state = 'STOPPING'
-                self.doDestroyMe(arg)
-            elif event == 'init-local-done' and ( ( not self.isInstalled(arg) and not self.isGUIPossible(arg) ) or self.isInstalled(arg) ):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'init-local-done' and ( ( not self.isInstalled(*args, **kwargs) and not self.isGUIPossible(*args, **kwargs) ) or self.isInstalled(*args, **kwargs) ):
                 self.state = 'INTERFACES'
                 shutdowner.A('ready')
-                self.doInitInterfaces(arg)
+                self.doInitInterfaces(*args, **kwargs)
         #---MODULES---
         elif self.state == 'MODULES':
             if event == 'init-modules-done':
                 self.state = 'READY'
-                self.doUpdate(arg)
-                self.doShowGUI(arg)
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.doUpdate(*args, **kwargs)
+                self.doShowGUI(*args, **kwargs)
+            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
                 self.state = 'EXIT'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---INSTALL---
         elif self.state == 'INSTALL':
-            if not self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ):
+            if not self.flagCmdLine and ( event == 'installer.state' and args[0] == 'DONE' ):
                 self.state = 'STOPPING'
                 shutdowner.A('stop', "restartnshow")
-            elif self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ):
+            elif self.flagCmdLine and ( event == 'installer.state' and args[0] == 'DONE' ):
                 self.state = 'STOPPING'
                 shutdowner.A('stop', "exit")
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
                 self.state = 'EXIT'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---READY---
         elif self.state == 'READY':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            if ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
                 self.state = 'EXIT'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---STOPPING---
         elif self.state == 'STOPPING':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            if ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
                 self.state = 'EXIT'
-                self.doUpdate(arg)
-                self.doDestroyMe(arg)
+                self.doUpdate(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---EXIT---
         elif self.state == 'EXIT':
             pass
@@ -212,42 +212,42 @@ class Initializer(automat.Automat):
         elif self.state == 'SERVICES':
             if event == 'init-services-done':
                 self.state = 'MODULES'
-                self.doInitModules(arg)
+                self.doInitModules(*args, **kwargs)
                 shutdowner.A('ready')
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
                 self.state = 'EXIT'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---INTERFACES---
         elif self.state == 'INTERFACES':
             if event == 'init-interfaces-done':
                 self.state = 'SERVICES'
-                self.doInitServices(arg)
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.doInitServices(*args, **kwargs)
+            elif ( event == 'shutdowner.state' and args[0] == 'FINISHED' ):
                 self.state = 'EXIT'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
-    def isInstalled(self, arg):
+    def isInstalled(self, *args, **kwargs):
         if self.is_installed is None:
             self.is_installed = self._check_install()
         return self.is_installed
 
-    def isGUIPossible(self, arg):
+    def isGUIPossible(self, *args, **kwargs):
         return bpio.isGUIpossible()
 
-    def doUpdate(self, arg):
+    def doUpdate(self, *args, **kwargs):
         from main import control
         control.request_update()
 
-    def doInitLocal(self, arg):
+    def doInitLocal(self, *args, **kwargs):
         """
         """
-        self.flagGUI = arg.strip() == 'show'
+        self.flagGUI = args[0].strip() == 'show'
         lg.out(2, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
         self._init_local()
-        reactor.callLater(0, self.automat, 'init-local-done')
+        reactor.callLater(0, self.automat, 'init-local-done')  # @UndefinedVariable
 
-    def doInitServices(self, arg):
+    def doInitServices(self, *args, **kwargs):
         """
         Action method.
         """
@@ -256,7 +256,7 @@ class Initializer(automat.Automat):
         d = driver.start()
         d.addBoth(lambda x: self.automat('init-services-done'))
 
-    def doInitInterfaces(self, arg):
+    def doInitInterfaces(self, *args, **kwargs):
         lg.out(2, 'initializer.doInitInterfaces')
         if settings.enableFTPServer():
             from interface import ftp_server
@@ -267,14 +267,14 @@ class Initializer(automat.Automat):
         if settings.enableRESTHTTPServer():
             from interface import api_rest_http_server
             api_rest_http_server.init(port=settings.getRESTHTTPServerPort())
-        reactor.callLater(0, self.automat, 'init-interfaces-done')
+        reactor.callLater(0, self.automat, 'init-interfaces-done')  # @UndefinedVariable
 
-    def doInitModules(self, arg):
+    def doInitModules(self, *args, **kwargs):
         lg.out(2, 'initializer.doInitModules')
         self._init_modules()
-        reactor.callLater(0, self.automat, 'init-modules-done')
+        reactor.callLater(0, self.automat, 'init-modules-done')  # @UndefinedVariable
 
-    def doShowGUI(self, arg):
+    def doShowGUI(self, *args, **kwargs):
         lg.out(2, 'initializer.doShowGUI')
         from main import control
         control.init()
@@ -288,7 +288,7 @@ class Initializer(automat.Automat):
             tray_icon.SetControlFunc(self._on_tray_icon_command)
         # TODO: raise up electron window ?
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         global _Initializer
         try:
             from system.tray_icon import USE_TRAY_ICON
@@ -443,11 +443,11 @@ class Initializer(automat.Automat):
                     def _sync_callback(result):
                         if result == 'error':
                             tray_icon.draw_icon('error')
-                            reactor.callLater(5, tray_icon.restore_icon)
+                            reactor.callLater(5, tray_icon.restore_icon)  # @UndefinedVariable
                             return
                         elif result == 'source-code-fetched':
                             tray_icon.draw_icon('updated')
-                            reactor.callLater(5, tray_icon.restore_icon)
+                            reactor.callLater(5, tray_icon.restore_icon)  # @UndefinedVariable
                             return
                         tray_icon.restore_icon()
                     tray_icon.draw_icon('sync')

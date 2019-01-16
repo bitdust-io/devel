@@ -59,7 +59,6 @@ class CustomerService(LocalService):
         from customer import supplier_connector
         from logs import lg
         from main import settings
-        from raid import eccmap
         from userid import my_id
         customer_key_id = my_id.getGlobalID(key_alias='customer')
         if not my_keys.is_key_registered(customer_key_id):
@@ -70,8 +69,6 @@ class CustomerService(LocalService):
                 supplier_connector.create(
                     supplier_idurl=supplier_idurl,
                     customer_idurl=my_id.getLocalID(),
-                    family_position=pos,
-                    ecc_map=eccmap.Current().name,
                 )
         # TODO: read from dht and connect to other suppliers - from other customers who shared data to me
         return True

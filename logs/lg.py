@@ -103,17 +103,15 @@ def out(level, msg, nl='\n'):
     if level:
         s = ' ' * level + s
     if _ShowTime and level > 0:
-        tm_string = ''
+        tm_string = time.strftime('%H:%M:%S')
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
             mn = dt // 60
             sc = dt - mn * 60
-            if _GlobalDebugLevel >= 10:
-                tm_string = '%02d:%06.3f' % (mn, sc)
+            if _GlobalDebugLevel >= 6:
+                tm_string += '/%02d:%06.3f' % (mn, sc)
             else:
-                tm_string = '%02d:%02d' % (mn, sc)
-        else:
-            tm_string = time.strftime('%H:%M:%S')
+                tm_string += '/%02d:%02d' % (mn, sc)
         if _UseColors is None:
             _UseColors = platform.uname()[0] != 'Windows'
         if _UseColors:
@@ -129,7 +127,7 @@ def out(level, msg, nl='\n'):
                 if not isinstance(o, str):
                     o = o.decode('utf-8')
             else:
-                if not isinstance(o, unicode):
+                if not isinstance(o, unicode):  # @UndefinedVariable
                     o = o.decode('utf-8')
             _LogFile.write(o)
             _LogFile.flush()
@@ -330,7 +328,7 @@ def exception_name(value):
         if sys.version_info[0] == 3:
             excStr = str(value)
         else:
-            excStr = unicode(value)
+            excStr = unicode(value)  # @UndefinedVariable
     except:
         try:
             excStr = repr(value)

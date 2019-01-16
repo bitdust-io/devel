@@ -15,8 +15,9 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
-from . import msgtypes
 from six.moves import range
+
+from . import msgtypes  # @UnresolvedImport
 
 
 class MessageTranslator(object):

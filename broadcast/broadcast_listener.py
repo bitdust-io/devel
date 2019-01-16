@@ -71,18 +71,18 @@ _BroadcastListener = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _BroadcastListener
-    if event is None and arg is None:
+    if event is None and not args:
         return _BroadcastListener
     if _BroadcastListener is None:
         # set automat name and starting state here
         _BroadcastListener = BroadcastListener('broadcast_listener', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _BroadcastListener.automat(event, arg)
+        _BroadcastListener.automat(event, *args, **kwargs)
     return _BroadcastListener
 
 #------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ class BroadcastListener(automat.Automat):
         self.broadcaster_idurl = None
         self.incoming_broadcast_message_callback = None
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -111,90 +111,90 @@ class BroadcastListener(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #--- BROADCASTER?
         elif self.state == 'BROADCASTER?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect' or event == 'lookup-failed':
                 self.state = 'OFFLINE'
             elif event == 'broadcaster-connected':
                 self.state = 'LISTENING'
-                self.doSetBroadcaster(arg)
+                self.doSetBroadcaster(*args, **kwargs)
         #--- LISTENING
         elif self.state == 'LISTENING':
             if event == 'disconnect' or event == 'message-failed':
                 self.state = 'OFFLINE'
-                self.doRemoveBroadcaster(arg)
+                self.doRemoveBroadcaster(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doRemoveBroadcaster(arg)
-                self.doDestroyMe(arg)
+                self.doRemoveBroadcaster(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'outbound-message':
-                self.doSendMessageToBroadcaster(arg)
+                self.doSendMessageToBroadcaster(*args, **kwargs)
             elif event == 'incoming-message':
-                self.doNotifyInputMessage(arg)
+                self.doNotifyInputMessage(*args, **kwargs)
         #--- OFFLINE
         elif self.state == 'OFFLINE':
             if event == 'connect':
                 self.state = 'BROADCASTER?'
-                self.doStartBroadcasterLookup(arg)
+                self.doStartBroadcasterLookup(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #--- CLOSED
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.incoming_broadcast_message_callback = arg
+        self.incoming_broadcast_message_callback = args[0]
         callback.append_inbox_callback(self._on_inbox_packet)
 
-    def doStartBroadcasterLookup(self, arg):
+    def doStartBroadcasterLookup(self, *args, **kwargs):
         """
         Action method.
         """
         from broadcast import broadcasters_finder
-        scope = arg
+        scope = args[0]
         if not scope:
             scope = []
         broadcasters_finder.A('start', (self.automat, {'action': 'listen', 'scopes': json.dumps(scope), }, []))
 
-    def doSetBroadcaster(self, arg):
+    def doSetBroadcaster(self, *args, **kwargs):
         """
         Action method.
         """
-        self.broadcaster_idurl = arg
+        self.broadcaster_idurl = args[0]
 
-    def doRemoveBroadcaster(self, arg):
+    def doRemoveBroadcaster(self, *args, **kwargs):
         """
         Action method.
         """
         self.broadcaster_idurl = None
 
-    def doSendMessageToBroadcaster(self, arg):
+    def doSendMessageToBroadcaster(self, *args, **kwargs):
         """
         Action method.
         """
         from broadcast import broadcast_service
         outpacket = broadcast_service.packet_for_broadcaster(
-            self.broadcaster_idurl, arg)
+            self.broadcaster_idurl, *args, **kwargs)
         p2p_service.SendBroadcastMessage(outpacket)
 
-    def doNotifyInputMessage(self, arg):
+    def doNotifyInputMessage(self, *args, **kwargs):
         """
         Action method.
         """
-        msg, newpacket = arg
+        msg, newpacket = args[0]
         if self.incoming_broadcast_message_callback is not None:
             self.incoming_broadcast_message_callback(msg)
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

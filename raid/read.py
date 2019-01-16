@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# raidread.py
+# read.py
 #
 # Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
 #
@@ -64,7 +64,6 @@ from six.moves import range
 
 import os
 import sys
-import struct
 
 #------------------------------------------------------------------------------
 

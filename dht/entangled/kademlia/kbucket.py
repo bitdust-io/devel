@@ -16,10 +16,9 @@
 
 from __future__ import absolute_import
 import six
-import codecs
 
-from . import constants
-from . import encoding
+from . import constants  # @UnresolvedImport
+from . import encoding  # @UnresolvedImport
 
 
 class BucketFull(Exception):

@@ -71,7 +71,7 @@ _CustomersRejector = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -80,7 +80,7 @@ def A(event=None, arg=None):
         # set automat name and starting state here
         _CustomersRejector = CustomersRejector('customers_rejector', 'READY', 4)
     if event is not None:
-        _CustomersRejector.automat(event, arg)
+        _CustomersRejector.automat(event, *args, **kwargs)
     return _CustomersRejector
 
 
@@ -112,30 +112,30 @@ class CustomersRejector(automat.Automat):
         state machine.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
             if event == 'restart':
                 self.state = 'CAPACITY?'
-                self.doTestMyCapacity(arg)
+                self.doTestMyCapacity(*args, **kwargs)
         #---CAPACITY?---
         elif self.state == 'CAPACITY?':
             if event == 'space-enough':
                 self.state = 'READY'
             elif event == 'space-overflow':
                 self.state = 'REJECT_GUYS'
-                self.doRemoveCustomers(arg)
-                self.doSendRejectService(arg)
+                self.doRemoveCustomers(*args, **kwargs)
+                self.doSendRejectService(*args, **kwargs)
         #---REJECT_GUYS---
         elif self.state == 'REJECT_GUYS':
             if event == 'restart':
                 self.state = 'CAPACITY?'
-                self.doTestMyCapacity(arg)
+                self.doTestMyCapacity(*args, **kwargs)
             elif event == 'packets-sent':
                 self.state = 'READY'
-                self.doRestartLocalTester(arg)
+                self.doRestartLocalTester(*args, **kwargs)
 
-    def doTestMyCapacity(self, arg):
+    def doTestMyCapacity(self, *args, **kwargs):
         """
         Here are some values.
 
@@ -188,7 +188,7 @@ class CustomersRejector(automat.Automat):
         self.automat('space-overflow', (
             space_dict, consumed_bytes, current_customers, failed_customers))
 
-    def doTestMyCapacity2(self, arg):
+    def doTestMyCapacity2(self, *args, **kwargs):
         """
         Here are some values.
 
@@ -285,28 +285,28 @@ class CustomersRejector(automat.Automat):
         lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
         self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
 
-    def doRemoveCustomers(self, arg):
+    def doRemoveCustomers(self, *args, **kwargs):
         """
         Action method.
         """
-        space_dict, spent_bytes, current_customers, removed_customers = arg
+        space_dict, spent_bytes, current_customers, removed_customers = args[0]
         contactsdb.update_customers(current_customers)
         for customer_idurl in removed_customers:
             contactsdb.remove_customer_meta_info(customer_idurl)
         contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict)
 
-    def doSendRejectService(self, arg):
+    def doSendRejectService(self, *args, **kwargs):
         """
         Action method.
         """
-        space_dict, spent_bytes, current_customers, removed_customers = arg
+        space_dict, spent_bytes, current_customers, removed_customers = args[0]
         for customer_idurl in removed_customers:
             p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
             events.send('existing-customer-terminated', dict(idurl=customer_idurl))
         self.automat('packets-sent')
 
-    def doRestartLocalTester(self, arg):
+    def doRestartLocalTester(self, *args, **kwargs):
         """
         Action method.
         """

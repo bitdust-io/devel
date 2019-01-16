@@ -76,18 +76,18 @@ _BroadcastersFinder = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _BroadcastersFinder
-    if event is None and arg is None:
+    if event is None and not args:
         return _BroadcastersFinder
     if _BroadcastersFinder is None:
         # set automat name and starting state here
         _BroadcastersFinder = BroadcastersFinder('broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _BroadcastersFinder.automat(event, arg)
+        _BroadcastersFinder.automat(event, *args, **kwargs)
     return _BroadcastersFinder
 
 #------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ class BroadcastersFinder(automat.Automat):
         self.request_service_params = None
         self.current_broadcasters = []
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -118,67 +118,67 @@ class BroadcastersFinder(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         elif self.state == 'ACK?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
-                self.doSendRequestService(arg)
+                self.doSendRequestService(*args, **kwargs)
             elif event == 'timer-10sec' and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomUser(*args, **kwargs)
             elif event == 'timer-3sec':
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
         elif self.state == 'RANDOM_USER':
             if event == 'found-one-user':
                 self.state = 'ACK?'
-                self.doRememberUser(arg)
+                self.doRememberUser(*args, **kwargs)
                 self.Attempts += 1
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'users-not-found':
                 self.state = 'READY'
-                self.doNotifyLookupFailed(arg)
+                self.doNotifyLookupFailed(*args, **kwargs)
         elif self.state == 'SERVICE?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'service-accepted':
                 self.state = 'READY'
-                self.doNotifyLookupSuccess(arg)
+                self.doNotifyLookupSuccess(*args, **kwargs)
             elif self.Attempts == 5 and (event == 'timer-10sec' or event == 'service-denied'):
                 self.state = 'READY'
-                self.doNotifyLookupFailed(arg)
+                self.doNotifyLookupFailed(*args, **kwargs)
             elif (event == 'timer-10sec' or event == 'service-denied') and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomUser(*args, **kwargs)
         elif self.state == 'READY':
             if event == 'start':
                 self.state = 'RANDOM_USER'
-                self.doSetNotifyCallback(arg)
+                self.doSetNotifyCallback(*args, **kwargs)
                 self.Attempts = 0
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomUser(*args, **kwargs)
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         callback.append_inbox_callback(self._inbox_packet_received)
 
-    def doSetNotifyCallback(self, arg):
+    def doSetNotifyCallback(self, *args, **kwargs):
         """
         Action method.
         """
-        self.result_callback, self.request_service_params, self.current_broadcasters = arg
+        self.result_callback, self.request_service_params, self.current_broadcasters = args[0]
 
-    def doLookupRandomUser(self, arg):
+    def doLookupRandomUser(self, *args, **kwargs):
         """
         Action method.
         """
@@ -186,19 +186,19 @@ class BroadcastersFinder(automat.Automat):
         t.result_defer.addCallback(self._nodes_lookup_finished)
         t.result_defer.addErrback(lambda err: self.automat('users-not-found'))
 
-    def doRememberUser(self, arg):
+    def doRememberUser(self, *args, **kwargs):
         """
         Action method.
         """
-        self.target_idurl = arg
+        self.target_idurl = args[0]
 
-    def doSendMyIdentity(self, arg):
+    def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
         p2p_service.SendIdentity(self.target_idurl, wide=True)
 
-    def doSendRequestService(self, arg):
+    def doSendRequestService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -211,29 +211,29 @@ class BroadcastersFinder(automat.Automat):
         )
         self.requested_packet_id = out_packet.PacketID
 
-    def doNotifyLookupSuccess(self, arg):
+    def doNotifyLookupSuccess(self, *args, **kwargs):
         """
         Action method.
         """
         if self.result_callback:
-            self.result_callback('broadcaster-connected', arg)
+            self.result_callback('broadcaster-connected', *args, **kwargs)
         self.result_callback = None
         self.request_service_params = None
         self.current_broadcasters = []
 
-    def doNotifyLookupFailed(self, arg):
+    def doNotifyLookupFailed(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
             lg.out(_DebugLevel, 'broadcasters_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
-            self.result_callback('lookup-failed', arg)
+            self.result_callback('lookup-failed', *args, **kwargs)
         self.result_callback = None
         self.request_service_params = None
         self.current_broadcasters = []
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

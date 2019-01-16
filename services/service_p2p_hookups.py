@@ -182,7 +182,7 @@ class P2PHookupsService(LocalService):
             lg.out(self.debug_level, "service_p2p_hookups._send_cancel_service outbox packet sent")
         return True
 
-    def _on_p2p_connector_switched(self, oldstate, newstate, evt, args):
+    def _on_p2p_connector_switched(self, oldstate, newstate, evt, *args, **kwargs):
         if newstate == 'INCOMMING?':
             if self._starting_defer is not None:
                 self._starting_defer.callback(newstate)
@@ -192,7 +192,7 @@ class P2PHookupsService(LocalService):
         if network_connector.A():
             tray_icon.state_changed(network_connector.A().state, newstate)
 
-    def _on_network_connector_switched(self, oldstate, newstate, evt, args):
+    def _on_network_connector_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from p2p import p2p_connector
         from system import tray_icon
         if oldstate != newstate:

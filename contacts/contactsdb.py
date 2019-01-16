@@ -170,7 +170,7 @@ def set_suppliers(idlist, customer_idurl=None):
     _SuppliersList[customer_idurl] = [strng.to_bin(idurl.strip()) for idurl in idlist]
 
 
-def update_suppliers(idslist, customer_idurl=None):
+def update_suppliers(idlist, customer_idurl=None):
     """
     High-level method to set suppliers ID's list.
     Executes required callbacks.
@@ -179,7 +179,7 @@ def update_suppliers(idslist, customer_idurl=None):
     global _ContactsChangedCallbacks
     oldsuppliers = list(suppliers(customer_idurl=customer_idurl))
     oldcontacts = list(contacts())
-    set_suppliers(idslist, customer_idurl=customer_idurl)
+    set_suppliers(idlist, customer_idurl=customer_idurl)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
     for cb in _ContactsChangedCallbacks:
@@ -199,17 +199,20 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
     idurl = strng.to_bin(idurl.strip())
-    if position is None:
+    if position is None or position == -1:
+        lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (idurl, customer_idurl, ))
         _SuppliersList[customer_idurl].append(idurl)
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
         current_suppliers += [b'', ] * (1 + position - len(current_suppliers))
     if current_suppliers[position] and current_suppliers[position] != idurl:
-        lg.warn('replacing known supplier %s by %s at position %d for customer %s' % (
-            current_suppliers[position], idurl, position, customer_idurl))
+        lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
+            current_suppliers[position], idurl, position, customer_idurl, ))
+    else:
+        lg.info('added supplier "%s" at position %d for customer %s' % (idurl, position, customer_idurl, ))
     current_suppliers[position] = idurl
-    _SuppliersList[customer_idurl] = current_suppliers
+    update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
     return position
 
 
@@ -234,7 +237,7 @@ def erase_supplier(idurl=None, position=None, customer_idurl=None):
         current_suppliers[position] = b''
     else:
         return False
-    _SuppliersList[customer_idurl] = current_suppliers
+    update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
     return True
 
 
@@ -551,10 +554,11 @@ def save_suppliers(path=None, customer_idurl=None):
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
     customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path is None:
         path = os.path.join(
             settings.SuppliersDir(),
-            global_id.UrlToGlobalID(customer_idurl),
+            customer_id,
             'supplierids',
         )
     lst = suppliers(customer_idurl=customer_idurl)
@@ -562,6 +566,8 @@ def save_suppliers(path=None, customer_idurl=None):
     if not os.path.exists(os.path.dirname(path)):
         bpio._dirs_make(os.path.dirname(path))
     bpio._write_list(path, lst)
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.save_suppliers for customer [%s]:\n%r' % (customer_id, lst, ))
     return True
 
 def load_suppliers(path=None, customer_idurl=None, all_customers=False):
@@ -610,6 +616,8 @@ def save_customers(path=None, save_meta_info=False):
     bpio._write_list(path, lst)
     if save_meta_info:
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.save_customers : %r' % lst)
 
 
 def load_customers(path=None):

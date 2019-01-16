@@ -54,17 +54,17 @@ _DataReceiver = None
 
 #------------------------------------------------------------------------------
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _DataReceiver
-    if event is None and arg is None:
+    if event is None and not args:
         return _DataReceiver
     if _DataReceiver is None:
         _DataReceiver = DataReceiver(publish_events=True, log_events=_Debug, debug_level=_DebugLevel)
     if event is not None:
-        _DataReceiver.automat(event, arg)
+        _DataReceiver.automat(event, *args, **kwargs)
     return _DataReceiver
 
 #------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ class DataReceiver(automat.Automat):
             **kwargs
         )
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
@@ -95,7 +95,7 @@ class DataReceiver(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
                 self.StreamsCounter=0
         #---READY---
         elif self.state == 'READY':
@@ -104,7 +104,7 @@ class DataReceiver(automat.Automat):
                 self.StreamsCounter+=1
             elif event == 'shutdown':
                 self.state = 'CLOSE'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---RECEIVING---
         elif self.state == 'RECEIVING':
             if event == 'input-stream-closed' and self.StreamsCounter>1:
@@ -116,20 +116,20 @@ class DataReceiver(automat.Automat):
                 self.StreamsCounter+=1
             elif event == 'shutdown':
                 self.state = 'CLOSE'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSE---
         elif self.state == 'CLOSE':
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         callback.add_begin_file_receiving_callback(self._on_begin_file_receiving)
         callback.add_finish_file_receiving_callback(self._on_finish_file_receiving)
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
