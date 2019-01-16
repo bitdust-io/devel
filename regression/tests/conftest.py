@@ -316,6 +316,7 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2):
     run_ssh_command_and_wait(node, 'bitdust set services/customer/suppliers-number %d' % num_suppliers)
     # create randomized file to test file upload/download
     run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt')
+    run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/second_file_{node}.txt')
     # start BitDust daemon and create new identity for supplier
     start_daemon(node)
     health_check(node)
@@ -407,11 +408,23 @@ async def report_one_node(node):
         node, num_warnings, num_errors, num_tracebacks, num_failures, num_exceptions, ))
 
 
+async def print_exceptions_one_node(node):
+    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log')[0].strip()
+    if exceptions_out:
+        print('\n[%s]:\n\n%s\n\n' % (node, exceptions_out, ))
+
+
 def report_all_nodes(event_loop):
     print('\n\nTest report:')
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
     ]))
+    print('\n\nALL EXCEPTIONS:')
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(print_exceptions_one_node(node)) for node in ALL_NODES
+    ]))
+
+
 
 #------------------------------------------------------------------------------
 

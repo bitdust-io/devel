@@ -315,7 +315,7 @@ def split_key(key_str):
 
 def on_success(result, method, key, *args, **kwargs):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)' % (method, key, ))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)    result is %s' % (method, key, type(result), ))
     return result
 
 
@@ -505,12 +505,13 @@ def validate_before_request(key, **kwargs):
     return True
 
 
-def validate_data(value, key, rules, result_defer=None, raise_for_result=True):
+def validate_data(value, key, rules, result_defer=None, raise_for_result=True, populate_meta_fields=False):
     if not rules:
-        lg.err('data must have validation rules applied')
+        lg.err('DHT record must have validation rules applied')
         if result_defer:
             result_defer.errback(Exception('data must have validation rules applied'))
         return None
+
     if not isinstance(value, dict):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
@@ -520,11 +521,26 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True):
             else:
                 result_defer.errback(Exception('value not found'))
         return None
+
+    if value.get('key') != key and populate_meta_fields:
+        value['key'] = key
+
+    try:
+        record_type = rules['type'][0]['arg']
+    except:
+        lg.exc()
+        if result_defer:
+            result_defer.errback(Exception('validation rules can not be applied'))
+        return None
+    if value.get('type') != record_type and populate_meta_fields:
+        value['type'] = record_type
+
     passed = True
     errors = []
     for field, field_rules in rules.items():
         for rule in field_rules:
             if 'op' not in rule:
+                lg.warn('incorrect validation rule found: %r' % rule)
                 continue
             if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
                 passed = False
@@ -537,9 +553,9 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True):
         if not passed:
             break
     if not passed:
-        lg.err('invalid data in response, validation failed, errors: %s' % errors)
+        lg.err('DHT record validation failed, errors: %s' % errors)
         if result_defer:
-            result_defer.errback(Exception('invalid value in response'))
+            result_defer.errback(Exception('DHT record validation failed'))
         return None
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] : value is OK' % key)
@@ -595,13 +611,14 @@ def validate_data_written(store_results, key, json_data, result_defer):
 def get_valid_data(key, rules={}, raise_for_result=True):
     ret = Deferred()
     d = get_json_value(key)
-    d.addCallback(validate_data, key, rules, ret, raise_for_result=raise_for_result)
+    d.addCallback(validate_data, key=key, rules=rules, result_defer=ret, raise_for_result=raise_for_result)
     d.addErrback(ret.errback)
     return ret
 
 
 def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}, collect_results=False):
-    if validate_data(json_data, key, rules) is None:
+    valid_json_data = validate_data(value=json_data, key=key, rules=rules, populate_meta_fields=True)
+    if valid_json_data is None:
         return fail(Exception('invalid data, validation failed'))
     ret = Deferred()
     d = set_json_value(key, json_data=json_data, age=age, expire=expire, collect_results=collect_results)
