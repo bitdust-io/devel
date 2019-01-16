@@ -317,7 +317,7 @@ def Identity(newpacket, send_ack=True):
                 nameurl.GetName(idurl), newpacket.OwnerID, ))
     if not send_ack:
         return True
-    reactor.callLater(0, SendAck, newpacket, wide=True)
+    reactor.callLater(0, SendAck, newpacket, wide=True)  # @UndefinedVariable
     return True
 
 
