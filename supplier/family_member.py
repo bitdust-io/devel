@@ -175,15 +175,7 @@ class FamilyMember(automat.Automat):
                 self.doCheckReply(*args, **kwargs)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'dht-value-exist' or event == 'dht-value-not-exist':
-                self.state = 'SUPPLIERS'
-                self.Attempts+=1
-                self.doRebuildFamily(*args, **kwargs)
-                self.doRequestSuppliersReview(*args, **kwargs)
-            elif event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
+            if event == 'family-refresh' or event == 'family-join' or event == 'family-leave':
                 self.doPush(event, *args, **kwargs)
             elif event == 'contacts-received':
                 self.doCheckReply(*args, **kwargs)
@@ -191,6 +183,18 @@ class FamilyMember(automat.Automat):
                 self.state = 'DISCONNECTED'
                 self.Attempts=0
                 self.doNotifyDisconnected(*args, **kwargs)
+            elif event == 'dht-value-exist' and self.isMyPositionOK(*args, **kwargs) and not self.isLeaving(*args, **kwargs):
+                self.state = 'CONNECTED'
+                self.Attempts=0
+                self.doNotifyConnected(*args, **kwargs)
+            elif ( event == 'dht-value-exist' and self.isMyPositionOK(*args, **kwargs) and self.isLeaving(*args, **kwargs) ) or event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-value-not-exist' or ( event == 'dht-value-exist' and not self.isMyPositionOK(*args, **kwargs) ):
+                self.state = 'SUPPLIERS'
+                self.Attempts+=1
+                self.doRebuildFamily(*args, **kwargs)
+                self.doRequestSuppliersReview(*args, **kwargs)
         #---SUPPLIERS---
         elif self.state == 'SUPPLIERS':
             if event == 'shutdown':
@@ -257,6 +261,40 @@ class FamilyMember(automat.Automat):
         Condition method.
         """
         return len(self.requests) > 0
+
+    def isLeaving(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        return self.current_request and self.current_request['command'] == 'family-leave'
+
+    def isMyPositionOK(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        dht_info_valid = self._do_validate_dht_info(args[0])
+        if not dht_info_valid:
+            return False
+        if self.current_request and self.current_request['command'] == 'family-leave':
+            if my_id.getLocalIDURL() not in dht_info_valid['suppliers']:
+                return True
+        my_info_valid = self._do_validate_my_info(self.my_info)
+        if not my_info_valid:
+            return False
+        latest_revision = self._do_detect_latest_revision(dht_info_valid, my_info_valid)
+        if latest_revision == 0:
+            return False
+        try:
+            my_position = my_info_valid['suppliers'].index(my_id.getLocalIDURL())
+        except:
+            my_position = -1
+        if my_position < 0:
+            return False
+        try:
+            existing_position = dht_info_valid['suppliers'].index(my_id.getLocalIDURL())
+        except:
+            existing_position = -1
+        return existing_position > 0 and my_position > 0 and existing_position == my_position
 
     def isFamilyModified(self, *args, **kwargs):
         """
@@ -669,7 +707,7 @@ class FamilyMember(automat.Automat):
 
         try:
             existing_position = merged_info['suppliers'].index(current_request['supplier_idurl'])
-        except ValueError:
+        except:
             existing_position = -1
 
         if current_request['position'] is not None and current_request['position'] >= 0:
