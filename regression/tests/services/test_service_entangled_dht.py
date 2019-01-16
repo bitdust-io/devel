@@ -21,6 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import requests
+import pprint
 
 from ..testsupport import tunnel_url
 
@@ -52,7 +53,7 @@ VALIDATORS_NODES = [
 def read_value(node, key, expected_data, record_type='skip_validation', ):
     response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )))
     assert response.status_code == 200
-    # print('\n\ndht/value/get/v1?key=%s from %s\n%s\n' % (key, node, pprint.pformat(response.json())))
+    print('\n\ndht/value/get/v1?key=%s from %s\n%s\n' % (key, node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['key'] == key, response.json()

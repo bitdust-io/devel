@@ -3656,7 +3656,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                 if _Debug:
                     lg.out(_DebugLevel, 'api.dht_value_set OK: %r' % response)
                 return ret.callback(OK({
-                    'write': 'success',
+                    'write': 'success' if len(response) > 0 else 'failed',
                     'my_dht_id': base64.b64encode(dht_service.node().id),
                     'key': strng.to_text(key, errors='ignore'),
                     'key_64': base64.b64encode(key),
@@ -3666,6 +3666,8 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
                 }))
+            if _Debug:
+                lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % response)
             return ret.callback(ERROR('unexpected DHT response'))
         except Exception as exc:
             lg.exc()
@@ -3688,6 +3690,8 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                     'dht_id': base64.b64encode(c.id),
                     'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                 } for c in nodes]
+            if _Debug:
+                lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
             return ret.callback(ERROR(errmsg, extra_fields={
                 'write': 'failed',
                 'my_dht_id': base64.b64encode(dht_service.node().id),

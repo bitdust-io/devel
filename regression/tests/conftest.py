@@ -419,7 +419,7 @@ def report_all_nodes(event_loop):
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
     ]))
-    print('\n\ALL EXCEPTIONS:')
+    print('\n\nALL EXCEPTIONS:')
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(print_exceptions_one_node(node)) for node in ALL_NODES
     ]))
