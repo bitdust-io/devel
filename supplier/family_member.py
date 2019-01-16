@@ -126,7 +126,9 @@ class FamilyMember(automat.Automat):
         self.customer_idurl = customer_idurl
         self.supplier_idurl = my_id.getLocalIDURL()
         super(FamilyMember, self).__init__(
-            name="family_member_%s" % nameurl.GetName(self.customer_idurl),
+            name="family_member_%s_%s" % (
+                nameurl.GetName(self.customer_idurl),
+                nameurl.GetName(my_id.getLocalIDURL()), ),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
