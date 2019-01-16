@@ -779,9 +779,15 @@ class FireHire(automat.Automat):
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
-            self.connect_list.remove(idurl)
+            if idurl in self.connect_list:
+                self.connect_list.remove(idurl)
+            else:
+                lg.warn('did not found %r in connect_list' % idurl)
         elif self.state == 'FIRE_MANY':
-            self.dismiss_results.append(idurl)
+            if idurl in self.dismiss_results:
+                self.dismiss_results.append(idurl)
+            else:
+                lg.warn('did not found %r in dismiss_results' % idurl)
         else:
             return
         self.automat('supplier-state-changed', (idurl, newstate, ))
@@ -791,6 +797,8 @@ class FireHire(automat.Automat):
             oldstate, newstate, self.state))
 #         if newstate == 'OFFLINE' and oldstate != 'OFFLINE':
         self.automat('restart')
+
+
 
 # def WhoIsLost():
 #    """
