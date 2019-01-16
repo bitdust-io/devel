@@ -33,8 +33,8 @@ Methods to establish a messages queue between two or more nodes.:
     + Producers will send a messages to the queue
     + Consumers will listen to the queue and read the messages comming
     + Producer only start sending if he have a Public Key
-    + Consumer can only listen if he posses the correct Private Key
-    + Queue is only stored on given node: both producer and conumer must be connected to that machine
+    + Consumer can only listen if he possess the correct Private Key
+    + Queue is only stored on given node: both producer and consumer must be connected to that machine
     + Global queue ID is unique : mykey$alice@somehost.net:.queue/xyz
     + Queue size is limited by a parameter, you can not publish when queue is overloaded
 
@@ -387,7 +387,7 @@ def subscribe_consumer(consumer_id, queue_id):
     if queue_id in consumer(consumer_id).queues:
         raise Exception('already subscribed')
     consumer(consumer_id).queues.append(queue_id)
-    lg.info('conumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
+    lg.info('consumer %s subscribed to read queue %s' % (consumer_id, queue_id, ))
     return True
 
 
@@ -398,12 +398,12 @@ def unsubscribe_consumer(consumer_id, queue_id=None):
         raise Exception('consumer not found')
     if queue_id is None:
         consumer(consumer_id).queues = []
-        lg.info('conumer %s unsubscribed from all queues' % (consumer_id, ))
+        lg.info('consumer %s unsubscribed from all queues' % (consumer_id, ))
         return True
     if queue_id not in consumer(consumer_id).queues:
         raise Exception('consumer is not subscribed for that queue')
     consumer(consumer_id).queues.remove(queue_id)
-    lg.info('conumer %s unsubscribed from queue %s' % (consumer_id, queue_id, ))
+    lg.info('consumer %s unsubscribed from queue %s' % (consumer_id, queue_id, ))
     return True
 
 #------------------------------------------------------------------------------

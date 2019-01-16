@@ -106,12 +106,12 @@ _MaxRoutesNumber = 20
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with proxy_router() machine.
     """
     global _ProxyRouter
-    if event is None and arg is None:
+    if event is None and not args:
         return _ProxyRouter
     if _ProxyRouter is None:
         # set automat name and starting state here
@@ -123,7 +123,7 @@ def A(event=None, arg=None):
             log_transitions=_Debug,
         )
     if event is not None:
-        _ProxyRouter.automat(event, arg)
+        _ProxyRouter.automat(event, *args, **kwargs)
     return _ProxyRouter
 
 #------------------------------------------------------------------------------
@@ -143,18 +143,18 @@ class ProxyRouter(automat.Automat):
         self.routes = {}
         self.acks = []
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when proxy_router() state were changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in
         the proxy_router() but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <http://code.google.com/p/visio2python/>`_ tool.
@@ -162,40 +162,40 @@ class ProxyRouter(automat.Automat):
         #---LISTEN---
         if self.state == 'LISTEN':
             if event == 'routed-inbox-packet-received':
-                self.doForwardInboxPacket(arg)
-                self.doCountIncomingTraffic(arg)
+                self.doForwardInboxPacket(*args, **kwargs)
+                self.doCountIncomingTraffic(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doUnregisterAllRouts(arg)
-                self.doDestroyMe(arg)
+                self.doUnregisterAllRouts(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'routed-outbox-packet-received':
-                self.doForwardOutboxPacket(arg)
-                self.doCountOutgoingTraffic(arg)
+                self.doForwardOutboxPacket(*args, **kwargs)
+                self.doCountOutgoingTraffic(*args, **kwargs)
             elif event == 'stop' or event == 'network-disconnected':
                 self.state = 'STOPPED'
-                self.doUnregisterAllRouts(arg)
+                self.doUnregisterAllRouts(*args, **kwargs)
             elif event == 'request-route-ack-sent':
-                self.doSaveRouteProtoHost(arg)
+                self.doSaveRouteProtoHost(*args, **kwargs)
             elif event == 'known-identity-received':
-                self.doSetContactsOverride(arg)
+                self.doSetContactsOverride(*args, **kwargs)
             elif event == 'unknown-identity-received':
-                self.doClearContactsOverride(arg)
+                self.doClearContactsOverride(*args, **kwargs)
             elif event == 'unknown-packet-received':
-                self.doSendFail(arg)
+                self.doSendFail(*args, **kwargs)
             elif event == 'request-route-received' or event == 'cancel-route-received':
-                self.doProcessRequest(arg)
+                self.doProcessRequest(*args, **kwargs)
             elif event == 'routed-session-disconnected':
-                self.doUnregisterRoute(arg)
+                self.doUnregisterRoute(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---TRANSPORTS?---
         elif self.state == 'TRANSPORTS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop' or event == 'network-disconnected':
                 self.state = 'STOPPED'
             elif event == 'network-connected':
@@ -206,13 +206,13 @@ class ProxyRouter(automat.Automat):
                 self.state = 'TRANSPORTS?'
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
@@ -221,22 +221,22 @@ class ProxyRouter(automat.Automat):
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
 
-    def doProcessRequest(self, arg):
+    def doProcessRequest(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_process_request(arg)
+        self._do_process_request(args[0])
 
-    def doUnregisterRoute(self, arg):
+    def doUnregisterRoute(self, *args, **kwargs):
         """
         Action method.
         """
-        idurl = arg
+        idurl = args[0]
         identitycache.StopOverridingIdentity(idurl)
         self.routes.pop(idurl)
         self._remove_route(idurl)
 
-    def doUnregisterAllRouts(self, arg):
+    def doUnregisterAllRouts(self, *args, **kwargs):
         """
         Action method.
         """
@@ -245,62 +245,62 @@ class ProxyRouter(automat.Automat):
         self.routes.clear()
         self._clear_routes()
 
-    def doForwardOutboxPacket(self, arg):
+    def doForwardOutboxPacket(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_forward_outbox_packet(arg)
+        self._do_forward_outbox_packet(args[0])
 
-    def doForwardInboxPacket(self, arg):
+    def doForwardInboxPacket(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_forward_inbox_packet(arg)
+        self._do_forward_inbox_packet(args[0])
 
-    def doCountOutgoingTraffic(self, arg):
-        """
-        Action method.
-        """
-
-    def doCountIncomingTraffic(self, arg):
+    def doCountOutgoingTraffic(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doSaveRouteProtoHost(self, arg):
+    def doCountIncomingTraffic(self, *args, **kwargs):
         """
         Action method.
         """
-        idurl, _, item, _, _, _ = arg
+
+    def doSaveRouteProtoHost(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        idurl, _, item, _, _, _ = args[0]
         self.routes[idurl]['address'].append((strng.to_bin(item.proto), item.host))
         self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
                 item.proto, item.host, nameurl.GetName(idurl)))
 
-    def doSetContactsOverride(self, arg):
+    def doSetContactsOverride(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_set_contacts_override(arg)
+        self._do_set_contacts_override(args[0])
 
-    def doClearContactsOverride(self, arg):
+    def doClearContactsOverride(self, *args, **kwargs):
         """
         Action method.
         """
-        result = identitycache.StopOverridingIdentity(arg.CreatorID)
+        result = identitycache.StopOverridingIdentity(args[0].CreatorID)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doClearContactsOverride identity for %s, result=%s' % (
-                arg.CreatorID, result, ))
+                args[0].CreatorID, result, ))
 
-    def doSendFail(self, arg):
+    def doSendFail(self, *args, **kwargs):
         """
         Action method.
         """
-        newpacket, _ = arg
+        newpacket, _ = args[0]
         p2p_service.SendFail(newpacket, wide=True)
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
@@ -314,9 +314,9 @@ class ProxyRouter(automat.Automat):
         del _ProxyRouter
         _ProxyRouter = None
 
-    def _do_process_request(self, arg):
+    def _do_process_request(self, *args, **kwargs):
         global _MaxRoutesNumber
-        json_payload, request, info = arg
+        json_payload, request, info = args[0]
         user_id = request.CreatorID
         #--- commands.RequestService()
         if request.Command == commands.RequestService():
@@ -417,9 +417,9 @@ class ProxyRouter(automat.Automat):
         else:
             p2p_service.SendFail(request, 'rejected', wide=True)
 
-    def _do_forward_inbox_packet(self, arg):
+    def _do_forward_inbox_packet(self, *args, **kwargs):
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
-        receiver_idurl, newpacket, info = arg
+        receiver_idurl, newpacket, info = args[0]
         route_info = self.routes.get(receiver_idurl, None)
         if not route_info:
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
@@ -478,11 +478,11 @@ class ProxyRouter(automat.Automat):
         del newpacket
         del routed_packet
 
-    def _do_set_contacts_override(self, arg):
+    def _do_set_contacts_override(self, *args, **kwargs):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doSetContactsOverride identity for %s' % arg.CreatorID)
-        user_id = arg.CreatorID
-        idsrc = arg.Payload
+            lg.out(_DebugLevel, 'proxy_router.doSetContactsOverride identity for %s' % args[0].CreatorID)
+        user_id = args[0].CreatorID
+        idsrc = args[0].Payload
         try:
             new_ident = identity.identity(xmlsrc=idsrc)
         except:
@@ -498,7 +498,7 @@ class ProxyRouter(automat.Automat):
         except:
             current_contacts = []
         identitycache.StopOverridingIdentity(user_id)
-        result = identitycache.OverrideIdentity(arg.CreatorID, idsrc)
+        result = identitycache.OverrideIdentity(args[0].CreatorID, idsrc)
         if _Debug:
             lg.out(_DebugLevel, '    current overridden contacts is : %s' % current_contacts)
             lg.out(_DebugLevel, '    new override contacts will be : %s' % new_ident.getContacts())
@@ -614,7 +614,7 @@ class ProxyRouter(automat.Automat):
                 return False
             # it can be a RequestService or CancelService packets...
 #             elif newpacket.Command == commands.RequestService():
-#                 self.automat(event_string, arg)
+#                 self.automat(event_string, *args, **kwargs)
 #                 'request-route-received'....
             # so this packet may be of any kind, but addressed to me
             # for example if I am a supplier for node A he will send me packets in usual way
@@ -664,7 +664,7 @@ class ProxyRouter(automat.Automat):
                 newpacket, newpacket.CreatorID))
         return False
 
-    def _on_network_connector_state_changed(self, oldstate, newstate, event, arg):
+    def _on_network_connector_state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
             self.automat('network-connected')
         if oldstate != 'DISCONNECTED' and newstate == 'DISCONNECTED':
@@ -693,7 +693,7 @@ class ProxyRouter(automat.Automat):
                 found = True
         return found
 
-    def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, args):
+    def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('user session disconnected: %s->%s' % (oldstate, newstate))
         self.automat('routed-session-disconnected', user_id)
 
@@ -764,8 +764,8 @@ class ProxyRouter(automat.Automat):
 
 def main():
     from twisted.internet import reactor  # @UnresolvedImport
-    reactor.callWhenRunning(A, 'init')
-    reactor.run()
+    reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":

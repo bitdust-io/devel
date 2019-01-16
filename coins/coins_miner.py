@@ -94,18 +94,18 @@ _CoinsMiner = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _CoinsMiner
-    if event is None and arg is None:
+    if event is None and not args:
         return _CoinsMiner
     if _CoinsMiner is None:
         # set automat name and starting state here
         _CoinsMiner = CoinsMiner('coins_miner', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _CoinsMiner.automat(event, arg)
+        _CoinsMiner.automat(event, *args, **kwargs)
     return _CoinsMiner
 
 #------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ class CoinsMiner(automat.Automat):
         self.mining_started = -1
         self.mining_counts = 0
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -151,88 +151,88 @@ class CoinsMiner(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---READY---
         elif self.state == 'READY':
             if event == 'stop':
                 self.state = 'STOPPED'
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'new-data-received' and self.isDecideOK(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'new-data-received' and self.isDecideOK(*args, **kwargs):
                 self.state = 'MINING'
-                self.doStartMining(arg)
-            elif event == 'new-data-received' and not self.isDecideOK(arg):
-                self.doSendFail(arg)
+                self.doStartMining(*args, **kwargs)
+            elif event == 'new-data-received' and not self.isDecideOK(*args, **kwargs):
+                self.doSendFail(*args, **kwargs)
         #---MINING---
         elif self.state == 'MINING':
             if event == 'stop':
                 self.state = 'STOPPED'
-                self.doStopMining(arg)
+                self.doStopMining(*args, **kwargs)
             elif event == 'coin-mined':
                 self.state = 'PUBLISH_COIN'
-                self.doSendCoinToAccountants(arg)
+                self.doSendCoinToAccountants(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopMining(arg)
-                self.doDestroyMe(arg)
+                self.doStopMining(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'new-data-received':
-                self.doPushInputData(arg)
+                self.doPushInputData(*args, **kwargs)
             elif event == 'cancel':
                 self.state = 'READY'
-                self.doStopMining(arg)
-                self.doSendFail(arg)
-                self.doPullInputData(arg)
+                self.doStopMining(*args, **kwargs)
+                self.doSendFail(*args, **kwargs)
+                self.doPullInputData(*args, **kwargs)
         #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'ACCOUNTANTS?'
-                self.doLookupAccountants(arg)
+                self.doLookupAccountants(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---PUBLISH_COIN---
         elif self.state == 'PUBLISH_COIN':
             if event == 'stop':
                 self.state = 'STOPPED'
-            elif event == 'coin-confirmed' and self.isAllConfirmed(arg):
+            elif event == 'coin-confirmed' and self.isAllConfirmed(*args, **kwargs):
                 self.state = 'READY'
-                self.doSendAck(arg)
-                self.doPullInputData(arg)
+                self.doSendAck(*args, **kwargs)
+                self.doPullInputData(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'coin-rejected' and self.isDecideOK(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'coin-rejected' and self.isDecideOK(*args, **kwargs):
                 self.state = 'MINING'
-                self.doContinueMining(arg)
+                self.doContinueMining(*args, **kwargs)
             elif event == 'new-data-received':
-                self.doPushInputData(arg)
-            elif event == 'cancel' or ( event == 'coin-rejected' and not self.isDecideOK(arg) ):
+                self.doPushInputData(*args, **kwargs)
+            elif event == 'cancel' or ( event == 'coin-rejected' and not self.isDecideOK(*args, **kwargs) ):
                 self.state = 'READY'
-                self.doSendFail(arg)
-                self.doPullInputData(arg)
+                self.doSendFail(*args, **kwargs)
+                self.doPullInputData(*args, **kwargs)
         #---ACCOUNTANTS?---
         elif self.state == 'ACCOUNTANTS?':
-            if event == 'accountant-connected' and not self.isMoreNeeded(arg):
+            if event == 'accountant-connected' and not self.isMoreNeeded(*args, **kwargs):
                 self.state = 'READY'
-                self.doAddAccountant(arg)
-                self.doPullInputData(arg)
-            elif event == 'accountant-connected' and self.isMoreNeeded(arg):
-                self.doAddAccountant(arg)
-                self.doLookupAccountants(arg)
+                self.doAddAccountant(*args, **kwargs)
+                self.doPullInputData(*args, **kwargs)
+            elif event == 'accountant-connected' and self.isMoreNeeded(*args, **kwargs):
+                self.doAddAccountant(*args, **kwargs)
+                self.doLookupAccountants(*args, **kwargs)
             elif event == 'new-data-received':
-                self.doPushInputData(arg)
+                self.doPushInputData(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'stop' or event == 'cancel' or event == 'timer-2min' or ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'stop' or event == 'cancel' or event == 'timer-2min' or ( event == 'lookup-failed' and not self.isAnyAccountants(*args, **kwargs) ):
                 self.state = 'STOPPED'
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def isAnyAccountants(self, arg):
+    def isAnyAccountants(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -240,7 +240,7 @@ class CoinsMiner(automat.Automat):
             return True
         return len(self.connected_accountants) > 0
 
-    def isMoreNeeded(self, arg):
+    def isMoreNeeded(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -248,14 +248,14 @@ class CoinsMiner(automat.Automat):
             return False
         return len(self.connected_accountants) < self.min_accountants_connected
 
-    def isDecideOK(self, arg):
+    def isDecideOK(self, *args, **kwargs):
         """
         Condition method.
         """
         # TODO:
         return True
 
-    def isAllConfirmed(self, arg):
+    def isAllConfirmed(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -264,25 +264,25 @@ class CoinsMiner(automat.Automat):
         # TODO:
         return False
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         callback.append_inbox_callback(self._on_inbox_packet)
-        if arg:
-            self.new_coin_filter_method, self.offline_mode = arg
+        if args and args[0]:
+            self.new_coin_filter_method, self.offline_mode = args[0]
 
-    def doAddAccountant(self, arg):
+    def doAddAccountant(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg:
-            if arg not in self.connected_accountants:
-                self.connected_accountants.append(arg)
+        if args and args[0]:
+            if args[0] not in self.connected_accountants:
+                self.connected_accountants.append(args[0])
             else:
-                lg.warn('%s already connected as accountant' % arg)
+                lg.warn('%s already connected as accountant' % args[0])
 
-    def doLookupAccountants(self, arg):
+    def doLookupAccountants(self, *args, **kwargs):
         """
         Action method.
         """
@@ -292,62 +292,54 @@ class CoinsMiner(automat.Automat):
         from coins import accountants_finder
         accountants_finder.A('start', (self.automat, 'read'))
 
-    def doPushInputData(self, arg):
+    def doPushInputData(self, *args, **kwargs):
         """
         Action method.
         """
-        self.input_data.append(arg)
+        self.input_data.append(args[0])
 
-    def doPullInputData(self, arg):
+    def doPullInputData(self, *args, **kwargs):
         """
         Action method.
         """
         if len(self.input_data) > 0:
             self.automat('new-data-received', self.input_data.pop(0))
 
-    def doStartMining(self, arg):
+    def doStartMining(self, *args, **kwargs):
         """
         Action method.
         """
         self.mining_started = utime.get_sec1970()
-        d = self._start(arg)
+        d = self._start(args[0])
         d.addCallback(self._on_coin_mined)
         d.addErrback(lambda err: self.automat('stop'))
         d.addErrback(lambda err: lg.exc(exc_value=err))
 
-    def doStopMining(self, arg):
+    def doStopMining(self, *args, **kwargs):
         """
         Action method.
         """
         self.mining_started = -1
 
-    def doSendCoinToAccountants(self, arg):
+    def doSendCoinToAccountants(self, *args, **kwargs):
         """
         Action method.
         """
         if self.offline_mode:
             self.automat('coin-confirmed')
             return
-        coins = [arg, ]
+        coins = [args[0], ]
         if _Debug:
             lg.out(_DebugLevel, 'coins_miner.doSendCoinToAccountants: %s' % coins)
         for idurl in self.connected_accountants:
             p2p_service.SendCoin(idurl, coins)
 
-    def doContinueMining(self, arg):
+    def doContinueMining(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doSendAck(self, arg):
-        """
-        Action method.
-        """
-        if self.offline_mode:
-            return
-        # TODO:
-
-    def doSendFail(self, arg):
+    def doSendAck(self, *args, **kwargs):
         """
         Action method.
         """
@@ -355,7 +347,15 @@ class CoinsMiner(automat.Automat):
             return
         # TODO:
 
-    def doDestroyMe(self, arg):
+    def doSendFail(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if self.offline_mode:
+            return
+        # TODO:
+
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -410,7 +410,7 @@ class CoinsMiner(automat.Automat):
 
     def _build_starter(self, length):
         return (''.join(
-            [random.choice(string.uppercase + string.lowercase + string.digits)
+            [random.choice(string.uppercase + string.lowercase + string.digits)  # @UndefinedVariable
                 for _ in range(length)])) + '_'
 
     def _build_hash(self, payload):
@@ -485,7 +485,7 @@ def start_offline_job(coin):
     one_miner = CoinsMiner('coins_miner', 'AT_STARTUP', _DebugLevel, _Debug)
 
     def _job_done(new_coin):
-        reactor.callLater(0, one_miner.automat, 'shutdown')
+        reactor.callLater(0, one_miner.automat, 'shutdown')  # @UndefinedVariable
         result.callback(new_coin)
         return None
 
@@ -500,8 +500,8 @@ def start_offline_job(coin):
 def _test():
     lg.set_debug_level(20)
     acoin = coins_io.storage_contract_open('http://abc.com/id.xml', 3600, 100)
-    start_offline_job(acoin).addBoth(lambda *a, **kw: reactor.stop())
-    reactor.run()
+    start_offline_job(acoin).addBoth(lambda *a, **kw: reactor.stop())  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":

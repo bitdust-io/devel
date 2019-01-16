@@ -200,10 +200,7 @@ def CurrentName():
     Should return a ecc map name from current suppliers number - taken from user settings.
     """
     from main import settings
-    snum = settings.getSuppliersNumberDesired()
-    if snum < 0:
-        return DefaultName()
-    return GetEccMapName(snum)
+    return GetEccMapName(settings.getSuppliersNumberDesired())
 
 
 def Current():
@@ -250,7 +247,7 @@ def GetEccMapName(suppliers_number):
     Return a ecc map name for given suppliers number or ``DefaultName()``.
     """
     global __suppliers2eccmap
-    return __suppliers2eccmap.get(suppliers_number, DefaultName())
+    return __suppliers2eccmap[suppliers_number]
 
 
 def GetEccMapSuppliersNumber(eccmapname):
@@ -258,11 +255,7 @@ def GetEccMapSuppliersNumber(eccmapname):
     Reverse method, return a suppliers number for that map.
     """
     global __eccmap2suppliers
-    try:
-        return int(__eccmap2suppliers[eccmapname])
-    except:
-        from main import settings
-        return settings.DefaultDesiredSuppliers()
+    return int(__eccmap2suppliers[eccmapname])
 
 
 def GetEccMapData(name):
@@ -280,7 +273,7 @@ def GetCorrectableErrors(suppliers_number):
     For every map we have different amount of "fixable" errors.
     """
     global __correctable_errors
-    return __correctable_errors.get(suppliers_number, 1)
+    return __correctable_errors[suppliers_number]
 
 
 def GetFireHireErrors(suppliers_number):
@@ -288,7 +281,7 @@ def GetFireHireErrors(suppliers_number):
     For every map we have different critical amount of dead suppliers.
     """
     global __fire_hire_errors
-    return __fire_hire_errors.get(suppliers_number, 1)
+    return __fire_hire_errors[suppliers_number]
 
 #------------------------------------------------------------------------------
 

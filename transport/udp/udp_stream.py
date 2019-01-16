@@ -158,7 +158,7 @@ def create(stream_id, consumer, producer):
     s = UDPStream(stream_id, consumer, producer)
     streams()[s.stream_id] = s
     s.automat('init')
-    reactor.callLater(0, balance_streams_limits)
+    reactor.callLater(0, balance_streams_limits)  # @UndefinedVariable
     return s
 
 
@@ -251,7 +251,7 @@ def process_streams():
         _CurrentSendingAvarageRate = 0.0
 
     if _ProcessStreamsTask is None or _ProcessStreamsTask.called:
-        _ProcessStreamsTask = reactor.callLater(
+        _ProcessStreamsTask = reactor.callLater(  # @UndefinedVariable
             POOLING_INTERVAL, process_streams)
 
 
@@ -354,60 +354,60 @@ class UDPStream(automat.Automat):
         self.last_progress_report = 0
         self.eof = False
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         newstate = self.state
         #---SENDING---
         if self.state == 'SENDING':
             if event == 'iterate':
-                self.doResendBlocks(arg)
-                self.doSendingLoop(arg)
+                self.doResendBlocks(*args, **kwargs)
+                self.doSendingLoop(*args, **kwargs)
             elif event == 'consume':
-                self.doPushBlocks(arg)
-                self.doResendBlocks(arg)
+                self.doPushBlocks(*args, **kwargs)
+                self.doResendBlocks(*args, **kwargs)
             elif event == 'set-limits':
-                self.doUpdateLimits(arg)
-            elif event == 'ack-received' and not self.isEOF(arg) and not self.isPaused(arg):
-                self.doResendBlocks(arg)
-            elif event == 'ack-received' and self.isEOF(arg):
-                self.doReportSendDone(arg)
-                self.doCloseStream(arg)
+                self.doUpdateLimits(*args, **kwargs)
+            elif event == 'ack-received' and not self.isEOF(*args, **kwargs) and not self.isPaused(*args, **kwargs):
+                self.doResendBlocks(*args, **kwargs)
+            elif event == 'ack-received' and self.isEOF(*args, **kwargs):
+                self.doReportSendDone(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
                 newstate = 'COMPLETION'
-            elif event == 'pause' or ( event == 'ack-received' and self.isPaused(arg) ):
-                self.doResumeLater(arg)
+            elif event == 'pause' or ( event == 'ack-received' and self.isPaused(*args, **kwargs) ):
+                self.doResumeLater(*args, **kwargs)
                 newstate = 'PAUSE'
             elif event == 'timeout':
-                self.doReportSendTimeout(arg)
-                self.doCloseStream(arg)
+                self.doReportSendTimeout(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
                 newstate = 'COMPLETION'
             elif event == 'close':
-                self.doReportClosed(arg)
-                self.doCloseStream(arg)
-                self.doDestroyMe(arg)
+                self.doReportClosed(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
                 newstate = 'CLOSED'
         #---DOWNTIME---
         elif self.state == 'DOWNTIME':
             if event == 'set-limits':
-                self.doUpdateLimits(arg)
+                self.doUpdateLimits(*args, **kwargs)
             elif event == 'consume':
-                self.doPushBlocks(arg)
-                self.doResendBlocks(arg)
+                self.doPushBlocks(*args, **kwargs)
+                self.doResendBlocks(*args, **kwargs)
                 newstate = 'SENDING'
             elif event == 'block-received':
-                self.doResendAck(arg)
+                self.doResendAck(*args, **kwargs)
                 newstate = 'RECEIVING'
             elif event == 'ack-received':
-                self.doReportError(arg)
-                self.doCloseStream(arg)
+                self.doReportError(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
                 newstate = 'COMPLETION'
             elif event == 'close':
-                self.doReportClosed(arg)
-                self.doCloseStream(arg)
-                self.doDestroyMe(arg)
+                self.doReportClosed(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
                 newstate = 'CLOSED'
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
                 newstate = 'DOWNTIME'
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -415,67 +415,67 @@ class UDPStream(automat.Automat):
         #---RECEIVING---
         elif self.state == 'RECEIVING':
             if event == 'set-limits':
-                self.doUpdateLimits(arg)
+                self.doUpdateLimits(*args, **kwargs)
             elif event == 'iterate':
-                self.doResendAck(arg)
-                self.doReceivingLoop(arg)
-            elif event == 'block-received' and not self.isEOF(arg):
-                self.doResendAck(arg)
+                self.doResendAck(*args, **kwargs)
+                self.doReceivingLoop(*args, **kwargs)
+            elif event == 'block-received' and not self.isEOF(*args, **kwargs):
+                self.doResendAck(*args, **kwargs)
             elif event == 'timeout':
-                self.doReportReceiveTimeout(arg)
-                self.doCloseStream(arg)
+                self.doReportReceiveTimeout(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
                 newstate = 'COMPLETION'
             elif event == 'close':
-                self.doReportClosed(arg)
-                self.doCloseStream(arg)
-                self.doDestroyMe(arg)
+                self.doReportClosed(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
                 newstate = 'CLOSED'
-            elif event == 'block-received' and self.isEOF(arg):
-                self.doResendAck(arg)
-                self.doReportReceiveDone(arg)
-                self.doCloseStream(arg)
+            elif event == 'block-received' and self.isEOF(*args, **kwargs):
+                self.doResendAck(*args, **kwargs)
+                self.doReportReceiveDone(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
                 newstate = 'COMPLETION'
         #---COMPLETION---
         elif self.state == 'COMPLETION':
             if event == 'close':
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
                 newstate = 'CLOSED'
         #---PAUSE---
         elif self.state == 'PAUSE':
             if event == 'consume':
-                self.doPushBlocks(arg)
+                self.doPushBlocks(*args, **kwargs)
             elif event == 'timeout':
-                self.doReportSendTimeout(arg)
-                self.doCloseStream(arg)
+                self.doReportSendTimeout(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
                 newstate = 'COMPLETION'
-            elif event == 'ack-received' and self.isEOF(arg):
-                self.doReportSendDone(arg)
-                self.doCloseStream(arg)
+            elif event == 'ack-received' and self.isEOF(*args, **kwargs):
+                self.doReportSendDone(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
                 newstate = 'COMPLETION'
             elif event == 'resume':
-                self.doResendBlocks(arg)
+                self.doResendBlocks(*args, **kwargs)
                 newstate = 'SENDING'
             elif event == 'close':
-                self.doReportClosed(arg)
-                self.doCloseStream(arg)
-                self.doDestroyMe(arg)
+                self.doReportClosed(*args, **kwargs)
+                self.doCloseStream(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
                 newstate = 'CLOSED'
         return newstate
 
-    def isEOF(self, arg):
+    def isEOF(self, *args, **kwargs):
         """
         Condition method.
         """
         return self.eof
 
-    def isPaused(self, arg):
+    def isPaused(self, *args, **kwargs):
         """
         Condition method.
         """
-        _, pause, _ = arg
+        _, pause, _ = args[0]
         return pause > 0
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
@@ -497,13 +497,13 @@ class UDPStream(automat.Automat):
                 self.output_limit_bytes_per_sec,
                 self.output_rtt_avarage))
 
-    def doPushBlocks(self, arg):
+    def doPushBlocks(self, *args, **kwargs):
         """
         Action method.
         """
-        self._push_blocks(arg)
+        self._push_blocks(args[0])
 
-    def doResendBlocks(self, arg):
+    def doResendBlocks(self, *args, **kwargs):
         """
         Action method.
         """
@@ -511,40 +511,40 @@ class UDPStream(automat.Automat):
         self._resend_blocks()
         self.output_blocks_last_delta = self.output_blocks_counter - current_blocks
 
-    def doResendAck(self, arg):
+    def doResendAck(self, *args, **kwargs):
         """
         Action method.
         """
         self._resend_ack()
 
-    def doSendingLoop(self, arg):
+    def doSendingLoop(self, *args, **kwargs):
         """
         Action method.
         """
         self._sending_loop()
 
-    def doReceivingLoop(self, arg):
+    def doReceivingLoop(self, *args, **kwargs):
         """
         Action method.
         """
         self._receiving_loop()
 
-    def doResumeLater(self, arg):
+    def doResumeLater(self, *args, **kwargs):
         """
         Action method.
         """
-        if isinstance(arg, float):
-            reactor.callLater(arg, self.automat, 'resume')
+        if isinstance(args[0], float):
+            reactor.callLater(args[0], self.automat, 'resume')  # @UndefinedVariable
             return
-        _, pause, remote_side_limit_receiving = arg
+        _, pause, remote_side_limit_receiving = args[0]
         if pause > 0:
-            reactor.callLater(pause, self.automat, 'resume')
+            reactor.callLater(pause, self.automat, 'resume')  # @UndefinedVariable
         if remote_side_limit_receiving > 0:
             self.output_limit_bytes_per_sec_from_remote = remote_side_limit_receiving
         else:
             self.output_limit_bytes_per_sec_from_remote = 0.0
 
-    def doReportSendDone(self, arg):
+    def doReportSendDone(self, *args, **kwargs):
         """
         Action method.
         """
@@ -559,7 +559,7 @@ class UDPStream(automat.Automat):
             self.consumer.error_message = 'sending was not finished correctly'
         self.producer.on_outbox_file_done(self.stream_id)
 
-    def doReportSendTimeout(self, arg):
+    def doReportSendTimeout(self, *args, **kwargs):
         """
         Action method.
         """
@@ -571,14 +571,14 @@ class UDPStream(automat.Automat):
         self.consumer.timeout = True
         self.producer.on_timeout_sending(self.stream_id)
 
-    def doReportReceiveDone(self, arg):
+    def doReportReceiveDone(self, *args, **kwargs):
         """
         Action method.
         """
         self.consumer.status = 'finished'
         self.producer.on_inbox_file_done(self.stream_id)
 
-    def doReportReceiveTimeout(self, arg):
+    def doReportReceiveTimeout(self, *args, **kwargs):
         """
         Action method.
         """
@@ -587,21 +587,21 @@ class UDPStream(automat.Automat):
         self.consumer.timeout = True
         self.producer.on_timeout_receiving(self.stream_id)
 
-    def doReportClosed(self, arg):
+    def doReportClosed(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
             lg.out(self.debug_level, 'CLOSED %s' % self.stream_id)
 
-    def doReportError(self, arg):
+    def doReportError(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
             lg.out(2, 'udp_stream.doReportError')
 
-    def doCloseStream(self, arg):
+    def doCloseStream(self, *args, **kwargs):
         """
         Action method.
         """
@@ -639,11 +639,11 @@ class UDPStream(automat.Automat):
         self.output_blocks.clear()
         self.output_blocks_ids = []
 
-    def doUpdateLimits(self, arg):
+    def doUpdateLimits(self, *args, **kwargs):
         """
         Action method.
         """
-        new_limit_receive, new_limit_send = arg
+        new_limit_receive, new_limit_send = args[0]
         self.input_limit_bytes_per_sec = new_limit_receive
         self.output_limit_bytes_per_sec = new_limit_send
         self.output_limit_factor = SENDING_LIMIT_FACTOR_ON_START
@@ -653,7 +653,7 @@ class UDPStream(automat.Automat):
                 self.input_limit_bytes_per_sec, self.output_limit_bytes_per_sec,
                 self.output_limit_bytes_per_sec_from_remote))
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         Remove all references to the state machine object to destroy it.
@@ -665,7 +665,7 @@ class UDPStream(automat.Automat):
         self.producer = None
         streams().pop(self.stream_id)
         self.destroy()
-        reactor.callLater(0, balance_streams_limits)
+        reactor.callLater(0, balance_streams_limits)  # @UndefinedVariable
 
     def on_block_received(self, inpt):
         if not (self.consumer and getattr(self.consumer, 'on_received_raw_data', None)):
@@ -881,7 +881,7 @@ class UDPStream(automat.Automat):
             lg.out(self.debug_level, 'udp_stream.UDPStream[%d].on_close, send "close" event to the stream, state=%s' % (self.stream_id, self.state))
             lg.out(self.debug_level, '    %r' % self.output_iterations_results)
         if self.consumer:
-            reactor.callLater(0, self.automat, 'close')
+            reactor.callLater(0, self.automat, 'close')  # @UndefinedVariable
 
     def _push_blocks(self, data):
         outp = StringIO(data)
@@ -1017,7 +1017,7 @@ class UDPStream(automat.Automat):
                         if stream_relative_time > 0:
                             speeds.append(int(s.output_bytes_sent / float(relative_time)))
                     lg.out(self.debug_level, '%r' % speeds)
-                reactor.callLater(0, self.automat, 'timeout')
+                reactor.callLater(0, self.automat, 'timeout')  # @UndefinedVariable
                 return
         if self.input_acks_counter > 0:
             if last_block_sent_delta < RTT_MAX_LIMIT:
@@ -1257,7 +1257,7 @@ class UDPStream(automat.Automat):
                     round(relative_time - self.input_block_last_time, 4),
                     round(relative_time - self.input_limit_iteration_last_time, 4),
                     relative_time, self.eof, len(self.input_blocks_to_ack),))
-            reactor.callLater(0, self.automat, 'timeout')
+            reactor.callLater(0, self.automat, 'timeout')  # @UndefinedVariable
             return
         if len(self.input_blocks_to_ack) >= BLOCKS_PER_ACK:
             #--- received enough blocks to make a group, send ACK

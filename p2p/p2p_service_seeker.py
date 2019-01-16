@@ -99,19 +99,19 @@ class P2PServiceSeeker(automat.Automat):
         self.lookup_task = None
         self.exclude_nodes = []
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when p2p_service_seeker() state were
         changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in
         the p2p_service_seeker() but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -120,84 +120,84 @@ class P2PServiceSeeker(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---RANDOM_USER---
         elif self.state == 'RANDOM_USER':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopLookup(arg)
-                self.doDestroyMe(arg)
+                self.doStopLookup(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'users-not-found':
                 self.state = 'READY'
-                self.doNotifyLookupFailed(arg)
+                self.doNotifyLookupFailed(*args, **kwargs)
             elif event == 'found-users':
                 self.state = 'ACK?'
-                self.doSelectOneUser(arg)
+                self.doSelectOneUser(*args, **kwargs)
                 self.Attempts+=1
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
         #---ACK?---
         elif self.state == 'ACK?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
-                self.doSendRequestService(arg)
+                self.doSendRequestService(*args, **kwargs)
             elif event == 'timer-3sec':
-                self.doSendMyIdentity(arg)
+                self.doSendMyIdentity(*args, **kwargs)
             elif event == 'timer-10sec' and self.Attempts<5:
                 self.state = 'RANDOM_USER'
-                self.doLookupRandomNode(arg)
+                self.doLookupRandomNode(*args, **kwargs)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'service-accepted':
                 self.state = 'READY'
-                self.doNotifyLookupSuccess(arg)
+                self.doNotifyLookupSuccess(*args, **kwargs)
             elif ( event == 'timer-10sec' or event == 'service-denied' ) and self.Attempts<5:
                 self.state = 'RANDOM_USER'
-                self.doLookupRandomNode(arg)
+                self.doLookupRandomNode(*args, **kwargs)
             elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'service-denied' ):
                 self.state = 'READY'
-                self.doNotifyLookupFailed(arg)
+                self.doNotifyLookupFailed(*args, **kwargs)
         #---READY---
         elif self.state == 'READY':
             if event == 'start':
                 self.state = 'RANDOM_USER'
-                self.doSetRequest(arg)
-                self.doSetCallback(arg)
+                self.doSetRequest(*args, **kwargs)
+                self.doSetCallback(*args, **kwargs)
                 self.Attempts=0
-                self.doLookupRandomNode(arg)
+                self.doLookupRandomNode(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.exclude_nodes = arg[0]
+        self.exclude_nodes = args[0][0]
         callback.append_inbox_callback(self._inbox_packet_received)
 
-    def doSetRequest(self, arg):
+    def doSetRequest(self, *args, **kwargs):
         """
         Action method.
         """
-        self.target_service, self.request_service_params = arg[:2]
+        self.target_service, self.request_service_params = args[0][:2]
 
-    def doSetCallback(self, arg):
+    def doSetCallback(self, *args, **kwargs):
         """
         Action method.
         """
-        self.result_callback = arg[-1]
+        self.result_callback = args[0][-1]
 
-    def doLookupRandomNode(self, arg):
+    def doLookupRandomNode(self, *args, **kwargs):
         """
         Action method.
         """
@@ -208,25 +208,25 @@ class P2PServiceSeeker(automat.Automat):
         else:
             self.automat('users-not-found')
 
-    def doStopLookup(self, arg):
+    def doStopLookup(self, *args, **kwargs):
         """
         Action method.
         """
         self.lookup_task.stop()
 
-    def doSelectOneUser(self, arg):
+    def doSelectOneUser(self, *args, **kwargs):
         """
         Action method.
         """
-        self.target_idurl = arg[0]
+        self.target_idurl = args[0][0]
 
-    def doSendMyIdentity(self, arg):
+    def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
         p2p_service.SendIdentity(self.target_idurl, wide=True)
 
-    def doSendRequestService(self, arg):
+    def doSendRequestService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -241,27 +241,27 @@ class P2PServiceSeeker(automat.Automat):
         )
         self.requested_packet_id = out_packet.PacketID
 
-    def doNotifyLookupSuccess(self, arg):
+    def doNotifyLookupSuccess(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyLookupSuccess with %s' % arg)
+            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyLookupSuccess with %s' % args[0])
         if self.result_callback:
-            self.result_callback('node-connected', arg)
+            self.result_callback('node-connected', *args, **kwargs)
         self.result_callback = None
 
-    def doNotifyLookupFailed(self, arg):
+    def doNotifyLookupFailed(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
-            self.result_callback('lookup-failed', arg)
+            self.result_callback('lookup-failed', *args, **kwargs)
         self.result_callback = None
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

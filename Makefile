@@ -1,3 +1,26 @@
+#
+# Makefile
+#
+# Copyright (C) 2008-2018 Veselin Penev  https://bitdust.io
+#
+# This file (Makefile) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+
+
 # This Makefile requires the following commands to be available:
 # * virtualenv
 # * python2.7
@@ -109,24 +132,122 @@ regression_rerun:
 regression_clean:
 	make -C regression/ clean
 
-regression_logs:
+regression_log_one/%:
+	@echo "### [identity-server] #########################################################################"
+	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/main.log
+
+regression_log_states_one/%:
+	@echo "### [identity-server] #########################################################################"
+	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/automats.log
+
+regression_logs_all:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/main.log
+	@echo "### [dht_seed1] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/main.log
+	@echo "### [dht_seed2] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_2 cat /root/.bitdust/logs/main.log
 	@echo "### [stun_1] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec stun_1 cat /root/.bitdust/logs/main.log
 	@echo "### [stun_2] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec stun_2 cat /root/.bitdust/logs/main.log
+	@echo "### [proxy_server_1] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec proxy_server_1 cat /root/.bitdust/logs/main.log
+	@echo "### [proxy_server_2] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec proxy_server_2 cat /root/.bitdust/logs/main.log
 	@echo "### [supplier_1] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec supplier_1 cat /root/.bitdust/logs/main.log
 	@echo "### [supplier_2] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec supplier_2 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_3] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_3 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_4] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_4 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_5] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_5 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_6] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_6 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_7] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_7 cat /root/.bitdust/logs/main.log
+	@echo "### [supplier_8] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_8 cat /root/.bitdust/logs/main.log
 	@echo "### [customer_1] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_1 cat /root/.bitdust/logs/main.log
 	@echo "### [customer_2] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_2 cat /root/.bitdust/logs/main.log
 	@echo "### [customer_3] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_3 cat /root/.bitdust/logs/main.log
+	@echo "### [customer_4] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/main.log
+	@echo "### [customer_5] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/main.log
+
+regression_logs_all_states:
+    # TODO: keep up to date with docker-compose links
+	@echo "### [identity-server] #########################################################################"
+	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/automats.log
+	@echo "### [dht_seed1] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/automats.log
+	@echo "### [dht_seed2] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_2 cat /root/.bitdust/logs/automats.log
+	@echo "### [stun_1] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec stun_1 cat /root/.bitdust/logs/automats.log
+	@echo "### [stun_2] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec stun_2 cat /root/.bitdust/logs/automats.log
+	@echo "### [proxy_server_1] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec proxy_server_1 cat /root/.bitdust/logs/automats.log
+	@echo "### [proxy_server_2] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec proxy_server_2 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_1] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_1 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_2] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_2 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_3] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_3 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_4] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_4 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_5] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_5 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_6] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_6 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_7] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_7 cat /root/.bitdust/logs/automats.log
+	@echo "### [supplier_8] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec supplier_8 cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_1] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_1 cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_2] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_2 cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_3] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_3 cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_4] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_5] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/automats.log
+
+
+dht_network_up:
+	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
+
+dht_network_run_producer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 5"
+
+dht_network_run_producer/%:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_producer.py 1 $*"
+
+dht_network_run_consumer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 5"
+
+dht_network_run_consumer/%:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash -c "/root/.bitdust/venv/bin/python /bitdust/tests/dht/test_consumer.py 1 $*"
+
+dht_network_ssh_producer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_producer bash
+
+dht_network_ssh_consumer:
+	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash
+
 
 lint: venv_install
 	@$(TOX) -e lint

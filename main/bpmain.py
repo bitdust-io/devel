@@ -115,7 +115,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     #---OS Windows init---
     if bpio.Windows():
         try:
-            from win32event import CreateMutex
+            from win32event import CreateMutex  # @UnresolvedImport
             mutex = CreateMutex(None, False, "BitDust")
             lg.out(4, 'bpmain.run created a Mutex: %s' % str(mutex))
         except:
@@ -192,7 +192,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     from main import initializer
     IA = initializer.A()
     lg.out(4, 'sending event "run" to initializer()')
-    reactor.callWhenRunning(IA.automat, 'run', UI)
+    reactor.callWhenRunning(IA.automat, 'run', UI)  # @UndefinedVariable
     return IA
 
 #------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ def run_twisted_reactor():
         lg.exc()
         sys.exit('Error initializing reactor in bpmain.py\n')
     lg.out(2, 'bpmain.run_twisted_reactor calling Twisted reactor.run()')
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
     lg.out(2, 'bpmain.run_twisted_reactor Twisted reactor stopped')
 
 
@@ -409,13 +409,13 @@ def wait_then_kill(x):
         ])
         if len(appList) == 0:
             lg.out(0, 'DONE')
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return 0
         total_count += 1
         if total_count > 10:
             lg.out(0, 'not responding, KILLING ...')
             ret = kill()
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return ret
         time.sleep(1)
 
@@ -704,15 +704,15 @@ def main(executable_path=None):
             def done(x):
                 lg.out(0, 'DONE\n', '')
                 from twisted.internet import reactor  # @UnresolvedImport
-                if reactor.running and not reactor._stopped:
-                    reactor.stop()
+                if reactor.running and not reactor._stopped:  # @UndefinedVariable
+                    reactor.stop()  # @UndefinedVariable
 
             def failed(x):
                 ok = str(x).count('Connection was closed cleanly') > 0
                 from twisted.internet import reactor  # @UnresolvedImport
-                if ok and reactor.running and not reactor._stopped:
+                if ok and reactor.running and not reactor._stopped:  # @UndefinedVariable
                     lg.out(0, 'DONE\n', '')
-                    reactor.stop()
+                    reactor.stop()  # @UndefinedVariable
                     return
                 lg.out(0, 'FAILED while killing previous process - do HARD restart\n', '')
                 try:
@@ -720,8 +720,9 @@ def main(executable_path=None):
                 except:
                     lg.exc()
                 from lib import misc
-                reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
-                reactor.stop()
+                reactor.addSystemEventTrigger(  # @UndefinedVariable
+                    'after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
+                reactor.stop()  # @UndefinedVariable
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
                 # from interface.command_line import run_url_command
@@ -732,7 +733,7 @@ def main(executable_path=None):
                 d = cmd_line_json.call_jsonrpc_method('restart', ui)
                 d.addCallback(done)
                 d.addErrback(failed)
-                reactor.run()
+                reactor.run()  # @UndefinedVariable
                 bpio.shutdown()
                 return 0
             except:
@@ -792,13 +793,13 @@ def main(executable_path=None):
 
                 def _stopped(x):
                     lg.out(0, 'BitDust process finished correctly\n')
-                    reactor.stop()
+                    reactor.stop()  # @UndefinedVariable
                     bpio.shutdown()
                 # from interface import cmd_line
                 # cmd_line.call_xmlrpc_method('stop').addBoth(_stopped)
                 from interface import cmd_line_json
                 cmd_line_json.call_jsonrpc_method('stop').addBoth(_stopped)
-                reactor.run()
+                reactor.run()  # @UndefinedVariable
                 return 0
             except:
                 lg.exc()

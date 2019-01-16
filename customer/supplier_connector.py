@@ -74,6 +74,8 @@ from lib import strng
 from lib import nameurl
 from lib import diskspace
 
+from contacts import contactsdb
+
 from userid import global_id
 
 from crypt import my_keys
@@ -104,7 +106,7 @@ def connectors(customer_idurl=None):
 
 
 def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
-           key_id=None, queue_subscribe=True, family_position=None, ecc_map=None):
+           key_id=None, queue_subscribe=True):
     """
     """
     if customer_idurl is None:
@@ -116,8 +118,6 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
         needed_bytes=needed_bytes,
         key_id=key_id,
         queue_subscribe=queue_subscribe,
-        family_position=family_position,
-        ecc_map=ecc_map,
     )
     return connectors(customer_idurl)[supplier_idurl]
 
@@ -157,23 +157,28 @@ class SupplierConnector(automat.Automat):
     }
 
     def __init__(self, supplier_idurl, customer_idurl, needed_bytes,
-                 key_id=None, queue_subscribe=True, family_position=None, ecc_map=None):
+                 key_id=None, queue_subscribe=True):
         """
         """
         self.supplier_idurl = supplier_idurl
         self.customer_idurl = customer_idurl
         self.needed_bytes = needed_bytes
         self.key_id = key_id
-        self.family_position = family_position
-        self.ecc_map = ecc_map
         self.queue_subscribe = queue_subscribe
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
-            num_suppliers = settings.getSuppliersNumberDesired()
+            num_suppliers = -1
+            if self.customer_idurl == my_id.getLocalIDURL():
+                num_suppliers = settings.getSuppliersNumberDesired()
+            else:
+                known_ecc_map = contactsdb.get_customer_meta_info(customer_idurl).get('ecc_map')
+                if known_ecc_map:
+                    num_suppliers = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
             if num_suppliers > 0:
                 self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
             else:
-                self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
+                raise Exception('not possible to determine needed_bytes value to be requested from that supplier')
+                # self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
         name = 'supplier_%s_%s' % (
             nameurl.GetName(self.supplier_idurl),
             diskspace.MakeStringFromBytes(self.needed_bytes).replace(' ', ''),
@@ -203,11 +208,14 @@ class SupplierConnector(automat.Automat):
         Method to initialize additional variables and flags at creation of the
         state machine.
         """
+        self._last_known_family_position = None
+        self._last_known_ecc_map = None
+        self._last_known_family_snapshot = None
         contact_peer = contact_status.getInstance(self.supplier_idurl)
         if contact_peer:
             contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when automat's state were
         changed.
@@ -232,116 +240,117 @@ class SupplierConnector(automat.Automat):
         if name in list(self.callbacks.keys()):
             self.callbacks.pop(name)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---NO_SERVICE---
         if self.state == 'NO_SERVICE':
             if event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(arg)
-            elif event == 'ack' and self.isServiceAccepted(arg):
-                self.state = 'CONNECTED'
-                self.doReportConnect(arg)
+                self.doRequestService(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect':
-                self.doReportNoService(arg)
+                self.doReportNoService(*args, **kwargs)
+            elif event == 'ack' and self.isServiceAccepted(*args, **kwargs):
+                self.state = 'CONNECTED'
+                self.doReportConnect(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'close':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect':
                 self.state = 'REFUSE'
-                self.doCancelService(arg)
+                self.doCancelServiceQueue(*args, **kwargs)
+                self.doCancelService(*args, **kwargs)
             elif event == 'fail' or event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(arg)
+                self.doRequestService(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
-            if event == 'ack' and self.isServiceAccepted(arg):
-                self.state = 'CONNECTED'
-                self.doReportConnect(arg)
-            elif event == 'shutdown':
+            if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnect':
                 self.state = 'REFUSE'
-                self.doCancelService(arg)
+                self.doCancelService(*args, **kwargs)
             elif event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(arg)
+                self.doRequestService(*args, **kwargs)
             elif event == 'fail':
                 self.state = 'NO_SERVICE'
-                self.doReportNoService(arg)
+                self.doReportNoService(*args, **kwargs)
+            elif event == 'ack' and self.isServiceAccepted(*args, **kwargs):
+                self.state = 'CONNECTED'
+                self.doReportConnect(*args, **kwargs)
         #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'disconnect':
                 self.GoDisconnect=True
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif self.GoDisconnect and event == 'ack' and self.isServiceAccepted(arg):
-                self.state = 'REFUSE'
-                self.doCancelService(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-20sec':
                 self.state = 'DISCONNECTED'
-                self.doCleanRequest(arg)
-                self.doReportDisconnect(arg)
-            elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(arg) and not self.GoDisconnect ):
+                self.doCleanRequest(*args, **kwargs)
+                self.doReportDisconnect(*args, **kwargs)
+            elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(*args, **kwargs) and not self.GoDisconnect ):
                 self.state = 'NO_SERVICE'
-                self.doReportNoService(arg)
-            elif event == 'ack' and not self.GoDisconnect and self.isServiceAccepted(arg):
+                self.doReportNoService(*args, **kwargs)
+            elif event == 'ack' and not self.GoDisconnect and self.isServiceAccepted(*args, **kwargs):
                 self.state = 'QUEUE?'
-                self.doRequestQueueService(arg)
+                self.doRequestQueueService(*args, **kwargs)
+            elif self.GoDisconnect and event == 'ack' and self.isServiceAccepted(*args, **kwargs):
+                self.state = 'REFUSE'
+                self.doCancelService(*args, **kwargs)
         #---REFUSE---
         elif self.state == 'REFUSE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doCleanRequest(arg)
-                self.doDestroyMe(arg)
-            elif event == 'timer-10sec' or event == 'fail' or ( event == 'ack' and self.isServiceCancelled(arg) ):
+                self.doCleanRequest(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'timer-10sec' or event == 'fail' or ( event == 'ack' and self.isServiceCancelled(*args, **kwargs) ):
                 self.state = 'NO_SERVICE'
-                self.doCleanRequest(arg)
-                self.doReportNoService(arg)
+                self.doCleanRequest(*args, **kwargs)
+                self.doReportNoService(*args, **kwargs)
         #---QUEUE?---
         elif self.state == 'QUEUE?':
             if event == 'disconnect':
                 self.GoDisconnect=True
             elif self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
                 self.state = 'REFUSE'
-                self.doCancelServiceQueue(arg)
-                self.doCancelService(arg)
+                self.doCancelServiceQueue(*args, **kwargs)
+                self.doCancelService(*args, **kwargs)
             elif event == 'close':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif not self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
                 self.state = 'CONNECTED'
-                self.doReportConnect(arg)
+                self.doReportConnect(*args, **kwargs)
         return None
 
-    def isServiceAccepted(self, arg):
+    def isServiceAccepted(self, *args, **kwargs):
         """
         Condition method.
         """
-        newpacket = arg
+        newpacket = args[0]
         if strng.to_text(newpacket.Payload).startswith('accepted'):
             if _Debug:
                 lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.supplier_idurl)
             return True
         return False
 
-    def isServiceCancelled(self, arg):
+    def isServiceCancelled(self, *args, **kwargs):
         """
         Condition method.
         """
-        newpacket = arg
+        newpacket = args[0]
         if newpacket.Command == commands.Ack():
             if strng.to_text(newpacket.Payload).startswith('accepted'):
                 if _Debug:
@@ -349,7 +358,7 @@ class SupplierConnector(automat.Automat):
                 return True
         return False
 
-    def doRequestService(self, arg):
+    def doRequestService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -365,10 +374,15 @@ class SupplierConnector(automat.Automat):
             )
         if self.key_id:
             service_info['key_id'] = self.key_id
-        if self.ecc_map:
-            service_info['ecc_map'] = self.ecc_map
-        if self.family_position:
-            service_info['position'] = self.family_position
+        self._last_known_ecc_map = kwargs.get('ecc_map')
+        if self._last_known_ecc_map is not None:
+            service_info['ecc_map'] = self._last_known_ecc_map
+        self._last_known_family_position = kwargs.get('family_position')
+        if self._last_known_family_position is not None:
+            service_info['position'] = self._last_known_family_position
+        self._last_known_family_snapshot = kwargs.get('family_snapshot')
+        if self._last_known_family_snapshot is not None:
+            service_info['family_snapshot'] = self._last_known_family_snapshot
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
@@ -380,7 +394,7 @@ class SupplierConnector(automat.Automat):
         )
         self.request_packet_id = request.PacketID
 
-    def doCancelService(self, arg):
+    def doCancelService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -394,7 +408,7 @@ class SupplierConnector(automat.Automat):
         )
         self.request_packet_id = request.PacketID
 
-    def doRequestQueueService(self, arg):
+    def doRequestQueueService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -430,7 +444,7 @@ class SupplierConnector(automat.Automat):
             },
         )
 
-    def doCancelServiceQueue(self, arg):
+    def doCancelServiceQueue(self, *args, **kwargs):
         """
         Action method.
         """
@@ -463,34 +477,41 @@ class SupplierConnector(automat.Automat):
             },
         )
 
-    def doCleanRequest(self, arg):
+    def doCleanRequest(self, *args, **kwargs):
         """
         Action method.
         """
         self.request_packet_id = None
 
-    def doReportConnect(self, arg):
+    def doReportConnect(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in list(self.callbacks.values()):
-            cb(self.supplier_idurl, 'CONNECTED')
-        if self.family_position is not None:
-            p2p_service.SendContacts(
-                remote_idurl=self.supplier_idurl,
-                json_payload={
-                    'space': 'family_member',
-                    'type': 'supplier_position',
-                    'customer_idurl': my_id.getLocalIDURL(),
-                    'ecc_map': eccmap.Current().name,
-                    'supplier_idurl': self.supplier_idurl,
-                    'supplier_position': self.family_position,
-                },
+            cb(
+                self.supplier_idurl,
+                'CONNECTED',
+                family_position=self._last_known_family_position,
+                ecc_map=self._last_known_ecc_map,
+                family_snapshot=self._last_known_family_snapshot,
             )
+#         if self._last_known_family_position is not None:
+#             p2p_service.SendContacts(
+#                 remote_idurl=self.supplier_idurl,
+#                 json_payload={
+#                     'space': 'family_member',
+#                     'type': 'supplier_position',
+#                     'customer_idurl': my_id.getLocalIDURL(),
+#                     'customer_ecc_map': self._last_known_ecc_map,
+#                     'supplier_idurl': self.supplier_idurl,
+#                     'supplier_position': self._last_known_family_position,
+#                     'family_snapshot': self._last_known_family_snapshot,
+#                 },
+#             )
 
-    def doReportNoService(self, arg):
+    def doReportNoService(self, *args, **kwargs):
         """
         Action method.
         """
@@ -499,7 +520,7 @@ class SupplierConnector(automat.Automat):
         for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'NO_SERVICE')
 
-    def doReportDisconnect(self, arg):
+    def doReportDisconnect(self, *args, **kwargs):
         """
         Action method.
         """
@@ -508,7 +529,7 @@ class SupplierConnector(automat.Automat):
         for cb in list(self.callbacks.values()):
             cb(self.supplier_idurl, 'DISCONNECTED')
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -535,7 +556,7 @@ class SupplierConnector(automat.Automat):
         else:
             self.automat('fail', None)
 
-    def _on_contact_status_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_contact_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
             if _Debug:
                 lg.out(12, 'supplier_connector._on_contact_status_state_changed %s : %s->%s, reconnecting now' % (
