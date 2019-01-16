@@ -72,7 +72,7 @@ _InstallWizard = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -80,7 +80,7 @@ def A(event=None, arg=None):
     if _InstallWizard is None:
         _InstallWizard = InstallWizard('install_wizard', 'READY', 2)
     if event is not None:
-        _InstallWizard.automat(event, arg)
+        _InstallWizard.automat(event, *args, **kwargs)
     return _InstallWizard
 
 
@@ -102,7 +102,7 @@ class InstallWizard(automat.Automat):
         # because only have one page "STORAGE"
         self.state = 'STORAGE'
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if newstate == 'CONTACTS' and oldstate == 'STORAGE':
             self.event('next', {})
             # TODO:
@@ -112,7 +112,7 @@ class InstallWizard(automat.Automat):
         control.request_update()
         installer.A('install_wizard.state', newstate)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
             if event == 'next':
@@ -123,7 +123,7 @@ class InstallWizard(automat.Automat):
         elif self.state == 'STORAGE':
             if event == 'next':
                 self.state = 'CONTACTS'
-                self.doSaveStorage(arg)
+                self.doSaveStorage(*args, **kwargs)
             elif event == 'back':
                 self.state = 'READY'
         #---CONTACTS---
@@ -132,7 +132,7 @@ class InstallWizard(automat.Automat):
                 self.state = 'STORAGE'
             elif event == 'next':
                 self.state = 'LAST_PAGE'
-                self.doSaveContacts(arg)
+                self.doSaveContacts(*args, **kwargs)
         #---DONE---
         elif self.state == 'DONE':
             pass
@@ -144,12 +144,12 @@ class InstallWizard(automat.Automat):
                 self.state = 'CONTACTS'
         return None
 
-    def doSaveStorage(self, arg):
-        needed = arg.get('needed', '')
-        donated = arg.get('donated', '')
-        customersdir = arg.get('customersdir', '')
-        localbackupsdir = arg.get('localbackupsdir', '')
-        restoredir = arg.get('restoredir', '')
+    def doSaveStorage(self, *args, **kwargs):
+        needed = args[0].get('needed', '')
+        donated = args[0].get('donated', '')
+        customersdir = args[0].get('customersdir', '')
+        localbackupsdir = args[0].get('localbackupsdir', '')
+        restoredir = args[0].get('restoredir', '')
         if needed:
             config.conf().setData('services/customer/needed-space', needed + ' MB')
         if donated:
@@ -161,8 +161,8 @@ class InstallWizard(automat.Automat):
         if restoredir:
             config.conf().setString('paths/restore', restoredir)
 
-    def doSaveContacts(self, arg):
-        config.conf().setData('personal/email', arg.get('email', '').strip())
-        config.conf().setData('personal/name', arg.get('name', '').strip())
-        config.conf().setData('personal/surname', arg.get('surname', '').strip())
-        config.conf().setData('personal/nickname', arg.get('nickname', '').strip())
+    def doSaveContacts(self, *args, **kwargs):
+        config.conf().setData('personal/email', args[0].get('email', '').strip())
+        config.conf().setData('personal/name', args[0].get('name', '').strip())
+        config.conf().setData('personal/surname', args[0].get('surname', '').strip())
+        config.conf().setData('personal/nickname', args[0].get('nickname', '').strip())

@@ -67,7 +67,7 @@ class ContractChainService(LocalService):
         from coins import contract_chain_consumer
         return contract_chain_consumer.A().state in ['CONNECTED', ]
 
-    def _on_contract_chain_state_changed(self, oldstate, newstate, event_string, args):
+    def _on_contract_chain_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if self.starting_deferred:
             if newstate in ['CONNECTED', 'DISCONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
                 self.starting_deferred.callback(newstate)

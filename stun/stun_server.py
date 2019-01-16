@@ -74,7 +74,7 @@ _StunServer = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
@@ -89,7 +89,7 @@ def A(event=None, arg=None):
             log_transitions=_Debug,
         )
     if event is not None:
-        _StunServer.automat(event, arg)
+        _StunServer.automat(event, *args, **kwargs)
     return _StunServer
 
 
@@ -116,41 +116,41 @@ class StunServer(automat.Automat):
     def init(self):
         self.listen_port = None
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state is 'AT_STARTUP':
             if event == 'start':
                 self.state = 'LISTEN'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---LISTEN---
         elif self.state is 'LISTEN':
             if event == 'stop':
                 self.state = 'STOPPED'
-                self.doStop(arg)
-            elif event == 'datagram-received' and self.isSTUN(arg):
-                self.doSendYourIPPort(arg)
+                self.doStop(*args, **kwargs)
+            elif event == 'datagram-received' and self.isSTUN(*args, **kwargs):
+                self.doSendYourIPPort(*args, **kwargs)
         #---STOPPED---
         elif self.state is 'STOPPED':
             if event == 'start':
                 self.state = 'LISTEN'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
 
-    def isSTUN(self, arg):
+    def isSTUN(self, *args, **kwargs):
         """
         Condition method.
         """
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             return False
         return command == udp.CMD_STUN
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.listen_port = arg
+        self.listen_port = args[0]
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).add_callback(self._datagramReceived)
         else:
@@ -161,7 +161,7 @@ class StunServer(automat.Automat):
             externalPort = self.listen_port
         dht_service.set_node_data(b'stun_port', externalPort)
 
-    def doStop(self, arg):
+    def doStop(self, *args, **kwargs):
         """
         Action method.
         """
@@ -170,12 +170,12 @@ class StunServer(automat.Automat):
         else:
             lg.err('udp port %s is not opened' % self.listen_port)
 
-    def doSendYourIPPort(self, arg):
+    def doSendYourIPPort(self, *args, **kwargs):
         """
         Action method.
         """
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             return False
@@ -213,7 +213,7 @@ def main():
 
     d.addCallback(_go)
 
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 

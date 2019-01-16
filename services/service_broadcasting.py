@@ -156,7 +156,7 @@ class BroadcastingService(LocalService):
             broadcaster_node.A().addStateChangedCallback(
                 self._on_broadcaster_node_switched)
 
-    def _on_broadcast_listener_switched(self, oldstate, newstate, evt, args):
+    def _on_broadcast_listener_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcast_listener
@@ -168,7 +168,7 @@ class BroadcastingService(LocalService):
             reactor.callLater(60, broadcast_listener.A, 'connect', self.scope)
             lg.out(8, 'service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute')
 
-    def _on_broadcaster_node_switched(self, oldstate, newstate, evt, args):
+    def _on_broadcaster_node_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from logs import lg
         from twisted.internet import reactor  # @UnresolvedImport
         from broadcast import broadcaster_node

@@ -118,54 +118,54 @@ class NicknameObserver(automat.Automat):
         self.result_callback = None
         self.log_events = True
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'observe-many':
                 self.state = 'DHT_LOOP'
-                self.doInit(arg)
-                self.doDHTReadKey(arg)
+                self.doInit(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
             elif event == 'find-one':
                 self.state = 'DHT_FIND'
-                self.doInit(arg)
-                self.doDHTReadKey(arg)
+                self.doInit(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
         #---DHT_LOOP---
         elif self.state == 'DHT_LOOP':
             if event == 'stop':
                 self.state = 'STOPPED'
-                self.doDestroyMe(arg)
-            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(arg):
-                self.doNextKey(arg)
-                self.doDHTReadKey(arg)
-            elif event == 'dht-read-success' and not self.isMoreAttemptsNeeded(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(*args, **kwargs):
+                self.doNextKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
+            elif event == 'dht-read-success' and not self.isMoreAttemptsNeeded(*args, **kwargs):
                 self.state = 'FINISHED'
-                self.doReportNicknameExist(arg)
-                self.doReportFinished(arg)
-                self.doDestroyMe(arg)
-            elif event == 'dht-read-success' and self.isMoreAttemptsNeeded(arg):
-                self.doReportNicknameExist(arg)
-                self.doNextKey(arg)
-                self.doDHTReadKey(arg)
-            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(arg):
+                self.doReportNicknameExist(*args, **kwargs)
+                self.doReportFinished(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-read-success' and self.isMoreAttemptsNeeded(*args, **kwargs):
+                self.doReportNicknameExist(*args, **kwargs)
+                self.doNextKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
+            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(*args, **kwargs):
                 self.state = 'FINISHED'
-                self.doReportFinished(arg)
-                self.doDestroyMe(arg)
+                self.doReportFinished(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---DHT_FIND---
         elif self.state == 'DHT_FIND':
             if event == 'dht-read-success':
                 self.state = 'FOUND'
-                self.doReportNicknameExist(arg)
-                self.doDestroyMe(arg)
-            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(arg):
-                self.doNextKey(arg)
-                self.doDHTReadKey(arg)
+                self.doReportNicknameExist(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(*args, **kwargs):
+                self.doNextKey(*args, **kwargs)
+                self.doDHTReadKey(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'STOPPED'
-                self.doDestroyMe(arg)
-            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(*args, **kwargs):
                 self.state = 'NOT_FOUND'
-                self.doReportNicknameNotExist(arg)
-                self.doDestroyMe(arg)
+                self.doReportNicknameNotExist(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---FOUND---
         elif self.state == 'FOUND':
             pass
@@ -180,17 +180,17 @@ class NicknameObserver(automat.Automat):
             pass
         return None
 
-    def isMoreAttemptsNeeded(self, arg):
+    def isMoreAttemptsNeeded(self, *args, **kwargs):
         """
         Condition method.
         """
         return self.attempts > 1
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.nickname, self.attempts, self.result_callback = arg
+        self.nickname, self.attempts, self.result_callback = args[0]
         try:
             nick, index = self.nickname.rsplit(':', 1)
             index = int(index)
@@ -205,7 +205,7 @@ class NicknameObserver(automat.Automat):
             prefix='nickname',
         )
 
-    def doNextKey(self, arg):
+    def doNextKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -226,7 +226,7 @@ class NicknameObserver(automat.Automat):
         )
         self.attempts -= 1
 
-    def doDHTReadKey(self, arg):
+    def doDHTReadKey(self, *args, **kwargs):
         """
         Action method.
         """
@@ -239,11 +239,11 @@ class NicknameObserver(automat.Automat):
         d.addErrback(self._dht_read_failed)
         self.dht_read_defer = d
 
-    def doReportNicknameExist(self, arg):
+    def doReportNicknameExist(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.out(8, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, arg))
+        lg.out(8, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, args[0], ))
         if self.result_callback is not None:
             try:
                 key_info = dht_service.split_key(self.key)
@@ -255,9 +255,9 @@ class NicknameObserver(automat.Automat):
                 index = 0
             # nik, num = self.key.split(':')
             # num = int(num)
-            self.result_callback('exist', nick, index, arg)
+            self.result_callback('exist', nick, index, *args, **kwargs)
 
-    def doReportNicknameNotExist(self, arg):
+    def doReportNicknameNotExist(self, *args, **kwargs):
         """
         Action method.
         """
@@ -265,7 +265,7 @@ class NicknameObserver(automat.Automat):
         if self.result_callback is not None:
             self.result_callback('not exist', self.nickname, -1, '')
 
-    def doReportFinished(self, arg):
+    def doReportFinished(self, *args, **kwargs):
         """
         Action method.
         """
@@ -273,7 +273,7 @@ class NicknameObserver(automat.Automat):
         if self.result_callback is not None:
             self.result_callback('finished', '', -1, '')
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
@@ -319,12 +319,12 @@ def main():
     def _result(result, nickname):
         print(result, nickname)
         if result == 'finished':
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
     if sys.argv[1] == 'many':
         observe_many(sys.argv[2], int(sys.argv[3]), results_callback=_result)
     else:
         find_one(sys.argv[2], int(sys.argv[3]), _result)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":

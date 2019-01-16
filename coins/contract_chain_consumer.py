@@ -68,18 +68,18 @@ _ContractChainConsumer = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _ContractChainConsumer
-    if event is None and arg is None:
+    if event is None and not args:
         return _ContractChainConsumer
     if _ContractChainConsumer is None:
         # set automat name and starting state here
         _ContractChainConsumer = ContractChainConsumer('contract_chain_consumer', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _ContractChainConsumer.automat(event, arg)
+        _ContractChainConsumer.automat(event, *args, **kwargs)
     return _ContractChainConsumer
 
 #------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class ContractChainConsumer(automat.Automat):
         self.connected_accountants = []
         self.connected_miner = None
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
@@ -109,64 +109,64 @@ class ContractChainConsumer(automat.Automat):
         if self.state == 'MINER?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'miner-connected':
                 self.state = 'CONNECTED'
             elif event == 'stop' or event == 'timer-1min' or event == 'miner-failed':
                 self.state = 'DISCONNECTED'
-                self.doDisconnectAccountants(arg)
-                self.doDisconnectMiner(arg)
+                self.doDisconnectAccountants(*args, **kwargs)
+                self.doDisconnectMiner(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'DISCONNECTED'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---ACCOUNTANTS?---
         elif self.state == 'ACCOUNTANTS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop' or event == 'timer-1min' or event == 'accountants-failed':
                 self.state = 'DISCONNECTED'
-                self.doDisconnectAccountants(arg)
+                self.doDisconnectAccountants(*args, **kwargs)
             elif event == 'accountants-connected':
                 self.state = 'MINER?'
-                self.doConnectMiner(arg)
+                self.doConnectMiner(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'start':
                 self.state = 'ACCOUNTANTS?'
-                self.doConnectAccountants(arg)
+                self.doConnectAccountants(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'DISCONNECTED'
-                self.doDisconnectAccountants(arg)
-                self.doDisconnectMiner(arg)
+                self.doDisconnectAccountants(*args, **kwargs)
+                self.doDisconnectMiner(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doConnectAccountants(self, arg):
+    def doConnectAccountants(self, *args, **kwargs):
         """
         Action method.
         """
         self.accountant_lookups = 0
         self._lookup_next_accountant()
 
-    def doDisconnectAccountants(self, arg):
+    def doDisconnectAccountants(self, *args, **kwargs):
         """
         Action method.
         """
@@ -174,14 +174,14 @@ class ContractChainConsumer(automat.Automat):
             p2p_service.SendCancelService(idurl, 'service_accountant')
         self.connected_accountants = []
 
-    def doConnectMiner(self, arg):
+    def doConnectMiner(self, *args, **kwargs):
         """
         Action method.
         """
         self.miner_lookups = 0
         self._lookup_miner()
 
-    def doDisconnectMiner(self, arg):
+    def doDisconnectMiner(self, *args, **kwargs):
         """
         Action method.
         """
@@ -189,7 +189,7 @@ class ContractChainConsumer(automat.Automat):
             p2p_service.SendCancelService(self.connected_miner, 'service_miner')
         self.connected_miner = None
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -207,7 +207,7 @@ class ContractChainConsumer(automat.Automat):
         if not idurl:
             if _Debug:
                 lg.out(_DebugLevel, 'contract_chain_consumer._on_accountant_lookup_finished with no results, try again')
-            reactor.callLater(0, self._lookup_next_accountant)
+            reactor.callLater(0, self._lookup_next_accountant)  # @UndefinedVariable
             return None
         if idurl in self.connected_accountants:
             lg.warn('node %s already connected as accountant')
@@ -215,7 +215,7 @@ class ContractChainConsumer(automat.Automat):
             self.connected_accountants.append(idurl)
             if _Debug:
                 lg.out(_DebugLevel, 'contract_chain_consumer._on_accountant_lookup_finished !!!!!!!! %s CONNECTED as new accountant' % idurl)
-        reactor.callLater(0, self._lookup_next_accountant)
+        reactor.callLater(0, self._lookup_next_accountant)  # @UndefinedVariable
         return None
 
     def _lookup_next_accountant(self):
@@ -246,7 +246,7 @@ class ContractChainConsumer(automat.Automat):
         if not idurl:
             if _Debug:
                 lg.out(_DebugLevel, 'contract_chain_consumer._on_miner_lookup_finished with no results, try again')
-            reactor.callLater(0, self._lookup_miner)
+            reactor.callLater(0, self._lookup_miner)  # @UndefinedVariable
             return None
         self.connected_miner = idurl
         if _Debug:

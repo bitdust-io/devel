@@ -1,0 +1,21 @@
+#!/bin/bash
+
+IFS=$'\n' read -d '' -r -a nodes < nodes.txt
+
+echo "target nodes:"
+echo "${nodes[@]}"
+
+echo "target command: $1"
+
+for node in ${nodes[@]}
+do
+  echo ""
+  echo "----------------------------------------------------"
+  echo "[$node] RUNNING ..."
+  echo ""
+  echo "execute [$1] at $node"
+  echo ""
+  ssh $node "$1 $node;"
+  echo "DONE"
+  echo ""
+done

@@ -344,6 +344,7 @@ def update(idurl, xml_src):
         oldidentity = identity.identity(xmlsrc=oldidentityxml)
 
         if oldidentity.publickey != newid.publickey:
+            # TODO: SECURITY   add some kind of black list to be able to block certain IP's if the DDoS me
             lg.out(1, "identitydb.update ERROR new publickey does not match old, SECURITY VIOLATION : %r" % idurl)
             return False
 

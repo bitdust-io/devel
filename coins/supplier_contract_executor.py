@@ -159,7 +159,7 @@ class SupplierContractExecutor(automat.Automat):
         """
         self.current_duration = 60 * 60  # TODO: read from settings
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python <https://bitdust.io/visio2python/>`_ tool.
         """
@@ -167,12 +167,12 @@ class SupplierContractExecutor(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READ_CHAIN?'
-                self.doRequestCoins(arg)
+                self.doRequestCoins(*args, **kwargs)
         #---MY_COIN!---
         elif self.state == 'MY_COIN!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'coin-failed':
                 self.state = 'UNCLEAR'
             elif event == 'coin-sent':
@@ -181,21 +181,21 @@ class SupplierContractExecutor(automat.Automat):
         elif self.state == 'CUSTOMER_COIN?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'coin-published':
                 self.state = 'ACTIVE'
-                self.doSchedulePayment(arg)
+                self.doSchedulePayment(*args, **kwargs)
             elif event == 'payment-timeout':
                 self.state = 'FINISHED'
-                self.doRemoveCustomer(arg)
+                self.doRemoveCustomer(*args, **kwargs)
         #---ACTIVE---
         elif self.state == 'ACTIVE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'time-to-charge':
                 self.state = 'MY_COIN!'
-                self.doSendNextCoin(arg)
+                self.doSendNextCoin(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -203,28 +203,28 @@ class SupplierContractExecutor(automat.Automat):
         elif self.state == 'FINISHED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         #---UNCLEAR---
         elif self.state == 'UNCLEAR':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'recheck':
                 self.state = 'READ_CHAIN?'
-                self.doRequestCoins(arg)
+                self.doRequestCoins(*args, **kwargs)
         #---READ_CHAIN?---
         elif self.state == 'READ_CHAIN?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'chain-2-state':
                 self.state = 'ACTIVE'
-                self.doSchedulePayment(arg)
+                self.doSchedulePayment(*args, **kwargs)
             elif event == 'timer-1min' or event == 'query-failed':
                 self.state = 'UNCLEAR'
             elif event == 'chain-empty':
                 self.state = 'CUSTOMER_SIGN?'
-                self.doRequestCustomerSignature(arg)
+                self.doRequestCustomerSignature(*args, **kwargs)
             elif event == 'chain-1-state':
                 self.state = 'CUSTOMER_COIN?'
             elif event == 'chain-closed':
@@ -235,10 +235,10 @@ class SupplierContractExecutor(automat.Automat):
                 self.state = 'UNCLEAR'
             elif event == 'contract-signed':
                 self.state = 'MY_COIN!'
-                self.doSendFirstCoin(arg)
+                self.doSendFirstCoin(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
         return None
 
     def isCustomerCoinExist(self, coins):
@@ -268,7 +268,7 @@ class SupplierContractExecutor(automat.Automat):
         # TODO: 
         return True
 
-    def doRequestCoins(self, arg):
+    def doRequestCoins(self, *args, **kwargs):
         """
         Action method.
         """
@@ -281,7 +281,7 @@ class SupplierContractExecutor(automat.Automat):
             self._on_query_failed,
         )
 
-    def doRequestCustomerSignature(self, arg):
+    def doRequestCustomerSignature(self, *args, **kwargs):
         """
         Action method.
         """
@@ -303,11 +303,11 @@ class SupplierContractExecutor(automat.Automat):
             }
         )
 
-    def doSendFirstCoin(self, arg):
+    def doSendFirstCoin(self, *args, **kwargs):
         """
         Action method.
         """
-        coin_json = arg
+        coin_json = args[0]
         contract_chain_node.send_to_miner(
             [coin_json, ],
         ).addCallbacks(
@@ -315,23 +315,23 @@ class SupplierContractExecutor(automat.Automat):
             self._on_coin_failed,
         )
 
-    def doSendNextCoin(self, arg):
+    def doSendNextCoin(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
         self.unregister()
 
-    def doRemoveCustomer(self, arg):
+    def doRemoveCustomer(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doSchedulePayment(self, arg):
+    def doSchedulePayment(self, *args, **kwargs):
         """
         Action method.
         """

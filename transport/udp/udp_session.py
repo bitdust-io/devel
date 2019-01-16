@@ -228,7 +228,7 @@ def process_sessions(sessions_to_process=None):
                 _ProcessSessionsDelay, has_activity,
                 MIN_PROCESS_SESSIONS_DELAY, MAX_PROCESS_SESSIONS_DELAY,)
         # attenuation
-        _ProcessSessionsTask = reactor.callLater(
+        _ProcessSessionsTask = reactor.callLater(  # @UndefinedVariable
             _ProcessSessionsDelay, process_sessions)
 
 
@@ -277,7 +277,7 @@ class UDPSession(automat.Automat):
             self.peer_address[0], self.peer_address[1], str(self.peer_id))
         automat.Automat.__init__(self, name, 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
 
-    def msg(self, msgid, arg=None):
+    def msg(self, msgid, *args, **kwargs):
         return self.MESSAGES.get(msgid, '')
 
     def init(self):
@@ -299,140 +299,140 @@ class UDPSession(automat.Automat):
         return udp.send_command(self.node.listen_port, command,
                                 payload, self.peer_address)
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'shutdown' or ( event == 'timer-10sec' and not self.isSessionActive(arg) ):
+            if event == 'shutdown' or ( event == 'timer-10sec' and not self.isSessionActive(*args, **kwargs) ):
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_1', arg))
-                self.doClosePendingFiles(arg)
-                self.doNotifyDisconnected(arg)
-                self.doDestroyMe(arg)
-            elif event == 'datagram-received' and self.isGreeting(arg):
-                self.doAcceptGreeting(arg)
-                self.doFinishRTT(arg)
-                self.doAlive(arg)
-            elif event == 'datagram-received' and self.isPayloadData(arg):
-                self.doReceiveData(arg)
-            elif event == 'datagram-received' and self.isPing(arg):
-                self.doAcceptPing(arg)
-                self.doGreeting(arg)
+                self.doErrMsg(event,self.msg('MSG_1', *args, **kwargs))
+                self.doClosePendingFiles(*args, **kwargs)
+                self.doNotifyDisconnected(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'datagram-received' and self.isGreeting(*args, **kwargs):
+                self.doAcceptGreeting(*args, **kwargs)
+                self.doFinishRTT(*args, **kwargs)
+                self.doAlive(*args, **kwargs)
+            elif event == 'datagram-received' and self.isPayloadData(*args, **kwargs):
+                self.doReceiveData(*args, **kwargs)
+            elif event == 'datagram-received' and self.isPing(*args, **kwargs):
+                self.doAcceptPing(*args, **kwargs)
+                self.doGreeting(*args, **kwargs)
             elif event == 'send-keep-alive' or event == 'timer-10sec':
-                self.doAlive(arg)
+                self.doAlive(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'PING'
-                self.doInit(arg)
-                self.doStartRTT(arg)
-                self.doPing(arg)
+                self.doInit(*args, **kwargs)
+                self.doStartRTT(*args, **kwargs)
+                self.doPing(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_4', arg))
-                self.doClosePendingFiles(arg)
-                self.doNotifyDisconnected(arg)
-                self.doDestroyMe(arg)
+                self.doErrMsg(event,self.msg('MSG_4', *args, **kwargs))
+                self.doClosePendingFiles(*args, **kwargs)
+                self.doNotifyDisconnected(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---PING---
         elif self.state == 'PING':
             if event == 'timer-1sec':
-                self.doStartRTT(arg)
-                self.doPing(arg)
-            elif event == 'datagram-received' and self.isGreeting(arg):
+                self.doStartRTT(*args, **kwargs)
+                self.doPing(*args, **kwargs)
+            elif event == 'datagram-received' and self.isGreeting(*args, **kwargs):
                 self.state = 'GREETING'
-                self.doAcceptGreeting(arg)
-                self.doFinishRTT(arg)
-                self.doStartRTT(arg)
-                self.doGreeting(arg)
-            elif event == 'datagram-received' and self.isPing(arg):
+                self.doAcceptGreeting(*args, **kwargs)
+                self.doFinishRTT(*args, **kwargs)
+                self.doStartRTT(*args, **kwargs)
+                self.doGreeting(*args, **kwargs)
+            elif event == 'datagram-received' and self.isPing(*args, **kwargs):
                 self.state = 'GREETING'
-                self.doAcceptPing(arg)
-                self.doStartRTT(arg)
-                self.doGreeting(arg)
+                self.doAcceptPing(*args, **kwargs)
+                self.doStartRTT(*args, **kwargs)
+                self.doGreeting(*args, **kwargs)
             elif event == 'shutdown' or event == 'timer-20sec':
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_3', arg))
-                self.doClosePendingFiles(arg)
-                self.doNotifyDisconnected(arg)
-                self.doDestroyMe(arg)
+                self.doErrMsg(event,self.msg('MSG_3', *args, **kwargs))
+                self.doClosePendingFiles(*args, **kwargs)
+                self.doNotifyDisconnected(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---GREETING---
         elif self.state == 'GREETING':
             if event == 'timer-1sec':
-                self.doStartRTT(arg)
-                self.doGreeting(arg)
+                self.doStartRTT(*args, **kwargs)
+                self.doGreeting(*args, **kwargs)
             elif event == 'shutdown' or event == 'timer-30sec':
                 self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_2', arg))
-                self.doClosePendingFiles(arg)
-                self.doNotifyDisconnected(arg)
-                self.doDestroyMe(arg)
-            elif event == 'datagram-received' and self.isAlive(arg):
+                self.doErrMsg(event,self.msg('MSG_2', *args, **kwargs))
+                self.doClosePendingFiles(*args, **kwargs)
+                self.doNotifyDisconnected(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'datagram-received' and self.isAlive(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doAcceptAlive(arg)
-                self.doFinishAllRTTs(arg)
-                self.doNotifyConnected(arg)
-                self.doCheckPendingFiles(arg)
-                self.doAlive(arg)
-            elif event == 'datagram-received' and self.isPing(arg):
-                self.doAcceptPing(arg)
-                self.doStartRTT(arg)
-                self.doGreeting(arg)
-            elif event == 'datagram-received' and self.isGreeting(arg):
-                self.doAcceptGreeting(arg)
-                self.doFinishRTT(arg)
-                self.doAlive(arg)
+                self.doAcceptAlive(*args, **kwargs)
+                self.doFinishAllRTTs(*args, **kwargs)
+                self.doNotifyConnected(*args, **kwargs)
+                self.doCheckPendingFiles(*args, **kwargs)
+                self.doAlive(*args, **kwargs)
+            elif event == 'datagram-received' and self.isPing(*args, **kwargs):
+                self.doAcceptPing(*args, **kwargs)
+                self.doStartRTT(*args, **kwargs)
+                self.doGreeting(*args, **kwargs)
+            elif event == 'datagram-received' and self.isGreeting(*args, **kwargs):
+                self.doAcceptGreeting(*args, **kwargs)
+                self.doFinishRTT(*args, **kwargs)
+                self.doAlive(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def isPayloadData(self, arg):
+    def isPayloadData(self, *args, **kwargs):
         """
         Condition method.
         """
-        command = arg[0][0]
+        command = args[0][0][0]
         return (command == udp.CMD_DATA or command == udp.CMD_ACK)
 
-    def isPing(self, arg):
+    def isPing(self, *args, **kwargs):
         """
         Condition method.
         """
-        command = arg[0][0]
+        command = args[0][0][0]
         return (command == udp.CMD_PING)
 
-    def isGreeting(self, arg):
+    def isGreeting(self, *args, **kwargs):
         """
         Condition method.
         """
-        command = arg[0][0]
+        command = args[0][0][0]
         return (command == udp.CMD_GREETING)
 
-    def isAlive(self, arg):
+    def isAlive(self, *args, **kwargs):
         """
         Condition method.
         """
-        command = arg[0][0]
+        command = args[0][0][0]
         return (command == udp.CMD_ALIVE)
 
-#    def isGreetingOrAlive(self, arg):
+#    def isGreetingOrAlive(self, *args, **kwargs):
 #        """
 #        Condition method.
 #        """
 #        command = arg[0][0]
 #        return ( command == udp.CMD_ALIVE or command == udp.CMD_GREETING)
 
-    def isSessionActive(self, arg):
+    def isSessionActive(self, *args, **kwargs):
         """
         Condition method.
         """
         return time.time() - self.last_datagram_received_time < 20
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         # self.listen_port, self.my_id, self.my_address = arg
 
-    def doPing(self, arg):
+    def doPing(self, *args, **kwargs):
         """
         Action method.
         """
@@ -449,7 +449,7 @@ class UDPSession(automat.Automat):
         # # print 'doPing', self.my_rtt_id
         self.my_rtt_id = '0'
 
-    def doGreeting(self, arg):
+    def doGreeting(self, *args, **kwargs):
         """
         Action method.
         """
@@ -466,7 +466,7 @@ class UDPSession(automat.Automat):
         self.peer_rtt_id = '0'
         self.my_rtt_id = '0'
 
-    def doAlive(self, arg):
+    def doAlive(self, *args, **kwargs):
         """
         Action method.
         """
@@ -478,19 +478,19 @@ class UDPSession(automat.Automat):
         # print 'doAlive', self.peer_rtt_id
         self.peer_rtt_id = '0'
 
-    def doAcceptPing(self, arg):
+    def doAcceptPing(self, *args, **kwargs):
         """
         Action method.
         """
-        address, command, payload = self._dispatch_datagram(arg)
+        address, command, payload = self._dispatch_datagram(args[0])
         self.peer_rtt_id = payload.strip()
         # print 'doAcceptPing', self.peer_rtt_id
 
-    def doAcceptGreeting(self, arg):
+    def doAcceptGreeting(self, *args, **kwargs):
         """
         Action method.
         """
-        address, command, payload = self._dispatch_datagram(arg)
+        address, command, payload = self._dispatch_datagram(args[0])
         parts = payload.split(' ')
         try:
             new_peer_id = parts[0]
@@ -561,21 +561,21 @@ class UDPSession(automat.Automat):
                     s.automat('shutdown')
                     continue
 
-    def doAcceptAlive(self, arg):
+    def doAcceptAlive(self, *args, **kwargs):
         """
         Action method.
         """
-        address, command, payload = self._dispatch_datagram(arg)
+        address, command, payload = self._dispatch_datagram(args[0])
         self.my_rtt_id = payload.strip()
         # print 'doAcceptAlive', self.my_rtt_id
 
-    def doReceiveData(self, arg):
+    def doReceiveData(self, *args, **kwargs):
         """
         Action method.
         """
         self.last_datagram_received_time = time.time()
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             return
@@ -592,19 +592,19 @@ class UDPSession(automat.Automat):
 #        elif command == udp.CMD_GREETING:
 #            pass
 
-    def doNotifyConnected(self, arg):
+    def doNotifyConnected(self, *args, **kwargs):
         """
         Action method.
         """
         # # print 'CONNECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 
-    def doNotifyDisconnected(self, arg):
+    def doNotifyDisconnected(self, *args, **kwargs):
         """
         Action method.
         """
         # # print 'DISCONNECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 
-    def doCheckPendingFiles(self, arg):
+    def doCheckPendingFiles(self, *args, **kwargs):
         """
         Action method.
         """
@@ -634,9 +634,9 @@ class UDPSession(automat.Automat):
                 # print 'skip'
         # print len(_PendingOutboxFiles)
         if outgoings > 0:
-            reactor.callLater(0, process_sessions)
+            reactor.callLater(0, process_sessions)  # @UndefinedVariable
 
-    def doClosePendingFiles(self, arg):
+    def doClosePendingFiles(self, *args, **kwargs):
         """
         Action method.
         """
@@ -646,20 +646,20 @@ class UDPSession(automat.Automat):
         self.file_queue.report_failed_outbox_files(self.error_message)
         self.file_queue.report_failed_outbox_queue(self.error_message)
 
-    def doStartRTT(self, arg):
+    def doStartRTT(self, *args, **kwargs):
         """
         Action method.
         """
         self.my_rtt_id = self._rtt_start(self.state)
 
-    def doFinishRTT(self, arg):
+    def doFinishRTT(self, *args, **kwargs):
         """
         Action method.
         """
         self._rtt_finish(self.my_rtt_id)
         self.my_rtt_id = '0'
 
-    def doFinishAllRTTs(self, arg):
+    def doFinishAllRTTs(self, *args, **kwargs):
         """
         Action method.
         """
@@ -685,16 +685,16 @@ class UDPSession(automat.Automat):
                 'udp_session.doFinishAllRTTs: %r' %
                 good_rtts)  # print self.rtts.keys()
 
-    def doErrMsg(self, event, arg):
+    def doErrMsg(self, event, *args, **kwargs):
         """
         Action method.
         """
         if event.count('shutdown'):
             self.error_message = 'session has been closed'
         else:
-            self.error_message = arg
+            self.error_message = args[0]
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
@@ -713,10 +713,10 @@ class UDPSession(automat.Automat):
                 sessions_by_peer_id().pop(self.peer_id)
         self.destroy()
 
-    def _dispatch_datagram(self, arg):
+    def _dispatch_datagram(self, *args, **kwargs):
         self.last_datagram_received_time = time.time()
         try:
-            datagram, address = arg
+            datagram, address = args[0]
             command, payload = datagram
         except:
             lg.exc()

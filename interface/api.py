@@ -49,6 +49,7 @@ import json
 import gc
 
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -105,6 +106,16 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
 
 
 def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
+    if isinstance(errors, Exception):
+        try:
+            errors = str(errors)
+        except:
+            errors = 'unknown exception'
+    elif isinstance(errors, Failure):
+        try:
+            errors = errors.getErrorMessage()
+        except:
+            errors = 'unknown failure'
     o = {'status': status,
          'errors': errors if isinstance(errors, list) else [errors, ]}
     if message is not None:
@@ -130,7 +141,8 @@ def process_stop():
 
         {'status': 'OK', 'result': 'stopped'}
     """
-    lg.out(_DebugLevel, 'api.process_stop sending event "stop" to the shutdowner() machine')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.process_stop sending event "stop" to the shutdowner() machine')
     from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
     reactor.callLater(0.1, shutdowner.A, 'stop', 'exit')  # @UndefinedVariable
@@ -150,11 +162,13 @@ def process_restart(showgui=False):
     from twisted.internet import reactor  # @UnresolvedImport
     from main import shutdowner
     if showgui:
-        lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
+        if _Debug:
+            lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
         reactor.callLater(0.1, shutdowner.A, 'stop', 'restartnshow')  # @UndefinedVariable
         # shutdowner.A('stop', 'restartnshow')
         return OK('restarted with GUI')
-    lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.process_restart sending event "stop" to the shutdowner() machine')
     # shutdowner.A('stop', 'restart')
     reactor.callLater(0.1, shutdowner.A, 'stop', 'restart')  # @UndefinedVariable
     return OK('restarted')
@@ -169,7 +183,8 @@ def process_show():
 
         {'status': 'OK',   'result': '"show" event has been sent to the main process'}
     """
-    lg.out(_DebugLevel, 'api.process_show')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.process_show')
     # TODO: raise up electron window ?
     return OK('"show" event has been sent to the main process')
 
@@ -182,7 +197,8 @@ def process_health():
 
         {'status': 'OK' }
     """
-    lg.out(_DebugLevel, 'api.process_health')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.process_health')
     return OK()
 
 
@@ -208,7 +224,8 @@ def config_get(key):
         key = str(key).strip('/')
     except:
         return ERROR('wrong key')
-    lg.out(_DebugLevel, 'api.config_get [%s]' % key)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.config_get [%s]' % key)
     from main import config
     from main import config_types
     if key and not config.conf().exist(key):
@@ -271,7 +288,8 @@ def config_set(key, value):
         v['old_value'] = config.conf().getData(key)
     typ = config.conf().getType(key)
     typ_label = config.conf().getTypeLabel(key)
-    lg.out(_DebugLevel, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
     if not typ or typ in [config_types.TYPE_STRING,
                           config_types.TYPE_TEXT,
                           config_types.TYPE_UNDEFINED, ]:
@@ -324,7 +342,8 @@ def config_list(sort=False):
             'key': 'services/backups/max-block-size'
         }]}
     """
-    lg.out(_DebugLevel, 'api.config_list')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.config_list')
     from main import config
     r = config.conf().cache()
     r = [{
@@ -364,7 +383,7 @@ def identity_create(username):
     ret = Deferred()
     my_id_registrator = id_registrator.A()
 
-    def _id_registrator_state_changed(oldstate, newstate, event_string, args):
+    def _id_registrator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if ret.called:
             return
         if newstate == 'FAILED':
@@ -452,7 +471,7 @@ def identity_recover(private_key_source, known_idurl=None):
     ret = Deferred()
     my_id_restorer = id_restorer.A()
 
-    def _id_restorer_state_changed(oldstate, newstate, event_string, args):
+    def _id_restorer_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if ret.called:
             return
         if newstate == 'FAILED':
@@ -510,7 +529,8 @@ def key_get(key_id, include_private=False):
             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
         }]}
     """
-    lg.out(_DebugLevel, 'api.key_get')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.key_get')
     from crypt import my_keys
     try:
         r = my_keys.get_key_info(key_id=key_id, include_private=include_private)
@@ -548,7 +568,8 @@ def keys_list(sort=False, include_private=False):
              'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
         }]}
     """
-    lg.out(_DebugLevel, 'api.keys_list')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.keys_list')
     from crypt import my_keys
     r = []
     for key_id, key_object in my_keys.known_keys().items():
@@ -599,7 +620,8 @@ def key_create(key_alias, key_size=None, include_private=False):
         return ERROR('key "%s" already exist' % key_id)
     if not key_size:
         key_size = settings.getPrivateKeySize()
-    lg.out(_DebugLevel, 'api.key_create id=%s, size=%s' % (key_id, key_size))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.key_create id=%s, size=%s' % (key_id, key_size))
     key_object = my_keys.generate_key(key_id, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
@@ -622,7 +644,8 @@ def key_erase(key_id):
     """
     from crypt import my_keys
     key_id = str(key_id)
-    lg.out(_DebugLevel, 'api.keys_list')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.keys_list')
     if key_id == 'master':
         return ERROR('"master" key can not be removed')
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
@@ -768,7 +791,8 @@ def files_sync():
         lg.out(_DebugLevel, 'api.files_sync')
     from storage import backup_monitor
     backup_monitor.A('restart')
-    lg.out(_DebugLevel, 'api.files_sync')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.files_sync')
     return OK('the main files sync loop has been restarted')
 
 
@@ -1000,7 +1024,8 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
                     'eccmap': '' if not r.EccMap else r.EccMap.name,
                 })
         r['downloads'] = downloads
-    lg.out(_DebugLevel, 'api.file_info : "%s"' % pathID)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_info : "%s"' % pathID)
     return RESULT([r, ])
 
 
@@ -1047,7 +1072,8 @@ def file_create(remote_path, as_folder=False):
                 iterID=backup_fs.fsID(parts['idurl']),
                 key_id=keyID,
             )
-            lg.out(_DebugLevel, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
+            if _Debug:
+                lg.out(_DebugLevel, 'api.file_create parent folder "%s" was created at "%s"' % (parent_path, parentPathID))
         id_iter_iterID = backup_fs.GetIteratorsByPath(
             parent_path,
             iter=backup_fs.fs(parts['idurl']),
@@ -1070,7 +1096,8 @@ def file_create(remote_path, as_folder=False):
     control.request_update([('pathID', newPathID), ])
     full_glob_id = global_id.MakeGlobalID(customer=parts['customer'], path=newPathID, key_alias=keyAlias)
     full_remote_path = global_id.MakeGlobalID(customer=parts['customer'], path=parts['path'], key_alias=keyAlias)
-    lg.out(_DebugLevel, 'api.file_create : "%s"' % full_glob_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_create : "%s"' % full_glob_id)
     return OK(
         'new %s was created in "%s"' % (('folder' if as_folder else 'file'), full_glob_id),
         extra_fields={
@@ -1122,7 +1149,8 @@ def file_delete(remote_path):
     backup_control.Save()
     backup_monitor.A('restart')
     control.request_update([('pathID', pathIDfull), ])
-    lg.out(_DebugLevel, 'api.file_delete %s' % parts)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_delete %s' % parts)
     return OK('item "%s" was deleted from remote suppliers' % pathIDfull, extra_fields={
         'path_id': pathIDfull,
         'path': path,
@@ -1261,7 +1289,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         backup_fs.Calculate()
         backup_control.Save()
         control.request_update([('pathID', pathIDfull), ])
-        lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
+        if _Debug:
+            lg.out(_DebugLevel, 'api.file_upload_start %s with %s, wait_result=True' % (remote_path, pathIDfull))
         return d
     tsk = backup_control.StartSingle(
         pathID=pathIDfull,
@@ -1275,7 +1304,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathIDfull), ])
-    lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_upload_start %s with %s' % (remote_path, pathIDfull))
     return OK(
         'uploading "%s" started, local path is: "%s"' % (remote_path, local_path),
         extra_fields={
@@ -1319,7 +1349,8 @@ def file_upload_stop(remote_path):
             msg.append('backup "%s" aborted' % backupID)
     if not r:
         return ERROR('no running or pending tasks for "%s" found' % pathIDfull)
-    lg.out(_DebugLevel, 'api.file_upload_stop %s' % r)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_upload_stop %s' % r)
     return RESULT(r, message=(', '.join(msg)))
 
 
@@ -1401,6 +1432,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
     if packetid.Valid(glob_path['path']):
         _, pathID, version = packetid.SplitBackupID(remote_path)
+        if not pathID and version:
+            pathID, version = version, ''
         item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(glob_path['customer']))
         if not item:
             return ERROR('path "%s" is not found in catalog' % remote_path)
@@ -1474,11 +1507,13 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     
     def _start_restore():
         if wait_result:
-            lg.out(_DebugLevel, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
+            if _Debug:
+                lg.out(_DebugLevel, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
             restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
             control.request_update([('pathID', knownPath), ])
             return ret
-        lg.out(_DebugLevel, 'api.download_start %s to %s' % (backupID, destination_path))
+        if _Debug:
+            lg.out(_DebugLevel, 'api.download_start %s to %s' % (backupID, destination_path))
         restore_monitor.Start(backupID, destination_path, keyID=key_id, )
         control.request_update([('pathID', knownPath), ])
         ret.callback(OK(
@@ -1494,16 +1529,18 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         ))
         return True
     
-    def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, args):
+    def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate == 'CONNECTED':
-            lg.out(_DebugLevel, 'api.download_start share %s is CONNECTED, removing callback %s' % (
-                active_share.key_id, callback_id,))
+            if _Debug:
+                lg.out(_DebugLevel, 'api.download_start share %s is CONNECTED, removing callback %s' % (
+                    active_share.key_id, callback_id,))
             active_share.removeStateChangedCallback(callback_id=callback_id)
             _start_restore()
             return True
         if oldstate != newstate and newstate == 'DISCONNECTED':
-            lg.out(_DebugLevel, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
-                active_share.key_id, callback_id,))
+            if _Debug:
+                lg.out(_DebugLevel, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
+                    active_share.key_id, callback_id,))
             active_share.removeStateChangedCallback(callback_id=callback_id)
             ret.callback(ERROR(
                 'downloading version "%s" failed, result: %s' % (backupID, 'share disconnected'),
@@ -1524,9 +1561,11 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
                 key_id, log_events=True, publish_events=True, )
-            lg.out(_DebugLevel, 'api.download_start opened new share : %s' % active_share.key_id)
+            if _Debug:
+                lg.out(_DebugLevel, 'api.download_start opened new share : %s' % active_share.key_id)
         else:
-            lg.out(_DebugLevel, 'api.download_start found existing share : %s' % active_share.key_id)
+            if _Debug:
+                lg.out(_DebugLevel, 'api.download_start found existing share : %s' % active_share.key_id)
         if active_share.state != 'CONNECTED':
             cb_id = 'file_download_start_' + str(time.time())
             active_share.addStateChangedCallback(
@@ -1534,9 +1573,11 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                 callback_id=cb_id,
             )
             active_share.automat('restart')
-            lg.out(_DebugLevel, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
+            if _Debug:
+                lg.out(_DebugLevel, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
         else:
-            lg.out(_DebugLevel, 'api.download_start existing share %s is currently CONNECTED' % active_share.key_id)
+            if _Debug:
+                lg.out(_DebugLevel, 'api.download_start existing share %s is currently CONNECTED' % active_share.key_id)
             _start_restore()
         return True
 
@@ -1744,7 +1785,7 @@ def share_open(key_id):
         active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=True, )
     ret = Deferred()
 
-    def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, args):
+    def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
         if newstate == 'CONNECTED':
             if new_share:
@@ -2165,10 +2206,12 @@ def space_donated():
     """
     from storage import accounting
     result = accounting.report_donated_storage()
-    lg.out(_DebugLevel, 'api.space_donated finished with %d customers and %d errors' % (
+    if _Debug:
+        lg.out(_DebugLevel, 'api.space_donated finished with %d customers and %d errors' % (
         len(result['customers']), len(result['errors']),))
     for err in result['errors']:
-        lg.out(_DebugLevel, '    %s' % err)
+        if _Debug:
+            lg.out(_DebugLevel, '    %s' % err)
     errors = result.pop('errors', [])
     return RESULT([result, ], errors=errors,)
 
@@ -2199,7 +2242,8 @@ def space_consumed():
     """
     from storage import accounting
     result = accounting.report_consumed_storage()
-    lg.out(_DebugLevel, 'api.space_consumed finished')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.space_consumed finished')
     return RESULT([result, ])
 
 
@@ -2229,7 +2273,8 @@ def space_local():
     """
     from storage import accounting
     result = accounting.report_local_storage()
-    lg.out(_DebugLevel, 'api.space_local finished')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.space_local finished')
     return RESULT([result, ],)
 
 #------------------------------------------------------------------------------
@@ -2260,7 +2305,8 @@ def automats_list():
         'state': a.state,
         'timers': (','.join(list(a.getTimers().keys()))),
     } for a in automat.objects().values()]
-    lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.automats_list responded with %d items' % len(result))
     return RESULT(result)
 
 #------------------------------------------------------------------------------
@@ -2300,7 +2346,8 @@ def services_list():
         'config_path': svc.config_path,
         'depends': svc.dependent_on()
     } for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0])]
-    lg.out(_DebugLevel, 'api.services_list responded with %d items' % len(result))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.services_list responded with %d items' % len(result))
     return RESULT(result)
 
 
@@ -2358,14 +2405,17 @@ def service_start(service_name):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.out(_DebugLevel, 'api.service_start %s not found' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.service_start %s not found' % service_name)
         return ERROR('service "%s" was not found' % service_name)
     if svc.state == 'ON':
-        lg.out(_DebugLevel, 'api.service_start %s already started' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.service_start %s already started' % service_name)
         return ERROR('service "%s" already started' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config:
-        lg.out(_DebugLevel, 'api.service_start %s already enabled' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.service_start %s already enabled' % service_name)
         return ERROR('service "%s" already enabled' % service_name)
     config.conf().setBool(svc.config_path, True)
     return OK('"%s" was switched on' % service_name)
@@ -2390,14 +2440,17 @@ def service_stop(service_name):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.out(_DebugLevel, 'api.service_stop %s not found' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.service_stop %s not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config is None:
-        lg.out(_DebugLevel, 'api.service_stop config item %s was not found' % svc.config_path)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.service_stop config item %s was not found' % svc.config_path)
         return ERROR('config item "%s" was not found' % svc.config_path)
     if current_config is False:
-        lg.out(_DebugLevel, 'api.service_stop %s already disabled' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.service_stop %s already disabled' % service_name)
         return ERROR('service "%s" already disabled' % service_name)
     config.conf().setBool(svc.config_path, False)
     return OK('"%s" was switched off' % service_name)
@@ -2417,7 +2470,8 @@ def service_restart(service_name, wait_timeout=10):
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        lg.out(_DebugLevel, 'api.service_restart %s not found' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.service_restart %s not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=wait_timeout)
@@ -2748,7 +2802,7 @@ def user_status_check(idurl_or_global_id, timeout=5):
         return ERROR('failed to check peer status')
     ret = Deferred()
 
-    def _on_peer_status_state_changed(oldstate, newstate, event_string, args):
+    def _on_peer_status_state_changed(oldstate, newstate, event_string, *args, **kwargs):
         if newstate not in ['CONNECTED', 'OFFLINE', ]:
             return None
         if newstate == 'OFFLINE' and oldstate == 'OFFLINE' and not event_string == 'ping-failed':
@@ -2909,7 +2963,8 @@ def message_history(user):
     target_glob_id = global_id.MakeGlobalID(**glob_id)
     if not my_keys.is_valid_key_id(target_glob_id):
         return ERROR('invalid key_id: %s' % target_glob_id)
-    lg.out(_DebugLevel, 'api.message_history with "%s"' % target_glob_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_history with "%s"' % target_glob_id)
     key = '{}:{}'.format(my_id.getGlobalID(key_alias='master'), target_glob_id)
     messages = [m for m in message_db.get_many(index_name='sender_recipient_glob_id', key=key)]
     messages.reverse()
@@ -2943,7 +2998,8 @@ def message_send(recipient, json_data, timeout=5):
         return ERROR('invalid key_id: %s' % target_glob_id)
 #     if not my_keys.is_key_registered(target_glob_id):
 #         return ERROR('unknown key_id: %s' % target_glob_id)
-    lg.out(_DebugLevel, 'api.message_send to "%s"' % target_glob_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_send to "%s"' % target_glob_id)
     result = message.send_message(
         json_data=json_data,
         recipient_global_id=target_glob_id,
@@ -3002,14 +3058,16 @@ def message_receive(consumer_id):
                 'message_id': msg['id'],
                 'dir': msg['dir'],
             })
-        lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %s' % result)
+        if _Debug:
+            lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %s' % result)
         ret.callback(OK(result))
         return len(result) > 0
 
     d = message.consume_messages(consumer_id)
     d.addCallback(_on_pending_messages)
     d.addErrback(lambda err: ret.callback(ERROR(str(err))))
-    lg.out(_DebugLevel, 'api.message_receive "%s"' % consumer_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.message_receive "%s"' % consumer_id)
     return ret
 
 
@@ -3044,7 +3102,8 @@ def broadcast_send_message(payload):
         current_states[broadcaster_node.A().name] = broadcaster_node.A().state
     if broadcast_listener.A():
         current_states[broadcast_listener.A().name] = broadcast_listener.A().state
-    lg.out(_DebugLevel, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
     return RESULT([msg, current_states, ])
 
 #------------------------------------------------------------------------------
@@ -3060,7 +3119,8 @@ def event_send(event_id, json_data=None):
         except:
             return ERROR('json data payload is not correct')
     evt = events.send(event_id, data=json_payload)
-    lg.out(_DebugLevel, 'api.event_send "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
+    if _Debug:
+        lg.out(_DebugLevel, 'api.event_send "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
     return OK({'event_id': event_id, 'created': evt.created, })
 
 def events_listen(consumer_id):
@@ -3077,14 +3137,16 @@ def events_listen(consumer_id):
                 'data': evt['data'],
                 'time': evt['time'],
             })
-        # lg.out(_DebugLevel, 'api.events_listen._on_pending_events returning : %s' % result)
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'api.events_listen._on_pending_events returning : %s' % result)
         ret.callback(OK(result))
         return len(result) > 0
 
     d = events.consume_events(consumer_id)
     d.addCallback(_on_pending_events)
     d.addErrback(lambda err: ret.callback(ERROR(str(err))))
-    # lg.out(_DebugLevel, 'api.events_listen "%s"' % consumer_id)
+    # if _Debug:
+    #     lg.out(_DebugLevel, 'api.events_listen "%s"' % consumer_id)
     return ret
 
 #------------------------------------------------------------------------------
@@ -3111,7 +3173,8 @@ def network_reconnect():
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
     from p2p import network_connector
-    lg.out(_DebugLevel, 'api.network_reconnect')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.network_reconnect')
     network_connector.A('reconnect')
     return OK('reconnected')
 
@@ -3122,7 +3185,8 @@ def network_connected(wait_timeout=5):
     If all is good this method will block for `wait_timeout` seconds.
     In case of some network issues method will return result asap.
     """
-    lg.out(_DebugLevel, 'api.network_connected  wait_timeout=%r' % wait_timeout)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.network_connected  wait_timeout=%r' % wait_timeout)
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
     from twisted.internet import reactor  # @UnresolvedImport
@@ -3472,5 +3536,182 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     sessions.append(i)
                 r['proxy']['sessions' ] = sessions
     return RESULT([r, ])
+
+#------------------------------------------------------------------------------
+
+def dht_node_find(node_id_64=None):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    import base64
+    from dht import dht_service
+    if node_id_64 is None:
+        node_id = dht_service.random_key()
+        node_id_64 = base64.b64encode(node_id)
+    else:
+        try:
+            node_id = base64.b64decode(node_id_64)
+        except:
+            node_id = node_id_64
+    ret = Deferred()
+
+    def _cb(response):
+        try:
+            if isinstance(response, list):
+                return ret.callback(OK({
+                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'lookup': node_id_64, 
+                    'closest_nodes': [{
+                        'dht_id': base64.b64encode(c.id),
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }))
+            return ret.callback(ERROR('unexpected DHT response'))
+        except Exception as exc:
+            lg.exc()
+            return ret.callback(ERROR(exc))
+
+    def _eb(err):
+        lg.err(str(err))
+        ret.callback(ERROR(str(err)))
+        return None
+
+    d = dht_service.find_node(node_id)
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
+
+
+def dht_value_get(key, record_type='skip_validation'):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    import base64
+    from dht import dht_service
+    from dht import dht_records
+    ret = Deferred()
+
+    def _cb(value):
+        if isinstance(value, dict):
+            if _Debug:
+                lg.out(_DebugLevel, 'api.dht_value_get OK: %r' % value)
+            return ret.callback(OK({
+                'read': 'success',
+                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'key': strng.to_text(key, errors='ignore'),
+                'key_64': base64.b64encode(key),
+                'value': value,
+            }))
+        closest_nodes = []
+        if isinstance(value, list):
+            closest_nodes = value
+        if _Debug:
+            lg.out(_DebugLevel, 'api.dht_value_get ERROR: %r' % value)
+        return ret.callback(OK({
+            'read': 'failed',
+            'my_dht_id': base64.b64encode(dht_service.node().id),
+            'key': strng.to_text(key, errors='ignore'),
+            'key_64': base64.b64encode(key),
+            'closest_nodes': [{
+                'dht_id': base64.b64encode(c.id),
+                'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+            } for c in closest_nodes],
+        }))
+
+    def _eb(err):
+        lg.err(str(err))
+        ret.callback(ERROR(err))
+        return None
+
+    d = dht_service.get_valid_data(
+        key=key,
+        rules=dht_records.get_rules(record_type),
+        raise_for_result=False,
+    )
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
+
+
+def dht_value_set(key, value, expire=None, record_type='skip_validation'):
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    if not isinstance(value, dict):
+        try:
+            value = json.loads(value)
+        except Exception as exc:
+            lg.exc()
+            return ERROR('input value must be a json')
+    try:
+        jsn.dumps(value, indent=0, sort_keys=True, separators=(',', ':'))
+    except Exception as exc:
+        return ERROR(exc)
+
+    import base64
+    from dht import dht_service
+    from dht import dht_records
+    ret = Deferred()
+
+    def _cb(response):
+        try:
+            if isinstance(response, list):
+                if _Debug:
+                    lg.out(_DebugLevel, 'api.dht_value_set OK: %r' % response)
+                return ret.callback(OK({
+                    'write': 'success' if len(response) > 0 else 'failed',
+                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'key': strng.to_text(key, errors='ignore'),
+                    'key_64': base64.b64encode(key),
+                    'value': value,
+                    'closest_nodes': [{
+                        'dht_id': base64.b64encode(c.id),
+                        'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                    } for c in response],
+                }))
+            if _Debug:
+                lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % response)
+            return ret.callback(ERROR('unexpected DHT response'))
+        except Exception as exc:
+            lg.exc()
+            return ret.callback(ERROR(exc))
+
+    def _eb(err):
+        try:
+            nodes = []
+            try:
+                errmsg = err.value.subFailure.getErrorMessage()
+            except:
+                errmsg = 'store operation failed'
+            try:
+                nodes = err.value
+            except:
+                pass
+            closest_nodes = []
+            if nodes and isinstance(nodes, list) and hasattr(nodes[0], 'address') and hasattr(nodes[0], 'port'):
+                closest_nodes = [{
+                    'dht_id': base64.b64encode(c.id),
+                    'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
+                } for c in nodes]
+            if _Debug:
+                lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
+            return ret.callback(ERROR(errmsg, extra_fields={
+                'write': 'failed',
+                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'key': strng.to_text(key, errors='ignore'),
+                'key_64': base64.b64encode(key),
+                'closest_nodes': closest_nodes,
+            }))
+        except Exception as exc:
+            lg.exc()
+            return ERROR(exc)
+
+    d = dht_service.set_valid_data(
+        key=key,
+        json_data=value,
+        expire=expire or dht_service.KEY_EXPIRE_MAX_SECONDS,
+        rules=dht_records.get_rules(record_type),
+        collect_results=True,
+    )
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
 
 #------------------------------------------------------------------------------

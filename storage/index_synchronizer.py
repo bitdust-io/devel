@@ -134,12 +134,12 @@ def is_synchronized():
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _IndexSynchronizer
-    if event is None and arg is None:
+    if event is None and not args:
         return _IndexSynchronizer
     if _IndexSynchronizer is None:
         _IndexSynchronizer = IndexSynchronizer(
@@ -150,7 +150,7 @@ def A(event=None, arg=None):
             log_transitions=_Debug,
         )
     if event is not None:
-        _IndexSynchronizer.automat(event, arg)
+        _IndexSynchronizer.automat(event, *args, **kwargs)
     return _IndexSynchronizer
 
 #------------------------------------------------------------------------------
@@ -180,19 +180,19 @@ class IndexSynchronizer(automat.Automat):
         self.sending_suppliers = set()
         self.sent_suppliers_number = 0
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when index_synchronizer() state were
         changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in
         the index_synchronizer() but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -201,74 +201,74 @@ class IndexSynchronizer(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'NO_INFO'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'push':
                 self.state = 'SENDING'
-                self.doSuppliersSendIndexFile(arg)
+                self.doSuppliersSendIndexFile(*args, **kwargs)
             elif event == 'pull' or event == 'timer-5min':
                 self.state = 'REQUEST?'
-                self.doSuppliersRequestIndexFile(arg)
+                self.doSuppliersRequestIndexFile(*args, **kwargs)
         #---REQUEST?---
         elif self.state == 'REQUEST?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doCancelRequests(arg)
-                self.doDestroyMe(arg)
-            elif event == 'timer-15sec' and not self.isSomeResponded(arg):
+                self.doCancelRequests(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'timer-15sec' and not self.isSomeResponded(*args, **kwargs):
                 self.state = 'NO_INFO'
-                self.doCancelRequests(arg)
-            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and self.isVersionChanged(arg):
+                self.doCancelRequests(*args, **kwargs)
+            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs) ) ) and self.isVersionChanged(*args, **kwargs):
                 self.state = 'SENDING'
-                self.doCancelRequests(arg)
-                self.doSuppliersSendIndexFile(arg)
+                self.doCancelRequests(*args, **kwargs)
+                self.doSuppliersSendIndexFile(*args, **kwargs)
             elif event == 'index-file-received':
-                self.doCheckVersion(arg)
-            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and not self.isVersionChanged(arg):
+                self.doCheckVersion(*args, **kwargs)
+            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs) ) ) and not self.isVersionChanged(*args, **kwargs):
                 self.state = 'IN_SYNC!'
-                self.doCancelRequests(arg)
+                self.doCancelRequests(*args, **kwargs)
         #---SENDING---
         elif self.state == 'SENDING':
-            if event == 'timer-15sec' and not self.isSomeAcked(arg):
+            if event == 'timer-15sec' and not self.isSomeAcked(*args, **kwargs):
                 self.state = 'NO_INFO'
-            elif event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(arg) ):
+            elif event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(*args, **kwargs) ):
                 self.state = 'IN_SYNC!'
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'pull':
                 self.state = 'REQUEST?'
-                self.doSuppliersRequestIndexFile(arg)
+                self.doSuppliersRequestIndexFile(*args, **kwargs)
         #---NO_INFO---
         elif self.state == 'NO_INFO':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'push' or event == 'pull' or event == 'timer-1min':
                 self.state = 'REQUEST?'
-                self.doSuppliersRequestIndexFile(arg)
+                self.doSuppliersRequestIndexFile(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
 
-    def isSomeAcked(self, arg):
+    def isSomeAcked(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.sending_suppliers) < self.sent_suppliers_number
 
-    def isSomeResponded(self, arg):
+    def isSomeResponded(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.requesting_suppliers) < self.requested_suppliers_number
 
-    def isVersionChanged(self, arg):
+    def isVersionChanged(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -277,12 +277,12 @@ class IndexSynchronizer(automat.Automat):
             return True
         return self.current_local_revision != self.latest_supplier_revision
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doSuppliersRequestIndexFile(self, arg):
+    def doSuppliersRequestIndexFile(self, *args, **kwargs):
         """
         Action method.
         """
@@ -334,7 +334,7 @@ class IndexSynchronizer(automat.Automat):
                 lg.out(_DebugLevel, '    %s sending to %s' %
                        (pkt_out, nameurl.GetName(supplierId)))
 
-    def doSuppliersSendIndexFile(self, arg):
+    def doSuppliersSendIndexFile(self, *args, **kwargs):
         """
         Action method.
         """
@@ -386,7 +386,7 @@ class IndexSynchronizer(automat.Automat):
                 lg.out(_DebugLevel, '    %s sending to %s' %
                        (newpacket, nameurl.GetName(supplierId)))
 
-    def doCancelRequests(self, arg):
+    def doCancelRequests(self, *args, **kwargs):
         """
         Action method.
         """
@@ -401,15 +401,15 @@ class IndexSynchronizer(automat.Automat):
 #                     pkt_out, pkt_out.remote_idurl, ))
 #                 pkt_out.automat('cancel')
 
-    def doCheckVersion(self, arg):
+    def doCheckVersion(self, *args, **kwargs):
         """
         Action method.
         """
-        _, supplier_revision = arg
+        _, supplier_revision = args[0]
         if supplier_revision > self.latest_supplier_revision:
             self.latest_supplier_revision = supplier_revision
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

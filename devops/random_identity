@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo "running 'idcreate' on $1"
+
+RND4=$(openssl rand -hex 2)
+
+NODE_NAME="$1_${RND4}"
+
+bitdust id erase
+
+bitdust id create "$NODE_NAME"
+
+echo 'DONE'

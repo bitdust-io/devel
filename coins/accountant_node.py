@@ -86,18 +86,18 @@ _AccountantNode = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _AccountantNode
-    if event is None and arg is None:
+    if event is None and not args:
         return _AccountantNode
     if _AccountantNode is None:
         # set automat name and starting state here
         _AccountantNode = AccountantNode('accountant_node', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _AccountantNode.automat(event, arg)
+        _AccountantNode.automat(event, *args, **kwargs)
     return _AccountantNode
 
 #------------------------------------------------------------------------------
@@ -127,18 +127,18 @@ class AccountantNode(automat.Automat):
         self.pending_coins = []
         self.current_coin = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
         Method to catch the moment when accountant_node() state were changed.
         """
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event, *args, **kwargs):
         """
         This method intended to catch the moment when some event was fired in
         the accountant_node() but its state was not changed.
         """
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -147,91 +147,91 @@ class AccountantNode(automat.Automat):
         if self.state == 'READY':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'connection-lost' or event == 'stop':
                 self.state = 'OFFLINE'
             elif event == 'new-coin-mined':
-                self.doPushCoin(arg)
+                self.doPushCoin(*args, **kwargs)
             elif event == 'valid-coins-received':
-                self.doWriteCoins(arg)
+                self.doWriteCoins(*args, **kwargs)
             elif event == 'pending-coin':
                 self.state = 'VALID_COIN?'
-                self.doPullCoin(arg)
-                self.doVerifyCoin(arg)
+                self.doPullCoin(*args, **kwargs)
+                self.doVerifyCoin(*args, **kwargs)
         #---READ_COINS---
         elif self.state == 'READ_COINS':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'accountant-connected':
-                self.doAddAccountant(arg)
-                self.doRetrieveCoins(arg)
-            elif event == 'stop' or ( event == 'timer-1min' and not self.isAnyCoinsReceived(arg) ):
+                self.doAddAccountant(*args, **kwargs)
+                self.doRetrieveCoins(*args, **kwargs)
+            elif event == 'stop' or ( event == 'timer-1min' and not self.isAnyCoinsReceived(*args, **kwargs) ):
                 self.state = 'OFFLINE'
             elif event == 'new-coin-mined':
-                self.doPushCoin(arg)
-            elif event == 'valid-coins-received' and self.isMoreCoins(arg):
-                self.doWriteCoins(arg)
-                self.doRetrieveCoins(arg)
-            elif event == 'valid-coins-received' and not self.isMoreCoins(arg):
+                self.doPushCoin(*args, **kwargs)
+            elif event == 'valid-coins-received' and self.isMoreCoins(*args, **kwargs):
+                self.doWriteCoins(*args, **kwargs)
+                self.doRetrieveCoins(*args, **kwargs)
+            elif event == 'valid-coins-received' and not self.isMoreCoins(*args, **kwargs):
                 self.state = 'READY'
-                self.doWriteCoins(arg)
-                self.doCheckPendingCoins(arg)
+                self.doWriteCoins(*args, **kwargs)
+                self.doCheckPendingCoins(*args, **kwargs)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
         #---VALID_COIN?---
         elif self.state == 'VALID_COIN?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'OFFLINE'
             elif event == 'coin-not-valid':
                 self.state = 'READY'
-                self.doCheckPendingCoins(arg)
+                self.doCheckPendingCoins(*args, **kwargs)
             elif event == 'accountant-connected':
-                self.doAddAccountant(arg)
+                self.doAddAccountant(*args, **kwargs)
             elif event == 'coin-verified':
                 self.state = 'WRITE_COIN!'
-                self.doWriteCoin(arg)
-                self.doBroadcastCoin(arg)
+                self.doWriteCoin(*args, **kwargs)
+                self.doBroadcastCoin(*args, **kwargs)
             elif event == 'valid-coins-received':
-                self.doWriteCoins(arg)
+                self.doWriteCoins(*args, **kwargs)
             elif event == 'new-coin-mined':
-                self.doPushCoin(arg)
+                self.doPushCoin(*args, **kwargs)
         #---WRITE_COIN!---
         elif self.state == 'WRITE_COIN!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'OFFLINE'
             elif event == 'coin-broadcasted':
                 self.state = 'READY'
-                self.doCheckPendingCoins(arg)
+                self.doCheckPendingCoins(*args, **kwargs)
             elif event == 'accountant-connected':
-                self.doAddAccountant(arg)
+                self.doAddAccountant(*args, **kwargs)
             elif event == 'valid-coins-received':
-                self.doWriteCoins(arg)
+                self.doWriteCoins(*args, **kwargs)
             elif event == 'new-coin-mined':
-                self.doPushCoin(arg)
+                self.doPushCoin(*args, **kwargs)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'start':
                 self.state = 'ACCOUNTANTS?'
                 self.Attempts=0
-                self.doLookupAccountants(arg)
+                self.doLookupAccountants(*args, **kwargs)
             elif event == 'accountant-connected':
                 self.state = 'ACCOUNTANTS?'
-                self.doAddAccountant(arg)
+                self.doAddAccountant(*args, **kwargs)
                 self.Attempts=2
-                self.doLookupAccountants(arg)
+                self.doLookupAccountants(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -239,70 +239,70 @@ class AccountantNode(automat.Automat):
         elif self.state == 'ACCOUNTANTS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'accountant-connected' and self.isMoreNeeded(arg):
-                self.doAddAccountant(arg)
-                self.doLookupAccountants(arg)
-            elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'accountant-connected' and self.isMoreNeeded(*args, **kwargs):
+                self.doAddAccountant(*args, **kwargs)
+                self.doLookupAccountants(*args, **kwargs)
+            elif event == 'accountant-connected' and not self.isMoreNeeded(*args, **kwargs):
                 self.state = 'READ_COINS'
-                self.doRetrieveCoins(arg)
-            elif event == 'lookup-failed' and self.Attempts < 5 and self.isAnyAccountants(arg):
+                self.doRetrieveCoins(*args, **kwargs)
+            elif event == 'lookup-failed' and self.Attempts < 5 and self.isAnyAccountants(*args, **kwargs):
                 self.Attempts+=1
-                self.doLookupAccountants(arg)
-            elif ( event == 'lookup-failed' and ( self.Attempts>=5 or not self.isAnyAccountants(arg) ) ) or event == 'timer-2min':
+                self.doLookupAccountants(*args, **kwargs)
+            elif ( event == 'lookup-failed' and ( self.Attempts>=5 or not self.isAnyAccountants(*args, **kwargs) ) ) or event == 'timer-2min':
                 self.state = 'OFFLINE'
         return None
 
-    def isAnyAccountants(self, arg):
+    def isAnyAccountants(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.connected_accountants) > 0
 
-    def isMoreNeeded(self, arg):
+    def isMoreNeeded(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.connected_accountants) < self.max_accountants_connected
 
-    def isMoreCoins(self, arg):
+    def isMoreCoins(self, *args, **kwargs):
         """
         Condition method.
         """
-        return len(arg) > 0
+        return len(*args, **kwargs) > 0
 
-    def isAnyCoinsReceived(self, arg):
+    def isAnyCoinsReceived(self, *args, **kwargs):
         """
         Condition method.
         """
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
         callback.append_inbox_callback(self._on_inbox_packet)
 
-    def doLookupAccountants(self, arg):
+    def doLookupAccountants(self, *args, **kwargs):
         """
         Action method.
         """
         from coins import accountants_finder
         accountants_finder.A('start', (self.automat, {'action': 'join', }))
 
-    def doAddAccountant(self, arg):
+    def doAddAccountant(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg in self.connected_accountants:
+        if args[0] in self.connected_accountants:
             if _Debug:
-                lg.out(_DebugLevel, 'accountant_node.doAddAccountant SKIP, %s already connected, skip' % arg)
+                lg.out(_DebugLevel, 'accountant_node.doAddAccountant SKIP, %s already connected, skip' % args[0])
             return
-        self.connected_accountants.append(arg)
+        self.connected_accountants.append(args[0])
         if _Debug:
             lg.out(_DebugLevel, 'accountant_node.doAddAccountant NEW %s connected, %d total accountants' % (
-                arg, len(self.connected_accountants)))
+                args[0], len(self.connected_accountants)))
 
-    def doRetrieveCoins(self, arg):
+    def doRetrieveCoins(self, *args, **kwargs):
         """
         Action method.
         """
@@ -316,36 +316,36 @@ class AccountantNode(automat.Automat):
         for idurl in self.connected_accountants:
             p2p_service.SendRetrieveCoin(idurl, query)
 
-    def doWriteCoins(self, arg):
+    def doWriteCoins(self, *args, **kwargs):
         """
         Action method.
         """
-        for coin in arg:
+        for coin in args[0]:
             if not coins_db.exist(coin):
                 coins_db.insert(coin)
             if coin['tm'] > utime.datetime_to_sec1970(self.download_offset):
                 self.download_offset = utime.sec1970_to_datetime_utc(coin['tm'])
 
-    def doPushCoin(self, arg):
+    def doPushCoin(self, *args, **kwargs):
         """
         Action method.
         """
-        self.pending_coins.append(arg)
+        self.pending_coins.append(args[0])
 
-    def doPullCoin(self, arg):
+    def doPullCoin(self, *args, **kwargs):
         """
         Action method.
         """
         self.current_coin = self.pending_coins.pop(0)
 
-    def doCheckPendingCoins(self, arg):
+    def doCheckPendingCoins(self, *args, **kwargs):
         """
         Action method.
         """
         if len(self.pending_coins) > 0:
             self.automat('pending-coin')
 
-    def doVerifyCoin(self, arg):
+    def doVerifyCoin(self, *args, **kwargs):
         """
         Action method.
         """
@@ -357,19 +357,19 @@ class AccountantNode(automat.Automat):
         d.addCallback(lambda coin: self.automat('coin-verified'))
         d.addErrback(lambda err: self.automat('coin-not-valid'))
 
-    def doBroadcastCoin(self, arg):
+    def doBroadcastCoin(self, *args, **kwargs):
         """
         Action method.
         """
-        broadcast_service.send_broadcast_message({'type': 'coin', 'data': arg})
+        broadcast_service.send_broadcast_message({'type': 'coin', 'data': args[0], })
 
-    def doWriteCoin(self, arg):
+    def doWriteCoin(self, *args, **kwargs):
         """
         Action method.
         """
-        coins_db.insert(arg)
+        coins_db.insert(args[0])
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

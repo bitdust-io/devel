@@ -77,18 +77,18 @@ _BroadcasterNode = None
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _BroadcasterNode
-    if event is None and arg is None:
+    if event is None and not args:
         return _BroadcasterNode
     if _BroadcasterNode is None:
         # set automat name and starting state here
         _BroadcasterNode = BroadcasterNode('broadcaster_node', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _BroadcasterNode.automat(event, arg)
+        _BroadcasterNode.automat(event, *args, **kwargs)
     return _BroadcasterNode
 
 #------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class BroadcasterNode(automat.Automat):
         self.listeners = {}
         self.incoming_broadcast_message_callback = None
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         """
         The state machine code, generated using `visio2python
         <https://bitdust.io/visio2python/>`_ tool.
@@ -123,33 +123,33 @@ class BroadcasterNode(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'BROADCASTERS?'
-                self.doInit(arg)
-                self.doStartBroadcastersLookup(arg)
+                self.doInit(*args, **kwargs)
+                self.doStartBroadcastersLookup(*args, **kwargs)
         #---BROADCASTERS?---
         elif self.state == 'BROADCASTERS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doEraseBroadcasters(arg)
-                self.doDestroyMe(arg)
-            elif event == 'broadcaster-connected' and not self.isMoreNeeded(arg):
+                self.doEraseBroadcasters(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'broadcaster-connected' and not self.isMoreNeeded(*args, **kwargs):
                 self.state = 'BROADCASTING'
-                self.doAddBroadcaster(arg)
-            elif event == 'lookup-failed' and not self.isAnyBroadcasters(arg):
+                self.doAddBroadcaster(*args, **kwargs)
+            elif event == 'lookup-failed' and not self.isAnyBroadcasters(*args, **kwargs):
                 self.state = 'OFFLINE'
-            elif event == 'broadcaster-connected' and self.isMoreNeeded(arg):
-                self.doAddBroadcaster(arg)
-                self.doStartBroadcastersLookup(arg)
-            elif event == 'lookup-failed' and self.isAnyBroadcasters(arg):
+            elif event == 'broadcaster-connected' and self.isMoreNeeded(*args, **kwargs):
+                self.doAddBroadcaster(*args, **kwargs)
+                self.doStartBroadcastersLookup(*args, **kwargs)
+            elif event == 'lookup-failed' and self.isAnyBroadcasters(*args, **kwargs):
                 self.state = 'BROADCASTING'
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'reconnect' or event == 'new-broadcaster-connected':
                 self.state = 'BROADCASTERS?'
-                self.doAddBroadcaster(arg)
-                self.doStartBroadcastersLookup(arg)
+                self.doAddBroadcaster(*args, **kwargs)
+                self.doStartBroadcastersLookup(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -157,24 +157,24 @@ class BroadcasterNode(automat.Automat):
         elif self.state == 'BROADCASTING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doEraseBroadcasters(arg)
-                self.doDestroyMe(arg)
+                self.doEraseBroadcasters(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
             elif event == 'new-broadcaster-connected':
-                self.doAddBroadcaster(arg)
+                self.doAddBroadcaster(*args, **kwargs)
             elif event == 'broadcast-message-received':
-                self.doCheckAndSendForward(arg)
+                self.doCheckAndSendForward(*args, **kwargs)
             elif event == 'broadcaster-disconnected':
-                self.doRemoveBroadcaster(arg)
+                self.doRemoveBroadcaster(*args, **kwargs)
             elif event == 'new-outbound-message':
-                self.doBroadcastMessage(arg)
-            elif event == 'timer-1min' and self.isLineActive(arg):
-                self.doTestReconnectBroadcasters(arg)
-            elif event == 'timer-1min' and not self.isLineActive(arg):
+                self.doBroadcastMessage(*args, **kwargs)
+            elif event == 'timer-1min' and self.isLineActive(*args, **kwargs):
+                self.doTestReconnectBroadcasters(*args, **kwargs)
+            elif event == 'timer-1min' and not self.isLineActive(*args, **kwargs):
                 self.state = 'OFFLINE'
-                self.doEraseBroadcasters(arg)
+                self.doEraseBroadcasters(*args, **kwargs)
         return None
 
-    def isLineActive(self, arg):
+    def isLineActive(self, *args, **kwargs):
         """
         Condition method.
         """
@@ -187,72 +187,72 @@ class BroadcasterNode(automat.Automat):
             return False
         return time.time() - self.last_success_action_time > 5 * 60
 
-    def isAnyBroadcasters(self, arg):
+    def isAnyBroadcasters(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.connected_broadcasters) > 0
 
-    def isMoreNeeded(self, arg):
+    def isMoreNeeded(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(self.connected_broadcasters) < self.max_broadcasters
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         """
         Action method.
         """
-        self.incoming_broadcast_message_callback = arg
+        self.incoming_broadcast_message_callback = args[0]
         callback.append_inbox_callback(self._on_inbox_packet)
 
-    def doStartBroadcastersLookup(self, arg):
+    def doStartBroadcastersLookup(self, *args, **kwargs):
         """
         Action method.
         """
         from broadcast import broadcasters_finder
         broadcasters_finder.A('start', (self.automat, {'action': 'route', }, list(self.connected_broadcasters)))
 
-    def doAddBroadcaster(self, arg):
+    def doAddBroadcaster(self, *args, **kwargs):
         """
         Action method.
         """
-        if not arg:
+        if not args:
             return
-        if arg in self.connected_broadcasters:
-            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster SKIP, %s already connected as broadcaster' % arg)
+        if args[0] in self.connected_broadcasters:
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster SKIP, %s already connected as broadcaster' % args[0])
             return
-        if arg in self.listeners:
-            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster SKIP, %s already connected as listener' % arg)
-        self.connected_broadcasters.append(arg)
+        if args[0] in self.listeners:
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster SKIP, %s already connected as listener' % args[0])
+        self.connected_broadcasters.append(args[0])
         self.last_success_action_time = time.time()
         if _Debug:
             lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s joined, %d total connected' % (
-                arg, len(self.connected_broadcasters)))
+                args[0], len(self.connected_broadcasters)))
 
-    def doRemoveBroadcaster(self, arg):
+    def doRemoveBroadcaster(self, *args, **kwargs):
         """
         Action method.
         """
-        if arg not in self.connected_broadcasters:
-            lg.warn('%s is not connected' % arg)
+        if args[0] not in self.connected_broadcasters:
+            lg.warn('%s is not connected' % args[0])
             return
-        self.connected_broadcasters.remove(arg)
+        self.connected_broadcasters.remove(args[0])
         if _Debug:
-            lg.out(_DebugLevel, 'broadcaster_node.doRemoveBroadcaster %s now disconnected' % arg)
+            lg.out(_DebugLevel, 'broadcaster_node.doRemoveBroadcaster %s now disconnected' % args[0])
 
-    def doEraseBroadcasters(self, arg):
+    def doEraseBroadcasters(self, *args, **kwargs):
         """
         Action method.
         """
         self.connected_broadcasters = []
 
-    def doCheckAndSendForward(self, arg):
+    def doCheckAndSendForward(self, *args, **kwargs):
         """
         Action method.
         """
         from broadcast import broadcast_service
-        msg, newpacket = arg
+        msg, newpacket = args[0]
         msgid = msg['id']
         if _Debug:
             lg.out(_DebugLevel, 'broadcaster_node.doCheckAndSendForward %s' % msgid)
@@ -285,12 +285,12 @@ class BroadcasterNode(automat.Automat):
             p2p_service.SendBroadcastMessage(outpacket)
         self.messages_sent[msgid] = int(time.time())
 
-    def doBroadcastMessage(self, arg):
+    def doBroadcastMessage(self, *args, **kwargs):
         """
         Action method.
         """
         from broadcast import broadcast_service
-        msg, newpacket = arg
+        msg, newpacket = args[0]
         msgid = msg['id']
         if _Debug:
             lg.out(_DebugLevel, 'broadcaster_node.doBroadcastMessage %s' % msgid)
@@ -319,12 +319,12 @@ class BroadcasterNode(automat.Automat):
             p2p_service.SendBroadcastMessage(outpacket)
         self.messages_sent[msgid] = int(time.time())
 
-    def doTestReconnectBroadcasters(self, arg):
+    def doTestReconnectBroadcasters(self, *args, **kwargs):
         """
         Action method.
         """
 
-    def doDestroyMe(self, arg):
+    def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """

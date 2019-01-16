@@ -155,17 +155,17 @@ def inbox(newpacket, info, status, message):
 #------------------------------------------------------------------------------
 
 
-def A(event=None, arg=None):
+def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _P2PConnector
-    if event is None and arg is None:
+    if event is None and not args:
         return _P2PConnector
     if _P2PConnector is None:
         _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', _DebugLevel)
     if event is not None:
-        _P2PConnector.automat(event, arg)
+        _P2PConnector.automat(event, *args, **kwargs)
     return _P2PConnector
 
 
@@ -192,123 +192,123 @@ class P2PConnector(automat.Automat):
     def init(self):
         self.log_transitions = _Debug
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('P2P ' + newstate)
         if newstate == 'INCOMMING?':
             self.automat('instant')
 
-    def A(self, event, arg):
+    def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'NETWORK?'
                 self.NeedPropagate=True
-                self.doInit(arg)
+                self.doInit(*args, **kwargs)
                 network_connector.A('reconnect')
         #---NETWORK?---
         elif self.state == 'NETWORK?':
-            if ( event == 'network_connector.state' and arg == 'CONNECTED' ):
+            if ( event == 'network_connector.state' and args[0] == 'CONNECTED' ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
-            elif ( event == 'network_connector.state' and arg == 'DISCONNECTED' ):
+                self.doUpdateMyIdentity(*args, **kwargs)
+            elif ( event == 'network_connector.state' and args[0] == 'DISCONNECTED' ):
                 self.state = 'DISCONNECTED'
         #---INCOMMING?---
         elif self.state == 'INCOMMING?':
-            if event == 'inbox-packet' and not self.isUsingBestProto(arg):
+            if event == 'inbox-packet' and not self.isUsingBestProto(*args, **kwargs):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
-                self.doPopBestProto(arg)
-            elif event == 'timer-20sec' or ( event == 'network_connector.state' and arg == 'DISCONNECTED' ):
+                self.doUpdateMyIdentity(*args, **kwargs)
+                self.doPopBestProto(*args, **kwargs)
+            elif event == 'timer-20sec' or ( event == 'network_connector.state' and args[0] == 'DISCONNECTED' ):
                 self.state = 'DISCONNECTED'
-                self.doInitRatings(arg)
-            elif event == 'check-synchronize' or ( event == 'network_connector.state' and arg == 'CONNECTED' ):
+                self.doInitRatings(*args, **kwargs)
+            elif event == 'check-synchronize' or ( event == 'network_connector.state' and args[0] == 'CONNECTED' ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
-            elif ( event == 'instant' and not self.isAnyPeersKnown(arg) ) or ( event == 'inbox-packet' and self.isUsingBestProto(arg) ):
+                self.doUpdateMyIdentity(*args, **kwargs)
+            elif ( event == 'instant' and not self.isAnyPeersKnown(*args, **kwargs) ) or ( event == 'inbox-packet' and self.isUsingBestProto(*args, **kwargs) ):
                 self.state = 'CONNECTED'
-                self.doInitRatings(arg)
-                self.doRestartCustomersRejector(arg)
+                self.doInitRatings(*args, **kwargs)
+                self.doRestartCustomersRejector(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'ping-contact':
-                self.doSendMyIdentity(arg)
-            elif ( event == 'network_connector.state' and arg == 'DISCONNECTED' ):
+                self.doSendMyIdentity(*args, **kwargs)
+            elif ( event == 'network_connector.state' and args[0] == 'DISCONNECTED' ):
                 self.state = 'DISCONNECTED'
-            elif event == 'check-synchronize' or ( event == 'network_connector.state' and arg == 'CONNECTED' ):
+            elif event == 'check-synchronize' or ( event == 'network_connector.state' and args[0] == 'CONNECTED' ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
-            elif ( event == 'network_connector.state' and arg not in [ 'CONNECTED' , 'DISCONNECTED' ] ):
+                self.doUpdateMyIdentity(*args, **kwargs)
+            elif ( event == 'network_connector.state' and args[0] not in [ 'CONNECTED' , 'DISCONNECTED' ] ):
                 self.state = 'NETWORK?'
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'ping-contact':
-                self.doSendMyIdentity(arg)
-            elif event == 'inbox-packet' or event == 'check-synchronize' or ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ):
+                self.doSendMyIdentity(*args, **kwargs)
+            elif event == 'inbox-packet' or event == 'check-synchronize' or ( ( event == 'network_connector.state' and args[0] == 'CONNECTED' ) ):
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
-            elif ( event == 'network_connector.state' and arg not in [ 'CONNECTED', 'DISCONNECTED', ] ):
+                self.doUpdateMyIdentity(*args, **kwargs)
+            elif ( event == 'network_connector.state' and args[0] not in [ 'CONNECTED', 'DISCONNECTED', ] ):
                 self.state = 'NETWORK?'
         #---MY_IDENTITY---
         elif self.state == 'MY_IDENTITY':
-            if event == 'my-id-updated' and self.isMyContactsChanged(arg):
+            if event == 'my-id-updated' and self.isMyContactsChanged(*args, **kwargs):
                 self.state = 'NETWORK?'
                 self.NeedPropagate=True
                 network_connector.A('check-reconnect')
-            elif event == 'my-id-updated' and not self.isMyContactsChanged(arg) and ( self.NeedPropagate or self.isMyIdentityChanged(arg) ):
+            elif event == 'my-id-updated' and not self.isMyContactsChanged(*args, **kwargs) and ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ):
                 self.state = 'PROPAGATE'
-                self.doPropagateMyIdentity(arg)
-            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(arg) ) and ( network_connector.A().state is not 'CONNECTED' ):
+                self.doPropagateMyIdentity(*args, **kwargs)
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state is not 'CONNECTED' ):
                 self.state = 'DISCONNECTED'
-            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(arg) ) and ( network_connector.A().state is 'CONNECTED' ):
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(*args, **kwargs) ) and ( network_connector.A().state is 'CONNECTED' ):
                 self.state = 'CONNECTED'
         #---PROPAGATE---
         elif self.state == 'PROPAGATE':
             if event == 'my-id-propagated':
                 self.state = 'INCOMMING?'
                 self.NeedPropagate=False
-                self.doRestartFireHire(arg)
-            elif ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) or event == 'check-synchronize':
+                self.doRestartFireHire(*args, **kwargs)
+            elif ( ( event == 'network_connector.state' and args[0] == 'CONNECTED' ) ) or event == 'check-synchronize':
                 self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
+                self.doUpdateMyIdentity(*args, **kwargs)
         return None
 
-    def isUsingBestProto(self, arg):
+    def isUsingBestProto(self, *args, **kwargs):
         """
         Condition method.
         """
         return self._check_to_use_best_proto()
 
-    def isMyIdentityChanged(self, arg):
+    def isMyIdentityChanged(self, *args, **kwargs):
         """
         Condition method.
         """
-        return arg[1]
+        return args[0][1]
 
-    def isMyContactsChanged(self, arg):
+    def isMyContactsChanged(self, *args, **kwargs):
         """
         Condition method.
         """
-        return arg[0]
+        return args[0][0]
 
-    def isAnyPeersKnown(self, arg):
+    def isAnyPeersKnown(self, *args, **kwargs):
         """
         Condition method.
         """
         return len(contactsdb.contacts_remote()) > 0
 
-    def doSendMyIdentity(self, arg):
+    def doSendMyIdentity(self, *args, **kwargs):
         """
         Action method.
         """
-        propagate.single(arg, wide=True)
+        propagate.single(args[0], wide=True)
 
-    def doInit(self, arg):
+    def doInit(self, *args, **kwargs):
         version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         if _Debug:
             lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
         callback.append_inbox_callback(inbox)
 
-    def doUpdateMyIdentity(self, arg):
+    def doUpdateMyIdentity(self, *args, **kwargs):
         if _Debug:
             lg.out(4, 'p2p_connector.doUpdateMyIdentity')
         contacts_changed = False
@@ -335,7 +335,7 @@ class P2PConnector(automat.Automat):
             lg.out(4, '    identity HAS %sBEEN CHANGED' % ('' if identity_changed else 'NOT '))
         self.automat('my-id-updated', (contacts_changed, identity_changed))
 
-    def doPropagateMyIdentity(self, arg):
+    def doPropagateMyIdentity(self, *args, **kwargs):
         # TODO: need to run this actions one by one, not in parallel - use Defered chain
         propagate.update()
         propagate.write_to_dht()
@@ -343,13 +343,13 @@ class P2PConnector(automat.Automat):
         d = propagate.start(wide=True)
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 
-    def doPopBestProto(self, arg):
+    def doPopBestProto(self, *args, **kwargs):
         self._pop_active_proto()
 
-    def doInitRatings(self, arg):
+    def doInitRatings(self, *args, **kwargs):
         ratings.init()
 
-    def doRestartCustomersRejector(self, arg):
+    def doRestartCustomersRejector(self, *args, **kwargs):
         """
         Action method.
         """
@@ -358,7 +358,7 @@ class P2PConnector(automat.Automat):
             from supplier import customers_rejector
             customers_rejector.A('restart')
 
-    def doRestartFireHire(self, arg):
+    def doRestartFireHire(self, *args, **kwargs):
         """
         Action method.
         """
