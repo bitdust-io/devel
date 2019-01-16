@@ -348,7 +348,10 @@ class RestoreWorker(automat.Automat):
             self.EccMap = eccmap.eccmap(all_known_eccmaps[0][0])
             lg.info('eccmap %s recognized from suppliers meta info' % self.EccMap)
         else:
-            self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(len(self.known_suppliers)))
+            num_suppliers = len(self.known_suppliers)
+            if num_suppliers == 0:
+                num_suppliers = settings.DefaultDesiredSuppliers()
+            self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(num_suppliers))
             lg.warn('no meta info found, guessed eccmap %s from %d known suppliers' % (
                 self.EccMap, len(self.known_suppliers)))
         if data_receiver.A():

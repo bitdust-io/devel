@@ -564,7 +564,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out('fire_hire.doFindNewSupplier')
+            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier')
         position_for_new_supplier = None
         for pos in range(settings.getSuppliersNumberDesired()):
             if pos in self.hire_list:
