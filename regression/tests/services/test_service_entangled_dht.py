@@ -94,7 +94,7 @@ def write_value(node, key, new_data, record_type='skip_validation', ):
     assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
 
 
-def test_get_value_not_exist_customer_1():
+def test_dht_get_value_not_exist_customer_1():
     read_value(
         node='customer_1',
         key='value_not_exist_customer_1',
@@ -102,7 +102,7 @@ def test_get_value_not_exist_customer_1():
     )
 
 
-def test_set_value_customer_1_and_get_value_customer_1():
+def test_dht_set_value_customer_1_and_get_value_customer_1():
     write_value(
         node='customer_1',
         key='test_key_1_customer_1',
@@ -115,7 +115,7 @@ def test_set_value_customer_1_and_get_value_customer_1():
     )
 
 
-def test_set_value_customer_2_and_get_value_customer_3():
+def test_dht_set_value_customer_2_and_get_value_customer_3():
     write_value(
         node='customer_2',
         key='test_key_1_customer_2',
@@ -128,7 +128,7 @@ def test_set_value_customer_2_and_get_value_customer_3():
     )
 
 
-def test_get_value_all_nodes():
+def test_dht_get_value_all_nodes():
     write_value(
         node='supplier_1',
         key='test_key_1_supplier_1',
