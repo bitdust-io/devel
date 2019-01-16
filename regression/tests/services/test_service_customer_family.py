@@ -26,7 +26,7 @@ import requests
 from ..testsupport import tunnel_url
 
 
-def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, sleep_sec=1):
+def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, sleep_sec=2):
     count = 0
     while True:
         if count >= retries:
@@ -107,8 +107,7 @@ def test_customer_family_increase_for_customer_4():
 
 def test_customer_family_decrease_for_customer_5():
     # TODO: need to build correctly "family-leave" event in family_member() automat first
-    return True
-
+    # return True
     validate_customer_family(
         customer_node='customer_5',
         observer_node='customer_5',

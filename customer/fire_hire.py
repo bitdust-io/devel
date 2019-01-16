@@ -228,6 +228,7 @@ class FireHire(automat.Automat):
         self.connect_list = []
         self.dismiss_list = []
         self.dismiss_results = []
+        self.hire_list = []
         self.configs = (None, None)
         self.restart_interval = 1.0
         self.restart_task = None
@@ -562,8 +563,12 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier')
         position_for_new_supplier = None
         for pos in range(settings.getSuppliersNumberDesired()):
+            if pos in self.hire_list:
+                continue
             supplier_idurl = contactsdb.supplier(pos)
             if not supplier_idurl:
                 lg.info('found empty supplier at position %d and going to find new supplier on that position' % pos)
@@ -578,6 +583,7 @@ class FireHire(automat.Automat):
             lg.err('did not found position for new supplier')
             self.automat('search-failed')
             return
+        self.hire_list.append(position_for_new_supplier)
         supplier_finder.A(
             'start',
             family_position=position_for_new_supplier,
@@ -593,6 +599,11 @@ class FireHire(automat.Automat):
         family_position = kwargs.get('family_position')
         current_suppliers = list(contactsdb.suppliers())
         old_idurl = None
+        if family_position in self.hire_list:
+            self.hire_list.remove(family_position)
+            lg.info('found position on which new supplier suppose to be hired: %d' % family_position)
+        else:
+            lg.warn('did not found position for new supplier to be hired on')
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)
         if not family_position:
@@ -737,6 +748,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
+        self.hire_list = []
         if not self.restart_task:
             self.restart_task = reactor.callLater(  # @UndefinedVariable
                 self.restart_interval, self._scheduled_restart)
@@ -747,11 +759,13 @@ class FireHire(automat.Automat):
                 time.time() - self.restart_task.getTime()))
 
     def doNotifySuppliersChanged(self, *args, **kwargs):
+        self.hire_list = []
         if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('suppliers-changed')
 
     def doNotifyFinished(self, *args, **kwargs):
+        self.hire_list = []
         if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('fire-hire-finished')
@@ -765,9 +779,15 @@ class FireHire(automat.Automat):
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
-            self.connect_list.remove(idurl)
+            if idurl in self.connect_list:
+                self.connect_list.remove(idurl)
+            else:
+                lg.warn('did not found %r in connect_list' % idurl)
         elif self.state == 'FIRE_MANY':
-            self.dismiss_results.append(idurl)
+            if idurl in self.dismiss_results:
+                self.dismiss_results.append(idurl)
+            else:
+                lg.warn('did not found %r in dismiss_results' % idurl)
         else:
             return
         self.automat('supplier-state-changed', (idurl, newstate, ))
@@ -777,6 +797,8 @@ class FireHire(automat.Automat):
             oldstate, newstate, self.state))
 #         if newstate == 'OFFLINE' and oldstate != 'OFFLINE':
         self.automat('restart')
+
+
 
 # def WhoIsLost():
 #    """
