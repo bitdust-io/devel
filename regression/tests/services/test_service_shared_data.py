@@ -79,7 +79,7 @@ def test_file_shared_from_customer_1_to_customer_4():
         print('\nretry share/grant/v1\n')
         time.sleep(1)
     else:
-        assert False, 'failed to grant access to shared file: ' + response.json()
+        assert False, 'failed to grant access to shared file: %r' % response.json()
 
     for i in range(20):
         response = requests.post(
@@ -102,7 +102,7 @@ def test_file_shared_from_customer_1_to_customer_4():
             assert False, response.json()
 
     else:
-        assert False, 'failed to download shared file: ' + response.json()
+        assert False, 'failed to download shared file: %r' % response.json()
 
     local_file_hash = run_ssh_command_and_wait('customer_1', 'sha1sum %s' % local_path)[0].strip().split(' ')[0].strip()
     downloaded_file_hash = run_ssh_command_and_wait('customer_4', 'sha1sum %s' % downloaded_file)[0].strip().split(' ')[0].strip()

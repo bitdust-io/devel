@@ -74,7 +74,7 @@ def test_upload_download_file_with_master_customer_1():
             assert False, response.json()
 
     else:
-        assert False, 'download was not successful: ' + response.json()
+        assert False, 'download was not successful: %r' % response.json()
 
     local_file_hash = run_ssh_command_and_wait('customer_1', 'sha1sum %s' % local_path)[0].strip().split(' ')[0].strip()
     downloaded_file_hash = run_ssh_command_and_wait('customer_1', 'sha1sum %s' % downloaded_file)[0].strip().split(' ')[0].strip()
