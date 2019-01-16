@@ -748,7 +748,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        self.hire_list.clear()
+        self.hire_list = []
         if not self.restart_task:
             self.restart_task = reactor.callLater(  # @UndefinedVariable
                 self.restart_interval, self._scheduled_restart)
@@ -759,13 +759,13 @@ class FireHire(automat.Automat):
                 time.time() - self.restart_task.getTime()))
 
     def doNotifySuppliersChanged(self, *args, **kwargs):
-        self.hire_list.clear()
+        self.hire_list = []
         if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('suppliers-changed')
 
     def doNotifyFinished(self, *args, **kwargs):
-        self.hire_list.clear()
+        self.hire_list = []
         if driver.is_on('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('fire-hire-finished')
