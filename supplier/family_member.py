@@ -702,6 +702,9 @@ class FamilyMember(automat.Automat):
             return None
 
         expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
+        if not merged_info['suppliers']:
+            merged_info['suppliers'] = [b'', ] * expected_suppliers_count
+
         if len(merged_info['suppliers']) < expected_suppliers_count:
             merged_info['suppliers'] += [b'', ] * (expected_suppliers_count - len(merged_info['suppliers']))
         else:
