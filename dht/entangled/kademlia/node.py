@@ -196,57 +196,58 @@ class Node(object):
         ret = defer.Deferred()
 
         def storeSuccess(ok, key):
+            try:
+                o = repr(ok)
+            except:
+                o = 'Unknown Error'
             if _Debug:
-                try:
-                    o = repr(ok)
-                except:
-                    o = 'Unknown Error'
                 print('storeSuccess', key, o)
             return ok
 
         def storeFailed(x, key):
-            if _Debug:
+            try:
+                o = repr(x.value)
+            except:
                 try:
-                    o = repr(x.value)
+                    o = repr(x)
                 except:
-                    try:
-                        o = repr(x)
-                    except:
-                        o = 'Unknown Error'
+                    o = 'Unknown Error'
+            if _Debug:
                 print('storeFailed', key, o)
             return o
 
         # Prepare a callback for doing "STORE" RPC calls
 
         def findNodeFailed(x):
-            if _Debug:
+            try:
+                o = repr(x.value)
+            except:
                 try:
-                    o = repr(x.value)
+                    o = repr(x)
                 except:
-                    try:
-                        o = repr(x)
-                    except:
-                        o = 'Unknown Error'
+                    o = 'Unknown Error'
+            if _Debug:
                 print('findNodeFailed', o)
             return x
 
         def storeRPCsCollected(store_results, store_nodes):
-            if _Debug: print('storeRPCsCollected', store_results, store_nodes)
+            if _Debug:
+                print('storeRPCsCollected', store_results, store_nodes)
             ret.callback((store_nodes, store_results, ))
             return None
 
         def storeRPCsFailed(x):
-            if _Debug:
+            try:
+                o = repr(x.value)
+            except:
                 try:
-                    o = repr(x.value)
+                    o = repr(x)
                 except:
-                    try:
-                        o = repr(x)
-                    except:
-                        o = 'Unknown Error'
+                    o = 'Unknown Error'
+            if _Debug:
                 print('storeRPCsFailed', o)
             ret.errback(x)
-            return None
+            return o
 
         def executeStoreRPCs(nodes):
             # print '        .....execStoreRPCs called'
