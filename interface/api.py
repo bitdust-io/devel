@@ -1755,11 +1755,11 @@ def share_grant(trusted_remote_user, key_id):
     ret = Deferred()
 
     def _on_shared_access_donor_success(result):
-        ret.callback(OK() if result else ERROR('failed'))
+        ret.callback(OK() if result else ERROR(result))
         return None
 
     def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR('failed'))
+        ret.callback(ERROR(str(err)))
         return None
 
     d = Deferred()
