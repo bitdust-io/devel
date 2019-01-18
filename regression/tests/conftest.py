@@ -75,7 +75,33 @@ ALL_ROLES = OrderedDict([
     ]),
 ])
 
-ALL_NODES = [n[0] for r in ALL_ROLES.values() for n in r]
+# TODO: keep this list up to date with docker-compose links
+ALL_NODES = [
+    'customer_1',
+    'customer_2',
+    'customer_3',
+    'customer_4',
+    'customer_5',
+    'customer_backup',
+    'customer_restore',
+    'supplier_1',
+    'supplier_2',
+    'supplier_3',
+    'supplier_4',
+    'supplier_5',
+    'supplier_6',
+    'supplier_7',
+    'supplier_8',
+    'proxy_server_1',
+    'proxy_server_2',
+    'stun_1',
+    'stun_2',
+    'is',
+    'dht_seed_1',
+    'dht_seed_2',
+]
+
+# ALL_NODES = [n[0] for r in ALL_ROLES.values() for n in r]
 
 #------------------------------------------------------------------------------
 
