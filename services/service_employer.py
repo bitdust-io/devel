@@ -106,8 +106,8 @@ class EmployerService(LocalService):
         fire_hire.A('restart')
 
     def _on_supplier_modified(self, evt):
-        if evt.data['new_idurl']:
-            self._do_notify_supplier_position(evt.data['new_idurl'], evt.data['position'], )
+        # if evt.data['new_idurl']:
+        #     self._do_notify_supplier_position(evt.data['new_idurl'], evt.data['position'], )
         self._do_cleanup_dht_suppliers()
 
     def _on_my_dht_relations_discovered(self, discovered_suppliers_list):
@@ -125,15 +125,15 @@ class EmployerService(LocalService):
             if not contactsdb.is_supplier(idurl):
                 lg.warn('dht relation with %s is not valid anymore' % idurl)
                 suppliers_to_be_dismissed.add(idurl)
-        for idurl in suppliers_to_be_dismissed:
+        for supplier_idurl in suppliers_to_be_dismissed:
             p2p_service.SendCancelService(
-                remote_idurl=idurl,
+                remote_idurl=supplier_idurl,
                 service_name='service_supplier',
             )
-            p2p_service.SendCancelService(
-                remote_idurl=idurl,
-                service_name='service_customer_family',
-            )
+#             p2p_service.SendCancelService(
+#                 remote_idurl=idurl,
+#                 service_name='service_p2p_notifications',
+#             )
         if suppliers_to_be_dismissed:
             lg.info('found %d suppliers to be cleaned and sent CancelService() packets' % len(suppliers_to_be_dismissed))
 

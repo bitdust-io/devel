@@ -273,7 +273,7 @@ class StunClient(automat.Automat):
         Action method.
         """
         if args and args[0]:
-            self.callbacks.append(*args, **kwargs)
+            self.callbacks.append(args[0])
 
     def doDHTFindRandomNode(self, *args, **kwargs):
         """
@@ -312,7 +312,7 @@ class StunClient(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel + 10, 'stun_client.doAddStunServer %s' % str(*args, **kwargs))
-        self.stun_servers.append(*args, **kwargs)
+        self.stun_servers.append(args[0])
 
     def doStun(self, *args, **kwargs):
         """

@@ -84,7 +84,7 @@ def init(json_rpc_port=None):
         json_rpc_port = settings.getJsonRPCServerPort()
     bpio.WriteTextFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
     # TODO: add protection: accept connections only from local host: 127.0.0.1
-    _JsonRPCServer = reactor.listenTCP(json_rpc_port, server.Site(BitDustJsonRPCServer()))
+    _JsonRPCServer = reactor.listenTCP(json_rpc_port, server.Site(BitDustJsonRPCServer()))  # @UndefinedVariable
     if _Debug:
         lg.out(4, '    started on port %d' % json_rpc_port)
 
@@ -252,8 +252,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_file_upload_stop(self, remote_path):
         return api.file_upload_stop(remote_path)
 
-    def jsonrpc_file_download_start(self, remote_path, destination_path=None):
-        return api.file_download_start(remote_path, destination_path=destination_path)
+    def jsonrpc_file_download_start(self, remote_path, destination_path=None, wait_result=False, open_share=True):
+        return api.file_download_start(remote_path, destination_path=destination_path, wait_result=wait_result, open_share=open_share)
 
     def jsonrpc_file_download_stop(self, remote_path):
         return api.file_download_stop(remote_path)

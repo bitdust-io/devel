@@ -1,6 +1,30 @@
+#!/usr/bin/env python
+# testsupport.py
+#
+# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
+#
+# This file (testsupport.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+
+
 import subprocess
 import asyncio
 import json
+
 
 #------------------------------------------------------------------------------
 
@@ -32,7 +56,7 @@ def run_ssh_command_and_wait(host, cmd):
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
-        cmd_args = ['ssh', '-o', 'StrictHostKeyChecking=no', '-p', '22', 'root@%s' % host, cmd, ]
+        cmd_args = ['ssh', '-o', 'StrictHostKeyChecking=no', '-p', '22', f'root@{host}', cmd, ]
     ssh_proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, shell=False)
     output, err = ssh_proc.communicate()
     if err:
@@ -52,7 +76,7 @@ def open_tunnel(node):
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
     _NextSSHTunnelPort += 1
-    print('open_tunnel [%s] on port %d with %s\n' % (node, local_port, ssh_proc, ))
+    print(f'open_tunnel [{node}] on port {local_port} with {ssh_proc}\n')
 
 
 def close_tunnel(node):
@@ -63,7 +87,7 @@ def close_tunnel(node):
         assert False, 'ssh tunnel process for that node was not found'
     close_ssh_port_forwarding(node, _SSHTunnels[node])
     _SSHTunnels.pop(node)
-    print('close_tunnel [%s] OK\n' % node)
+    print(f'close_tunnel [{node}] OK\n')
 
 
 def open_ssh_port_forwarding(node, port1, port2):
@@ -78,7 +102,7 @@ def open_ssh_port_forwarding(node, port1, port2):
 def close_ssh_port_forwarding(node, ssh_proc):
     if node == 'is':
         node = 'identity-server'
-    print('\n[%s] closing %s' % (node, ssh_proc))
+    print(f'\n[{node}] closing {ssh_proc}')
     ssh_proc.kill()
     return True
 
@@ -86,6 +110,7 @@ def close_ssh_port_forwarding(node, ssh_proc):
 def open_all_tunnels(nodes):
     for node in nodes:
         open_tunnel(node)
+
 
 def close_all_tunnels():
     global _SSHTunnels
@@ -101,5 +126,6 @@ def tunnel_port(node):
         node = 'identity-server'
     return _NodeTunnelPort[node]
 
+
 def tunnel_url(node, endpoint):
-    return 'http://127.0.0.1:%d/%s' % (tunnel_port(node), endpoint.lstrip('/'))
+    return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'

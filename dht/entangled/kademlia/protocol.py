@@ -16,18 +16,20 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+
 from twisted.internet import protocol, defer
 from twisted.python import failure
+
+import base64
+
 import twisted.internet.reactor
-
-from . import constants
-from . import encoding
-from . import msgtypes
-from . import msgformat
-from .contact import Contact
-
 reactor = twisted.internet.reactor
 
+from . import constants  # @UnresolvedImport
+from . import encoding  # @UnresolvedImport
+from . import msgtypes  # @UnresolvedImport
+from . import msgformat  # @UnresolvedImport
+from .contact import Contact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -59,7 +61,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._partialMessages = {}
         self._partialMessagesProgress = {}
 
-    def sendRPC(self, contact, method, args, rawResponse=False):
+    def sendRPC(self, contact, method, args, rawResponse=False, **kwargs):
         """
         Sends an RPC to the specified contact.
 
@@ -149,6 +151,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             if isinstance(message, msgtypes.RequestMessage):
                 # This is an RPC method request
                 self._handleRPC(remoteContact, message.id, str(message.request), message.args)
+
             elif isinstance(message, msgtypes.ResponseMessage):
                 # Find the message that triggered this response
                 if message.id in self._sentMessages:
@@ -186,6 +189,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     # If the original message isn't found, it must have timed out
                     # TODO: we should probably do something with this...
                     pass
+
         except:
             import traceback
             traceback.print_exc()
@@ -284,7 +288,6 @@ class KademliaProtocol(protocol.DatagramProtocol):
         df.addErrback(handleError)
 
         if _Debug:
-            import base64
             print('                    _handleRPC', base64.b64encode(rpcID), method, args)
 
         if self._counter:

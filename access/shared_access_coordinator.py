@@ -435,7 +435,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.result_defer = None
         self.unregister()
 
-    def _on_supplier_connector_state_changed(self, idurl, newstate):
+    def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_coordinator._supplier_connector_state_changed %s to %s, own state is %s' % (
                 idurl, newstate, self.state))

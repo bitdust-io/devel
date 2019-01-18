@@ -63,11 +63,11 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.dtuple import DistributedTupleSpacePeer
 from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
 from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
 from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
+from dht.entangled.node import EntangledNode  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ SENDING_QUEUE_LENGTH_CRITICAL = 50
 _MyNode = None
 _ActiveLookup = None
 _Counters = {}
-_ProtocolVersion = 6
+_ProtocolVersion = 7
 
 #------------------------------------------------------------------------------
 
@@ -314,20 +314,19 @@ def split_key(key_str):
 #------------------------------------------------------------------------------
 
 def on_success(result, method, key, *args, **kwargs):
-    if isinstance(result, dict):
-        sz_bytes = len(str(result))
-    else:
-        sz_bytes = 0
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)   with %d bytes' % (
-            method, key, sz_bytes))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)    result is %s' % (method, key, type(result), ))
     return result
 
 
 def on_error(err, method, key):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%s' % (
-            method, key, str(err)))
+        try:
+            _err = str(err)
+        except:
+            _err = 'unknown error' 
+        lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%r' % (
+            method, key, _err))
     return err
 
 #------------------------------------------------------------------------------
@@ -344,7 +343,7 @@ def get_value(key):
     return d
 
 
-def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
+def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=True):
     if not node():
         return fail(Exception('DHT service is off'))
     count('set_value_%s' % key)
@@ -356,7 +355,7 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
         expire = KEY_EXPIRE_MIN_SECONDS
     if expire > KEY_EXPIRE_MAX_SECONDS:
         expire = KEY_EXPIRE_MAX_SECONDS
-    d = node().iterativeStore(key_to_hash(key), value, age=age, expireSeconds=expire)
+    d = node().iterativeStore(key_to_hash(key), value, age=age, expireSeconds=expire, collect_results=collect_results)
     d.addCallback(on_success, 'set_value', key, value)
     d.addErrback(on_error, 'set_value', key)
     return d
@@ -377,14 +376,18 @@ def delete_key(key):
 
 def read_json_response(response, key, result_defer=None):
     value = None
+    if isinstance(response, list):
+        if result_defer:
+            result_defer.callback(response)
+        return None
     if isinstance(response, dict):
         try:
-            value = json.loads(response[key])
+            value = jsn.loads(response[key])
         except:
             lg.exc()
             if result_defer:
-                result_defer.errback(Exception('invalid json value'))
-            return
+                result_defer.errback(Exception('invalid json value found in DHT'))
+            return None
     if result_defer:
         result_defer.callback(value)
     return value
@@ -400,7 +403,7 @@ def get_json_value(key):
     return ret
 
 
-def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
+def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=True):
     if not node():
         return fail(Exception('DHT service is off'))
     try:
@@ -410,22 +413,134 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS):
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] with %d bytes' % (
             key, len(str(value))))
-    return set_value(key=key, value=value, age=age, expire=expire)
+    return set_value(key=key, value=value, age=age, expire=expire, collect_results=collect_results)
 
 #------------------------------------------------------------------------------
 
-def validate_data(value, key, rules, result_defer=None):
+def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
+    try:
+        json_new_value = json.loads(value)
+    except:
+        # not a json data to be written - this is not valid
+        lg.exc()
+        raise ValueError('input data is not a json value')
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (
+            base64.b64encode(key), json_new_value, ))
+    new_record_type = json_new_value.get('type')
+    if not new_record_type:
+        if _Debug:
+            lg.out(_DebugLevel, '        new json data do not have "type" field present, store operation FAILED')
+        raise ValueError('input data do not have "type" field present')
+    if key not in node()._dataStore:
+        if _Debug:
+            lg.out(_DebugLevel, '        previous value not exists yet, store OK')
+        return True
+    prev_value = node()._dataStore[key]
+    try:
+        json_prev_value = json.loads(prev_value)
+    except:
+        if _Debug:
+            lg.out(_DebugLevel, '        current value in DHT is not a json data, will be overwritten, store OK')
+        return True
+    prev_record_type = json_prev_value.get('type')
+    if prev_record_type and prev_record_type != new_record_type:
+        if _Debug:
+            lg.out(_DebugLevel, '        new json data type did not match to existing record type, store operation FAILED')
+        raise ValueError('new json data type do not match to existing record type')
+    # TODO: need to include "key" field into DHT record and validate it as well 
+    # new_record_key = json_new_value.get('key')
+    # if not new_record_key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data do not have "key" field present, store operation FAILED')
+    #     return False
+    # if new_record_key != key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data do not have "key" field set properly, store operation FAILED')
+    #     return False
+    # prev_record_key = json_prev_value.get('key')
+    # if prev_record_key and prev_record_key != new_record_key:
+    #     if _Debug:
+    #         lg.out(_DebugLevel, '        new json data "key" field do not match to existing record "key", store operation FAILED')
+    #     return False
+    try:
+        prev_revision = int(json_prev_value['revision'])
+    except:
+        prev_revision = -1
+    try:
+        new_revision = int(json_new_value['revision'])
+    except:
+        new_revision = -1
+    if prev_revision >= 0:
+        if new_revision < 0:
+            if _Debug:
+                lg.out(_DebugLevel, '        new json data must have a revision, store operation FAILED')
+            raise ValueError('new json data must have a revision')
+        if new_revision < prev_revision:
+            if _Debug:
+                lg.out(_DebugLevel, '        new json data must increment revision number, store operation FAILED')
+            raise ValueError('new json data must increment revision number')
+        if new_revision == prev_revision:
+            if prev_record_type == 'suppliers':
+                prev_ecc_map = json_prev_value.get('ecc_map')
+                new_ecc_map = json_new_value.get('ecc_map')
+                if prev_ecc_map and new_ecc_map != prev_ecc_map:
+                    if _Debug:
+                        lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
+                    raise ValueError('new json data have same revision but different ecc_map')
+                prev_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_prev_value.get('suppliers', [])]
+                new_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_new_value.get('suppliers', [])]
+                if prev_suppliers != new_suppliers:
+                    if _Debug:
+                        lg.out(_DebugLevel, '        new json data have same revision but different suppliers list, store operation FAILED')
+                    raise ValueError('new json data have same revision but different suppliers list')
+    if _Debug:
+        lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
+    return True
+
+
+def validate_before_request(key, **kwargs):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_before_request key=[%s]' % key)
+    return True
+
+
+def validate_data(value, key, rules, result_defer=None, raise_for_result=True, populate_meta_fields=False):
+    if not rules:
+        lg.err('DHT record must have validation rules applied')
+        if result_defer:
+            result_defer.errback(Exception('data must have validation rules applied'))
+        return None
+
     if not isinstance(value, dict):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
         if result_defer:
-            result_defer.errback(Exception('value not found'))
+            if not raise_for_result:
+                result_defer.callback(value)
+            else:
+                result_defer.errback(Exception('value not found'))
         return None
+
+    if value.get('key') != key and populate_meta_fields:
+        value['key'] = key
+
+    try:
+        record_type = rules['type'][0]['arg']
+    except:
+        lg.exc()
+        if result_defer:
+            result_defer.errback(Exception('validation rules can not be applied'))
+        return None
+    if value.get('type') != record_type and populate_meta_fields:
+        value['type'] = record_type
+
     passed = True
     errors = []
     for field, field_rules in rules.items():
         for rule in field_rules:
             if 'op' not in rule:
+                lg.warn('incorrect validation rule found: %r' % rule)
                 continue
             if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
                 passed = False
@@ -438,9 +553,9 @@ def validate_data(value, key, rules, result_defer=None):
         if not passed:
             break
     if not passed:
-        lg.warn('invalid data in response, validation rules failed, errors: %s' % errors)
+        lg.err('DHT record validation failed, errors: %s' % errors)
         if result_defer:
-            result_defer.errback(Exception('invalid value in response'))
+            result_defer.errback(Exception('DHT record validation failed'))
         return None
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] : value is OK' % key)
@@ -449,18 +564,147 @@ def validate_data(value, key, rules, result_defer=None):
     return value
 
 
-def get_valid_data(key, rules={}):
+def validate_data_written(store_results, key, json_data, result_defer):
+    try:
+        nodes = store_results
+        results_collected = False
+        if isinstance(store_results, tuple):
+            results_collected = True
+            nodes = store_results[0]
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  collected=%s  nodes=%r' % (
+                base64.b64encode(key), results_collected, nodes, ))
+        if results_collected:
+            for result in store_results[1]:
+                try:
+                    success = result[0]
+                    response = result[1]
+                    success_str = repr(success)
+                    response_str = repr(response)
+                except Exception as exc:
+                    lg.exc()
+                    result_defer.errback(exc)
+                    return None
+                if success_str.count('TimeoutError') or response_str.count('TimeoutError'):
+                    continue
+                if not success:
+                    if _Debug:
+                        lg.out(_DebugLevel, '    store operation failed: %r' % response)
+                    result_defer.errback(ValueError(response))
+                    return None
+                if response != 'OK':
+                    if _Debug:
+                        lg.out(_DebugLevel, '    store operation failed, unexpected response received: %r' % response)
+                    result_defer.errback(ValueError(response))
+                    return None
+            result_defer.callback(nodes)
+            return None
+        if isinstance(store_results, list):
+            result_defer.callback(nodes)
+            return None
+    except:
+        lg.exc()
+        result_defer.errback(store_results)
+    return None
+
+
+def get_valid_data(key, rules={}, raise_for_result=True):
     ret = Deferred()
     d = get_json_value(key)
-    d.addCallback(validate_data, key, rules, ret)
+    d.addCallback(validate_data, key=key, rules=rules, result_defer=ret, raise_for_result=raise_for_result)
     d.addErrback(ret.errback)
     return ret
 
 
-def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}):
-    if validate_data(json_data, key, rules) is None:
+def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}, collect_results=False):
+    valid_json_data = validate_data(value=json_data, key=key, rules=rules, populate_meta_fields=True)
+    if valid_json_data is None:
         return fail(Exception('invalid data, validation failed'))
-    return set_json_value(key, json_data=json_data, age=age, expire=expire)
+    ret = Deferred()
+    d = set_json_value(key, json_data=json_data, age=age, expire=expire, collect_results=collect_results)
+    d.addCallback(validate_data_written, key, json_data, ret)
+    d.addErrback(ret.errback)
+    return ret
+
+
+def write_verify_republish_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}):
+    """
+    """
+    try:
+        raw_value = jsn.dumps(json_data, indent=0, sort_keys=True, separators=(',', ':'))
+    except:
+        return fail(Exception('bad input json data'))
+
+    ret = Deferred()
+    _found_nodes = None
+    _write_response = None
+    _join = Deferred()
+    _join.addCallback(_do_verify)
+    _join.addErrback(lg.errback)
+
+    def _some_nodes_found(nodes):
+        global _write_response
+        global _found_nodes
+        global _join
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service._some_nodes_found : %r' % nodes)
+        if len(nodes) > 0:
+            _found_nodes = nodes
+        else:
+            _found_nodes = []
+        if _write_response:
+            _join.callback(_write_response, _found_nodes)
+        return nodes
+
+    def _nodes_not_found(err):
+        global _found_nodes
+        global _join
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service._nodes_not_found err=%s' % str(err))
+        _found_nodes = []
+        _join.cancel()
+        del _join
+        ret.errback(err)
+        return err
+
+    def _write_ok(write_result):
+        global _write_response
+        global _found_nodes
+        global _join
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service._write_ok : %r' % write_result)
+        _write_response = write_result
+        if _found_nodes is not None:
+            _join.callback(_write_response, _found_nodes) 
+        return write_result
+
+    def _write_failed(err):
+        global _join
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service._write_failed  err=%r' % err)
+        _join.cancel()
+        del _join
+        ret.errback(err)
+        return err
+
+    def _do_verify(write_response, found_nodes):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service._do_verify  %r via nodes: %r' % (write_response, found_nodes, ))
+        for node in found_nodes:
+            node.request(b'verify_update', key, raw_value, age, expire)
+        ret.callback(write_response, found_nodes)
+        return None
+
+    new_key = random_key()
+    d_observer = find_node(new_key)
+    d_observer.addCallback(_some_nodes_found)
+    d_observer.addErrback(_nodes_not_found)
+
+    d_write = set_valid_data(key=key, json_data=json_data, age=age, expire=expire, rules=rules)
+    d_write.addCallback(_write_ok)
+    d_write.addErrback(_write_failed)
+
+    return ret
 
 #------------------------------------------------------------------------------
 
@@ -491,8 +735,8 @@ def find_node(node_id):
     if not node():
         return fail(Exception('DHT service is off'))
     _ActiveLookup = node().iterativeFindNode(node_id)
-    _ActiveLookup.addErrback(on_lookup_failed, node_id64)
     _ActiveLookup.addCallback(on_nodes_found, node_id64)
+    _ActiveLookup.addErrback(on_lookup_failed, node_id64)
     return _ActiveLookup
 
 #------------------------------------------------------------------------------
@@ -547,13 +791,21 @@ def delete_node_data(key):
 
 #------------------------------------------------------------------------------
 
-class DHTNode(DistributedTupleSpacePeer):
+
+class DHTNode(EntangledNode):
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
         super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=None, )
+        self._counter = count
         self.data = {}
         self.expire_task = LoopingCall(self.expire)
-        self._counter = count
+        self.rpc_callbacks = {}
+
+    def add_rpc_callback(self, rpc_method_name, cb):
+        self.rpc_callbacks[rpc_method_name] = cb
+
+    def remove_rpc_callback(self, rpc_method_name):
+        self.rpc_callbacks.pop(rpc_method_name, None)
 
     def expire(self):
         now = utime.get_sec1970()
@@ -579,13 +831,14 @@ class DHTNode(DistributedTupleSpacePeer):
     @rpcmethod
     def store(self, key, value, originalPublisherID=None,
               age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
-        # TODO: add signature validation to be sure this is the owner of that key:value pair
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
                 base64.b64encode(key), expireSeconds, counter('store')))
-        try:
-            return super(DHTNode, self).store(
+
+        if 'store' in self.rpc_callbacks:
+            # TODO: add signature validation to be sure this is the owner of that key:value pair
+            self.rpc_callbacks['store'](
                 key=key,
                 value=value,
                 originalPublisherID=originalPublisherID,
@@ -593,15 +846,27 @@ class DHTNode(DistributedTupleSpacePeer):
                 expireSeconds=expireSeconds,
                 **kwargs
             )
-        except:
-            lg.exc()
-            return 'OK'
+
+        return super(DHTNode, self).store(
+            key=key,
+            value=value,
+            originalPublisherID=originalPublisherID,
+            age=age,
+            expireSeconds=expireSeconds,
+            **kwargs
+        )
 
     @rpcmethod
     def request(self, key):
         count('request')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
+
+        if 'request' in self.rpc_callbacks:
+            self.rpc_callbacks['request'](
+                key=key,
+            )
+
         internal_value = get_node_data(key)
         if internal_value is None and key in self._dataStore:
             value = self._dataStore[key]
@@ -615,6 +880,13 @@ class DHTNode(DistributedTupleSpacePeer):
         if _Debug:
             lg.out(_DebugLevel, '    read internal value, counter=%d' % counter('request'))
         return {key: value, }
+
+    @rpcmethod
+    def verify_update(self, key, value, originalPublisherID=None,
+                      age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
+        count('request')
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.DHTNode.verify_update key=[%s]' % strng.to_text(key, errors='ignore')[:10])
 
     def reconnect(self, knownNodeAddresses=None):
         """
@@ -746,6 +1018,8 @@ def main(options=None, args=None):
                     dht_relations.read_customer_suppliers(args[1]).addBoth(_r)
                 elif cmd == 'write_customer_suppliers':
                     dht_relations.write_customer_suppliers(args[1], args[2].split(',')).addBoth(_r)
+                elif cmd == 'write_verify_republish':
+                    write_verify_republish_data(args[1], args[2], expire=int(args[3])).addBoth(_r)
                 elif cmd == 'find':
                     find_node(key_to_hash(args[1])).addBoth(_r)
                 elif cmd == 'ping':

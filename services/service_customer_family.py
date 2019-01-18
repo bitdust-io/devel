@@ -75,6 +75,7 @@ class SupplierRelationsService(LocalService):
                 'supplier_idurl': my_id.getLocalIDURL(),
                 'ecc_map': local_customer_meta_info.get('ecc_map'),
                 'position': local_customer_meta_info.get('position', -1),
+                'family_snapshot': local_customer_meta_info.get('family_snapshot'),
             })
 
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
@@ -107,6 +108,7 @@ class SupplierRelationsService(LocalService):
             'supplier_idurl': my_id.getLocalIDURL(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position', -1),
+            'family_snapshot': evt.data.get('family_snapshot'),
         })
 
     def _on_existing_customer_accepted(self, evt):
@@ -128,6 +130,7 @@ class SupplierRelationsService(LocalService):
             'supplier_idurl': my_id.getLocalIDURL(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position'),
+            'family_snapshot': evt.data.get('family_snapshot'),
         })
 
     def _on_existing_customer_terminated(self, evt):
@@ -168,6 +171,7 @@ class SupplierRelationsService(LocalService):
                 customer_idurl = strng.to_bin(json_payload['customer_idurl'])
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
                 suppliers_list = list(map(strng.to_bin, json_payload['suppliers_list']))
+                transaction_revision = json_payload.get('transaction_revision')
             except:
                 lg.exc()
                 return False
@@ -185,7 +189,9 @@ class SupplierRelationsService(LocalService):
                 'customer_idurl': customer_idurl,
                 'customer_ecc_map': ecc_map,
                 'suppliers_list': suppliers_list,
+                'transaction_revision': transaction_revision,
             })
+            return True
 
         elif contacts_type == 'supplier_position':
             try:
@@ -193,6 +199,7 @@ class SupplierRelationsService(LocalService):
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
                 supplier_idurl = strng.to_bin(json_payload['supplier_idurl'])
                 supplier_position = json_payload['supplier_position']
+                family_snapshot = json_payload.get('family_snapshot')
             except:
                 lg.exc()
                 return False
@@ -211,7 +218,9 @@ class SupplierRelationsService(LocalService):
                 'customer_ecc_map': ecc_map,
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,
+                'family_snapshot': family_snapshot,
             })
+            return True
 
         return False
 

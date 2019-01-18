@@ -49,7 +49,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -65,7 +65,6 @@ from logs import lg
 
 from lib import nameurl
 from lib import serialization
-from lib import strng
 
 from crypt import encrypted
 from crypt import key

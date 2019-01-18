@@ -224,7 +224,7 @@ class BroadcasterNode(automat.Automat):
             return
         if args[0] in self.listeners:
             lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster SKIP, %s already connected as listener' % args[0])
-        self.connected_broadcasters.append(*args, **kwargs)
+        self.connected_broadcasters.append(args[0])
         self.last_success_action_time = time.time()
         if _Debug:
             lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s joined, %d total connected' % (
@@ -237,7 +237,7 @@ class BroadcasterNode(automat.Automat):
         if args[0] not in self.connected_broadcasters:
             lg.warn('%s is not connected' % args[0])
             return
-        self.connected_broadcasters.remove(*args, **kwargs)
+        self.connected_broadcasters.remove(args[0])
         if _Debug:
             lg.out(_DebugLevel, 'broadcaster_node.doRemoveBroadcaster %s now disconnected' % args[0])
 

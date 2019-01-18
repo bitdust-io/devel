@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo "running 'monitor'"
+
+echo "================================================================================================"
+hostname
+bitdust id
+echo "------------------------------------------------------------------------------------------------"
+df -h
+bitdust states
+bitdust suppliers
+bitdust customers
+bitdust space
+bitdust id
+echo "DONE"
+
+exit 0

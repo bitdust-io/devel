@@ -89,7 +89,7 @@ def init():
     P2PCommandAcks[Key()] = [Ack(), Fail(), ]
     P2PCommandAcks[AuditKey()] = [Ack(), Fail(), ]
     P2PCommandAcks[Event()] = [Ack(), Fail(), ]
-    P2PCommandAcks[Contacts()] = [Contacts(), Fail(), ]
+    P2PCommandAcks[Contacts()] = [Contacts(), Ack(), Fail(), ]
 
 
 def IsCommand(s):

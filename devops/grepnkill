@@ -1,0 +1,19 @@
+#!/bin/bash
+# grepnkill - Grep and Kill
+#
+# grep ps -x for $1 and kill that process.
+#
+# Note that this process and the grep process are saved by the grep -v grep
+#    because the name of this script includes "grep"
+#
+
+echo "running 'kill $1'"
+
+LINES=`ps auxww | grep "$1" | grep -v grep`
+[ -n "$LINES" ] && echo "$LINES"
+NUM=`echo "$LINES" | awk '{print $2}'`
+[ -n "$NUM" ] && kill -9 $NUM
+[ -n "$NUM" ] && echo "killed process $NUM"
+
+exit 0
+

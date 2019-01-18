@@ -74,6 +74,8 @@ from lib import strng
 from lib import nameurl
 from lib import diskspace
 
+from contacts import contactsdb
+
 from userid import global_id
 
 from crypt import my_keys
@@ -165,11 +167,18 @@ class SupplierConnector(automat.Automat):
         self.queue_subscribe = queue_subscribe
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
-            num_suppliers = settings.getSuppliersNumberDesired()
+            num_suppliers = -1
+            if self.customer_idurl == my_id.getLocalIDURL():
+                num_suppliers = settings.getSuppliersNumberDesired()
+            else:
+                known_ecc_map = contactsdb.get_customer_meta_info(customer_idurl).get('ecc_map')
+                if known_ecc_map:
+                    num_suppliers = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
             if num_suppliers > 0:
                 self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
             else:
-                self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
+                raise Exception('not possible to determine needed_bytes value to be requested from that supplier')
+                # self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
         name = 'supplier_%s_%s' % (
             nameurl.GetName(self.supplier_idurl),
             diskspace.MakeStringFromBytes(self.needed_bytes).replace(' ', ''),
@@ -201,6 +210,7 @@ class SupplierConnector(automat.Automat):
         """
         self._last_known_family_position = None
         self._last_known_ecc_map = None
+        self._last_known_family_snapshot = None
         contact_peer = contact_status.getInstance(self.supplier_idurl)
         if contact_peer:
             contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
@@ -370,6 +380,9 @@ class SupplierConnector(automat.Automat):
         self._last_known_family_position = kwargs.get('family_position')
         if self._last_known_family_position is not None:
             service_info['position'] = self._last_known_family_position
+        self._last_known_family_snapshot = kwargs.get('family_snapshot')
+        if self._last_known_family_snapshot is not None:
+            service_info['family_snapshot'] = self._last_known_family_snapshot
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
@@ -394,7 +407,6 @@ class SupplierConnector(automat.Automat):
             },
         )
         self.request_packet_id = request.PacketID
-        
 
     def doRequestQueueService(self, *args, **kwargs):
         """
@@ -478,19 +490,26 @@ class SupplierConnector(automat.Automat):
         if _Debug:
             lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
         for cb in list(self.callbacks.values()):
-            cb(self.supplier_idurl, 'CONNECTED')
-        if self._last_known_family_position is not None:
-            p2p_service.SendContacts(
-                remote_idurl=self.supplier_idurl,
-                json_payload={
-                    'space': 'family_member',
-                    'type': 'supplier_position',
-                    'customer_idurl': my_id.getLocalIDURL(),
-                    'customer_ecc_map': self._last_known_ecc_map,
-                    'supplier_idurl': self.supplier_idurl,
-                    'supplier_position': self._last_known_family_position,
-                },
+            cb(
+                self.supplier_idurl,
+                'CONNECTED',
+                family_position=self._last_known_family_position,
+                ecc_map=self._last_known_ecc_map,
+                family_snapshot=self._last_known_family_snapshot,
             )
+#         if self._last_known_family_position is not None:
+#             p2p_service.SendContacts(
+#                 remote_idurl=self.supplier_idurl,
+#                 json_payload={
+#                     'space': 'family_member',
+#                     'type': 'supplier_position',
+#                     'customer_idurl': my_id.getLocalIDURL(),
+#                     'customer_ecc_map': self._last_known_ecc_map,
+#                     'supplier_idurl': self.supplier_idurl,
+#                     'supplier_position': self._last_known_family_position,
+#                     'family_snapshot': self._last_known_family_snapshot,
+#                 },
+#             )
 
     def doReportNoService(self, *args, **kwargs):
         """

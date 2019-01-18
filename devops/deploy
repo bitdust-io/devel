@@ -1,0 +1,26 @@
+#!/bin/bash
+
+cd ~
+
+echo "killing 'bitdust.py' process on $1"
+
+./grepnkill bitdust.py
+
+
+echo "cloning github.com/bitdust-io/public.git on $1"
+
+rm -rf bitdust
+git clone https://github.com/bitdust-io/public.git bitdust
+
+
+echo "running 'deploy' on $1"
+
+cd bitdust
+python bitdust.py deploy
+cd ..
+
+# You will need to create a system wide alias for BitDust on that machine
+# this requires to create a link in a system folder, an so it requires root permissions
+# comment this line if you do not want to run it automatically after deployment finished
+
+sudo ln -fs ~/.bitdust/bitdust /usr/local/bin/bitdust
