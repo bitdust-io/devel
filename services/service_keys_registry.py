@@ -44,10 +44,9 @@ class KeysRegistryService(LocalService):
     config_path = 'services/keys-registry/enabled'
 
     def dependent_on(self):
-        return ['service_list_files',
-                'service_employer',
-                'service_rebuilding',
-                ]
+        return [
+            'service_p2p_notifications',
+        ]
 
     def start(self):
         from access import key_ring

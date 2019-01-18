@@ -44,8 +44,9 @@ class DataMotionService(LocalService):
     config_path = 'services/data-motion/enabled'
 
     def dependent_on(self):
-        return ['service_customer',
-                ]
+        return [
+            'service_customer',
+        ]
 
     def start(self):
         from customer import io_throttle

@@ -44,8 +44,9 @@ class CustomerService(LocalService):
     config_path = 'services/customer/enabled'
 
     def dependent_on(self):
-        return ['service_p2p_notifications',
-                ]
+        return [
+            'service_keys_registry',
+        ]
 
     def installed(self):
         from userid import my_id

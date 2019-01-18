@@ -45,8 +45,10 @@ class P2PHookupsService(LocalService):
 
     def dependent_on(self):
         from main import settings
-        depends = ['service_gateway',
-                   'service_identity_propagate', ]
+        depends = [
+            'service_gateway',
+            'service_identity_propagate',
+        ]
         if settings.enableTCP():
             depends.append('service_tcp_transport')
         if settings.enableUDP():
