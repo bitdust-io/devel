@@ -25,6 +25,7 @@ import time
 import requests
 import asyncio
 import itertools
+import pprint
 import aiohttp  # @UnresolvedImport
 
 from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_ssh_command_and_wait_async
