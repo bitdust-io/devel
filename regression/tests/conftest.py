@@ -25,11 +25,10 @@ import time
 import requests
 import asyncio
 import itertools
-import pprint
+import aiohttp  # @UnresolvedImport
 
-from collections import OrderedDict
+from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_ssh_command_and_wait_async
 
-from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url
 
 #------------------------------------------------------------------------------
 
@@ -125,6 +124,29 @@ def health_check(node):
     print(f'health_check [{node}] : OK\n')
 
 
+async def health_check_async(node, loop):
+
+    async def server_is_health(node):
+        url = tunnel_url(node, 'process/health/v1')
+        print('GET: ', url, flush=True)
+        async with aiohttp.ClientSession(loop=loop) as session:
+            for i in range(5):
+                try:
+                    response = await session.get(url)
+                except Exception as e:
+                    print(f'Exception {url} {e}. Try again in sec.', flush=True)
+                    await asyncio.sleep(1)
+                else:
+                    print(f'Done: {response.url} ({response.status})', flush=True)
+                    response.release()
+                    break
+            else:
+                assert False, 'node %r is not healthy after 5 seconds' % node
+
+    await server_is_health(node)
+    print(f'health_check [{node}] : OK\n')
+
+
 def create_identity(node, identity_name):
     count = 0
     while True:
@@ -149,6 +171,28 @@ def create_identity(node, identity_name):
     print(f'create_identity [{node}] with name {identity_name} : OK\n')
 
 
+async def create_identity_async(node, identity_name, event_loop):
+    client = aiohttp.ClientSession(loop=event_loop)
+    for i in range(5):
+        response_identity = await client.post(tunnel_url(node, 'identity/create/v1'), json={'username': identity_name})
+        assert response_identity.status == 200
+
+        response_json = await response_identity.json()
+
+        if response_json['status'] == 'OK':
+            print('\n' + response_json['result'][0]['xml'] + '\n')
+            break
+        else:
+            assert response_json['errors'] == ['network connection error'], response_json
+
+        print('[%s] retry %d   POST:identity/create/v1  username=%s     network connection error' % (node, i + 1, identity_name,))
+        await asyncio.sleep(1)
+    else:
+        assert False
+
+    print('create_identity [%s] with name %s : OK\n' % (node, identity_name,))
+
+
 def connect_network(node):
     count = 0
     response = requests.get(url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
@@ -164,12 +208,43 @@ def connect_network(node):
         time.sleep(5)
     print(f'connect_network [{node}] : OK\n')
 
+
+async def connect_network_async(node, loop):
+    client = aiohttp.ClientSession(loop=loop)
+    response = await client.get(tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
+    response_json = await response.json()
+    assert response_json['status'] == 'ERROR'
+
+    for i in range(5):
+        response = await client.get(f'http://{node}:8180/network/connected/v1?wait_timeout=1')
+        response_json = await response.json()
+        if response_json['status'] == 'OK':
+            print(f"{node}: got status OK", flush=True)
+            break
+
+        print(f"{node}: sleep 1 sec", flush=True)
+        await asyncio.sleep(1)
+    else:
+        assert False
+
 #------------------------------------------------------------------------------
 
 def start_daemon(node):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
     bitdust_daemon = run_ssh_command_and_wait(node, 'bitdust daemon')
+    print('\n' + bitdust_daemon[0].strip())
+    assert (
+        bitdust_daemon[0].strip().startswith('main BitDust process already started') or
+        bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
+    )
+    print(f'start_daemon [{node}] OK\n')
+
+
+async def start_daemon_async(node, loop):
+    await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
+    await run_ssh_command_and_wait_async(node, 'echo "docker" > /root/.bitdust/metadata/networkname', loop)
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'bitdust daemon', loop)
     print('\n' + bitdust_daemon[0].strip())
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
@@ -287,6 +362,30 @@ def start_proxy_server(node, identity_name):
     print(f'\nSTARTED PROXY SERVER [{node}]\n')
 
 
+async def start_proxy_server_async(node, identity_name, loop):
+    print(f'\nNEW PROXY SERVER {identity_name} at [{node}]\n')
+    # use short key to run tests faster
+    await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
+    # disable unwanted services
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/customer/enabled false', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/supplier/enabled false', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-transport/enabled false', loop)
+
+    # configure ID servers
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
+    # configure DHT udp port
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
+    # enable ProxyServer service
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-server/enabled true', loop)
+    # start BitDust daemon and create new identity for proxy server
+    await start_daemon_async(node, loop)
+    await health_check_async(node, loop)
+    await create_identity_async(node, identity_name, loop)
+    await connect_network_async(node, loop)
+    print(f'\nSTARTED PROXY SERVER [{node}]\n')
+
+
 def start_supplier(node, identity_name):
     print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
     # use short key to run tests faster
@@ -308,6 +407,30 @@ def start_supplier(node, identity_name):
     health_check(node)
     create_identity(node, identity_name)
     connect_network(node)
+    print(f'\nSTARTED SUPPLIER [{node}]\n')
+
+
+async def start_supplier_async(node, identity_name, loop):
+    print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
+    # use short key to run tests faster
+    await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
+    # disable unwanted services
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/customer/enabled false', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-server/enabled false', loop)
+    # configure ID servers
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
+    # configure DHT udp port
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
+    # set desired Proxy router
+    await run_ssh_command_and_wait_async(node, f'bitdust set services/proxy-transport/preferred-routers "{PROXY_ROUTERS}"', loop)
+    # enable supplier service
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/supplier/enabled true', loop)
+    # start BitDust daemon and create new identity for supplier
+    await start_daemon_async(node, loop)
+    await health_check_async(node, loop)
+    await create_identity_async(node, identity_name, loop)
+    await connect_network_async(node, loop)
     print(f'\nSTARTED SUPPLIER [{node}]\n')
 
 
@@ -339,6 +462,36 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2):
         connect_network(node)
     print(f'\nSTARTED CUSTOMER [{node}]\n')
 
+
+async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2):
+    print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
+    # use short key to run tests faster
+    await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
+    # disable unwanted services
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/supplier/enabled false', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-server/enabled false', loop)
+    # configure ID servers
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
+    # configure DHT udp port
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
+    # set desired Proxy router
+    await run_ssh_command_and_wait_async(node, f'bitdust set services/proxy-transport/preferred-routers "{PROXY_ROUTERS}"', loop)
+    # enable customer service and prepare tests
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/customer/enabled true', loop)
+    await run_ssh_command_and_wait_async(node, f'bitdust set services/customer/suppliers-number {num_suppliers}', loop)
+    # create randomized file to test file upload/download
+    await run_ssh_command_and_wait_async(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt', loop)
+    await run_ssh_command_and_wait_async(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/second_file_{node}.txt', loop)
+    # start BitDust daemon and create new identity for supplier
+    await start_daemon_async(node, loop)
+    await health_check_async(node, loop)
+    if join_network:
+        await create_identity_async(node, identity_name, loop)
+        await connect_network_async(node, loop)
+    print(f'\nSTARTED CUSTOMER [{node}]\n')
+
+
 #------------------------------------------------------------------------------
 
 async def open_one_tunnel(node):
@@ -348,12 +501,17 @@ async def open_one_tunnel(node):
 def open_all_tunnels(event_loop, nodes):
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(open_one_tunnel(node)) for node in nodes
-]))
+    ]))
+
 
 #------------------------------------------------------------------------------
 
 async def start_one_supplier(supplier):
     start_supplier(node=supplier, identity_name=supplier)
+
+
+async def start_one_supplier_async(supplier, loop):
+    await start_supplier_async(node=supplier, identity_name=supplier, loop=loop)
 
 
 async def start_one_customer(customer):
@@ -365,9 +523,21 @@ async def start_one_customer(customer):
     )
 
 
+async def start_one_customer_async(customer, loop):
+    await start_customer_async(
+        node=customer['name'],
+        identity_name=customer['name'],
+        join_network=customer['join_network'],
+        loop=loop,
+    )
+
+
+async def start_one_proxy_server(supplier, loop):
+    await start_proxy_server_async(node=supplier, identity_name=supplier, loop=loop)
+
+
 def start_all_nodes(event_loop):
-    # TODO: keep up to date with docker-compose links
-    print('\nStarting nodes\n') 
+    print('\nStarting nodes\n')
 
     for number, dhtseed in enumerate(ALL_ROLES['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
@@ -383,15 +553,16 @@ def start_all_nodes(event_loop):
     for stunsrv in ALL_ROLES['stun-servers']:
         start_stun_server(node=stunsrv)
 
-    for proxysrv in ALL_ROLES['proxy-servers']:
-        start_proxy_server(node=proxysrv, identity_name=proxysrv)
-
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(start_one_supplier(supplier)) for supplier in ALL_ROLES['suppliers']
+        start_one_proxy_server(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
     ]))
 
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(start_one_customer(customer)) for customer in ALL_ROLES['customers']
+        asyncio.ensure_future(start_one_supplier_async(supplier, event_loop)) for supplier in ALL_ROLES['suppliers']
+    ]))
+
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(start_one_customer_async(customer, event_loop)) for customer in ALL_ROLES['customers']
     ]))
 
     print('\nALL NODES STARTED\n')
@@ -408,7 +579,6 @@ def stop_all_nodes(event_loop):
     ]))
     print('\nALL NODES STOPPED\n')
 
-#------------------------------------------------------------------------------
 
 async def report_one_node(node):
     main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()

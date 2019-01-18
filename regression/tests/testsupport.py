@@ -22,6 +22,9 @@
 
 
 import subprocess
+import asyncio
+import json
+
 
 #------------------------------------------------------------------------------
 
@@ -30,6 +33,24 @@ _NodeTunnelPort = {}
 _NextSSHTunnelPort = 10000
 
 #------------------------------------------------------------------------------
+
+
+async def run_ssh_command_and_wait_async(host, cmd, loop):
+    if host in [None, '', b'', 'localhost', ]:
+        cmd_args = cmd
+    else:
+        cmd_args = ['ssh', '-o', 'StrictHostKeyChecking=no', '-p', '22', 'root@%s' % host, cmd, ]
+
+    create = asyncio.create_subprocess_exec(*cmd_args,
+                                            stdout=asyncio.subprocess.PIPE,
+                                            loop=loop)
+    ssh_proc = await create
+    stdout, stderr = await ssh_proc.communicate()
+    if stderr:
+        print('STDERR: %r' % stderr)
+    assert not stderr
+    return stdout.decode(), stderr
+
 
 def run_ssh_command_and_wait(host, cmd):
     if host in [None, '', b'', 'localhost', ]:
