@@ -108,44 +108,37 @@ ALL_ROLES = {
 def health_check(node):
     count = 0
     while True:
-        if count > 5:
-            assert False, f'node {node} is not healthy after 5 seconds'
-
+        if count > 10:
+            assert False, f'node {node} is not healthy after 10 attempts'
         try:
             response = requests.get(tunnel_url(node, 'process/health/v1'))
         except Exception as exc:
-            print(f'[{node}] retry {count}   GET:process/health/v1  :  {exc}')
+            # print(f'[{node}] retry {count}   GET:process/health/v1  :  {exc}')
             response = None
-
         if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
-
+        print(f'node {node} process not started yet, try again after 1 sec.', flush=True)
         time.sleep(1)
         count += 1
-    print(f'health_check [{node}] : OK\n')
+    print(f'process/health/v1 [{node}] : OK\n')
 
 
-async def health_check_async(node, loop):
-
-    async def server_is_health(node):
-        url = tunnel_url(node, 'process/health/v1')
-        print('GET: ', url, flush=True)
-        async with aiohttp.ClientSession(loop=loop) as session:
-            for i in range(5):
-                try:
-                    response = await session.get(url)
-                except Exception as e:
-                    print(f'Exception {url} {e}. Try again in sec.', flush=True)
-                    await asyncio.sleep(1)
-                else:
-                    print(f'Done: {response.url} ({response.status})', flush=True)
-                    response.release()
-                    break
-            else:
-                assert False, 'node %r is not healthy after 5 seconds' % node
-
-    await server_is_health(node)
-    print(f'health_check [{node}] : OK\n')
+async def health_check_async(node, event_loop):
+    count = 0
+    while True:
+        if count > 10:
+            assert False, f'node {node} is not healthy after 10 attempts'
+        try:
+            client = aiohttp.ClientSession(loop=event_loop)
+            response = await client.get(tunnel_url(node, 'process/health/v1'))
+        except:
+            response = None
+        if response and response.status_code == 200 and response.json()['status'] == 'OK':
+            break
+        print(f'node {node} process not started yet, try again after 1 sec.', flush=True)
+        time.sleep(1)
+        count += 1
+    print(f'process/health/v1 [{node}] : OK\n')
 
 
 def create_identity(node, identity_name):
@@ -169,29 +162,29 @@ def create_identity(node, identity_name):
 
         assert False, f'[{node}] bad response from /identity/create/v1'
 
-    print(f'create_identity [{node}] with name {identity_name} : OK\n')
+    print(f'identity/create/v1 [{node}] with name {identity_name} : OK\n')
 
 
 async def create_identity_async(node, identity_name, event_loop):
-    client = aiohttp.ClientSession(loop=event_loop)
-    for i in range(5):
+    for i in range(10):
+        client = aiohttp.ClientSession(loop=event_loop)
         response_identity = await client.post(tunnel_url(node, 'identity/create/v1'), json={'username': identity_name})
         assert response_identity.status == 200
 
         response_json = await response_identity.json()
 
         if response_json['status'] == 'OK':
-            print('\n' + response_json['result'][0]['xml'] + '\n')
+            # print('\n' + response_json['result'][0]['xml'] + '\n')
             break
         else:
             assert response_json['errors'] == ['network connection error'], response_json
 
-        print('[%s] retry %d   POST:identity/create/v1  username=%s     network connection error' % (node, i + 1, identity_name,))
+        print('[%s] retry %d   POST:identity/create/v1  username=%s    after 1 sec.' % (node, i + 1, identity_name,))
         await asyncio.sleep(1)
     else:
         assert False
 
-    print('create_identity [%s] with name %s : OK\n' % (node, identity_name,))
+    print('identity/create/v1 [%s] with name %s : OK\n' % (node, identity_name,))
 
 
 def connect_network(node):
@@ -206,8 +199,8 @@ def connect_network(node):
             break
         count += 1
         # print('[%s] retry %d   GET:network/connected/v1' % (node, count, ))
-        time.sleep(5)
-    print(f'connect_network [{node}] : OK\n')
+        time.sleep(1)
+    print(f'network/connected/v1 [{node}] : OK\n')
 
 
 async def connect_network_async(node, loop):
@@ -220,7 +213,7 @@ async def connect_network_async(node, loop):
         response = await client.get(f'http://{node}:8180/network/connected/v1?wait_timeout=1')
         response_json = await response.json()
         if response_json['status'] == 'OK':
-            print(f"{node}: got status OK", flush=True)
+            print(f"network/connected/v1 {node}: got status OK", flush=True)
             break
 
         print(f"{node}: sleep 1 sec", flush=True)
@@ -251,7 +244,7 @@ async def start_daemon_async(node, loop):
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
-    print(f'start_daemon [{node}] OK\n')
+    print(f'start_daemon_async [{node}] OK\n')
 
 
 def stop_daemon(node, skip_checks=False):
@@ -348,6 +341,7 @@ def start_proxy_server(node, identity_name):
     run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/enabled false')
+
     # configure ID servers
     run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')
     run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/max-servers 1')
@@ -495,19 +489,20 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 
 #------------------------------------------------------------------------------
 
-async def open_one_tunnel(node):
+async def open_one_tunnel_async(node):
     open_tunnel(node)
 
 
 def open_all_tunnels(event_loop, nodes):
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(open_one_tunnel(node)) for node in nodes
+        asyncio.ensure_future(open_one_tunnel_async(node)) for node in nodes
     ]))
+    print('\nAll SSH tunnels opened\n')
 
 
 #------------------------------------------------------------------------------
 
-async def start_one_supplier(supplier):
+def start_one_supplier(supplier):
     start_supplier(node=supplier, identity_name=supplier)
 
 
@@ -515,7 +510,7 @@ async def start_one_supplier_async(supplier, loop):
     await start_supplier_async(node=supplier, identity_name=supplier, loop=loop)
 
 
-async def start_one_customer(customer):
+def start_one_customer(customer):
     start_customer(
         node=customer['name'],
         identity_name=customer['name'],
@@ -523,19 +518,25 @@ async def start_one_customer(customer):
         num_suppliers=customer['num_suppliers'],
     )
 
-
 async def start_one_customer_async(customer, loop):
     await start_customer_async(
         node=customer['name'],
         identity_name=customer['name'],
         join_network=customer['join_network'],
+        num_suppliers=customer['num_suppliers'],
         loop=loop,
     )
 
 
-async def start_one_proxy_server(supplier, loop):
-    await start_proxy_server_async(node=supplier, identity_name=supplier, loop=loop)
+def start_one_proxy_server(proxy_server):
+    start_proxy_server(node=proxy_server, identity_name=proxy_server)
 
+
+async def start_one_proxy_server_async(proxy_server, loop):
+    await start_proxy_server_async(node=proxy_server, identity_name=proxy_server, loop=loop)
+
+
+#------------------------------------------------------------------------------
 
 def start_all_nodes(event_loop):
     print('\nStarting nodes\n')
@@ -544,29 +545,41 @@ def start_all_nodes(event_loop):
         # first seed to be started immediately, all other seeds must wait a bit before start
         start_dht_seed(
             node=dhtseed,
-            # wait_seconds=(10 if number > 0 else 0),
-            wait_seconds=15,
+            wait_seconds=(15 if number > 0 else 0),
+            # wait_seconds=15,
         )
+    print('\nALL DHT SEEDS STARTED\n')
 
     for idsrv in ALL_ROLES['identity-servers']:
         start_identity_server(node=idsrv)
+    print('\nALL ID SERVERS STARTED\n')
 
     for stunsrv in ALL_ROLES['stun-servers']:
         start_stun_server(node=stunsrv)
+    print('\nALL STUN SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
-        start_one_proxy_server(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
-    ]))
+    for proxy_server in ALL_ROLES['proxy-servers']:
+        start_one_proxy_server(proxy_server)
+    # event_loop.run_until_complete(asyncio.wait([
+    #     start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
+    # ]))
+    print('\nALL PROXY SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(start_one_supplier_async(supplier, event_loop)) for supplier in ALL_ROLES['suppliers']
-    ]))
+    for supplier in ALL_ROLES['suppliers']:
+        start_one_supplier(supplier)
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(start_one_supplier_async(supplier, event_loop)) for supplier in ALL_ROLES['suppliers']
+    # ]))
+    print('\nALL SUPPLIERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(start_one_customer_async(customer, event_loop)) for customer in ALL_ROLES['customers']
-    ]))
+    for customer in ALL_ROLES['customers']:
+        start_one_customer(customer)
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(start_one_customer_async(customer, event_loop)) for customer in ALL_ROLES['customers']
+    # ]))
+    print('\nALL CUSTOMERS STARTED\n')
 
-    print('\nALL NODES STARTED\n')
+    print('\nDONE! ALL NODES STARTED!\n')
 
 
 async def stop_one_node(node):
@@ -581,8 +594,8 @@ def stop_all_nodes(event_loop):
     print('\nALL NODES STOPPED\n')
 
 
-async def report_one_node(node):
-    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+async def report_one_node_async(node):
+    main_log = run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
     num_warnings = main_log.count('WARNING')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
@@ -593,8 +606,8 @@ async def report_one_node(node):
           f'Failures: {num_failures}    Exceptions: {num_exceptions}')
 
 
-async def print_exceptions_one_node(node):
-    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log')[0].strip()
+async def print_exceptions_one_node_async(node):
+    exceptions_out = run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log')[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
 
@@ -602,11 +615,11 @@ async def print_exceptions_one_node(node):
 def report_all_nodes(event_loop):
     print('\n\nTest report:')
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(report_one_node(node)) for node in ALL_NODES
+        asyncio.ensure_future(report_one_node_async(node)) for node in ALL_NODES
     ]))
     print('\n\nALL EXCEPTIONS:')
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(print_exceptions_one_node(node)) for node in ALL_NODES
+        asyncio.ensure_future(print_exceptions_one_node_async(node)) for node in ALL_NODES
 ]))
 
 
@@ -630,6 +643,7 @@ async def clean_one_customer(node):
 
 
 def clean_all_nodes(event_loop, skip_checks=False):
+    print('\nCleaning all nodes')
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(clean_one_node(node, skip_checks=skip_checks)) for node in ALL_NODES
     ]))
@@ -637,7 +651,7 @@ def clean_all_nodes(event_loop, skip_checks=False):
         asyncio.ensure_future(clean_one_customer(node)) for node in [
         'customer_1', 'customer_2', 'customer_3', 'customer_4', 'customer_5', 'customer_backup', 'customer_restore',
     ]]))
-    print('All nodes cleaned')
+    print('\n\nAll nodes cleaned')
 
 
 #------------------------------------------------------------------------------
@@ -668,7 +682,7 @@ def global_wrapper(event_loop):
     clean_all_nodes(event_loop, skip_checks=True)
     start_all_nodes(event_loop)
     
-    print('\nStarting all roles and execute tests')
+    print('\nTest network prepared in %5.3f seconds\n')
  
     yield
 
