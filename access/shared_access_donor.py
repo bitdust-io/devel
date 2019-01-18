@@ -226,7 +226,9 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        self.remote_idurl, self.key_id, self.result_defer = args[0]
+        self.remote_idurl = kwargs['trusted_idurl']
+        self.key_id = kwargs['key_id']
+        self.result_defer = kwargs.get('result_defer', None)
 
     def doInsertInboxCallback(self, *args, **kwargs):
         """
@@ -344,6 +346,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
+        lg.info('share key [%s] with %s finished with SUCCESS !!!!!' % (self.key_id, self.remote_idurl, ))
         events.send('private-key-shared', dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
@@ -356,41 +359,24 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        if self.result_defer:
-            if args and args[0]:
-                events.send('private-key-share-failed', dict(
-                    global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                    remote_idurl=self.remote_idurl,
-                    key_id=self.key_id,
-                    reason=args[0],
-                ))
-                self.result_defer.errback(Exception(*args, **kwargs))
+        lg.warn('share key [%s] with %s FAILED: %s' % (self.key_id, self.remote_idurl, args, ))
+        reason = 'share key failed with unknown reason'
+        if args and args[0]:
+            reason = args[0]
+        else:
+            if self.remote_identity is None:
+                reason='remote id caching failed',
             else:
-                if self.remote_identity is None:
-                    events.send('private-key-share-failed', dict(
-                        global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                        remote_idurl=self.remote_idurl,
-                        key_id=self.key_id,
-                        reason='remote id caching failed',
-                    ))
-                    self.result_defer.errback(Exception('remote id caching failed'))
-                else:
-                    if self.ping_response is None:
-                        events.send('private-key-share-failed', dict(
-                            global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                            remote_idurl=self.remote_idurl,
-                            key_id=self.key_id,
-                            reason='remote node not responding',
-                        ))
-                        self.result_defer.errback(Exception('remote node not responding'))
-                    else:
-                        events.send('private-key-share-failed', dict(
-                            global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                            remote_idurl=self.remote_idurl,
-                            key_id=self.key_id,
-                            reason='failed',
-                        ))
-                        self.result_defer.errback(Exception('failed'))
+                if self.ping_response is None:
+                    reason='remote node not responding',
+        events.send('private-key-share-failed', dict(
+            global_id=global_id.UrlToGlobalID(self.remote_idurl),
+            remote_idurl=self.remote_idurl,
+            key_id=self.key_id,
+            reason=reason,
+        ))
+        if self.result_defer:
+            self.result_defer.errback(Exception(reason))
 
     def doDestroyMe(self, *args, **kwargs):
         """

@@ -1743,7 +1743,7 @@ def share_grant(trusted_remote_user, key_id):
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invlid share name')
+        return ERROR('invalid share name')
     from userid import global_id
     remote_idurl = trusted_remote_user
     if trusted_remote_user.count('@'):
@@ -1766,7 +1766,7 @@ def share_grant(trusted_remote_user, key_id):
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
     shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=True, )
-    shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
+    shared_access_donor_machine.automat('init', trusted_idurl=remote_idurl, key_id=key_id, result_defer=d)
     return ret
 
 
