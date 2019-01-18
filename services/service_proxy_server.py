@@ -48,8 +48,9 @@ class ProxyServerService(LocalService):
         # self.log_events = True
 
     def dependent_on(self):
-        return ['service_p2p_hookups',
-                ]
+        return [
+            'service_p2p_hookups',
+        ]
 
     def enabled(self):
         from main import settings

@@ -524,42 +524,42 @@ class FamilyMember(automat.Automat):
         if not inp:
             return None
         if not inp or not isinstance(inp, dict):
-            return None  # self._do_prepare_my_default_info()
+            return None
         out = inp.copy()
         try:
             my_revision = int(out['revision'])
             if my_revision < 1:
                 raise Exception('invalid revision')
-        except:
-            lg.exc()
-            # out['revision'] = 0
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             suppliers = out['suppliers']
             if not isinstance(suppliers, list) or len(suppliers) < 1:
                 raise Exception('must include some suppliers')
-        except:
-            lg.exc()
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             ecc_map = out['ecc_map']
             if ecc_map and ecc_map not in eccmap.EccMapNames():
                 raise Exception('invalid ecc_map name')
-        except:
-            lg.exc()
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             out['publisher_idurl']
             # TODO: if I am a publisher - revision number must be the same as my info
-        except:
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             customer_idurl = out['customer_idurl']
             if customer_idurl != self.customer_idurl:
                 raise Exception('invalid customer_idurl')
-        except:
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
-
         return out
 
     def _do_create_first_revision(self, request):

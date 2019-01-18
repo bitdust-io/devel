@@ -44,9 +44,10 @@ class SupplierRelationsService(LocalService):
     config_path = 'services/customer-family/enabled'
 
     def dependent_on(self):
-        return ['service_supplier',
-                'service_entangled_dht',
-                ]
+        return [
+            'service_supplier',
+            'service_entangled_dht',
+        ]
 
     def start(self):
         from logs import lg

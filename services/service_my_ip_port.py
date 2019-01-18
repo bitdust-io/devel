@@ -47,9 +47,10 @@ class MyIPPortService(LocalService):
         self._my_address = None
 
     def dependent_on(self):
-        return ['service_entangled_dht',
-                'service_udp_datagrams',
-                ]
+        return [
+            'service_entangled_dht',
+            'service_udp_datagrams',
+        ]
 
     def start(self):
         from stun import stun_client

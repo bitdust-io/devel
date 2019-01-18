@@ -44,9 +44,10 @@ class EmployerService(LocalService):
     config_path = 'services/employer/enabled'
 
     def dependent_on(self):
-        return ['service_customer',
-                'service_nodes_lookup',
-                ]
+        return [
+            'service_customer',
+            'service_nodes_lookup',
+        ]
 
     def start(self):
         from customer import fire_hire

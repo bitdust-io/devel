@@ -44,8 +44,9 @@ class SharedDataService(LocalService):
     config_path = 'services/shared-data/enabled'
 
     def dependent_on(self):
-        return ['service_restores',
-                ]
+        return [
+            'service_restores',
+        ]
 
     def start(self):
         from main import events
