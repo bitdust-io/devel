@@ -69,7 +69,7 @@ def test_file_shared_from_customer_1_to_customer_4():
             'trusted_global_id': 'customer_4@is_8084',
             'key_id': key_id,
         },
-        timeout=30,
+        timeout=40,
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()

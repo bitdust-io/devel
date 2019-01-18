@@ -369,6 +369,9 @@ class SharedAccessDonor(automat.Automat):
             else:
                 if self.ping_response is None:
                     reason='remote node not responding',
+                else:
+                    if self.suppliers_responses:
+                        reason = 'connection timeout with my suppliers'
         events.send('private-key-share-failed', dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,

@@ -1764,9 +1764,9 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
         return None
 
     d = Deferred()
-    d.addTimeout(timeout, clock=reactor)
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
+    d.addTimeout(timeout, clock=reactor)
     shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=True, )
     shared_access_donor_machine.automat('init', trusted_idurl=remote_idurl, key_id=key_id, result_defer=d)
     return ret
