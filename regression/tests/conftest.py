@@ -38,44 +38,6 @@ DHT_SEED_NODES = 'dht_seed_1:14441, dht_seed_2:14441, stun_1:14441, stun_2:14441
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
 # TODO: keep this list up to date with docker-compose links
-ALL_ROLES = OrderedDict([
-    ('dht-seeds', [
-        ('dht_seed_1', {}, ),
-        ('dht_seed_2', {}, ),
-    ]),
-    ('identity-servers', [
-        ('is', {}, ),
-    ]),
-    ('stun-servers', [
-        ('stun_1', {}, ),
-        ('stun_2', {}, ),
-    ]),
-    ('proxy-servers', [
-        ('proxy_server_1', {}, ),
-        ('proxy_server_2', {}, ),
-    ]),
-    ('suppliers', [
-        ('supplier_1', {}, ),
-        ('supplier_2', {}, ),
-        ('supplier_3', {}, ),
-        ('supplier_4', {}, ),
-        ('supplier_5', {}, ),
-        ('supplier_6', {}, ),
-        ('supplier_7', {}, ),
-        ('supplier_8', {}, ),
-    ]),
-    ('customers', [
-        ('customer_1', {'join_network': True, 'num_suppliers': 2, }, ),
-        ('customer_2', {'join_network': True, 'num_suppliers': 2, }, ),
-        ('customer_3', {'join_network': True, 'num_suppliers': 2, }, ),
-        ('customer_4', {'join_network': True, 'num_suppliers': 2, }, ),
-        ('customer_5', {'join_network': True, 'num_suppliers': 4, }, ),
-        ('customer_backup', {'join_network': True, 'num_suppliers': 2, }, ),
-        ('customer_restore', {'join_network': False, 'num_suppliers': 2, }, ),
-    ]),
-])
-
-# TODO: keep this list up to date with docker-compose links
 ALL_NODES = [
     'customer_1',
     'customer_2',
@@ -100,6 +62,44 @@ ALL_NODES = [
     'dht_seed_1',
     'dht_seed_2',
 ]
+
+# TODO: keep this list up to date with docker-compose links
+ALL_ROLES = {
+    'dht-seeds': [
+        'dht_seed_1',
+        'dht_seed_2',
+    ],
+    'identity-servers': [
+        'is',
+    ],
+    'stun-servers': [
+        'stun_1',
+        'stun_2',
+    ],
+    'proxy-servers': [
+        'proxy_server_1',
+        'proxy_server_2',
+    ],
+    'suppliers': [
+        'supplier_1',
+        'supplier_2',
+        'supplier_3',
+        'supplier_4',
+        'supplier_5',
+        'supplier_6',
+        'supplier_7',
+        'supplier_8',
+    ],
+    'customers': [
+        {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, },
+        {'name': 'customer_2', 'join_network': True, 'num_suppliers': 2, },
+        {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
+        {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
+        {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
+        {'name': 'customer_backup', 'join_network': True, 'num_suppliers': 2, },
+        {'name': 'customer_restore', 'join_network': False, 'num_suppliers': 2, },
+    ],
+}
 
 # ALL_NODES = [n[0] for r in ALL_ROLES.values() for n in r]
 
@@ -348,7 +348,7 @@ async def open_one_tunnel(node):
 def open_all_tunnels(event_loop, nodes):
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(open_one_tunnel(node)) for node in nodes
-    ]))
+]))
 
 #------------------------------------------------------------------------------
 
@@ -356,12 +356,12 @@ async def start_one_supplier(supplier):
     start_supplier(node=supplier, identity_name=supplier)
 
 
-async def start_one_customer(customer, params):
+async def start_one_customer(customer):
     start_customer(
-        node=customer,
-        identity_name=params['name'],
-        join_network=params['join_network'],
-        num_suppliers=params['num_suppliers'],
+        node=customer['name'],
+        identity_name=customer['name'],
+        join_network=customer['join_network'],
+        num_suppliers=customer['num_suppliers'],
     )
 
 
@@ -369,7 +369,7 @@ def start_all_nodes(event_loop):
     # TODO: keep up to date with docker-compose links
     print('\nStarting nodes\n') 
 
-    for dhtseed, _ in ALL_ROLES['dht-seeds']:
+    for number, dhtseed in enumerate(ALL_ROLES['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
         start_dht_seed(
             node=dhtseed,
@@ -377,21 +377,21 @@ def start_all_nodes(event_loop):
             wait_seconds=15,
         )
 
-    for idsrv, _ in ALL_ROLES['identity-servers']:
+    for idsrv in ALL_ROLES['identity-servers']:
         start_identity_server(node=idsrv)
 
-    for stunsrv, _ in ALL_ROLES['stun-servers']:
+    for stunsrv in ALL_ROLES['stun-servers']:
         start_stun_server(node=stunsrv)
 
-    for proxysrv, _ in ALL_ROLES['proxy-servers']:
+    for proxysrv in ALL_ROLES['proxy-servers']:
         start_proxy_server(node=proxysrv, identity_name=proxysrv)
 
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(start_one_supplier(supplier)) for supplier, _ in ALL_ROLES['suppliers']
+        asyncio.ensure_future(start_one_supplier(supplier)) for supplier in ALL_ROLES['suppliers']
     ]))
 
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(start_one_customer(customer, params)) for customer, params in ALL_ROLES['customers']
+        asyncio.ensure_future(start_one_customer(customer)) for customer in ALL_ROLES['customers']
     ]))
 
     print('\nALL NODES STARTED\n')
@@ -436,7 +436,7 @@ def report_all_nodes(event_loop):
     print('\n\nALL EXCEPTIONS:')
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(print_exceptions_one_node(node)) for node in ALL_NODES
-    ]))
+]))
 
 
 #------------------------------------------------------------------------------
@@ -463,7 +463,9 @@ def clean_all_nodes(event_loop, skip_checks=False):
         asyncio.ensure_future(clean_one_node(node, skip_checks=skip_checks)) for node in ALL_NODES
     ]))
     event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(clean_one_customer(node)) for node in ALL_ROLES['customers']]))
+        asyncio.ensure_future(clean_one_customer(node)) for node in [
+        'customer_1', 'customer_2', 'customer_3', 'customer_4', 'customer_5', 'customer_backup', 'customer_restore',
+    ]]))
     print('All nodes cleaned')
 
 

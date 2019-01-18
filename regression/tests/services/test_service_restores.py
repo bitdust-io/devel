@@ -54,6 +54,8 @@ def test_upload_download_file_with_master_customer_1():
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
 
+    print(run_ssh_command_and_wait('customer_1', 'rm -rfv /root/.bitdust/backups/*')[0].strip())
+
     for i in range(20):
         response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),
