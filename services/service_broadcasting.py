@@ -48,9 +48,10 @@ class BroadcastingService(LocalService):
     # for now let's just listen for all broadcast messages (global scope)
 
     def dependent_on(self):
-        return ['service_p2p_hookups',
-                'service_nodes_lookup',
-                ]
+        return [
+            'service_p2p_hookups',
+            'service_nodes_lookup',
+        ]
 
     def start(self):
         from twisted.internet.defer import Deferred
@@ -119,11 +120,12 @@ class BroadcastingService(LocalService):
             return p2p_service.SendFail(newpacket, 'currently not broadcasting')
         if mode == 'route':
             broadcaster_node.A('new-broadcaster-connected', newpacket.OwnerID)
-            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words)
+            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % mode)
             return p2p_service.SendAck(newpacket, 'accepted')
         if mode == 'listen':
-            broadcaster_node.A().add_listener(newpacket.OwnerID, ' '.join(words[2:]))
-            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words[1])
+            # TODO: fix!!!
+            # broadcaster_node.A().add_listener(newpacket.OwnerID, ' '.join(words[2:]))
+            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % mode)
             return p2p_service.SendAck(newpacket, 'accepted')
         return p2p_service.SendAck(newpacket, 'bad request')
 
@@ -165,7 +167,7 @@ class BroadcastingService(LocalService):
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
         if newstate == 'OFFLINE':
-            reactor.callLater(60, broadcast_listener.A, 'connect', self.scope)
+            reactor.callLater(60, broadcast_listener.A, 'connect', self.scope)  # @UndefinedVariable
             lg.out(8, 'service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute')
 
     def _on_broadcaster_node_switched(self, oldstate, newstate, evt, *args, **kwargs):
@@ -177,7 +179,7 @@ class BroadcastingService(LocalService):
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
-            reactor.callLater(60, broadcaster_node.A, 'reconnect')
+            reactor.callLater(60, broadcaster_node.A, 'reconnect')  # @UndefinedVariable
             lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
 
 

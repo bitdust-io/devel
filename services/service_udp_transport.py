@@ -45,10 +45,11 @@ class UDPTransportService(LocalService):
     proto = 'udp'
 
     def dependent_on(self):
-        return ['service_udp_datagrams',
-                'service_my_ip_port',
-                'service_gateway',
-                ]
+        return [
+            'service_udp_datagrams',
+            'service_my_ip_port',
+            'service_gateway',
+        ]
 
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
@@ -61,7 +62,7 @@ class UDPTransportService(LocalService):
         self.transport = network_transport.NetworkTransport('udp', udp_interface.GateInterface())
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
-        reactor.callLater(0, self.transport.automat, 'start')
+        reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
         conf().addCallback('services/udp-transport/enabled',
                            self._on_enabled_disabled)
         conf().addCallback('services/udp-transport/receiving-enabled',

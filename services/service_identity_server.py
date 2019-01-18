@@ -44,17 +44,14 @@ class IdentityServerService(LocalService):
     config_path = 'services/identity-server/enabled'
 
     def init(self):
-        # self.debug_level = 2
         self.log_events = True
 
     def dependent_on(self):
-        return ['service_tcp_connections',
-                ]
+        return [
+            'service_tcp_connections',
+        ]
 
     def installed(self):
-        # from userid import my_id
-        # if not my_id.isLocalIdentityReady():
-        #     return False
         return True
 
     def enabled(self):

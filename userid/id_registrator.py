@@ -316,6 +316,7 @@ class IdRegistrator(automat.Automat):
             lg.warn('my identity is not valid')
             return False
         if self.new_identity.serialize() != id_from_server.serialize():
+            # TODO: seems an issue here!
             lg.warn('my identity source is different than copy received from id server')
             return False
         return True

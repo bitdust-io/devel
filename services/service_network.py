@@ -46,7 +46,9 @@ class NetworkService(LocalService):
     current_network_interfaces = None
 
     def dependent_on(self):
-        return []
+        return [
+            # this is a top root service, everything in BitDust depends on networking
+        ]
 
     def start(self):
         from twisted.internet import task

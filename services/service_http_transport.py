@@ -45,13 +45,14 @@ class HTTPTransportService(LocalService):
     proto = 'http'
 
     def enabled(self):
-        # development started
+        # TODO: development just started... service disabled at the moment
         return False
 
     def dependent_on(self):
-        return ['service_http_connections',
-                'service_gateway',
-                ]
+        return [
+            'service_http_connections',
+            'service_gateway',
+        ]
 
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
@@ -64,7 +65,7 @@ class HTTPTransportService(LocalService):
         self.transport = network_transport.NetworkTransport('http', http_interface.GateInterface())
         self.transport.automat('init',
                                (gateway.listener(), self._on_transport_state_changed))
-        reactor.callLater(0, self.transport.automat, 'start')
+        reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
         conf().addCallback('services/http-transport/enabled',
                            self._on_enabled_disabled)
         conf().addCallback('services/http-transport/receiving-enabled',

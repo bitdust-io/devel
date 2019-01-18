@@ -44,9 +44,10 @@ class MinerService(LocalService):
     config_path = 'services/miner/enabled'
 
     def dependent_on(self):
-        return ['service_nodes_lookup',
-                'service_blockchain',
-                ]
+        return [
+            'service_nodes_lookup',
+            'service_blockchain',
+        ]
 
     def start(self):
         from coins import coins_miner

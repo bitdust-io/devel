@@ -44,9 +44,10 @@ class IdentityPropagateService(LocalService):
     config_path = 'services/identity-propagate/enabled'
 
     def dependent_on(self):
-        return ['service_gateway',
-                'service_tcp_connections',
-                ]
+        return [
+            'service_gateway',
+            'service_tcp_connections',
+        ]
 
     def installed(self):
         from userid import my_id
