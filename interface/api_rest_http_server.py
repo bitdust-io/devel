@@ -483,6 +483,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.share_grant(
             trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             key_id=data['key_id'],
+            timeout=data.get('timeout', 30),
         )
 
     @POST('^/sh/o$')

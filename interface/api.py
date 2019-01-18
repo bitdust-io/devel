@@ -1737,9 +1737,10 @@ def share_create(owner_id=None, key_size=2048):
     ), message='new share "%s" was generated successfully' % key_id, )
 
 
-def share_grant(trusted_remote_user, key_id):
+def share_grant(trusted_remote_user, key_id, timeout=30):
     """
     """
+    from twisted.internet import reactor  # @UnresolvedImport
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
@@ -1763,6 +1764,7 @@ def share_grant(trusted_remote_user, key_id):
         return None
 
     d = Deferred()
+    d.addTimeout(timeout, clock=reactor)
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
     shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=True, )
