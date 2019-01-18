@@ -2,6 +2,23 @@ Change Log
 ==========
 
 
+
+2019-01-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added more regression tests
+* a lot of fixes/improvements in DHT code
+* introduced DHT key-value store/request validation methods
+* software must not use default suppliers number and default ecc_map in the real-time logic
+* some updates in state machines around the code
+* minor fixes api methods
+* added copyrights for some files for Stanislav Evseev, Veselin Penev
+* report number of warnings/errors/exceptions from containers in the end of regression test
+* all state changed callbacks must also use "*args, **kwargs" instead of "args"
+* switched all state machines to *args, **kwargs notation instead of single arg=None input
+* a lot of work with family_member() machine
+
+
+
 2018-12-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in dht_relations

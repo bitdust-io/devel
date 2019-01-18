@@ -62,7 +62,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -368,7 +368,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self.router_idurl = strng.to_bin(*args, **kwargs)
+        self.router_idurl = strng.to_bin(args[0])
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []
@@ -379,7 +379,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self._do_send_request_service(*args, **kwargs)
+        self._do_send_request_service(args[0])
 
     def doSendCancelService(self, *args, **kwargs):
         """
@@ -406,7 +406,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self._do_process_inbox_packet(*args, **kwargs)
+        self._do_process_inbox_packet(args[0])
 
     def doStartListening(self, *args, **kwargs):
         """
@@ -584,7 +584,7 @@ class ProxyReceiver(automat.Automat):
             newidentity = identity.identity(xmlsrc=routed_packet.Payload)
             idurl = newidentity.getIDURL()
             if not identitycache.HasKey(idurl):
-                lg.warn('received new identity: %s' % idurl)
+                lg.info('received new identity: %s' % idurl)
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
@@ -602,10 +602,10 @@ class ProxyReceiver(automat.Automat):
                     return
             except:
                 lg.exc()
-        if not routed_packet.Valid():
-            lg.err('invalid packet %s from %s' % (
-                routed_packet, newpacket.CreatorID, ))
-            return
+#         if not routed_packet.Valid():
+#             lg.err('invalid packet %s from %s' % (
+#                 routed_packet, newpacket.CreatorID, ))
+#             return
         self.traffic_in += len(data)
         packet_in.process(routed_packet, info)
         del block

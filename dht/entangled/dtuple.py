@@ -16,14 +16,15 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+from io import open
 import six.moves.cPickle
+
 import hashlib
 
 from twisted.internet import defer
 
-from .kademlia.node import rpcmethod
-from .node import EntangledNode
-from io import open
+from .kademlia.node import rpcmethod  # @UnresolvedImport
+from .node import EntangledNode  # @UnresolvedImport
 
 
 class DistributedTupleSpacePeer(EntangledNode):
@@ -33,7 +34,7 @@ class DistributedTupleSpacePeer(EntangledNode):
     """
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
-        EntangledNode.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+        EntangledNode.__init__(self, udpPort, dataStore, routingTable, networkProtocol, **kwargs)
         self._blockingGetRequests = {}
         self._blockingReadRequests = {}
 
@@ -590,4 +591,4 @@ if __name__ == '__main__':
 
     node = DistributedTupleSpacePeer(udpPort=int(sys.argv[1]))
     node.joinNetwork(knownNodes)
-    twisted.internet.reactor.run()
+    twisted.internet.reactor.run()  # @UndefinedVariable

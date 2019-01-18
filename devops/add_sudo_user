@@ -1,0 +1,7 @@
+#!/bin/bash 
+
+# use: add_sudo_user alice myownhost.com
+
+ssh root@"$2" "adduser $1; adduser $1 sudo;"
+ssh-copy-id -i ~/.ssh/id_rsa.pub "$2"
+scp ~/.bash_aliases "$2":

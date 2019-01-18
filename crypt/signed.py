@@ -202,11 +202,14 @@ class Packet(object):
         - hash of that packet - just call ``GenerateHash()`` to make it,
         - the signature itself.
         """
-        ConIdentity = contactsdb.get_contact_identity(self.CreatorID)
-        if ConIdentity is None:
-            lg.out(1, "signed.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
-            return False
-        Result = key.Verify(ConIdentity, self.GenerateHash(), self.Signature)
+        CreatorIdentity = contactsdb.get_contact_identity(self.CreatorID)
+        if CreatorIdentity is None:
+            OwnerIdentity = contactsdb.get_contact_identity(self.OwnerID)
+            if OwnerIdentity is None:
+                lg.out(1, "signed.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
+                return False
+            CreatorIdentity = OwnerIdentity
+        Result = key.Verify(CreatorIdentity, self.GenerateHash(), self.Signature)
         return Result
 
     def Ready(self):

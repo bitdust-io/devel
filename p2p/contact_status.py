@@ -423,7 +423,7 @@ class ContactStatus(automat.Automat):
         Action method.
         """
         try:
-            timeout = int(*args, **kwargs)
+            timeout = int(args[0])
         except:
             timeout = 10
         d = propagate.PingContact(self.idurl, timeout=timeout)

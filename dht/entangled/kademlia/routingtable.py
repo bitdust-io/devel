@@ -18,12 +18,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 import time
 import random
-import codecs
+# import codecs
 
-from . import constants
-from . import encoding
-from . import kbucket
-from .protocol import TimeoutError
+from . import constants  # @UnresolvedImport
+from . import encoding  # @UnresolvedImport
+from . import kbucket  # @UnresolvedImport
+from .protocol import TimeoutError  # @UnresolvedImport
 
 
 _Debug = False

@@ -225,7 +225,7 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        self._do_process_request(*args, **kwargs)
+        self._do_process_request(args[0])
 
     def doUnregisterRoute(self, *args, **kwargs):
         """
@@ -249,13 +249,13 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        self._do_forward_outbox_packet(*args, **kwargs)
+        self._do_forward_outbox_packet(args[0])
 
     def doForwardInboxPacket(self, *args, **kwargs):
         """
         Action method.
         """
-        self._do_forward_inbox_packet(*args, **kwargs)
+        self._do_forward_inbox_packet(args[0])
 
     def doCountOutgoingTraffic(self, *args, **kwargs):
         """
@@ -282,7 +282,7 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        self._do_set_contacts_override(*args, **kwargs)
+        self._do_set_contacts_override(args[0])
 
     def doClearContactsOverride(self, *args, **kwargs):
         """

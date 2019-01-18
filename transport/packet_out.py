@@ -59,7 +59,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -624,7 +624,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        self._pop(*args, **kwargs)
+        self._pop(args[0])
 
     def doPopItems(self, *args, **kwargs):
         """

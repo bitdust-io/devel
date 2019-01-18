@@ -33,7 +33,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ _StreamCounter = 0
 #------------------------------------------------------------------------------
 
 def start_process_streams():
-    reactor.callLater(0, process_streams)
+    reactor.callLater(0, process_streams)  # @UndefinedVariable
     return True
 
 
@@ -107,7 +107,7 @@ def process_streams():
         MIN_PROCESS_STREAMS_DELAY,
         MAX_PROCESS_STREAMS_DELAY,)
     # attenuation
-    _ProcessStreamsTask = reactor.callLater(
+    _ProcessStreamsTask = reactor.callLater(  # @UndefinedVariable
         _ProcessStreamsDelay, process_streams)
 
 #------------------------------------------------------------------------------

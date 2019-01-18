@@ -501,7 +501,7 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        self._push_blocks(*args, **kwargs)
+        self._push_blocks(args[0])
 
     def doResendBlocks(self, *args, **kwargs):
         """

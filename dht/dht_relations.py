@@ -56,6 +56,10 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
+def validate_customer_suppliers():
+    pass
+
+
 def read_customer_suppliers(customer_idurl):
     result = Deferred()
 
@@ -80,12 +84,13 @@ def read_customer_suppliers(customer_idurl):
             'timestamp': _timestamp,
         }
         if customer_idurl == my_id.getLocalIDURL():
-            lg.warn('skip writing my own suppliers list received from DHT')
+            if _Debug:
+                lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers   skip caching my own suppliers list received from DHT: %s' % ret)
         else:
             contactsdb.set_suppliers(_suppliers_list, customer_idurl=customer_idurl)
             contactsdb.save_suppliers(customer_idurl=customer_idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
+            if _Debug:
+                lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  returned %r' % (customer_idurl, ret, ))
         result.callback(ret)
         return None
 

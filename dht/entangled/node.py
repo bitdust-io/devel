@@ -16,14 +16,15 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+from io import open
 import six
+
 import hashlib
 
 from twisted.internet import defer
 
-from .kademlia.node import Node
-from .kademlia.node import rpcmethod
-from io import open
+from .kademlia.node import Node  # @UnresolvedImport
+from .kademlia.node import rpcmethod  # @UnresolvedImport
 
 
 class EntangledNode(Node):
@@ -34,8 +35,8 @@ class EntangledNode(Node):
     standard, but useful) RPCs defined.
     """
 
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, **kwargs):
+        Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol, **kwargs)
         self.invalidKeywords = []
         self.keywordSplitters = ['_', '.', '/']
 
@@ -297,7 +298,7 @@ class EntangledNode(Node):
 
 if __name__ == '__main__':
     import twisted.internet.reactor
-    from .kademlia.datastore import SQLiteDataStore
+    from kademlia.datastore import SQLiteDataStore  # @UnresolvedImport
     import sys
     import os
     if len(sys.argv) < 2:
@@ -333,4 +334,4 @@ if __name__ == '__main__':
     node = EntangledNode(udpPort=int(sys.argv[1]), dataStore=dataStore)
     #node = EntangledNode( udpPort=int(sys.argv[1]) )
     node.joinNetwork(knownNodes)
-    twisted.internet.reactor.run()
+    twisted.internet.reactor.run()  # @UndefinedVariable
