@@ -523,41 +523,11 @@ async def start_one_customer_async(customer, loop):
     )
 
 
-def start_all_nodes(event_loop):
-    # TODO: keep up to date with docker-compose links
-    nodes = {
-        'dht-seeds': [
-            'dht_seed_1',
-            'dht_seed_2',
-        ],
-        'identity-servers': [
-            'is',
-        ],
-        'stun-servers': [
-            'stun_1',
-            'stun_2',
-        ],
-        'proxy-servers': [
-            'proxy_server_1',
-            'proxy_server_2',
-        ],
-        'suppliers': [
-            'supplier_1',
-            'supplier_2',
-            'supplier_3',
-            'supplier_4',
-            'supplier_5',
-            'supplier_6',
-            'supplier_7',
-            'supplier_8',
-        ],
-        'customers': [
-            {'name': 'customer_1', 'join_network': True, },
-            {'name': 'customer_2', 'join_network': True, },
-            {'name': 'customer_3', 'join_network': False, },
-        ],
-    }
+async def start_one_proxy_server(supplier, loop):
+    await start_proxy_server_async(node=supplier, identity_name=supplier, loop=loop)
 
+
+def start_all_nodes(event_loop):
     print('\nStarting nodes\n')
 
     for number, dhtseed in enumerate(ALL_ROLES['dht-seeds']):
@@ -574,22 +544,9 @@ def start_all_nodes(event_loop):
     for stunsrv in ALL_ROLES['stun-servers']:
         start_stun_server(node=stunsrv)
 
-    async def start_one_proxy_server(supplier):
-        await start_proxy_server_async(node=supplier, identity_name=supplier, loop=event_loop)
-
     event_loop.run_until_complete(asyncio.wait([
-        start_one_proxy_server(proxy_server) for proxy_server in nodes['proxy-servers']
+        start_one_proxy_server(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
     ]))
-
-    async def start_one_supplier(supplier):
-        await start_supplier_async(node=supplier, identity_name=supplier, loop=event_loop)
-
-    event_loop.run_until_complete(asyncio.wait([
-        start_one_supplier(supplier) for supplier in nodes['suppliers']
-    ]))
-
-    for proxysrv in ALL_ROLES['proxy-servers']:
-        start_proxy_server(node=proxysrv, identity_name=proxysrv)
 
     event_loop.run_until_complete(asyncio.wait([
         asyncio.ensure_future(start_one_supplier_async(supplier, event_loop)) for supplier in ALL_ROLES['suppliers']
