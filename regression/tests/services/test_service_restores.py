@@ -21,14 +21,17 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
-import time
 import os
+import pytest
+import time
 import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 
 
 def test_upload_download_file_with_master_customer_1():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
     key_id = 'master$customer_1@is_8084'
     shared_volume = '/customer_1'
     origin_filename = 'file_customer_1.txt'
@@ -48,7 +51,7 @@ def test_upload_download_file_with_master_customer_1():
         json={
             'remote_path': remote_path,
             'local_path': local_path,
-            'wait_result': True,
+            'wait_result': '1',
         },
     )
     assert response.status_code == 200
@@ -60,7 +63,7 @@ def test_upload_download_file_with_master_customer_1():
             json={
                 'remote_path': remote_path,
                 'destination_folder': download_volume,
-                'wait_result': True,
+                'wait_result': '1',
             },
         )
         assert response.status_code == 200

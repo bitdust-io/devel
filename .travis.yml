@@ -22,5 +22,5 @@ before_install:
   - make -v
 
 script:
-  - make test
+  - make test_unit
   - make regression_test

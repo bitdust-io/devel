@@ -97,6 +97,16 @@ def close_tunnel(node):
     print(f'close_tunnel [{node}] OK\n')
 
 
+def save_tunnels_ports():
+    global _NodeTunnelPort
+    open('/tunnels_ports.json', 'w').write(json.dumps(_NodeTunnelPort))
+
+
+def load_tunnels_ports():
+    global _NodeTunnelPort
+    _NodeTunnelPort = json.loads(open('/tunnels_ports.json', 'r').read())
+
+
 def open_ssh_port_forwarding(node, port1, port2):
     if node == 'is':
         node = 'identity-server'

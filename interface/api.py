@@ -1506,14 +1506,13 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         return True
     
     def _start_restore():
+        if _Debug:
+            lg.out(_DebugLevel, 'api.file_download_start._start_restore %s to %s, wait_result=%s' % (
+                backupID, destination_path, wait_result))
         if wait_result:
-            if _Debug:
-                lg.out(_DebugLevel, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
             restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
             control.request_update([('pathID', knownPath), ])
             return ret
-        if _Debug:
-            lg.out(_DebugLevel, 'api.download_start %s to %s' % (backupID, destination_path))
         restore_monitor.Start(backupID, destination_path, keyID=key_id, )
         control.request_update([('pathID', knownPath), ])
         ret.callback(OK(
@@ -1529,21 +1528,15 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         ))
         return True
     
-    def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, *args, **kwargs):
-        if oldstate != newstate and newstate == 'CONNECTED':
+    def _on_share_connected(active_share, callback_id, result):
+        if _Debug:
+            lg.out(_DebugLevel, 'api.download_start._on_share_connected callback_id=%s result=%s' % (callback_id, result, ))
+        if not result:
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start share %s is CONNECTED, removing callback %s' % (
-                    active_share.key_id, callback_id,))
-            active_share.removeStateChangedCallback(callback_id=callback_id)
-            _start_restore()
-            return True
-        if oldstate != newstate and newstate == 'DISCONNECTED':
-            if _Debug:
-                lg.out(_DebugLevel, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
-                    active_share.key_id, callback_id,))
-            active_share.removeStateChangedCallback(callback_id=callback_id)
+                lg.out(_DebugLevel, '    share %s is now DISCONNECTED, removing callback %s' % (active_share.key_id, callback_id,))
+            active_share.remove_connected_callback(callback_id)
             ret.callback(ERROR(
-                'downloading version "%s" failed, result: %s' % (backupID, 'share disconnected'),
+                'downloading version "%s" failed, result: %s' % (backupID, 'share is disconnected'),
                 extra_fields={
                     'key_id': active_share.key_id,
                     'backup_id': backupID,
@@ -1553,31 +1546,36 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                 },
             ))
             return True
-        return False
+        if _Debug:
+            lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (
+                active_share.key_id, callback_id,))
+        active_share.remove_connected_callback(callback_id)
+        _start_restore()
+        return True
 
     def _open_share():
         from access import shared_access_coordinator
         active_share = shared_access_coordinator.get_active_share(key_id)
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
-                key_id, log_events=True, publish_events=True, )
+                key_id=key_id,
+                log_events=True,
+                publish_events=True,
+            )
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start opened new share : %s' % active_share.key_id)
+                lg.out(_DebugLevel, 'api.download_start._open_share opened new share : %s' % active_share.key_id)
         else:
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start found existing share : %s' % active_share.key_id)
+                lg.out(_DebugLevel, 'api.download_start._open_share found existing share : %s' % active_share.key_id)
         if active_share.state != 'CONNECTED':
             cb_id = 'file_download_start_' + str(time.time())
-            active_share.addStateChangedCallback(
-                cb=lambda o, n, e, a: _share_state_changed(cb_id, active_share, o, n, e, a),
-                callback_id=cb_id,
-            )
+            active_share.add_connected_callback(cb_id, lambda _id, _result: _on_share_connected(active_share, _id, _result))
             active_share.automat('restart')
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
+                lg.out(_DebugLevel, 'api.download_start._open_share added callback %s to the active share : %s' % (cb_id, active_share.key_id))
         else:
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start existing share %s is currently CONNECTED' % active_share.key_id)
+                lg.out(_DebugLevel, 'api.download_start._open_share existing share %s is currently CONNECTED' % active_share.key_id)
             _start_restore()
         return True
 

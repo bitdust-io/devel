@@ -21,6 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import os
+import pytest
 import time
 import requests
 
@@ -28,8 +29,10 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 
 
 def test_file_shared_from_customer_1_to_customer_4():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
     # TODO: to be continue
-    return True
+    # return True
 
     response = requests.post(url=tunnel_url('customer_1', 'share/create/v1'), json={'key_size': 1024, }, )
     assert response.status_code == 200
@@ -56,7 +59,7 @@ def test_file_shared_from_customer_1_to_customer_4():
         json={
             'remote_path': remote_path,
             'local_path': local_path,
-            'wait_result': True,
+            'wait_result': '1',
         },
     )
     assert response.status_code == 200
@@ -99,7 +102,7 @@ def test_file_shared_from_customer_1_to_customer_4():
             json={
                 'remote_path': remote_path,
                 'destination_folder': download_volume,
-                'wait_result': True,
+                'wait_result': '1',
             },
         )
         assert response.status_code == 200

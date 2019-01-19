@@ -20,6 +20,8 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+import os
+import pytest
 import time
 import requests
 
@@ -52,6 +54,8 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
 
 
 def test_customer_family_published_for_customer_1():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
     validate_customer_family(
         customer_node='customer_1',
         observer_node='customer_1',
@@ -67,6 +71,8 @@ def test_customer_family_published_for_customer_1():
 
 
 def test_customer_family_increase_for_customer_4():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
     validate_customer_family(
         customer_node='customer_4',
         observer_node='customer_4',
@@ -106,6 +112,8 @@ def test_customer_family_increase_for_customer_4():
 
 
 def test_customer_family_decrease_for_customer_5():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
     validate_customer_family(
         customer_node='customer_5',
         observer_node='customer_5',

@@ -20,6 +20,8 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+import os
+import pytest
 import time
 import requests
 
@@ -27,6 +29,8 @@ from ..testsupport import tunnel_url
 
 
 def test_hire_suppliers_by_customer_1():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
     count = 0
     while True:
         if count > 10:
