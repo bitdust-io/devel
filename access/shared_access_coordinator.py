@@ -181,12 +181,19 @@ class SharedAccessCoordinator(automat.Automat):
             'suppliers': self.known_suppliers_list,
         }
 
+    def add_connected_callback(self, callback_id, callback_method):
+        self.connected_callbacks[callback_id] = callback_method
+
+    def remove_connected_callback(self, callback_id):
+        self.connected_callbacks.pop(callback_id, None)
+
     def init(self):
         """
         Method to initialize additional variables and flags
         at creation phase of shared_access_coordinator() machine.
         """
         self.result_defer = None
+        self.connected_callbacks = {}
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -239,7 +246,7 @@ class SharedAccessCoordinator(automat.Automat):
                 self.state = 'LIST_FILES?'
             elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(*args, **kwargs) ) ) and self.isAnyFilesShared(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doRequestRandomPacket(*args, **kwargs)
+                self.doReportConnected(*args, **kwargs)
         #---LIST_FILES?---
         elif self.state == 'LIST_FILES?':
             if event == 'supplier-connected':
@@ -263,7 +270,7 @@ class SharedAccessCoordinator(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'ack' and self.isPacketValid(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doReportSuccess(*args, **kwargs)
+                self.doReportConnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'fail' or ( event == 'ack' and not self.isPacketValid(*args, **kwargs) ):
                 self.state = 'DISCONNECTED'
@@ -338,6 +345,7 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         # TODO : put in a seprate state in the state machine
+        self.result_defer = kwargs.get('result_defer', None) 
         identitycache.immediatelyCaching(self.customer_idurl)
 
     def doDHTLookupSuppliers(self, *args, **kwargs):
@@ -412,13 +420,15 @@ class SharedAccessCoordinator(automat.Automat):
         # to one of suppliers - this way we can be sure that shared data is available
         self.automat('ack')
 
-    def doReportSuccess(self, *args, **kwargs):
+    def doReportConnected(self, *args, **kwargs):
         """
         Action method.
         """
         events.send('share-connected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
+        for cb_id, cb in self.connected_callbacks.items():
+            cb(cb_id, True)
 
     def doReportDisconnected(self, *args, **kwargs):
         """
@@ -427,6 +437,8 @@ class SharedAccessCoordinator(automat.Automat):
         events.send('share-disconnected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
+        for cb_id, cb in self.connected_callbacks.items():
+            cb(cb_id, False)
 
     def doDestroyMe(self, *args, **kwargs):
         """

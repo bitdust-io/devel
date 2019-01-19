@@ -102,18 +102,7 @@ test_tox: clean tox
 test_tox/%: venv_install pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
 
-test_docker:
-	make -C tests/e2e/ -j2 test
-
-test_docker_1:
-	make -C tests/e2e/ -j2 test_1
-	docker-compose -p "namespace1" logs
-
-test_docker_2:
-	make -C tests/e2e/ -j2 test_2
-	docker-compose -p "namespace2" logs
-
-test: $(VENV_TEST)
+test_unit: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
@@ -126,11 +115,29 @@ test_regression:
 regression_test:
 	make -C regression/ test
 
-regression_rerun:
-	make -C regression/ test_all
+regression_build:
+	make -C regression/ build
+
+regression_run:
+	make -C regression/ run
+
+regression_prepare:
+	make -C regression/ prepare
+
+regression_try:
+	make -C regression/ try
+
+regression_test_one/%:
+	make -C regression/ test_one/$*
+
+regression_try_one/%:
+	make -C regression/ try_one/$*
 
 regression_clean:
 	make -C regression/ clean
+
+regression_clean_unused:
+	make -C regression/ clean_unused_images
 
 regression_log_one/%:
 	@echo "### [identity-server] #########################################################################"

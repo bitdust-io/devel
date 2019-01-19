@@ -20,18 +20,20 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
+import os
 import pytest
 import time
-import os
 import shutil
-
-import pytest
 import requests
 
 from ..testsupport import tunnel_url
 
 
 def test_identity_backup_restore():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+
+    # TODO: fix test
     return True
 
     backup_file_directory_c2 = '/customer_backup/identity.backup'

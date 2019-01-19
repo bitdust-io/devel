@@ -27,7 +27,7 @@ FROM python:${PYTHON_VERSION}
 
 
 RUN apt-get update && apt-get install -y \
-    curl openssh-server mosh \
+    curl openssh-server mosh nano \
  && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /var/run/sshd \
