@@ -493,14 +493,6 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 async def open_one_tunnel_async(node):
     open_tunnel(node)
 
-
-def open_all_tunnels(event_loop, nodes):
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(open_one_tunnel_async(node)) for node in nodes
-    ]))
-    print('\nAll SSH tunnels opened\n')
-
-
 #------------------------------------------------------------------------------
 
 def start_one_supplier(supplier):
@@ -536,8 +528,85 @@ def start_one_proxy_server(proxy_server):
 async def start_one_proxy_server_async(proxy_server, loop):
     await start_proxy_server_async(node=proxy_server, identity_name=proxy_server, loop=loop)
 
+#------------------------------------------------------------------------------
+
+def stop_one_node(node):
+    stop_daemon(node, skip_checks=True)
 
 #------------------------------------------------------------------------------
+
+def report_one_node(node):
+    main_log = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/main.log')[0].strip()
+    num_warnings = main_log.count('WARNING')
+    num_errors = main_log.count('ERROR!!!')
+    num_exceptions = main_log.count('Exception:')
+    num_tracebacks = main_log.count('Traceback')
+    num_failures = main_log.count('Failure')
+    # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
+    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
+          f'Failures: {num_failures}    Exceptions: {num_exceptions}')
+
+
+async def report_one_node_async(node, event_loop):
+    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)[0].strip()
+    num_warnings = main_log.count('WARNING')
+    num_errors = main_log.count('ERROR!!!')
+    num_exceptions = main_log.count('Exception:')
+    num_tracebacks = main_log.count('Traceback')
+    num_failures = main_log.count('Failure')
+    # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
+    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
+          f'Failures: {num_failures}    Exceptions: {num_exceptions}')
+
+
+def print_exceptions_one_node(node):
+    exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log')[0].strip()
+    if exceptions_out:
+        print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
+
+
+async def print_exceptions_one_node_async(node, event_loop):
+    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)[0].strip()
+    if exceptions_out:
+        print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
+
+#------------------------------------------------------------------------------
+
+
+async def clean_one_node_async(node, skip_checks=False, event_loop=None):
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
+
+
+async def clean_one_customer_async(node, event_loop):
+    await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
+
+#------------------------------------------------------------------------------
+
+def open_all_tunnels(event_loop, nodes):
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(open_one_tunnel_async(node)) for node in nodes
+    ]))
+    print('\nAll SSH tunnels opened\n')
+
+
+def clean_all_nodes(event_loop, skip_checks=False):
+    print('\nCleaning all nodes')
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(clean_one_node_async(node, skip_checks=skip_checks, event_loop=event_loop)) for node in ALL_NODES
+    ]))
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(clean_one_customer_async(node, event_loop)) for node in [
+        'customer_1', 'customer_2', 'customer_3', 'customer_4', 'customer_5', 'customer_backup', 'customer_restore',
+    ]]))
+    print('\n\nAll nodes cleaned')
+
 
 def start_all_nodes(event_loop):
     print('\nStarting nodes\n')
@@ -583,10 +652,6 @@ def start_all_nodes(event_loop):
     print('\nDONE! ALL NODES STARTED!\n')
 
 
-async def stop_one_node(node):
-    stop_daemon(node, skip_checks=True)
-
-
 def stop_all_nodes(event_loop):
     print('\nstop all nodes\n')
     event_loop.run_until_complete(asyncio.wait([
@@ -595,72 +660,26 @@ def stop_all_nodes(event_loop):
     print('\nALL NODES STOPPED\n')
 
 
-async def report_one_node_async(node, event_loop):
-    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)[0].strip()
-    num_warnings = main_log.count('WARNING')
-    num_errors = main_log.count('ERROR!!!')
-    num_exceptions = main_log.count('Exception:')
-    num_tracebacks = main_log.count('Traceback')
-    num_failures = main_log.count('Failure')
-    # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
-    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
-          f'Failures: {num_failures}    Exceptions: {num_exceptions}')
-
-
-async def print_exceptions_one_node_async(node, event_loop):
-    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)[0].strip()
-    if exceptions_out:
-        print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
-
-
-def report_all_nodes(event_loop):
-    print('\n\nTest report:')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
-    ]))
-    print('\n\nALL EXCEPTIONS:')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(print_exceptions_one_node_async(node, event_loop)) for node in ALL_NODES
-]))
-
-
-#------------------------------------------------------------------------------
-
-
-async def clean_one_node_async(node, skip_checks=False, event_loop=None):
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
-    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
-
-
-async def clean_one_customer_async(node, event_loop):
-    await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
-
-
-def clean_all_nodes(event_loop, skip_checks=False):
-    print('\nCleaning all nodes')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(clean_one_node_async(node, skip_checks=skip_checks, event_loop=event_loop)) for node in ALL_NODES
-    ]))
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(clean_one_customer_async(node, event_loop)) for node in [
-        'customer_1', 'customer_2', 'customer_3', 'customer_4', 'customer_5', 'customer_backup', 'customer_restore',
-    ]]))
-    print('\n\nAll nodes cleaned')
-
-
-#------------------------------------------------------------------------------
-
 def kill_all_nodes():
     for node in ALL_NODES:
         print('Shutdown %s' % node)
         run_ssh_command_and_wait(node, 'pkill -e sshd')
     print('All nodes stopped')
+
+
+def report_all_nodes(event_loop):
+    print('\n\nTest report:')
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
+    # ]))
+    for node in ALL_NODES:
+        report_one_node(node)
+    print('\n\nALL EXCEPTIONS:')
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(print_exceptions_one_node_async(node, event_loop)) for node in ALL_NODES
+    # ]))
+    for node in ALL_NODES:
+        print_exceptions_one_node(node)
 
 #------------------------------------------------------------------------------
 
