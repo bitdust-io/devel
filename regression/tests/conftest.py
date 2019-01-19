@@ -572,7 +572,6 @@ async def print_exceptions_one_node_async(node, event_loop):
 
 #------------------------------------------------------------------------------
 
-
 async def clean_one_node_async(node, skip_checks=False, event_loop=None):
     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
@@ -589,10 +588,12 @@ async def clean_one_customer_async(node, event_loop):
 
 #------------------------------------------------------------------------------
 
-def open_all_tunnels(event_loop, nodes):
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(open_one_tunnel_async(node)) for node in nodes
-    ]))
+def open_all_tunnels(event_loop):
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(open_one_tunnel_async(node)) for node in ALL_NODES
+    # ]))
+    for node in ALL_NODES:
+        open_tunnel(node)
     print('\nAll SSH tunnels opened\n')
 
 
@@ -629,14 +630,14 @@ def start_all_nodes(event_loop):
     print('\nALL STUN SERVERS STARTED\n')
 
     for proxy_server in ALL_ROLES['proxy-servers']:
-        start_one_proxy_server(proxy_server)
+        start_proxy_server(proxy_server, proxy_server)
     # event_loop.run_until_complete(asyncio.wait([
     #     start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
     # ]))
     print('\nALL PROXY SERVERS STARTED\n')
 
     for supplier in ALL_ROLES['suppliers']:
-        start_one_supplier(supplier)
+        start_supplier(supplier, supplier)
     # event_loop.run_until_complete(asyncio.wait([
     #     asyncio.ensure_future(start_one_supplier_async(supplier, event_loop)) for supplier in ALL_ROLES['suppliers']
     # ]))
@@ -701,7 +702,7 @@ def global_wrapper(event_loop):
     _begin = time.time()
 
     if os.environ.get('OPEN_TUNNELS', '1') == '1':
-        open_all_tunnels(event_loop, ALL_NODES)
+        open_all_tunnels(event_loop)
     if os.environ.get('STOP_NODES', '1') == '1':
         stop_all_nodes(event_loop)
     if os.environ.get('CLEAN_NODES', '1') == '1':

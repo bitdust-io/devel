@@ -741,8 +741,10 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        msg = args[0]
-        if not isinstance(msg, six.string_types):
+        msg = 'cancelled'
+        if args and args[0]:
+            msg = str(args[0])
+        else:
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
 
