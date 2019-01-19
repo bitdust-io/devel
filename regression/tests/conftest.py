@@ -595,7 +595,7 @@ def clean_one_node(node):
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
     run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages', event_loop)
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
 
 
 def clean_one_customer(node, event_loop):
