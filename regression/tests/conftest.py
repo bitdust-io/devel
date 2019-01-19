@@ -603,7 +603,7 @@ async def report_one_node_async(node, event_loop):
     num_tracebacks = main_log.count('Traceback')
     num_failures = main_log.count('Failure')
     # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
-    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}     Tracebacks: {num_tracebacks}     '
+    print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
           f'Failures: {num_failures}    Exceptions: {num_exceptions}')
 
 
