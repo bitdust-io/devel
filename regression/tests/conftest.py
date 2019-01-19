@@ -654,9 +654,11 @@ def start_all_nodes(event_loop):
 
 def stop_all_nodes(event_loop):
     print('\nstop all nodes\n')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(stop_one_node(node)) for node in ALL_NODES
-    ]))
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(stop_one_node(node)) for node in ALL_NODES
+    # ]))
+    for node in ALL_NODES:
+        stop_one_node(node)
     print('\nALL NODES STOPPED\n')
 
 
