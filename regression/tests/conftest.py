@@ -34,7 +34,7 @@ from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_
 
 #------------------------------------------------------------------------------
 
-DHT_SEED_NODES = 'dht_seed_1:14441, dht_seed_2:14441, stun_1:14441, stun_2:14441'
+DHT_SEED_NODES = 'dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
 
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
@@ -62,6 +62,8 @@ ALL_NODES = [
     'is',
     'dht_seed_1',
     'dht_seed_2',
+    'dht_seed_3',
+    'dht_seed_4',
 ]
 
 # TODO: keep this list up to date with docker-compose links
@@ -69,6 +71,8 @@ ALL_ROLES = {
     'dht-seeds': [
         'dht_seed_1',
         'dht_seed_2',
+        'dht_seed_3',
+        'dht_seed_4',
     ],
     'identity-servers': [
         'is',

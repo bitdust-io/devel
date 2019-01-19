@@ -48,6 +48,8 @@ VALIDATORS_NODES = [
     'stun_2',
     'dht_seed_1',
     'dht_seed_2',
+    'dht_seed_3',
+    'dht_seed_4',
 ]
 
 

@@ -49,6 +49,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
 
   stun_2:
     build:
@@ -60,6 +62,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
 
 
 
@@ -81,6 +85,29 @@ services:
     links:
       - "dht_seed_1"
 
+  dht_seed_3:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/dht_seed
+    ports:
+      - "22223:22"
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+
+  dht_seed_4:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/dht_seed
+    ports:
+      - "22224:22"
+    links:
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "dht_seed_3"
+
 
 
   proxy_server_1:
@@ -93,6 +120,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -107,6 +136,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -123,6 +154,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -137,6 +170,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -151,6 +186,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -165,6 +202,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -179,6 +218,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -193,6 +234,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -207,6 +250,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -221,6 +266,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -237,6 +284,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -253,6 +302,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -269,6 +320,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -285,6 +338,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -301,6 +356,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -317,6 +374,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -333,6 +392,8 @@ services:
     links:
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -349,6 +410,8 @@ services:
       - "stun_2"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "supplier_1"
       - "supplier_2"
       - "supplier_3"

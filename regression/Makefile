@@ -91,4 +91,4 @@ clean_unused_images:
 logs_fetch_local:
 	@rm -rf .logs
 	@mkdir .logs
-	@for node in "identity-server" "stun_1" "stun_2" "dht_seed_1" "dht_seed_2" "supplier_1" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do docker-compose exec $$node sh -c "cat /root/.bitdust/logs/main.log" > ".logs/$$node.main.log"; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/automats.log" > .logs/$$node.automats.log; echo $$node; done
+	@for node in "identity-server" "stun_1" "stun_2" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do docker-compose exec $$node sh -c "cat /root/.bitdust/logs/main.log" > ".logs/$$node.main.log"; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/automats.log" > .logs/$$node.automats.log; echo $$node; done

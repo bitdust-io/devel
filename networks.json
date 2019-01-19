@@ -105,6 +105,16 @@
                 "host": "dht_seed_2",
                 "udp_port": 14441,
                 "maintainer": "Docker"
+            },
+            {
+                "host": "dht_seed_3",
+                "udp_port": 14441,
+                "maintainer": "Docker"
+            },
+            {
+                "host": "dht_seed_4",
+                "udp_port": 14441,
+                "maintainer": "Docker"
             }
         ],
         "identity-servers": [

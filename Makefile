@@ -155,6 +155,10 @@ regression_logs_all:
 	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/main.log
 	@echo "### [dht_seed2] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec dht_seed_2 cat /root/.bitdust/logs/main.log
+	@echo "### [dht_seed3] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_3 cat /root/.bitdust/logs/main.log
+	@echo "### [dht_seed4] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_4 cat /root/.bitdust/logs/main.log
 	@echo "### [stun_1] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec stun_1 cat /root/.bitdust/logs/main.log
 	@echo "### [stun_2] ##################################################################################"
@@ -198,6 +202,10 @@ regression_states_all:
 	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/automats.log
 	@echo "### [dht_seed2] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec dht_seed_2 cat /root/.bitdust/logs/automats.log
+	@echo "### [dht_seed3] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_3 cat /root/.bitdust/logs/automats.log
+	@echo "### [dht_seed4] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_4 cat /root/.bitdust/logs/automats.log
 	@echo "### [stun_1] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec stun_1 cat /root/.bitdust/logs/automats.log
 	@echo "### [stun_2] ##################################################################################"
