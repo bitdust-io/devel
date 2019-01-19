@@ -1737,13 +1737,14 @@ def share_create(owner_id=None, key_size=2048):
     ), message='new share "%s" was generated successfully' % key_id, )
 
 
-def share_grant(trusted_remote_user, key_id):
+def share_grant(trusted_remote_user, key_id, timeout=30):
     """
     """
+    from twisted.internet import reactor  # @UnresolvedImport
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
-        return ERROR('invlid share name')
+        return ERROR('invalid share name')
     from userid import global_id
     remote_idurl = trusted_remote_user
     if trusted_remote_user.count('@'):
@@ -1755,18 +1756,19 @@ def share_grant(trusted_remote_user, key_id):
     ret = Deferred()
 
     def _on_shared_access_donor_success(result):
-        ret.callback(OK() if result else ERROR('failed'))
+        ret.callback(OK() if result else ERROR(result))
         return None
 
     def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR('failed'))
+        ret.callback(ERROR(str(err)))
         return None
 
     d = Deferred()
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
+    d.addTimeout(timeout, clock=reactor)
     shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=True, )
-    shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
+    shared_access_donor_machine.automat('init', trusted_idurl=remote_idurl, key_id=key_id, result_defer=d)
     return ret
 
 

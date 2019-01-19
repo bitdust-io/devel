@@ -62,6 +62,11 @@ def read_value(node, key, expected_data, record_type='skip_validation', ):
         assert 'value' not in response.json()['result'][0], response.json()
         assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
     else:
+        if response.json()['result'][0]['read'] == 'failed':
+            print('first request failed, retry one more time')
+            response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )))
+            assert response.status_code == 200
+            assert response.json()['status'] == 'OK', response.json()
         assert response.json()['result'][0]['read'] == 'success', response.json()
         assert 'value' in response.json()['result'][0], response.json()
         assert response.json()['result'][0]['value']['data'] == expected_data, response.json()

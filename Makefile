@@ -136,7 +136,7 @@ regression_log_one/%:
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/main.log
 
-regression_log_states_one/%:
+regression_states_one/%:
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/automats.log
 
@@ -183,7 +183,7 @@ regression_logs_all:
 	@echo "### [customer_5] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/main.log
 
-regression_logs_all_states:
+regression_states_all:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/automats.log

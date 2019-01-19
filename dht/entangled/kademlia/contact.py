@@ -16,6 +16,7 @@
 
 
 import six
+import base64
 
 
 class Contact(object):
@@ -53,8 +54,8 @@ class Contact(object):
         return str(self)
 
     def __str__(self):
-        return '%s at <%s:%d>' % (
-            self.__class__.__name__, self.address, self.port)
+        return '%s [%s] at <%s:%d>' % (
+            self.__class__.__name__, base64.b64encode(self.id), self.address, self.port)
 
     def __getattr__(self, name):
         """

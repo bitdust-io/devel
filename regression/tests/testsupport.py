@@ -40,16 +40,18 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
         cmd_args = cmd
     else:
         cmd_args = ['ssh', '-o', 'StrictHostKeyChecking=no', '-p', '22', 'root@%s' % host, cmd, ]
-
-    create = asyncio.create_subprocess_exec(*cmd_args,
-                                            stdout=asyncio.subprocess.PIPE,
-                                            loop=loop)
+    create = asyncio.create_subprocess_exec(
+        *cmd_args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        loop=loop,
+    )
     ssh_proc = await create
     stdout, stderr = await ssh_proc.communicate()
     if stderr:
-        print('STDERR: %r' % stderr)
-    assert not stderr
-    return stdout.decode(), stderr
+        print('STDERR: %r' % stderr.decode())
+    # assert not stderr
+    return stdout.decode(), stderr.decode()
 
 
 def run_ssh_command_and_wait(host, cmd):
@@ -57,12 +59,17 @@ def run_ssh_command_and_wait(host, cmd):
         cmd_args = cmd
     else:
         cmd_args = ['ssh', '-o', 'StrictHostKeyChecking=no', '-p', '22', f'root@{host}', cmd, ]
-    ssh_proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, shell=False)
+    ssh_proc = subprocess.Popen(
+        cmd_args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+    )
     output, err = ssh_proc.communicate()
     if err:
-        print('STDERR: %r' % err)
-    assert not err
-    return output.decode(), err
+        print('STDERR: %r' % err.decode())
+    # assert not err
+    return output.decode(), err.decode()
 
 
 def open_tunnel(node):
@@ -95,7 +102,12 @@ def open_ssh_port_forwarding(node, port1, port2):
         node = 'identity-server'
     cmd_args = ['ssh', '-4', '-o', 'StrictHostKeyChecking=no', '-p', '22', '-N', '-L', '%d:localhost:%d' % (port1, port2, ), 'root@%s' % node, ]
     print('\n[%s] %s' % (node, ' '.join(cmd_args), ))
-    ssh_proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, shell=False)
+    ssh_proc = subprocess.Popen(
+        cmd_args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+    )
     return ssh_proc
 
 
@@ -128,4 +140,5 @@ def tunnel_port(node):
 
 
 def tunnel_url(node, endpoint):
+    print('\n[%s]: %s' % (node, endpoint, ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
