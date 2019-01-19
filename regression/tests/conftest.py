@@ -588,14 +588,14 @@ async def clean_one_customer_async(node, event_loop):
 
 
 def clean_one_node(node):
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata')
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache')
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver')
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys')
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers')
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers')
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups')
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
+    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages', event_loop)
 
 
 def clean_one_customer(node, event_loop):
