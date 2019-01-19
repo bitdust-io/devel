@@ -596,7 +596,7 @@ def stop_all_nodes(event_loop):
 
 
 async def report_one_node_async(node, event_loop):
-    main_log = run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)[0].strip()
+    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)[0].strip()
     num_warnings = main_log.count('WARNING')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
@@ -608,7 +608,7 @@ async def report_one_node_async(node, event_loop):
 
 
 async def print_exceptions_one_node_async(node, event_loop):
-    exceptions_out = run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)[0].strip()
+    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
 
@@ -628,18 +628,18 @@ def report_all_nodes(event_loop):
 
 
 async def clean_one_node_async(node, skip_checks=False, event_loop=None):
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys', event_loop)
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers', event_loop)
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers', event_loop)
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
-    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups', event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
 
 
 async def clean_one_customer_async(node, event_loop):
-    run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
+    await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
 
 
 def clean_all_nodes(event_loop, skip_checks=False):
