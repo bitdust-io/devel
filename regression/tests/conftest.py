@@ -572,7 +572,7 @@ async def print_exceptions_one_node_async(node, event_loop):
 
 #------------------------------------------------------------------------------
 
-async def clean_one_node_async(node, skip_checks=False, event_loop=None):
+async def clean_one_node_async(node, event_loop):
     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)
     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver', event_loop)
@@ -585,6 +585,21 @@ async def clean_one_node_async(node, skip_checks=False, event_loop=None):
 
 async def clean_one_customer_async(node, event_loop):
     await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
+
+
+def clean_one_node(node):
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata')
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache')
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identityserver')
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/keys')
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/customers')
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/suppliers')
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/backups')
+    run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/messages', event_loop)
+
+
+def clean_one_customer(node, event_loop):
+    run_ssh_command_and_wait(node, 'rm -rf /%s/*' % node)
 
 #------------------------------------------------------------------------------
 
@@ -599,13 +614,16 @@ def open_all_tunnels(event_loop):
 
 def clean_all_nodes(event_loop, skip_checks=False):
     print('\nCleaning all nodes')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(clean_one_node_async(node, skip_checks=skip_checks, event_loop=event_loop)) for node in ALL_NODES
-    ]))
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(clean_one_customer_async(node, event_loop)) for node in [
-        'customer_1', 'customer_2', 'customer_3', 'customer_4', 'customer_5', 'customer_backup', 'customer_restore',
-    ]]))
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(clean_one_node_async(node, skip_checks=skip_checks, event_loop=event_loop)) for node in ALL_NODES
+    # ]))
+    for node in ALL_NODES:
+        clean_one_node(node)
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(clean_one_customer_async(node['name'], event_loop)) for node in ALL_ROLES['customers']
+    # ]]))
+    for node in ALL_ROLES['customers']:
+        clean_one_customer(node['name'])
     print('\n\nAll nodes cleaned')
 
 
