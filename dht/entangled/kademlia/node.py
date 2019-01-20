@@ -540,6 +540,7 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_findValue')
+        if _Debug: print('findValue %r' % key)
         if key in self._dataStore:
             exp = None
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
@@ -691,7 +692,7 @@ class Node(object):
                 failure.trap(protocol.TimeoutError)
                 deadContactID = failure.getErrorMessage()
                 if deadContactID in shortlist:
-                    if _Debug: print('removing')
+                    if _Debug: print('removing %r' % deadContactID)
                     shortlist.remove(deadContactID)
                 return deadContactID
     

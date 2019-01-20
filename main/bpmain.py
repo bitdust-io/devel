@@ -635,7 +635,7 @@ def main(executable_path=None):
         lg.stdout_start_redirecting()
         lg.out(2, 'bpmain.main redirecting started')
 
-    # TODO: temporary solution to record run-time errors
+    # very basic solution to record run-time errors
     try:
         if os.path.isfile(os.path.join(appdata, 'logs', 'exception.log')):
             os.remove(os.path.join(appdata, 'logs', 'exception.log'))
@@ -683,7 +683,11 @@ def main(executable_path=None):
         from lib import misc
         lg.out(0, 'new BitDust process will be started in daemon mode, finishing current process\n')
         bpio.shutdown()
-        result = misc.DoRestart(detach=True)
+        result = misc.DoRestart(
+            detach=True,
+            std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+        )
         if result is not None:
             try:
                 result = int(result)
@@ -721,7 +725,14 @@ def main(executable_path=None):
                     lg.exc()
                 from lib import misc
                 reactor.addSystemEventTrigger(  # @UndefinedVariable
-                    'after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
+                    'after',
+                    'shutdown',
+                    misc.DoRestart,
+                    param='show' if ui else '',
+                    detach=True,
+                    std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                    std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+                )
                 reactor.stop()  # @UndefinedVariable
             try:
                 from twisted.internet import reactor  # @UnresolvedImport
