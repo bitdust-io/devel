@@ -825,8 +825,8 @@ class DHTNode(EntangledNode):
             if _Debug:
                 lg.out(_DebugLevel, 'dht_service.expire   [%s] removed' % base64.b32encode(key))
             del self._dataStore[key]
-        if _DebugLevel <= 10:
-            lg.out(_DebugLevel, 'DHT counters last %d sec: %s' % (int(KEY_EXPIRE_MIN_SECONDS / 2), drop_counters()))
+        # if _DebugLevel <= 10:
+        #     lg.out(_DebugLevel, 'DHT counters last %d sec: %s' % (int(KEY_EXPIRE_MIN_SECONDS / 2), drop_counters()))
 
     @rpcmethod
     def store(self, key, value, originalPublisherID=None,
