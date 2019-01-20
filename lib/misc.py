@@ -561,7 +561,7 @@ def rndstr(length):
     """
     This generates a random string of given ``length`` - with only digits and letters.
     """
-    return ''.join([random.choice(string.letters + string.digits) for i in range(0, length)])
+    return ''.join([random.choice(string.letters + string.digits) for i in range(0, length)])  # @UndefinedVariable
 
 
 def stringToLong(s):
@@ -861,8 +861,8 @@ def getClipboardText():
     """
     if bpio.Windows():
         try:
-            import win32clipboard
-            import win32con
+            import win32clipboard  # @UnresolvedImport
+            import win32con  # @UnresolvedImport
             win32clipboard.OpenClipboard()
             d = win32clipboard.GetClipboardData(win32con.CF_TEXT)
             win32clipboard.CloseClipboard()
@@ -875,11 +875,11 @@ def getClipboardText():
             import wx
             # may crash, otherwise
             # this needs app.MainLoop() to be started
-            if not wx.TheClipboard.IsOpened():
-                do = wx.TextDataObject()
-                wx.TheClipboard.Open()
-                success = wx.TheClipboard.GetData(do)
-                wx.TheClipboard.Close()
+            if not wx.TheClipboard.IsOpened():  # @UndefinedVariable
+                do = wx.TextDataObject()  # @UndefinedVariable
+                wx.TheClipboard.Open()  # @UndefinedVariable
+                success = wx.TheClipboard.GetData(do)  # @UndefinedVariable
+                wx.TheClipboard.Close()  # @UndefinedVariable
                 if success:
                     return do.GetText()
                 else:
@@ -898,8 +898,8 @@ def setClipboardText(txt):
     """
     if bpio.Windows():
         try:
-            import win32clipboard
-            import win32con
+            import win32clipboard  # @UnresolvedImport
+            import win32con  # @UnresolvedImport
             win32clipboard.OpenClipboard()
             win32clipboard.EmptyClipboard()
             win32clipboard.SetClipboardData(win32con.CF_TEXT, txt)
@@ -910,12 +910,12 @@ def setClipboardText(txt):
     elif bpio.Linux():
         try:
             import wx
-            clipdata = wx.TextDataObject()
+            clipdata = wx.TextDataObject()  # @UndefinedVariable
             clipdata.SetText(txt)
-            if wx.TheClipboard:
-                wx.TheClipboard.Open()
-                wx.TheClipboard.SetData(clipdata)
-                wx.TheClipboard.Close()
+            if wx.TheClipboard:  # @UndefinedVariable
+                wx.TheClipboard.Open()  # @UndefinedVariable
+                wx.TheClipboard.SetData(clipdata)  # @UndefinedVariable
+                wx.TheClipboard.Close()  # @UndefinedVariable
         except:
             lg.exc()
 
@@ -1098,7 +1098,7 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
     folder will show an icons on the desktop.
     """
     try:
-        from win32com.client import Dispatch
+        from win32com.client import Dispatch  # @UnresolvedImport
         shell = Dispatch('WScript.Shell')
         desktop = shell.SpecialFolders(folder)
         return os.path.join(desktop, filename)
@@ -1149,7 +1149,7 @@ def pathToStartMenuShortcut(filename):
     """
     try:
         from win32com.shell import shell, shellcon  # @UnresolvedImport
-        from win32com.client import Dispatch
+        from win32com.client import Dispatch  # @UnresolvedImport
         shell_ = Dispatch('WScript.Shell')
         csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
         startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
@@ -1166,7 +1166,7 @@ def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
     if bpio.Windows():
         try:
             from win32com.shell import shell, shellcon  # @UnresolvedImport
-            from win32com.client import Dispatch
+            from win32com.client import Dispatch  # @UnresolvedImport
             shell_ = Dispatch('WScript.Shell')
             csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
             startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
@@ -1198,7 +1198,7 @@ def removeStartMenuShortcut(filename):
 #------------------------------------------------------------------------------
 
 
-def DoRestart(param='', detach=False):
+def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
     """
     A smart and portable way to restart a whole program.
     """
@@ -1215,12 +1215,12 @@ def DoRestart(param='', detach=False):
                 if param != '':
                     cmdargs.append(param)
                 # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-                return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)
+                return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)  # @UndefinedVariable
             cmdargs = [os.path.basename(starter_filepath), ]
             if param != '':
                 cmdargs.append(param)
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-            return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
+            return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)  # @UndefinedVariable
 
         else:
             lg.out(2, "misc.DoRestart under Windows param=%s" % param)
@@ -1268,8 +1268,8 @@ def DoRestart(param='', detach=False):
         return None
     if detach:
         cmdargs[1] = os.path.abspath(cmdargs[1])
-        cmdargs.append('1>/dev/null')
-        cmdargs.append('2>/dev/null')
+        cmdargs.append('1>%s' % std_out)
+        cmdargs.append('2>%s' % std_err)
         cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
         return os.system(cmd)
     lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
@@ -1301,7 +1301,7 @@ def RunShellCommand(cmdstr, wait=True):
     lg.out(8, 'misc.RunShellCommand ' + cmdstr)
     try:
         if bpio.Windows():
-            import win32process
+            import win32process  # @UnresolvedImport
             p = subprocess.Popen(
                 cmdstr,
                 shell=True,
@@ -1592,7 +1592,7 @@ def UpdateRegistryUninstall(uninstall=False):
     inside it.
     """
     try:
-        import six.moves.winreg
+        import six.moves.winreg  # @UnresolvedImport
     except:
         return False
     unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
@@ -1728,15 +1728,15 @@ if __name__ == '__main__':
 
         def _done(x):
             print('DONE', x)
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return x
 
         def _fail(x):
             print('FAIL', x)
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return x
         d = SendDevReport('subject ', 'some body112', True, _progress)
         if d:
             d.addCallback(_done)
             d.addErrback(_fail)
-        reactor.run()
+        reactor.run()  # @UndefinedVariable

@@ -43,8 +43,6 @@ import sys
 
 #------------------------------------------------------------------------------
 
-from lib import strng
-
 from lib import jsontemplate
 from lib import strng
 
@@ -1146,20 +1144,28 @@ def cmd_friend(opts, args, overDict):
 def cmd_dhtseed(opts, args, overDict):
     from lib import misc
     from system import bpio
+    from main import settings
+    settings.init()
+    appdata = settings.BaseDir()
+
     if len(args) > 1 and args[1] in ['daemon', 'background', 'detach', 'spawn', ]:
         appList = bpio.find_main_process()
         if len(appList) > 0:
             print_text('main BitDust process already started: %s' % str(appList))
             return 0
         print_text('starting Distributed Hash Table seed node and detach main BitDust process')
-        result = misc.DoRestart(param='dhtseed', detach=True)
+        result = misc.DoRestart(
+            param='dhtseed',
+            detach=True,
+            std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+        )
         try:
             result = result.pid
         except:
             result = str(result)
         return 0
 
-    from main import settings
     from dht import dht_service
     from logs import lg
     settings.init()
@@ -1198,8 +1204,15 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('main BitDust process already started: %s' % str(appList))
             return 0
         from lib import misc
+        from main import settings
+        settings.init()
+        appdata = settings.BaseDir()
         print_text('run and detach main BitDust process')
-        result = misc.DoRestart(detach=True)
+        result = misc.DoRestart(
+            detach=True,
+            std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+            std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+        )
         try:
             result = result.pid
         except:
@@ -1231,7 +1244,18 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 print_exception()
             from twisted.internet import reactor  # @UnresolvedImport
             from lib import misc
-            reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)  # @UndefinedVariable
+            from main import settings
+            settings.init()
+            appdata = settings.BaseDir()
+            reactor.addSystemEventTrigger(  # @UndefinedVariable
+                'after',
+                'shutdown',
+                misc.DoRestart,
+                param='show' if ui else '',
+                detach=True,
+                std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+            )
             reactor.stop()  # @UndefinedVariable
         try:
             from twisted.internet import reactor  # @UnresolvedImport
@@ -1259,8 +1283,16 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 return 0
         if len(appList) == 0:
             from lib import misc
+            from main import settings
+            settings.init()
+            appdata = settings.BaseDir()
             print_text('run and detach main BitDust process')
-            result = misc.DoRestart('show', detach=True)
+            result = misc.DoRestart(
+                'show',
+                detach=True,
+                std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+            )
             try:
                 result = result.pid
             except:
