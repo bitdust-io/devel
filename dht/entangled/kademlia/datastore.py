@@ -466,7 +466,7 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=encoding.encode_hex(row[4]),
+                originalPublisherID=None if not row[4] else encoding.encode_hex(row[4]),
                 expireSeconds=row[5],
                 key64=base64.b64encode(encoding.decode_hex(row[0]))
             ))
