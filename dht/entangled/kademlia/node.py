@@ -113,6 +113,7 @@ class Node(object):
                 for contactTriple in state[b'closestNodes']:
                     contact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
                     self._routingTable.addContact(contact)
+                if _Debug: print('found "nodeState" key in local db and added %d contacts to routing table' % len(state[b'closestNodes']))
         self._counter = None
 
     def __del__(self):
@@ -862,6 +863,7 @@ class Node(object):
         state = {
             b'id': self.id,
             b'closestNodes': self.findNode(self.id),
+            b'key': 'nodeState',
         }
         now = int(time.time())
         self._dataStore.setItem(b'nodeState', state, now, now, self.id)

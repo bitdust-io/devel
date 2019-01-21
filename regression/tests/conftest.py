@@ -708,7 +708,7 @@ def report_all_nodes(event_loop):
     print('\n\nALL DHT RECORDS:')
     for node in ALL_NODES:
         print('\n[%s]:' % node)
-        print(requests.get(tunnel_url(node, 'dht/db/dump/v1')).json())
+        pprint.pprint(requests.get(tunnel_url(node, 'dht/db/dump/v1')).json())
 
 #------------------------------------------------------------------------------
 
