@@ -20,6 +20,7 @@ from six.moves import range
 from io import open
 
 import hashlib
+import base64
 import random
 import time
 import traceback
@@ -201,7 +202,7 @@ class Node(object):
             except:
                 o = 'Unknown Error'
             if _Debug:
-                print('storeSuccess', key, o)
+                print('storeSuccess', base64.b64encode(key), o)
             return ok
 
         def storeFailed(x, key):
@@ -213,7 +214,7 @@ class Node(object):
                 except:
                     o = 'Unknown Error'
             if _Debug:
-                print('storeFailed', key, o)
+                print('storeFailed', base64.b64encode(key), o)
             return o
 
         # Prepare a callback for doing "STORE" RPC calls
@@ -358,7 +359,7 @@ class Node(object):
                     expireSeconds = constants.dataExpireSecondsDefaut
                     if 'expireSeconds' in result:
                         expireSeconds = result['expireSeconds']
-                    if _Debug: print('republish %s with %d' % (result[key], expireSeconds))
+                    if _Debug: print('republish %s : %r with %d' % (base64.b64encode(key), result[key], expireSeconds))
                     contact.store(key, result[key], None, 0, expireSeconds).addErrback(storeFailed)
                 outerDf.callback(result)
             else:
@@ -376,7 +377,7 @@ class Node(object):
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        if _Debug: print('refresh %s with %d' % (value, expireSeconds))
+                        if _Debug: print('refresh %s : %r with %d' % (base64.b64encode(key), value, expireSeconds))
                         contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
                     outerDf.callback({key: value})
                 else:
@@ -540,7 +541,7 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_findValue')
-        if _Debug: print('findValue %r' % key)
+        if _Debug: print('findValue %r' % base64.b64encode(key))
         if key in self._dataStore:
             exp = None
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
@@ -601,7 +602,7 @@ class Node(object):
         @rtype: twisted.internet.defer.Deferred
         """
         try:
-            if _Debug: print('_iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, key, startupShortlist, ))
+            if _Debug: print('_iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, base64.b64encode(key), startupShortlist, ))
             if self._counter:
                 self._counter('_iterativeFind')
             if rpc != 'findNode':
@@ -864,7 +865,7 @@ class Node(object):
         }
         now = int(time.time())
         self._dataStore.setItem(b'nodeState', state, now, now, self.id)
-        if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
+        if _Debug: print('_persistState id=%r state=%r' % (base64.b64encode(self.id), state, ))
         return args
 
     def _joinNetworkFailed(self, err):
@@ -919,10 +920,10 @@ class Node(object):
 
         This method should run in a deferred thread
         """
-        if _Debug: print('== republishData called, node: %r' % self.id[0])
+        if _Debug: print('== republishData called, node: %r' % base64.b64encode(self.id))
         expiredKeys = []
         for key in self._dataStore.keys():
-            if _Debug: print('    %r' % key)
+            if _Debug: print('    %r' % base64.b64encode(key))
             # Filter internal variables stored in the datastore
             if key == b'nodeState':
                 continue

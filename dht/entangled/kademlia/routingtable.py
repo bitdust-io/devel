@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import time
 import random
+import base64
 # import codecs
 
 from . import constants  # @UnresolvedImport
@@ -26,7 +27,7 @@ from . import kbucket  # @UnresolvedImport
 from .protocol import TimeoutError  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 class RoutingTable(object):
@@ -264,7 +265,7 @@ class TreeRoutingTable(RoutingTable):
                 closestNodes.extend(self._buckets[bucketIndex + i].getContacts(constants.k - len(closestNodes), _rpcNodeID))
                 canGoHigher = bucketIndex + (i + 1) < len(self._buckets)
             i += 1
-        if _Debug: print('findCloseNodes %r  _rpcNodeID=%r   result=%r' % (key, _rpcNodeID, closestNodes, ))
+        if _Debug: print('findCloseNodes %r  _rpcNodeID=%r   result=%r' % (base64.b64encode(key), _rpcNodeID, closestNodes, ))
         return closestNodes
 
     def getContact(self, contactID):
@@ -355,11 +356,11 @@ class TreeRoutingTable(RoutingTable):
         i = 0
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):
-                if _Debug: print('_kbucketIndex  %r  %r  returning %r' % (key, valKey, i, ))
+                if _Debug: print('_kbucketIndex  %r  %r  returning %r' % (base64.b64encode(key), valKey, i, ))
                 return i
             else:
                 i += 1
-        if _Debug: print('_kbucketIndex  %r  %r  finishing with %r' % (key, valKey, i, ))
+        if _Debug: print('_kbucketIndex  %r  %r  finishing with %r' % (base64.b64encode(key), valKey, i, ))
         return i
 
     def _randomIDInBucketRange(self, bucketIndex):
@@ -435,7 +436,7 @@ class OptimizedTreeRoutingTable(TreeRoutingTable):
         contact.failedRPCs = 0
 
         bucketIndex = self._kbucketIndex(contact.id)
-        if _Debug: print('addContact %r at %r' % (contact.id, bucketIndex))
+        if _Debug: print('addContact %r at %r' % (base64.b64encode(contact.id), bucketIndex))
         try:
             self._buckets[bucketIndex].addContact(contact)
         except kbucket.BucketFull:

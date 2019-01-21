@@ -869,6 +869,11 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             record_type=data.get('record_type', 'skip_validation'),
         )
 
+    @GET('^/d/d/d$')
+    @GET('^/dht/db/dump/v1$')
+    def dht_db_dump_v1(self, request):
+        return api.dht_local_db_dump()
+
     #------------------------------------------------------------------------------
 
     @ALL('^/*')
