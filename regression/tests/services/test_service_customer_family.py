@@ -30,6 +30,7 @@ from ..testsupport import tunnel_url
 
 def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=60, sleep_sec=2):
     count = 0
+    response = None
     while True:
         if count >= retries:
             assert False, 'customer family [%s] [%s] was not re-published correctly again after %d attempts, customer [%s] still see wrong info' % (
@@ -44,6 +45,7 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
             time.sleep(sleep_sec)
             continue
         if len(response.json()['result']['suppliers']) != expected_suppliers_number or '' in response.json()['result']['suppliers']:
+            print('\n%r' % response.json())
             count += 1
             time.sleep(sleep_sec)
             continue

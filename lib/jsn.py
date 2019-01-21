@@ -86,3 +86,22 @@ def loads(s, encoding='utf-8', **kw):
         object_hook=_to_bin,
         **kw
     )
+
+
+def loads_text(s, encoding='utf-8', **kw):
+    """
+    Calls `json.loads()` with parameters.
+    Always translates all json text values into unicode strings.
+    """
+
+    def _to_text(dct):
+        for k in dct.keys():
+            if not isinstance(dct[k], six.text_type):
+                dct[k] = dct[k].decode(encoding)
+        return dct
+
+    return json.loads(
+        s=s,
+        object_hook=_to_text,
+        **kw
+    )

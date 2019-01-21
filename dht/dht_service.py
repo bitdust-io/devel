@@ -744,7 +744,7 @@ def find_node(node_id):
 def get_node_data(key):
     if not node():
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.get_node_data local node is not not read')
+            lg.out(_DebugLevel, 'dht_service.get_node_data local node is not ready')
         return None
     count('get_node_data')
     key = strng.to_bin(key)
@@ -762,7 +762,7 @@ def get_node_data(key):
 def set_node_data(key, value):
     if not node():
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.set_node_data local node is not not read')
+            lg.out(_DebugLevel, 'dht_service.set_node_data local node is not ready')
         return False
     count('set_node_data')
     key = strng.to_bin(key)
@@ -776,7 +776,7 @@ def set_node_data(key, value):
 def delete_node_data(key):
     if not node():
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not not read')
+            lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not ready')
         return False
     count('delete_node_data')
     key = strng.to_bin(key)
@@ -788,6 +788,22 @@ def delete_node_data(key):
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s], counter=%d' % (key, counter('delete_node_data')))
     return True
+
+
+def dump_local_db(value_as_json=False):
+    if not node():
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.dump_local_db local node is not ready')
+        return None
+    l = []
+    for itm in node()._dataStore.getAllItems(unpickle=True):
+        if value_as_json:
+            try:
+                itm['value'] = json.loads(itm['value'])
+            except:
+                itm['value'] = strng.to_text(itm['value'])
+        l.append(itm)
+    return l
 
 #------------------------------------------------------------------------------
 

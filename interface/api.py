@@ -3714,4 +3714,11 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     d.addErrback(_eb)
     return ret
 
+
+def dht_local_db_dump():
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    from dht import dht_service
+    return RESULT(dht_service.dump_local_db(value_as_json=True))
+
 #------------------------------------------------------------------------------

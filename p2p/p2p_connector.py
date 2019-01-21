@@ -87,8 +87,6 @@ from lib import strng
 from automats import automat
 from automats import global_state
 
-from dht import dht_service
-
 from contacts import identitycache
 from contacts import contactsdb
 
@@ -338,8 +336,10 @@ class P2PConnector(automat.Automat):
     def doPropagateMyIdentity(self, *args, **kwargs):
         # TODO: need to run this actions one by one, not in parallel - use Defered chain
         propagate.update()
-        propagate.write_to_dht()
-        dht_service.set_node_data(b'idurl', my_id.getLocalID())
+        if driver.is_on('service_entangled_dht'):
+            from dht import dht_service
+            # propagate.write_to_dht()
+            dht_service.set_node_data(b'idurl', my_id.getLocalID())
         d = propagate.start(wide=True)
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 

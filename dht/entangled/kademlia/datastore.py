@@ -16,15 +16,16 @@
 
 from __future__ import absolute_import
 import six
+
 try:
     from UserDict import DictMixin
 except ImportError:
     from collections import MutableMapping as DictMixin
+
 import sqlite3
 import six.moves.cPickle as pickle
-# import pickle
 import os
-# import codecs
+import base64
 
 from . import constants  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
@@ -37,6 +38,8 @@ except:
 
 
 PICKLE_PROTOCOL = 2
+
+_Debug = True
 
 
 class DataStore(DictMixin):
@@ -231,6 +234,18 @@ class SQLiteDataStore(DataStore):
         finally:
             return keys
 
+    def keys64(self):
+        """
+        Return a list of the keys in this data store.
+        """
+        keys = []
+        try:
+            self._cursor.execute("SELECT key FROM data")
+            for row in self._cursor:
+                keys.append(base64.b64encode(encoding.decode_hex(row[0])))
+        finally:
+            return keys
+
     def lastPublished(self, key):
         """
         Get the time the C{(key, value)} pair identified by C{key} was last
@@ -392,6 +407,8 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 originalPublisherID,
                 expireSeconds,
             ))
+            if _Debug:
+                print('stored new value for key %s' % base64.b64encode(key))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=? WHERE key=?', (
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
@@ -401,6 +418,8 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 expireSeconds,
                 encodedKey,
             ))
+            if _Debug:
+                print('updated existing value for key %s' % base64.b64encode(key))
 
     def getItem(self, key):
         try:
@@ -422,21 +441,33 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 expireSeconds=row[5],
             )
         except:
+            if _Debug:
+                print('returned None for key %s' % base64.b64encode(key))
             return None
+        if _Debug:
+            print('returned dict object for key %s' % base64.b64encode(key))
         return result
 
-    def getAllItems(self):
+    def getAllItems(self, unpickle=False):
         self._cursor.execute("SELECT * FROM data")
         rows = self._cursor.fetchall()
         items = []
         for row in rows:
+            value = row[1]
+            if unpickle:
+                if six.PY2:
+                    if isinstance(value, buffer):
+                        value = str(value)
+                    value = pickle.loads(value)
+                else:
+                    value = pickle.loads(value, encoding='bytes')
             items.append(dict(
-                key=row[0],
-                value=str(row[1]),
+                key=encoding.encode_hex(row[0]),
+                value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=row[4],
+                originalPublisherID=None if not row[4] else encoding.encode_hex(row[4]),
                 expireSeconds=row[5],
+                key64=base64.b64encode(encoding.decode_hex(row[0]))
             ))
         return items
-

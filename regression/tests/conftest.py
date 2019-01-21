@@ -705,6 +705,10 @@ def report_all_nodes(event_loop):
     # ]))
     for node in ALL_NODES:
         print_exceptions_one_node(node)
+    print('\n\nALL DHT RECORDS:')
+    for node in ALL_NODES:
+        print('\n[%s]:' % node)
+        pprint.pprint(requests.get(tunnel_url(node, 'dht/db/dump/v1')).json())
 
 #------------------------------------------------------------------------------
 
