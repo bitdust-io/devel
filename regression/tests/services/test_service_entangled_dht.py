@@ -46,6 +46,7 @@ VALIDATORS_NODES = [
     'proxy_server_2',
     'stun_1',
     'stun_2',
+    'dht_seed_0',
     'dht_seed_1',
     'dht_seed_2',
     'dht_seed_3',

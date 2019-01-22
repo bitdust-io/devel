@@ -55,7 +55,7 @@ class EntangledDHTService(LocalService):
         from main.config import conf
         conf().addCallback('services/entangled-dht/udp-port', self._on_udp_port_modified)
         dht_service.init(udp_port=settings.getDHTPort(), db_file_path=settings.DHTDBFile())
-        known_seeds = known_nodes.default_nodes()
+        known_seeds = known_nodes.nodes()
         d = dht_service.connect(seed_nodes=known_seeds)
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)

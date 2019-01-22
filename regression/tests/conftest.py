@@ -25,16 +25,15 @@ import pytest
 import time
 import requests
 import asyncio
-import itertools
 import pprint
 import aiohttp  # @UnresolvedImport
 
-from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_ssh_command_and_wait_async, save_tunnels_ports, load_tunnels_ports
+from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_ssh_command_and_wait_async
 
 
 #------------------------------------------------------------------------------
 
-DHT_SEED_NODES = 'dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
+DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
 
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
@@ -60,6 +59,7 @@ ALL_NODES = [
     'stun_1',
     'stun_2',
     'is',
+    'dht_seed_0',
     'dht_seed_1',
     'dht_seed_2',
     'dht_seed_3',
@@ -69,10 +69,14 @@ ALL_NODES = [
 # TODO: keep this list up to date with docker-compose links
 ALL_ROLES = {
     'dht-seeds': [
-        'dht_seed_1',
-        'dht_seed_2',
-        'dht_seed_3',
-        'dht_seed_4',
+        {'name': 'dht_seed_0', 'other_seeds': 'genesis', },
+        {'name': 'dht_seed_1', 'other_seeds': 'dht_seed_0:14441', },
+        {'name': 'dht_seed_2', 'other_seeds': 'dht_seed_0:14441', },
+        {'name': 'dht_seed_3', 'other_seeds': 'dht_seed_0:14441', },
+        {'name': 'dht_seed_4', 'other_seeds': 'dht_seed_0:14441', },
+#         {'name': 'dht_seed_2', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441', },
+#         {'name': 'dht_seed_3', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441', },
+#         {'name': 'dht_seed_4', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441', },
     ],
     'identity-servers': [
         'is',
@@ -292,7 +296,7 @@ def start_identity_server(node):
     print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
 
 
-def start_dht_seed(node, wait_seconds=0):
+def start_dht_seed(node, wait_seconds=0, other_seeds=''):
     print(f'\nNEW DHT SEED (with STUN SERVER) at [{node}]\n')
     # use short key to run tests faster
     run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')
@@ -304,8 +308,10 @@ def start_dht_seed(node, wait_seconds=0):
     run_ssh_command_and_wait(node, 'bitdust set services/private-messages/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')
-    # configure DHT udp port
+    # configure DHT udp port and seed nodes
     run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
+    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % other_seeds)
+    
     # enable Stun server
     run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')
     # start BitDust daemon
@@ -637,7 +643,8 @@ def start_all_nodes(event_loop):
     for number, dhtseed in enumerate(ALL_ROLES['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
         start_dht_seed(
-            node=dhtseed,
+            node=dhtseed['name'],
+            other_seeds=dhtseed['other_seeds'],
             wait_seconds=(15 if number > 0 else 0),
             # wait_seconds=15,
         )
