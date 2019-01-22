@@ -552,23 +552,6 @@ class Node(object):
         else:
             return self.findNode(key, **kwargs)
 
-    @rpcmethod
-    def findTrueValue(self, key, **kwargs):
-        """
-        Always execute FIND_NODE for the key and lookup in DHT.
-
-        @param key: The hashtable key of the data to return
-        @type key: str
-
-        @return: A dictionary containing the requested key/value pair,
-                 or a list of contact triples closest to the requested key.
-        @rtype: dict or list
-        """
-        if self._counter:
-            self._counter('rpc_node_findTrueValue')
-        if _Debug: print('findTrueValue %r' % base64.b64encode(key))
-        return self.findNode(key, **kwargs)
-
 #    def _distance(self, keyOne, keyTwo):
 #        """ Calculate the XOR result between two string variables
 #
@@ -619,184 +602,180 @@ class Node(object):
                  return a list of the k closest nodes to the specified key
         @rtype: twisted.internet.defer.Deferred
         """
-        try:
-            if _Debug: print('_iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, base64.b64encode(key), startupShortlist, ))
-            if self._counter:
-                self._counter('_iterativeFind')
-            if rpc != 'findNode':
-                findValue = True
-            else:
-                findValue = False
-            shortlist = []
-            if startupShortlist is None:
-                shortlist = self._routingTable.findCloseNodes(key, constants.alpha)
-                if key != self.id:
-                    # Update the "last accessed" timestamp for the appropriate k-bucket
-                    self._routingTable.touchKBucket(key)
-                if len(shortlist) == 0:
-                    if _Debug: print("This node doesn't know of any other nodes !!!!!")
-                    # This node doesn't know of any other nodes
-                    fakeDf = defer.Deferred()
-                    fakeDf.callback([])
-                    return fakeDf
-            else:
-                # This is used during the bootstrap process; node ID's are most probably fake
-                shortlist = startupShortlist
-            if _Debug: print('shortlist=%r' % shortlist)
-            # List of active queries; len() indicates number of active probes
-            # - using lists for these variables, because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
-            activeProbes = []
-            # List of contact IDs that have already been queried
-            alreadyContacted = []
-            # Probes that were active during the previous iteration
-            # A list of found and known-to-be-active remote nodes
-            activeContacts = []
-            # This should only contain one entry; the next scheduled iteration call
-            pendingIterationCalls = []
-            prevClosestNode = [None]
-            findValueResult = {}
-            slowNodeCount = [0]
-    
-            def extendShortlist(responseTuple):
-                """ @type responseMsg: kademlia.msgtypes.ResponseMessage """
-                # The "raw response" tuple contains the response message, and the originating address info
-                responseMsg = responseTuple[0]
-                originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
-                # Make sure the responding node is valid, and abort the operation if it isn't
-                if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.id:
-                    return responseMsg.nodeID
-    
-                # Mark this node as active
-                if responseMsg.nodeID in shortlist:
-                    # Get the contact information from the shortlist...
-                    aContact = shortlist[shortlist.index(responseMsg.nodeID)]
-                else:
-                    # If it's not in the shortlist; we probably used a fake ID to reach it
-                    # - reconstruct the contact, using the real node ID this time
-                    aContact = Contact(responseMsg.nodeID, originAddress[0], originAddress[1], self._protocol)
-                activeContacts.append(aContact)
-                # This makes sure "bootstrap"-nodes with "fake" IDs don't get queried twice
-                if responseMsg.nodeID not in alreadyContacted:
-                    alreadyContacted.append(responseMsg.nodeID)
-                # Now grow extend the (unverified) shortlist with the returned contacts
-                result = responseMsg.response
-                # TODO: some validation on the result (for guarding against attacks)
-                # If we are looking for a value, first see if this result is the value
-                # we are looking for before treating it as a list of contact triples
-                if findValue and isinstance(result, dict):
-                    # We have found the value
-                    findValueResult[key] = result[key]
-                    if 'expireSeconds' in result:
-                        findValueResult['expireSeconds'] = result['expireSeconds']
-                else:
-                    if findValue:
-                        # We are looking for a value, and the remote node didn't have it
-                        # - mark it as the closest "empty" node, if it is
-                        if 'closestNodeNoValue' in findValueResult:
-                            if self._routingTable.distance(key, responseMsg.nodeID) < self._routingTable.distance(key, activeContacts[0].id):
-                                findValueResult['closestNodeNoValue'] = aContact
-                        else:
-                            findValueResult['closestNodeNoValue'] = aContact
-                    for contactTriple in result:
-                        try:
-                            testContact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
-                        except:
-                            continue
-                        if testContact not in shortlist:
-                            shortlist.append(testContact)
+        if _Debug: print('_iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, base64.b64encode(key), startupShortlist, ))
+        if self._counter:
+            self._counter('_iterativeFind')
+        if rpc != 'findNode':
+            findValue = True
+        else:
+            findValue = False
+        shortlist = []
+        if startupShortlist is None:
+            shortlist = self._routingTable.findCloseNodes(key, constants.alpha)
+            if key != self.id:
+                # Update the "last accessed" timestamp for the appropriate k-bucket
+                self._routingTable.touchKBucket(key)
+            if len(shortlist) == 0:
+                if _Debug: print("This node doesn't know of any other nodes !!!!!")
+                # This node doesn't know of any other nodes
+                fakeDf = defer.Deferred()
+                fakeDf.callback([])
+                return fakeDf
+        else:
+            # This is used during the bootstrap process; node ID's are most probably fake
+            shortlist = startupShortlist
+        if _Debug: print('shortlist=%r' % shortlist)
+        # List of active queries; len() indicates number of active probes
+        # - using lists for these variables, because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
+        activeProbes = []
+        # List of contact IDs that have already been queried
+        alreadyContacted = []
+        # Probes that were active during the previous iteration
+        # A list of found and known-to-be-active remote nodes
+        activeContacts = []
+        # This should only contain one entry; the next scheduled iteration call
+        pendingIterationCalls = []
+        prevClosestNode = [None]
+        findValueResult = {}
+        slowNodeCount = [0]
+
+        def extendShortlist(responseTuple):
+            """ @type responseMsg: kademlia.msgtypes.ResponseMessage """
+            # The "raw response" tuple contains the response message, and the originating address info
+            responseMsg = responseTuple[0]
+            originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
+            # Make sure the responding node is valid, and abort the operation if it isn't
+            if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.id:
                 return responseMsg.nodeID
-    
-            def removeFromShortlist(failure):
-                """ @type failure: twisted.python.failure.Failure """
-                failure.trap(protocol.TimeoutError)
-                deadContactID = failure.getErrorMessage()
-                if deadContactID in shortlist:
-                    if _Debug: print('removing %r' % deadContactID)
-                    shortlist.remove(deadContactID)
-                return deadContactID
-    
-            def cancelActiveProbe(contactID):
-                activeProbes.pop()
-                if len(activeProbes) <= constants.alpha / 2 and len(pendingIterationCalls):
-                    # Force the iteration
-                    pendingIterationCalls[0].cancel()
-                    del pendingIterationCalls[0]
-                    if _Debug: print('forcing iteration =================')
-                    searchIteration()
-    
-            # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
-            def searchIteration():
-                if _Debug: print('==> searchiteration')
-                slowNodeCount[0] = len(activeProbes)
-                # Sort the discovered active nodes from closest to furthest
-                # activeContacts.sort(lambda firstContact, secondContact, targetKey=key: cmp(
-                #     self._routingTable.distance(firstContact.id, targetKey),
-                #     self._routingTable.distance(secondContact.id, targetKey)
-                # ))
-                activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
-                # This makes sure a returning probe doesn't force calling this function by mistake
-                while len(pendingIterationCalls):
-                    del pendingIterationCalls[0]
-                # See if should continue the search
-                if key in findValueResult:
-                    if _Debug: print('++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
-                    outerDf.callback(findValueResult)
-                    return
-                elif len(activeContacts) and findValue == False:
-                    if (len(activeContacts) >= constants.k) or (activeContacts[0] == prevClosestNode[0] and len(activeProbes) == slowNodeCount[0]):
-                        # TODO: Re-send the FIND_NODEs to all of the k closest nodes not already queried
-                        # Ok, we're done; either we have accumulated k active contacts or no improvement in closestNode has been noted
-                        if len(activeContacts) >= constants.k:
-                            if _Debug: print('++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
-                        else:
-                            if _Debug: print('++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
-                        outerDf.callback(activeContacts)
-                        return
-                # The search continues...
-                if len(activeContacts):
-                    prevClosestNode[0] = activeContacts[0]
-                contactedNow = 0
-                # shortlist.sort(key=lambda firstContact, secondContact, targetKey=key: cmp(
-                #     self._routingTable.distance(firstContact.id, targetKey),
-                #     self._routingTable.distance(secondContact.id, targetKey)
-                # ))
-                activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
-                # Store the current shortList length before contacting other nodes
-                prevShortlistLength = len(shortlist)
-                for contact in shortlist:
-                    if contact.id not in alreadyContacted:
-                        activeProbes.append(contact.id)
-                        rpcMethod = getattr(contact, rpc)
-                        df = rpcMethod(key, rawResponse=True)
-                        df.addCallback(extendShortlist)
-                        df.addErrback(removeFromShortlist)
-                        df.addCallback(cancelActiveProbe)
-                        alreadyContacted.append(contact.id)
-                        contactedNow += 1
-                    if contactedNow == constants.alpha:
-                        break
-                if len(activeProbes) > slowNodeCount[0] \
-                        or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
-                    if _Debug: print('----------- scheduling next call -------------')
-                    # Schedule the next iteration if there are any active calls (Kademlia uses loose parallelism)
-                    call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101  @UndefinedVariable
-                    pendingIterationCalls.append(call)
-                # Check for a quick contact response that made an update to the shortList
-                elif prevShortlistLength < len(shortlist):
-                    # Ensure that the closest contacts are taken from the updated shortList
-                    searchIteration()
-                else:
-                    if _Debug: print('++++++++++++++ DONE (logically) +++++++++++++\n\n')
-                    # If no probes were sent, there will not be any improvement, so we're done
+
+            # Mark this node as active
+            if responseMsg.nodeID in shortlist:
+                # Get the contact information from the shortlist...
+                aContact = shortlist[shortlist.index(responseMsg.nodeID)]
+            else:
+                # If it's not in the shortlist; we probably used a fake ID to reach it
+                # - reconstruct the contact, using the real node ID this time
+                aContact = Contact(responseMsg.nodeID, originAddress[0], originAddress[1], self._protocol)
+            activeContacts.append(aContact)
+            # This makes sure "bootstrap"-nodes with "fake" IDs don't get queried twice
+            if responseMsg.nodeID not in alreadyContacted:
+                alreadyContacted.append(responseMsg.nodeID)
+            # Now grow extend the (unverified) shortlist with the returned contacts
+            result = responseMsg.response
+            # TODO: some validation on the result (for guarding against attacks)
+            # If we are looking for a value, first see if this result is the value
+            # we are looking for before treating it as a list of contact triples
+            if findValue and isinstance(result, dict):
+                # We have found the value
+                findValueResult[key] = result[key]
+                if 'expireSeconds' in result:
+                    findValueResult['expireSeconds'] = result['expireSeconds']
+            else:
+                if findValue:
+                    # We are looking for a value, and the remote node didn't have it
+                    # - mark it as the closest "empty" node, if it is
+                    if 'closestNodeNoValue' in findValueResult:
+                        if self._routingTable.distance(key, responseMsg.nodeID) < self._routingTable.distance(key, activeContacts[0].id):
+                            findValueResult['closestNodeNoValue'] = aContact
+                    else:
+                        findValueResult['closestNodeNoValue'] = aContact
+                for contactTriple in result:
+                    try:
+                        testContact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
+                    except:
+                        continue
+                    if testContact not in shortlist:
+                        shortlist.append(testContact)
+            return responseMsg.nodeID
+
+        def removeFromShortlist(failure):
+            """ @type failure: twisted.python.failure.Failure """
+            failure.trap(protocol.TimeoutError)
+            deadContactID = failure.getErrorMessage()
+            if deadContactID in shortlist:
+                if _Debug: print('removing %r' % deadContactID)
+                shortlist.remove(deadContactID)
+            return deadContactID
+
+        def cancelActiveProbe(contactID):
+            activeProbes.pop()
+            if len(activeProbes) <= constants.alpha / 2 and len(pendingIterationCalls):
+                # Force the iteration
+                pendingIterationCalls[0].cancel()
+                del pendingIterationCalls[0]
+                if _Debug: print('forcing iteration =================')
+                searchIteration()
+
+        # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
+        def searchIteration():
+            if _Debug: print('==> searchiteration')
+            slowNodeCount[0] = len(activeProbes)
+            # Sort the discovered active nodes from closest to furthest
+            # activeContacts.sort(lambda firstContact, secondContact, targetKey=key: cmp(
+            #     self._routingTable.distance(firstContact.id, targetKey),
+            #     self._routingTable.distance(secondContact.id, targetKey)
+            # ))
+            activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
+            # This makes sure a returning probe doesn't force calling this function by mistake
+            while len(pendingIterationCalls):
+                del pendingIterationCalls[0]
+            # See if should continue the search
+            if key in findValueResult:
+                if _Debug: print('++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
+                outerDf.callback(findValueResult)
+                return
+            elif len(activeContacts) and findValue == False:
+                if (len(activeContacts) >= constants.k) or (activeContacts[0] == prevClosestNode[0] and len(activeProbes) == slowNodeCount[0]):
+                    # TODO: Re-send the FIND_NODEs to all of the k closest nodes not already queried
+                    # Ok, we're done; either we have accumulated k active contacts or no improvement in closestNode has been noted
+                    if len(activeContacts) >= constants.k:
+                        if _Debug: print('++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
+                    else:
+                        if _Debug: print('++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
                     outerDf.callback(activeContacts)
-    
-            outerDf = defer.Deferred()
-            # Start the iterations
-            searchIteration()
-            return outerDf
-        except:
-            import traceback
-            traceback.print_exc()
+                    return
+            # The search continues...
+            if len(activeContacts):
+                prevClosestNode[0] = activeContacts[0]
+            contactedNow = 0
+            # shortlist.sort(key=lambda firstContact, secondContact, targetKey=key: cmp(
+            #     self._routingTable.distance(firstContact.id, targetKey),
+            #     self._routingTable.distance(secondContact.id, targetKey)
+            # ))
+            activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
+            # Store the current shortList length before contacting other nodes
+            prevShortlistLength = len(shortlist)
+            for contact in shortlist:
+                if contact.id not in alreadyContacted:
+                    activeProbes.append(contact.id)
+                    rpcMethod = getattr(contact, rpc)
+                    df = rpcMethod(key, rawResponse=True)
+                    df.addCallback(extendShortlist)
+                    df.addErrback(removeFromShortlist)
+                    df.addCallback(cancelActiveProbe)
+                    alreadyContacted.append(contact.id)
+                    contactedNow += 1
+                if contactedNow == constants.alpha:
+                    break
+            if len(activeProbes) > slowNodeCount[0] \
+                    or (len(shortlist) < constants.k and len(activeContacts) < len(shortlist) and len(activeProbes) > 0):
+                if _Debug: print('----------- scheduling next call -------------')
+                # Schedule the next iteration if there are any active calls (Kademlia uses loose parallelism)
+                call = twisted.internet.reactor.callLater(constants.iterativeLookupDelay, searchIteration)  # IGNORE:E1101  @UndefinedVariable
+                pendingIterationCalls.append(call)
+            # Check for a quick contact response that made an update to the shortList
+            elif prevShortlistLength < len(shortlist):
+                # Ensure that the closest contacts are taken from the updated shortList
+                searchIteration()
+            else:
+                if _Debug: print('++++++++++++++ DONE (logically) +++++++++++++\n\n')
+                # If no probes were sent, there will not be any improvement, so we're done
+                outerDf.callback(activeContacts)
+
+        outerDf = defer.Deferred()
+        # Start the iterations
+        searchIteration()
+        return outerDf
 
 
 #    def _kbucketIndex(self, key):
