@@ -342,7 +342,7 @@ def get_value(key):
     count('get_value_%s' % key)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value_%s' % key)))
-    d = node().iterativeFindValue(key_to_hash(key))
+    d = node().iterativeFindValue(key_to_hash(key), rpc='findTrueValue')
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
     return d

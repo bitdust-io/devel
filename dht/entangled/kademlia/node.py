@@ -321,7 +321,7 @@ class Node(object):
         """
         return self._iterativeFind(key)
 
-    def iterativeFindValue(self, key):
+    def iterativeFindValue(self, key, rpc='findValue'):
         """
         The Kademlia search operation (deterministic)
 
@@ -386,7 +386,7 @@ class Node(object):
                     outerDf.callback(result)
 
         # Execute the search
-        df = self._iterativeFind(key, rpc='findValue')
+        df = self._iterativeFind(key, rpc=rpc)
         df.addCallback(checkResult)
         df.addErrback(lookupFailed)
         return outerDf
@@ -551,6 +551,23 @@ class Node(object):
             return {key: self._dataStore[key], 'expireSeconds': exp, }
         else:
             return self.findNode(key, **kwargs)
+
+    @rpcmethod
+    def findTrueValue(self, key, **kwargs):
+        """
+        Always execute FIND_NODE for the key and lookup in DHT.
+
+        @param key: The hashtable key of the data to return
+        @type key: str
+
+        @return: A dictionary containing the requested key/value pair,
+                 or a list of contact triples closest to the requested key.
+        @rtype: dict or list
+        """
+        if self._counter:
+            self._counter('rpc_node_findTrueValue')
+        if _Debug: print('findTrueValue %r' % base64.b64encode(key))
+        return self.findNode(key, **kwargs)
 
 #    def _distance(self, keyOne, keyTwo):
 #        """ Calculate the XOR result between two string variables
