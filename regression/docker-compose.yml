@@ -47,6 +47,7 @@ services:
     ports:
       - "22211:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -60,12 +61,21 @@ services:
     ports:
       - "22212:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
       - "dht_seed_4"
 
 
+
+  dht_seed_0:
+    build:
+      <<: *common
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
+    image: bitdust/dht_seed
+    ports:
+      - "22220:22"
 
   dht_seed_1:
     build:
@@ -74,6 +84,8 @@ services:
     image: bitdust/dht_seed
     ports:
       - "22221:22"
+    links:
+      - "dht_seed_0"
 
   dht_seed_2:
     build:
@@ -83,6 +95,7 @@ services:
     ports:
       - "22222:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
 
   dht_seed_3:
@@ -93,6 +106,7 @@ services:
     ports:
       - "22223:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
 
@@ -104,6 +118,7 @@ services:
     ports:
       - "22224:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -118,6 +133,7 @@ services:
     ports:
       - "22231:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -134,6 +150,7 @@ services:
     ports:
       - "22232:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -152,6 +169,7 @@ services:
     ports:
       - "22241:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -168,6 +186,7 @@ services:
     ports:
       - "22242:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -184,6 +203,7 @@ services:
     ports:
       - "22243:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -200,6 +220,7 @@ services:
     ports:
       - "22244:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -216,6 +237,7 @@ services:
     ports:
       - "22245:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -232,6 +254,7 @@ services:
     ports:
       - "22246:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -248,6 +271,7 @@ services:
     ports:
       - "22247:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -264,6 +288,7 @@ services:
     ports:
       - "22248:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -282,6 +307,7 @@ services:
     ports:
       - "22251:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -300,6 +326,7 @@ services:
     ports:
       - "22252:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -318,6 +345,7 @@ services:
     ports:
       - "22253:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -336,6 +364,7 @@ services:
     ports:
       - "22254:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -354,6 +383,7 @@ services:
     ports:
       - "22255:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -372,6 +402,7 @@ services:
     ports:
       - "22256:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -390,6 +421,7 @@ services:
     ports:
       - "22257:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"
@@ -408,6 +440,7 @@ services:
       - "identity-server:is"
       - "stun_1"
       - "stun_2"
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
       - "dht_seed_3"

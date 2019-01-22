@@ -154,9 +154,9 @@ def connect(seed_nodes=[]):
         result.callback(True)
         return result
 
-    if not seed_nodes:
-        from dht import known_nodes
-        seed_nodes = known_nodes.nodes()
+#     if not seed_nodes:
+#         from dht import known_nodes
+#         seed_nodes = known_nodes.nodes()
 
     if not node().listener:
         node().listenUDP()
@@ -195,6 +195,8 @@ def connect(seed_nodes=[]):
             lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(resolved_seed_nodes)))
             for onenode in resolved_seed_nodes:
                 lg.out(_DebugLevel, '    %s:%s' % onenode)
+        if not resolved_seed_nodes:
+            resolved_seed_nodes = None 
         d = node().joinNetwork(resolved_seed_nodes)
         d.addCallback(_on_join_success, resolved_seed_nodes)
         d.addErrback(_on_join_failed)
@@ -273,6 +275,9 @@ def on_host_failed(err, host, result_list, total_hosts, result_defer):
 
 def resolve_hosts(nodes_list):
     result_defer = Deferred()
+    if not nodes_list:
+        result_defer.callback([])
+        return result_defer
     result_list = []
     for node_tuple in nodes_list:
         d = reactor.resolve(node_tuple[0])  #@UndefinedVariable
@@ -1061,7 +1066,7 @@ def main(options=None, args=None):
     
     if not seeds:
         from dht import known_nodes
-        seeds = known_nodes.default_nodes()
+        seeds = known_nodes.nodes()
 
     lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
 
