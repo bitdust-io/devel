@@ -342,7 +342,7 @@ def get_value(key):
     count('get_value_%s' % key)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value_%s' % key)))
-    d = node().iterativeFindValue(key_to_hash(key), rpc='findTrueValue')
+    d = node().iterativeFindValue(key_to_hash(key), rpc='findValue')
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
     return d
@@ -888,14 +888,16 @@ class DHTNode(EntangledNode):
                 key=key,
             )
 
-        internal_value = get_node_data(key)
-        if internal_value is None and key in self._dataStore:
-            value = self._dataStore[key]
-            self.data[key] = value
-            if _Debug:
-                lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
-        else:
-            value = internal_value
+#         internal_value = get_node_data(key)
+#         if internal_value is None and key in self._dataStore:
+#             value = self._dataStore[key]
+#             self.data[key] = value
+#             if _Debug:
+#                 lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
+#         else:
+#             value = internal_value
+
+        value = get_node_data(key)
         if value is None:
             value = 0
         if _Debug:
