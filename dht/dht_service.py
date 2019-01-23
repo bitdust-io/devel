@@ -386,9 +386,11 @@ def read_json_response(response, key, result_defer=None):
             result_defer.callback(response)
         return None
     if isinstance(response, dict):
-        if key in response:
+        if key in response and response.get('values'):
             try:
-                value = jsn.loads(response[key])
+                values = response['values']
+                values.sort(key=lambda v: v[1])
+                value = jsn.loads(values[0][0])
             except:
                 lg.exc()
                 if result_defer:

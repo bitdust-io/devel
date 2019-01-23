@@ -377,7 +377,6 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
             self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds)')
         self._cursor = self._db.cursor()
         
-
     def expireSeconds(self, key):
         """
         """

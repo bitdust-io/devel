@@ -382,7 +382,7 @@ class Node(object):
                             contact = result['activeContacts'][0]
                             if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), value, expireSeconds, contact))
                             contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
-                        outerDf.callback({key: value, 'all': [], 'activeContacts': result['activeContacts'], })
+                        outerDf.callback({key: value, 'values': [], 'activeContacts': result['activeContacts'], })
                     else:
                         # Ok, value does not exist in DHT at all
                         outerDf.callback(result)
@@ -403,7 +403,7 @@ class Node(object):
                         contact = result[0]
                         if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), value, expireSeconds, contact))
                         contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
-                    outerDf.callback({key: value, 'all': [], })
+                    outerDf.callback({key: value, 'values': [], })
                 else:
                     # Ok, value does not exist in DHT at all
                     outerDf.callback(result)
@@ -571,7 +571,11 @@ class Node(object):
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
             if expireSecondsCall:
                 exp = expireSecondsCall(key)
-            return {key: self._dataStore[key], 'expireSeconds': exp, }
+            originalPublishTimeCall = getattr(self._dataStore, 'originalPublishTime')
+            published = None
+            if originalPublishTimeCall:
+                published = originalPublishTimeCall(key)
+            return {key: self._dataStore[key], 'expireSeconds': exp, 'originallyPublished': published, }
         else:
             return self.findNode(key, **kwargs)
 
@@ -592,9 +596,9 @@ class Node(object):
         @return: A globally unique 160-bit pseudo-random identifier
         @rtype: str
         """
-        hash = hashlib.sha1()
-        hash.update(str(random.getrandbits(255)).encode())
-        return hash.digest()
+        hsh = hashlib.sha1()
+        hsh.update(str(random.getrandbits(255)).encode())
+        return hsh.digest()
 
     def _iterativeFind(self, key, startupShortlist=None, rpc='findNode'):
         """
@@ -659,7 +663,7 @@ class Node(object):
         # This should only contain one entry; the next scheduled iteration call
         pendingIterationCalls = []
         prevClosestNode = [None]
-        findValueResult = {'all': [], }
+        findValueResult = {'values': [], }
         slowNodeCount = [0]
 
         def extendShortlist(responseTuple):
@@ -691,7 +695,12 @@ class Node(object):
             if findValue and isinstance(result, dict):
                 # We have found the value
                 findValueResult[key] = result[key]
-                findValueResult['all'].append(result[key])
+                findValueResult['values'].append((
+                    result[key],
+                    result.get('originallyPublished', 0),
+                    responseMsg.nodeID,
+                    originAddress,
+                ))
                 if 'expireSeconds' in result:
                     findValueResult['expireSeconds'] = result['expireSeconds']
             else:
@@ -745,7 +754,6 @@ class Node(object):
                 del pendingIterationCalls[0]
             # See if should continue the search
 #             if key in findValueResult:
-#                 # if findValueResult['all'] >= constants.k or 
 #                 if _Debug: print('++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
 #                 outerDf.callback(findValueResult)
 #                 return
