@@ -398,7 +398,7 @@ def read_json_response(response, key, result_defer=None):
                 return None
         else:
             if result_defer:
-                result_defer.callback([])
+                result_defer.callback(response.get('activeContacts', []))
             return None
     if result_defer:
         result_defer.callback(value)
@@ -1038,12 +1038,14 @@ def main(options=None, args=None):
                 elif cmd == 'get_json':
                     get_json_value(args[1]).addBoth(_r)
                 elif cmd == 'set_json':
-                    set_json_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
+                    set_json_value(args[1], jsn.loads(args[2]),
+                                   expire=(int(args[3]) if len(args)>=4 else 9999)).addBoth(_r)
                 elif cmd == 'get_valid_data':
                     get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
                 elif cmd == 'set_valid_data':
                     set_valid_data(args[1], json.loads(args[2]),
-                                   expire=int(args[3]), rules=json.loads(args[4])).addBoth(_r)
+                                   expire=(int(args[3]) if len(args)>=4 else 9999),
+                                   rules=json.loads(args[4])).addBoth(_r)
                 elif cmd == 'read_customer_suppliers':
                     dht_relations.read_customer_suppliers(args[1]).addBoth(_r)
                 elif cmd == 'write_customer_suppliers':
