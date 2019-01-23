@@ -389,7 +389,7 @@ def read_json_response(response, key, result_defer=None):
         if key in response and response.get('values'):
             try:
                 values = response['values']
-                values.sort(key=lambda v: v[1])
+                values.sort(key=lambda v: v[1], reverse=True)
                 value = jsn.loads(values[0][0])
             except:
                 lg.exc()
