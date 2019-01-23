@@ -352,17 +352,40 @@ class Node(object):
             if _Debug: print('storeFailed', x)
 
         def checkResult(result):
+            if _Debug: print('checkResult', result)
             if isinstance(result, dict):
-                # We have found the value; now see who was the closest contact without it...
-                if 'closestNodeNoValue' in result:
-                    # ...and store the key/value pair
-                    contact = result['closestNodeNoValue']
-                    expireSeconds = constants.dataExpireSecondsDefaut
-                    if 'expireSeconds' in result:
-                        expireSeconds = result['expireSeconds']
-                    if _Debug: print('republish %s : %r with %d' % (base64.b64encode(key), result[key], expireSeconds))
-                    contact.store(key, result[key], None, 0, expireSeconds).addErrback(storeFailed)
-                outerDf.callback(result)
+                if key in result:
+                    # We have found the value; now see who was the closest contact without it...
+                    if 'closestNodeNoValue' in result:
+                        # ...and store the key/value pair
+                        contact = result['closestNodeNoValue']
+                        expireSeconds = constants.dataExpireSecondsDefaut
+                        if 'expireSeconds' in result:
+                            expireSeconds = result['expireSeconds']
+                        if _Debug: print('republish %s with %d expire seconds' % (base64.b64encode(key), expireSeconds))
+                        contact.store(key, result[key], None, 0, expireSeconds).addErrback(storeFailed)
+                    outerDf.callback(result)
+                else:
+                    # we was looking for value but did not found it
+                    # Now, see if we have the value (it might seem wasteful to search on the network
+                    # first, but it ensures that all values are properly propagated through the
+                    # network
+                    if key in self._dataStore:
+                        # Ok, we have the value locally, so use that
+                        value = self._dataStore[key]
+                        expireSeconds = constants.dataExpireSecondsDefaut
+                        expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
+                        if expireSecondsCall:
+                            expireSeconds = expireSecondsCall(key)
+                        # Send this value to the closest node without it
+                        if len(result['activeContacts']) > 0:
+                            contact = result['activeContacts'][0]
+                            if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), value, expireSeconds, contact))
+                            contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
+                        outerDf.callback({key: value, 'all': [], 'activeContacts': result['activeContacts'], })
+                    else:
+                        # Ok, value does not exist in DHT at all
+                        outerDf.callback(result)
             else:
                 # The value wasn't found, but a list of contacts was returned
                 # Now, see if we have the value (it might seem wasteful to search on the network
@@ -378,9 +401,9 @@ class Node(object):
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        if _Debug: print('refresh %s : %r with %d' % (base64.b64encode(key), value, expireSeconds))
+                        if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), value, expireSeconds, contact))
                         contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
-                    outerDf.callback({key: value})
+                    outerDf.callback({key: value, 'all': [], })
                 else:
                     # Ok, value does not exist in DHT at all
                     outerDf.callback(result)
@@ -636,7 +659,7 @@ class Node(object):
         # This should only contain one entry; the next scheduled iteration call
         pendingIterationCalls = []
         prevClosestNode = [None]
-        findValueResult = {}
+        findValueResult = {'all': [], }
         slowNodeCount = [0]
 
         def extendShortlist(responseTuple):
@@ -668,6 +691,7 @@ class Node(object):
             if findValue and isinstance(result, dict):
                 # We have found the value
                 findValueResult[key] = result[key]
+                findValueResult['all'].append(result[key])
                 if 'expireSeconds' in result:
                     findValueResult['expireSeconds'] = result['expireSeconds']
             else:
@@ -708,7 +732,6 @@ class Node(object):
 
         # Send parallel, asynchronous FIND_NODE RPCs to the shortlist of contacts
         def searchIteration():
-            if _Debug: print('==> searchiteration')
             slowNodeCount[0] = len(activeProbes)
             # Sort the discovered active nodes from closest to furthest
             # activeContacts.sort(lambda firstContact, secondContact, targetKey=key: cmp(
@@ -716,15 +739,17 @@ class Node(object):
             #     self._routingTable.distance(secondContact.id, targetKey)
             # ))
             activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
+            if _Debug: print('==> searchiteration %r' % activeContacts)
             # This makes sure a returning probe doesn't force calling this function by mistake
             while len(pendingIterationCalls):
                 del pendingIterationCalls[0]
             # See if should continue the search
-            if key in findValueResult:
-                if _Debug: print('++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
-                outerDf.callback(findValueResult)
-                return
-            elif len(activeContacts) and findValue == False:
+#             if key in findValueResult:
+#                 # if findValueResult['all'] >= constants.k or 
+#                 if _Debug: print('++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
+#                 outerDf.callback(findValueResult)
+#                 return
+            if len(activeContacts) and findValue == False:
                 if (len(activeContacts) >= constants.k) or (activeContacts[0] == prevClosestNode[0] and len(activeProbes) == slowNodeCount[0]):
                     # TODO: Re-send the FIND_NODEs to all of the k closest nodes not already queried
                     # Ok, we're done; either we have accumulated k active contacts or no improvement in closestNode has been noted
@@ -732,7 +757,12 @@ class Node(object):
                         if _Debug: print('++++++++++++++ DONE (test for k active contacts) +++++++++++++++\n\n')
                     else:
                         if _Debug: print('++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
-                    outerDf.callback(activeContacts)
+                    if findValue:
+                        # outerDf.callback(activeContacts)
+                        findValueResult['activeContacts'] = activeContacts
+                        outerDf.callback(findValueResult)
+                    else:
+                        outerDf.callback(activeContacts)
                     return
             # The search continues...
             if len(activeContacts):
@@ -770,7 +800,12 @@ class Node(object):
             else:
                 if _Debug: print('++++++++++++++ DONE (logically) +++++++++++++\n\n')
                 # If no probes were sent, there will not be any improvement, so we're done
-                outerDf.callback(activeContacts)
+                if findValue:
+                    # outerDf.callback(activeContacts)
+                    findValueResult['activeContacts'] = activeContacts
+                    outerDf.callback(findValueResult)
+                else:
+                    outerDf.callback(activeContacts)
 
         outerDf = defer.Deferred()
         # Start the iterations

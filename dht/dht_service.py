@@ -386,12 +386,17 @@ def read_json_response(response, key, result_defer=None):
             result_defer.callback(response)
         return None
     if isinstance(response, dict):
-        try:
-            value = jsn.loads(response[key])
-        except:
-            lg.exc()
+        if key in response:
+            try:
+                value = jsn.loads(response[key])
+            except:
+                lg.exc()
+                if result_defer:
+                    result_defer.errback(Exception('invalid json value found in DHT'))
+                return None
+        else:
             if result_defer:
-                result_defer.errback(Exception('invalid json value found in DHT'))
+                result_defer.callback([])
             return None
     if result_defer:
         result_defer.callback(value)
