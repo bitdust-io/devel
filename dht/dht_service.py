@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.datastore import SQLiteVersionedDataStore  # @UnresolvedImport
 from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
 from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
@@ -110,14 +110,14 @@ def init(udp_port, db_file_path=None):
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
     try:
-        dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
+        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
         # dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
         # del dataStore['not_exist_key']
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
         lg.exc()
         os.remove(dbPath)
-        dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
+        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
     _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
     if _Debug:
@@ -380,6 +380,8 @@ def delete_key(key):
 #------------------------------------------------------------------------------
 
 def read_json_response(response, key, result_defer=None):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.read_json_response [%s] with response: %r' % (base64.b64encode(key), response))
     value = None
     if isinstance(response, list):
         if result_defer:
@@ -389,6 +391,7 @@ def read_json_response(response, key, result_defer=None):
         if key in response and response.get('values'):
             try:
                 latest = 0
+                value = jsn.loads(response['values'][0][0])
                 for v in response['values']:
                     if v[1] > latest:
                         latest = v[1]
@@ -1063,6 +1066,8 @@ def main(options=None, args=None):
                         lg.info(x)
                         find_node(random_key()).addBoth(_l)
                     _l('')
+                elif cmd == 'dump_db':
+                    pprint.pprint(dump_local_db(value_as_json=True))
         except:
             lg.exc()
 

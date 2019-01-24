@@ -253,7 +253,7 @@ class Node(object):
 
         def executeStoreRPCs(nodes):
             # print '        .....execStoreRPCs called'
-            try:
+            # try:
                 l = []
                 if len(nodes) >= constants.k:
                     # If this node itself is closer to the key than the last (furthest) node in the list,
@@ -287,11 +287,11 @@ class Node(object):
                 dl.addCallback(storeRPCsCollected, nodes)
                 dl.addErrback(storeRPCsFailed)
                 return dl
-            except Exception as exc:
-                traceback.print_exc()
-                if collect_results:
-                    return defer.fail([])
-                return []
+            # except Exception as exc:
+            #     traceback.print_exc()
+            #     if collect_results:
+            #         return defer.fail([])
+            #     return []
  
         # Find k nodes closest to the key...
         df = self.iterativeFindNode(key)
@@ -351,10 +351,20 @@ class Node(object):
         def storeFailed(x):
             if _Debug: print('storeFailed', x)
 
+        def refreshRevisionSuccess(ok):
+            if _Debug: print('refreshRevisionSuccess', ok)
+
+        def refreshRevisionFailed(x):
+            if _Debug: print('refreshRevisionFailed', x)
+
         def checkResult(result):
             if _Debug: print('checkResult', result)
             if isinstance(result, dict):
                 if key in result:
+                    latest_revision = 0
+                    for v in result['values']:
+                        if v[1] > latest_revision:
+                            latest_revision = v[1]
                     # We have found the value; now see who was the closest contact without it...
                     if 'closestNodeNoValue' in result:
                         # ...and store the key/value pair
@@ -362,8 +372,16 @@ class Node(object):
                         expireSeconds = constants.dataExpireSecondsDefaut
                         if 'expireSeconds' in result:
                             expireSeconds = result['expireSeconds']
-                        if _Debug: print('republish %s with %d expire seconds' % (base64.b64encode(key), expireSeconds))
-                        contact.store(key, result[key], None, 0, expireSeconds).addErrback(storeFailed)
+                        if _Debug: print('republish %s to closest node with %d expire seconds' % (base64.b64encode(key), expireSeconds))
+                        contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision).addErrback(storeFailed)
+                    # need to refresh nodes who has old version of that value
+                    for v in result['values']:
+                        if v[1] < latest_revision:
+                            _contact = Contact(v[2], v[3][0], v[3][1], self._protocol)
+                            if _Debug: print('will refresh revision %d on %r' % (latest_revision, _contact))
+                            d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision)
+                            d.addCallback(refreshRevisionSuccess)
+                            d.addErrback(refreshRevisionFailed)
                     outerDf.callback(result)
                 else:
                     # we was looking for value but did not found it
@@ -371,18 +389,28 @@ class Node(object):
                     # first, but it ensures that all values are properly propagated through the
                     # network
                     if key in self._dataStore:
+                        import pdb; pdb.set_trace()
                         # Ok, we have the value locally, so use that
-                        value = self._dataStore[key]
-                        expireSeconds = constants.dataExpireSecondsDefaut
-                        expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
-                        if expireSecondsCall:
-                            expireSeconds = expireSecondsCall(key)
+                        item = self._dataStore.getItem(key, unpickle=True)
+                        # expireSeconds = constants.dataExpireSecondsDefaut
+                        # expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
+                        # if expireSecondsCall:
+                        #     expireSeconds = expireSecondsCall(key)
                         # Send this value to the closest node without it
                         if len(result['activeContacts']) > 0:
                             contact = result['activeContacts'][0]
-                            if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), value, expireSeconds, contact))
-                            contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
-                        outerDf.callback({key: value, 'values': [], 'activeContacts': result['activeContacts'], })
+                            if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), item['value'], expireSeconds, contact))
+                            contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
+                        outerDf.callback({
+                            'key': item['value'],
+                            'values': [(
+                                item['value'],
+                                item['revision'],
+                                self.id,
+                                (b'127.0.0.1', self.port),
+                            ),],
+                            'activeContacts': result['activeContacts'],
+                        })
                     else:
                         # Ok, value does not exist in DHT at all
                         outerDf.callback(result)
@@ -697,7 +725,7 @@ class Node(object):
                 findValueResult[key] = result[key]
                 findValueResult['values'].append((
                     result[key],
-                    result.get('originallyPublished', 0),
+                    result.get('revision', 0),
                     responseMsg.nodeID,
                     originAddress,
                 ))
@@ -969,7 +997,7 @@ class Node(object):
             if key == b'nodeState':
                 continue
             now = int(time.time())
-            itemData = self._dataStore.getItem(key)
+            itemData = self._dataStore.getItem(key, unpickle=True)
             originallyPublished = itemData['originallyPublished']
             originalPublisherID = itemData['originalPublisherID']
             lastPublished = itemData['lastPublished']
@@ -987,7 +1015,7 @@ class Node(object):
                     twisted.internet.reactor.callFromThread(  # @UndefinedVariable
                         self.iterativeStore,
                         key=key,
-                        value=self._dataStore[key],
+                        value=itemData['value'],
                         expireSeconds=expireSeconds,
                     )
             else:
