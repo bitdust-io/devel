@@ -27,6 +27,7 @@ x-common: &common
   context: ./../
 
 
+
 services:
 
   identity-server:
@@ -475,6 +476,7 @@ services:
 
     stdin_open: true
     tty: true
+
 
 
 volumes:
