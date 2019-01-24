@@ -388,9 +388,11 @@ def read_json_response(response, key, result_defer=None):
     if isinstance(response, dict):
         if key in response and response.get('values'):
             try:
-                values = response['values']
-                values.sort(key=lambda v: v[1], reverse=True)
-                value = jsn.loads(values[0][0])
+                latest = 0
+                for v in response['values']:
+                    if v[1] > latest:
+                        latest = v[1]
+                        value = jsn.loads(v[0])
             except:
                 lg.exc()
                 if result_defer:
