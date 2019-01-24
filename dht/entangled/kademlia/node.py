@@ -389,7 +389,6 @@ class Node(object):
                     # first, but it ensures that all values are properly propagated through the
                     # network
                     if key in self._dataStore:
-                        import pdb; pdb.set_trace()
                         # Ok, we have the value locally, so use that
                         item = self._dataStore.getItem(key, unpickle=True)
                         # expireSeconds = constants.dataExpireSecondsDefaut
