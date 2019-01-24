@@ -701,21 +701,21 @@ def kill_all_nodes():
 
 def report_all_nodes(event_loop):
     print('\n\nTest report:')
-    # event_loop.run_until_complete(asyncio.wait([
-    #     asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
-    # ]))
+    print('\n\nALL DHT RECORDS:')
     for node in ALL_NODES:
-        report_one_node(node)
+        print('\n[%s]:' % node)
+        pprint.pprint(requests.get(tunnel_url(node, 'dht/db/dump/v1')).json())
     print('\n\nALL EXCEPTIONS:')
     # event_loop.run_until_complete(asyncio.wait([
     #     asyncio.ensure_future(print_exceptions_one_node_async(node, event_loop)) for node in ALL_NODES
     # ]))
     for node in ALL_NODES:
         print_exceptions_one_node(node)
-    print('\n\nALL DHT RECORDS:')
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
+    # ]))
     for node in ALL_NODES:
-        print('\n[%s]:' % node)
-        pprint.pprint(requests.get(tunnel_url(node, 'dht/db/dump/v1')).json())
+        report_one_node(node)
 
 #------------------------------------------------------------------------------
 
