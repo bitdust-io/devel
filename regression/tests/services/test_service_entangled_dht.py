@@ -164,16 +164,15 @@ def test_dht_get_value_all_nodes():
 def test_dht_write_value_multiple_nodes():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
-    for node in ['supplier_1', 'supplier_2', 'supplier_3', 'supplier_4', ]:
+    for node in ['supplier_1', 'supplier_2', 'supplier_3', 'supplier_4', 'supplier_5', 'supplier_6', 'supplier_7', 'supplier_8', ]:
         write_value(
             node=node,
             key='test_key_2_shared',
             new_data=f'test_data_2_shared_{node}',
         )
     time.sleep(5)
-    for node in VALIDATORS_NODES:
-        read_value(
-            node=node,
-            key='test_key_2_shared',
-            expected_data='test_data_2_shared_supplier_4',
-        )
+    read_value(
+        node='customer_1',
+        key='test_key_2_shared',
+        expected_data='test_data_2_shared_supplier_8',
+    )
