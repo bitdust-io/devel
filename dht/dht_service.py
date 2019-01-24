@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.kademlia.datastore import SQLiteExpiredDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.datastore import SQLiteVersionedDataStore  # @UnresolvedImport
 from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
 from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
@@ -110,14 +110,14 @@ def init(udp_port, db_file_path=None):
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
     try:
-        dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
+        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
         # dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
         # del dataStore['not_exist_key']
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
         lg.exc()
         os.remove(dbPath)
-        dataStore = SQLiteExpiredDataStore(dbFile=dbPath)
+        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
     _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
     if _Debug:
@@ -342,7 +342,7 @@ def get_value(key):
     count('get_value_%s' % key)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value_%s' % key)))
-    d = node().iterativeFindValue(key_to_hash(key))
+    d = node().iterativeFindValue(key_to_hash(key), rpc='findValue')
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
     return d
@@ -380,18 +380,30 @@ def delete_key(key):
 #------------------------------------------------------------------------------
 
 def read_json_response(response, key, result_defer=None):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.read_json_response [%s] with response: %r' % (base64.b64encode(key), response))
     value = None
     if isinstance(response, list):
         if result_defer:
             result_defer.callback(response)
         return None
     if isinstance(response, dict):
-        try:
-            value = jsn.loads(response[key])
-        except:
-            lg.exc()
+        if key in response and response.get('values'):
+            try:
+                latest = 0
+                value = jsn.loads(response['values'][0][0])
+                for v in response['values']:
+                    if v[1] > latest:
+                        latest = v[1]
+                        value = jsn.loads(v[0])
+            except:
+                lg.exc()
+                if result_defer:
+                    result_defer.errback(Exception('invalid json value found in DHT'))
+                return None
+        else:
             if result_defer:
-                result_defer.errback(Exception('invalid json value found in DHT'))
+                result_defer.callback(response.get('activeContacts', []))
             return None
     if result_defer:
         result_defer.callback(value)
@@ -888,14 +900,16 @@ class DHTNode(EntangledNode):
                 key=key,
             )
 
-        internal_value = get_node_data(key)
-        if internal_value is None and key in self._dataStore:
-            value = self._dataStore[key]
-            self.data[key] = value
-            if _Debug:
-                lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
-        else:
-            value = internal_value
+#         internal_value = get_node_data(key)
+#         if internal_value is None and key in self._dataStore:
+#             value = self._dataStore[key]
+#             self.data[key] = value
+#             if _Debug:
+#                 lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
+#         else:
+#             value = internal_value
+
+        value = get_node_data(key)
         if value is None:
             value = 0
         if _Debug:
@@ -1029,12 +1043,14 @@ def main(options=None, args=None):
                 elif cmd == 'get_json':
                     get_json_value(args[1]).addBoth(_r)
                 elif cmd == 'set_json':
-                    set_json_value(args[1], args[2], expire=int(args[3])).addBoth(_r)
+                    set_json_value(args[1], jsn.loads(args[2]),
+                                   expire=(int(args[3]) if len(args)>=4 else 9999)).addBoth(_r)
                 elif cmd == 'get_valid_data':
                     get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
                 elif cmd == 'set_valid_data':
                     set_valid_data(args[1], json.loads(args[2]),
-                                   expire=int(args[3]), rules=json.loads(args[4])).addBoth(_r)
+                                   expire=(int(args[3]) if len(args)>=4 else 9999),
+                                   rules=json.loads(args[4])).addBoth(_r)
                 elif cmd == 'read_customer_suppliers':
                     dht_relations.read_customer_suppliers(args[1]).addBoth(_r)
                 elif cmd == 'write_customer_suppliers':
@@ -1050,6 +1066,8 @@ def main(options=None, args=None):
                         lg.info(x)
                         find_node(random_key()).addBoth(_l)
                     _l('')
+                elif cmd == 'dump_db':
+                    pprint.pprint(dump_local_db(value_as_json=True))
         except:
             lg.exc()
 

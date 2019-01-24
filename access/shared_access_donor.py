@@ -37,6 +37,8 @@ EVENTS:
     * :red:`list-files-ok`
     * :red:`priv-key-ok`
     * :red:`timer-10sec`
+    * :red:`timer-15sec`
+    * :red:`timer-2sec`
     * :red:`timer-5sec`
     * :red:`user-identity-cached`
 """
@@ -90,8 +92,10 @@ class SharedAccessDonor(automat.Automat):
     """
 
     timers = {
+        'timer-2sec': (2.0, ['PUB_KEY']),
         'timer-10sec': (10.0, ['PRIV_KEY', 'LIST_FILES']),
-        'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'AUDIT', 'CACHE']),
+        'timer-15sec': (15.0, ['PUB_KEY']),
+        'timer-5sec': (5.0, ['PING', 'AUDIT', 'CACHE']),
     }
 
     def __init__(self, debug_level=0, log_events=False, publish_events=False, **kwargs):
@@ -158,13 +162,13 @@ class SharedAccessDonor(automat.Automat):
         elif self.state == 'PUB_KEY':
             if event == 'ack':
                 self.doCheckAllAcked(*args, **kwargs)
-            elif event == 'all-suppliers-acked' or ( event == 'timer-5sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
-                self.state = 'PRIV_KEY'
-                self.doSendPrivKeyToUser(*args, **kwargs)
-            elif event == 'fail' or ( event == 'timer-5sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
+            elif event == 'fail' or ( event == 'timer-15sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'all-suppliers-acked' or ( event == 'timer-2sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
+                self.state = 'PRIV_KEY'
+                self.doSendPrivKeyToUser(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass

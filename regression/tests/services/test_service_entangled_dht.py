@@ -21,8 +21,10 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import os
+import time
 import pytest
 import requests
+import pprint
 
 from ..testsupport import tunnel_url
 
@@ -57,7 +59,7 @@ VALIDATORS_NODES = [
 def read_value(node, key, expected_data, record_type='skip_validation', ):
     response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )))
     assert response.status_code == 200
-    # print('\n\ndht/value/get/v1?key=%s from %s\n%s\n' % (key, node, pprint.pformat(response.json())))
+    print('dht/value/get/v1?key=%s from %s\n%s\n' % (key, node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['key'] == key, response.json()
@@ -92,7 +94,7 @@ def write_value(node, key, new_data, record_type='skip_validation', ):
         },
     )
     assert response.status_code == 200
-    # print('\n\ndht/value/set/v1 key=%s value=%s from %s\n%s\n' % (key, new_data, node, pprint.pformat(response.json())))
+    print('dht/value/set/v1 key=%s value=%s from %s\n%s\n' % (key, new_data, node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['write'] == 'success', response.json()
@@ -106,6 +108,7 @@ def write_value(node, key, new_data, record_type='skip_validation', ):
 def test_dht_get_value_not_exist_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+    return
     read_value(
         node='customer_1',
         key='value_not_exist_customer_1',
@@ -116,6 +119,7 @@ def test_dht_get_value_not_exist_customer_1():
 def test_dht_set_value_customer_1_and_get_value_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+    return
     write_value(
         node='customer_1',
         key='test_key_1_customer_1',
@@ -131,6 +135,7 @@ def test_dht_set_value_customer_1_and_get_value_customer_1():
 def test_dht_set_value_customer_2_and_get_value_customer_3():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+    return
     write_value(
         node='customer_2',
         key='test_key_1_customer_2',
@@ -146,54 +151,33 @@ def test_dht_set_value_customer_2_and_get_value_customer_3():
 def test_dht_get_value_all_nodes():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+    return
     write_value(
         node='supplier_1',
         key='test_key_1_supplier_1',
         new_data='test_data_1_supplier_1',
     )
-    write_value(
-        node='supplier_1',
-        key='test_key_2_supplier_1',
-        new_data='test_data_2_supplier_1',
-    )
-    write_value(
-        node='supplier_1',
-        key='test_key_3_supplier_1',
-        new_data='test_data_3_supplier_1',
-    )
-    write_value(
-        node='supplier_1',
-        key='test_key_4_supplier_1',
-        new_data='test_data_4_supplier_1',
-    )
-    write_value(
-        node='supplier_1',
-        key='test_key_5_supplier_1',
-        new_data='test_data_5_supplier_1',
-    )
+    time.sleep(5)
     for node in VALIDATORS_NODES:
         read_value(
             node=node,
             key='test_key_1_supplier_1',
             expected_data='test_data_1_supplier_1',
         )
-        read_value(
+
+def test_dht_write_value_multiple_nodes():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+    return
+    for node in ['supplier_1', 'supplier_2', 'supplier_3', 'supplier_4', 'supplier_5', 'supplier_6', 'supplier_7', 'supplier_8', ]:
+        write_value(
             node=node,
-            key='test_key_2_supplier_1',
-            expected_data='test_data_2_supplier_1',
+            key='test_key_2_shared',
+            new_data=f'test_data_2_shared_{node}',
         )
-        read_value(
-            node=node,
-            key='test_key_3_supplier_1',
-            expected_data='test_data_3_supplier_1',
-        )
-        read_value(
-            node=node,
-            key='test_key_4_supplier_1',
-            expected_data='test_data_4_supplier_1',
-        )
-        read_value(
-            node=node,
-            key='test_key_5_supplier_1',
-            expected_data='test_data_5_supplier_1',
-        )
+    time.sleep(5)
+    read_value(
+        node='customer_1',
+        key='test_key_2_shared',
+        expected_data='test_data_2_shared_supplier_8',
+    )

@@ -188,10 +188,10 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
             idurls = consume_discovered_idurls(count)
         else:
             idurls = extract_discovered_idurls(count)
-        reactor.callLater(0, t.result_defer.callback, idurls)
+        reactor.callLater(0, t.result_defer.callback, idurls)  # @UndefinedVariable
         return t
     _LookupTasks.append(t)
-    reactor.callLater(0, work)
+    reactor.callLater(0, work)  # @UndefinedVariable
     # reset_next_lookup()
     if _Debug:
         lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes' % count)
@@ -204,7 +204,7 @@ def on_lookup_task_success(result):
     if _Debug:
         lg.out(_DebugLevel - 4, 'lookup.on_lookup_task_success %s' % result)
     _CurrentLookupTask = None
-    reactor.callLater(0, work)
+    reactor.callLater(0, work)  # @UndefinedVariable
     return result
 
 
@@ -213,7 +213,7 @@ def on_lookup_task_failed(err):
     if _Debug:
         lg.out(_DebugLevel - 4, 'lookup.on_lookup_task_failed: %s' % err)
     _CurrentLookupTask = None
-    reactor.callLater(0, work)
+    reactor.callLater(0, work)  # @UndefinedVariable
     return err
 
 
@@ -327,6 +327,7 @@ class DiscoveryTask(object):
         self.stopped = False
         self.lookup_task = None
         self.result_defer = Deferred(canceller=lambda d: self._close())
+        self.result_defer.addErrback(lg.errback)
 
     def __del__(self):
         if _Debug:
@@ -419,17 +420,17 @@ class DiscoveryTask(object):
             lg.out(_DebugLevel, 'lookup._on_succeed %s info: %s' % (node, info))
         return node
 
-    def _on_node_proces_failed(self, err, *args, **kwargs):
+    def _on_node_proces_failed(self, err, node):
         self.failed += 1
         if _Debug:
-            lg.warn('%r : %r' % (arg, err))
+            lg.warn('%r : %r' % (node, err))
         return None
 
-    def _on_node_observe_failed(self, err, *args, **kwargs):
+    def _on_node_observe_failed(self, err, node):
         try:
             self.failed += 1
             if _Debug:
-                lg.warn('%r : %s' % (arg, strng.to_text(err, errors='ignore')))
+                lg.warn('%r : %s' % (node, strng.to_text(err, errors='ignore')))
         except:
             lg.exc()
         return None
@@ -495,7 +496,7 @@ class DiscoveryTask(object):
         discovered_idurls().append(idurl)
         known_idurls()[idurl] = time.time()
         self._on_node_succeed(node, idurl)
-        reactor.callLater(0, self._on_node_processed, node, idurl)
+        reactor.callLater(0, self._on_node_processed, node, idurl)  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'lookup._on_identity_cached : %s' % idurl)
         return idurl
