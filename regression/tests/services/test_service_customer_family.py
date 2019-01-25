@@ -63,14 +63,12 @@ def test_customer_family_published_for_customer_1():
         observer_node='customer_1',
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
-        accepted_mistakes=0,
     )
     validate_customer_family(
         customer_node='customer_1',
         observer_node='customer_2',
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
-        accepted_mistakes=0,
     )
 
 
@@ -82,14 +80,12 @@ def test_customer_family_increase_for_customer_4():
         observer_node='customer_4',
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
-        accepted_mistakes=0,
     )
     validate_customer_family(
         customer_node='customer_4',
         observer_node='customer_1',
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
-        accepted_mistakes=0,
     )
     response = requests.post(
         url=tunnel_url('customer_4', '/config/set/v1'),
@@ -108,14 +104,12 @@ def test_customer_family_increase_for_customer_4():
         observer_node='customer_4',
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
-        accepted_mistakes=0,
     )
     validate_customer_family(
         customer_node='customer_4',
         observer_node='customer_1',
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
-        accepted_mistakes=0,
     )
 
 
@@ -127,14 +121,12 @@ def test_customer_family_decrease_for_customer_5():
         observer_node='customer_5',
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
-        accepted_mistakes=0,
     )
     validate_customer_family(
         customer_node='customer_5',
         observer_node='customer_3',
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
-        accepted_mistakes=0,
     )
     response = requests.post(
         url=tunnel_url('customer_5', '/config/set/v1'),
@@ -153,12 +145,10 @@ def test_customer_family_decrease_for_customer_5():
         observer_node='customer_5',
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
-        accepted_mistakes=0,
     )
     validate_customer_family(
         customer_node='customer_5',
         observer_node='customer_3',
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
-        accepted_mistakes=0,
     )
