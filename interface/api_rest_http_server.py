@@ -163,7 +163,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             try:
                 func_name = callback.im_func.func_name
             except:
-                func_name = callback
+                func_name = callback.__name__
             lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
                 request.method, request.uri, func_name, _args))
         return None
