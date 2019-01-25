@@ -56,7 +56,7 @@ VALIDATORS_NODES = [
 ]
 
 
-def read_value(node, key, expected_data, record_type='skip_validation', retries=3):
+def read_value(node, key, expected_data, record_type='skip_validation', retries=5):
     for i in range(retries + 1):
         response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )))
         try:
@@ -81,8 +81,9 @@ def read_value(node, key, expected_data, record_type='skip_validation', retries=
                 assert response.json()['result'][0]['value']['key'] == key, response.json()
                 assert response.json()['result'][0]['value']['type'] == record_type, response.json()
         except:
+            time.sleep(2)
             if i == retries - 1:
-                assert False, f'DHT value read validation failed: {node} {key} {expected_data}'
+                assert False, f'DHT value read validation failed: {node} {key} {expected_data} : {response.json()}'
 
 
 def write_value(node, key, new_data, record_type='skip_validation', ):
@@ -158,7 +159,7 @@ def test_dht_get_value_all_nodes():
         key='test_key_1_supplier_1',
         new_data='test_data_1_supplier_1',
     )
-    # time.sleep(5)
+    time.sleep(5)
     for node in VALIDATORS_NODES:
         read_value(
             node=node,
@@ -175,7 +176,7 @@ def test_dht_write_value_multiple_nodes():
             key='test_key_2_shared',
             new_data=f'test_data_2_shared_{node}',
         )
-    # time.sleep(5)
+    time.sleep(5)
     read_value(
         node='customer_1',
         key='test_key_2_shared',
