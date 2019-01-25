@@ -381,7 +381,7 @@ def delete_key(key):
 
 def read_json_response(response, key, result_defer=None):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.read_json_response [%s] with response: %r' % (base64.b64encode(key), response))
+        lg.out(_DebugLevel, 'dht_service.read_json_response [%s]' % base64.b64encode(key))
     value = None
     if isinstance(response, list):
         if result_defer:
