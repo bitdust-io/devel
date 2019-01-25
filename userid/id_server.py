@@ -431,15 +431,15 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
                 src += '\n<br>\n<h3>%s</h3>\n' % str(currentChar).upper()
             url = '/' + filename
             name = filename[:-4]
-            src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (url, name)
+            src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (strng.to_text(url), strng.to_text(name))
         src += '</td>\n</tr>\n</table>\n</td>\n</tr>\n<tr><td align=left>'
         src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (strng.to_text(A().hostname), len(files))
         src += '<p>Other known identity servers:\n'
         for idhost in sorted(known_servers.by_host().keys()):
             idport = known_servers.by_host()[idhost][0]
             if idport != 80:
-                idhost += ':%d' % idport
-            src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (idhost, idhost)
+                idhost += b':%d' % idport
+            src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (strng.to_text(idhost), strng.to_text(idhost))
         src += '</p>'
         src += '</body>\n</html>'
         del files
