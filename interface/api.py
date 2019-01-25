@@ -368,11 +368,10 @@ def identity_get(include_xml_source=False):
     return RESULT([r, ])
 
 
-def identity_create(username):
+def identity_create(username, preferred_servers=[]):
     from lib import misc
     from userid import my_id
     from userid import id_registrator
-
     try:
         username = str(username)
     except:
@@ -399,7 +398,7 @@ def identity_create(username):
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
-    my_id_registrator.A('start', (username, ))
+    my_id_registrator.A('start', username=username, preferred_servers=preferred_servers)
     return ret
 
 

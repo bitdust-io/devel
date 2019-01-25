@@ -645,7 +645,7 @@ def start_all_nodes(event_loop):
         start_dht_seed(
             node=dhtseed['name'],
             other_seeds=dhtseed['other_seeds'],
-            wait_seconds=(15 if number > 0 else 0),
+            wait_seconds=(5 if number > 0 else 0),
             # wait_seconds=15,
         )
     print('\nALL DHT SEEDS STARTED\n')

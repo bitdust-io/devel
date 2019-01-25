@@ -349,12 +349,8 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        try:
-            login = args[0]['username']
-        except:
-            login = args[0][0]
-            if len(*args, **kwargs) > 1:
-                self.preferred_servers = [s.strip() for s in args[0][1].split(',')]
+        login = kwargs['username']
+        self.preferred_servers = [s.strip() for s in kwargs.get('preferred_servers', [])]
         if not self.known_servers:
             self.known_servers = known_servers.by_host()
         if not self.preferred_servers:
@@ -423,7 +419,7 @@ class IdRegistrator(automat.Automat):
             )
             if webport == 80:
                 webport = ''
-            server_url = nameurl.UrlMake('http', host, webport, '')
+            server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
             lg.out(4, '               connecting to %s:%s   known tcp port is %d' % (
                 server_url, webport, tcpport, ))
             d = net_misc.getPageTwisted(server_url, timeout=10)
@@ -463,7 +459,7 @@ class IdRegistrator(automat.Automat):
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             if webport == 80:
                 webport = ''
-            idurl = nameurl.UrlMake('http', host, webport, login + '.xml')
+            idurl = nameurl.UrlMake('http', strng.to_text(host), webport, login + '.xml')
             lg.out(4, '    %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=10)
             d.addCallback(_cb, idurl, host)
