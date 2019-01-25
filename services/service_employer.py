@@ -116,7 +116,7 @@ class EmployerService(LocalService):
         from contacts import contactsdb
         from logs import lg
         if not discovered_suppliers_list:
-            lg.warn('not dht records found for my customer family')
+            lg.warn('no dht records found for my customer family')
             return
         suppliers_to_be_dismissed = set()
         # clean up old suppliers

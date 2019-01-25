@@ -381,7 +381,7 @@ def delete_key(key):
 
 def read_json_response(response, key, result_defer=None):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.read_json_response [%s] with response: %r' % (base64.b64encode(key), response))
+        lg.out(_DebugLevel, 'dht_service.read_json_response [%s]' % base64.b64encode(key))
     value = None
     if isinstance(response, list):
         if result_defer:
@@ -559,7 +559,7 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True, p
             if 'op' not in rule:
                 lg.warn('incorrect validation rule found: %r' % rule)
                 continue
-            if rule['op'] == 'equal' and rule.get('arg') != value.get(field):
+            if rule['op'] == 'equal' and rule.get('arg') != strng.to_text(value.get(field)):
                 passed = False
                 errors.append((field, rule, ))
                 break
@@ -590,7 +590,7 @@ def validate_data_written(store_results, key, json_data, result_defer):
             nodes = store_results[0]
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  collected=%s  nodes=%r' % (
-                base64.b64encode(key), results_collected, nodes, ))
+                base64.b64encode(strng.to_bin(key)), results_collected, nodes, ))
         if results_collected:
             for result in store_results[1]:
                 try:

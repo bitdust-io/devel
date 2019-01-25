@@ -33,7 +33,8 @@ DOCKER_COMPOSE=$(shell which docker-compose)
 VENV=${HOME}/.bitdust/venv
 PIP=${VENV}/bin/pip
 PIP_NEW=venv/bin/pip
-PYTHON_VERSION=python2.7
+# REGRESSION_PY_VER=3.6
+VENV_PYTHON_VERSION=python2.7
 CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
@@ -68,7 +69,7 @@ venv: $(VENV_BASE)
 
 $(VENV_DIR):
 	@rm -rf venv
-	@virtualenv -p $(PYTHON_VERSION) venv
+	@virtualenv -p $(VENV_PYTHON_VERSION) venv
 	@touch $@
 
 $(VENV_BASE): $(VENV_DIR) $(REQUIREMENTS_TXT)
@@ -110,34 +111,34 @@ test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -p "test_raid_worker.py" -v
 
 test_regression:
-	make -C regression/ test
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
 
 regression_test:
-	make -C regression/ test
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
 
 regression_build:
-	make -C regression/ build
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ build
 
 regression_run:
-	make -C regression/ run
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ run
 
 regression_prepare:
-	make -C regression/ prepare
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ prepare
 
 regression_try:
-	make -C regression/ try
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ try
 
 regression_test_one/%:
-	make -C regression/ test_one/$*
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test_one/$*
 
 regression_try_one/%:
-	make -C regression/ try_one/$*
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ try_one/$*
 
 regression_clean:
-	make -C regression/ clean
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean
 
 regression_clean_unused:
-	make -C regression/ clean_unused_images
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean_unused_images
 
 regression_log_one/%:
 	@echo "### [identity-server] #########################################################################"

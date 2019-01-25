@@ -349,7 +349,7 @@ class RestoreWorker(automat.Automat):
             lg.info('eccmap %s recognized from suppliers meta info' % self.EccMap)
         else:
             num_suppliers = len(self.known_suppliers)
-            if num_suppliers == 0:
+            if num_suppliers not in eccmap.GetPossibleSuppliersCount():
                 num_suppliers = settings.DefaultDesiredSuppliers()
             self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(num_suppliers))
             lg.warn('no meta info found, guessed eccmap %s from %d known suppliers' % (
