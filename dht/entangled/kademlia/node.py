@@ -94,7 +94,7 @@ class Node(object):
         self._joinDeferred = None
         # Create k-buckets (for storing contacts)
         if routingTable is None:
-            self._routingTable = routingtable.OptimizedTreeRoutingTable(self.id)
+            self._routingTable = routingtable.TreeRoutingTable(self.id)
 
         # Initialize this node's network access mechanisms
         if networkProtocol is None:
@@ -321,7 +321,7 @@ class Node(object):
         """
         return self._iterativeFind(key)
 
-    def iterativeFindValue(self, key, rpc='findValue'):
+    def iterativeFindValue(self, key, rpc='findValue', refresh_revision=False):
         """
         The Kademlia search operation (deterministic)
 
@@ -374,14 +374,15 @@ class Node(object):
                             expireSeconds = result['expireSeconds']
                         if _Debug: print('republish %s to closest node with %d expire seconds' % (base64.b64encode(key), expireSeconds))
                         contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision).addErrback(storeFailed)
-                    # need to refresh nodes who has old version of that value
-                    for v in result['values']:
-                        if v[1] < latest_revision:
-                            _contact = Contact(v[2], v[3][0], v[3][1], self._protocol)
-                            if _Debug: print('will refresh revision %d on %r' % (latest_revision, _contact))
-                            d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision)
-                            d.addCallback(refreshRevisionSuccess)
-                            d.addErrback(refreshRevisionFailed)
+                    if refresh_revision:
+                        # need to refresh nodes who has old version of that value
+                        for v in result['values']:
+                            if v[1] < latest_revision:
+                                _contact = Contact(v[2], v[3][0], v[3][1], self._protocol)
+                                if _Debug: print('will refresh revision %d on %r' % (latest_revision, _contact))
+                                d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision)
+                                d.addCallback(refreshRevisionSuccess)
+                                d.addErrback(refreshRevisionFailed)
                     outerDf.callback(result)
                 else:
                     # we was looking for value but did not found it
@@ -391,7 +392,7 @@ class Node(object):
                     if key in self._dataStore:
                         # Ok, we have the value locally, so use that
                         item = self._dataStore.getItem(key, unpickle=True)
-                        # expireSeconds = constants.dataExpireSecondsDefaut
+                        expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
                         # expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
                         # if expireSecondsCall:
                         #     expireSeconds = expireSecondsCall(key)
@@ -420,17 +421,28 @@ class Node(object):
                 # network
                 if key in self._dataStore:
                     # Ok, we have the value locally, so use that
-                    value = self._dataStore[key]
-                    expireSeconds = constants.dataExpireSecondsDefaut
-                    expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
-                    if expireSecondsCall:
-                        expireSeconds = expireSecondsCall(key)
+                    item = self._dataStore.getItem(key, unpickle=True)
+                    expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
+                    # value = self._dataStore[key]
+                    # expireSeconds = constants.dataExpireSecondsDefaut
+                    # expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
+                    # if expireSecondsCall:
+                    #     expireSeconds = expireSecondsCall(key)
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), value, expireSeconds, contact))
-                        contact.store(key, value, None, 0, expireSeconds).addErrback(storeFailed)
-                    outerDf.callback({key: value, 'values': [], })
+                        if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), item['value'], expireSeconds, contact))
+                        contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
+                    outerDf.callback({
+                        'key': item['value'],
+                        'values': [(
+                            item['value'],
+                            item['revision'],
+                            self.id,
+                            (b'127.0.0.1', self.port),
+                        ),],
+                        'activeContacts': result['activeContacts'],
+                    })
                 else:
                     # Ok, value does not exist in DHT at all
                     outerDf.callback(result)
@@ -627,7 +639,7 @@ class Node(object):
         hsh.update(str(random.getrandbits(255)).encode())
         return hsh.digest()
 
-    def _iterativeFind(self, key, startupShortlist=None, rpc='findNode'):
+    def _iterativeFind(self, key, startupShortlist=None, rpc='findNode', deep=False):
         """
         The basic Kademlia iterative lookup operation (for nodes/values)
 
@@ -780,10 +792,11 @@ class Node(object):
             while len(pendingIterationCalls):
                 del pendingIterationCalls[0]
             # See if should continue the search
-#             if key in findValueResult:
-#                 if _Debug: print('++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
-#                 outerDf.callback(findValueResult)
-#                 return
+            if key in findValueResult and not deep:
+                if _Debug: print('++++++++++++++ DONE (findValue found) +++++++++++++++\n\n')
+                findValueResult['activeContacts'] = activeContacts
+                outerDf.callback(findValueResult)
+                return
             if len(activeContacts) and findValue == False:
                 if (len(activeContacts) >= constants.k) or (activeContacts[0] == prevClosestNode[0] and len(activeProbes) == slowNodeCount[0]):
                     # TODO: Re-send the FIND_NODEs to all of the k closest nodes not already queried
