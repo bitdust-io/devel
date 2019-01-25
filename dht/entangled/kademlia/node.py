@@ -36,7 +36,7 @@ from . import protocol  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = True
+_Debug = False
 
 
 def rpcmethod(func):
