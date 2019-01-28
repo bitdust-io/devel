@@ -16,6 +16,7 @@
 
 from __future__ import absolute_import
 import six
+import traceback
 
 try:
     from UserDict import DictMixin
@@ -186,11 +187,11 @@ class DictDataStore(DataStore):
         try:
             row = self._dict[key]
             result = dict(
-                key=row[0],
+                key=row[0].encode(),
                 value=row[1],
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=row[4],
+                originalPublisherID=None if not row[4] else row[4].encode(),
             )
         except:
             return None
@@ -343,11 +344,11 @@ class SQLiteDataStore(DataStore):
                 value = row[1]
 
             result = dict(
-                key=row[0],
+                key=row[0].encode(),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=row[4],
+                originalPublisherID=None if not row[4] else row[4].encode(),
             )
         except:
             return None
@@ -439,11 +440,11 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 value = row[1]
             
             result = dict(
-                key=row[0],
+                key=row[0].encode(),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=row[4],
+                originalPublisherID=None if not row[4] else row[4].encode(),
                 expireSeconds=row[5],
             )
         except:
@@ -468,13 +469,13 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 else:
                     value = pickle.loads(value, encoding='bytes')
             items.append(dict(
-                key=encoding.encode_hex(row[0]),
+                key=row[0].encode(),
+                key64=base64.b64encode(row[0].encode()),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=None if not row[4] else encoding.encode_hex(row[4]),
+                originalPublisherID=None if not row[4] else row[4].encode(),
                 expireSeconds=row[5],
-                key64=base64.b64encode(encoding.decode_hex(row[0]))
             ))
         return items
 
@@ -529,7 +530,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 lastPublished,
                 originallyPublished,
-                originalPublisherID,
+                encoding.encode_hex(originalPublisherID),
                 expireSeconds,
                 new_revision,
             ))
@@ -540,7 +541,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 lastPublished,
                 originallyPublished,
-                originalPublisherID,
+                encoding.encode_hex(originalPublisherID),
                 expireSeconds,
                 new_revision,
                 encodedKey,
@@ -571,11 +572,11 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 value = row[1]
             
             result = dict(
-                key=row[0],
+                key=row[0].encode(),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=row[4],
+                originalPublisherID=None if not row[4] else encoding.decode_hex(row[4]),
                 expireSeconds=row[5],
                 revision=row[6],
             )
@@ -600,13 +601,19 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                     value = pickle.loads(value)
                 else:
                     value = pickle.loads(value, encoding='bytes')
+            try:
+                _k = encoding.decode_hex(row[0], as_string=True)
+                _k64 = base64.b64encode(encoding.decode_hex(row[0])).decode()
+                _opID = None if not row[4] else base64.b64encode(encoding.decode_hex(row[4])).decode()
+            except:
+                traceback.print_exc()
             items.append(dict(
-                key=encoding.encode_hex(row[0]),
-                key64=base64.b64encode(encoding.decode_hex(row[0])),
+                key=_k,
+                key64=_k64,
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=None if not row[4] else encoding.encode_hex(row[4]),
+                originalPublisherID=_opID,
                 expireSeconds=row[5],
                 revision=row[6],
             ))

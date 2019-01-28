@@ -16,6 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 
 from twisted.internet import protocol, defer
 from twisted.python import failure
@@ -150,9 +151,15 @@ class KademliaProtocol(protocol.DatagramProtocol):
 
             if isinstance(message, msgtypes.RequestMessage):
                 # This is an RPC method request
-                self._handleRPC(remoteContact, message.id, str(message.request), message.args)
+                message_request = message.request
+                if isinstance(message_request, six.binary_type):
+                    message_response = message_request.decode()
+                self._handleRPC(remoteContact, message.id, message_request, message.args)
 
             elif isinstance(message, msgtypes.ResponseMessage):
+                message_response = message.response
+                if isinstance(message_response, six.binary_type):
+                    message_response = message_response.decode()
                 # Find the message that triggered this response
                 if message.id in self._sentMessages:
                     # Cancel timeout timer for this RPC
@@ -176,15 +183,11 @@ class KademliaProtocol(protocol.DatagramProtocol):
                                 localModuleHierarchy.pop(0)
                             exceptionClassName = '.'.join(remoteHierarchy)
                         remoteException = None
-                        try:
-                            exec('remoteException = %s("%s") from %s' % (exceptionClassName, message.response, address))
-                        except Exception:
-                            # We could not recreate the exception; create a generic one
-                            remoteException = Exception(str(message.response) + (' from %s' % str(address)))
+                        remoteException = Exception(message_response + ' from %s' % str(address))
                         df.errback(remoteException)
                     else:
                         # We got a result from the RPC
-                        df.callback(message.response)
+                        df.callback(message_response)
                 else:
                     # If the original message isn't found, it must have timed out
                     # TODO: we should probably do something with this...

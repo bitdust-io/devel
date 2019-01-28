@@ -16,6 +16,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 from six.moves import range
 from io import open
 
@@ -199,38 +200,56 @@ class Node(object):
 
         def storeSuccess(ok, key):
             try:
-                o = repr(ok)
+                if isinstance(ok, six.binary_type):
+                    ok = ok.decode()
+                ok = str(ok)
             except:
-                o = 'Unknown Error'
+                ok = 'Unknown Error'
             if _Debug:
-                print('storeSuccess', base64.b64encode(key), o)
+                print('storeSuccess', base64.b64encode(key), ok)
             return ok
 
         def storeFailed(x, key):
             try:
-                o = repr(x.value)
+                errmsg = x.value.subFailure.getErrorMessage()
             except:
                 try:
-                    o = repr(x)
+                    errmsg = x.getErrorMessage()
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        errmsg = x.value
+                    except:
+                        try:
+                            errmsg = str(x)
+                        except:
+                            errmsg = 'Unknown Error'
+            if isinstance(errmsg, six.binary_type):
+                errmsg = errmsg.decode()
             if _Debug:
-                print('storeFailed', base64.b64encode(key), o)
-            return o
+                print('storeFailed', base64.b64encode(key), errmsg)
+            return errmsg
 
         # Prepare a callback for doing "STORE" RPC calls
 
         def findNodeFailed(x):
             try:
-                o = repr(x.value)
+                errmsg = x.value.subFailure.getErrorMessage()
             except:
                 try:
-                    o = repr(x)
+                    errmsg = x.getErrorMessage()
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        errmsg = x.value
+                    except:
+                        try:
+                            errmsg = str(x)
+                        except:
+                            errmsg = 'Unknown Error'
+            if isinstance(errmsg, six.binary_type):
+                errmsg = errmsg.decode()
             if _Debug:
-                print('findNodeFailed', o)
-            return x
+                print('findNodeFailed', _Debug)
+            return _Debug
 
         def storeRPCsCollected(store_results, store_nodes):
             if _Debug:
@@ -240,16 +259,24 @@ class Node(object):
 
         def storeRPCsFailed(x):
             try:
-                o = repr(x.value)
+                errmsg = x.value.subFailure.getErrorMessage()
             except:
                 try:
-                    o = repr(x)
+                    errmsg = x.getErrorMessage()
                 except:
-                    o = 'Unknown Error'
+                    try:
+                        errmsg = x.value
+                    except:
+                        try:
+                            errmsg = str(x)
+                        except:
+                            errmsg = 'Unknown Error'
+            if isinstance(errmsg, six.binary_type):
+                errmsg = errmsg.decode()
             if _Debug:
-                print('storeRPCsFailed', o)
+                print('storeRPCsFailed', errmsg)
             ret.errback(x)
-            return o
+            return errmsg
 
         def executeStoreRPCs(nodes):
             # print '        .....execStoreRPCs called'

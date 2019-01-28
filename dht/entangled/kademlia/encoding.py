@@ -25,9 +25,9 @@ def encode_hex(value):
     return codecs.decode(codecs.encode(value, 'hex'), 'utf8')
 
 
-def decode_hex(value):
-#     if not isinstance(value, six.text_type):
-#         value = value.decode()
+def decode_hex(value, as_string=False):
+    if as_string:
+        return codecs.decode(codecs.decode(value, 'hex'), 'utf8')
     return codecs.decode(value, 'hex')
 
 

@@ -56,6 +56,8 @@ from logs import lg
 
 from interface import api
 
+from lib import strng
+
 from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
 from lib.txrestapi.txrestapi.methods import GET, POST, PUT, DELETE, ALL
 
@@ -102,6 +104,9 @@ def _request_arg(request, key, default='', mandatory=False):
     if key in args:
         values = args.get(key, [default, ])
         return values[0] if values else default
+    if strng.to_bin(key) in args:
+        values = args.get(strng.to_bin(key), [default, ])
+        return values[0] if values else default
     if mandatory:
         raise Exception('mandatory url query argument missed: %s' % key)
     return default
@@ -117,7 +122,7 @@ def _request_data(request, mandatory_keys=[], default_value={}):
             raise Exception('mandatory json input missed: %s' % mandatory_keys)
         return default_value
     try:
-        data = json.loads(request.content.getvalue())
+        data = json.loads(request.content.getvalue().decode())
     except:
         raise Exception('invalid json input')
     for k in mandatory_keys:
@@ -165,7 +170,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             except:
                 func_name = callback.__name__
             lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
-                request.method, request.uri, func_name, _args))
+                request.method.decode(), request.uri.decode(), func_name, _args))
         return None
 
     #------------------------------------------------------------------------------

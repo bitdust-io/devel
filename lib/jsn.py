@@ -39,10 +39,19 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
     Always translates every byte string json value into text using encoding.
     """
 
+    enc_errors = kw.pop('errors', 'strict')
+    keys_to_text = kw.pop('keys_to_text', False)
+
     def _to_text(v):
         if isinstance(v, six.binary_type):
-            v = v.decode(encoding)
+            v = v.decode(encoding, errors=enc_errors)
         return v
+
+    def _keys_to_text(o, enc):
+        return {(k.decode(enc, errors=enc_errors) if isinstance(k, six.binary_type) else k) : v for k, v in o.items()}
+
+    if keys_to_text:
+        obj = _keys_to_text(obj, enc=encoding)
 
     if six.PY2:
         return json.dumps(
@@ -91,13 +100,15 @@ def loads(s, encoding='utf-8', **kw):
 def loads_text(s, encoding='utf-8', **kw):
     """
     Calls `json.loads()` with parameters.
-    Always translates all json text values into unicode strings.
+    Always translates all json values into unicode strings.
     """
+
+    enc_errors = kw.pop('errors', 'strict')
 
     def _to_text(dct):
         for k in dct.keys():
-            if not isinstance(dct[k], six.text_type):
-                dct[k] = dct[k].decode(encoding)
+            if isinstance(dct[k], six.binary_type):
+                dct[k] = dct[k].decode(encoding, errors=enc_errors)
         return dct
 
     return json.loads(

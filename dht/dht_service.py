@@ -379,7 +379,7 @@ def delete_key(key):
 
 #------------------------------------------------------------------------------
 
-def read_json_response(response, key, result_defer=None):
+def read_json_response(response, key, result_defer=None, as_bytes=False):
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.read_json_response [%s]' % base64.b64encode(key))
     value = None
@@ -391,7 +391,10 @@ def read_json_response(response, key, result_defer=None):
         if key in response and response.get('values'):
             try:
                 latest = 0
-                value = jsn.loads(response['values'][0][0])
+                if as_bytes:
+                    value = jsn.loads(response['values'][0][0])
+                else:
+                    value = jsn.loads_text(response['values'][0][0])
                 for v in response['values']:
                     if v[1] > latest:
                         latest = v[1]
@@ -410,12 +413,12 @@ def read_json_response(response, key, result_defer=None):
     return value
 
 
-def get_json_value(key):
+def get_json_value(key, as_bytes=False):
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.get_json_value key=[%s]' % key)
     ret = Deferred()
     d = get_value(key)
-    d.addCallback(read_json_response, key_to_hash(key), ret)
+    d.addCallback(read_json_response, key_to_hash(key), ret, as_bytes)
     d.addErrback(ret.errback)
     return ret
 
@@ -594,7 +597,7 @@ def validate_data_written(store_results, key, json_data, result_defer):
         if results_collected:
             for result in store_results[1]:
                 try:
-                    success = result[0]
+                    success = strng.to_text(result[0])
                     response = result[1]
                     success_str = repr(success)
                     response_str = repr(response)
@@ -815,10 +818,14 @@ def dump_local_db(value_as_json=False):
     l = []
     for itm in node()._dataStore.getAllItems(unpickle=True):
         if value_as_json:
-            try:
-                itm['value'] = json.loads(itm['value'])
-            except:
-                itm['value'] = strng.to_text(itm['value'])
+            if isinstance(itm['value'], dict):
+                _j = jsn.dumps(itm['value'], keys_to_text=True, errors='ignore')
+                itm['value'] = jsn.loads_text(_j, errors='ignore')
+            else:
+                try:
+                    itm['value'] = jsn.loads_text(itm['value'], errors='ignore')
+                except:
+                    itm['value'] = strng.to_text(itm['value'])
         l.append(itm)
     return l
 

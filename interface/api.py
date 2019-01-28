@@ -101,7 +101,11 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     if api_method.count('lambda'):
         api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
+        try:
+            sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
+        except:
+            sample = strng.to_text(0, errors='ignore')[:150]
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample))
     return o
 
 
@@ -3678,7 +3682,10 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
             try:
                 errmsg = err.value.subFailure.getErrorMessage()
             except:
-                errmsg = 'store operation failed'
+                try:
+                    errmsg = err.getErrorMessage()
+                except:
+                    errmsg = 'store operation failed'
             try:
                 nodes = err.value
             except:
@@ -3695,7 +3702,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                 'write': 'failed',
                 'my_dht_id': base64.b64encode(dht_service.node().id),
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(key),
+                'key_64': base64.b64encode(strng.to_bin(key)),
                 'closest_nodes': closest_nodes,
             }))
         except Exception as exc:
