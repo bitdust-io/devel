@@ -153,7 +153,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # This is an RPC method request
                 message_request = message.request
                 if isinstance(message_request, six.binary_type):
-                    message_response = message_request.decode()
+                    message_request = message_request.decode()
                 self._handleRPC(remoteContact, message.id, message_request, message.args)
 
             elif isinstance(message, msgtypes.ResponseMessage):

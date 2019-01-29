@@ -201,7 +201,10 @@ class Node(object):
         def storeSuccess(ok, key):
             try:
                 if isinstance(ok, six.binary_type):
-                    ok = ok.decode()
+                    try:
+                        ok = ok.decode()
+                    except:
+                        ok = ok.decode(errors='ignore')
                 ok = str(ok)
             except:
                 ok = 'Unknown Error'
@@ -224,7 +227,10 @@ class Node(object):
                         except:
                             errmsg = 'Unknown Error'
             if isinstance(errmsg, six.binary_type):
-                errmsg = errmsg.decode()
+                try:
+                    errmsg = errmsg.decode()
+                except:
+                    errmsg = errmsg.decode(errors='ignore')
             if _Debug:
                 print('storeFailed', base64.b64encode(key), errmsg)
             return errmsg
@@ -246,7 +252,10 @@ class Node(object):
                         except:
                             errmsg = 'Unknown Error'
             if isinstance(errmsg, six.binary_type):
-                errmsg = errmsg.decode()
+                try:
+                    errmsg = errmsg.decode()
+                except:
+                    errmsg = errmsg.decode(errors='ignore')
             if _Debug:
                 print('findNodeFailed', _Debug)
             return _Debug
@@ -272,7 +281,10 @@ class Node(object):
                         except:
                             errmsg = 'Unknown Error'
             if isinstance(errmsg, six.binary_type):
-                errmsg = errmsg.decode()
+                try:
+                    errmsg = errmsg.decode()
+                except:
+                    errmsg = errmsg.decode(errors='ignore')
             if _Debug:
                 print('storeRPCsFailed', errmsg)
             ret.errback(x)

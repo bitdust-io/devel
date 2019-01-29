@@ -455,6 +455,8 @@ class StunClient(automat.Automat):
         self.automat('dht-nodes-not-found')
 
     def _stun_port_received(self, result, node):
+        if _Debug:
+            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s' % (result, node, ))
         self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
             return
@@ -462,12 +464,10 @@ class StunClient(automat.Automat):
             port = int(result[b'stun_port'])
             address = node.address
         except:
-            if _Debug:
-                lg.out(_DebugLevel, 'stun_client._stun_port_received ERROR result=%s from node: %s' % (
-                    str(result), node))
+            lg.exc()
             return
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client._stun_port_received  %s at %s' % (address, port, ))
+            lg.out(_DebugLevel, '        new stun port server found  %s:%s' % (address, port, ))
         self.automat('port-number-received', (address, port))
 
 #------------------------------------------------------------------------------

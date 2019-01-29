@@ -515,10 +515,6 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 expireSeconds=constants.dataExpireSecondsDefaut,
                 **kwargs):
         # Encode the key so that it doesn't corrupt the database
-        # encodedKey = key.encode('hex')
-#         if not isinstance(key, six.binary_type):
-#             key = key.encode()
-#         encodedKey = codecs.encode(key, 'hex')
         encodedKey = encoding.encode_hex(key)
         new_revision = kwargs.get('revision', None)
         if new_revision is None:
@@ -551,12 +547,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
 
     def getItem(self, key, unpickle=False):
         try:
-            # if not isinstance(key, six.binary_type):
-            #     key = key.encode()
-            # encodedKey = codecs.encode(key, 'hex')            
             self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-                # 'reqKey': key.encode('hex'),
-                # 'reqKey': encodedKey,
                 'reqKey': encoding.encode_hex(key),
             })
             row = self._cursor.fetchone()
@@ -570,7 +561,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                     value = pickle.loads(value, encoding='bytes')
             else:
                 value = row[1]
-            
+
             result = dict(
                 key=row[0].encode(),
                 value=value,
@@ -579,6 +570,8 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 originalPublisherID=None if not row[4] else encoding.decode_hex(row[4]),
                 expireSeconds=row[5],
                 revision=row[6],
+                key64=base64.b64encode(encoding.decode_hex(row[0])).decode(),
+                originalPublisherID64=None if not row[4] else base64.b64encode(encoding.decode_hex(row[4])).decode(),
             )
         except:
             if _Debug:
@@ -609,12 +602,12 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 traceback.print_exc()
             items.append(dict(
                 key=_k,
-                key64=_k64,
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
                 originalPublisherID=_opID,
                 expireSeconds=row[5],
                 revision=row[6],
+                key64=_k64,
             ))
         return items
