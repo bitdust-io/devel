@@ -119,7 +119,7 @@ def set_identity(idurl, raw_xml_data):
         json_data={
             'type': 'identity',
             'timestamp': utime.get_sec1970(),
-            'idurl': idurl,
+            'idurl': strng.to_text(idurl),
             'identity': raw_xml_data,
         },
         rules=get_rules('identity'),

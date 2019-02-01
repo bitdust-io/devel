@@ -22,6 +22,8 @@ import codecs
 
 
 def encode_hex(value):
+    if isinstance(value, six.text_type):
+        value = value.encode()
     return codecs.decode(codecs.encode(value, 'hex'), 'utf8')
 
 

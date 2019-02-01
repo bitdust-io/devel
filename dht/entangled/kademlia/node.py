@@ -37,7 +37,7 @@ from . import protocol  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):
@@ -750,7 +750,14 @@ class Node(object):
             responseMsg = responseTuple[0]
             originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
             # Make sure the responding node is valid, and abort the operation if it isn't
+            if _Debug: 
+                print('    extendShortlist', (base64.b64encode(responseMsg.nodeID), type(responseMsg.nodeID)))
             if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.id:
+                if _Debug:
+                    if responseMsg.nodeID == self.id:
+                        print('        response from my own node')
+                    else:
+                        print('        response from active contact')
                 return responseMsg.nodeID
 
             # Mark this node as active

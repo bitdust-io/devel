@@ -96,6 +96,7 @@ class RSAKey(object):
     def fromString(self, key_string):
         if self.keyObject:
             raise ValueError('key object already exist')
+        key_string = strng.to_bin(key_string)
         self.keyObject = RSA.import_key(key_string)
         return True
 
@@ -103,6 +104,7 @@ class RSAKey(object):
         if self.keyObject:
             raise ValueError('key object already exist')
         key_src = local_fs.ReadTextFile(keyfilename)
+        key_src = strng.to_bin(key_src)
         self.keyObject = RSA.import_key(key_src)
         del key_src
         gc.collect()

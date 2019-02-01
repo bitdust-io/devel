@@ -425,7 +425,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             if command not in CMD_LIST:
                 raise Exception('unknown command received')
         except:
-            lg.warn('invalid string received in tcp connection')
+            lg.warn('invalid string received in tcp connection: %r' % data)
             try:
                 self.transport.stopListening()
             except:

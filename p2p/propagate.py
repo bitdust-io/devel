@@ -72,6 +72,7 @@ from system import bpio
 
 from lib import nameurl
 from lib import net_misc
+from lib import strng
 
 from contacts import contactsdb
 from contacts import identitycache
@@ -314,7 +315,7 @@ def SlowSendSuppliers(delay=1, customer_idurl=None):
         reactor.callLater(delay, _send, index + 1, payload, delay)
 
     _SlowSendIsWorking = True
-    payload = my_id.getLocalIdentity().serialize()
+    payload = strng.to_bin(my_id.getLocalIdentity().serialize())
     _send(0, payload, delay)
 
 
@@ -340,7 +341,7 @@ def SlowSendCustomers(delay=1):
         reactor.callLater(delay, _send, index + 1, payload, delay)
 
     _SlowSendIsWorking = True
-    payload = my_id.getLocalIdentity().serialize()
+    payload = strng.to_bin(my_id.getLocalIdentity().serialize())
     _send(0, payload, delay)
 
 
@@ -384,7 +385,7 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
         timeout_handler = HandleTimeOut
     thePayload = Payload
     if thePayload is None:
-        thePayload = my_id.getLocalIdentity().serialize()
+        thePayload = strng.to_bin(my_id.getLocalIdentity().serialize())
     p = signed.Packet(
         commands.Identity(),
         my_id.getLocalID(),  # MyID,
@@ -418,7 +419,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     # MyID = my_id.getLocalID()
     # PacketID = MyID
     LocalIdentity = my_id.getLocalIdentity()
-    Payload = LocalIdentity.serialize()
+    Payload = strng.to_bin(LocalIdentity.serialize())
     # Hash = key.Hash(Payload)
     alreadysent = set()
     totalsent = 0

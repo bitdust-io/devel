@@ -81,7 +81,7 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
 def loads(s, encoding='utf-8', **kw):
     """
     Calls `json.loads()` with parameters.
-    Always translates all json text values into binary strings using encoding.
+    Always translates all json values into binary strings using encoding.
     """
 
     def _to_bin(dct):

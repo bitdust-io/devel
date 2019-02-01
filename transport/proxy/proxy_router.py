@@ -66,7 +66,6 @@ _DebugLevel = 10
 
 import time
 import json
-import pprint
 
 #------------------------------------------------------------------------------
 
@@ -272,7 +271,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, _, item, _, _, _ = args[0]
-        self.routes[idurl]['address'].append((strng.to_bin(item.proto), item.host))
+        self.routes[idurl]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
         self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
@@ -323,7 +322,7 @@ class ProxyRouter(automat.Automat):
             if len(self.routes) >= _MaxRoutesNumber:
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
-                    lg.out(_DebugLevel, '    %s' % pprint.pformat(self.routes))
+                    lg.out(_DebugLevel, '    %r' % self.routes)
                 p2p_service.SendAck(request, 'rejected', wide=True)
             else:
                 try:
@@ -359,14 +358,14 @@ class ProxyRouter(automat.Automat):
                 if not self._is_my_contacts_present_in_identity(cached_id):
                     if _Debug:
                         lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % user_id)
-                    identitycache.OverrideIdentity(user_id, idsrc)
+                    identitycache.OverrideIdentity(user_id, cached_id.serialize())
                 else:
                     if _Debug:
                         lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % user_id)
                 self.routes[user_id]['time'] = time.time()
-                self.routes[user_id]['identity'] = idsrc
-                self.routes[user_id]['publickey'] = cached_id.publickey
-                self.routes[user_id]['contacts'] = cached_id.getContactsAsTuples()
+                self.routes[user_id]['identity'] = cached_id.serialize()
+                self.routes[user_id]['publickey'] = strng.to_text(cached_id.publickey)
+                self.routes[user_id]['contacts'] = cached_id.getContactsAsTuples(as_text=True)
                 self.routes[user_id]['address'] = []
                 self._write_route(user_id)
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
@@ -413,7 +412,7 @@ class ProxyRouter(automat.Automat):
                 p2p_service.SendAck(request, 'rejected', wide=True)
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % user_id)
-                    lg.out(_DebugLevel, '    %s' % pprint.pformat(self.routes))
+                    lg.out(_DebugLevel, '    %r' % self.routes)
         else:
             p2p_service.SendFail(request, 'rejected', wide=True)
 
@@ -433,7 +432,7 @@ class ProxyRouter(automat.Automat):
             return
         if len(hosts) > 1:
             lg.warn('found more then one channel with receiver %s : %r' % (receiver_idurl, hosts, ))
-        receiver_proto, receiver_host = hosts[0]
+        receiver_proto, receiver_host = strng.to_bin(hosts[0][0]), strng.to_bin(hosts[0][1])
         publickey = route_info['publickey']
         block = encrypted.Block(
             CreatorID=my_id.getLocalID(),
@@ -712,11 +711,11 @@ class ProxyRouter(automat.Automat):
             lg.warn('setting [services/proxy-server/current-routes] not exist')
             return
         try:
-            dct = json.loads(src)
+            dct = serialization.BytesToDict(strng.to_bin(src), encoding='utf-8', as_text_values=True)
         except:
             dct = {}
         for k, v in dct.items():
-            self.routes[k] = v
+            self.routes[strng.to_bin(k)] = v
             ident = identity.identity(xmlsrc=v['identity'])
             if not self._is_my_contacts_present_in_identity(ident):
                 if _Debug:
@@ -736,12 +735,11 @@ class ProxyRouter(automat.Automat):
     def _write_route(self, user_id):
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
-            dct = json.loads(src)
+            dct = serialization.BytesToDict(strng.to_bin(src), encoding='utf-8', as_text_values=True)
         except:
             dct = {}
         dct[user_id] = self.routes[user_id]
-        # TODO: switch to lib.serialize
-        newsrc = pprint.pformat(json.dumps(dct, indent=0))
+        newsrc = strng.to_text(serialization.DictToBytes(dct, encoding='utf-8', keys_to_text=True))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc))
@@ -749,12 +747,12 @@ class ProxyRouter(automat.Automat):
     def _remove_route(self, user_id):
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
-            dct = json.loads(src)
+            dct = serialization.BytesToDict(strng.to_bin(src), encoding='utf-8', as_text_values=True)
         except:
             dct = {}
         if user_id in dct:
             dct.pop(user_id)
-        newsrc = json.dumps(dct)
+        newsrc = strng.to_text(serialization.DictToBytes(dct, encoding='utf-8', keys_to_text=True))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc))

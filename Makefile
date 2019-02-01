@@ -152,6 +152,8 @@ regression_logs_all:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/stdout.log
+	@echo "### [dht_seed0] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_0 cat /root/.bitdust/logs/stdout.log
 	@echo "### [dht_seed1] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/stdout.log
 	@echo "### [dht_seed2] ##################################################################################"
@@ -199,6 +201,8 @@ regression_states_all:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/automats.log
+	@echo "### [dht_seed0] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_0 cat /root/.bitdust/logs/automats.log
 	@echo "### [dht_seed1] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/automats.log
 	@echo "### [dht_seed2] ##################################################################################"

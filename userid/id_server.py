@@ -326,8 +326,8 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def stringReceived(self, data):
         try:
-            version = data[0]
-            command = data[1]
+            version = strng.to_bin(data[0:1])
+            command = strng.to_bin(data[1:2])
             payload = data[2:]
         except:
             self.disconnect()
@@ -335,20 +335,21 @@ class IdServerProtocol(basic.Int32StringReceiver):
             lg.exc()
             lg.warn('incorrect data from %s\n' % str(self.transport.getPeer()))
             return
-        if command == 'h':
+        if command == b'h':
             # lg.out(6, 'id_server.stringReceived HELLO received from %s' % payload)
-            self.sendString(strng.to_bin(
-                '%swid-server:%s' % (version, strng.to_text(A().hostname))))
+            # self.sendString(strng.to_bin(
+            #     '%swid-server:%s' % (version, strng.to_text(A().hostname))))
+            self.sendString(version + b'wid-server:' + strng.to_bin(A().hostname))
             return
-        if command != 'd':
+        if command != b'd':
             self.disconnect()
             # self.transport.loseConnection()
-            lg.warn('not a "data" packet from %s' % str(self.transport.getPeer()))
+            lg.warn('not a "data" packet from %s : %r' % (str(self.transport.getPeer()), data))
             return
         inp = BytesIO(payload)
         try:
-            file_id = struct.unpack('i', inp.read(4))[0]
-            file_size = struct.unpack('i', inp.read(4))[0]
+            file_id = int(struct.unpack('i', inp.read(4))[0])
+            file_size = int(struct.unpack('i', inp.read(4))[0])
         except:
             inp.close()
             self.disconnect()
@@ -363,7 +364,8 @@ class IdServerProtocol(basic.Int32StringReceiver):
         os.write(self.fin, inp_data)
         self.received += len(inp_data)
         # self.transport.loseConnection()
-        self.sendString(strng.to_bin('%so%s' % (version, struct.pack('i', file_id))))
+        self.sendString(version + b'o' + struct.pack('i', file_id))
+        # self.sendString(strng.to_bin('%so%s' % (version, struct.pack('i', file_id))))
         # lg.out(6, 'id_server.stringReceived  %d bytes received from %s' % (len(data), str(self.transport.getPeer())))
         if self.received == file_size:
             os.close(self.fin)

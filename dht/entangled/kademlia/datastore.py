@@ -526,7 +526,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 lastPublished,
                 originallyPublished,
-                encoding.encode_hex(originalPublisherID),
+                encoding.encode_hex(str(originalPublisherID)),
                 expireSeconds,
                 new_revision,
             ))
@@ -537,7 +537,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 lastPublished,
                 originallyPublished,
-                encoding.encode_hex(originalPublisherID),
+                encoding.encode_hex(str(originalPublisherID)),
                 expireSeconds,
                 new_revision,
                 encodedKey,

@@ -54,7 +54,7 @@ class Contact(object):
         return str(self)
 
     def __str__(self):
-        return '%s [%s] at <%s:%d>' % (
+        return '%s %r at <%r:%d>' % (
             self.__class__.__name__, base64.b64encode(self.id), self.address, self.port)
 
     def __getattr__(self, name):

@@ -151,7 +151,10 @@ def connect(seed_nodes=[]):
         node().refresher.reset(0)
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT already active : SKIP but RESET refresher task')
-        result.callback(True)
+            if node()._joinDeferred and node()._joinDeferred.called:
+                result.callback(True)
+            else:
+                node()._joinDeferred.addBoth(lambda x: result.callback(True))
         return result
 
 #     if not seed_nodes:
