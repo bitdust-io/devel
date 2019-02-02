@@ -601,7 +601,7 @@ class IdRegistrator(automat.Automat):
         # my_id.rebuildLocalIdentity(
         #     identity_object=ident, revision_up=True, save_identity=False)
         # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
-        my_identity_xmlsrc = ident.serialize()
+        my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
         self.new_identity = ident

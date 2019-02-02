@@ -209,7 +209,7 @@ def write_to_dht():
     LocalIdentity = my_id.getLocalIdentity()
     return dht_records.set_identity(
         LocalIdentity.getIDURL(),
-        LocalIdentity.serialize(),
+        LocalIdentity.serialize(as_text=True),
     )
 
 #------------------------------------------------------------------------------
@@ -259,7 +259,7 @@ def SendServers():
     sendfile, sendfilename = tmpfile.make("propagate")
     os.close(sendfile)
     LocalIdentity = my_id.getLocalIdentity()
-    bpio.WriteTextFile(sendfilename, LocalIdentity.serialize())
+    bpio.WriteTextFile(sendfilename, LocalIdentity.serialize(as_text=True))
     dlist = []
     for idurl in LocalIdentity.sources:
         # sources for out identity are servers we need to send to

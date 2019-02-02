@@ -58,6 +58,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from lib import net_misc
+from lib import strng
 
 from userid import identity
 
@@ -249,7 +250,7 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
-    xml_src = str(xml_src.strip())
+    xml_src = strng.to_text(xml_src.strip())
     if idurl in _OverriddenIdentities:
         if _OverriddenIdentities[idurl] == xml_src:
             if _Debug:
@@ -260,10 +261,10 @@ def OverrideIdentity(idurl, xml_src):
             lg.out(4, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
             lg.out(4, '\nOVERRIDDEN NEW:\n' + xml_src)
     else:
-        orig = identitydb.get(idurl).serialize() if identitydb.has_idurl(idurl) else ''
+        orig = identitydb.get(idurl).serialize(as_text=True) if identitydb.has_idurl(idurl) else ''
         if orig and orig == xml_src:
             if _Debug:
-                lg.out(4, 'identitycache.OverrideIdentity SKIPPED %r , overriden copy is the same as original' % idurl)
+                lg.out(4, 'identitycache.OverrideIdentity SKIPPED %r , overridden copy is the same as original' % idurl)
             return False
         if _Debug:
             lg.out(4, 'identitycache.OverrideIdentity replacing original identity for %r' % idurl)

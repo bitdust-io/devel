@@ -87,37 +87,37 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-        try:
-            if type(data) in six.integer_types:
-                return b'i%de' % data
-            elif isinstance(data, six.text_type):
-                return b'%d:%s' % (len(data.encode('utf-8')), data.encode('utf-8'))
-            elif isinstance(data, six.binary_type):
-                return b'%d:%s' % (len(data), data)
-            elif type(data) in (list, tuple):
-                encodedListItems = b''
-                for item in data:
-                    encodedListItems += self.encode(item)
-                return b'l%se' % encodedListItems
-            elif isinstance(data, dict):
-                encodedDictItems = b''
-                keys = sorted(data.keys())
-                for key in keys:
-                    e_key = self.encode(key)
-                    e_data = self.encode(data[key])
-                    encodedDictItems += e_key
-                    encodedDictItems += e_data
-                return b'd%se' % encodedDictItems
-            elif isinstance(data, float):
-                # This (float data type) is a non-standard extension to the original Bencode algorithm
-                return b'f%fe' % data
-            elif data is None:
-                return b'i0e'  # return 0
-            else:
-                raise TypeError("Cannot bencode '%s' object" % type(data))
-        except:
-            import traceback
-            traceback.print_exc()
+#         try:
+        if type(data) in six.integer_types:
+            return b'i%de' % data
+        elif isinstance(data, six.text_type):
+            return b'%d:%s' % (len(data.encode('utf-8')), data.encode('utf-8'))
+        elif isinstance(data, six.binary_type):
+            return b'%d:%s' % (len(data), data)
+        elif type(data) in (list, tuple):
+            encodedListItems = b''
+            for item in data:
+                encodedListItems += self.encode(item)
+            return b'l%se' % encodedListItems
+        elif isinstance(data, dict):
+            encodedDictItems = b''
+            keys = sorted(data.keys())
+            for key in keys:
+                e_key = self.encode(key)
+                e_data = self.encode(data[key])
+                encodedDictItems += e_key
+                encodedDictItems += e_data
+            return b'd%se' % encodedDictItems
+        elif isinstance(data, float):
+            # This (float data type) is a non-standard extension to the original Bencode algorithm
+            return b'f%fe' % data
+        elif data is None:
+            return b'i0e'  # return 0
+        else:
+            raise TypeError("Cannot bencode '%s' object" % type(data))
+#         except:
+#             import traceback
+#             traceback.print_exc()
 
     def decode(self, data):
         """
@@ -141,36 +141,36 @@ class Bencode(Encoding):
 
         Do not call this; use C{decode()} instead
         """
-        try:
-            if data[startIndex:startIndex+1] == b'i':
-                endPos = data[startIndex:].find(b'e') + startIndex
-                return (int(data[startIndex + 1:endPos]), endPos + 1)
-            elif data[startIndex:startIndex+1] == b'l':
-                startIndex += 1
-                decodedList = []
-                while data[startIndex:startIndex+1] != b'e':
-                    listData, startIndex = Bencode._decodeRecursive(data, startIndex)
-                    decodedList.append(listData)
-                return (decodedList, startIndex + 1)
-            elif data[startIndex:startIndex+1] == b'd':
-                startIndex += 1
-                decodedDict = {}
-                while data[startIndex:startIndex+1] != b'e':
-                    key, startIndex = Bencode._decodeRecursive(data, startIndex)
-                    value, startIndex = Bencode._decodeRecursive(data, startIndex)
-                    decodedDict[key] = value
-                return (decodedDict, startIndex)
-            elif data[startIndex:startIndex+1] == b'f':
-                # This (float data type) is a non-standard extension to the original Bencode algorithm
-                endPos = data[startIndex:].find(b'e') + startIndex
-                return (float(data[startIndex + 1:endPos]), endPos + 1)
-            else:
-                splitPos = data[startIndex:].find(b':') + startIndex
-                length = int(data[startIndex:splitPos])
-                startIndex = splitPos + 1
-                endPos = startIndex + length
-                byts = data[startIndex:endPos]
-                return (byts, endPos)
-        except:
-            import traceback
-            traceback.print_exc()
+#         try:
+        if data[startIndex:startIndex+1] == b'i':
+            endPos = data[startIndex:].find(b'e') + startIndex
+            return (int(data[startIndex + 1:endPos]), endPos + 1)
+        elif data[startIndex:startIndex+1] == b'l':
+            startIndex += 1
+            decodedList = []
+            while data[startIndex:startIndex+1] != b'e':
+                listData, startIndex = Bencode._decodeRecursive(data, startIndex)
+                decodedList.append(listData)
+            return (decodedList, startIndex + 1)
+        elif data[startIndex:startIndex+1] == b'd':
+            startIndex += 1
+            decodedDict = {}
+            while data[startIndex:startIndex+1] != b'e':
+                key, startIndex = Bencode._decodeRecursive(data, startIndex)
+                value, startIndex = Bencode._decodeRecursive(data, startIndex)
+                decodedDict[key] = value
+            return (decodedDict, startIndex)
+        elif data[startIndex:startIndex+1] == b'f':
+            # This (float data type) is a non-standard extension to the original Bencode algorithm
+            endPos = data[startIndex:].find(b'e') + startIndex
+            return (float(data[startIndex + 1:endPos]), endPos + 1)
+        else:
+            splitPos = data[startIndex:].find(b':') + startIndex
+            length = int(data[startIndex:splitPos])
+            startIndex = splitPos + 1
+            endPos = startIndex + length
+            byts = data[startIndex:endPos]
+            return (byts, endPos)
+#         except:
+#             import traceback
+#             traceback.print_exc()

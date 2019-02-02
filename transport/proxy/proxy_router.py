@@ -363,7 +363,7 @@ class ProxyRouter(automat.Automat):
                     if _Debug:
                         lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % user_id)
                 self.routes[user_id]['time'] = time.time()
-                self.routes[user_id]['identity'] = cached_id.serialize()
+                self.routes[user_id]['identity'] = cached_id.serialize(as_text=True)
                 self.routes[user_id]['publickey'] = strng.to_text(cached_id.publickey)
                 self.routes[user_id]['contacts'] = cached_id.getContactsAsTuples(as_text=True)
                 self.routes[user_id]['address'] = []
@@ -575,7 +575,7 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
             lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
             for k, v in self.routes.items():
-                lg.out(_DebugLevel, '        route with %s :  address=%s  contacts=%s' % (k, v['address'], v['contacts'], ))
+                lg.out(_DebugLevel, '        route with %s :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first

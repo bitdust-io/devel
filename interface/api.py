@@ -368,7 +368,7 @@ def identity_get(include_xml_source=False):
         return ERROR('local identity is not valid or not exist')
     r = my_id.getLocalIdentity().serialize_json()
     if include_xml_source:
-        r['xml'] = my_id.getLocalIdentity().serialize()
+        r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
     return RESULT([r, ])
 
 
@@ -397,7 +397,7 @@ def identity_create(username, preferred_servers=[]):
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity creation FAILED')
             r = my_id.getLocalIdentity().serialize_json()
-            r['xml'] = my_id.getLocalIdentity().serialize()
+            r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             ret.callback(RESULT([r, ]))
             return
 
@@ -485,7 +485,7 @@ def identity_recover(private_key_source, known_idurl=None):
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity recovery FAILED')
             r = my_id.getLocalIdentity().serialize_json()
-            r['xml'] = my_id.getLocalIdentity().serialize()
+            r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             ret.callback(RESULT([r, ]))
             return
 
@@ -3600,7 +3600,7 @@ def dht_value_get(key, record_type='skip_validation'):
                 'read': 'success',
                 'my_dht_id': base64.b64encode(dht_service.node().id),
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(key),
+                'key_64': base64.b64encode(strng.to_bin(key)),
                 'value': value,
             }))
         closest_nodes = []
@@ -3612,7 +3612,7 @@ def dht_value_get(key, record_type='skip_validation'):
             'read': 'failed',
             'my_dht_id': base64.b64encode(dht_service.node().id),
             'key': strng.to_text(key, errors='ignore'),
-            'key_64': base64.b64encode(key),
+            'key_64': base64.b64encode(strng.to_bin(key)),
             'closest_nodes': [{
                 'dht_id': base64.b64encode(c.id),
                 'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
@@ -3662,7 +3662,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                     'write': 'success' if len(response) > 0 else 'failed',
                     'my_dht_id': base64.b64encode(dht_service.node().id),
                     'key': strng.to_text(key, errors='ignore'),
-                    'key_64': base64.b64encode(key),
+                    'key_64': base64.b64encode(strng.to_bin(key)),
                     'value': value,
                     'closest_nodes': [{
                         'dht_id': base64.b64encode(c.id),

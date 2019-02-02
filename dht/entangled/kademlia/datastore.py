@@ -40,7 +40,7 @@ except:
 
 PICKLE_PROTOCOL = 2
 
-_Debug = False
+_Debug = True
 
 
 class DataStore(DictMixin):
@@ -546,11 +546,17 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 print('updated existing value for key %s' % base64.b64encode(key))
 
     def getItem(self, key, unpickle=False):
+        result = None
         try:
             self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
                 'reqKey': encoding.encode_hex(key),
             })
+
             row = self._cursor.fetchone()
+            if not row:
+                if _Debug:
+                    print('did not found key %s in dataStore' % base64.b64encode(key))
+                return None
 
             if unpickle:
                 if six.PY2:
@@ -575,10 +581,11 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
             )
         except:
             if _Debug:
-                print('returned None for key %s' % base64.b64encode(key))
+                print('ERROR, returned None for key %s' % base64.b64encode(key))
+                traceback.print_exc()
             return None
         if _Debug:
-            print('returned dict object for key %s' % base64.b64encode(key))
+            print('found one record for key %s' % base64.b64encode(key))
         return result
 
     def getAllItems(self, unpickle=False):

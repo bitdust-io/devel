@@ -399,7 +399,7 @@ class identity:
         try:
             doc = minidom.parseString(strng.to_bin(xmlsrc))
         except:
-            lg.exc()
+            lg.exc("xmlsrc=%r" % xmlsrc)
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)
@@ -427,7 +427,7 @@ class identity:
         self.setPublicKey(json_data['publickey'])
         self.setSignature(json_data['signature'])
 
-    def serialize(self, as_text=True):
+    def serialize(self, as_text=False):
         """
         A method to generate XML content for that identity object.
 
@@ -525,8 +525,9 @@ class identity:
         signature = doc.createElement('signature')
         signature.appendChild(doc.createTextNode(strng.to_text(self.signature)))
         root.appendChild(signature)
-
-        return doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8"), root, doc
+        
+        xmlsrc = doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8")
+        return xmlsrc, root, doc
 
     def from_xmlobj(self, root_node):
         """

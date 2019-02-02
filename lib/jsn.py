@@ -76,6 +76,7 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
             **kw
         )
 
+
 #------------------------------------------------------------------------------
 
 def loads(s, encoding='utf-8', **kw):
@@ -84,10 +85,14 @@ def loads(s, encoding='utf-8', **kw):
     Always translates all json values into binary strings using encoding.
     """
 
+    keys_to_bin = kw.pop('keys_to_bin', False)
+
     def _to_bin(dct):
         for k in dct.keys():
             if isinstance(dct[k], six.text_type):
                 dct[k] = dct[k].encode(encoding)
+        if keys_to_bin:
+            return {(k.encode(encoding) if isinstance(k, six.text_type) else k) : v for k, v in dct.items()}
         return dct
 
     return json.loads(
@@ -100,15 +105,21 @@ def loads(s, encoding='utf-8', **kw):
 def loads_text(s, encoding='utf-8', **kw):
     """
     Calls `json.loads()` with parameters.
-    Always translates all json values into unicode strings.
+    Always translates all json keys and values into unicode strings.
     """
 
     enc_errors = kw.pop('errors', 'strict')
 
     def _to_text(dct):
+        ret = {}
         for k in dct.keys():
-            if isinstance(dct[k], six.binary_type):
-                dct[k] = dct[k].decode(encoding, errors=enc_errors)
+            v_ = dct[k]
+            if isinstance(v_, six.binary_type):
+                v_ = v_.decode(encoding, errors=enc_errors)
+            k_ = k
+            if isinstance(k_, six.binary_type):
+                k_ = k_.decode(encoding, errors=enc_errors)
+            ret[k_] = v_
         return dct
 
     return json.loads(
@@ -116,3 +127,72 @@ def loads_text(s, encoding='utf-8', **kw):
         object_hook=_to_text,
         **kw
     )
+
+#------------------------------------------------------------------------------
+
+def pack_dict(dct, encoding='utf-8', errors='strict'):
+    """
+    Creates another dict from input dict where types of keys and values are also present.  
+    Keys can only be bin/text strings, integers, floats or None.
+    Values can only be bin/text strings, integers, floats, None, lists or tuples.
+    Result dict will always contain only text (unicode) keys and values or simple types like integer, float or None.
+    """
+    _d = {}
+    for k, v in dct.items():
+        _k = k
+        _ktyp = 's'
+        if isinstance(_k, six.binary_type):
+            _k = _k.decode(encoding, errors=errors)
+            _ktyp = 'b'
+        elif isinstance(_k, int):
+            _ktyp = 'i'
+        elif isinstance(_k, float):
+            _ktyp = 'f'
+        elif _k is None:
+            _ktyp = 'n'
+        _v = v
+        _vtyp = 's'
+        if isinstance(_v, six.binary_type):
+            _v = _v.decode(encoding, errors=errors)
+            _vtyp = 'b'
+        elif isinstance(_v, int):
+            _vtyp = 'i'
+        elif isinstance(_v, float):
+            _vtyp = 'f'
+        elif isinstance(_v, dict):
+            _v = pack_dict(_v, encoding=encoding, errors=errors)
+            _vtyp = 'd'
+        elif isinstance(_v, list):
+            _v = [pack_dict({'i': i}, encoding=encoding, errors=errors) for i in _v]
+            _vtyp = 'l'
+        elif isinstance(_v, tuple):
+            _v = [pack_dict({'i': i}, encoding=encoding, errors=errors) for i in _v]
+            _vtyp = 't'
+        elif _v is None:
+            _vtyp = 'n'
+        _d[_k] = (_ktyp, _vtyp, _v, )
+    return _d
+
+
+def unpack_dict(dct, encoding='utf-8', errors='strict'):
+    """
+    Reverse operation of `pack_dict()` method - returns original dict with all keys and values of correct types.
+    """
+    _d = {}
+    for k, v in dct.items():
+        _k = k
+        if len(v) != 3:
+            raise ValueError('unpack failed, invalid value: %r' % v)
+        if v[0] == 'b':
+            _k = _k.encode(encoding, errors=errors)
+        _v = v[2]
+        if v[1] == 'b':
+            _v = _v.encode(encoding, errors=errors)
+        elif v[1] == 'd':
+            _v = unpack_dict(_v, encoding=encoding, errors=errors)
+        elif v[1] == 'l':
+            _v = [unpack_dict(i, encoding=encoding, errors=errors)['i'] for i in _v]
+        elif v[1] == 't':
+            _v = tuple([unpack_dict(i, encoding=encoding, errors=errors)['i'] for i in _v])
+        _d[_k] = _v
+    return _d

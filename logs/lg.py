@@ -278,6 +278,13 @@ def exception(level, maxTBlevel, exc_info):
             out(level, '\033[1;31m%s\033[0m' % (l.replace('\n', '')))
         else:
             out(level, l.replace('\n', ''))
+    if trbk:
+        try:
+            f_locals = trbk.tb_next.tb_next.tb_frame.f_locals
+        except:
+            f_locals = ''
+        if f_locals:
+            out(level, 'locals: %r' % f_locals)
     if _StoreExceptionsEnabled and _LogFileName:
         exc_label = exc_name.lower().replace(' ', '_').replace('-', '_')[:80]
         exc_label = ''.join([c for c in exc_label if c in '0123456789abcdefghijklmnopqrstuvwxyz_'])

@@ -428,7 +428,7 @@ class ProxyReceiver(automat.Automat):
             strng.to_text(self.router_proto_host[0]),
             strng.to_text(self.router_proto_host[1]),
         ))
-        current_identity = my_id.getLocalIdentity().serialize()
+        current_identity = my_id.getLocalIdentity().serialize(as_text=True)
         previous_identity = ReadMyOriginalIdentitySource()
         if previous_identity:
             lg.warn('my original identity is not empty, SKIP overwriting')
@@ -629,7 +629,7 @@ class ProxyReceiver(automat.Automat):
             my_id.getLocalID(),
             my_id.getLocalID(),
             commands.Identity(),
-            identity_source,
+            identity_obj.serialize(),
             self.router_idurl,
         )
         packet_out.create(
@@ -650,11 +650,11 @@ class ProxyReceiver(automat.Automat):
             return
         orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if not orig_identity:
-            orig_identity = my_id.getLocalIdentity().serialize()
+            orig_identity = my_id.getLocalIdentity().serialize(as_text=True)
         service_info = {
             'name': 'service_proxy_server',
             'payload': {
-                'identity': strng.to_text(orig_identity),
+                'identity': orig_identity,
             },
         }
         service_info_raw = json.dumps(service_info)

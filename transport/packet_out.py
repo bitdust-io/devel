@@ -802,16 +802,16 @@ class PacketOut(automat.Automat):
         if self.route:
             # if this packet is routed - send directly to route host
             gateway.send_file(
-                self.route['remoteid'],
-                self.route['proto'],
-                self.route['host'],
+                strng.to_bin(self.route['remoteid']),
+                strng.to_text(self.route['proto']),
+                strng.to_bin(self.route['host']),
                 self.filename,
                 self.description,
                 self,
             )
             self.items.append(WorkItem(
-                self.route['proto'],
-                self.route['host'],
+                strng.to_text(self.route['proto']),
+                strng.to_bin(self.route['host']),
                 self.filesize))
             self.automat('items-sent')
             return
@@ -829,8 +829,15 @@ class PacketOut(automat.Automat):
                         gateway.is_installed(proto):
                     if proto == 'tcp' and localIP:
                         host = localIP
-                    gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description, self)
-                    self.items.append(WorkItem(proto, host, self.filesize))
+                    gateway.send_file(
+                        strng.to_bin(self.remote_idurl),
+                        strng.to_text(proto),
+                        strng.to_bin(host),
+                        self.filename,
+                        self.description,
+                        self,
+                    )
+                    self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
                     workitem_sent = True
             if not workitem_sent:
                 self.automat('nothing-to-send')
@@ -864,8 +871,8 @@ class PacketOut(automat.Automat):
                 proto, host, port, fn = nameurl.UrlParse(tcp_contact)
                 if port:
                     host = localIP + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
+                gateway.send_file(strng.to_bin(self.remote_idurl), strng.to_text(proto), strng.to_bin(host), self.filename, self.description, self)
+                self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
                 self.automat('items-sent')
                 return
         # tcp is the best proto - if it is working - this is the best case!!!
@@ -874,16 +881,16 @@ class PacketOut(automat.Automat):
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
                 if port:
                     host = host + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description)
-                self.items.append(WorkItem(proto, host, self.filesize))
+                gateway.send_file(strng.to_bin(self.remote_idurl), strng.to_text(proto), strng.to_bin(host), self.filename, self.description)
+                self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
                 self.automat('items-sent')
                 return
         # udp contact
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
-                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
+                gateway.send_file(strng.to_bin(self.remote_idurl), strng.to_text(proto), strng.to_bin(host), self.filename, self.description, self)
+                self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
                 self.automat('items-sent')
                 return
         # http contact
@@ -892,16 +899,16 @@ class PacketOut(automat.Automat):
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
                 if port:
                     host = host + ':' + str(port)
-                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
+                gateway.send_file(strng.to_bin(self.remote_idurl), strng.to_text(proto), strng.to_bin(host), self.filename, self.description, self)
+                self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
                 self.automat('items-sent')
                 return
         # proxy contact - he may use other node to receive and send packets
         if proxy_contact and 'proxy' in working_protos:
             proto, host = nameurl.IdContactSplit(proxy_contact)
             if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
-                gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
-                self.items.append(WorkItem(proto, host, self.filesize))
+                gateway.send_file(strng.to_bin(self.remote_idurl), strng.to_text(proto), strng.to_bin(host), self.filename, self.description, self)
+                self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
                 self.automat('items-sent')
                 return
         # finally use the first proto we supported if we can not find the best preferable method
@@ -914,8 +921,8 @@ class PacketOut(automat.Automat):
                 # try sending with tcp even if it is switched off in the settings
                 if gateway.is_installed(proto) and gateway.can_send(proto):
                     if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
-                        gateway.send_file(self.remote_idurl, proto, strng.to_bin(host), self.filename, self.description, self)
-                        self.items.append(WorkItem(proto, host, self.filesize))
+                        gateway.send_file(strng.to_bin(self.remote_idurl), strng.to_text(proto), strng.to_bin(host), self.filename, self.description, self)
+                        self.items.append(WorkItem(strng.to_text(proto), strng.to_bin(host), self.filesize))
                         self.automat('items-sent')
                         return
         self.automat('nothing-to-send')

@@ -47,6 +47,8 @@ from Cryptodome.Util import number
 
 #------------------------------------------------------------------------------
 
+from logs import lg
+
 from lib import strng
 
 from system import local_fs
@@ -93,11 +95,15 @@ class RSAKey(object):
             return self
         return self.keyObject.publickey()
 
-    def fromString(self, key_string):
+    def fromString(self, key_src):
         if self.keyObject:
             raise ValueError('key object already exist')
-        key_string = strng.to_bin(key_string)
-        self.keyObject = RSA.import_key(key_string)
+        key_src = strng.to_bin(key_src)
+        try:
+            self.keyObject = RSA.import_key(key_src)
+        except:
+            if _Debug:
+                lg.exc('key_src=%r' % key_src)
         return True
 
     def fromFile(self, keyfilename):
@@ -105,7 +111,11 @@ class RSAKey(object):
             raise ValueError('key object already exist')
         key_src = local_fs.ReadTextFile(keyfilename)
         key_src = strng.to_bin(key_src)
-        self.keyObject = RSA.import_key(key_src)
+        try:
+            self.keyObject = RSA.import_key(key_src)
+        except:
+            if _Debug:
+                lg.exc('key_src=%r' % key_src)
         del key_src
         gc.collect()
         return True
@@ -153,7 +163,6 @@ class RSAKey(object):
             result = True
         except (ValueError, TypeError, ):
             if _Debug:
-                from logs import lg
                 lg.exc()
             result = False
         return result

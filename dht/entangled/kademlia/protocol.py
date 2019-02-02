@@ -155,6 +155,17 @@ class KademliaProtocol(protocol.DatagramProtocol):
             if isinstance(message_request, six.binary_type):
                 message_request = message_request.decode()
             self._handleRPC(remoteContact, message.id, message_request, message.args)
+            if message.id in self._sentMessages:
+                if _Debug:
+                    print('                    RPC Request message received [%s]' % message_request)
+                # Cancel timeout timer for this RPC
+                df, timeoutCall = self._sentMessages[message.id][1:3]
+                timeoutCall.cancel()
+                del self._sentMessages[message.id]
+            else:
+                if _Debug:
+                    print('                     RPC Request message %r %s was not identified, currently sent: %r' % (
+                        base64.b64encode(message.id), type(message.id), self._sentMessages.keys()))
 
         elif isinstance(message, msgtypes.ResponseMessage):
             message_response = message.response
@@ -185,9 +196,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
                             localModuleHierarchy.pop(0)
                         exceptionClassName = '.'.join(remoteHierarchy)
                     remoteException = None
-                    remoteException = Exception(message_response + ' from %s' % str(address))
+                    exc_msg = message_response + ' from %s' % str(address)
+                    remoteException = Exception(exc_msg)
                     if _Debug:
-                        print('                    respond with error %r' % remoteException)
+                        print('                    respond with error "%s"' % exc_msg)
                     df.errback(remoteException)
                 else:
                     # We got a result from the RPC
@@ -198,7 +210,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # If the original message isn't found, it must have timed out
                 # TODO: we should probably do something with this...
                 if _Debug:
-                    print('                    message %s %s was not identified, currently sent: %r' % (
+                    print('                    message %r %s was not identified, currently sent: %r' % (
                         base64.b64encode(message.id), type(message.id), self._sentMessages.keys()))
         # if _Debug:
         #     print('                dt=%s' % (time.time() - _t))

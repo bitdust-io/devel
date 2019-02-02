@@ -31,26 +31,27 @@ from lib import strng
     
 #------------------------------------------------------------------------------
 
-def DictToBytes(dct, encoding='latin1'):
+def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, pack_types=False):
     """
     Calls `json.dupms()` method for input dict to build bytes output.
     Uses encoding to decode every byte string to text and ensure ascii output.
     """
     return strng.to_bin(
         jsn.dumps(
-            dct,
+            jsn.pack_dict(dct, encoding=encoding, errors=errors) if pack_types else dct,
             separators=(',', ':'),
             indent=None,
             sort_keys=True,
             ensure_ascii=True,
             encoding=encoding,
+            keys_to_text=keys_to_text,
         ),
         encoding=encoding,
-        errors='strict',
+        errors=errors,
     )
 
 
-def BytesToDict(inp, encoding='latin1', as_text_values=False):
+def BytesToDict(inp, encoding='latin1', errors='strict', as_text_values=False, unpack_types=False):
     """
     A smart way to extract input bytes into python dictionary object.
     All input bytes will be decoded into text and then loaded via `json.loads()` method.
@@ -59,4 +60,6 @@ def BytesToDict(inp, encoding='latin1', as_text_values=False):
     _t = strng.to_text(inp, encoding=encoding)
     if as_text_values:
         return jsn.loads_text(_t, encoding=encoding)
+    if unpack_types:
+        return jsn.unpack_dict(jsn.loads(_t, encoding=encoding), encoding=encoding, errors=errors)
     return jsn.loads(_t, encoding=encoding)
