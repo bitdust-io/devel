@@ -547,43 +547,43 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
 
     def getItem(self, key, unpickle=False):
         result = None
-        try:
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-                'reqKey': encoding.encode_hex(key),
-            })
+#         try:
+        self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
+            'reqKey': encoding.encode_hex(key),
+        })
 
-            row = self._cursor.fetchone()
-            if not row:
-                if _Debug:
-                    print('did not found key %s in dataStore' % base64.b64encode(key))
-                return None
-
-            if unpickle:
-                if six.PY2:
-                    if isinstance(row[1], buffer):
-                        value = str(row[1])
-                    value = pickle.loads(row[1])
-                else:
-                    value = pickle.loads(value, encoding='bytes')
-            else:
-                value = row[1]
-
-            result = dict(
-                key=row[0].encode(),
-                value=value,
-                lastPublished=row[2],
-                originallyPublished=row[3],
-                originalPublisherID=None if not row[4] else encoding.decode_hex(row[4]),
-                expireSeconds=row[5],
-                revision=row[6],
-                key64=base64.b64encode(encoding.decode_hex(row[0])).decode(),
-                originalPublisherID64=None if not row[4] else base64.b64encode(encoding.decode_hex(row[4])).decode(),
-            )
-        except:
+        row = self._cursor.fetchone()
+        if not row:
             if _Debug:
-                print('ERROR, returned None for key %s' % base64.b64encode(key))
-                traceback.print_exc()
+                print('did not found key %s in dataStore' % base64.b64encode(key))
             return None
+
+        if unpickle:
+            if six.PY2:
+                if isinstance(row[1], buffer):
+                    value = str(row[1])
+                value = pickle.loads(row[1])
+            else:
+                value = pickle.loads(value, encoding='bytes')
+        else:
+            value = row[1]
+
+        result = dict(
+            key=row[0].encode(),
+            value=value,
+            lastPublished=row[2],
+            originallyPublished=row[3],
+            originalPublisherID=None if not row[4] else encoding.decode_hex(row[4]),
+            expireSeconds=row[5],
+            revision=row[6],
+            key64=base64.b64encode(encoding.decode_hex(row[0])).decode(),
+            originalPublisherID64=None if not row[4] else base64.b64encode(encoding.decode_hex(row[4])).decode(),
+        )
+#         except:
+#             if _Debug:
+#                 print('ERROR, returned None for key %s' % base64.b64encode(key))
+#                 traceback.print_exc()
+#             return None
         if _Debug:
             print('found one record for key %s' % base64.b64encode(key))
         return result

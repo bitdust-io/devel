@@ -33,7 +33,8 @@ from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_
 
 #------------------------------------------------------------------------------
 
-DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
+# DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
+DHT_SEED_NODES = 'dht_seed_0:14441'
 
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
@@ -286,6 +287,7 @@ def start_identity_server(node):
     run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')
     # configure DHT udp port
+    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
     # configure and enable ID server
     run_ssh_command_and_wait(node, f'bitdust set services/identity-server/host {node}')
@@ -645,7 +647,7 @@ def start_all_nodes(event_loop):
         start_dht_seed(
             node=dhtseed['name'],
             other_seeds=dhtseed['other_seeds'],
-            wait_seconds=(5 if number > 0 else 0),
+            wait_seconds=(15 if number > 0 else 0),
             # wait_seconds=15,
         )
     print('\nALL DHT SEEDS STARTED\n')

@@ -111,33 +111,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
         return df
 
-    def datagramReceived(self, datagram, address):
-        """
-        Handles and parses incoming RPC messages (and responses)
-
-        @note: This is automatically called by Twisted when the protocol
-               receives a UDP datagram
-        """
-        if _Debug:
-            _t = time.time()
-        if datagram[0:1] == b'\x00' and datagram[25:26] == b'\x00':
-            totalPackets = (ord(datagram[1:2]) << 8) | ord(datagram[2:3])
-            msgID = datagram[5:25]
-            seqNumber = (ord(datagram[3:4]) << 8) | ord(datagram[4:5])
-            if msgID not in self._partialMessages:
-                self._partialMessages[msgID] = {}
-            self._partialMessages[msgID][seqNumber] = datagram[26:]
-            if len(self._partialMessages[msgID]) == totalPackets:
-                keys = sorted(self._partialMessages[msgID].keys())
-                data = ''
-                for key in keys:
-                    data += self._partialMessages[msgID][key]
-                datagram = data
-                if _Debug:
-                    print('                        finished partial message', keys)
-                del self._partialMessages[msgID]
-            else:
-                return
+    def dispatch(self, datagram, address):
         msgPrimitive = self._encoder.decode(datagram)
         message = self._translator.fromPrimitive(msgPrimitive)
 
@@ -214,6 +188,67 @@ class KademliaProtocol(protocol.DatagramProtocol):
                         base64.b64encode(message.id), type(message.id), self._sentMessages.keys()))
         # if _Debug:
         #     print('                dt=%s' % (time.time() - _t))
+        return True
+
+    def datagramReceived(self, datagram, address):
+        """
+        Handles and parses incoming RPC messages (and responses)
+
+        @note: This is automatically called by Twisted when the protocol
+               receives a UDP datagram
+        """
+        try:
+            if _Debug:
+                _t = time.time()
+            # we must consistently rely on "pagination" logic actually ( or not rely at all )
+            # we can't just check those two bytes in the header and say that packet is "paginated"! 
+            # what if a small data packet accidentally have those bytes set to \x00 just randomly?
+            # so I change the protocol so it will always include such header.
+            # if those two bytes are not set - it is a data coming from "late and not updated" node and we must reject it
+            header_ok = False
+            if datagram[0:1] == b'\x00' and datagram[25:26] == b'\x00':
+                header_ok = True
+            if not header_ok:
+                if _Debug:
+                    print('WARNING, dispatching old-style datagram, remote use is running old version')
+                self.dispatch(datagram, address)
+                return
+    
+            totalPackets = (ord(datagram[1:2]) << 8) | ord(datagram[2:3])
+            msgID = datagram[5:25]
+            seqNumber = (ord(datagram[3:4]) << 8) | ord(datagram[4:5])
+    
+            if _Debug:
+                print('datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (
+                    len(datagram), totalPackets, seqNumber, base64.b64encode(msgID), address))
+    
+            if seqNumber < 0 or seqNumber >= totalPackets:
+                if _Debug:
+                    print('                skip, seqNumber with totalPackets')
+                return
+    
+            if msgID not in self._partialMessages:
+                self._partialMessages[msgID] = {}
+            self._partialMessages[msgID][seqNumber] = datagram[26:]
+    
+            if len(self._partialMessages[msgID]) < totalPackets:
+                if _Debug:
+                    print('                skip, _partialMessages=%r' % self._partialMessages)
+                return
+    
+            keys = sorted(self._partialMessages[msgID].keys())
+            data = b''
+            for key in keys:
+                data += self._partialMessages[msgID][key]
+            datagram = data
+            if _Debug:
+                print('                        finished message of %d pieces: %r' % (totalPackets, keys))
+            del self._partialMessages[msgID]
+    
+            self.dispatch(datagram, address)
+        except Exception as exc:
+            print(exc)
+
 
     def _send(self, data, rpcID, address):
         """
@@ -235,8 +270,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         if len(data) > self.msgSizeLimit:
             # We have to spread the data over multiple UDP datagrams, and provide sequencing information
-            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission, bytes 4 & 5 are the sequence number for this specific packet
-            totalPackets = len(data) / self.msgSizeLimit
+            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
+            # bytes 4 & 5 are the sequence number for this specific packet
+            totalPackets = int(len(data) / self.msgSizeLimit)
             if len(data) % self.msgSizeLimit > 0:
                 totalPackets += 1
             encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
@@ -246,13 +282,28 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # reactor.iterate() #IGNORE:E1101
                 packetData = data[startPos:startPos + self.msgSizeLimit]
                 encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-                txData = '\x00%s%s%s\x00%s' % (encTotalPackets, encSeqNumber, rpcID, packetData)
-                # reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
-                self._write(txData, address)
+                # actually we must always pass a header!
+                if six.PY2:
+                    txData = b'\x00%s%s%s\x00%s' % (encTotalPackets, encSeqNumber, rpcID, packetData)
+                else:
+                    txData = b'\x00%b%b%b\x00%b' % (encoding.to_bin(encTotalPackets), encoding.to_bin(encSeqNumber), encoding.to_bin(rpcID), packetData)
+                # txData = txData.encode()
+                reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
+                # self._write(txData, address)
                 startPos += self.msgSizeLimit
                 seqNumber += 1
         else:
-            self._write(data, address)
+            # self._write(data, address)
+            totalPackets = 1
+            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+            seqNumber = 0
+            encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
+            if six.PY2:
+                txData = b'\x00%s%s%s\x00%s' % (encTotalPackets, encSeqNumber, rpcID, data)
+            else:
+                txData = b'\x00%b%b%b\x00%b' % (encoding.to_bin(encTotalPackets), encoding.to_bin(encSeqNumber), encoding.to_bin(rpcID), data)
+            # txData = txData.encode()
+            self._write(txData, address)
 
     def _write(self, data, address):
         if _Debug:

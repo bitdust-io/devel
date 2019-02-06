@@ -75,6 +75,8 @@ from lib import udp
 
 from main import settings
 
+from services import driver
+
 from dht import dht_service
 
 #------------------------------------------------------------------------------
@@ -472,9 +474,20 @@ class StunClient(automat.Automat):
 
 #------------------------------------------------------------------------------
 
-def safe_stun(udp_port=None, dht_port=None, ):
+def safe_stun(udp_port=None, dht_port=None, result_defer=None):
     from twisted.internet.defer import Deferred
-    result = Deferred()
+    result = result_defer or Deferred()
+
+    if driver.is_started('service_entangled_dht'):
+        if dht_service.node()._joinDeferred and not dht_service.node()._joinDeferred.called:
+            dht_service.node()._joinDeferred.addCallback(lambda ok: safe_stun(udp_port=udp_port, dht_port=dht_port, result_defer=result))
+            dht_service.node()._joinDeferred.addErrback(result.errback)
+            return result
+
+    if not driver.is_on('service_entangled_dht'):
+        result.errback(Exception('service_entangled_dht() is not started'))
+        return result
+    
     try:
         settings.init()
         dht_port = dht_port or settings.getDHTPort()
