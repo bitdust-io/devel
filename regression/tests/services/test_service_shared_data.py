@@ -66,6 +66,8 @@ def test_file_shared_from_customer_1_to_customer_4():
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nfile/upload/start/v1 remote_path=%s local_path=%s : %r\n' % (remote_path, local_path, response.json(), ))
 
+    time.sleep(10)
+
     response = requests.put(
         url=tunnel_url('customer_1', 'share/grant/v1'),
         json={
@@ -96,6 +98,8 @@ def test_file_shared_from_customer_1_to_customer_4():
 #     else:
 #         assert False, 'failed to grant access to shared file: %r' % response.json()
 
+    time.sleep(10)
+
     for i in range(20):
         response = requests.post(
             url=tunnel_url('customer_4', 'file/download/start/v1'),
@@ -106,12 +110,13 @@ def test_file_shared_from_customer_1_to_customer_4():
             },
         )
         assert response.status_code == 200
+        print('\n\nfile/download/start/v1 remote_path=%s destination_folder=%s : %s\n' % (remote_path, download_volume, response.json(), ))
 
         if response.json()['status'] == 'OK':
             print('\n\nfile/download/start/v1 remote_path=%s destination_folder=%s : %r\n' % (remote_path, download_volume, response.json(), ))
             break
 
-        if response.json()['errors'][0].startswith('download shared file is not possible yet, retry...'):
+        if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
             time.sleep(1)
         else:
             assert False, response.json()

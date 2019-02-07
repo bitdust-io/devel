@@ -56,7 +56,6 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
 
 
 def test_customer_family_published_for_customer_1():
-    return True
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
     validate_customer_family(
@@ -74,7 +73,6 @@ def test_customer_family_published_for_customer_1():
 
 
 def test_customer_family_increase_for_customer_4():
-    return True
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
     validate_customer_family(
@@ -116,7 +114,6 @@ def test_customer_family_increase_for_customer_4():
 
 
 def test_customer_family_decrease_for_customer_5():
-    return True
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
     validate_customer_family(
