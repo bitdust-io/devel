@@ -56,6 +56,7 @@ from interface import api
 
 from lib import strng
 from lib import jsn
+from lib import serialization
 
 from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
 from lib.txrestapi.txrestapi.methods import GET, POST, PUT, DELETE, ALL
@@ -121,7 +122,7 @@ def _request_data(request, mandatory_keys=[], default_value={}):
             raise Exception('mandatory json input missed: %s' % mandatory_keys)
         return default_value
     try:
-        data = jsn.loads(request.content.getvalue().decode())
+        data = serialization.BytesToDict(input_request_data, keys_to_text=True, values_to_text=True)
     except:
         raise Exception('invalid json input')
     for k in mandatory_keys:

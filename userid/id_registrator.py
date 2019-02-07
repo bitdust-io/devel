@@ -185,9 +185,9 @@ class IdRegistrator(automat.Automat):
     def msg(self, msgid, *args, **kwargs):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0] % {
-            'login': strng.to_bin(bpio.ReadTextFile(settings.UserNameFilename())),
-            'externalip': strng.to_bin(misc.readExternalIP()),
-            'localip': strng.to_bin(bpio.ReadTextFile(settings.LocalIPFilename())),
+            'login': strng.to_text(bpio.ReadTextFile(settings.UserNameFilename())),
+            'externalip': strng.to_text(misc.readExternalIP()),
+            'localip': strng.to_text(bpio.ReadTextFile(settings.LocalIPFilename())),
         }
         color = 'black'
         if len(msg) == 2:
