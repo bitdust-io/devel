@@ -270,12 +270,12 @@ class PrivateMessage(object):
             'k': self.encrypted_session,
             'p': self.encrypted_body,
         }
-        return serialization.DictToBytes(dct, encoding='utf-8')
+        return serialization.DictToBytes(dct)
 
     @staticmethod
     def deserialize(input_string):
         try:
-            dct = serialization.BytesToDict(input_string, encoding='utf-8')
+            dct = serialization.BytesToDict(input_string, keys_to_text=True)
             _recipient = dct['r']
             _sender = dct['s']
             _encrypted_session_key = dct['k']
@@ -308,8 +308,6 @@ def on_incoming_message(request, info, status, error_message):
         decrypted_message = private_message_object.decrypt()
         json_message = serialization.BytesToDict(
             decrypted_message,
-            encoding='utf-8',
-            errors='strict',
             unpack_types=True,
         )
     except:
@@ -367,8 +365,6 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
         raise Exception('remote identity object not exist in cache')
     message_body = serialization.DictToBytes(
         json_data,
-        encoding='utf-8',
-        errors='strict',
         pack_types=True,
     )
     lg.out(4, "message.do_send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))

@@ -82,6 +82,7 @@ def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
     Returns dict where all keys and values are converted to text strings.
     Only works for simple dicts - one level structure.
     """
+    # TODO: make it fully recursive... for example if list of lists is passed 
     _d = {}
     for k in dct.keys():
         _v = dct[k]
@@ -215,13 +216,11 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
 
 #------------------------------------------------------------------------------
 
-def loads(s, encoding='utf-8', **kw):
+def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
     """
     Calls `json.loads()` with parameters.
     Always translates all json values into binary strings using encoding.
     """
-
-    keys_to_bin = kw.pop('keys_to_bin', False)
 
     def _to_bin(dct):
         for k in dct.keys():

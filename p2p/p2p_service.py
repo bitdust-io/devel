@@ -692,7 +692,7 @@ def SendBroadcastMessage(outpacket):
 def Coin(request, info):
     if _Debug:
         try:
-            input_coins = serialization.BytesToDict(request.Payload)
+            input_coins = serialization.BytesToDict(request.Payload, keys_to_text=True)
         except:
             lg.exc()
             input_coins = []
@@ -706,9 +706,13 @@ def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
     if packet_id is None:
         packet_id = packetid.UniqueID()
     outpacket = signed.Packet(
-        commands.Coin(), my_id.getLocalID(),
-        my_id.getLocalID(), packet_id,
-        serialization.DictToBytes(coins), remote_idurl)
+        commands.Coin(),
+        my_id.getLocalID(),
+        my_id.getLocalID(),
+        packet_id,
+        serialization.DictToBytes(coins, keys_to_text=True),
+        remote_idurl,
+    )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
 
@@ -795,7 +799,7 @@ def Event(request, info):
     """
     if _Debug:
         try:
-            e_json = serialization.BytesToDict(request.Payload)
+            e_json = serialization.BytesToDict(request.Payload, keys_to_text=True)
             e_json['event_id']
             e_json['payload']
         except:
@@ -851,7 +855,8 @@ def Contacts(request, info):
     """
     if _Debug:
         lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s] : %r' % (
-            len(request.Payload), request.PacketID, serialization.BytesToDict(request.Payload)))
+            len(request.Payload), request.PacketID,
+            serialization.BytesToDict(request.Payload, keys_to_text=True, values_to_text=True)))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
 

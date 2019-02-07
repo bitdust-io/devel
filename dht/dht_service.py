@@ -46,7 +46,6 @@ import hashlib
 import random
 import base64
 import optparse
-import json
 import pprint
 
 #------------------------------------------------------------------------------
@@ -451,7 +450,7 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
 
 def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
     try:
-        json_new_value = json.loads(value)
+        json_new_value = jsn.loads(value)
     except:
         # not a json data to be written - this is not valid
         lg.exc()
@@ -470,7 +469,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         return True
     prev_value = node()._dataStore[key]
     try:
-        json_prev_value = json.loads(prev_value)
+        json_prev_value = jsn.loads(prev_value)
     except:
         if _Debug:
             lg.out(_DebugLevel, '        current value in DHT is not a json data, will be overwritten, store OK')
@@ -1067,11 +1066,11 @@ def main(options=None, args=None):
                     set_json_value(args[1], jsn.loads(args[2]),
                                    expire=(int(args[3]) if len(args)>=4 else 9999)).addBoth(_r)
                 elif cmd == 'get_valid_data':
-                    get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
+                    get_valid_data(args[1], rules=jsn.loads(args[2])).addBoth(_r)
                 elif cmd == 'set_valid_data':
-                    set_valid_data(args[1], json.loads(args[2]),
+                    set_valid_data(args[1], jsn.loads(args[2]),
                                    expire=(int(args[3]) if len(args)>=4 else 9999),
-                                   rules=json.loads(args[4])).addBoth(_r)
+                                   rules=jsn.loads(args[4])).addBoth(_r)
                 elif cmd == 'read_customer_suppliers':
                     dht_relations.read_customer_suppliers(args[1]).addBoth(_r)
                 elif cmd == 'write_customer_suppliers':

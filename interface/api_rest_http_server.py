@@ -42,7 +42,6 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import os
-import json
 
 #------------------------------------------------------------------------------
 
@@ -122,7 +121,7 @@ def _request_data(request, mandatory_keys=[], default_value={}):
             raise Exception('mandatory json input missed: %s' % mandatory_keys)
         return default_value
     try:
-        data = json.loads(request.content.getvalue().decode())
+        data = jsn.loads(request.content.getvalue().decode())
     except:
         raise Exception('invalid json input')
     for k in mandatory_keys:

@@ -372,7 +372,7 @@ def on_key_received(newpacket, info, status, error_message):
         return False
     try:
         key_data = block.Data()
-        key_json = serialization.BytesToDict(key_data, as_text_values=True)
+        key_json = serialization.BytesToDict(key_data, keys_to_text=True, values_to_text=True)
         key_id = key_json['key_id']
         key_id, key_object = my_keys.read_key_info(key_json)
         if key_object.isPublic():
@@ -438,7 +438,7 @@ def on_audit_key_received(newpacket, info, status, error_message):
         return False
     try:
         raw_payload = block.Data()
-        json_payload = serialization.BytesToDict(raw_payload, as_text_values=True)
+        json_payload = serialization.BytesToDict(raw_payload, keys_to_text=True, values_to_text=True)
         key_id = json_payload['key_id']
         json_payload['audit']
         public_sample = base64.b64decode(json_payload['audit']['public_sample'])

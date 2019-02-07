@@ -312,7 +312,7 @@ def Unserialize(data):
         lg.out(_DebugLevel, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
 
     try:
-        json_data = serialization.BytesToDict(data)
+        json_data = serialization.BytesToDict(data, keys_to_text=True)
         newobject = Packet(
             Command=strng.to_text(json_data['m']),
             OwnerID=json_data['o'],

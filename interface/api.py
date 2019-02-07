@@ -45,7 +45,6 @@ _DebugLevel = 8
 import os
 import sys
 import time
-import json
 import gc
 
 from twisted.internet.defer import Deferred
@@ -3118,7 +3117,7 @@ def event_send(event_id, json_data=None):
     if json_data and strng.is_string(json_data):
         json_length = len(json_data)
         try:
-            json_payload = json.loads(strng.to_text(json_data or '{}'))
+            json_payload = jsn.loads(strng.to_text(json_data or '{}'))
         except:
             return ERROR('json data payload is not correct')
     evt = events.send(event_id, data=json_payload)
@@ -3644,7 +3643,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
 
     if not isinstance(value, dict):
         try:
-            value = json.loads(value)
+            value = jsn.loads(value)
         except Exception as exc:
             lg.exc()
             return ERROR('input value must be a json')

@@ -8,7 +8,7 @@ from six import PY2, b
 from functools import wraps
 
 from twisted.web.resource import Resource
-from twisted.web.server import NOT_DONE_YET, Request
+from twisted.web.server import NOT_DONE_YET
 from twisted.internet.defer import Deferred
 from twisted.python import log as twlog
 

@@ -949,7 +949,7 @@ class FamilyMember(automat.Automat):
         if response.PacketID in self.suppliers_requests:
             self.suppliers_requests.remove(response.PacketID)
         try:
-            json_payload = serialization.BytesToDict(response.Payload)
+            json_payload = serialization.BytesToDict(response.Payload, keys_to_text=True)
             ecc_map = strng.to_text(json_payload['ecc_map'])
             suppliers_list = list(map(strng.to_bin, json_payload['suppliers']))
         except:
