@@ -1,0 +1,8 @@
+#!/bin/bash
+
+nohup ~/.bitdust/venv36/bin/python dht/dht_service.py -p 10000 -d /tmp/db0 -s "genesis" &
+
+sleep 10
+
+
+

@@ -61,6 +61,7 @@ def dict_values_to_text(dct, encoding='utf-8', errors='strict'):
     Can go recursively, but not super smart.
     If value is a list of dicts - will not be covered. 
     """
+    # TODO: make it fully recursive... for example if list of lists is passed 
     _d = {}
     for k, v in dct.items():
         _v = v
@@ -168,14 +169,14 @@ def unpack_dict(dct, encoding='utf-8', errors='strict'):
 
 #------------------------------------------------------------------------------
 
-def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', **kw):
+def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', 
+          keys_to_text=False, values_to_text=False, **kw):
     """
     Calls `json.dumps()` with parameters.
     Always translates every byte string json value into text using encoding.
     """
 
     enc_errors = kw.pop('errors', 'strict')
-    keys_to_text = kw.pop('keys_to_text', False)
 
     def _to_text(v):
         if isinstance(v, six.binary_type):
@@ -184,6 +185,9 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
 
     if keys_to_text:
         obj = dict_keys_to_text(obj, encoding=encoding, errors=enc_errors)
+
+    if values_to_text:
+        obj = dict_values_to_text(obj, encoding=encoding, errors=enc_errors)
 
     if six.PY2:
         return json.dumps(
