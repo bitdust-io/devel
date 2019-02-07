@@ -92,7 +92,13 @@ def A(event=None, *args, **kwargs):
     global _IdServer
     if _IdServer is None:
         # set automat name and starting state here
-        _IdServer = IdServer('id_server', 'AT_STARTUP', 2, True)
+        _IdServer = IdServer(
+            name='id_server',
+            state='AT_STARTUP',
+            debug_level=2,
+            log_events=True,
+            log_transitions=True,
+        )
     if event is None:
         return _IdServer
     _IdServer.automat(event, *args, **kwargs)
