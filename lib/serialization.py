@@ -31,7 +31,7 @@ from lib import strng
     
 #------------------------------------------------------------------------------
 
-def DictToBytes(dct, encoding='utf-8', errors='strict', keys_to_text=False, values_to_text=False, pack_types=False):
+def DictToBytes(dct, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, pack_types=False):
     """
     Calls `json.dupms()` method for input dict to build bytes output.
     Uses encoding to decode every byte string to text and ensure ascii output.
@@ -57,7 +57,7 @@ def DictToBytes(dct, encoding='utf-8', errors='strict', keys_to_text=False, valu
     )
 
 
-def BytesToDict(inp, encoding='utf-8', errors='strict', keys_to_text=False, values_to_text=False, unpack_types=False):
+def BytesToDict(inp, encoding='latin1', errors='strict', keys_to_text=False, values_to_text=False, unpack_types=False):
     """
     A smart way to extract input bytes into python dictionary object.
     All input bytes will be decoded into text and then loaded via `json.loads()` method.
