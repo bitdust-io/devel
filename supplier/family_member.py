@@ -573,7 +573,7 @@ class FamilyMember(automat.Automat):
 
     def _do_create_possible_revision(self, latest_revision):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = local_customer_meta_info.get('position', -1)
+        possible_position = local_customer_meta_info.get('position', -1) or -1
         possible_suppliers = local_customer_meta_info.get('family_snapshot')
         if possible_position > 0 and my_id.getLocalIDURL() not in possible_suppliers:
             if len(possible_suppliers) > possible_position:
@@ -588,7 +588,7 @@ class FamilyMember(automat.Automat):
 
     def _do_create_revision_from_another_supplier(self, another_revision, another_suppliers, another_ecc_map):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = local_customer_meta_info.get('position', -1)
+        possible_position = local_customer_meta_info.get('position', -1) or -1
         if possible_position >= 0:
             try:
                 another_suppliers[possible_position] = my_id.getLocalIDURL()
@@ -601,7 +601,7 @@ class FamilyMember(automat.Automat):
             })
         return {
             'revision': int(another_revision),
-            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
+            'publisher_idurl': my_id.getLocalIDURL(),  # I will be a publisher of that revision
             'suppliers': another_suppliers,
             'ecc_map': another_ecc_map,
             'customer_idurl': self.customer_idurl,

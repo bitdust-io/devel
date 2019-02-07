@@ -72,6 +72,10 @@ _Rules = {
         'suppliers': [{'op': 'exist', }, ],
         'revision': [{'op': 'exist', }, ],
     },
+    'relation': {
+        'type': [{'op': 'equal', 'arg': 'relation', }, ],
+        'revision': [{'op': 'exist', }, ],
+    },
     'skip_validation': {
         'type': [{'op': 'equal', 'arg': 'skip_validation', }, ],
     },

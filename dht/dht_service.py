@@ -327,15 +327,24 @@ def on_success(result, method, key, *args, **kwargs):
     return result
 
 
-def on_error(err, method, key):
+def on_error(x, method, key):
     if _Debug:
         try:
-            _err = str(err)
+            errmsg = x.value.subFailure.getErrorMessage()
         except:
-            _err = 'unknown error' 
+            try:
+                errmsg = x.getErrorMessage()
+            except:
+                try:
+                    errmsg = x.value
+                except:
+                    try:
+                        errmsg = str(x)
+                    except:
+                        errmsg = 'Unknown Error'
         lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%r' % (
-            method, key, _err))
-    return err
+            method, key, errmsg))
+    return x
 
 #------------------------------------------------------------------------------
 

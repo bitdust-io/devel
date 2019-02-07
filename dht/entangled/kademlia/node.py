@@ -385,19 +385,19 @@ class Node(object):
         outerDf = defer.Deferred()
 
         def lookupFailed(x):
-            if _Debug: print('lookupFailed', x)
+            if _Debug: print('iterativeFindValue.lookupFailed', x)
 
         def storeFailed(x):
-            if _Debug: print('storeFailed', x)
+            if _Debug: print('iterativeFindValue.storeFailed', x)
 
         def refreshRevisionSuccess(ok):
-            if _Debug: print('refreshRevisionSuccess', ok)
+            if _Debug: print('iterativeFindValue.refreshRevisionSuccess', ok)
 
         def refreshRevisionFailed(x):
-            if _Debug: print('refreshRevisionFailed', x)
+            if _Debug: print('iterativeFindValue.refreshRevisionFailed', x)
 
         def checkResult(result):
-            if _Debug: print('checkResult', result)
+            if _Debug: print('iterativeFindValue.checkResult', result)
             if isinstance(result, dict):
                 if key in result:
                     latest_revision = 0

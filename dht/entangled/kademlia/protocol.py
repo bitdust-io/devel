@@ -119,7 +119,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Refresh the remote node's details in the local node's k-buckets
         self._node.addContact(remoteContact)
 
-        if _Debug:
+        if _Debug:                                                                                                                                                                                                                                
             print('                [%s] dht.datagramReceived %d %s from %s %r %s' % (
                 time.time(), len(datagram), str(type(message)), str(address), base64.b64encode(message.id), type(message.id), ))
 

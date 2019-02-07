@@ -3592,6 +3592,10 @@ def dht_value_get(key, record_type='skip_validation'):
     from dht import dht_records
     ret = Deferred()
 
+    record_rules = dht_records.get_rules(record_type)
+    if not record_rules:
+        return ERROR('record must be have correct type and known validation rules')
+
     def _cb(value):
         if isinstance(value, dict):
             if _Debug:
@@ -3626,7 +3630,7 @@ def dht_value_get(key, record_type='skip_validation'):
 
     d = dht_service.get_valid_data(
         key=key,
-        rules=dht_records.get_rules(record_type),
+        rules=record_rules,
         raise_for_result=False,
     )
     d.addCallback(_cb)
@@ -3637,6 +3641,7 @@ def dht_value_get(key, record_type='skip_validation'):
 def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
+
     if not isinstance(value, dict):
         try:
             value = json.loads(value)
@@ -3652,6 +3657,10 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     from dht import dht_service
     from dht import dht_records
     ret = Deferred()
+
+    record_rules = dht_records.get_rules(record_type)
+    if not record_rules:
+        return ERROR('record must be have correct type and known validation rules')
 
     def _cb(response):
         try:
@@ -3713,7 +3722,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
         key=key,
         json_data=value,
         expire=expire or dht_service.KEY_EXPIRE_MAX_SECONDS,
-        rules=dht_records.get_rules(record_type),
+        rules=record_rules,
         collect_results=True,
     )
     d.addCallback(_cb)

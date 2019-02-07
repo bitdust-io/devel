@@ -564,7 +564,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                     value = str(row[1])
                 value = pickle.loads(row[1])
             else:
-                value = pickle.loads(value, encoding='bytes')
+                value = pickle.loads(row[1], encoding='bytes')
         else:
             value = row[1]
 
