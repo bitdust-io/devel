@@ -112,7 +112,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
         try:
-            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
+            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
             json_payload['name']
             json_payload['payload']
         except:
@@ -154,7 +154,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
         try:
-            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
+            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
             json_payload['name']
             json_payload['payload']
         except:
