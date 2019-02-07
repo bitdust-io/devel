@@ -28,7 +28,7 @@ import requests
 from ..testsupport import tunnel_url
 
 
-def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=60, sleep_sec=2, accepted_mistakes=0):
+def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, sleep_sec=2, accepted_mistakes=0):
     count = 0
     response = None
     while True:

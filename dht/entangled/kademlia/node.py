@@ -385,16 +385,76 @@ class Node(object):
         outerDf = defer.Deferred()
 
         def lookupFailed(x):
-            if _Debug: print('iterativeFindValue.lookupFailed', x)
+            try:
+                errmsg = x.value.subFailure.getErrorMessage()
+            except:
+                try:
+                    errmsg = x.getErrorMessage()
+                except:
+                    try:
+                        errmsg = x.value
+                    except:
+                        try:
+                            errmsg = str(x)
+                        except:
+                            errmsg = 'Unknown Error'
+            if isinstance(errmsg, six.binary_type):
+                try:
+                    errmsg = errmsg.decode()
+                except:
+                    errmsg = errmsg.decode(errors='ignore')
+            if _Debug:
+                print('iterativeFindValue.lookupFailed', errmsg)
+            return errmsg
 
         def storeFailed(x):
-            if _Debug: print('iterativeFindValue.storeFailed', x)
+            try:
+                errmsg = x.value.subFailure.getErrorMessage()
+            except:
+                try:
+                    errmsg = x.getErrorMessage()
+                except:
+                    try:
+                        errmsg = x.value
+                    except:
+                        try:
+                            errmsg = str(x)
+                        except:
+                            errmsg = 'Unknown Error'
+            if isinstance(errmsg, six.binary_type):
+                try:
+                    errmsg = errmsg.decode()
+                except:
+                    errmsg = errmsg.decode(errors='ignore')
+            if _Debug:
+                print('iterativeFindValue.storeFailed', base64.b64encode(key), errmsg)
+            return errmsg
 
         def refreshRevisionSuccess(ok):
             if _Debug: print('iterativeFindValue.refreshRevisionSuccess', ok)
 
         def refreshRevisionFailed(x):
-            if _Debug: print('iterativeFindValue.refreshRevisionFailed', x)
+            try:
+                errmsg = x.value.subFailure.getErrorMessage()
+            except:
+                try:
+                    errmsg = x.getErrorMessage()
+                except:
+                    try:
+                        errmsg = x.value
+                    except:
+                        try:
+                            errmsg = str(x)
+                        except:
+                            errmsg = 'Unknown Error'
+            if isinstance(errmsg, six.binary_type):
+                try:
+                    errmsg = errmsg.decode()
+                except:
+                    errmsg = errmsg.decode(errors='ignore')
+            if _Debug:
+                print('iterativeFindValue.refreshRevisionFailed', errmsg)
+            return errmsg
 
         def checkResult(result):
             if _Debug: print('iterativeFindValue.checkResult', result)

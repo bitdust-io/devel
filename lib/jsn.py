@@ -33,100 +33,68 @@ import six
 
 #------------------------------------------------------------------------------
 
-def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', **kw):
+def dict_keys_to_text(dct, encoding='utf-8', errors='strict'):
     """
-    Calls `json.dumps()` with parameters.
-    Always translates every byte string json value into text using encoding.
+    Returns dict where all keys are converted to text strings.
+    Only works for keys in a "root" level of the dict.
     """
-
-    enc_errors = kw.pop('errors', 'strict')
-    keys_to_text = kw.pop('keys_to_text', False)
-
-    def _to_text(v):
-        if isinstance(v, six.binary_type):
-            v = v.decode(encoding, errors=enc_errors)
-        return v
-
-    def _keys_to_text(o, enc):
-        return {(k.decode(enc, errors=enc_errors) if isinstance(k, six.binary_type) else k) : v for k, v in o.items()}
-
-    if keys_to_text:
-        obj = _keys_to_text(obj, enc=encoding)
-
-    if six.PY2:
-        return json.dumps(
-            obj=obj,
-            indent=indent,
-            separators=separators,
-            sort_keys=sort_keys,
-            ensure_ascii=ensure_ascii,
-            default=_to_text,
-            encoding=encoding,
-            **kw
-        )
-
-    else:
-        return json.dumps(
-            obj=obj,
-            indent=indent,
-            separators=separators,
-            sort_keys=sort_keys,
-            ensure_ascii=ensure_ascii,
-            default=_to_text,
-            **kw
-        )
+    return {
+        (k.decode(encoding, errors=errors) if isinstance(k, six.binary_type) else k) : v
+        for k, v in dct.items()
+    }
 
 
-#------------------------------------------------------------------------------
-
-def loads(s, encoding='utf-8', **kw):
+def dict_keys_to_bin(dct, encoding='utf-8', errors='strict'):
     """
-    Calls `json.loads()` with parameters.
-    Always translates all json values into binary strings using encoding.
+    Returns dict where all keys are converted to binary strings.
+    Only works for keys in a "root" level of the dict.
     """
-
-    keys_to_bin = kw.pop('keys_to_bin', False)
-
-    def _to_bin(dct):
-        for k in dct.keys():
-            if isinstance(dct[k], six.text_type):
-                dct[k] = dct[k].encode(encoding)
-        if keys_to_bin:
-            return {(k.encode(encoding) if isinstance(k, six.text_type) else k) : v for k, v in dct.items()}
-        return dct
-
-    return json.loads(
-        s=s,
-        object_hook=_to_bin,
-        **kw
-    )
+    return {
+        (k.encode(encoding, errors=errors) if isinstance(k, six.text_type) else k) : v
+        for k, v in dct.items()
+    }
 
 
-def loads_text(s, encoding='utf-8', **kw):
+def dict_values_to_text(dct, encoding='utf-8', errors='strict'):
     """
-    Calls `json.loads()` with parameters.
-    Always translates all json keys and values into unicode strings.
+    Returns dict where all values are converted to text strings.
+    Can go recursively, but not super smart.
+    If value is a list of dicts - will not be covered. 
     """
+    _d = {}
+    for k, v in dct.items():
+        _v = v
+        if isinstance(_v, six.binary_type):
+            _v = _v.decode(encoding, errors=errors)
+        elif isinstance(_v, dict):
+            _v = dict_values_to_text(_v, encoding=encoding, errors=errors)
+        elif isinstance(_v, list):
+            _v = [i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v]
+        elif isinstance(_v, tuple):
+            _v = tuple([i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v])
+        _d[k] = _v
+    return _d
 
-    enc_errors = kw.pop('errors', 'strict')
 
-    def _to_text(dct):
-        ret = {}
-        for k in dct.keys():
-            v_ = dct[k]
-            if isinstance(v_, six.binary_type):
-                v_ = v_.decode(encoding, errors=enc_errors)
-            k_ = k
-            if isinstance(k_, six.binary_type):
-                k_ = k_.decode(encoding, errors=enc_errors)
-            ret[k_] = v_
-        return dct
-
-    return json.loads(
-        s=s,
-        object_hook=_to_text,
-        **kw
-    )
+def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
+    """
+    Returns dict where all keys and values are converted to text strings.
+    Only works for simple dicts - one level structure.
+    """
+    _d = {}
+    for k in dct.keys():
+        _v = dct[k]
+        if isinstance(_v, six.binary_type):
+            _v = _v.decode(encoding, errors=errors)
+        elif isinstance(_v, list):
+            _v = [i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v]
+        elif isinstance(_v, tuple):
+            _v = tuple([i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v])
+        _k = k
+        if isinstance(_k, six.binary_type):
+            _k = _k.decode(encoding, errors=errors)
+        _d[_k] = _v
+    return _d
 
 #------------------------------------------------------------------------------
 
@@ -196,3 +164,87 @@ def unpack_dict(dct, encoding='utf-8', errors='strict'):
             _v = tuple([unpack_dict(i, encoding=encoding, errors=errors)['i'] for i in _v])
         _d[_k] = _v
     return _d
+
+
+#------------------------------------------------------------------------------
+
+def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False, encoding='utf-8', **kw):
+    """
+    Calls `json.dumps()` with parameters.
+    Always translates every byte string json value into text using encoding.
+    """
+
+    enc_errors = kw.pop('errors', 'strict')
+    keys_to_text = kw.pop('keys_to_text', False)
+
+    def _to_text(v):
+        if isinstance(v, six.binary_type):
+            v = v.decode(encoding, errors=enc_errors)
+        return v
+
+    if keys_to_text:
+        obj = dict_keys_to_text(obj, encoding=encoding, errors=enc_errors)
+
+    if six.PY2:
+        return json.dumps(
+            obj=obj,
+            indent=indent,
+            separators=separators,
+            sort_keys=sort_keys,
+            ensure_ascii=ensure_ascii,
+            default=_to_text,
+            encoding=encoding,
+            **kw
+        )
+
+    else:
+        return json.dumps(
+            obj=obj,
+            indent=indent,
+            separators=separators,
+            sort_keys=sort_keys,
+            ensure_ascii=ensure_ascii,
+            default=_to_text,
+            **kw
+        )
+
+
+#------------------------------------------------------------------------------
+
+def loads(s, encoding='utf-8', **kw):
+    """
+    Calls `json.loads()` with parameters.
+    Always translates all json values into binary strings using encoding.
+    """
+
+    keys_to_bin = kw.pop('keys_to_bin', False)
+
+    def _to_bin(dct):
+        for k in dct.keys():
+            if isinstance(dct[k], six.text_type):
+                dct[k] = dct[k].encode(encoding)
+        if keys_to_bin:
+            return {(k.encode(encoding) if isinstance(k, six.text_type) else k) : v for k, v in dct.items()}
+        return dct
+
+    return json.loads(
+        s=s,
+        object_hook=_to_bin,
+        **kw
+    )
+
+#------------------------------------------------------------------------------
+
+def loads_text(s, encoding='utf-8', **kw):
+    """
+    Calls `json.loads()` with parameters.
+    Always translates all json keys and values into unicode strings.
+    """
+
+    enc_errors = kw.pop('errors', 'strict')
+
+    return json.loads(
+        s=s,
+        object_hook=lambda itm: dict_items_to_text_simple(itm, encoding=encoding, errors=enc_errors),
+        **kw
+    )

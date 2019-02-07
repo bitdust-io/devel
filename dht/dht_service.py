@@ -393,7 +393,7 @@ def delete_key(key):
 
 def read_json_response(response, key, result_defer=None, as_bytes=False):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.read_json_response [%s]' % base64.b64encode(key))
+        lg.out(_DebugLevel, 'dht_service.read_json_response [%r] : %r' % (key, response))
     value = None
     if isinstance(response, list):
         if result_defer:
@@ -427,10 +427,10 @@ def read_json_response(response, key, result_defer=None, as_bytes=False):
 
 def get_json_value(key, as_bytes=False):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%r]' % key)
     ret = Deferred()
     d = get_value(key)
-    d.addCallback(read_json_response, key_to_hash(key), ret, as_bytes)
+    d.addCallback(read_json_response, key, ret, as_bytes)
     d.addErrback(ret.errback)
     return ret
 
