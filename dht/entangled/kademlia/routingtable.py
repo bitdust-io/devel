@@ -27,7 +27,7 @@ from . import kbucket  # @UnresolvedImport
 from .protocol import TimeoutError  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 class RoutingTable(object):

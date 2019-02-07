@@ -245,6 +245,6 @@ def loads_text(s, encoding='utf-8', **kw):
 
     return json.loads(
         s=s,
-        object_hook=lambda itm: dict_items_to_text_simple(itm, encoding=encoding, errors=enc_errors),
+        object_hook=lambda itm: dict_items_to_text(itm, encoding=encoding, errors=enc_errors),
         **kw
     )

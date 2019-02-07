@@ -257,8 +257,8 @@ class Node(object):
                 except:
                     errmsg = errmsg.decode(errors='ignore')
             if _Debug:
-                print('findNodeFailed', _Debug)
-            return _Debug
+                print('findNodeFailed', errmsg)
+            return errmsg
 
         def storeRPCsCollected(store_results, store_nodes):
             if _Debug:
@@ -427,7 +427,7 @@ class Node(object):
                 except:
                     errmsg = errmsg.decode(errors='ignore')
             if _Debug:
-                print('iterativeFindValue.storeFailed', base64.b64encode(key), errmsg)
+                print('iterativeFindValue.storeFailed', errmsg)
             return errmsg
 
         def refreshRevisionSuccess(ok):
@@ -643,6 +643,7 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_store')
+        if _Debug: print('rpcmethod.store %r' % base64.b64encode(key))
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -677,12 +678,16 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_findNode')
+        if _Debug: print('rpcmethod.findNode %r' % base64.b64encode(key))
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
         else:
             rpcSenderID = None
-        contacts = self._routingTable.findCloseNodes(key, constants.k, rpcSenderID)
+        try:
+            contacts = self._routingTable.findCloseNodes(key, constants.k, rpcSenderID)
+        except Exception as exc:
+            print(exc)
         contactTriples = []
         for contact in contacts:
             contactTriples.append((contact.id, contact.address, contact.port))
@@ -703,7 +708,7 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_findValue')
-        if _Debug: print('findValue %r' % base64.b64encode(key))
+        if _Debug: print('rpcmethod.findValue %r' % base64.b64encode(key))
         if key in self._dataStore:
             exp = None
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
@@ -713,8 +718,12 @@ class Node(object):
             published = None
             if originalPublishTimeCall:
                 published = originalPublishTimeCall(key)
+            if _Debug:
+                print('    found key in local dataStore %r' % self._dataStore[key])
             return {key: self._dataStore[key], 'expireSeconds': exp, 'originallyPublished': published, }
         else:
+            if _Debug:
+                print('    NOT found key in local dataStore')
             return self.findNode(key, **kwargs)
 
 #    def _distance(self, keyOne, keyTwo):

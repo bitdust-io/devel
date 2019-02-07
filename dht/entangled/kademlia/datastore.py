@@ -496,6 +496,8 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
         self._db.text_factory = str
         if createDB:
             self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
+            if _Debug:
+                print('Created empty table for DHT records')
         self._cursor = self._db.cursor()
 
     def revision(self, key):
@@ -520,13 +522,14 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
         if new_revision is None:
             new_revision = self.revision(key) + 1
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
+        opID = encoding.encode_hex(encoding.to_bin(originalPublisherID)) 
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
                 encodedKey,
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 lastPublished,
                 originallyPublished,
-                encoding.encode_hex(str(originalPublisherID)),
+                opID,
                 expireSeconds,
                 new_revision,
             ))
@@ -537,7 +540,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 lastPublished,
                 originallyPublished,
-                encoding.encode_hex(str(originalPublisherID)),
+                opID,
                 expireSeconds,
                 new_revision,
                 encodedKey,
@@ -546,10 +549,11 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 print('updated existing value for key %s' % base64.b64encode(key))
 
     def getItem(self, key, unpickle=False):
-        result = None
+#         result = None
 #         try:
+        reqKey = encoding.encode_hex(key)
         self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-            'reqKey': encoding.encode_hex(key),
+            'reqKey': reqKey,
         })
 
         row = self._cursor.fetchone()
@@ -602,13 +606,14 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 else:
                     value = pickle.loads(value, encoding='bytes')
             try:
-                _k = encoding.decode_hex(row[0], as_string=True)
+                _k = encoding.decode_hex(row[0])
                 _k64 = base64.b64encode(encoding.decode_hex(row[0])).decode()
                 _opID = None if not row[4] else base64.b64encode(encoding.decode_hex(row[4])).decode()
-            except:
-                traceback.print_exc()
+            except Exception as exc:
+                if _Debug:
+                    print('getAllItems', exc)
             items.append(dict(
-                key=_k,
+                key=encoding.to_text(_k, errors='replace'),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],

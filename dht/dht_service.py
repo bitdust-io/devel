@@ -400,7 +400,7 @@ def read_json_response(response, key, result_defer=None, as_bytes=False):
             result_defer.callback(response)
         return None
     if isinstance(response, dict):
-        if key in response and response.get('values'):
+        if response.get('values'):
             try:
                 latest = 0
                 if as_bytes:
@@ -1051,9 +1051,11 @@ def main(options=None, args=None):
                 pass
 
             elif len(args) > 0:
+
                 def _r(x):
                     lg.info(x)
-                    reactor.stop()  #@UndefinedVariable
+                    # reactor.stop()  #@UndefinedVariable
+
                 cmd = args[0]
                 if cmd == 'get':
                     get_value(args[1]).addBoth(_r)
@@ -1091,21 +1093,26 @@ def main(options=None, args=None):
             lg.exc()
 
     seeds = []
-    for dht_node_str in options.seeds.split(','):
-        if dht_node_str.strip():
-            try:
-                dht_node = dht_node_str.strip().split(':')
-                dht_node_host = dht_node[0].strip()
-                dht_node_port = int(dht_node[1].strip())
-            except:
-                continue
-            seeds.append((dht_node_host, dht_node_port, ))
-    
-    if not seeds:
-        from dht import known_nodes
-        seeds = known_nodes.nodes()
 
-    lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
+    if options.seeds in ['genesis', 'root', b'genesis', b'root', ]:
+        lg.out(_DebugLevel, 'Starting genesis node!!!!!!!!!!!!!!!!!!!!')
+    
+    else:
+        for dht_node_str in options.seeds.split(','):
+            if dht_node_str.strip():
+                try:
+                    dht_node = dht_node_str.strip().split(':')
+                    dht_node_host = dht_node[0].strip()
+                    dht_node_port = int(dht_node[1].strip())
+                except:
+                    continue
+                seeds.append((dht_node_host, dht_node_port, ))
+        
+        if not seeds:
+            from dht import known_nodes
+            seeds = known_nodes.nodes()
+
+        lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
 
     if options.delayed:
         lg.out(_DebugLevel, 'Wait %d seconds before join the network' % options.delayed)
