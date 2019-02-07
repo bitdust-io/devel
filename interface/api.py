@@ -1551,7 +1551,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         if _Debug:
             lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (
                 active_share.key_id, callback_id,))
-        active_share.remove_connected_callback(callback_id)
+        from twisted.internet import reactor  # @UnresolvedImport
+        reactor.callLater(0, active_share.remove_connected_callback, callback_id)  # @UndefinedVariable
         _start_restore()
         return True
 

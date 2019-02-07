@@ -427,8 +427,10 @@ class SharedAccessCoordinator(automat.Automat):
         events.send('share-connected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
-        for cb_id, cb in self.connected_callbacks.items():
-            cb(cb_id, True)
+        for cb_id in list(self.connected_callbacks.keys()):
+            cb = self.connected_callbacks.get(cb_id)
+            if cb:
+                cb(cb_id, True)
 
     def doReportDisconnected(self, *args, **kwargs):
         """
