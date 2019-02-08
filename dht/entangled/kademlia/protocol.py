@@ -331,7 +331,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         except Exception as exc:
             print('_sendResponse', exc)
         if _Debug:
-            print('                _sendResponse', (contact.address, contact.port), rpcID, response)
+            print('                _sendResponse', (contact.address, contact.port), base64.b64encode(rpcID), response)
         if self._counter:
             self._counter('_sendResponse')
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
@@ -344,7 +344,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
         if _Debug:
-            print('                _sendError', (contact.address, contact.port), rpcID, exceptionType, exceptionMessage)
+            print('                _sendError', (contact.address, contact.port), base64.b64encode(rpcID), exceptionType, exceptionMessage)
         if self._counter:
             self._counter('_sendError')
         self._send(encodedMsg, rpcID, (contact.address, contact.port))

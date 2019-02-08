@@ -189,7 +189,7 @@ def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publis
         json_data={
             'type': 'suppliers',
             'timestamp': utime.get_sec1970(),
-            'revision': revision,
+            'revision': 0 if revision is None else revision,
             'publisher_idurl': publisher_idurl,
             'customer_idurl': customer_idurl,
             'ecc_map': ecc_map,

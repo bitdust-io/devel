@@ -65,12 +65,12 @@ def read_customer_suppliers(customer_idurl):
 
     def _do_verify(dht_value):
         try:
-            _ecc_map = dht_value['ecc_map']
+            _ecc_map = strng.to_text(dht_value['ecc_map'])
             _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
             _publisher_idurl = dht_value.get('publisher_idurl')
             _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
-            _revision = dht_value.get('revision')
-            _timestamp = dht_value.get('timestamp')
+            _revision = int(dht_value.get('revision'))
+            _timestamp = int(dht_value.get('timestamp'))
         except:
             lg.exc()
             result.callback(None)
