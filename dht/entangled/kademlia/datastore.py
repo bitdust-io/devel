@@ -39,7 +39,7 @@ except:
 
 PICKLE_PROTOCOL = 2
 
-_Debug = False
+_Debug = True
 
 
 class DataStore(DictMixin):
@@ -612,7 +612,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 if _Debug:
                     print('getAllItems', exc)
             items.append(dict(
-                key=encoding.to_text(_k, errors='replace'),
+                # key=encoding.to_text(_k, errors='replace'),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],

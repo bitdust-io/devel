@@ -284,7 +284,7 @@ def StopOverridingIdentity(idurl):
     if _Debug:
         lg.out(4, 'identitycache.StopOverridingIdentity   removed overridden source for %s' % idurl)
         if result:
-            lg.out('    previous overridden identity was %d bytes' % len(result))
+            lg.out(4, '    previous overridden identity was %d bytes' % len(result))
         lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
     return result
 
