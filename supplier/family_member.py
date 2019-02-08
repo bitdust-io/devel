@@ -565,9 +565,9 @@ class FamilyMember(automat.Automat):
     def _do_create_first_revision(self, request):
         return {
             'revision': 0,
-            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of the first revision
+            'publisher_idurl': my_id.getLocalIDURL(),  # I will be a publisher of the first revision
             'suppliers': request.get('family_snapshot'),
-            'ecc_map': request['ecc_map'],
+            'ecc_map': request.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
         }
 
@@ -580,7 +580,7 @@ class FamilyMember(automat.Automat):
                 possible_suppliers[possible_position] = my_id.getLocalIDURL()
         return {
             'revision': latest_revision,
-            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
+            'publisher_idurl': my_id.getLocalIDURL(),  # I will be a publisher of that revision
             'suppliers': possible_suppliers,
             'ecc_map': local_customer_meta_info.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
