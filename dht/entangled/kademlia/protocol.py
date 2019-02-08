@@ -100,15 +100,15 @@ class KademliaProtocol(protocol.DatagramProtocol):
         if rawResponse:
             df._rpcRawResponse = True
 
-        # Set the RPC timeout timer
-        timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, msg.id)  # IGNORE:E1101
         # Transmit the data
         if _Debug:
             print('                [%s] sendRPC' % time.time(), (method, base64.b64encode(msg.id), type(msg.id), contact.address, contact.port))
         if self._counter:
             self._counter('sendRPC')
-        self._send(encodedMsg, msg.id, (contact.address, contact.port))
+        # Set the RPC timeout timer
+        timeoutCall = reactor.callLater(constants.rpcTimeout * 2, self._msgTimeout, msg.id)  # IGNORE:E1101
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
+        self._send(encodedMsg, msg.id, (contact.address, contact.port))
         return df
 
     def dispatch(self, datagram, address):
@@ -139,7 +139,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
             else:
                 if _Debug:
                     print('                     RPC Request message %r %s was not identified, currently sent: %r' % (
-                        base64.b64encode(message.id), type(message.id), self._sentMessages.keys()))
+                        base64.b64encode(message.id), type(message.id),
+                        [base64.b64encode(k) for k in self._sentMessages.keys()], ))
 
         elif isinstance(message, msgtypes.ResponseMessage):
             message_response = message.response
@@ -185,7 +186,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # TODO: we should probably do something with this...
                 if _Debug:
                     print('                    message %r %s was not identified, currently sent: %r' % (
-                        base64.b64encode(message.id), type(message.id), self._sentMessages.keys()))
+                        base64.b64encode(message.id), type(message.id),
+                        [base64.b64encode(k) for k in self._sentMessages.keys()], ))
         # if _Debug:
         #     print('                dt=%s' % (time.time() - _t))
         return True
@@ -400,7 +402,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         if self._counter:
             self._counter('_msgTimeout')
         if _Debug:
-            print('                [%s] _msgTimeout' % time.time(), (base64.b64encode(messageID), type(messageID)))
+            print('                [%s] _msgTimeout' % time.time(), (base64.b64encode(messageID), type(messageID)),
+                  [base64.b64encode(k) for k in self._sentMessages.keys()], )
         # Find the message that timed out
         if messageID in self._sentMessages:
             remoteContactID, df = self._sentMessages[messageID][0:2]
@@ -417,6 +420,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # Reset the RPC timeout timer
                 timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, messageID)  # IGNORE:E1101
                 self._sentMessages[messageID] = (remoteContactID, df, timeoutCall)
+                if _Debug:
+                    print('            reset timeout for', base64.b64encode(messageID))
                 return
             del self._sentMessages[messageID]
             # The message's destination node is now considered to be dead;
