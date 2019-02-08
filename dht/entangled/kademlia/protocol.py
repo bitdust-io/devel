@@ -106,7 +106,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         if self._counter:
             self._counter('sendRPC')
         # Set the RPC timeout timer
-        timeoutCall = reactor.callLater(constants.rpcTimeout * 2, self._msgTimeout, msg.id)  # IGNORE:E1101
+        timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, msg.id)  # IGNORE:E1101
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
         self._send(encodedMsg, msg.id, (contact.address, contact.port))
         return df
@@ -160,18 +160,18 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     df.callback((message, address))
                 elif isinstance(message, msgtypes.ErrorMessage):
                     # The RPC request raised a remote exception; raise it locally
-                    if message.exceptionType.startswith('exceptions.'):
-                        exceptionClassName = message.exceptionType[11:]
-                    else:
-                        localModuleHierarchy = self.__module__.split('.')
-                        remoteHierarchy = message.exceptionType.split('.')
-                        # strip the remote hierarchy
-                        while remoteHierarchy[0] == localModuleHierarchy[0]:
-                            remoteHierarchy.pop(0)
-                            localModuleHierarchy.pop(0)
-                        exceptionClassName = '.'.join(remoteHierarchy)
+#                     if message.exceptionType.startswith('exceptions.'):
+#                         exceptionClassName = message.exceptionType[11:]
+#                     else:
+#                         localModuleHierarchy = self.__module__.split('.')
+#                         remoteHierarchy = message.exceptionType.split('.')
+#                         # strip the remote hierarchy
+#                         while remoteHierarchy[0] == localModuleHierarchy[0]:
+#                             remoteHierarchy.pop(0)
+#                             localModuleHierarchy.pop(0)
+#                         exceptionClassName = '.'.join(remoteHierarchy)
                     remoteException = None
-                    exc_msg = message_response + ' from %s' % str(address)
+                    exc_msg = message_response  # + ' from %s' % str(address)
                     remoteException = Exception(exc_msg)
                     if _Debug:
                         print('                    respond with error "%s"' % exc_msg)
@@ -418,7 +418,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                         df.errback(failure.Failure(TimeoutError(remoteContactID)))
                         return
                 # Reset the RPC timeout timer
-                timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, messageID)  # IGNORE:E1101
+                timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, messageID)  # IGNORE:E1101
                 self._sentMessages[messageID] = (remoteContactID, df, timeoutCall)
                 if _Debug:
                     print('            reset timeout for', base64.b64encode(messageID))

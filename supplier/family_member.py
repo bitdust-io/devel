@@ -439,15 +439,7 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        d = dht_relations.write_customer_suppliers(
-            customer_idurl=self.customer_idurl,
-            suppliers_list=self.transaction['suppliers'],
-            ecc_map=self.transaction['ecc_map'],
-            revision=self.transaction['revision'],
-            publisher_idurl=self.transaction['publisher_idurl'],
-        )
-        d.addCallback(self._on_dht_write_success)
-        d.addErrback(self._on_dht_write_failed)
+        self._do_write_transaction(0)
 
     def doNotifyConnected(self, *args, **kwargs):
         """
@@ -827,6 +819,17 @@ class FamilyMember(automat.Automat):
         lg.err('invalid request command')
         return None
 
+    def _do_write_transaction(self, retries):
+        d = dht_relations.write_customer_suppliers(
+            customer_idurl=self.customer_idurl,
+            suppliers_list=self.transaction['suppliers'],
+            ecc_map=self.transaction['ecc_map'],
+            revision=self.transaction['revision'],
+            publisher_idurl=self.transaction['publisher_idurl'],
+        )
+        d.addCallback(self._on_dht_write_success)
+        d.addErrback(self._on_dht_write_failed, retries)
+
     def _on_family_refresh_task(self):
         self.automat('family-refresh')
 
@@ -854,9 +857,18 @@ class FamilyMember(automat.Automat):
         self.transaction = None
         self.automat('dht-write-ok', dht_result)
 
-    def _on_dht_write_failed(self, err):
+    def _on_dht_write_failed(self, err, retries):
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_write_failed')
+            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %r' % err)
+        err_msg = strng.to_text(err)
+        if err_msg.count('current revision is') and retries < 3:
+            try:
+                current_revision = int(err_msg[err_msg.index('current revision is'):].replace('current revision is ', ''))
+            except:
+                current_revision = self.transaction['revision']
+            self.transaction['revision'] = current_revision + 1
+            self._do_write_transaction(retries + 1)
+            return
         self.transaction = None
         self.dht_info = None
         self.automat('dht-write-fail')

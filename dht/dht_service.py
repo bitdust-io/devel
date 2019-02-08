@@ -510,7 +510,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         if new_revision < prev_revision:
             if _Debug:
                 lg.out(_DebugLevel, '        new json data must increment revision number, store operation FAILED')
-            raise ValueError('new json data must increment revision number')
+            raise ValueError('new json data must increment revision number, current revision is %d' % prev_revision)
         if new_revision == prev_revision:
             if prev_record_type == 'suppliers':
                 prev_ecc_map = json_prev_value.get('ecc_map')
@@ -518,13 +518,13 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
                 if prev_ecc_map and new_ecc_map != prev_ecc_map:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
-                    raise ValueError('new json data have same revision but different ecc_map')
+                    raise ValueError('new json data have same revision but different ecc_map, current revision is %d' % prev_revision)
                 prev_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_prev_value.get('suppliers', [])]
                 new_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_new_value.get('suppliers', [])]
                 if prev_suppliers != new_suppliers:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different suppliers list, store operation FAILED')
-                    raise ValueError('new json data have same revision but different suppliers list')
+                    raise ValueError('new json data have same revision but different suppliers list, current revision is %d' % prev_revision)
     if _Debug:
         lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
     return True
@@ -967,14 +967,13 @@ class KademliaProtocolConveyor(KademliaProtocol):
         self.sending_worker = None
         self._counter = count
 
-    def datagramReceived(self, datagram, address):
-        count('dht_datagramReceived')
-        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL:
-            lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
-        self.receiving_queue.append((datagram, address, ))
-        if self.receiving_worker is None:
-            self._process_incoming()
-            # self.receiving_worker = reactor.callLater(0, self._process_incoming)
+#     def datagramReceived(self, datagram, address):
+#         count('dht_datagramReceived')
+#         if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL:
+#             lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
+#         self.receiving_queue.append((datagram, address, ))
+#         if self.receiving_worker is None:
+#             self._process_incoming()  # self.receiving_worker = reactor.callLater(0, self._process_incoming)
 
     def _process_incoming(self):
         if len(self.receiving_queue) == 0:
@@ -987,15 +986,14 @@ class KademliaProtocolConveyor(KademliaProtocol):
             t = RECEIVING_FREQUENCY_SEC
         self.receiving_worker = reactor.callLater(t, self._process_incoming)  #@UndefinedVariable
 
-    def _send(self, data, rpcID, address):
-        count('dht_send')
-        if _Debug:
-            if len(self.sending_queue) > 50:
-                lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
-        self.sending_queue.append((data, rpcID, address, ))
-        if self.receiving_worker is None:
-            self._process_outgoing()
-            # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
+#     def _send(self, data, rpcID, address):
+#         count('dht_send')
+#         if _Debug:
+#             if len(self.sending_queue) > 50:
+#                 lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
+#         self.sending_queue.append((data, rpcID, address, ))
+#         if self.receiving_worker is None:
+#             self._process_outgoing() # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
 
     def _process_outgoing(self):
         if len(self.sending_queue) == 0:
