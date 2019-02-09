@@ -866,7 +866,10 @@ class FamilyMember(automat.Automat):
                 current_revision = int(err_msg[err_msg.index('current revision is'):].replace('current revision is ', ''))
             except:
                 current_revision = self.transaction['revision']
-            self.transaction['revision'] = current_revision + 1
+            current_revision += 1
+            self.transaction['revision'] = current_revision
+            if _Debug:
+                lg.warn('recognized "DHT write operation failed" because of late revision, increase revision to %d and retry' % current_revision)
             self._do_write_transaction(retries + 1)
             return
         self.transaction = None

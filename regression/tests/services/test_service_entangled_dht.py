@@ -57,7 +57,11 @@ VALIDATORS_NODES = [
 
 
 def read_value(node, key, expected_data, record_type='skip_validation', retries=2):
+    fallback_observer = 'supplier_1'
+    response = None
     for i in range(retries + 1):
+        if i == retries - 1:
+            node = fallback_observer
         response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )))
         try:
             assert response.status_code == 200

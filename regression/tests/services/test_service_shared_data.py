@@ -31,8 +31,6 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 def test_file_shared_from_customer_1_to_customer_4():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
-    # TODO: to be continue
-    # return True
 
     response = requests.post(url=tunnel_url('customer_1', 'share/create/v1'), json={'key_size': 1024, }, )
     assert response.status_code == 200
@@ -80,25 +78,7 @@ def test_file_shared_from_customer_1_to_customer_4():
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
 
-#     for i in range(20):
-#         response = requests.put(
-#             url=tunnel_url('customer_1', 'share/grant/v1'),
-#             json={
-#                 'trusted_global_id': 'customer_4@is_8084',
-#                 'key_id': key_id,
-#             },
-#         )
-#         assert response.status_code == 200
-#         if response.json()['status'] == 'OK':
-#             assert response.json()['status'] == 'OK', response.json()
-#             print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
-#             break
-#         print('\nretry share/grant/v1\n')
-#         time.sleep(1)
-#     else:
-#         assert False, 'failed to grant access to shared file: %r' % response.json()
-
-    time.sleep(10)
+    time.sleep(5)
 
     for i in range(20):
         response = requests.post(
@@ -117,7 +97,7 @@ def test_file_shared_from_customer_1_to_customer_4():
             break
 
         if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
-            time.sleep(1)
+            time.sleep(5)
         else:
             assert False, response.json()
 
