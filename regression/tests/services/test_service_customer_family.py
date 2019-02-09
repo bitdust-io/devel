@@ -28,13 +28,14 @@ import requests
 from ..testsupport import tunnel_url
 
 
-def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=10, sleep_sec=3, accepted_mistakes=1):
-    count = 0
-    response = None
+def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=10, sleep_sec=3, accepted_mistakes=0):
 
     def _validate(obs):
+        response = None
+        count = 0
         while True:
             if count >= retries:
+                print('\nfailed after %d retries')
                 return False
             response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
             assert response.status_code == 200
@@ -57,8 +58,8 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
 
     if not _validate(observer_node):
         if not _validate('supplier_1'):
-            assert False, 'customer family [%s] [%s] was not re-published correctly again after %d attempts, observer [%s] and another node still see wrong info' % (
-                customer_node, expected_ecc_map, count, observer_node, )
+            assert False, 'customer family [%s] [%s] was not re-published correctly, observer [%s] and another node still see wrong info' % (
+                customer_node, expected_ecc_map, observer_node, )
 
     return True
 
