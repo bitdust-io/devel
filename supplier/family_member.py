@@ -858,13 +858,14 @@ class FamilyMember(automat.Automat):
         self.automat('dht-write-ok', dht_result)
 
     def _on_dht_write_failed(self, err, retries):
-        if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %r' % err)
         err_msg = strng.to_text(err)
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %s' % err)
         if err_msg.count('current revision is') and retries < 3:
             try:
                 current_revision = int(err_msg[err_msg.index('current revision is'):].replace('current revision is ', ''))
             except:
+                lg.exc()
                 current_revision = self.transaction['revision']
             current_revision += 1
             self.transaction['revision'] = current_revision

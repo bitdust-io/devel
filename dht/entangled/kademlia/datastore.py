@@ -533,7 +533,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 new_revision,
             ))
             if _Debug:
-                print('stored new value for key %s' % base64.b64encode(key))
+                print('                    setItem  stored new value for key %s with revision %d' % (base64.b64encode(key), new_revision))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
@@ -545,7 +545,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 encodedKey,
             ))
             if _Debug:
-                print('updated existing value for key %s' % base64.b64encode(key))
+                print('                    setItem  updated existing value for key %s with revision %d' % (base64.b64encode(key), new_revision))
 
     def getItem(self, key, unpickle=False):
 #         result = None
@@ -558,7 +558,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
         row = self._cursor.fetchone()
         if not row:
             if _Debug:
-                print('did not found key %s in dataStore' % base64.b64encode(key))
+                print('                        getItem %s  return None : did not found key in dataStore' % base64.b64encode(key))
             return None
 
         if unpickle:
@@ -588,7 +588,7 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
 #                 traceback.print_exc()
 #             return None
         if _Debug:
-            print('found one record for key %s' % base64.b64encode(key))
+            print('                        getItem   found one record for key %s, revision is %d' % (base64.b64encode(key), row[6]))
         return result
 
     def getAllItems(self, unpickle=False):

@@ -27,7 +27,7 @@ from . import kbucket  # @UnresolvedImport
 from .protocol import TimeoutError  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 class RoutingTable(object):
@@ -249,6 +249,11 @@ class TreeRoutingTable(RoutingTable):
         #    bucketIndex = 0 #TODO: maybe not allow this to continue?
         # else:
         bucketIndex = self._kbucketIndex(key)
+
+        if _Debug:
+            print('                        findCloseNodes %r   _rpcNodeID=%r   bucketIndex=%d' % (
+                base64.b64encode(key), base64.b64encode(_rpcNodeID) if _rpcNodeID else None, bucketIndex, ))   
+
         closestNodes = self._buckets[bucketIndex].getContacts(constants.k, _rpcNodeID)
         # This method must return k contacts (even if we have the node with the specified key as node ID),
         # unless there is less than k remote nodes in the routing table
@@ -258,14 +263,21 @@ class TreeRoutingTable(RoutingTable):
         # Fill up the node list to k nodes, starting with the closest neighbouring nodes known
         while len(closestNodes) < constants.k and (canGoLower or canGoHigher):
             # TODO: this may need to be optimized
+            more_contacts = []
             if canGoLower:
-                closestNodes.extend(self._buckets[bucketIndex - i].getContacts(constants.k - len(closestNodes), _rpcNodeID))
+                more_contacts = self._buckets[bucketIndex - i].getContacts(constants.k - len(closestNodes), _rpcNodeID)
+                closestNodes.extend(more_contacts)
                 canGoLower = bucketIndex - (i + 1) >= 0
             if canGoHigher:
-                closestNodes.extend(self._buckets[bucketIndex + i].getContacts(constants.k - len(closestNodes), _rpcNodeID))
+                more_contacts = self._buckets[bucketIndex + i].getContacts(constants.k - len(closestNodes), _rpcNodeID)
+                closestNodes.extend(more_contacts)
                 canGoHigher = bucketIndex + (i + 1) < len(self._buckets)
             i += 1
-        if _Debug: print('findCloseNodes %r  _rpcNodeID=%r   result=%r' % (base64.b64encode(key), _rpcNodeID, closestNodes, ))
+            if _Debug:
+                print('                        canGoLower=%s canGoHigher=%s more_contacts=%r' % (
+                    canGoLower, canGoHigher, more_contacts, ))
+        if _Debug:
+            print('                                result=%r' % closestNodes)
         return closestNodes
 
     def getContact(self, contactID):

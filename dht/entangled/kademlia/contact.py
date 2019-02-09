@@ -53,9 +53,13 @@ class Contact(object):
     def __repr__(self, *args, **kwargs):
         return str(self)
 
+#     def __str__(self):
+#         return '%s %r at <%r:%d>' % (
+#             self.__class__.__name__, base64.b64encode(self.id), self.address, self.port)
+
     def __str__(self):
-        return '%s %r at <%r:%d>' % (
-            self.__class__.__name__, base64.b64encode(self.id), self.address, self.port)
+        return '<%s at %r:%d>' % (
+            base64.b64encode(self.id).decode()[:6], self.address, self.port)
 
     def __getattr__(self, name):
         """
