@@ -46,7 +46,7 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
                 time.sleep(sleep_sec)
                 continue
             ss = response.json()['result']['suppliers']
-            if len(ss) != expected_suppliers_number or (ss.count('') > accepted_mistakes and len(expected_suppliers_number) > 2):
+            if len(ss) != expected_suppliers_number or (ss.count('') > accepted_mistakes and expected_suppliers_number > 2):
                 print('\n%r' % response.json())
                 count += 1
                 time.sleep(sleep_sec)
