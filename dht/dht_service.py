@@ -510,7 +510,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         if new_revision < prev_revision:
             if _Debug:
                 lg.out(_DebugLevel, '        new json data must increment revision number, store operation FAILED')
-            raise ValueError('new json data must increment revision number, current revision is %d' % prev_revision)
+            raise ValueError('new json data must increment revision number, current revision is %d ' % prev_revision)
         if new_revision == prev_revision:
             if prev_record_type == 'suppliers':
                 prev_ecc_map = json_prev_value.get('ecc_map')
@@ -518,13 +518,13 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
                 if prev_ecc_map and new_ecc_map != prev_ecc_map:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
-                    raise ValueError('new json data have same revision but different ecc_map, current revision is %d' % prev_revision)
+                    raise ValueError('new json data have same revision but different ecc_map, current revision is %d ' % prev_revision)
                 prev_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_prev_value.get('suppliers', [])]
                 new_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_new_value.get('suppliers', [])]
                 if prev_suppliers != new_suppliers:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different suppliers list, store operation FAILED')
-                    raise ValueError('new json data have same revision but different suppliers list, current revision is %d' % prev_revision)
+                    raise ValueError('new json data have same revision but different suppliers list, current revision is %d ' % prev_revision)
     if _Debug:
         lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
     return True

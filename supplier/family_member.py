@@ -862,8 +862,11 @@ class FamilyMember(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %s' % err)
         if err_msg.count('current revision is') and retries < 3:
+            marker = 'current revision is'
+            pos = err_msg.index(marker) + len(marker)
             try:
-                current_revision = int(err_msg[err_msg.index('current revision is'):].replace('current revision is ', ''))
+                current_revision = err_msg[pos:].split(' ')[0].strip()
+                current_revision = int(current_revision)
             except:
                 lg.exc()
                 current_revision = self.transaction['revision']
