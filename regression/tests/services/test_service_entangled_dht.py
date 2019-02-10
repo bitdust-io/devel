@@ -81,7 +81,7 @@ def read_value(node, key, expected_data, record_type='skip_validation', retries=
                     assert response.json()['status'] == 'OK', response.json()
                 assert response.json()['result'][0]['read'] == 'success', response.json()
                 assert 'value' in response.json()['result'][0], response.json()
-                assert response.json()['result'][0]['value']['data'] == expected_data, response.json()
+                assert response.json()['result'][0]['value']['data'] in expected_data, response.json()
                 assert response.json()['result'][0]['value']['key'] == key, response.json()
                 assert response.json()['result'][0]['value']['type'] == record_type, response.json()
         except:
@@ -136,7 +136,7 @@ def test_dht_set_value_customer_1_and_get_value_customer_1():
     read_value(
         node='customer_1',
         key='test_key_1_customer_1',
-        expected_data='test_data_1_customer_1',
+        expected_data=['test_data_1_customer_1', ],
     )
 
 
@@ -151,7 +151,7 @@ def test_dht_set_value_customer_2_and_get_value_customer_3():
     read_value(
         node='customer_3',
         key='test_key_1_customer_2',
-        expected_data='test_data_1_customer_2',
+        expected_data=['test_data_1_customer_2', ],
     )
 
 
@@ -168,7 +168,7 @@ def test_dht_get_value_multiple_nodes():
         read_value(
             node=node,
             key='test_key_1_supplier_1',
-            expected_data='test_data_1_supplier_1',
+            expected_data=['test_data_1_supplier_1', ],
         )
 
 def test_dht_write_value_multiple_nodes():
@@ -185,5 +185,5 @@ def test_dht_write_value_multiple_nodes():
         read_value(
             node=node,
             key='test_key_2_shared',
-            expected_data='test_data_2_shared_supplier_3',
+            expected_data=['test_data_2_shared_supplier_1', 'test_data_2_shared_supplier_2', 'test_data_2_shared_supplier_3'],
         )
