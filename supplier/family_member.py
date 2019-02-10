@@ -39,6 +39,8 @@ DHT_RECORD_REFRESH_INTERVAL = 2 * 60
 
 #------------------------------------------------------------------------------
 
+import re
+
 from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
@@ -858,14 +860,22 @@ class FamilyMember(automat.Automat):
         self.automat('dht-write-ok', dht_result)
 
     def _on_dht_write_failed(self, err, retries):
-        err_msg = strng.to_text(err)
-        if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %s' % err)
-        if err_msg.count('current revision is') and retries < 3:
-            marker = 'current revision is'
-            pos = err_msg.index(marker) + len(marker)
+        try:
+            errmsg = err.value.subFailure.getErrorMessage()
+        except:
             try:
-                current_revision = err_msg[pos:].split(' ')[0].strip()
+                errmsg = err.getErrorMessage()
+            except:
+                try:
+                    errmsg = err.value
+                except:
+                    errmsg = str(err)
+        err_msg = strng.to_text(errmsg)
+        if _Debug:
+            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %s' % err_msg)
+        if err_msg.count('current revision is') and retries < 3:
+            try:
+                current_revision = re.search("current revision is (\d+?)", err_msg).group(1)
                 current_revision = int(current_revision)
             except:
                 lg.exc()
