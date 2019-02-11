@@ -108,8 +108,13 @@ class Node(object):
         else:
             self._dataStore = dataStore
             # Try to restore the node's state...
-            if 'nodeState' in self._dataStore:
-                json_state = self._dataStore['nodeState']
+
+            h = hashlib.sha1()
+            h.update(b'nodeState')
+            nodeStateKey = h.hexdigest()
+
+            if nodeStateKey in self._dataStore:
+                json_state = self._dataStore[nodeStateKey]
                 state = json.loads(json_state)
                 self.id = state['id']
                 for contactTriple in state['closestNodes']:
@@ -1060,7 +1065,12 @@ class Node(object):
         }
         json_value = json.dumps(state)
         now = int(time.time())
-        self._dataStore.setItem('nodeState', json_value, now, now, self.id)
+
+        h = hashlib.sha1()
+        h.update(b'nodeState')
+        nodeStateKey = h.hexdigest()
+
+        self._dataStore.setItem(nodeStateKey, json_value, now, now, self.id)
         if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
         return args
 
@@ -1126,6 +1136,7 @@ class Node(object):
             # Filter internal variables stored in the datastore
             if key == 'nodeState':
                 continue
+            
             now = int(time.time())
             itemData = self._dataStore.getItem(key)
             originallyPublished = itemData['originallyPublished']

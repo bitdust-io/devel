@@ -862,8 +862,11 @@ class DHTNode(EntangledNode):
     def expire(self):
         now = utime.get_sec1970()
         expired_keys = []
+        h = hashlib.sha1()
+        h.update(b'nodeState')
+        nodeStateKey = h.hexdigest()
         for key in self._dataStore.keys():
-            if key == 'nodeState':
+            if key == nodeStateKey:
                 continue
             item_data = self._dataStore.getItem(key)
             if item_data:
