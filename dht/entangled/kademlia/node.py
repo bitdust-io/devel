@@ -490,7 +490,7 @@ class Node(object):
                     # network
                     if key in self._dataStore:
                         # Ok, we have the value locally, so use that
-                        item = self._dataStore.getItem(key, unpickle=True)
+                        item = self._dataStore.getItem(key)
                         expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
                         # expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
                         # if expireSecondsCall:
@@ -520,7 +520,7 @@ class Node(object):
                 # network
                 if key in self._dataStore:
                     # Ok, we have the value locally, so use that
-                    item = self._dataStore.getItem(key, unpickle=True)
+                    item = self._dataStore.getItem(key)
                     expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
                     # value = self._dataStore[key]
                     # expireSeconds = constants.dataExpireSecondsDefaut
@@ -1124,7 +1124,7 @@ class Node(object):
             if key == b'nodeState':
                 continue
             now = int(time.time())
-            itemData = self._dataStore.getItem(key, unpickle=True)
+            itemData = self._dataStore.getItem(key)
             originallyPublished = itemData['originallyPublished']
             originalPublisherID = itemData['originalPublisherID']
             lastPublished = itemData['lastPublished']

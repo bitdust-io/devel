@@ -827,7 +827,7 @@ def dump_local_db(value_as_json=False):
             lg.out(_DebugLevel, 'dht_service.dump_local_db local node is not ready')
         return None
     l = []
-    for itm in node()._dataStore.getAllItems(unpickle=True):
+    for itm in node()._dataStore.getAllItems():
         if value_as_json:
             if isinstance(itm['value'], dict):
                 _j = jsn.dumps(itm['value'], keys_to_text=True, errors='ignore')

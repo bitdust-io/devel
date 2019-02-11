@@ -23,9 +23,7 @@ except ImportError:
     from collections import MutableMapping as DictMixin
 
 import sqlite3
-import six.moves.cPickle as pickle
 import os
-import base64
 import json
 
 from . import constants  # @UnresolvedImport
@@ -123,6 +121,7 @@ class DataStore(DictMixin):
         """
 
 
+
 class DictDataStore(DataStore):
     """
     A datastore using an in-memory Python dictionary.
@@ -200,6 +199,7 @@ class DictDataStore(DataStore):
         return result
 
 
+
 class SQLiteDataStore(DataStore):
     """
     Example of a SQLite database-based datastore.
@@ -214,10 +214,15 @@ class SQLiteDataStore(DataStore):
         createDB = not os.path.exists(dbFile)
         self._db = sqlite3.connect(dbFile)
         self._db.isolation_level = None
-        self._db.text_factory = str
+        self._db.text_factory = encoding.to_text
         if createDB:
-            self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID)')
+            self.create_table()
+            if _Debug:
+                print('Created empty table for DHT records')
         self._cursor = self._db.cursor()
+
+    def create_table(self):
+        self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID)')
 
     def keys(self):
         """
@@ -227,25 +232,7 @@ class SQLiteDataStore(DataStore):
         try:
             self._cursor.execute("SELECT key FROM data")
             for row in self._cursor:
-#                 key = row[0]
-#                 if not isinstance(key, six.text_type):
-#                     key = key.decode()
-#                 decodedKey = codecs.decode(key, 'hex')            
-#                 keys.append(decodedKey)
-                # keys.append(row[0].decode('hex'))
                 keys.append(row[0])
-        finally:
-            return keys
-
-    def keys64(self):
-        """
-        Return a list of the keys in this data store.
-        """
-        keys = []
-        try:
-            self._cursor.execute("SELECT key FROM data")
-            for row in self._cursor:
-                keys.append(base64.b64encode(encoding.decode_hex(row[0])))
         finally:
             return keys
 
@@ -275,32 +262,7 @@ class SQLiteDataStore(DataStore):
         """
         return int(self._dbQuery(key, 'originallyPublished'))
 
-    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
-        # Encode the key so that it doesn't corrupt the database
-        # encodedKey = key.encode('hex')
-#         if not isinstance(key, six.binary_type):
-#             key = key.encode()
-#         encodedKey = codecs.encode(key, 'hex')
-        encodedKey = encoding.encode_hex(key)
-        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
-        if self._cursor.fetchone() is None:
-            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (
-                encodedKey,
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-            ))
-        else:
-            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=? WHERE key=?', (
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-                encodedKey,
-            ))
-
-    def _dbQuery(self, key, columnName, unpickle=False):
+    def _dbQuery(self, key, columnName, default=None):
         try:
             self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
                 'reqKey': encoding.encode_hex(key), 
@@ -310,204 +272,32 @@ class SQLiteDataStore(DataStore):
         except TypeError:
             raise KeyError(key)
         else:
-            if unpickle:
-                if six.PY2:
-                    if isinstance(value, buffer):
-                        value = encoding.to_text(value)
-                    return pickle.loads(value)
-                else:
-                    return pickle.loads(value, encoding='bytes')
-            else:
-                return value
+            return value
 
     def __getitem__(self, key):
-        return self._dbQuery(key, 'value', unpickle=True)
+        return self._dbQuery(key, 'value')
 
     def __delitem__(self, key):
         self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
             'reqKey': encoding.encode_hex(key),
         })
 
-    def getItem(self, key, unpickle=False):
-        try:
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-                'reqKey': encoding.encode_hex(key),
-            })
-            row = self._cursor.fetchone()
-
-            if unpickle:
-                if six.PY2:
-                    if isinstance(row[1], buffer):
-                        value = encoding.to_text(row[1])
-                    value = pickle.loads(row[1])
-                else:
-                    value = pickle.loads(value, encoding='bytes')
-            else:
-                value = row[1]
-
-            result = dict(
-                key=row[0].encode(),
-                value=value,
-                lastPublished=row[2],
-                originallyPublished=row[3],
-                originalPublisherID=None if not row[4] else row[4].encode(),
-            )
-        except:
-            return None
-        return result
 
 
-class SQLiteExpiredDataStore(SQLiteDataStore):
-    """
-    Example of a SQLite database-based datastore.
-    """
+class SQLiteVersionedJsonDataStore(SQLiteDataStore):
 
-    def __init__(self, dbFile=':memory:'):
-        """
-        @param dbFile: The name of the file containing the SQLite database; if
-                       unspecified, an in-memory database is used.
-        @type dbFile: str
-        """
-        createDB = not os.path.exists(dbFile)
-        self._db = sqlite3.connect(dbFile)
-        self._db.isolation_level = None
-        self._db.text_factory = str
-        if createDB:
-            self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds)')
-        self._cursor = self._db.cursor()
-        
+    def create_table(self):
+        self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
+
     def expireSeconds(self, key):
         """
         """
         return int(self._dbQuery(key, 'expireSeconds'))
 
-    def setItem(self,
-                key,
-                value,
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-                expireSeconds=constants.dataExpireSecondsDefaut,
-                **kwargs):
-        # Encode the key so that it doesn't corrupt the database
-        # encodedKey = key.encode('hex')
-#         if not isinstance(key, six.binary_type):
-#             key = key.encode()
-#         encodedKey = codecs.encode(key, 'hex')
-        encodedKey = encoding.encode_hex(key)
-        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
-        if self._cursor.fetchone() is None:
-            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds) VALUES (?, ?, ?, ?, ?, ?)', (
-                encodedKey,
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-                expireSeconds,
-            ))
-            if _Debug:
-                print('stored new value for key %s' % key)
-        else:
-            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=? WHERE key=?', (
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-                expireSeconds,
-                encodedKey,
-            ))
-            if _Debug:
-                print('updated existing value for key %s' % key)
-
-    def getItem(self, key, unpickle=False):
-        try:
-            # if not isinstance(key, six.binary_type):
-            #     key = key.encode()
-            # encodedKey = codecs.encode(key, 'hex')            
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-                # 'reqKey': key.encode('hex'),
-                # 'reqKey': encodedKey,
-                'reqKey': encoding.encode_hex(key),
-            })
-            row = self._cursor.fetchone()
-
-            if unpickle:
-                if six.PY2:
-                    if isinstance(row[1], buffer):
-                        value = encoding.to_text(row[1])
-                    value = pickle.loads(row[1])
-                else:
-                    value = pickle.loads(value, encoding='bytes')
-            else:
-                value = row[1]
-            
-            result = dict(
-                key=row[0].encode(),
-                value=value,
-                lastPublished=row[2],
-                originallyPublished=row[3],
-                originalPublisherID=None if not row[4] else row[4].encode(),
-                expireSeconds=row[5],
-            )
-        except:
-            if _Debug:
-                print('returned None for key %s' % key)
-            return None
-        if _Debug:
-            print('returned dict object for key %s' % key)
-        return result
-
-    def getAllItems(self, unpickle=False):
-        self._cursor.execute("SELECT * FROM data")
-        rows = self._cursor.fetchall()
-        items = []
-        for row in rows:
-            value = row[1]
-            if unpickle:
-                if six.PY2:
-                    if isinstance(value, buffer):
-                        value = encoding.to_text(value)
-                    value = pickle.loads(value)
-                else:
-                    value = pickle.loads(value, encoding='bytes')
-            items.append(dict(
-                key=row[0].encode(),
-                value=value,
-                lastPublished=row[2],
-                originallyPublished=row[3],
-                originalPublisherID=None if not row[4] else row[4].encode(),
-                expireSeconds=row[5],
-            ))
-        return items
-
-
-class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
-    """
-    """
-
-    def __init__(self, dbFile=':memory:'):
-        """
-        @param dbFile: The name of the file containing the SQLite database; if
-                       unspecified, an in-memory database is used.
-        @type dbFile: str
-        """
-        createDB = not os.path.exists(dbFile)
-        self._db = sqlite3.connect(dbFile)
-        self._db.isolation_level = None
-        self._db.text_factory = str
-        if createDB:
-            self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
-            if _Debug:
-                print('Created empty table for DHT records')
-        self._cursor = self._db.cursor()
-
     def revision(self, key):
         """
         """
-        try:
-            return int(self._dbQuery(key, 'revision'))
-        except KeyError:
-            return 0
+        return int(self._dbQuery(key, 'revision', default=0))
 
     def setItem(self,
                 key,
@@ -527,7 +317,6 @@ class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
                 key_hex,
-                # buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
                 lastPublished,
                 originallyPublished,
@@ -536,10 +325,9 @@ class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
                 new_revision,
             ))
             if _Debug:
-                print('                    setItem  stored new value for key %s with revision %d' % (base64.b64encode(key), new_revision))
+                print('                    setItem  stored new value for key %s with revision %d' % (key, new_revision))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
-                # buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
                 json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
                 lastPublished,
                 originallyPublished,
@@ -549,11 +337,9 @@ class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
                 key_hex,
             ))
             if _Debug:
-                print('                    setItem  updated existing value for key %s with revision %d' % (base64.b64encode(key), new_revision))
+                print('                    setItem  updated existing value for key %s with revision %d' % (key, new_revision))
 
     def getItem(self, key):
-#         result = None
-#         try:
         key_hex = encoding.encode_hex(key)
         self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
             'reqKey': key_hex,
@@ -562,7 +348,7 @@ class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
         row = self._cursor.fetchone()
         if not row:
             if _Debug:
-                print('                        getItem %s  return None : did not found key in dataStore' % base64.b64encode(key))
+                print('                        getItem %s  return None : did not found key in dataStore' % key)
             return None
 
         v = row[1]
@@ -592,14 +378,8 @@ class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
             revision=row[6],
         )
 
-#         except:
-#             if _Debug:
-#                 print('ERROR, returned None for key %s' % base64.b64encode(key))
-#                 traceback.print_exc()
-#             return None
-
         if _Debug:
-            print('                        getItem   found one record for key %s, revision is %d' % (base64.b64encode(key), row[6]))
+            print('                        getItem   found one record for key %s, revision is %d' % (key, row[6]))
         return result
 
     def getAllItems(self):
@@ -627,7 +407,6 @@ class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
                 if _Debug:
                     print('getAllItems', exc)
             items.append(dict(
-                # key=encoding.to_text(_k, errors='replace'),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
