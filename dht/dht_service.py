@@ -451,10 +451,7 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
 
 def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
     try:
-        v = json.loads(value)
-        json_new_value = jsn.loads(v['d'])
-        # TODO: check v['k'] against key
-        # TODO: check v['v'] against datastore.PROTOCOL_VERSION
+        json_new_value = jsn.loads(value)
     except:
         # not a json data to be written - this is not valid
         lg.exc()
@@ -466,7 +463,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
     if not new_record_type:
         if _Debug:
             lg.out(_DebugLevel, '        new json data do not have "type" field present, store operation FAILED')
-        raise ValueError('input data do not have "type" field present')
+        raise ValueError('input data do not have "type" field present: %r' % json_new_value)
     if key not in node()._dataStore:
         if _Debug:
             lg.out(_DebugLevel, '        previous value not exists yet, store OK')
@@ -482,7 +479,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
     if prev_record_type and prev_record_type != new_record_type:
         if _Debug:
             lg.out(_DebugLevel, '        new json data type did not match to existing record type, store operation FAILED')
-        raise ValueError('new json data type do not match to existing record type')
+        raise ValueError('new json data type do not match to existing record type: %r' % json_prev_value)
     # TODO: need to include "key" field into DHT record and validate it as well 
     # new_record_key = json_new_value.get('key')
     # if not new_record_key:

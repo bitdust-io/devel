@@ -200,9 +200,9 @@ class DictDataStore(DataStore):
 
 
 
-class SQLiteDataStore(DataStore):
+class SQLiteVersionedJsonDataStore(DataStore):
     """
-    Example of a SQLite database-based datastore.
+    SQLite database-based datastore.
     """
 
     def __init__(self, dbFile=':memory:'):
@@ -221,8 +221,32 @@ class SQLiteDataStore(DataStore):
                 print('Created empty table for DHT records')
         self._cursor = self._db.cursor()
 
+    def _dbQuery(self, key, columnName):
+        try:
+            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
+                # 'reqKey': encoding.encode_hex(key),
+                'reqKey': key,
+            })
+            row = self._cursor.fetchone()
+            value = row[0]
+        except:
+            raise KeyError(key)
+        else:
+            return value
+
+    def __getitem__(self, key):
+        v = self._dbQuery(key, 'value')
+        v = json.loads(v)
+        return v['d']
+
+    def __delitem__(self, key):
+        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
+            # 'reqKey': encoding.encode_hex(key),
+            'reqKey': key,
+        })
+
     def create_table(self):
-        self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID)')
+        self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
 
     def keys(self):
         """
@@ -262,33 +286,6 @@ class SQLiteDataStore(DataStore):
         """
         return int(self._dbQuery(key, 'originallyPublished'))
 
-    def _dbQuery(self, key, columnName):
-        try:
-            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
-                'reqKey': encoding.encode_hex(key), 
-            })
-            row = self._cursor.fetchone()
-            value = row[0]
-        except:
-            raise KeyError(key)
-        else:
-            return value
-
-    def __getitem__(self, key):
-        return self._dbQuery(key, 'value')
-
-    def __delitem__(self, key):
-        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
-            'reqKey': encoding.encode_hex(key),
-        })
-
-
-
-class SQLiteVersionedJsonDataStore(SQLiteDataStore):
-
-    def create_table(self):
-        self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
-
     def expireSeconds(self, key):
         """
         """
@@ -311,12 +308,14 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
                 expireSeconds=constants.dataExpireSecondsDefaut,
                 **kwargs):
         # Encode the key so that it doesn't corrupt the database
-        key_hex =  encoding.encode_hex(key)
+        # key_hex =  encoding.encode_hex(key)
+        key_hex = key
         new_revision = kwargs.get('revision', None)
         if new_revision is None:
             new_revision = self.revision(key) + 1
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': key_hex})
-        opID = encoding.encode_hex(originalPublisherID) if originalPublisherID else None 
+        # opID = encoding.encode_hex(originalPublisherID) if originalPublisherID else None
+        opID = originalPublisherID or None
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
                 key_hex,
@@ -328,7 +327,7 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
                 new_revision,
             ))
             if _Debug:
-                print('                    setItem  stored new value for key %s with revision %d' % (key, new_revision))
+                print('                    setItem  stored new value for key [%s] with revision %d' % (key, new_revision))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
                 json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
@@ -340,10 +339,11 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
                 key_hex,
             ))
             if _Debug:
-                print('                    setItem  updated existing value for key %s with revision %d' % (key, new_revision))
+                print('                    setItem  updated existing value for key [%s] with revision %d' % (key, new_revision))
 
     def getItem(self, key):
-        key_hex = encoding.encode_hex(key)
+        # key_hex = encoding.encode_hex(key)
+        key_hex = key
         self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
             'reqKey': key_hex,
         })
@@ -351,7 +351,7 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
         row = self._cursor.fetchone()
         if not row:
             if _Debug:
-                print('                        getItem %s  return None : did not found key in dataStore' % key)
+                print('                        getItem [%s]  return None : did not found key in dataStore' % key)
             return None
 
         v = row[1]
@@ -365,11 +365,13 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
 
         value = v['d']
 
-        key_orig = encoding.decode_hex(row[0])
+        # key_orig = encoding.decode_hex(row[0])
+        key_orig = row[0]
 
         # TODO: check / verify key_orig against key
 
-        opID = None if not row[4] else encoding.decode_hex(row[4])
+        # opID = None if not row[4] else encoding.decode_hex(row[4])
+        opID = row[4] or None
 
         result = dict(
             key=key_orig,
@@ -382,7 +384,7 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
         )
 
         if _Debug:
-            print('                        getItem   found one record for key %s, revision is %d' % (key, row[6]))
+            print('                        getItem   found one record for key [%s], revision is %d' % (key, row[6]))
         return result
 
     def getAllItems(self):
@@ -403,9 +405,11 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
             value = v['d']
 
             try:
-                _k = encoding.decode_hex(row[0])
-                _opID = encoding.to_text(row[4]) if isinstance(row[4], buffer) else row[4]
-                _opID = None if not row[4] else encoding.decode_hex(_opID)
+                # _k = encoding.decode_hex(row[0])
+                _k = row[0]
+                # _opID = encoding.to_text(row[4]) if isinstance(row[4], buffer) else row[4]
+                # _opID = None if not row[4] else encoding.decode_hex(_opID)
+                _opID = row[4] or None
             except Exception as exc:
                 if _Debug:
                     print('getAllItems', exc)
