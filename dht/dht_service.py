@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.kademlia.datastore import SQLiteVersionedDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.datastore import SQLiteVersionedJsonDataStore  # @UnresolvedImport
 from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
 from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
@@ -109,14 +109,14 @@ def init(udp_port, db_file_path=None):
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
     try:
-        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
+        dataStore = SQLiteVersionedJsonDataStore(dbFile=dbPath)
         # dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
         # del dataStore['not_exist_key']
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
         lg.exc()
         os.remove(dbPath)
-        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
+        dataStore = SQLiteVersionedJsonDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
     _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
     if _Debug:
@@ -182,7 +182,7 @@ def connect(seed_nodes=[]):
                     lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
             lg.out(_DebugLevel, 'alive DHT nodes: %s' % pprint.pformat(live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
-            lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
+            lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % node().id)
         result.callback(resolved_seed_nodes)
         return live_contacts
 
@@ -297,7 +297,7 @@ def key_to_hash(key):
     key = strng.to_bin(key)
     h = hashlib.sha1()
     h.update(key)
-    return h.digest()
+    return h.hexdigest()
 
 #------------------------------------------------------------------------------
 
@@ -457,7 +457,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         raise ValueError('input data is not a json value')
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (
-            base64.b64encode(key), json_new_value, ))
+            key, json_new_value, ))
     new_record_type = json_new_value.get('type')
     if not new_record_type:
         if _Debug:
@@ -604,7 +604,7 @@ def validate_data_written(store_results, key, json_data, result_defer):
             nodes = store_results[0]
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  collected=%s  nodes=%r' % (
-                base64.b64encode(strng.to_bin(key)), results_collected, nodes, ))
+                key, results_collected, nodes, ))
         if results_collected:
             for result in store_results[1]:
                 try:
@@ -760,7 +760,7 @@ def find_node(node_id):
             lg.out(_DebugLevel, 'dht_service.find_node SKIP, already started')
         return _ActiveLookup
     count('find_node')
-    node_id64 = base64.b64encode(node_id)
+    node_id64 = node_id
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]  counter=%d' % (node_id64, counter('find_node')))
     if not node():
@@ -885,7 +885,7 @@ class DHTNode(EntangledNode):
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
-                base64.b64encode(key), expireSeconds, counter('store')))
+                key, expireSeconds, counter('store')))
 
         if 'store' in self.rpc_callbacks:
             # TODO: add signature validation to be sure this is the owner of that key:value pair

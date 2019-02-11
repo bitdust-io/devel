@@ -37,7 +37,7 @@ from . import protocol  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):
@@ -209,7 +209,7 @@ class Node(object):
             except:
                 ok = 'Unknown Error'
             if _Debug:
-                print('storeSuccess', base64.b64encode(key), ok)
+                print('storeSuccess', key, ok)
             return ok
 
         def storeFailed(x, key):
@@ -232,7 +232,7 @@ class Node(object):
                 except:
                     errmsg = errmsg.decode(errors='ignore')
             if _Debug:
-                print('storeFailed', base64.b64encode(key), errmsg)
+                print('storeFailed', key, errmsg)
             return errmsg
 
         # Prepare a callback for doing "STORE" RPC calls
@@ -471,7 +471,7 @@ class Node(object):
                         expireSeconds = constants.dataExpireSecondsDefaut
                         if 'expireSeconds' in result:
                             expireSeconds = result['expireSeconds']
-                        if _Debug: print('republish %s to closest node with %d expire seconds' % (base64.b64encode(key), expireSeconds))
+                        if _Debug: print('republish %s to closest node with %d expire seconds' % (key, expireSeconds))
                         contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision).addErrback(storeFailed)
                     if refresh_revision:
                         # need to refresh nodes who has old version of that value
@@ -498,7 +498,7 @@ class Node(object):
                         # Send this value to the closest node without it
                         if len(result['activeContacts']) > 0:
                             contact = result['activeContacts'][0]
-                            if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), item['value'], expireSeconds, contact))
+                            if _Debug: print('refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                             contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
                         outerDf.callback({
                             'key': item['value'],
@@ -530,7 +530,7 @@ class Node(object):
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        if _Debug: print('refresh %s : %r with %d to %r' % (base64.b64encode(key), item['value'], expireSeconds, contact))
+                        if _Debug: print('refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                         contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
                     outerDf.callback({
                         'key': item['value'],
@@ -643,7 +643,7 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_store')
-        if _Debug: print('rpcmethod.store %r' % base64.b64encode(key))
+        if _Debug: print('rpcmethod.store %r' % key)
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
@@ -678,16 +678,13 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_findNode')
-        if _Debug: print('rpcmethod.findNode %r' % base64.b64encode(key))
+        if _Debug: print('rpcmethod.findNode %r' % key)
         # Get the sender's ID (if any)
         if '_rpcNodeID' in kwargs:
             rpcSenderID = kwargs['_rpcNodeID']
         else:
             rpcSenderID = None
-        try:
-            contacts = self._routingTable.findCloseNodes(key, constants.k, rpcSenderID)
-        except Exception as exc:
-            print(exc)
+        contacts = self._routingTable.findCloseNodes(key, constants.k, rpcSenderID)
         contactTriples = []
         for contact in contacts:
             contactTriples.append((contact.id, contact.address, contact.port))
@@ -708,7 +705,7 @@ class Node(object):
         """
         if self._counter:
             self._counter('rpc_node_findValue')
-        if _Debug: print('rpcmethod.findValue %r' % base64.b64encode(key))
+        if _Debug: print('rpcmethod.findValue %r' % key)
         if key in self._dataStore:
             exp = None
             expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
@@ -745,7 +742,7 @@ class Node(object):
         """
         hsh = hashlib.sha1()
         hsh.update(str(random.getrandbits(255)).encode())
-        return hsh.digest()
+        return hsh.hexdigest()
 
     def _iterativeFind(self, key, startupShortlist=None, rpc='findNode', deep=False):
         """
@@ -776,7 +773,7 @@ class Node(object):
                  return a list of the k closest nodes to the specified key
         @rtype: twisted.internet.defer.Deferred
         """
-        if _Debug: print('_iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, base64.b64encode(key), startupShortlist, ))
+        if _Debug: print('_iterativeFind rpc=%r   key=%r  startupShortlist=%r' % (rpc, key, startupShortlist, ))
         if self._counter:
             self._counter('_iterativeFind')
         if rpc != 'findNode':
@@ -820,7 +817,7 @@ class Node(object):
             originAddress = responseTuple[1]  # tuple: (ip adress, udp port)
             # Make sure the responding node is valid, and abort the operation if it isn't
             if _Debug: 
-                print('    extendShortlist', (base64.b64encode(responseMsg.nodeID), type(responseMsg.nodeID)))
+                print('    extendShortlist', (responseMsg.nodeID, type(responseMsg.nodeID)))
             if responseMsg.nodeID in activeContacts or responseMsg.nodeID == self.id:
                 if _Debug:
                     if responseMsg.nodeID == self.id:
@@ -1061,7 +1058,7 @@ class Node(object):
         }
         now = int(time.time())
         self._dataStore.setItem(b'nodeState', state, now, now, self.id)
-        if _Debug: print('_persistState id=%r state=%r' % (base64.b64encode(self.id), state, ))
+        if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
         return args
 
     def _joinNetworkFailed(self, err):
@@ -1082,6 +1079,9 @@ class Node(object):
 
     def _refreshRoutingTable(self):
         nodeIDs = self._routingTable.getRefreshList(0, False)
+        if _Debug:
+            print('_refreshRoutingTable', nodeIDs)
+
         outerDf = defer.Deferred()
 
         def searchFailed(err):
@@ -1116,10 +1116,10 @@ class Node(object):
 
         This method should run in a deferred thread
         """
-        if _Debug: print('== republishData called, node: %r' % base64.b64encode(self.id))
+        if _Debug: print('== republishData called, node: %r' % self.id)
         expiredKeys = []
         for key in self._dataStore.keys():
-            if _Debug: print('    %r' % base64.b64encode(key))
+            if _Debug: print('    %r' % key)
             # Filter internal variables stored in the datastore
             if key == b'nodeState':
                 continue

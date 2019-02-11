@@ -35,7 +35,7 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
         count = 0
         while True:
             if count >= retries:
-                print('\nfailed after %d retries')
+                print('\nfailed after %d retries' % count)
                 return False
             response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
             assert response.status_code == 200

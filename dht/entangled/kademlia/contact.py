@@ -59,7 +59,7 @@ class Contact(object):
 
     def __str__(self):
         return '<%s at %r:%d>' % (
-            base64.b64encode(self.id).decode()[:6], self.address, self.port)
+            self.id[:6], self.address, self.port)
 
     def __getattr__(self, name):
         """

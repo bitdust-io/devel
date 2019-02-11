@@ -84,16 +84,22 @@ def to_bin(s, encoding='utf-8', errors='strict'):
     return s.encode(encoding=encoding, errors=errors)
 
 
-def encode_hex(value):
-    if isinstance(value, six.text_type):
-        value = value.encode()
-    return codecs.decode(codecs.encode(value, 'hex'), 'utf8')
-
-
-def decode_hex(value, as_string=False):
+def encode_hex(value, as_string=True, encoding='utf-8'):
+    # if isinstance(value, six.binary_type):
+    #     value = value.decode(encoding)
+    hex_value = codecs.encode(value, 'hex')
     if as_string:
-        return codecs.decode(codecs.decode(value, 'hex'), 'utf8')
-    return codecs.decode(value, 'hex')
+        return hex_value.decode('utf-8')
+    return hex_value
+
+
+def decode_hex(value, as_string=True, encoding='utf-8'):
+    # if isinstance(value, six.text_type):
+    #     value = value.encode(encoding)
+    orig_value = codecs.decode(value, 'hex')
+    if as_string:
+        return orig_value.decode('utf-8')
+    return orig_value
 
 
 class Encoding(object):
@@ -236,6 +242,21 @@ class Bencode(Encoding):
             endPos = startIndex + length
             byts = data[startIndex:endPos]
             return (byts, endPos)
+
+
+#             splitPos = data[startIndex:].find(b':') + startIndex
+#             length = int(data[startIndex:splitPos])
+#             startIndex = splitPos + 1
+#             endPos = startIndex + length
+#             byts = data[startIndex:endPos]
+#             text_or_bin = byts[0:1]
+#             byts = byts[1:]
+#             assert text_or_bin in [b'b', b't']
+#             if text_or_bin == b't':
+#                 return (byts.decode(encoding), endPos)
+#             return (byts, endPos)
+
+
 #         except:
 #             import traceback
 #             traceback.print_exc()

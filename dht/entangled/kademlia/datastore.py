@@ -26,6 +26,7 @@ import sqlite3
 import six.moves.cPickle as pickle
 import os
 import base64
+import json
 
 from . import constants  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
@@ -36,6 +37,8 @@ try:
 except:
     buffer = memoryview
 
+
+PROTOCOL_VERSION = 1
 
 PICKLE_PROTOCOL = 2
 
@@ -230,7 +233,7 @@ class SQLiteDataStore(DataStore):
 #                 decodedKey = codecs.decode(key, 'hex')            
 #                 keys.append(decodedKey)
                 # keys.append(row[0].decode('hex'))
-                keys.append(encoding.decode_hex(row[0]))
+                keys.append(row[0])
         finally:
             return keys
 
@@ -310,7 +313,7 @@ class SQLiteDataStore(DataStore):
             if unpickle:
                 if six.PY2:
                     if isinstance(value, buffer):
-                        value = str(value)
+                        value = encoding.to_text(value)
                     return pickle.loads(value)
                 else:
                     return pickle.loads(value, encoding='bytes')
@@ -335,7 +338,7 @@ class SQLiteDataStore(DataStore):
             if unpickle:
                 if six.PY2:
                     if isinstance(row[1], buffer):
-                        value = str(row[1])
+                        value = encoding.to_text(row[1])
                     value = pickle.loads(row[1])
                 else:
                     value = pickle.loads(value, encoding='bytes')
@@ -403,7 +406,7 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 expireSeconds,
             ))
             if _Debug:
-                print('stored new value for key %s' % base64.b64encode(key))
+                print('stored new value for key %s' % key)
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=? WHERE key=?', (
                 buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
@@ -414,7 +417,7 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 encodedKey,
             ))
             if _Debug:
-                print('updated existing value for key %s' % base64.b64encode(key))
+                print('updated existing value for key %s' % key)
 
     def getItem(self, key, unpickle=False):
         try:
@@ -431,7 +434,7 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
             if unpickle:
                 if six.PY2:
                     if isinstance(row[1], buffer):
-                        value = str(row[1])
+                        value = encoding.to_text(row[1])
                     value = pickle.loads(row[1])
                 else:
                     value = pickle.loads(value, encoding='bytes')
@@ -448,10 +451,10 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
             )
         except:
             if _Debug:
-                print('returned None for key %s' % base64.b64encode(key))
+                print('returned None for key %s' % key)
             return None
         if _Debug:
-            print('returned dict object for key %s' % base64.b64encode(key))
+            print('returned dict object for key %s' % key)
         return result
 
     def getAllItems(self, unpickle=False):
@@ -463,13 +466,12 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
             if unpickle:
                 if six.PY2:
                     if isinstance(value, buffer):
-                        value = str(value)
+                        value = encoding.to_text(value)
                     value = pickle.loads(value)
                 else:
                     value = pickle.loads(value, encoding='bytes')
             items.append(dict(
                 key=row[0].encode(),
-                key64=base64.b64encode(row[0].encode()),
                 value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
@@ -479,7 +481,7 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
         return items
 
 
-class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
+class SQLiteVersionedJsonDataStore(SQLiteExpiredDataStore):
     """
     """
 
@@ -516,16 +518,17 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 expireSeconds=constants.dataExpireSecondsDefaut,
                 **kwargs):
         # Encode the key so that it doesn't corrupt the database
-        encodedKey = encoding.encode_hex(key)
+        key_hex =  encoding.encode_hex(key)
         new_revision = kwargs.get('revision', None)
         if new_revision is None:
             new_revision = self.revision(key) + 1
-        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
-        opID = encoding.encode_hex(encoding.to_bin(originalPublisherID)) 
+        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': key_hex})
+        opID = encoding.encode_hex(originalPublisherID) if originalPublisherID else None 
         if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
-                encodedKey,
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                key_hex,
+                # buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
                 lastPublished,
                 originallyPublished,
                 opID,
@@ -536,23 +539,24 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 print('                    setItem  stored new value for key %s with revision %d' % (base64.b64encode(key), new_revision))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                # buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
                 lastPublished,
                 originallyPublished,
                 opID,
                 expireSeconds,
                 new_revision,
-                encodedKey,
+                key_hex,
             ))
             if _Debug:
                 print('                    setItem  updated existing value for key %s with revision %d' % (base64.b64encode(key), new_revision))
 
-    def getItem(self, key, unpickle=False):
+    def getItem(self, key):
 #         result = None
 #         try:
-        reqKey = encoding.encode_hex(key)
+        key_hex = encoding.encode_hex(key)
         self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-            'reqKey': reqKey,
+            'reqKey': key_hex,
         })
 
         row = self._cursor.fetchone()
@@ -561,53 +565,64 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 print('                        getItem %s  return None : did not found key in dataStore' % base64.b64encode(key))
             return None
 
-        if unpickle:
-            if six.PY2:
-                if isinstance(row[1], buffer):
-                    value = str(row[1])
-                value = pickle.loads(row[1])
-            else:
-                value = pickle.loads(row[1], encoding='bytes')
-        else:
-            value = row[1]
+        v = row[1]
+        if isinstance(v, buffer):
+            v = encoding.to_text(v)
+
+        v = json.loads(v)
+        
+        # TODO: check / verify v['k'] against key_hex
+        # TODO: check / verify v['v'] against PROTOCOL_VERSION
+
+        value = v['d']
+
+        key_orig = encoding.decode_hex(row[0])
+
+        # TODO: check / verify key_orig against key
+
+        opID = None if not row[4] else encoding.decode_hex(row[4])
 
         result = dict(
-            key=row[0].encode(),
+            key=key_orig,
             value=value,
             lastPublished=row[2],
             originallyPublished=row[3],
-            originalPublisherID=None if not row[4] else encoding.decode_hex(row[4]),
+            originalPublisherID=opID,
             expireSeconds=row[5],
             revision=row[6],
-            key64=base64.b64encode(encoding.decode_hex(row[0])).decode(),
-            originalPublisherID64=None if not row[4] else base64.b64encode(encoding.decode_hex(row[4])).decode(),
         )
+
 #         except:
 #             if _Debug:
 #                 print('ERROR, returned None for key %s' % base64.b64encode(key))
 #                 traceback.print_exc()
 #             return None
+
         if _Debug:
             print('                        getItem   found one record for key %s, revision is %d' % (base64.b64encode(key), row[6]))
         return result
 
-    def getAllItems(self, unpickle=False):
+    def getAllItems(self):
         self._cursor.execute("SELECT * FROM data")
         rows = self._cursor.fetchall()
         items = []
         for row in rows:
-            value = row[1]
-            if unpickle:
-                if six.PY2:
-                    if isinstance(value, buffer):
-                        value = str(value)
-                    value = pickle.loads(value)
-                else:
-                    value = pickle.loads(value, encoding='bytes')
+
+            v = row[1]
+            if isinstance(v, buffer):
+                v = encoding.to_text(v)
+
+            v = json.loads(v)
+            
+            # TODO: check / verify v['k'] against key_hex
+            # TODO: check / verify v['v'] against PROTOCOL_VERSION
+    
+            value = v['d']
+
             try:
                 _k = encoding.decode_hex(row[0])
-                _k64 = base64.b64encode(encoding.decode_hex(row[0])).decode()
-                _opID = None if not row[4] else base64.b64encode(encoding.decode_hex(row[4])).decode()
+                _opID = encoding.to_text(row[4]) if isinstance(row[4], buffer) else row[4]
+                _opID = None if not row[4] else encoding.decode_hex(_opID)
             except Exception as exc:
                 if _Debug:
                     print('getAllItems', exc)
@@ -619,6 +634,5 @@ class SQLiteVersionedDataStore(SQLiteExpiredDataStore):
                 originalPublisherID=_opID,
                 expireSeconds=row[5],
                 revision=row[6],
-                key64=_k64,
             ))
         return items

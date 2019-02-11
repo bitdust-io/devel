@@ -62,12 +62,14 @@ class RoutingTable(object):
         @return: XOR result of two long variables
         @rtype: long
         """
-        valKeyOne = int(encoding.encode_hex(keyOne), 16)
-        valKeyTwo = int(encoding.encode_hex(keyTwo), 16)
+        # valKeyOne = int(encoding.encode_hex(keyOne), 16)
+        # valKeyTwo = int(encoding.encode_hex(keyTwo), 16)
         # valKeyOne = int(keyOne.encode('hex'), 16)
         # valKeyOne = int(codecs.encode(keyOne, 'hex'), 16)
         # valKeyTwo = int(keyTwo.encode('hex'), 16)
         # valKeyTwo = int(codecs.encode(keyTwo, 'hex'), 16)
+        valKeyOne = int(keyOne, 16)
+        valKeyTwo = int(keyTwo, 16)
         return valKeyOne ^ valKeyTwo
 
     def findCloseNodes(self, key, count, _rpcNodeID=None):
@@ -252,7 +254,7 @@ class TreeRoutingTable(RoutingTable):
 
         if _Debug:
             print('                        findCloseNodes %r   _rpcNodeID=%r   bucketIndex=%d' % (
-                base64.b64encode(key), base64.b64encode(_rpcNodeID) if _rpcNodeID else None, bucketIndex, ))   
+                key, _rpcNodeID if _rpcNodeID else None, bucketIndex, ))   
 
         closestNodes = self._buckets[bucketIndex].getContacts(constants.k, _rpcNodeID)
         # This method must return k contacts (even if we have the node with the specified key as node ID),
@@ -364,15 +366,16 @@ class TreeRoutingTable(RoutingTable):
         """
         # valKey = int(key.encode('hex'), 16)
         # valKey = int(codecs.encode(key, 'hex'), 16)
-        valKey = int(encoding.encode_hex(key), 16)
+        # valKey = int(encoding.encode_hex(key), 16)
+        valKey = int(key, 16)
         i = 0
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):
-                if _Debug: print('_kbucketIndex  %r  %r  returning %r' % (base64.b64encode(key), valKey, i, ))
+                if _Debug: print('_kbucketIndex  %r  %r  returning %r' % (key, valKey, i, ))
                 return i
             else:
                 i += 1
-        if _Debug: print('_kbucketIndex  %r  %r  finishing with %r' % (base64.b64encode(key), valKey, i, ))
+        if _Debug: print('_kbucketIndex  %r  %r  finishing with %r' % (key, valKey, i, ))
         return i
 
     def _randomIDInBucketRange(self, bucketIndex):
@@ -390,8 +393,8 @@ class TreeRoutingTable(RoutingTable):
             randomID = '0' + randomID
         # randomID = randomID.decode('hex')
         # randomID = codecs.decode(randomID, 'hex')
-        randomID = encoding.decode_hex(randomID)
-        randomID = (20 - len(randomID)) * b'\x00' + randomID
+        # randomID = encoding.decode_hex(randomID)
+        randomID = (40 - len(randomID)) * '0' + randomID
         return randomID
 
     def _splitBucket(self, oldBucketIndex):
@@ -448,7 +451,7 @@ class OptimizedTreeRoutingTable(TreeRoutingTable):
         contact.failedRPCs = 0
 
         bucketIndex = self._kbucketIndex(contact.id)
-        if _Debug: print('addContact %r at %r' % (base64.b64encode(contact.id), bucketIndex))
+        if _Debug: print('addContact %r at %r' % (contact.id, bucketIndex))
         try:
             self._buckets[bucketIndex].addContact(contact)
         except kbucket.BucketFull:

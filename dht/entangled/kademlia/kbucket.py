@@ -149,9 +149,10 @@ class KBucket(object):
         _k = key
         if isinstance(key, six.integer_types):
             return self.rangeMin <= key < self.rangeMax
-        if isinstance(key, six.text_type):
-            key = key.encode(encoding='utf-8')
-        key = int(encoding.encode_hex(key), 16)
+        # if isinstance(key, six.text_type):
+        #     key = key.encode(encoding='utf-8')
+        # key = int(encoding.encode_hex(key), 16)
+        key = int(key, 16)
         return self.rangeMin <= key < self.rangeMax
 
     def __len__(self):

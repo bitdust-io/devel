@@ -38,7 +38,7 @@ class RequestMessage(Message):
         if rpcID is None:
             hsh = hashlib.sha1()
             hsh.update(str(random.getrandbits(255)).encode())
-            rpcID = hsh.digest()
+            rpcID = hsh.hexdigest()
         Message.__init__(self, rpcID, nodeID)
         self.request = method
         self.args = methodArgs

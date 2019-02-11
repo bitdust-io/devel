@@ -202,7 +202,7 @@ def connect_network(node):
     response = requests.get(url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
     assert response.json()['status'] == 'ERROR'
     while True:
-        if count > 5:
+        if count > 10:
             assert False, f'node {node} failed to connect to the network after few retries'
         response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=5'))
         if response.json()['status'] == 'OK':
