@@ -3545,26 +3545,22 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
 def dht_node_find(node_id_64=None):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
-    import base64
     from dht import dht_service
     if node_id_64 is None:
         node_id = dht_service.random_key()
-        node_id_64 = base64.b64encode(node_id)
+        node_id_64 = node_id
     else:
-        try:
-            node_id = base64.b64decode(node_id_64)
-        except:
-            node_id = node_id_64
+        node_id = node_id_64
     ret = Deferred()
 
     def _cb(response):
         try:
             if isinstance(response, list):
                 return ret.callback(OK({
-                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'my_dht_id': dht_service.node().id,
                     'lookup': node_id_64, 
                     'closest_nodes': [{
-                        'dht_id': base64.b64encode(c.id),
+                        'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
                 }))
@@ -3587,7 +3583,6 @@ def dht_node_find(node_id_64=None):
 def dht_value_get(key, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
-    import base64
     from dht import dht_service
     from dht import dht_records
     ret = Deferred()
@@ -3602,9 +3597,8 @@ def dht_value_get(key, record_type='skip_validation'):
                 lg.out(_DebugLevel, 'api.dht_value_get OK: %r' % value)
             return ret.callback(OK({
                 'read': 'success',
-                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(strng.to_bin(key)),
                 'value': value,
             }))
         closest_nodes = []
@@ -3614,11 +3608,10 @@ def dht_value_get(key, record_type='skip_validation'):
             lg.out(_DebugLevel, 'api.dht_value_get ERROR: %r' % value)
         return ret.callback(OK({
             'read': 'failed',
-            'my_dht_id': base64.b64encode(dht_service.node().id),
+            'my_dht_id': dht_service.node().id,
             'key': strng.to_text(key, errors='ignore'),
-            'key_64': base64.b64encode(strng.to_bin(key)),
             'closest_nodes': [{
-                'dht_id': base64.b64encode(c.id),
+                'dht_id': c.id,
                 'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
             } for c in closest_nodes],
         }))
@@ -3653,7 +3646,6 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     except Exception as exc:
         return ERROR(exc)
 
-    import base64
     from dht import dht_service
     from dht import dht_records
     ret = Deferred()
@@ -3669,12 +3661,11 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                     lg.out(_DebugLevel, 'api.dht_value_set OK: %r' % response)
                 return ret.callback(OK({
                     'write': 'success' if len(response) > 0 else 'failed',
-                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'my_dht_id': dht_service.node().id,
                     'key': strng.to_text(key, errors='ignore'),
-                    'key_64': base64.b64encode(strng.to_bin(key)),
                     'value': value,
                     'closest_nodes': [{
-                        'dht_id': base64.b64encode(c.id),
+                        'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
                 }))
@@ -3702,16 +3693,15 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
             closest_nodes = []
             if nodes and isinstance(nodes, list) and hasattr(nodes[0], 'address') and hasattr(nodes[0], 'port'):
                 closest_nodes = [{
-                    'dht_id': base64.b64encode(c.id),
+                    'dht_id': c.id,
                     'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                 } for c in nodes]
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
             return ret.callback(ERROR(errmsg, extra_fields={
                 'write': 'failed',
-                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(strng.to_bin(key)),
                 'closest_nodes': closest_nodes,
             }))
         except Exception as exc:

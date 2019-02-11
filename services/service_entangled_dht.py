@@ -76,10 +76,9 @@ class EntangledDHTService(LocalService):
 
     def _on_connected(self, nodes):
         from dht import dht_service
-        import base64
         from logs import lg
         lg.out(self.debug_level, 'service_entangled_dht._on_connected    nodes: %r' % nodes)
-        lg.out(self.debug_level, '        DHT node is active, ID=[%s]' % base64.b64encode(dht_service.node().id))
+        lg.out(self.debug_level, '        DHT node is active, ID=[%s]' % dht_service.node().id)
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
         return nodes

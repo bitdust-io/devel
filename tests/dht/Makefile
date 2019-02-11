@@ -28,7 +28,7 @@ produce:
 	docker-compose exec dht_producer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_producer.py 1 10
 
 consume:
-	docker-compose exec dht_consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 10
+	docker-compose exec dht_consumer /root/.bitdust/venv/bin/python /app/bitdust/tests/dht/test_consumer.py 1 15
 
 dumpdb:
 	docker-compose exec dht_seed_1 /root/.bitdust/venv/bin/python -c "import sqlite3; db=sqlite3.connect('/root/.bitdust/metadata/dhtdb'); cur=db.cursor(); cur.execute('SELECT * FROM data'); import pprint; pprint.pprint(cur.fetchall());"
