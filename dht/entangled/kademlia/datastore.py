@@ -262,14 +262,14 @@ class SQLiteDataStore(DataStore):
         """
         return int(self._dbQuery(key, 'originallyPublished'))
 
-    def _dbQuery(self, key, columnName, default=None):
+    def _dbQuery(self, key, columnName):
         try:
             self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
                 'reqKey': encoding.encode_hex(key), 
             })
             row = self._cursor.fetchone()
             value = row[0]
-        except TypeError:
+        except:
             raise KeyError(key)
         else:
             return value
@@ -297,7 +297,10 @@ class SQLiteVersionedJsonDataStore(SQLiteDataStore):
     def revision(self, key):
         """
         """
-        return int(self._dbQuery(key, 'revision', default=0))
+        try:
+            return int(self._dbQuery(key, 'revision'))
+        except KeyError:
+            return 0
 
     def setItem(self,
                 key,

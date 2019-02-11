@@ -102,7 +102,7 @@ def read_customer_suppliers(customer_idurl):
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (
                 customer_idurl, msg, ))
-        result.callback(None)
+        result.errback(err)
         return None
 
     d = dht_records.get_suppliers(customer_idurl)

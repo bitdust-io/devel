@@ -31,6 +31,7 @@ module:: dht_service
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 
 #------------------------------------------------------------------------------
 
@@ -41,7 +42,7 @@ _DebugLevel = 10
 
 import os
 import sys
-import six
+import json
 import hashlib
 import random
 import base64
@@ -450,11 +451,14 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
 
 def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
     try:
-        json_new_value = jsn.loads(value)
+        v = json.loads(value)
+        json_new_value = jsn.loads(v['d'])
+        # TODO: check v['k'] against key
+        # TODO: check v['v'] against datastore.PROTOCOL_VERSION
     except:
         # not a json data to be written - this is not valid
         lg.exc()
-        raise ValueError('input data is not a json value')
+        raise ValueError('input data is not a json value: %r' % value)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (
             key, json_new_value, ))
@@ -862,7 +866,7 @@ class DHTNode(EntangledNode):
         now = utime.get_sec1970()
         expired_keys = []
         for key in self._dataStore.keys():
-            if key == b'nodeState':
+            if key == 'nodeState':
                 continue
             item_data = self._dataStore.getItem(key)
             if item_data:
@@ -917,15 +921,6 @@ class DHTNode(EntangledNode):
             self.rpc_callbacks['request'](
                 key=key,
             )
-
-#         internal_value = get_node_data(key)
-#         if internal_value is None and key in self._dataStore:
-#             value = self._dataStore[key]
-#             self.data[key] = value
-#             if _Debug:
-#                 lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
-#         else:
-#             value = internal_value
 
         value = get_node_data(key)
         if value is None:

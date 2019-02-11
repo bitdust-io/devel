@@ -21,7 +21,7 @@ from six.moves import range
 from io import open
 
 import hashlib
-import base64
+import json
 import random
 import time
 import traceback
@@ -108,10 +108,11 @@ class Node(object):
         else:
             self._dataStore = dataStore
             # Try to restore the node's state...
-            if b'nodeState' in self._dataStore:
-                state = self._dataStore[b'nodeState']
-                self.id = state[b'id']
-                for contactTriple in state[b'closestNodes']:
+            if 'nodeState' in self._dataStore:
+                json_state = self._dataStore['nodeState']
+                state = json.loads(json_state)
+                self.id = state['id']
+                for contactTriple in state['closestNodes']:
                     contact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
                     self._routingTable.addContact(contact)
                 if _Debug: print('found "nodeState" key in local db and added %d contacts to routing table' % len(state[b'closestNodes']))
@@ -1052,12 +1053,14 @@ class Node(object):
 
     def _persistState(self, *args):
         state = {
-            b'id': self.id,
-            b'closestNodes': self.findNode(self.id),
-            b'key': 'nodeState',
+            'id': self.id,
+            'closestNodes': self.findNode(self.id),
+            'key': 'nodeState',
+            'type': 'skip_validation',
         }
+        json_value = json.dumps(state)
         now = int(time.time())
-        self._dataStore.setItem(b'nodeState', state, now, now, self.id)
+        self._dataStore.setItem('nodeState', json_value, now, now, self.id)
         if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
         return args
 
@@ -1121,7 +1124,7 @@ class Node(object):
         for key in self._dataStore.keys():
             if _Debug: print('    %r' % key)
             # Filter internal variables stored in the datastore
-            if key == b'nodeState':
+            if key == 'nodeState':
                 continue
             now = int(time.time())
             itemData = self._dataStore.getItem(key)
