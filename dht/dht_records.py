@@ -36,7 +36,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -124,7 +124,7 @@ def set_identity(idurl, raw_xml_data):
             'type': 'identity',
             'timestamp': utime.get_sec1970(),
             'idurl': strng.to_text(idurl),
-            'identity': raw_xml_data,
+            'identity': strng.to_text(raw_xml_data),
         },
         rules=get_rules('identity'),
     )
@@ -150,7 +150,6 @@ def set_relation(key, idurl, data, prefix, index, expire=60*60):
     # because of performance reasonse it is better to maintain only one DHT record for each relation exclusively
     # need to use another solution here instead of storing multiple records...  
     # check out family_memeber()
-
     if _Debug:
         lg.args(_DebugLevel, key, idurl, prefix, index)
     return dht_service.set_valid_data(

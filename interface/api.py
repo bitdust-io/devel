@@ -3625,6 +3625,7 @@ def dht_value_get(key, record_type='skip_validation'):
         key=key,
         rules=record_rules,
         raise_for_result=False,
+        return_details=True,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)

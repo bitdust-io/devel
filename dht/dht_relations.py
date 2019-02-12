@@ -35,7 +35,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -56,14 +56,13 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-def validate_customer_suppliers():
-    pass
-
-
 def read_customer_suppliers(customer_idurl):
     result = Deferred()
 
     def _do_verify(dht_value):
+        if not dht_value:
+            result.callback(None)
+            return None
         try:
             _ecc_map = strng.to_text(dht_value['ecc_map'])
             _customer_idurl = strng.to_bin(dht_value['customer_idurl'])
@@ -100,7 +99,7 @@ def read_customer_suppliers(customer_idurl):
         except:
             msg = str(err).replace('Exception:', '')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  %r  failed with %r' % (
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers ERROR %r  failed with %r' % (
                 customer_idurl, msg, ))
         result.errback(err)
         return None

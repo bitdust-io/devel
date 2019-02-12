@@ -396,6 +396,8 @@ def read_json_response(response, key, result_defer=None, as_bytes=False):
         lg.out(_DebugLevel, 'dht_service.read_json_response [%r] : %r' % (key, response))
     value = None
     if isinstance(response, list):
+        if _Debug:
+            lg.out(_DebugLevel, '        response is a list, value not found')
         if result_defer:
             result_defer.callback(response)
         return None
@@ -413,13 +415,19 @@ def read_json_response(response, key, result_defer=None, as_bytes=False):
                         value = jsn.loads(v[0])
             except:
                 lg.exc()
+                if _Debug:
+                    lg.out(_DebugLevel, '        invalid json value found in DHT, return None')
                 if result_defer:
                     result_defer.errback(Exception('invalid json value found in DHT'))
                 return None
         else:
+            if _Debug:
+                lg.out(_DebugLevel, '        response is a dict, "values" field is empty, value not found')
             if result_defer:
                 result_defer.callback(response.get('activeContacts', []))
             return None
+    if _Debug:
+        lg.out(_DebugLevel, '        response is a dict, value is OK')
     if result_defer:
         result_defer.callback(value)
     return value
@@ -537,7 +545,7 @@ def validate_before_request(key, **kwargs):
     return True
 
 
-def validate_data(value, key, rules, result_defer=None, raise_for_result=True, populate_meta_fields=False):
+def validate_data(value, key, rules, result_defer=None, raise_for_result=False, populate_meta_fields=False):
     if not rules:
         lg.err('DHT record must have validation rules applied')
         if result_defer:
@@ -546,12 +554,15 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True, p
 
     if not isinstance(value, dict):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
+            lg.out(_DebugLevel, 'dht_service.validate_data_received    key=[%s] not found : %s' % (key, type(value)))
         if result_defer:
-            if not raise_for_result:
-                result_defer.callback(value)
-            else:
+            if raise_for_result:
                 result_defer.errback(Exception('value not found'))
+            else:
+                if populate_meta_fields:
+                    result_defer.callback(value)
+                else:
+                    result_defer.callback(None)
         return None
 
     if value.get('key') != key and populate_meta_fields:
@@ -564,6 +575,7 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True, p
         if result_defer:
             result_defer.errback(Exception('validation rules can not be applied'))
         return None
+
     if value.get('type') != record_type and populate_meta_fields:
         value['type'] = record_type
 
@@ -590,7 +602,7 @@ def validate_data(value, key, rules, result_defer=None, raise_for_result=True, p
             result_defer.errback(Exception('DHT record validation failed'))
         return None
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] : value is OK' % key)
+        lg.out(_DebugLevel, 'dht_service.validate_data_received   key=[%s] : value is OK' % key)
     if result_defer:
         result_defer.callback(value)
     return value
@@ -640,18 +652,32 @@ def validate_data_written(store_results, key, json_data, result_defer):
     return None
 
 
-def get_valid_data(key, rules={}, raise_for_result=True):
+def validate_data_before_send(value, key, rules, populate_meta_fields):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_before_send for key [%s]' % key)
+    return validate_data(value, key, rules, raise_for_result=False, populate_meta_fields=populate_meta_fields)
+
+
+def validate_data_after_receive(value, key, rules, result_defer, raise_for_result, populate_meta_fields):
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_after_receive for key [%s]' % key)
+    return validate_data(value, key, rules, result_defer=result_defer,
+                         raise_for_result=raise_for_result, populate_meta_fields=populate_meta_fields)
+
+
+def get_valid_data(key, rules={}, raise_for_result=False, return_details=False):
     ret = Deferred()
     d = get_json_value(key)
-    d.addCallback(validate_data, key=key, rules=rules, result_defer=ret, raise_for_result=raise_for_result)
+    d.addCallback(validate_data_after_receive, key=key, rules=rules, result_defer=ret,
+                  raise_for_result=raise_for_result, populate_meta_fields=return_details)
     d.addErrback(ret.errback)
     return ret
 
 
 def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}, collect_results=False):
-    valid_json_data = validate_data(value=json_data, key=key, rules=rules, populate_meta_fields=True)
-    if valid_json_data is None:
-        return fail(Exception('invalid data, validation failed'))
+    valid_json_data = validate_data_before_send(value=json_data, key=key, rules=rules, populate_meta_fields=True)
+    if valid_json_data is None or not isinstance(valid_json_data, dict):
+        return fail(Exception('invalid data going to be written, validation failed'))
     ret = Deferred()
     d = set_json_value(key, json_data=json_data, age=age, expire=expire, collect_results=collect_results)
     d.addCallback(validate_data_written, key, json_data, ret)
