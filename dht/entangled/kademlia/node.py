@@ -34,6 +34,7 @@ from . import constants  # @UnresolvedImport
 from . import routingtable  # @UnresolvedImport
 from . import datastore  # @UnresolvedImport
 from . import protocol  # @UnresolvedImport
+from . import encoding  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
@@ -118,7 +119,7 @@ class Node(object):
                 state = json.loads(json_state)
                 self.id = state['id']
                 for contactTriple in state['closestNodes']:
-                    contact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
+                    contact = Contact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol)
                     self._routingTable.addContact(contact)
                 if _Debug: print('found "nodeState" key in local db and added %d contacts to routing table' % len(state[b'closestNodes']))
         self._counter = None
@@ -483,7 +484,7 @@ class Node(object):
                         # need to refresh nodes who has old version of that value
                         for v in result['values']:
                             if v[1] < latest_revision:
-                                _contact = Contact(v[2], v[3][0], v[3][1], self._protocol)
+                                _contact = Contact(encoding.to_text(v[2]), v[3][0], v[3][1], self._protocol)
                                 if _Debug: print('will refresh revision %d on %r' % (latest_revision, _contact))
                                 d = _contact.store(key, result[key], None, 0, expireSeconds, revision=latest_revision)
                                 d.addCallback(refreshRevisionSuccess)
@@ -693,7 +694,7 @@ class Node(object):
         contacts = self._routingTable.findCloseNodes(key, constants.k, rpcSenderID)
         contactTriples = []
         for contact in contacts:
-            contactTriples.append((contact.id, contact.address, contact.port))
+            contactTriples.append((contact.id, encoding.to_text(contact.address), contact.port))
         return contactTriples
 
     @rpcmethod
@@ -839,7 +840,7 @@ class Node(object):
             else:
                 # If it's not in the shortlist; we probably used a fake ID to reach it
                 # - reconstruct the contact, using the real node ID this time
-                aContact = Contact(responseMsg.nodeID, originAddress[0], originAddress[1], self._protocol)
+                aContact = Contact(encoding.to_text(responseMsg.nodeID), originAddress[0], originAddress[1], self._protocol)
             activeContacts.append(aContact)
             # This makes sure "bootstrap"-nodes with "fake" IDs don't get queried twice
             if responseMsg.nodeID not in alreadyContacted:
@@ -871,7 +872,7 @@ class Node(object):
                         findValueResult['closestNodeNoValue'] = aContact
                 for contactTriple in result:
                     try:
-                        testContact = Contact(contactTriple[0], contactTriple[1], contactTriple[2], self._protocol)
+                        testContact = Contact(encoding.to_text(contactTriple[0]), contactTriple[1], contactTriple[2], self._protocol)
                     except:
                         continue
                     if testContact not in shortlist:
@@ -1063,6 +1064,7 @@ class Node(object):
             'key': 'nodeState',
             'type': 'skip_validation',
         }
+        if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
         json_value = json.dumps(state)
         now = int(time.time())
 
@@ -1071,7 +1073,6 @@ class Node(object):
         nodeStateKey = h.hexdigest()
 
         self._dataStore.setItem(nodeStateKey, json_value, now, now, self.id)
-        if _Debug: print('_persistState id=%r state=%r' % (self.id, state, ))
         return args
 
     def _joinNetworkFailed(self, err):

@@ -23,8 +23,6 @@ import traceback
 from twisted.internet import protocol, defer
 from twisted.python import failure
 
-import base64
-
 import twisted.internet.reactor
 reactor = twisted.internet.reactor
 
@@ -115,7 +113,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msgPrimitive = self._encoder.decode(datagram)
         message = self._translator.fromPrimitive(msgPrimitive)
 
-        remoteContact = Contact(message.nodeID, address[0], address[1], self)
+        remoteContact = Contact(encoding.to_text(message.nodeID), address[0], address[1], self)
         # Refresh the remote node's details in the local node's k-buckets
         self._node.addContact(remoteContact)
 
