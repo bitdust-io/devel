@@ -4,5 +4,5 @@ pycryptodomex
 pyparsing
 appdirs
 psutil
-cffi
 six
+cffi

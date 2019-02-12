@@ -354,7 +354,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         d = dht_relations.read_customer_suppliers(self.customer_idurl)
         # TODO: add more validations of dht_result
-        d.addCallback(lambda dht_result: self.automat('dht-lookup-ok', dht_result))
+        d.addCallback(self._on_read_customer_suppliers)
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doConnectCustomerSuppliers(self, *args, **kwargs):
@@ -439,8 +439,10 @@ class SharedAccessCoordinator(automat.Automat):
         events.send('share-disconnected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
-        for cb_id, cb in self.connected_callbacks.items():
-            cb(cb_id, False)
+        for cb_id in list(self.connected_callbacks.keys()):
+            if cb_id in self.connected_callbacks:
+                cb = self.connected_callbacks[cb_id]
+                cb(cb_id, False)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -448,6 +450,14 @@ class SharedAccessCoordinator(automat.Automat):
         """
         self.result_defer = None
         self.unregister()
+
+    def _on_read_customer_suppliers(self, dht_value):
+        if _Debug:
+            lg.args(_DebugLevel, dht_value)
+        if dht_value:
+            self.automat('dht-lookup-ok', dht_value)
+        else:
+            self.automat('fail', Exception('customers suppliers not found in DHT'))
 
     def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
         if _Debug:
