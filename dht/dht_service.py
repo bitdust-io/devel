@@ -457,7 +457,79 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
 
 #------------------------------------------------------------------------------
 
+def validate_rules(value, key, rules, result_defer=None, raise_for_result=False, populate_meta_fields=False):
+    """
+    Will be executed on both sides: sender and receiver for each (key,value) get / set request on DHT.
+    Can return in `result_defer` : errback, callback with list (closest nodes), callback with dict
+    """
+    if not rules:
+        lg.err('DHT record must have validation rules applied')
+        if result_defer:
+            result_defer.errback(Exception('data must have validation rules applied'))
+        return None
+
+    if not isinstance(value, dict):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.validate_data_received    key=[%s] not found : %s' % (key, type(value)))
+        if not result_defer:
+            return value if populate_meta_fields else None
+        if raise_for_result:
+            result_defer.errback(Exception('value not found'))
+            return None
+        if not populate_meta_fields:
+            result_defer.callback(None)
+            return None
+        result_defer.callback(value)
+        return None
+
+    try:
+        expected_record_type = rules['type'][0]['arg']
+    except:
+        lg.exc()
+        if result_defer:
+            result_defer.errback(Exception('invalid validation rules can not be applied'))
+        return None
+
+    if populate_meta_fields:
+        # Otherwise those records will not pass validation
+        if value.get('type') != expected_record_type:
+            value['type'] = expected_record_type
+        if value.get('key') != key:
+            value['key'] = key
+
+    passed = True
+    errors = []
+    for field, field_rules in rules.items():
+        for rule in field_rules:
+            if 'op' not in rule:
+                lg.warn('incorrect validation rule found: %r' % rule)
+                continue
+            if rule['op'] == 'equal' and rule.get('arg') != strng.to_text(value.get(field)):
+                passed = False
+                errors.append((field, rule, ))
+                break
+            if rule['op'] == 'exist' and field not in value:
+                passed = False
+                errors.append((field, rule, ))
+                break
+        if not passed:
+            break
+    if not passed:
+        lg.err('DHT record validation failed, errors: %s' % errors)
+        if result_defer:
+            result_defer.errback(Exception('DHT record validation failed'))
+        return None
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_received   key=[%s] : value is OK' % key)
+    if result_defer:
+        result_defer.callback(value)
+    return value
+
+
 def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
+    """
+    Will be executed on receiver side for each (key,value) set request on DHT
+    """
     try:
         json_new_value = jsn.loads(value)
     except:
@@ -540,75 +612,18 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
 
 
 def validate_before_request(key, **kwargs):
+    """
+    Will be executed on receiver side for each "direct" key request on DHT
+    """
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_before_request key=[%s]' % key)
     return True
 
 
-def validate_data(value, key, rules, result_defer=None, raise_for_result=False, populate_meta_fields=False):
-    if not rules:
-        lg.err('DHT record must have validation rules applied')
-        if result_defer:
-            result_defer.errback(Exception('data must have validation rules applied'))
-        return None
-
-    if not isinstance(value, dict):
-        if _Debug:
-            lg.out(_DebugLevel, 'dht_service.validate_data_received    key=[%s] not found : %s' % (key, type(value)))
-        if result_defer:
-            if raise_for_result:
-                result_defer.errback(Exception('value not found'))
-            else:
-                if populate_meta_fields:
-                    result_defer.callback(value)
-                else:
-                    result_defer.callback(None)
-        return None
-
-    if value.get('key') != key and populate_meta_fields:
-        value['key'] = key
-
-    try:
-        record_type = rules['type'][0]['arg']
-    except:
-        lg.exc()
-        if result_defer:
-            result_defer.errback(Exception('validation rules can not be applied'))
-        return None
-
-    if value.get('type') != record_type and populate_meta_fields:
-        value['type'] = record_type
-
-    passed = True
-    errors = []
-    for field, field_rules in rules.items():
-        for rule in field_rules:
-            if 'op' not in rule:
-                lg.warn('incorrect validation rule found: %r' % rule)
-                continue
-            if rule['op'] == 'equal' and rule.get('arg') != strng.to_text(value.get(field)):
-                passed = False
-                errors.append((field, rule, ))
-                break
-            if rule['op'] == 'exist' and field not in value:
-                passed = False
-                errors.append((field, rule, ))
-                break
-        if not passed:
-            break
-    if not passed:
-        lg.err('DHT record validation failed, errors: %s' % errors)
-        if result_defer:
-            result_defer.errback(Exception('DHT record validation failed'))
-        return None
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_data_received   key=[%s] : value is OK' % key)
-    if result_defer:
-        result_defer.callback(value)
-    return value
-
-
 def validate_data_written(store_results, key, json_data, result_defer):
+    """
+    Will be executed on sender side for each (key,value) set request on DHT
+    """
     try:
         nodes = store_results
         results_collected = False
@@ -652,30 +667,56 @@ def validate_data_written(store_results, key, json_data, result_defer):
     return None
 
 
-def validate_data_before_send(value, key, rules, populate_meta_fields):
+def validate_before_send(value, key, rules, populate_meta_fields):
+    """
+    Will be executed on sender side before every (key,value) set request towards DHT
+    """
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_data_before_send for key [%s]' % key)
-    return validate_data(value, key, rules, raise_for_result=False, populate_meta_fields=populate_meta_fields)
+    if populate_meta_fields:
+        if value.get('key') != key:
+            value['key'] = key
+        if value.get('type') != rules['type'][0]['arg']:
+            value['type'] = rules['type'][0]['arg']
+    return validate_rules(value, key, rules, raise_for_result=False, populate_meta_fields=populate_meta_fields)
 
 
-def validate_data_after_receive(value, key, rules, result_defer, raise_for_result, populate_meta_fields):
+def validate_after_receive(value, key, rules, result_defer, raise_for_result, populate_meta_fields):
+    """
+    Will be executed on sender side for each (key,value) get response from DHT
+    """
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_data_after_receive for key [%s]' % key)
-    return validate_data(value, key, rules, result_defer=result_defer,
-                         raise_for_result=raise_for_result, populate_meta_fields=populate_meta_fields)
+    response = validate_rules(value, key, rules, result_defer=result_defer,
+                            raise_for_result=raise_for_result,
+                            populate_meta_fields=populate_meta_fields)
+    if not isinstance(response, dict):
+        if populate_meta_fields:
+            ret = {
+                'key': key,
+                'type': rules['type'][0]['arg'],
+                'closest': response,
+            }
+            return ret
+    if populate_meta_fields:
+        if response.get('key') != key:
+            response['key'] = key
+        if response.get('type') != rules['type'][0]['arg']:
+            response['type'] = rules['type'][0]['arg']
+    return response
 
 
 def get_valid_data(key, rules={}, raise_for_result=False, return_details=False):
     ret = Deferred()
     d = get_json_value(key)
-    d.addCallback(validate_data_after_receive, key=key, rules=rules, result_defer=ret,
+    d.addCallback(validate_after_receive, key=key, rules=rules, result_defer=ret,
                   raise_for_result=raise_for_result, populate_meta_fields=return_details)
     d.addErrback(ret.errback)
     return ret
 
 
 def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}, collect_results=False):
-    valid_json_data = validate_data_before_send(value=json_data, key=key, rules=rules, populate_meta_fields=True)
+    valid_json_data = validate_before_send(value=json_data, key=key, rules=rules, populate_meta_fields=True)
     if valid_json_data is None or not isinstance(valid_json_data, dict):
         return fail(Exception('invalid data going to be written, validation failed'))
     ret = Deferred()
@@ -1087,7 +1128,7 @@ def main(options=None, args=None):
                     set_json_value(args[1], jsn.loads(args[2]),
                                    expire=(int(args[3]) if len(args)>=4 else 9999)).addBoth(_r)
                 elif cmd == 'get_valid_data':
-                    get_valid_data(args[1], rules=jsn.loads(args[2])).addBoth(_r)
+                    get_valid_data(args[1], rules=jsn.loads(args[2]), return_details=True).addBoth(_r)
                 elif cmd == 'set_valid_data':
                     set_valid_data(args[1], jsn.loads(args[2]),
                                    expire=(int(args[3]) if len(args)>=4 else 9999),

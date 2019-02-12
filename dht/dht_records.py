@@ -52,6 +52,7 @@ from dht import dht_service
 
 _Rules = {
     'nickname': {
+        'key': [{'op': 'exist', }, ],
         'type': [{'op': 'equal', 'arg': 'nickname', }, ],
         'timestamp': [{'op': 'exist', }, ],
         'idurl': [{'op': 'exist', }, ],
@@ -59,12 +60,14 @@ _Rules = {
         'position': [{'op': 'exist', }, ],
     },
     'identity': {
+        'key': [{'op': 'exist', }, ],
         'type': [{'op': 'equal', 'arg': 'identity', }, ],
         'timestamp': [{'op': 'exist', }, ],
         'idurl': [{'op': 'exist', }, ],
         'identity': [{'op': 'exist', }, ],
     },
     'suppliers': {
+        'key': [{'op': 'exist', }, ],
         'type': [{'op': 'equal', 'arg': 'suppliers', }, ],
         'timestamp': [{'op': 'exist', }, ],
         'customer_idurl': [{'op': 'exist', }, ],
@@ -73,6 +76,7 @@ _Rules = {
         'revision': [{'op': 'exist', }, ],
     },
     'relation': {
+        'key': [{'op': 'exist', }, ],
         'type': [{'op': 'equal', 'arg': 'relation', }, ],
         'revision': [{'op': 'exist', }, ],
     },
@@ -113,7 +117,7 @@ def set_nickname(key, idurl):
 def get_identity(idurl):
     if _Debug:
         lg.args(_DebugLevel, idurl)
-    return dht_service.get_valid_data(idurl, rules=get_rules('identity'))
+    return dht_service.get_valid_data(idurl, rules=get_rules('identity'), return_details=True)
 
 def set_identity(idurl, raw_xml_data):
     if _Debug:
@@ -143,7 +147,7 @@ def set_udp_incoming():
 def get_relation(key):
     if _Debug:
         lg.args(_DebugLevel, key)
-    return dht_service.get_valid_data(key, rules=get_rules('relation'))
+    return dht_service.get_valid_data(key, rules=get_rules('relation'), return_details=True)
 
 def set_relation(key, idurl, data, prefix, index, expire=60*60):
     # TODO: set_relation() is OBSOLETE...
@@ -168,7 +172,7 @@ def set_relation(key, idurl, data, prefix, index, expire=60*60):
 
 #------------------------------------------------------------------------------
 
-def get_suppliers(customer_idurl):
+def get_suppliers(customer_idurl, return_details=True):
     if _Debug:
         lg.args(_DebugLevel, customer_idurl)
     return dht_service.get_valid_data(
@@ -177,6 +181,7 @@ def get_suppliers(customer_idurl):
             prefix='suppliers',
         ),
         rules=get_rules('suppliers'),
+        return_details=return_details,
     )
 
 def set_suppliers(customer_idurl, ecc_map, suppliers_list, revision=None, publisher_idurl=None, expire=60*60):

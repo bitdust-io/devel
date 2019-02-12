@@ -838,7 +838,7 @@ class FamilyMember(automat.Automat):
     def _on_dht_read_success(self, dht_result):
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_dht_read_success  result: %r' % dht_result)
-        if dht_result:
+        if dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0:
             self.dht_info = dht_result
             self.automat('dht-value-exist', dht_result)
         else:

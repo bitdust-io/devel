@@ -158,7 +158,7 @@ def args(level, *args, **kwargs):
     for k, v in enumerate(args):
         funcargs.append('"%s"' % v)
     for k, v in kwargs:
-        funcargs.append('%s="%s"' % (k, v))
+        funcargs.append('%s=%s' % (k, v))
     funcname = '%s.%s' % (modul, caller)
     o = '%s(%s)' % (funcname, ','.join(funcargs), )
     if message:

@@ -454,7 +454,7 @@ class SharedAccessCoordinator(automat.Automat):
     def _on_read_customer_suppliers(self, dht_value):
         if _Debug:
             lg.args(_DebugLevel, dht_value)
-        if dht_value:
+        if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
             self.automat('dht-lookup-ok', dht_value)
         else:
             self.automat('fail', Exception('customers suppliers not found in DHT'))
