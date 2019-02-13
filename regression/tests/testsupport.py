@@ -21,6 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
+import time
 import subprocess
 import asyncio
 import json
@@ -70,6 +71,29 @@ def run_ssh_command_and_wait(host, cmd):
         print('STDERR: %r' % err.decode())
     # assert not err
     return output.decode(), err.decode()
+
+
+async def open_tunnel_async(node, local_port, loop):
+    global _SSHTunnels
+    global _NodeTunnelPort
+    # global _NextSSHTunnelPort
+    if node == 'is':
+        node = 'identity-server'
+    # local_port = int(str(_NextSSHTunnelPort))
+    cmd_args = ['ssh', '-4', '-o', 'StrictHostKeyChecking=no', '-p', '22', '-N', '-L', '%d:localhost:%d' % (local_port, 8180, ), 'root@%s' % node, ]
+    print('\n[%s]:%s %s' % (node, time.time(), ' '.join(cmd_args), ))
+    tunnel = asyncio.create_subprocess_exec(
+        *cmd_args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        loop=loop,
+    )
+    ssh_proc = await tunnel
+    _SSHTunnels[node] = ssh_proc
+    _NodeTunnelPort[node] = local_port
+    # _NextSSHTunnelPort += 1
+    print(f'open_tunnel [{node}] on port {local_port} with {ssh_proc}\n')
+    return ssh_proc
 
 
 def open_tunnel(node):

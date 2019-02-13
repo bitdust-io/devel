@@ -28,7 +28,7 @@ import asyncio
 import pprint
 import aiohttp  # @UnresolvedImport
 
-from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_ssh_command_and_wait_async
+from .testsupport import run_ssh_command_and_wait, open_tunnel, open_tunnel_async, tunnel_url, run_ssh_command_and_wait_async
 
 
 #------------------------------------------------------------------------------
@@ -502,8 +502,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 
 #------------------------------------------------------------------------------
 
-async def open_one_tunnel_async(node):
-    open_tunnel(node)
+async def open_one_tunnel_async(node, local_port, loop):
+    await open_tunnel_async(node, local_port, loop)
 
 #------------------------------------------------------------------------------
 
@@ -560,7 +560,8 @@ def report_one_node(node):
 
 
 async def report_one_node_async(node, event_loop):
-    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)[0].strip()
+    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)
+    main_log = main_log[0].strip()
     num_warnings = main_log.count('WARNING')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
@@ -578,7 +579,8 @@ def print_exceptions_one_node(node):
 
 
 async def print_exceptions_one_node_async(node, event_loop):
-    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)[0].strip()
+    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)
+    exceptions_out = exceptions_out[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
 
@@ -616,21 +618,22 @@ def clean_one_customer(node):
 #------------------------------------------------------------------------------
 
 def open_all_tunnels(event_loop):
-    # event_loop.run_until_complete(asyncio.wait([
-    #     asyncio.ensure_future(open_one_tunnel_async(node)) for node in ALL_NODES
-    # ]))
-    for node in ALL_NODES:
-        open_tunnel(node)
+    print('\nStarting all SSH tunnels\n')
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(open_one_tunnel_async(node, 10000+pos, event_loop)) for pos, node in enumerate(ALL_NODES)
+    ]))
+    # for node in ALL_NODES:
+    #     open_tunnel(node)
     print('\nAll SSH tunnels opened\n')
 
 
 def clean_all_nodes(event_loop, skip_checks=False):
     print('\nCleaning all nodes')
-    # event_loop.run_until_complete(asyncio.wait([
-    #     asyncio.ensure_future(clean_one_node_async(node, skip_checks=skip_checks, event_loop=event_loop)) for node in ALL_NODES
-    # ]))
-    for node in ALL_NODES:
-        clean_one_node(node)
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(clean_one_node_async(node, event_loop=event_loop)) for node in ALL_NODES
+    ]))
+    # for node in ALL_NODES:
+    #     clean_one_node(node)
     # event_loop.run_until_complete(asyncio.wait([
     #     asyncio.ensure_future(clean_one_customer_async(node['name'], event_loop)) for node in ALL_ROLES['customers']
     # ]]))
