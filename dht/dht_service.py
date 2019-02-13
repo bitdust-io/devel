@@ -110,8 +110,6 @@ def init(udp_port, db_file_path=None):
     dbPath = bpio.portablePath(db_file_path)
     try:
         dataStore = SQLiteVersionedJsonDataStore(dbFile=dbPath)
-        # dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
-        # del dataStore['not_exist_key']
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
         lg.exc()
@@ -155,10 +153,6 @@ def connect(seed_nodes=[]):
             else:
                 node()._joinDeferred.addBoth(lambda x: result.callback(True))
         return result
-
-#     if not seed_nodes:
-#         from dht import known_nodes
-#         seed_nodes = known_nodes.nodes()
 
     if not node().listener:
         node().listenUDP()

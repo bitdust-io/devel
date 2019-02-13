@@ -39,7 +39,7 @@ PROTOCOL_VERSION = 1
 
 PICKLE_PROTOCOL = 2
 
-_Debug = False
+_Debug = True
 
 
 class DataStore(DictMixin):
@@ -217,7 +217,7 @@ class SQLiteVersionedJsonDataStore(DataStore):
         if createDB:
             self.create_table()
             if _Debug:
-                print('Created empty table for DHT records')
+                print('[DHT DB]   Created empty table for DHT records')
         self._cursor = self._db.cursor()
 
     def _dbQuery(self, key, columnName):
@@ -321,7 +321,7 @@ class SQLiteVersionedJsonDataStore(DataStore):
                 new_revision,
             ))
             if _Debug:
-                print('                    setItem  stored new value for key [%s] with revision %d' % (key, new_revision))
+                print('[DHT DB]       setItem  stored new value for key [%s] with revision %d' % (key, new_revision))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
                 json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
@@ -333,7 +333,7 @@ class SQLiteVersionedJsonDataStore(DataStore):
                 key_hex,
             ))
             if _Debug:
-                print('                    setItem  updated existing value for key [%s] with revision %d' % (key, new_revision))
+                print('[DHT DB]        setItem  updated existing value for key [%s] with revision %d' % (key, new_revision))
 
     def getItem(self, key):
         key_hex = key
@@ -345,7 +345,7 @@ class SQLiteVersionedJsonDataStore(DataStore):
         row = self._cursor.fetchone()
         if not row:
             if _Debug:
-                print('                        getItem [%s]  return None : did not found key in dataStore' % key)
+                print('[DHT DB]         getItem [%s]  return None : did not found key in dataStore' % key)
             return None
 
         v = row[1]
@@ -376,7 +376,7 @@ class SQLiteVersionedJsonDataStore(DataStore):
         )
 
         if _Debug:
-            print('                        getItem   found one record for key [%s], revision is %d' % (key, row[6]))
+            print('[DHT DB]               getItem   found one record for key [%s], revision is %d' % (key, row[6]))
         return result
 
     def getAllItems(self):
@@ -396,12 +396,9 @@ class SQLiteVersionedJsonDataStore(DataStore):
     
             value = v['d']
 
-            try:
-                _k = row[0]
-                _opID = row[4] or None
-            except Exception as exc:
-                if _Debug:
-                    print('getAllItems', exc)
+            _k = row[0]
+            _opID = row[4] or None
+
             items.append(dict(
                 value=value,
                 lastPublished=row[2],
