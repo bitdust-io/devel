@@ -619,11 +619,11 @@ def clean_one_customer(node):
 
 def open_all_tunnels(event_loop):
     print('\nStarting all SSH tunnels\n')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(open_one_tunnel_async(node, 10000+pos, event_loop)) for pos, node in enumerate(ALL_NODES)
-    ]))
-    # for node in ALL_NODES:
-    #     open_tunnel(node)
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(open_one_tunnel_async(node, 10000+pos, event_loop)) for pos, node in enumerate(ALL_NODES)
+    # ]))
+    for node in ALL_NODES:
+        open_tunnel(node)
     print('\nAll SSH tunnels opened\n')
 
 

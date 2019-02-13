@@ -304,7 +304,7 @@ class StunClient(automat.Automat):
                 continue
             if _Debug:
                 lg.out(_DebugLevel + 4, '    from %s' % node)
-            d = node.request(b'stun_port')
+            d = node.request('stun_port')
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node.id] = d
 
@@ -463,7 +463,7 @@ class StunClient(automat.Automat):
         if not isinstance(result, dict):
             return
         try:
-            port = int(result[b'stun_port'])
+            port = int(result['stun_port'])
             address = node.address
         except:
             lg.exc()

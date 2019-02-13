@@ -146,7 +146,7 @@ class Bencode(Encoding):
            integers.
     """
 
-    def encode(self, data):
+    def encode(self, data, encoding='utf-8'):
         """
         Encoder implementation of the Bencode algorithm.
 
@@ -160,7 +160,7 @@ class Bencode(Encoding):
             if type(data) in six.integer_types:
                 return b'i%de' % data
             elif isinstance(data, six.text_type):
-                return b'%d:%s' % (len(data.encode('utf-8')), data.encode('utf-8'))
+                return b'%d:%s' % (len(data.encode(encoding=encoding)), data.encode(encoding=encoding))
             elif isinstance(data, six.binary_type):
                 return b'%d:%s' % (len(data), data)
             elif type(data) in (list, tuple):
@@ -190,7 +190,7 @@ class Bencode(Encoding):
 #             import traceback
 #             traceback.print_exc()
 
-    def decode(self, data):
+    def decode(self, data, encoding=None):
         """
         Decoder implementation of the Bencode algorithm.
 
@@ -203,10 +203,10 @@ class Bencode(Encoding):
         @return: The decoded data, as a native Python type
         @rtype:  int, list, dict or str
         """
-        return self._decodeRecursive(data)[0]
+        return self._decodeRecursive(data, encoding=encoding)[0]
 
     @staticmethod
-    def _decodeRecursive(data, startIndex=0):
+    def _decodeRecursive(data, startIndex=0, encoding=None):
         """
         Actual implementation of the recursive Bencode algorithm.
 
@@ -241,6 +241,8 @@ class Bencode(Encoding):
             startIndex = splitPos + 1
             endPos = startIndex + length
             byts = data[startIndex:endPos]
+            if encoding:
+                byts = byts.decode(encoding=encoding)
             return (byts, endPos)
 
 

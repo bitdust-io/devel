@@ -92,7 +92,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         msg = msgtypes.RequestMessage(self._node.id, method, args)
         msgPrimitive = self._translator.toPrimitive(msg)
-        encodedMsg = self._encoder.encode(msgPrimitive)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
 
         df = defer.Deferred()
         if rawResponse:
@@ -110,7 +110,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         return df
 
     def dispatch(self, datagram, address):
-        msgPrimitive = self._encoder.decode(datagram)
+        msgPrimitive = self._encoder.decode(datagram, encoding='utf-8')
         message = self._translator.fromPrimitive(msgPrimitive)
 
         remoteContact = Contact(encoding.to_text(message.nodeID), address[0], address[1], self)
@@ -329,7 +329,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         try:
             msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
             msgPrimitive = self._translator.toPrimitive(msg)
-            encodedMsg = self._encoder.encode(msgPrimitive)
+            encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
         except Exception as exc:
             print('_sendResponse', exc)
         if _Debug:
@@ -344,7 +344,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         msg = msgtypes.ErrorMessage(rpcID, self._node.id, exceptionType, exceptionMessage)
         msgPrimitive = self._translator.toPrimitive(msg)
-        encodedMsg = self._encoder.encode(msgPrimitive)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
         if _Debug:
             print('                _sendError', (contact.address, contact.port), rpcID, exceptionType, exceptionMessage)
         if self._counter:
