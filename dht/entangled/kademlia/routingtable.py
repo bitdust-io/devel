@@ -18,11 +18,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 import time
 import random
-import base64
-# import codecs
 
 from . import constants  # @UnresolvedImport
-from . import encoding  # @UnresolvedImport
 from . import kbucket  # @UnresolvedImport
 from .protocol import TimeoutError  # @UnresolvedImport
 
@@ -62,12 +59,6 @@ class RoutingTable(object):
         @return: XOR result of two long variables
         @rtype: long
         """
-        # valKeyOne = int(encoding.encode_hex(keyOne), 16)
-        # valKeyTwo = int(encoding.encode_hex(keyTwo), 16)
-        # valKeyOne = int(keyOne.encode('hex'), 16)
-        # valKeyOne = int(codecs.encode(keyOne, 'hex'), 16)
-        # valKeyTwo = int(keyTwo.encode('hex'), 16)
-        # valKeyTwo = int(codecs.encode(keyTwo, 'hex'), 16)
         valKeyOne = int(keyOne, 16)
         valKeyTwo = int(keyTwo, 16)
         return valKeyOne ^ valKeyTwo
@@ -339,7 +330,8 @@ class TreeRoutingTable(RoutingTable):
         try:
             self._buckets[bucketIndex].removeContact(contactID)
         except ValueError:
-            # print 'removeContact(): Contact not in routing table'
+            if _Debug:
+                print('removeContact(%r): Contact not in routing table bucketIndex=%r' % (contactID, bucketIndex))
             return
 
     def touchKBucket(self, key):
@@ -364,9 +356,6 @@ class TreeRoutingTable(RoutingTable):
         @return: The index of the k-bucket responsible for the specified key
         @rtype: int
         """
-        # valKey = int(key.encode('hex'), 16)
-        # valKey = int(codecs.encode(key, 'hex'), 16)
-        # valKey = int(encoding.encode_hex(key), 16)
         valKey = int(key, 16)
         i = 0
         for bucket in self._buckets:
@@ -391,9 +380,6 @@ class TreeRoutingTable(RoutingTable):
             randomID = randomID[:-1]
         if len(randomID) % 2 != 0:
             randomID = '0' + randomID
-        # randomID = randomID.decode('hex')
-        # randomID = codecs.decode(randomID, 'hex')
-        # randomID = encoding.decode_hex(randomID)
         randomID = (40 - len(randomID)) * '0' + randomID
         return randomID
 

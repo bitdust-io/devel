@@ -42,7 +42,6 @@ _DebugLevel = 10
 
 import os
 import sys
-import json
 import hashlib
 import random
 import base64

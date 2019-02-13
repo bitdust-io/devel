@@ -38,7 +38,7 @@ from . import encoding  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = True
+_Debug = False
 
 
 def rpcmethod(func):
@@ -298,22 +298,12 @@ class Node(object):
             return errmsg
 
         def executeStoreRPCs(nodes):
-            # print '        .....execStoreRPCs called'
-            # try:
-                l = []
-                if len(nodes) >= constants.k:
-                    # If this node itself is closer to the key than the last (furthest) node in the list,
-                    # we should store the value at ourselves as well
-                    if self._routingTable.distance(key, self.id) < self._routingTable.distance(key, nodes[-1].id):
-                        nodes.pop()
-                        try:
-                            ok = self.store(key, value, originalPublisherID=originalPublisherID,
-                                            age=age, expireSeconds=expireSeconds, **kwargs)
-                            l.append(defer.succeed(ok))
-                        except Exception as exc:
-                            if _Debug: traceback.print_exc()
-                            l.append(defer.fail(exc))
-                else:
+            l = []
+            if len(nodes) >= constants.k:
+                # If this node itself is closer to the key than the last (furthest) node in the list,
+                # we should store the value at ourselves as well
+                if self._routingTable.distance(key, self.id) < self._routingTable.distance(key, nodes[-1].id):
+                    nodes.pop()
                     try:
                         ok = self.store(key, value, originalPublisherID=originalPublisherID,
                                         age=age, expireSeconds=expireSeconds, **kwargs)
@@ -321,23 +311,28 @@ class Node(object):
                     except Exception as exc:
                         if _Debug: traceback.print_exc()
                         l.append(defer.fail(exc))
-                        
-                for contact in nodes:
-                    d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
-                    d.addCallback(storeSuccess, key)
-                    d.addErrback(storeFailed, key)
-                    l.append(d)
-                if not collect_results:
-                    return nodes
-                dl = defer.DeferredList(l, fireOnOneErrback=True, consumeErrors=True)
-                dl.addCallback(storeRPCsCollected, nodes)
-                dl.addErrback(storeRPCsFailed)
-                return dl
-            # except Exception as exc:
-            #     traceback.print_exc()
-            #     if collect_results:
-            #         return defer.fail([])
-            #     return []
+            else:
+                try:
+                    ok = self.store(key, value, originalPublisherID=originalPublisherID,
+                                    age=age, expireSeconds=expireSeconds, **kwargs)
+                    l.append(defer.succeed(ok))
+                except Exception as exc:
+                    if _Debug: traceback.print_exc()
+                    l.append(defer.fail(exc))
+                    
+            for contact in nodes:
+                d = contact.store(key, value, originalPublisherID, age, expireSeconds, **kwargs)
+                d.addCallback(storeSuccess, key)
+                d.addErrback(storeFailed, key)
+                l.append(d)
+
+            if not collect_results:
+                return nodes
+
+            dl = defer.DeferredList(l, fireOnOneErrback=True, consumeErrors=True)
+            dl.addCallback(storeRPCsCollected, nodes)
+            dl.addErrback(storeRPCsFailed)
+            return dl
  
         # Find k nodes closest to the key...
         df = self.iterativeFindNode(key)
@@ -499,9 +494,6 @@ class Node(object):
                         # Ok, we have the value locally, so use that
                         item = self._dataStore.getItem(key)
                         expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
-                        # expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
-                        # if expireSecondsCall:
-                        #     expireSeconds = expireSecondsCall(key)
                         # Send this value to the closest node without it
                         if len(result['activeContacts']) > 0:
                             contact = result['activeContacts'][0]
@@ -529,11 +521,6 @@ class Node(object):
                     # Ok, we have the value locally, so use that
                     item = self._dataStore.getItem(key)
                     expireSeconds = item.get('expireSeconds', constants.dataExpireSecondsDefaut)
-                    # value = self._dataStore[key]
-                    # expireSeconds = constants.dataExpireSecondsDefaut
-                    # expireSecondsCall = getattr(self._dataStore, 'expireSeconds')
-                    # if expireSecondsCall:
-                    #     expireSeconds = expireSecondsCall(key)
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
@@ -730,16 +717,6 @@ class Node(object):
                 print('    NOT found key in local dataStore')
             return self.findNode(key, **kwargs)
 
-#    def _distance(self, keyOne, keyTwo):
-#        """ Calculate the XOR result between two string variables
-#
-#        @return: XOR result of two long variables
-#        @rtype: long
-#        """
-#        valKeyOne = long(keyOne.encode('hex'), 16)
-#        valKeyTwo = long(keyTwo.encode('hex'), 16)
-#        return valKeyOne ^ valKeyTwo
-
     def _generateID(self):
         """
         Generates a 160-bit pseudo-random identifier.
@@ -901,10 +878,6 @@ class Node(object):
         def searchIteration():
             slowNodeCount[0] = len(activeProbes)
             # Sort the discovered active nodes from closest to furthest
-            # activeContacts.sort(lambda firstContact, secondContact, targetKey=key: cmp(
-            #     self._routingTable.distance(firstContact.id, targetKey),
-            #     self._routingTable.distance(secondContact.id, targetKey)
-            # ))
             activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
             if _Debug: print('==> searchiteration %r' % activeContacts)
             # This makes sure a returning probe doesn't force calling this function by mistake
@@ -925,7 +898,6 @@ class Node(object):
                     else:
                         if _Debug: print('++++++++++++++ DONE (test for closest node) +++++++++++++++\n\n')
                     if findValue:
-                        # outerDf.callback(activeContacts)
                         findValueResult['activeContacts'] = activeContacts
                         outerDf.callback(findValueResult)
                     else:
@@ -935,10 +907,6 @@ class Node(object):
             if len(activeContacts):
                 prevClosestNode[0] = activeContacts[0]
             contactedNow = 0
-            # shortlist.sort(key=lambda firstContact, secondContact, targetKey=key: cmp(
-            #     self._routingTable.distance(firstContact.id, targetKey),
-            #     self._routingTable.distance(secondContact.id, targetKey)
-            # ))
             activeContacts.sort(key=lambda cont: self._routingTable.distance(cont.id, key))
             # Store the current shortList length before contacting other nodes
             prevShortlistLength = len(shortlist)
@@ -968,7 +936,6 @@ class Node(object):
                 if _Debug: print('++++++++++++++ DONE (logically) +++++++++++++\n\n')
                 # If no probes were sent, there will not be any improvement, so we're done
                 if findValue:
-                    # outerDf.callback(activeContacts)
                     findValueResult['activeContacts'] = activeContacts
                     outerDf.callback(findValueResult)
                 else:
@@ -978,84 +945,6 @@ class Node(object):
         # Start the iterations
         searchIteration()
         return outerDf
-
-
-#    def _kbucketIndex(self, key):
-#        """ Calculate the index of the k-bucket which is responsible for the
-#        specified key
-#
-#        @param key: The key for which to find the appropriate k-bucket index
-#        @type key: str
-#
-#        @return: The index of the k-bucket responsible for the specified key
-#        @rtype: int
-#        """
-#        distance = self._distance(self.id, key)
-#        bucketIndex = int(math.log(distance, 2))
-#        return bucketIndex
-
-#    def _randomIDInBucketRange(self, bucketIndex):
-#        """ Returns a random ID in the specified k-bucket's range
-#
-#        @param bucketIndex: The index of the k-bucket to use
-#        @type bucketIndex: int
-#        """
-#        def makeIDString(distance):
-#            id = hex(distance)[2:]
-#            if id[-1] == 'L':
-#                id = id[:-1]
-#            if len(id) % 2 != 0:
-#                id = '0' + id
-#            id = id.decode('hex')
-#            id = (20 - len(id))*'\x00' + id
-#            return id
-#        min = math.pow(2, bucketIndex)
-#        max = math.pow(2, bucketIndex+1)
-#        distance = random.randrange(min, max)
-#        distanceStr = makeIDString(distance)
-#        randomID = makeIDString(self._distance(distanceStr, self.id))
-#        return randomID
-
-#    def _refreshKBuckets(self, startIndex=0, force=False):
-#        """ Refreshes all k-buckets that need refreshing, starting at the
-#        k-bucket with the specified index
-#
-#        @param startIndex: The index of the bucket to start refreshing at;
-#                           this bucket and those further away from it will
-#                           be refreshed. For example, when joining the
-#                           network, this node will set this to the index of
-#                           the bucket after the one containing it's closest
-#                           neighbour.
-#        @type startIndex: index
-#        @param force: If this is C{True}, all buckets (in the specified range)
-#                      will be refreshed, regardless of the time they were last
-#                      accessed.
-#        @type force: bool
-#        """
-#        #print '_refreshKbuckets called with index:',startIndex
-#        bucketIndex = []
-#        bucketIndex.append(startIndex + 1)
-#        outerDf = defer.Deferred()
-#        def refreshNextKBucket(dfResult=None):
-#            #print '  refreshNexKbucket called; bucketindex is', bucketIndex[0]
-#            bucketIndex[0] += 1
-#            while bucketIndex[0] < 160:
-#                if force or (int(time.time()) - self._buckets[bucketIndex[0]].lastAccessed >= constants.refreshTimeout):
-#                    searchID = self._randomIDInBucketRange(bucketIndex[0])
-#                    self._buckets[bucketIndex[0]].lastAccessed = int(time.time())
-#                    #print '  refreshing bucket',bucketIndex[0]
-#                    df = self.iterativeFindNode(searchID)
-#                    df.addCallback(refreshNextKBucket)
-#                    return
-#                else:
-#                    bucketIndex[0] += 1
-#            # If this is reached, we have refreshed all the buckets
-#            #print '  all buckets refreshed; initiating outer deferred callback'
-#            outerDf.callback(None)
-#        #print '_refreshKbuckets starting cycle'
-#        refreshNextKBucket()
-#        #print '_refreshKbuckets returning'
-#        return outerDf
 
     def _persistState(self, *args):
         state = {
@@ -1084,7 +973,6 @@ class Node(object):
         Periodically called to perform k-bucket refreshes and data
         replication/republishing as necessary.
         """
-        # print 'refreshNode called'
         if self._counter:
             self._counter('_refreshNode')
         df = self._refreshRoutingTable()
@@ -1115,12 +1003,10 @@ class Node(object):
         return outerDf
 
     def _republishData(self, *args):
-        # print '---republishData() called'
         df = twisted.internet.threads.deferToThread(self._threadedRepublishData)
         return df
 
     def _scheduleNextNodeRefresh(self, *args):
-        # print '==== sheduling next refresh'
         self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode)  # @UndefinedVariable
 
     def _threadedRepublishData(self, *args):
@@ -1145,15 +1031,10 @@ class Node(object):
             lastPublished = itemData['lastPublished']
             expireSeconds = itemData['expireSeconds']
             age = now - originallyPublished
-            # originalPublisherID = self._dataStore.originalPublisherID(key)
-            # age = now - self._dataStore.originalPublishTime(key)
-            # expireSeconds = self._dataStore.expireSeconds(key)
-            # print '  node:',ord(self.id[0]),'key:',ord(key[0]),'orig publishing time:',self._dataStore.originalPublishTime(key),'now:',now,'age:',age,'lastPublished age:',now - self._dataStore.lastPublished(key),'original pubID:', ord(originalPublisherID[0])
             if originalPublisherID == self.id:
                 # This node is the original publisher; it has to republish
                 # the data before it expires (24 hours in basic Kademlia)
                 if age >= constants.dataExpireTimeout:
-                    # print '    REPUBLISHING key:', key
                     twisted.internet.reactor.callFromThread(  # @UndefinedVariable
                         self.iterativeStore,
                         key=key,
@@ -1170,7 +1051,6 @@ class Node(object):
                     expiredKeys.append(key)
                 elif now - lastPublished >= constants.replicateInterval:
                     # ...data has not yet expired, and we need to replicate it
-                    # print '    replicating key:', key,'age:',age
                     twisted.internet.reactor.callFromThread(  # @UndefinedVariable
                         self.iterativeStore,
                         key=key,
@@ -1180,9 +1060,7 @@ class Node(object):
                         expireSeconds=expireSeconds,
                     )
         for key in expiredKeys:
-            # print '    expiring key:', key
             del self._dataStore[key]
-        # print 'done with threadedDataRefresh()'
 
 
 if __name__ == '__main__':

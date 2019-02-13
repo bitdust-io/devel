@@ -85,8 +85,6 @@ def to_bin(s, encoding='utf-8', errors='strict'):
 
 
 def encode_hex(value, as_string=True, encoding='utf-8'):
-    # if isinstance(value, six.binary_type):
-    #     value = value.decode(encoding)
     hex_value = codecs.encode(value, 'hex')
     if as_string:
         return hex_value.decode('utf-8')
@@ -94,8 +92,6 @@ def encode_hex(value, as_string=True, encoding='utf-8'):
 
 
 def decode_hex(value, as_string=True, encoding='utf-8'):
-    # if isinstance(value, six.text_type):
-    #     value = value.encode(encoding)
     orig_value = codecs.decode(value, 'hex')
     if as_string:
         return orig_value.decode('utf-8')
@@ -156,39 +152,34 @@ class Bencode(Encoding):
         @return: The encoded data
         @rtype: str
         """
-        try:
-            if type(data) in six.integer_types:
-                return b'i%de' % data
-            elif isinstance(data, six.text_type):
-                return b'%d:%s' % (len(data.encode(encoding=encoding)), data.encode(encoding=encoding))
-            elif isinstance(data, six.binary_type):
-                return b'%d:%s' % (len(data), data)
-            elif type(data) in (list, tuple):
-                encodedListItems = b''
-                for item in data:
-                    encodedListItems += self.encode(item)
-                return b'l%se' % encodedListItems
-            elif isinstance(data, dict):
-                encodedDictItems = b''
-                _d = {(k.encode() if k and isinstance(k, six.text_type) else k) : v for k, v in data.items()}
-                keys = sorted(_d.keys())
-                for key in keys:
-                    e_key = self.encode(key)
-                    e_data = self.encode(_d[key])
-                    encodedDictItems += e_key
-                    encodedDictItems += e_data
-                return b'd%se' % encodedDictItems
-            elif isinstance(data, float):
-                # This (float data type) is a non-standard extension to the original Bencode algorithm
-                return b'f%fe' % data
-            elif data is None:
-                return b'i0e'  # return 0
-            else:
-                raise TypeError("Cannot bencode '%s' object" % type(data))
-        except Exception as exc:
-            print('encode', exc, data)
-#             import traceback
-#             traceback.print_exc()
+        if type(data) in six.integer_types:
+            return b'i%de' % data
+        elif isinstance(data, six.text_type):
+            return b'%d:%s' % (len(data.encode(encoding=encoding)), data.encode(encoding=encoding))
+        elif isinstance(data, six.binary_type):
+            return b'%d:%s' % (len(data), data)
+        elif type(data) in (list, tuple):
+            encodedListItems = b''
+            for item in data:
+                encodedListItems += self.encode(item)
+            return b'l%se' % encodedListItems
+        elif isinstance(data, dict):
+            encodedDictItems = b''
+            _d = {(k.encode() if k and isinstance(k, six.text_type) else k) : v for k, v in data.items()}
+            keys = sorted(_d.keys())
+            for key in keys:
+                e_key = self.encode(key)
+                e_data = self.encode(_d[key])
+                encodedDictItems += e_key
+                encodedDictItems += e_data
+            return b'd%se' % encodedDictItems
+        elif isinstance(data, float):
+            # This (float data type) is a non-standard extension to the original Bencode algorithm
+            return b'f%fe' % data
+        elif data is None:
+            return b'i0e'  # return 0
+        else:
+            raise TypeError("Cannot bencode '%s' object" % type(data))
 
     def decode(self, data, encoding=None):
         """
@@ -212,7 +203,6 @@ class Bencode(Encoding):
 
         Do not call this; use C{decode()} instead
         """
-#         try:
         if data[startIndex:startIndex+1] == b'i':
             endPos = data[startIndex:].find(b'e') + startIndex
             return (int(data[startIndex + 1:endPos]), endPos + 1)
@@ -244,21 +234,3 @@ class Bencode(Encoding):
             if encoding:
                 byts = byts.decode(encoding=encoding)
             return (byts, endPos)
-
-
-#             splitPos = data[startIndex:].find(b':') + startIndex
-#             length = int(data[startIndex:splitPos])
-#             startIndex = splitPos + 1
-#             endPos = startIndex + length
-#             byts = data[startIndex:endPos]
-#             text_or_bin = byts[0:1]
-#             byts = byts[1:]
-#             assert text_or_bin in [b'b', b't']
-#             if text_or_bin == b't':
-#                 return (byts.decode(encoding), endPos)
-#             return (byts, endPos)
-
-
-#         except:
-#             import traceback
-#             traceback.print_exc()

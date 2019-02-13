@@ -34,7 +34,7 @@ from .contact import Contact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
@@ -162,18 +162,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     df.callback((message, address))
                 elif isinstance(message, msgtypes.ErrorMessage):
                     # The RPC request raised a remote exception; raise it locally
-#                     if message.exceptionType.startswith('exceptions.'):
-#                         exceptionClassName = message.exceptionType[11:]
-#                     else:
-#                         localModuleHierarchy = self.__module__.split('.')
-#                         remoteHierarchy = message.exceptionType.split('.')
-#                         # strip the remote hierarchy
-#                         while remoteHierarchy[0] == localModuleHierarchy[0]:
-#                             remoteHierarchy.pop(0)
-#                             localModuleHierarchy.pop(0)
-#                         exceptionClassName = '.'.join(remoteHierarchy)
                     remoteException = None
-                    exc_msg = message_response  # + ' from %s' % str(address)
+                    exc_msg = message_response
                     remoteException = Exception(exc_msg)
                     if _Debug:
                         print('                    respond with error "%s"' % exc_msg)
@@ -190,8 +180,6 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     print('                    message %r %s was not identified, currently sent: %r' % (
                         message.id, type(message.id),
                         [k for k in self._sentMessages.keys()], ))
-        # if _Debug:
-        #     print('                dt=%s' % (time.time() - _t))
         return True
 
     def datagramReceived(self, datagram, address):
@@ -273,56 +261,39 @@ class KademliaProtocol(protocol.DatagramProtocol):
                future, into something similar to a message translator/encoder
                class (see C{kademlia.msgformat} and C{kademlia.encoding}).
         """
-        try:
-            if len(data) > self.msgSizeLimit:
-                # We have to spread the data over multiple UDP datagrams, and provide sequencing information
-                # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
-                # bytes 4 & 5 are the sequence number for this specific packet
-                totalPackets = int(len(data) / self.msgSizeLimit)
-                if len(data) % self.msgSizeLimit > 0:
-                    totalPackets += 1
-                encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
-                seqNumber = 0
-                startPos = 0
-                while seqNumber < totalPackets:
-                    # reactor.iterate() #IGNORE:E1101
-                    packetData = data[startPos:startPos + self.msgSizeLimit]
-                    encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-                    # actually we must always pass a header!
-                    # if six.PY2:
-                    #     txData = b'\x00%s%s%s\x00%s' % (encTotalPackets, encSeqNumber, rpcID, packetData)
-                    # else:
-                    # txData = b'\x00%b%b%b\x00%b' % (encoding.to_bin(encTotalPackets), encoding.to_bin(encSeqNumber), encoding.to_bin(rpcID), packetData)
-                    # txData = txData.encode()
-                    txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
-                    txData = b'\x00' + txHeader + b'\x00' + packetData 
-                    reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
-                    # self._write(txData, address)
-                    startPos += self.msgSizeLimit
-                    seqNumber += 1
-            else:
-                # self._write(data, address)
-                totalPackets = 1
-                encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
-                seqNumber = 0
+        if len(data) > self.msgSizeLimit:
+            # We have to spread the data over multiple UDP datagrams, and provide sequencing information
+            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
+            # bytes 4 & 5 are the sequence number for this specific packet
+            totalPackets = int(len(data) / self.msgSizeLimit)
+            if len(data) % self.msgSizeLimit > 0:
+                totalPackets += 1
+            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+            seqNumber = 0
+            startPos = 0
+            while seqNumber < totalPackets:
+                # reactor.iterate() #IGNORE:E1101
+                packetData = data[startPos:startPos + self.msgSizeLimit]
                 encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-                # if six.PY2:
-                #     txData = b'\x00%s%s%s\x00%s' % (encTotalPackets, encSeqNumber, rpcID, data)
-                # else:
+                # actually we must always pass a header!
                 txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
-                txData = b'\x00' + txHeader + b'\x00' + data 
-                # txData = txData.encode()
-                self._write(txData, address)
-        except Exception as exc:
-            print('_send', exc)
+                txData = b'\x00' + txHeader + b'\x00' + packetData 
+                reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
+                startPos += self.msgSizeLimit
+                seqNumber += 1
+        else:
+            totalPackets = 1
+            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+            seqNumber = 0
+            encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
+            txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
+            txData = b'\x00' + txHeader + b'\x00' + data 
+            self._write(txData, address)
 
     def _write(self, data, address):
         if self._counter:
             self._counter('_write')
-        try:
-            self.transport.write(data, address)
-        except Exception as exc:
-            print('_write', exc)
+        self.transport.write(data, address)
         if _Debug:
             print('                        dht._write %d bytes to %s' % (len(data), str(address)))
 
@@ -330,12 +301,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         Send a RPC response to the specified contact.
         """
-        try:
-            msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
-            msgPrimitive = self._translator.toPrimitive(msg)
-            encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
-        except Exception as exc:
-            print('_sendResponse', exc)
+        msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
+        msgPrimitive = self._translator.toPrimitive(msg)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
         if _Debug:
             print('                _sendResponse', (contact.address, contact.port), rpcID, response)
         if self._counter:

@@ -16,7 +16,6 @@
 
 
 import six
-import base64
 
 
 class Contact(object):
@@ -53,10 +52,6 @@ class Contact(object):
     def __repr__(self, *args, **kwargs):
         return str(self)
 
-#     def __str__(self):
-#         return '%s %r at <%r:%d>' % (
-#             self.__class__.__name__, base64.b64encode(self.id), self.address, self.port)
-
     def __str__(self):
         return '<%s at %r:%d>' % (
             self.id[:6], self.address, self.port)
@@ -76,12 +71,6 @@ class Contact(object):
         This happens via this contact's C{_networkProtocol} object (i.e. the
         host Node's C{_protocol} object).
         """
-#        import sys, os
-#        cod = sys._getframe().f_back.f_code
-#        modul = os.path.basename(cod.co_filename).replace('.py', '')
-#        caller = cod.co_name
-#        print 'contact.__getattr__ from %s.%s' % (modul, caller)
         def _sendRPC(*args, **kwargs):
-            #            print 'sendRPC', name, self.address, self.port, self.commTime
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
         return _sendRPC
