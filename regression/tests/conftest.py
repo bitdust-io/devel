@@ -629,11 +629,11 @@ def open_all_tunnels(event_loop):
 
 def clean_all_nodes(event_loop, skip_checks=False):
     print('\nCleaning all nodes')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(clean_one_node_async(node, event_loop=event_loop)) for node in ALL_NODES
-    ]))
-    # for node in ALL_NODES:
-    #     clean_one_node(node)
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(clean_one_node_async(node, event_loop=event_loop)) for node in ALL_NODES
+    # ]))
+    for node in ALL_NODES:
+        clean_one_node(node)
     # event_loop.run_until_complete(asyncio.wait([
     #     asyncio.ensure_future(clean_one_customer_async(node['name'], event_loop)) for node in ALL_ROLES['customers']
     # ]]))
@@ -716,11 +716,11 @@ def report_all_nodes(event_loop):
     # ]))
     for node in ALL_NODES:
         print_exceptions_one_node(node)
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
-    ]))
-    # for node in ALL_NODES:
-    #     report_one_node(node)
+    # event_loop.run_until_complete(asyncio.wait([
+    #     asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
+    # ]))
+    for node in ALL_NODES:
+        report_one_node(node)
 
 #------------------------------------------------------------------------------
 
@@ -750,7 +750,7 @@ def global_wrapper(event_loop):
 
     if os.environ.get('START_NODES', '1') == '1':
         start_all_nodes(event_loop)
-    
+
     print('\nTest network prepared in %5.3f seconds\n')
  
     yield
