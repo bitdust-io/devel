@@ -110,7 +110,11 @@ class KademliaProtocol(protocol.DatagramProtocol):
         return df
 
     def dispatch(self, datagram, address):
+        if _Debug:
+            print('                datagram: %r' % datagram)
         msgPrimitive = self._encoder.decode(datagram, encoding='utf-8')
+        if _Debug:
+            print('                msgPrimitive: %r' % msgPrimitive)
         message = self._translator.fromPrimitive(msgPrimitive)
 
         remoteContact = Contact(encoding.to_text(message.nodeID), address[0], address[1], self)
@@ -118,7 +122,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._node.addContact(remoteContact)
 
         if _Debug:                                                                                                                                                                                                                                
-            print('                [%s] dht.datagramReceived %d %s from %s %r %s' % (
+            print('                [%s] dht.dispatch %d %s from %s %r %s' % (
                 time.time(), len(datagram), str(type(message)), str(address), message.id, type(message.id), ))
 
         if isinstance(message, msgtypes.RequestMessage):

@@ -220,15 +220,15 @@ class Bencode(Encoding):
             startIndex += 1
             decodedList = []
             while data[startIndex:startIndex+1] != b'e':
-                listData, startIndex = Bencode._decodeRecursive(data, startIndex)
+                listData, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 decodedList.append(listData)
             return (decodedList, startIndex + 1)
         elif data[startIndex:startIndex+1] == b'd':
             startIndex += 1
             decodedDict = {}
             while data[startIndex:startIndex+1] != b'e':
-                key, startIndex = Bencode._decodeRecursive(data, startIndex)
-                value, startIndex = Bencode._decodeRecursive(data, startIndex)
+                key, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
+                value, startIndex = Bencode._decodeRecursive(data, startIndex, encoding=encoding)
                 decodedDict[key] = value
             return (decodedDict, startIndex)
         elif data[startIndex:startIndex+1] == b'f':
