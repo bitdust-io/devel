@@ -397,10 +397,9 @@ class identity:
         A smart method to load object fields data from XML content.
         """
         try:
-            doc = minidom.parseString(xmlsrc)
+            doc = minidom.parseString(strng.to_bin(xmlsrc))
         except:
-            lg.exc('identity unserialize failed', 8, 1)
-            lg.out(12, '\n' + xmlsrc[:256] + '\n')
+            lg.exc("xmlsrc=%r" % xmlsrc)
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)
@@ -428,12 +427,14 @@ class identity:
         self.setPublicKey(json_data['publickey'])
         self.setSignature(json_data['signature'])
 
-    def serialize(self):
+    def serialize(self, as_text=False):
         """
         A method to generate XML content for that identity object.
 
         Used to save identity on disk or transfer over network.
         """
+        if as_text:
+            return strng.to_text(self.toxml()[0].strip())
         return self.toxml()[0].strip()
 
     def serialize_object(self):
@@ -452,16 +453,16 @@ class identity:
             'name': self.getIDName(),
             'idurl': self.getIDURL(),
             'global_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
-            'sources': self.getSources(),
-            'contacts': self.getContacts(),
-            'certificates': self.certificates,
-            'scrubbers': self.scrubbers,
-            'postage': self.postage,
-            'date': self.date,
-            'version': self.version,
-            'revision': self.revision,
-            'publickey': self.publickey,
-            'signature': self.signature,
+            'sources': [strng.to_text(i) for i in self.getSources()],
+            'contacts': [strng.to_text(i) for i in self.getContacts()],
+            'certificates': [strng.to_text(i) for i in self.certificates],
+            'scrubbers': [strng.to_text(i) for i in self.scrubbers],
+            'postage': strng.to_text(self.postage),
+            'date': strng.to_text(self.date),
+            'version': strng.to_text(self.version),
+            'revision': strng.to_text(self.revision),
+            'publickey': strng.to_text(self.publickey),
+            'signature': strng.to_text(self.signature),
         }
 
     def toxml(self):
@@ -524,8 +525,9 @@ class identity:
         signature = doc.createElement('signature')
         signature.appendChild(doc.createTextNode(strng.to_text(self.signature)))
         root.appendChild(signature)
-
-        return doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8"), root, doc
+        
+        xmlsrc = doc.toprettyxml(indent="  ", newl="\n", encoding="utf-8")
+        return xmlsrc, root, doc
 
     def from_xmlobj(self, root_node):
         """
@@ -731,13 +733,16 @@ class identity:
             orderL.append(proto)
         return orderL
 
-    def getContactsAsTuples(self):
+    def getContactsAsTuples(self, as_text=False):
         """
         """
         result = []
         for c in self.contacts:
             proto, host = c.split(b'://')
-            result.append((proto, host))
+            if as_text:
+                result.append((strng.to_text(proto), strng.to_text(host)))
+            else:
+                result.append((proto, host))
         return result
 
     def getContactsByProto(self):

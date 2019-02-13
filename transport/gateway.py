@@ -71,7 +71,7 @@ from io import open
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 16
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -293,23 +293,23 @@ def verify():
 
     def _verify_transport(proto):
         if _Debug:
-            lg.out(_DebugLevel - 8, '    verifying %s_transport' % proto)
+            lg.out(_DebugLevel - 2, '    verifying %s_transport' % proto)
         if not settings.transportIsEnabled(proto):
             if _Debug:
-                lg.out(_DebugLevel - 8, '    %s_transport is disabled' % proto)
+                lg.out(_DebugLevel - 2, '    %s_transport is disabled' % proto)
             return succeed(True)
         transp = transport(proto)
         if transp.state == 'OFFLINE':
             if _Debug:
-                lg.out(_DebugLevel - 8, '    %s_transport state is OFFLINE' % proto)
+                lg.out(_DebugLevel - 2, '    %s_transport state is OFFLINE' % proto)
             return succeed(True)
         if transp.state != 'LISTENING':
             if _Debug:
-                lg.out(_DebugLevel - 8, '    %s_transport state is not LISTENING' % proto)
+                lg.out(_DebugLevel - 2, '    %s_transport state is not LISTENING' % proto)
             return succeed(True)
         transp_result = transp.interface.verify_contacts(my_id_obj)
         if _Debug:
-            lg.out(_DebugLevel - 8, '        %s result is %r' % (proto, transp_result))
+            lg.out(_DebugLevel - 2, '        %s result is %r' % (proto, transp_result))
         if isinstance(transp_result, bool) and transp_result:
             return succeed(True)
         if isinstance(transp_result, bool) and transp_result == False:
@@ -324,7 +324,7 @@ def verify():
     def _on_verified_one(t_result, proto):
         all_results[proto] = t_result
         if _Debug:
-            lg.out(_DebugLevel - 8, '        verified %s transport, result=%r' % (proto, t_result))
+            lg.out(_DebugLevel - 2, '        verified %s transport, result=%r' % (proto, t_result))
         if len(all_results) == len(ordered_list):
             resulted.callback((ordered_list, all_results))
 
@@ -386,8 +386,11 @@ def inbox(info):
     global _LastInboxPacketTime
 #     if _DoingShutdown:
 #         if _Debug:
-#             lg.out(_DebugLevel - 4, "gateway.inbox ignoring input since _DoingShutdown ")
+#             lg.out(_DebugLevel, "gateway.inbox ignoring input since _DoingShutdown ")
 #         return None
+    if _Debug:
+        lg.out(_DebugLevel, "gateway.inbox [%s]" % info.filename)
+
     if info.filename == "" or not os.path.exists(info.filename):
         lg.err("bad filename=" + info.filename)
         return None
@@ -432,7 +435,7 @@ def inbox(info):
         return None
     _LastInboxPacketTime = time.time()
     if _Debug:
-        lg.out(_DebugLevel - 8, "gateway.inbox [%s] signed by %s|%s (for %s) from %s://%s" % (
+        lg.out(_DebugLevel - 2, "gateway.inbox [%s] signed by %s|%s (for %s) from %s://%s" % (
             Command,
             nameurl.GetName(OwnerID),
             nameurl.GetName(CreatorID),
@@ -469,7 +472,7 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
         `packet_out.PacketOut` object if packet was sent
     """
     if _Debug:
-        lg.out(_DebugLevel - 8, "gateway.outbox [%s] signed by %s|%s to %s (%s), wide=%s" % (
+        lg.out(_DebugLevel - 2, "gateway.outbox [%s] signed by %s|%s to %s (%s), wide=%s" % (
             outpacket.Command,
             nameurl.GetName(outpacket.OwnerID),
             nameurl.GetName(outpacket.CreatorID),
@@ -586,7 +589,7 @@ def cancel_input_file(transferID, why=None):
     pkt_in = packet_in.get(transferID)
     assert pkt_in is not None
     if _Debug:
-        lg.out(_DebugLevel - 4, 'gateway.cancel_input_file : %s why: %s' % (transferID, why))
+        lg.out(_DebugLevel, 'gateway.cancel_input_file : %s why: %s' % (transferID, why))
     pkt_in.automat('cancel', why)
     return True
 
@@ -597,7 +600,7 @@ def cancel_outbox_file(proto, host, filename, why=None):
         lg.err('gateway.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
         return None
     if _Debug:
-        lg.out(_DebugLevel - 4, 'gateway.cancel_outbox_file : %s:%s %s, why: %s' % (proto, host, filename, why))
+        lg.out(_DebugLevel, 'gateway.cancel_outbox_file : %s:%s %s, why: %s' % (proto, host, filename, why))
     pkt_out.automat('cancel', why)
 
 
@@ -607,7 +610,7 @@ def cancel_outbox_file_by_transfer_id(transferID, why=None):
         lg.warn('%s is not found' % str(transferID))
         return False
     if _Debug:
-        lg.out(_DebugLevel - 4, 'gateway.cancel_outbox_file_by_transfer_id : %s' % transferID)
+        lg.out(_DebugLevel, 'gateway.cancel_outbox_file_by_transfer_id : %s' % transferID)
     pkt_out.automat('cancel', why)
     return True
 
@@ -667,12 +670,12 @@ def packets_timeout_loop():
     for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
             if _Debug:
-                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_in, pkt_in.timeout))
+                lg.out(_DebugLevel, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_in, pkt_in.timeout))
             pkt_in.automat('cancel', 'timeout')
     for pkt_out in packet_out.queue():
         if pkt_out.is_timed_out():
             if _Debug:
-                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_out, pkt_out.timeout))
+                lg.out(_DebugLevel, 'gateway.packets_timeout_loop %r is timed out: %s' % (pkt_out, pkt_out.timeout))
             pkt_out.automat('cancel', 'timeout')
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
@@ -734,7 +737,7 @@ def on_transport_state_changed(transport, oldstate, newstate):
     """
     global _TransportStateChangedCallbacksList
     if _Debug:
-        lg.out(_DebugLevel - 8, 'gateway.on_transport_state_changed in %r : %s->%s' % (
+        lg.out(_DebugLevel - 2, 'gateway.on_transport_state_changed in %r : %s->%s' % (
             transport, oldstate, newstate))
     from p2p import network_connector
     if network_connector.A():
@@ -754,7 +757,7 @@ def on_receiving_started(proto, host, options_modified=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel - 8, 'gateway.on_receiving_started %r host=%r' % (proto.upper(), host))
+        lg.out(_DebugLevel - 2, 'gateway.on_receiving_started %r host=%r' % (proto.upper(), host))
     transport(proto).automat('receiving-started', (proto, host, options_modified))
     return True
 
@@ -763,7 +766,7 @@ def on_receiving_failed(proto, error_code=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel - 8, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
+        lg.out(_DebugLevel - 2, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
     return True
 
@@ -772,7 +775,7 @@ def on_disconnected(proto, result=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel - 8, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
+        lg.out(_DebugLevel - 2, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     if proto in transports():
         transport(proto).automat('stopped')
     return True

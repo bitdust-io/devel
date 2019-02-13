@@ -67,12 +67,11 @@ class P2PNotificationsService(LocalService):
         return True
 
     def request(self, json_payload, newpacket, info):
-        import json
         from logs import lg
+        from lib import serialization
         from p2p import p2p_service
         from p2p import p2p_queue
         try:
-            # service_info_json = json.loads(newpacket.Payload)
             service_requests_list = json_payload['items']
         except:
             lg.warn("invlid json payload")
@@ -150,7 +149,8 @@ class P2PNotificationsService(LocalService):
             service_responses_list.append(resp)
             lg.out(self.debug_level, 'service_p2p_notifications.request  %s:%s  is  [%s] : %s' % (
                 r_scope, r_action, resp['result'], resp.get('reason', 'OK'), ))
-        return p2p_service.SendAck(newpacket, json.dumps({'items': service_responses_list}))
+        payload = serialization.DictToBytes({'items': service_responses_list, }, values_to_text=True)
+        return p2p_service.SendAck(newpacket, payload)
 
     def cancel(self, json_payload, newpacket, info):
         # TODO: work in progress
@@ -168,6 +168,8 @@ class P2PNotificationsService(LocalService):
         if newpacket.Command != commands.Event():
             return False
         return p2p_queue.on_event_packet_received(newpacket, info, status, error_message)
+
+
 #         try:
 #             e_json = json.loads(newpacket.Payload)
 #             event_id = e_json['event_id']

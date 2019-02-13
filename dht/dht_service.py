@@ -31,6 +31,7 @@ module:: dht_service
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
 
 #------------------------------------------------------------------------------
 
@@ -41,12 +42,10 @@ _DebugLevel = 10
 
 import os
 import sys
-import six
 import hashlib
 import random
 import base64
 import optparse
-import json
 import pprint
 
 #------------------------------------------------------------------------------
@@ -63,7 +62,7 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from dht.entangled.kademlia.datastore import SQLiteVersionedDataStore  # @UnresolvedImport
+from dht.entangled.kademlia.datastore import SQLiteVersionedJsonDataStore  # @UnresolvedImport
 from dht.entangled.kademlia.node import rpcmethod  # @UnresolvedImport
 from dht.entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat  # @UnresolvedImport
 from dht.entangled.kademlia import constants  # @UnresolvedImport
@@ -110,14 +109,12 @@ def init(udp_port, db_file_path=None):
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
     try:
-        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
-        # dataStore.setItem('not_exist_key', 'not_exist_value', time.time(), time.time(), None, 60)
-        # del dataStore['not_exist_key']
+        dataStore = SQLiteVersionedJsonDataStore(dbFile=dbPath)
     except:
         lg.warn('failed reading DHT records, removing %s and starting clean DB' % dbPath)
         lg.exc()
         os.remove(dbPath)
-        dataStore = SQLiteVersionedDataStore(dbFile=dbPath)
+        dataStore = SQLiteVersionedJsonDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
     _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
     if _Debug:
@@ -151,12 +148,11 @@ def connect(seed_nodes=[]):
         node().refresher.reset(0)
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect DHT already active : SKIP but RESET refresher task')
-        result.callback(True)
+            if node()._joinDeferred and node()._joinDeferred.called:
+                result.callback(True)
+            else:
+                node()._joinDeferred.addBoth(lambda x: result.callback(True))
         return result
-
-#     if not seed_nodes:
-#         from dht import known_nodes
-#         seed_nodes = known_nodes.nodes()
 
     if not node().listener:
         node().listenUDP()
@@ -180,7 +176,7 @@ def connect(seed_nodes=[]):
                     lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
             lg.out(_DebugLevel, 'alive DHT nodes: %s' % pprint.pformat(live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
-            lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % base64.b64encode(node().id))
+            lg.out(_DebugLevel, 'DHT node is active, ID=[%s]' % node().id)
         result.callback(resolved_seed_nodes)
         return live_contacts
 
@@ -295,7 +291,7 @@ def key_to_hash(key):
     key = strng.to_bin(key)
     h = hashlib.sha1()
     h.update(key)
-    return h.digest()
+    return h.hexdigest()
 
 #------------------------------------------------------------------------------
 
@@ -324,15 +320,24 @@ def on_success(result, method, key, *args, **kwargs):
     return result
 
 
-def on_error(err, method, key):
+def on_error(x, method, key):
     if _Debug:
         try:
-            _err = str(err)
+            errmsg = x.value.subFailure.getErrorMessage()
         except:
-            _err = 'unknown error' 
+            try:
+                errmsg = x.getErrorMessage()
+            except:
+                try:
+                    errmsg = x.value
+                except:
+                    try:
+                        errmsg = str(x)
+                    except:
+                        errmsg = 'Unknown Error'
         lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%r' % (
-            method, key, _err))
-    return err
+            method, key, errmsg))
+    return x
 
 #------------------------------------------------------------------------------
 
@@ -379,43 +384,54 @@ def delete_key(key):
 
 #------------------------------------------------------------------------------
 
-def read_json_response(response, key, result_defer=None):
+def read_json_response(response, key, result_defer=None, as_bytes=False):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.read_json_response [%s]' % base64.b64encode(key))
+        lg.out(_DebugLevel, 'dht_service.read_json_response [%r] : %r' % (key, response))
     value = None
     if isinstance(response, list):
+        if _Debug:
+            lg.out(_DebugLevel, '        response is a list, value not found')
         if result_defer:
             result_defer.callback(response)
         return None
     if isinstance(response, dict):
-        if key in response and response.get('values'):
+        if response.get('values'):
             try:
                 latest = 0
-                value = jsn.loads(response['values'][0][0])
+                if as_bytes:
+                    value = jsn.loads(response['values'][0][0])
+                else:
+                    value = jsn.loads_text(response['values'][0][0])
                 for v in response['values']:
                     if v[1] > latest:
                         latest = v[1]
                         value = jsn.loads(v[0])
             except:
                 lg.exc()
+                if _Debug:
+                    lg.out(_DebugLevel, '        invalid json value found in DHT, return None')
                 if result_defer:
                     result_defer.errback(Exception('invalid json value found in DHT'))
                 return None
         else:
+            if _Debug:
+                lg.out(_DebugLevel, '        response is a dict, "values" field is empty, value not found')
             if result_defer:
                 result_defer.callback(response.get('activeContacts', []))
             return None
+    if _Debug:
+        lg.out(_DebugLevel, '        response is a dict, value is OK')
     if result_defer:
         result_defer.callback(value)
     return value
 
 
-def get_json_value(key):
+def get_json_value(key, as_bytes=False):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.get_json_value key=[%r]' % key)
     ret = Deferred()
     d = get_value(key)
-    d.addCallback(read_json_response, key_to_hash(key), ret)
+    d.addCallback(read_json_response, key, ret, as_bytes)
     d.addErrback(ret.errback)
     return ret
 
@@ -434,28 +450,100 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
 
 #------------------------------------------------------------------------------
 
-def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
+def validate_rules(value, key, rules, result_defer=None, raise_for_result=False, populate_meta_fields=False):
+    """
+    Will be executed on both sides: sender and receiver for each (key,value) get / set request on DHT.
+    Can return in `result_defer` : errback, callback with list (closest nodes), callback with dict
+    """
+    if not rules:
+        lg.err('DHT record must have validation rules applied')
+        if result_defer:
+            result_defer.errback(Exception('data must have validation rules applied'))
+        return None
+
+    if not isinstance(value, dict):
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.validate_data_received    key=[%s] not found : %s' % (key, type(value)))
+        if not result_defer:
+            return value if populate_meta_fields else None
+        if raise_for_result:
+            result_defer.errback(Exception('value not found'))
+            return None
+        if not populate_meta_fields:
+            result_defer.callback(None)
+            return None
+        result_defer.callback(value)
+        return None
+
     try:
-        json_new_value = json.loads(value)
+        expected_record_type = rules['type'][0]['arg']
+    except:
+        lg.exc()
+        if result_defer:
+            result_defer.errback(Exception('invalid validation rules can not be applied'))
+        return None
+
+    if populate_meta_fields:
+        # Otherwise those records will not pass validation
+        if value.get('type') != expected_record_type:
+            value['type'] = expected_record_type
+        if value.get('key') != key:
+            value['key'] = key
+
+    passed = True
+    errors = []
+    for field, field_rules in rules.items():
+        for rule in field_rules:
+            if 'op' not in rule:
+                lg.warn('incorrect validation rule found: %r' % rule)
+                continue
+            if rule['op'] == 'equal' and rule.get('arg') != strng.to_text(value.get(field)):
+                passed = False
+                errors.append((field, rule, ))
+                break
+            if rule['op'] == 'exist' and field not in value:
+                passed = False
+                errors.append((field, rule, ))
+                break
+        if not passed:
+            break
+    if not passed:
+        lg.err('DHT record validation failed, errors: %s' % errors)
+        if result_defer:
+            result_defer.errback(Exception('DHT record validation failed'))
+        return None
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_received   key=[%s] : value is OK' % key)
+    if result_defer:
+        result_defer.callback(value)
+    return value
+
+
+def validate_before_store(key, value, originalPublisherID, age, expireSeconds, **kwargs):
+    """
+    Will be executed on receiver side for each (key,value) set request on DHT
+    """
+    try:
+        json_new_value = jsn.loads(value)
     except:
         # not a json data to be written - this is not valid
         lg.exc()
-        raise ValueError('input data is not a json value')
+        raise ValueError('input data is not a json value: %r' % value)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (
-            base64.b64encode(key), json_new_value, ))
+            key, json_new_value, ))
     new_record_type = json_new_value.get('type')
     if not new_record_type:
         if _Debug:
             lg.out(_DebugLevel, '        new json data do not have "type" field present, store operation FAILED')
-        raise ValueError('input data do not have "type" field present')
+        raise ValueError('input data do not have "type" field present: %r' % json_new_value)
     if key not in node()._dataStore:
         if _Debug:
             lg.out(_DebugLevel, '        previous value not exists yet, store OK')
         return True
     prev_value = node()._dataStore[key]
     try:
-        json_prev_value = json.loads(prev_value)
+        json_prev_value = jsn.loads(prev_value)
     except:
         if _Debug:
             lg.out(_DebugLevel, '        current value in DHT is not a json data, will be overwritten, store OK')
@@ -464,7 +552,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
     if prev_record_type and prev_record_type != new_record_type:
         if _Debug:
             lg.out(_DebugLevel, '        new json data type did not match to existing record type, store operation FAILED')
-        raise ValueError('new json data type do not match to existing record type')
+        raise ValueError('new json data type do not match to existing record type: %r' % json_prev_value)
     # TODO: need to include "key" field into DHT record and validate it as well 
     # new_record_key = json_new_value.get('key')
     # if not new_record_key:
@@ -496,7 +584,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         if new_revision < prev_revision:
             if _Debug:
                 lg.out(_DebugLevel, '        new json data must increment revision number, store operation FAILED')
-            raise ValueError('new json data must increment revision number')
+            raise ValueError('new json data must increment revision number, current revision is %d ' % prev_revision)
         if new_revision == prev_revision:
             if prev_record_type == 'suppliers':
                 prev_ecc_map = json_prev_value.get('ecc_map')
@@ -504,84 +592,31 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
                 if prev_ecc_map and new_ecc_map != prev_ecc_map:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
-                    raise ValueError('new json data have same revision but different ecc_map')
+                    raise ValueError('new json data have same revision but different ecc_map, current revision is %d ' % prev_revision)
                 prev_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_prev_value.get('suppliers', [])]
                 new_suppliers = [strng.to_bin(idurl.strip()) for idurl in json_new_value.get('suppliers', [])]
                 if prev_suppliers != new_suppliers:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different suppliers list, store operation FAILED')
-                    raise ValueError('new json data have same revision but different suppliers list')
+                    raise ValueError('new json data have same revision but different suppliers list, current revision is %d ' % prev_revision)
     if _Debug:
         lg.out(_DebugLevel, '        new json data is valid and matching existing DHT record, store OK')
     return True
 
 
 def validate_before_request(key, **kwargs):
+    """
+    Will be executed on receiver side for each "direct" key request on DHT
+    """
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_before_request key=[%s]' % key)
     return True
 
 
-def validate_data(value, key, rules, result_defer=None, raise_for_result=True, populate_meta_fields=False):
-    if not rules:
-        lg.err('DHT record must have validation rules applied')
-        if result_defer:
-            result_defer.errback(Exception('data must have validation rules applied'))
-        return None
-
-    if not isinstance(value, dict):
-        if _Debug:
-            lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] not found' % key)
-        if result_defer:
-            if not raise_for_result:
-                result_defer.callback(value)
-            else:
-                result_defer.errback(Exception('value not found'))
-        return None
-
-    if value.get('key') != key and populate_meta_fields:
-        value['key'] = key
-
-    try:
-        record_type = rules['type'][0]['arg']
-    except:
-        lg.exc()
-        if result_defer:
-            result_defer.errback(Exception('validation rules can not be applied'))
-        return None
-    if value.get('type') != record_type and populate_meta_fields:
-        value['type'] = record_type
-
-    passed = True
-    errors = []
-    for field, field_rules in rules.items():
-        for rule in field_rules:
-            if 'op' not in rule:
-                lg.warn('incorrect validation rule found: %r' % rule)
-                continue
-            if rule['op'] == 'equal' and rule.get('arg') != strng.to_text(value.get(field)):
-                passed = False
-                errors.append((field, rule, ))
-                break
-            if rule['op'] == 'exist' and field not in value:
-                passed = False
-                errors.append((field, rule, ))
-                break
-        if not passed:
-            break
-    if not passed:
-        lg.err('DHT record validation failed, errors: %s' % errors)
-        if result_defer:
-            result_defer.errback(Exception('DHT record validation failed'))
-        return None
-    if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_data   key=[%s] : value is OK' % key)
-    if result_defer:
-        result_defer.callback(value)
-    return value
-
-
 def validate_data_written(store_results, key, json_data, result_defer):
+    """
+    Will be executed on sender side for each (key,value) set request on DHT
+    """
     try:
         nodes = store_results
         results_collected = False
@@ -590,11 +625,11 @@ def validate_data_written(store_results, key, json_data, result_defer):
             nodes = store_results[0]
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  collected=%s  nodes=%r' % (
-                base64.b64encode(strng.to_bin(key)), results_collected, nodes, ))
+                key, results_collected, nodes, ))
         if results_collected:
             for result in store_results[1]:
                 try:
-                    success = result[0]
+                    success = strng.to_text(result[0])
                     response = result[1]
                     success_str = repr(success)
                     response_str = repr(response)
@@ -625,18 +660,58 @@ def validate_data_written(store_results, key, json_data, result_defer):
     return None
 
 
-def get_valid_data(key, rules={}, raise_for_result=True):
+def validate_before_send(value, key, rules, populate_meta_fields):
+    """
+    Will be executed on sender side before every (key,value) set request towards DHT
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_before_send for key [%s]' % key)
+    if populate_meta_fields:
+        if value.get('key') != key:
+            value['key'] = key
+        if value.get('type') != rules['type'][0]['arg']:
+            value['type'] = rules['type'][0]['arg']
+    return validate_rules(value, key, rules, raise_for_result=False, populate_meta_fields=populate_meta_fields)
+
+
+def validate_after_receive(value, key, rules, result_defer, raise_for_result, populate_meta_fields):
+    """
+    Will be executed on sender side for each (key,value) get response from DHT
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_after_receive for key [%s]' % key)
+    response = validate_rules(value, key, rules, result_defer=result_defer,
+                            raise_for_result=raise_for_result,
+                            populate_meta_fields=populate_meta_fields)
+    if not isinstance(response, dict):
+        if populate_meta_fields:
+            ret = {
+                'key': key,
+                'type': rules['type'][0]['arg'],
+                'closest': response,
+            }
+            return ret
+    if populate_meta_fields:
+        if response.get('key') != key:
+            response['key'] = key
+        if response.get('type') != rules['type'][0]['arg']:
+            response['type'] = rules['type'][0]['arg']
+    return response
+
+
+def get_valid_data(key, rules={}, raise_for_result=False, return_details=False):
     ret = Deferred()
     d = get_json_value(key)
-    d.addCallback(validate_data, key=key, rules=rules, result_defer=ret, raise_for_result=raise_for_result)
+    d.addCallback(validate_after_receive, key=key, rules=rules, result_defer=ret,
+                  raise_for_result=raise_for_result, populate_meta_fields=return_details)
     d.addErrback(ret.errback)
     return ret
 
 
 def set_valid_data(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, rules={}, collect_results=False):
-    valid_json_data = validate_data(value=json_data, key=key, rules=rules, populate_meta_fields=True)
-    if valid_json_data is None:
-        return fail(Exception('invalid data, validation failed'))
+    valid_json_data = validate_before_send(value=json_data, key=key, rules=rules, populate_meta_fields=True)
+    if valid_json_data is None or not isinstance(valid_json_data, dict):
+        return fail(Exception('invalid data going to be written, validation failed'))
     ret = Deferred()
     d = set_json_value(key, json_data=json_data, age=age, expire=expire, collect_results=collect_results)
     d.addCallback(validate_data_written, key, json_data, ret)
@@ -746,7 +821,7 @@ def find_node(node_id):
             lg.out(_DebugLevel, 'dht_service.find_node SKIP, already started')
         return _ActiveLookup
     count('find_node')
-    node_id64 = base64.b64encode(node_id)
+    node_id64 = node_id
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]  counter=%d' % (node_id64, counter('find_node')))
     if not node():
@@ -813,12 +888,16 @@ def dump_local_db(value_as_json=False):
             lg.out(_DebugLevel, 'dht_service.dump_local_db local node is not ready')
         return None
     l = []
-    for itm in node()._dataStore.getAllItems(unpickle=True):
+    for itm in node()._dataStore.getAllItems():
         if value_as_json:
-            try:
-                itm['value'] = json.loads(itm['value'])
-            except:
-                itm['value'] = strng.to_text(itm['value'])
+            if isinstance(itm['value'], dict):
+                _j = jsn.dumps(itm['value'], keys_to_text=True, errors='ignore')
+                itm['value'] = jsn.loads_text(_j, errors='ignore')
+            else:
+                try:
+                    itm['value'] = jsn.loads_text(itm['value'], errors='ignore')
+                except:
+                    itm['value'] = strng.to_text(itm['value'])
         l.append(itm)
     return l
 
@@ -843,8 +922,13 @@ class DHTNode(EntangledNode):
     def expire(self):
         now = utime.get_sec1970()
         expired_keys = []
+
+        h = hashlib.sha1()
+        h.update(b'nodeState')
+        nodeStateKey = h.hexdigest()
+
         for key in self._dataStore.keys():
-            if key == b'nodeState':
+            if key == nodeStateKey:
                 continue
             item_data = self._dataStore.getItem(key)
             if item_data:
@@ -867,7 +951,7 @@ class DHTNode(EntangledNode):
         count('store_dht_service')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.store key=[%s] for %d seconds, counter=%d' % (
-                base64.b64encode(key), expireSeconds, counter('store')))
+                key, expireSeconds, counter('store')))
 
         if 'store' in self.rpc_callbacks:
             # TODO: add signature validation to be sure this is the owner of that key:value pair
@@ -899,15 +983,6 @@ class DHTNode(EntangledNode):
             self.rpc_callbacks['request'](
                 key=key,
             )
-
-#         internal_value = get_node_data(key)
-#         if internal_value is None and key in self._dataStore:
-#             value = self._dataStore[key]
-#             self.data[key] = value
-#             if _Debug:
-#                 lg.out(_DebugLevel, '    found in _dataStore and saved as internal')
-#         else:
-#             value = internal_value
 
         value = get_node_data(key)
         if value is None:
@@ -949,14 +1024,13 @@ class KademliaProtocolConveyor(KademliaProtocol):
         self.sending_worker = None
         self._counter = count
 
-    def datagramReceived(self, datagram, address):
-        count('dht_datagramReceived')
-        if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL:
-            lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
-        self.receiving_queue.append((datagram, address, ))
-        if self.receiving_worker is None:
-            self._process_incoming()
-            # self.receiving_worker = reactor.callLater(0, self._process_incoming)
+#     def datagramReceived(self, datagram, address):
+#         count('dht_datagramReceived')
+#         if len(self.receiving_queue) > RECEIVING_QUEUE_LENGTH_CRITICAL:
+#             lg.warn('incoming DHT traffic too high, items to process: %d' % len(self.receiving_queue))
+#         self.receiving_queue.append((datagram, address, ))
+#         if self.receiving_worker is None:
+#             self._process_incoming()  # self.receiving_worker = reactor.callLater(0, self._process_incoming)
 
     def _process_incoming(self):
         if len(self.receiving_queue) == 0:
@@ -969,15 +1043,14 @@ class KademliaProtocolConveyor(KademliaProtocol):
             t = RECEIVING_FREQUENCY_SEC
         self.receiving_worker = reactor.callLater(t, self._process_incoming)  #@UndefinedVariable
 
-    def _send(self, data, rpcID, address):
-        count('dht_send')
-        if _Debug:
-            if len(self.sending_queue) > 50:
-                lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
-        self.sending_queue.append((data, rpcID, address, ))
-        if self.receiving_worker is None:
-            self._process_outgoing()
-            # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
+#     def _send(self, data, rpcID, address):
+#         count('dht_send')
+#         if _Debug:
+#             if len(self.sending_queue) > 50:
+#                 lg.warn('outgoing DHT traffic too high, items to send: %d' % len(self.sending_queue))
+#         self.sending_queue.append((data, rpcID, address, ))
+#         if self.receiving_worker is None:
+#             self._process_outgoing() # self.receiving_worker = reactor.callLater(0, self._process_outgoing)
 
     def _process_outgoing(self):
         if len(self.sending_queue) == 0:
@@ -1032,9 +1105,11 @@ def main(options=None, args=None):
                 pass
 
             elif len(args) > 0:
+
                 def _r(x):
                     lg.info(x)
-                    reactor.stop()  #@UndefinedVariable
+                    # reactor.stop()  #@UndefinedVariable
+
                 cmd = args[0]
                 if cmd == 'get':
                     get_value(args[1]).addBoth(_r)
@@ -1046,11 +1121,11 @@ def main(options=None, args=None):
                     set_json_value(args[1], jsn.loads(args[2]),
                                    expire=(int(args[3]) if len(args)>=4 else 9999)).addBoth(_r)
                 elif cmd == 'get_valid_data':
-                    get_valid_data(args[1], rules=json.loads(args[2])).addBoth(_r)
+                    get_valid_data(args[1], rules=jsn.loads(args[2]), return_details=True).addBoth(_r)
                 elif cmd == 'set_valid_data':
-                    set_valid_data(args[1], json.loads(args[2]),
+                    set_valid_data(args[1], jsn.loads(args[2]),
                                    expire=(int(args[3]) if len(args)>=4 else 9999),
-                                   rules=json.loads(args[4])).addBoth(_r)
+                                   rules=jsn.loads(args[4])).addBoth(_r)
                 elif cmd == 'read_customer_suppliers':
                     dht_relations.read_customer_suppliers(args[1]).addBoth(_r)
                 elif cmd == 'write_customer_suppliers':
@@ -1072,21 +1147,26 @@ def main(options=None, args=None):
             lg.exc()
 
     seeds = []
-    for dht_node_str in options.seeds.split(','):
-        if dht_node_str.strip():
-            try:
-                dht_node = dht_node_str.strip().split(':')
-                dht_node_host = dht_node[0].strip()
-                dht_node_port = int(dht_node[1].strip())
-            except:
-                continue
-            seeds.append((dht_node_host, dht_node_port, ))
-    
-    if not seeds:
-        from dht import known_nodes
-        seeds = known_nodes.nodes()
 
-    lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
+    if options.seeds in ['genesis', 'root', b'genesis', b'root', ]:
+        lg.out(_DebugLevel, 'Starting genesis node!!!!!!!!!!!!!!!!!!!!')
+    
+    else:
+        for dht_node_str in options.seeds.split(','):
+            if dht_node_str.strip():
+                try:
+                    dht_node = dht_node_str.strip().split(':')
+                    dht_node_host = dht_node[0].strip()
+                    dht_node_port = int(dht_node[1].strip())
+                except:
+                    continue
+                seeds.append((dht_node_host, dht_node_port, ))
+        
+        if not seeds:
+            from dht import known_nodes
+            seeds = known_nodes.nodes()
+
+        lg.out(_DebugLevel, 'Seed nodes: %s' % seeds)
 
     if options.delayed:
         lg.out(_DebugLevel, 'Wait %d seconds before join the network' % options.delayed)

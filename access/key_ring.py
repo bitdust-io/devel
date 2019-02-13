@@ -40,7 +40,6 @@ _DebugLevel = 4
 #------------------------------------------------------------------------------
 
 import sys
-import json
 import base64
 
 from twisted.internet.defer import Deferred
@@ -56,6 +55,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from lib import strng
+from lib import serialization
 
 from contacts import identitycache
 
@@ -155,7 +155,7 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
         lg.exc()
         result.errback(exc)
         return result
-    key_data = json.dumps(key_json)
+    key_data = serialization.DictToBytes(key_json, values_to_text=True)
     block = encrypted.Block(
         BackupID=key_id,
         Data=key_data,
@@ -259,7 +259,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
             'private_sample': '',
         }
     }
-    raw_payload = json.dumps(json_payload)
+    raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
     block = encrypted.Block(
         BackupID=key_id,
         Data=raw_payload,
@@ -340,7 +340,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
             'private_sample': base64.b64encode(private_test_encrypted_sample),
         }
     }
-    raw_payload = json.dumps(json_payload)
+    raw_payload = serialization.DictToBytes(json_payload, values_to_text=True)
     block = encrypted.Block(
         BackupID=key_id,
         Data=raw_payload,
@@ -372,7 +372,7 @@ def on_key_received(newpacket, info, status, error_message):
         return False
     try:
         key_data = block.Data()
-        key_json = json.loads(key_data)
+        key_json = serialization.BytesToDict(key_data, keys_to_text=True, values_to_text=True)
         key_id = key_json['key_id']
         key_id, key_object = my_keys.read_key_info(key_json)
         if key_object.isPublic():
@@ -438,7 +438,7 @@ def on_audit_key_received(newpacket, info, status, error_message):
         return False
     try:
         raw_payload = block.Data()
-        json_payload = json.loads(raw_payload)
+        json_payload = serialization.BytesToDict(raw_payload, keys_to_text=True, values_to_text=True)
         key_id = json_payload['key_id']
         json_payload['audit']
         public_sample = base64.b64decode(json_payload['audit']['public_sample'])

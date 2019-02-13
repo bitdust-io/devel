@@ -92,7 +92,13 @@ def A(event=None, *args, **kwargs):
     global _IdServer
     if _IdServer is None:
         # set automat name and starting state here
-        _IdServer = IdServer('id_server', 'AT_STARTUP', 2, True)
+        _IdServer = IdServer(
+            name='id_server',
+            state='AT_STARTUP',
+            debug_level=2,
+            log_events=True,
+            log_transitions=True,
+        )
     if event is None:
         return _IdServer
     _IdServer.automat(event, *args, **kwargs)
@@ -326,8 +332,8 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def stringReceived(self, data):
         try:
-            version = data[0]
-            command = data[1]
+            version = strng.to_bin(data[0:1])
+            command = strng.to_bin(data[1:2])
             payload = data[2:]
         except:
             self.disconnect()
@@ -335,20 +341,21 @@ class IdServerProtocol(basic.Int32StringReceiver):
             lg.exc()
             lg.warn('incorrect data from %s\n' % str(self.transport.getPeer()))
             return
-        if command == 'h':
+        if command == b'h':
             # lg.out(6, 'id_server.stringReceived HELLO received from %s' % payload)
-            self.sendString(strng.to_bin(
-                '%swid-server:%s' % (version, strng.to_text(A().hostname))))
+            # self.sendString(strng.to_bin(
+            #     '%swid-server:%s' % (version, strng.to_text(A().hostname))))
+            self.sendString(version + b'wid-server:' + strng.to_bin(A().hostname))
             return
-        if command != 'd':
+        if command != b'd':
             self.disconnect()
             # self.transport.loseConnection()
-            lg.warn('not a "data" packet from %s' % str(self.transport.getPeer()))
+            lg.warn('not a "data" packet from %s : %r' % (str(self.transport.getPeer()), data))
             return
         inp = BytesIO(payload)
         try:
-            file_id = struct.unpack('i', inp.read(4))[0]
-            file_size = struct.unpack('i', inp.read(4))[0]
+            file_id = int(struct.unpack('i', inp.read(4))[0])
+            file_size = int(struct.unpack('i', inp.read(4))[0])
         except:
             inp.close()
             self.disconnect()
@@ -363,7 +370,8 @@ class IdServerProtocol(basic.Int32StringReceiver):
         os.write(self.fin, inp_data)
         self.received += len(inp_data)
         # self.transport.loseConnection()
-        self.sendString(strng.to_bin('%so%s' % (version, struct.pack('i', file_id))))
+        self.sendString(version + b'o' + struct.pack('i', file_id))
+        # self.sendString(strng.to_bin('%so%s' % (version, struct.pack('i', file_id))))
         # lg.out(6, 'id_server.stringReceived  %d bytes received from %s' % (len(data), str(self.transport.getPeer())))
         if self.received == file_size:
             os.close(self.fin)
@@ -431,15 +439,15 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
                 src += '\n<br>\n<h3>%s</h3>\n' % str(currentChar).upper()
             url = '/' + filename
             name = filename[:-4]
-            src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (url, name)
+            src += '<p><a href="%s"><nobr>%s</nobr></a></p>\n' % (strng.to_text(url), strng.to_text(name))
         src += '</td>\n</tr>\n</table>\n</td>\n</tr>\n<tr><td align=left>'
         src += '<br><br><p>Total identities on "%s": %d</p><br><br>\n' % (strng.to_text(A().hostname), len(files))
         src += '<p>Other known identity servers:\n'
         for idhost in sorted(known_servers.by_host().keys()):
             idport = known_servers.by_host()[idhost][0]
             if idport != 80:
-                idhost += ':%d' % idport
-            src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (idhost, idhost)
+                idhost += b':%d' % idport
+            src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (strng.to_text(idhost), strng.to_text(idhost))
         src += '</p>'
         src += '</body>\n</html>'
         del files

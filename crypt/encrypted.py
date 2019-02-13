@@ -264,7 +264,7 @@ def Unserialize(data, decrypt_key=None):
     """
     A method to create a ``encrypted.Block`` instance from input string.
     """
-    dct = serialization.BytesToDict(data)
+    dct = serialization.BytesToDict(data, keys_to_text=True)
     try:
         newobject = Block(
             CreatorID=dct['c'],

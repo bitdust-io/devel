@@ -101,9 +101,9 @@ class P2PHookupsService(LocalService):
         return False
 
     def _on_request_service_received(self, newpacket, info):
-        import json
         from twisted.internet.defer import Deferred
         from logs import lg
+        from lib import serialization
         from services import driver
         from p2p import p2p_service
         from transport import packet_out
@@ -112,7 +112,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
         try:
-            json_payload = json.loads(newpacket.Payload)
+            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
             json_payload['name']
             json_payload['payload']
         except:
@@ -144,9 +144,9 @@ class P2PHookupsService(LocalService):
         return True
 
     def _on_cancel_service_received(self, newpacket, info):
-        import json
         from twisted.internet.defer import Deferred
         from logs import lg
+        from lib import serialization
         from services import driver
         from p2p import p2p_service
         from transport import packet_out
@@ -154,7 +154,7 @@ class P2PHookupsService(LocalService):
             p2p_service.SendFail(newpacket, 'too long payload')
             return False
         try:
-            json_payload = json.loads(newpacket.Payload)
+            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True, values_to_text=True)
             json_payload['name']
             json_payload['payload']
         except:

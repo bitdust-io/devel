@@ -7,7 +7,7 @@ services:
   base:
     build:
       <<: *common
-      dockerfile: tests/e2e/Dockerfiles/base/Dockerfile
+      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
     image: bitdust_perf/base
 
   dht_producer:

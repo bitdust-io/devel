@@ -68,7 +68,6 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import re
-import json
 import time
 import random
 
@@ -78,6 +77,7 @@ from logs import lg
 
 from lib import packetid
 from lib import strng
+from lib import serialization
 
 from automats import automat
 
@@ -385,16 +385,12 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        service_info = {
-            'name': 'service_proxy_server',
-        }
-        service_info_raw = json.dumps(service_info)
         newpacket = signed.Packet(
             commands.CancelService(),
             my_id.getLocalID(),
             my_id.getLocalID(),
             packetid.UniqueID(),
-            service_info_raw,
+            serialization.DictToBytes({'name': 'service_proxy_server', }),
             self.router_idurl,
         )
         packet_out.create(newpacket, wide=True, callbacks={
@@ -428,7 +424,7 @@ class ProxyReceiver(automat.Automat):
             strng.to_text(self.router_proto_host[0]),
             strng.to_text(self.router_proto_host[1]),
         ))
-        current_identity = my_id.getLocalIdentity().serialize()
+        current_identity = my_id.getLocalIdentity().serialize(as_text=True)
         previous_identity = ReadMyOriginalIdentitySource()
         if previous_identity:
             lg.warn('my original identity is not empty, SKIP overwriting')
@@ -629,7 +625,7 @@ class ProxyReceiver(automat.Automat):
             my_id.getLocalID(),
             my_id.getLocalID(),
             commands.Identity(),
-            identity_source,
+            identity_obj.serialize(),
             self.router_idurl,
         )
         packet_out.create(
@@ -650,20 +646,19 @@ class ProxyReceiver(automat.Automat):
             return
         orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if not orig_identity:
-            orig_identity = my_id.getLocalIdentity().serialize()
+            orig_identity = my_id.getLocalIdentity().serialize(as_text=True)
         service_info = {
             'name': 'service_proxy_server',
             'payload': {
-                'identity': strng.to_text(orig_identity),
+                'identity': orig_identity,
             },
         }
-        service_info_raw = json.dumps(service_info)
         newpacket = signed.Packet(
             commands.RequestService(),
             my_id.getLocalID(),
             my_id.getLocalID(),
             packetid.UniqueID(),
-            service_info_raw,
+            serialization.DictToBytes(service_info, values_to_text=True),
             self.router_idurl,
         )
         packet_out.create(newpacket, wide=False, callbacks={

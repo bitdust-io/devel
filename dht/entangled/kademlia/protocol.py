@@ -16,11 +16,12 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import six
+import time
+import traceback
 
 from twisted.internet import protocol, defer
 from twisted.python import failure
-
-import base64
 
 import twisted.internet.reactor
 reactor = twisted.internet.reactor
@@ -33,7 +34,7 @@ from .contact import Contact  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -91,22 +92,93 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         msg = msgtypes.RequestMessage(self._node.id, method, args)
         msgPrimitive = self._translator.toPrimitive(msg)
-        encodedMsg = self._encoder.encode(msgPrimitive)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
 
         df = defer.Deferred()
         if rawResponse:
             df._rpcRawResponse = True
 
-        # Set the RPC timeout timer
-        timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, msg.id)  # IGNORE:E1101
         # Transmit the data
         if _Debug:
-            print('                sendRPC', (method, contact.address, contact.port))
+            print('        <<< [%s] sendRPC' % time.time(), (method, msg.id, contact.address, contact.port))
         if self._counter:
             self._counter('sendRPC')
-        self._send(encodedMsg, msg.id, (contact.address, contact.port))
+        # Set the RPC timeout timer
+        timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, msg.id)  # IGNORE:E1101
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
+        self._send(encodedMsg, msg.id, (contact.address, contact.port))
         return df
+
+    def dispatch(self, datagram, address):
+        if _Debug:
+            print('                    datagram of %d bytes to dispatch from %r' % (len(datagram), address))
+        msgPrimitive = self._encoder.decode(datagram, encoding='utf-8')
+        if _Debug:
+            print('                        msgPrimitive: %r' % msgPrimitive)
+        message = self._translator.fromPrimitive(msgPrimitive)
+
+        remoteContact = Contact(encoding.to_text(message.nodeID), address[0], address[1], self)
+        # Refresh the remote node's details in the local node's k-buckets
+        self._node.addContact(remoteContact)
+
+        if _Debug:                                                                                                                                                                                                                                
+            print('        >>> [%s] dht.dispatch %r from %r' % (
+                time.time(), message.id, address, ))
+
+        if isinstance(message, msgtypes.RequestMessage):
+            # This is an RPC method request
+            message_request = message.request
+            if isinstance(message_request, six.binary_type):
+                message_request = message_request.decode()
+            self._handleRPC(remoteContact, message.id, message_request, message.args)
+            if message.id in self._sentMessages:
+                if _Debug:
+                    print('                    RPC Request message received [%s]' % message_request)
+                # Cancel timeout timer for this RPC
+                df, timeoutCall = self._sentMessages[message.id][1:3]
+                timeoutCall.cancel()
+                del self._sentMessages[message.id]
+            else:
+                if _Debug:
+                    print('                     RPC Request message %r was not identified, currently sent: %r' % (
+                        message.id, [k for k in self._sentMessages.keys()], ))
+
+        elif isinstance(message, msgtypes.ResponseMessage):
+            message_response = message.response
+            if isinstance(message_response, six.binary_type):
+                message_response = message_response.decode()
+            # Find the message that triggered this response
+            if message.id in self._sentMessages:
+                # Cancel timeout timer for this RPC
+                df, timeoutCall = self._sentMessages[message.id][1:3]
+                timeoutCall.cancel()
+                del self._sentMessages[message.id]
+
+                if hasattr(df, '_rpcRawResponse'):
+                    if _Debug:
+                        print('                        respond with tuple (%r, %r)' % (message, address))
+                    # The RPC requested that the raw response message and originating address be returned; do not interpret it
+                    df.callback((message, address))
+                elif isinstance(message, msgtypes.ErrorMessage):
+                    # The RPC request raised a remote exception; raise it locally
+                    remoteException = None
+                    exc_msg = message_response
+                    remoteException = Exception(exc_msg)
+                    if _Debug:
+                        print('                    respond with error "%s"' % exc_msg)
+                    df.errback(remoteException)
+                else:
+                    # We got a result from the RPC
+                    if _Debug:
+                        print('                    respond with message_response: %r' % message_response)
+                    df.callback(message_response)
+            else:
+                # If the original message isn't found, it must have timed out
+                # TODO: we should probably do something with this...
+                if _Debug:
+                    print('                    message %r was not identified, currently sent: %r' % (
+                        message.id, [k for k in self._sentMessages.keys()], ))
+        return True
 
     def datagramReceived(self, datagram, address):
         """
@@ -115,86 +187,59 @@ class KademliaProtocol(protocol.DatagramProtocol):
         @note: This is automatically called by Twisted when the protocol
                receives a UDP datagram
         """
-        if _Debug:
-            import time
-            _t = time.time()
         try:
-            if datagram[0:1] == b'\x00' and datagram[25:26] == b'\x00':
-                totalPackets = (ord(datagram[1:2]) << 8) | ord(datagram[2:3])
-                msgID = datagram[5:25]
-                seqNumber = (ord(datagram[3:4]) << 8) | ord(datagram[4:5])
-                if msgID not in self._partialMessages:
-                    self._partialMessages[msgID] = {}
-                self._partialMessages[msgID][seqNumber] = datagram[26:]
-                if len(self._partialMessages[msgID]) == totalPackets:
-                    keys = sorted(self._partialMessages[msgID].keys())
-                    data = ''
-                    for key in keys:
-                        data += self._partialMessages[msgID][key]
-                    datagram = data
-                    if _Debug:
-                        print('                finished partial message', keys)
-                    del self._partialMessages[msgID]
-                else:
-                    return
-            msgPrimitive = self._encoder.decode(datagram)
-            message = self._translator.fromPrimitive(msgPrimitive)
-
-            remoteContact = Contact(message.nodeID, address[0], address[1], self)
-            # Refresh the remote node's details in the local node's k-buckets
-            self._node.addContact(remoteContact)
-
             if _Debug:
-                print('                dht.datagramReceived %d (%s) from %s' % (
-                    len(datagram), str(type(message)), str(address)))
+                _t = time.time()
+            # we must consistently rely on "pagination" logic actually ( or not rely at all )
+            # we can't just check those two bytes in the header and say that packet is "paginated"! 
+            # what if a small data packet accidentally have those bytes set to \x00 just randomly?
+            # so I change the protocol so it will always include such header.
+            # if those two bytes are not set - it is a data coming from "late and not updated" node and we must reject it
+            header_ok = False
+            if datagram[0:1] == b'\x00' and datagram[45:46] == b'\x00':
+                header_ok = True
+            if not header_ok:
+                if _Debug:
+                    print('WARNING, dispatching old-style datagram, remote use is running old version')
+                self.dispatch(datagram, address)
+                return
+   
+            header = datagram[0:46]
+            totalPackets = (ord(encoding.to_text(header[1:2])) << 8) | ord(encoding.to_text(header[2:3]))
+            seqNumber = (ord(encoding.to_text(header[3:4])) << 8) | ord(encoding.to_text(header[4:5]))
+            msgID = encoding.to_text(header[5:45], encoding='utf-8')
+    
+            if _Debug:
+                print('                        datagramReceived with %d bytes   totalPackets=%d seqNumber=%d msgID=%r from %r' % (
+                    len(datagram), totalPackets, seqNumber, msgID, address))
+    
+            if seqNumber < 0 or seqNumber >= totalPackets:
+                if _Debug:
+                    print('                            skip, seqNumber with totalPackets')
+                return
+    
+            if msgID not in self._partialMessages:
+                self._partialMessages[msgID] = {}
+            self._partialMessages[msgID][seqNumber] = datagram[46:]
+    
+            if len(self._partialMessages[msgID]) < totalPackets:
+                if _Debug:
+                    print('                            skip, _partialMessages=%r' % self._partialMessages)
+                return
+    
+            keys = sorted(self._partialMessages[msgID].keys())
+            data = b''
+            for key in keys:
+                data += self._partialMessages[msgID][key]
+            datagram = data
+            if _Debug:
+                print('                                finished message of %d pieces: %r' % (totalPackets, keys))
+            del self._partialMessages[msgID]
+    
+            self.dispatch(datagram, address)
+        except Exception as exc:
+            print(exc)
 
-            if isinstance(message, msgtypes.RequestMessage):
-                # This is an RPC method request
-                self._handleRPC(remoteContact, message.id, str(message.request), message.args)
-
-            elif isinstance(message, msgtypes.ResponseMessage):
-                # Find the message that triggered this response
-                if message.id in self._sentMessages:
-                    # Cancel timeout timer for this RPC
-                    df, timeoutCall = self._sentMessages[message.id][1:3]
-                    timeoutCall.cancel()
-                    del self._sentMessages[message.id]
-
-                    if hasattr(df, '_rpcRawResponse'):
-                        # The RPC requested that the raw response message and originating address be returned; do not interpret it
-                        df.callback((message, address))
-                    elif isinstance(message, msgtypes.ErrorMessage):
-                        # The RPC request raised a remote exception; raise it locally
-                        if message.exceptionType.startswith('exceptions.'):
-                            exceptionClassName = message.exceptionType[11:]
-                        else:
-                            localModuleHierarchy = self.__module__.split('.')
-                            remoteHierarchy = message.exceptionType.split('.')
-                            # strip the remote hierarchy
-                            while remoteHierarchy[0] == localModuleHierarchy[0]:
-                                remoteHierarchy.pop(0)
-                                localModuleHierarchy.pop(0)
-                            exceptionClassName = '.'.join(remoteHierarchy)
-                        remoteException = None
-                        try:
-                            exec('remoteException = %s("%s") from %s' % (exceptionClassName, message.response, address))
-                        except Exception:
-                            # We could not recreate the exception; create a generic one
-                            remoteException = Exception(str(message.response) + (' from %s' % str(address)))
-                        df.errback(remoteException)
-                    else:
-                        # We got a result from the RPC
-                        df.callback(message.response)
-                else:
-                    # If the original message isn't found, it must have timed out
-                    # TODO: we should probably do something with this...
-                    pass
-
-        except:
-            import traceback
-            traceback.print_exc()
-        if _Debug:
-            print('                dt=%s' % (time.time() - _t))
 
     def _send(self, data, rpcID, address):
         """
@@ -206,7 +251,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             |           |     |      |      |        ||||||||||||   0x00   |
             |Transmision|Total number|Sequence number| RPC ID   |Header end|
             | type ID   | of packets |of this packet |          | indicator|
-            | (1 byte)  | (2 bytes)  |  (2 bytes)    |(20 bytes)| (1 byte) |
+            | (1 byte)  | (2 bytes)  |  (2 bytes)    |(40 bytes)| (1 byte) |
             |           |     |      |      |        ||||||||||||          |
 
         @note: The header used for breaking up large data segments will
@@ -216,8 +261,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         if len(data) > self.msgSizeLimit:
             # We have to spread the data over multiple UDP datagrams, and provide sequencing information
-            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission, bytes 4 & 5 are the sequence number for this specific packet
-            totalPackets = len(data) / self.msgSizeLimit
+            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission,
+            # bytes 4 & 5 are the sequence number for this specific packet
+            totalPackets = int(len(data) / self.msgSizeLimit)
             if len(data) % self.msgSizeLimit > 0:
                 totalPackets += 1
             encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
@@ -227,24 +273,27 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # reactor.iterate() #IGNORE:E1101
                 packetData = data[startPos:startPos + self.msgSizeLimit]
                 encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-                txData = '\x00%s%s%s\x00%s' % (encTotalPackets, encSeqNumber, rpcID, packetData)
+                # actually we must always pass a header!
+                txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
+                txData = b'\x00' + txHeader + b'\x00' + packetData 
                 reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
                 startPos += self.msgSizeLimit
                 seqNumber += 1
         else:
-            self._write(data, address)
+            totalPackets = 1
+            encTotalPackets = chr(totalPackets >> 8) + chr(totalPackets & 0xff)
+            seqNumber = 0
+            encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
+            txHeader = encoding.to_bin(encTotalPackets) + encoding.to_bin(encSeqNumber) + encoding.to_bin(rpcID)
+            txData = b'\x00' + txHeader + b'\x00' + data 
+            self._write(txData, address)
 
     def _write(self, data, address):
-        if _Debug:
-            print('                dht._write %d bytes to %s' % (len(data), str(address)))
         if self._counter:
             self._counter('_write')
-        try:
-            self.transport.write(data, address)
-        except:
-            if _Debug:
-                import traceback
-                traceback.print_exc()
+        self.transport.write(data, address)
+        if _Debug:
+            print('                            dht._write %d bytes to %s' % (len(data), str(address)))
 
     def _sendResponse(self, contact, rpcID, response):
         """
@@ -252,9 +301,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
         msgPrimitive = self._translator.toPrimitive(msg)
-        encodedMsg = self._encoder.encode(msgPrimitive)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
         if _Debug:
-            print('                sendResponse', (contact.address, contact.port))
+            print('                    _sendResponse', (contact.address, contact.port), rpcID, response)
         if self._counter:
             self._counter('_sendResponse')
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
@@ -265,9 +314,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         msg = msgtypes.ErrorMessage(rpcID, self._node.id, exceptionType, exceptionMessage)
         msgPrimitive = self._translator.toPrimitive(msg)
-        encodedMsg = self._encoder.encode(msgPrimitive)
+        encodedMsg = self._encoder.encode(msgPrimitive, encoding='utf-8')
         if _Debug:
-            print('                sendError', (contact.address, contact.port))
+            print('                    _sendError', (contact.address, contact.port), rpcID, exceptionType, exceptionMessage)
         if self._counter:
             self._counter('_sendError')
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
@@ -288,13 +337,14 @@ class KademliaProtocol(protocol.DatagramProtocol):
         df.addErrback(handleError)
 
         if _Debug:
-            print('                    _handleRPC', base64.b64encode(rpcID), method, args)
+            print('            _handleRPC', rpcID, method, args)
 
         if self._counter:
             self._counter('_handleRPC')
 
         # Execute the RPC
         func = getattr(self._node, method, None)
+
         if callable(func) and hasattr(func, 'rpcmethod'):
             # Call the exposed Node method and return the result to the deferred callback chain
             try:
@@ -305,10 +355,15 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     # ...or simply call it if that fails
                     result = func(*args)
             except Exception as e:
+                traceback.print_exc()
                 df.errback(failure.Failure(e))
             else:
+                if _Debug:
+                    print('                            result is OK')
                 df.callback(result)
         else:
+            if _Debug:
+                print('                                no such exposed method')
             # No such exposed method
             df.errback(failure.Failure(AttributeError('Invalid method: %s' % method)))
 
@@ -318,7 +373,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         if self._counter:
             self._counter('_msgTimeout')
-
+        if _Debug:
+            print('               !!! [%s] _msgTimeout' % time.time(), messageID, [k for k in self._sentMessages.keys()], )
         # Find the message that timed out
         if messageID in self._sentMessages:
             remoteContactID, df = self._sentMessages[messageID][0:2]
@@ -333,8 +389,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
                         df.errback(failure.Failure(TimeoutError(remoteContactID)))
                         return
                 # Reset the RPC timeout timer
-                timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, messageID)  # IGNORE:E1101
+                timeoutCall = reactor.callLater(constants.rpcTimeout * 3, self._msgTimeout, messageID)  # IGNORE:E1101
                 self._sentMessages[messageID] = (remoteContactID, df, timeoutCall)
+                if _Debug:
+                    print('                    reset timeout for', messageID)
                 return
             del self._sentMessages[messageID]
             # The message's destination node is now considered to be dead;

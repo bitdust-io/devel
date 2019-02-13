@@ -152,6 +152,8 @@ regression_logs_all:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/stdout.log
+	@echo "### [dht_seed0] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_0 cat /root/.bitdust/logs/stdout.log
 	@echo "### [dht_seed1] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/stdout.log
 	@echo "### [dht_seed2] ##################################################################################"
@@ -194,11 +196,17 @@ regression_logs_all:
 	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/stdout.log
 	@echo "### [customer_5] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/stdout.log
+	@echo "### [customer_backup] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_backup cat /root/.bitdust/logs/stdout.log
+	@echo "### [customer_restore] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_restore cat /root/.bitdust/logs/stdout.log
 
 regression_states_all:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/automats.log
+	@echo "### [dht_seed0] ##################################################################################"
+	docker-compose -f regression/docker-compose.yml exec dht_seed_0 cat /root/.bitdust/logs/automats.log
 	@echo "### [dht_seed1] ##################################################################################"
 	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/automats.log
 	@echo "### [dht_seed2] ##################################################################################"
@@ -241,6 +249,10 @@ regression_states_all:
 	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/automats.log
 	@echo "### [customer_5] ##############################################################################"
 	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_backup] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_backup cat /root/.bitdust/logs/automats.log
+	@echo "### [customer_restore] ##############################################################################"
+	docker-compose -f regression/docker-compose.yml exec customer_restore cat /root/.bitdust/logs/automats.log
 
 
 dht_network_up:

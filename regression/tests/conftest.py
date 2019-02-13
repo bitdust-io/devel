@@ -28,12 +28,13 @@ import asyncio
 import pprint
 import aiohttp  # @UnresolvedImport
 
-from .testsupport import run_ssh_command_and_wait, open_tunnel, tunnel_url, run_ssh_command_and_wait_async
+from .testsupport import run_ssh_command_and_wait, open_tunnel, open_tunnel_async, tunnel_url, run_ssh_command_and_wait_async
 
 
 #------------------------------------------------------------------------------
 
-DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
+# DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
+DHT_SEED_NODES = 'dht_seed_0:14441'
 
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
@@ -201,7 +202,7 @@ def connect_network(node):
     response = requests.get(url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
     assert response.json()['status'] == 'ERROR'
     while True:
-        if count > 5:
+        if count > 10:
             assert False, f'node {node} failed to connect to the network after few retries'
         response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=5'))
         if response.json()['status'] == 'OK':
@@ -286,6 +287,7 @@ def start_identity_server(node):
     run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')
     # configure DHT udp port
+    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/enabled false')
     run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
     # configure and enable ID server
     run_ssh_command_and_wait(node, f'bitdust set services/identity-server/host {node}')
@@ -500,8 +502,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 
 #------------------------------------------------------------------------------
 
-async def open_one_tunnel_async(node):
-    open_tunnel(node)
+async def open_one_tunnel_async(node, local_port, loop):
+    await open_tunnel_async(node, local_port, loop)
 
 #------------------------------------------------------------------------------
 
@@ -558,7 +560,8 @@ def report_one_node(node):
 
 
 async def report_one_node_async(node, event_loop):
-    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)[0].strip()
+    main_log = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/main.log', event_loop)
+    main_log = main_log[0].strip()
     num_warnings = main_log.count('WARNING')
     num_errors = main_log.count('ERROR!!!')
     num_exceptions = main_log.count('Exception:')
@@ -576,7 +579,8 @@ def print_exceptions_one_node(node):
 
 
 async def print_exceptions_one_node_async(node, event_loop):
-    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)[0].strip()
+    exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)
+    exceptions_out = exceptions_out[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
 
@@ -614,8 +618,9 @@ def clean_one_customer(node):
 #------------------------------------------------------------------------------
 
 def open_all_tunnels(event_loop):
+    print('\nStarting all SSH tunnels\n')
     # event_loop.run_until_complete(asyncio.wait([
-    #     asyncio.ensure_future(open_one_tunnel_async(node)) for node in ALL_NODES
+    #     asyncio.ensure_future(open_one_tunnel_async(node, 10000+pos, event_loop)) for pos, node in enumerate(ALL_NODES)
     # ]))
     for node in ALL_NODES:
         open_tunnel(node)
@@ -625,7 +630,7 @@ def open_all_tunnels(event_loop):
 def clean_all_nodes(event_loop, skip_checks=False):
     print('\nCleaning all nodes')
     # event_loop.run_until_complete(asyncio.wait([
-    #     asyncio.ensure_future(clean_one_node_async(node, skip_checks=skip_checks, event_loop=event_loop)) for node in ALL_NODES
+    #     asyncio.ensure_future(clean_one_node_async(node, event_loop=event_loop)) for node in ALL_NODES
     # ]))
     for node in ALL_NODES:
         clean_one_node(node)
@@ -645,8 +650,8 @@ def start_all_nodes(event_loop):
         start_dht_seed(
             node=dhtseed['name'],
             other_seeds=dhtseed['other_seeds'],
-            wait_seconds=(15 if number > 0 else 0),
-            # wait_seconds=15,
+            # wait_seconds=(15 if number > 0 else 0),
+            wait_seconds=15,
         )
     print('\nALL DHT SEEDS STARTED\n')
 
@@ -736,13 +741,16 @@ def global_wrapper(event_loop):
 
     if os.environ.get('OPEN_TUNNELS', '1') == '1':
         open_all_tunnels(event_loop)
+
     if os.environ.get('STOP_NODES', '1') == '1':
         stop_all_nodes(event_loop)
+
     if os.environ.get('CLEAN_NODES', '1') == '1':
         clean_all_nodes(event_loop, skip_checks=True)
+
     if os.environ.get('START_NODES', '1') == '1':
         start_all_nodes(event_loop)
-    
+
     print('\nTest network prepared in %5.3f seconds\n')
  
     yield

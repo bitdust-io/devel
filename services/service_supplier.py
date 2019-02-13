@@ -557,12 +557,14 @@ class SupplierService(LocalService):
         import os
         from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
+        from lib import jsn
         from system import bpio
         from main import settings
         from userid import my_id
         from userid import global_id
         from contacts import contactsdb
         from p2p import p2p_service
+        from storage import accounting
         if newpacket.OwnerID == my_id.getLocalID():
             # this Data belong to us, SKIP
             return False
@@ -595,15 +597,13 @@ class SupplierService(LocalService):
                 return False
         data = newpacket.Serialize()
         donated_bytes = settings.getDonatedBytes()
-        if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {b'free': donated_bytes, })
-            lg.warn('created a new space file: %s' % settings.CustomersSpaceFile())
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile())
+        accounting.check_create_customers_quotas(donated_bytes)
+        space_dict = accounting.read_customers_quotas()
         if newpacket.OwnerID not in list(space_dict.keys()):
             lg.err("no info about donated space for %s" % newpacket.OwnerID)
             p2p_service.SendFail(newpacket, 'no info about donated space')
             return False
-        used_space_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
+        used_space_dict = accounting.read_customers_usage()
         if newpacket.OwnerID in list(used_space_dict.keys()):
             try:
                 bytes_used_by_customer = int(used_space_dict[newpacket.OwnerID])

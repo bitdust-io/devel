@@ -45,7 +45,6 @@ _DebugLevel = 8
 import os
 import sys
 import time
-import json
 import gc
 
 from twisted.internet.defer import Deferred
@@ -101,7 +100,11 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     if api_method.count('lambda'):
         api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
+        try:
+            sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
+        except:
+            sample = strng.to_text(0, errors='ignore')[:150]
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample))
     return o
 
 
@@ -364,15 +367,14 @@ def identity_get(include_xml_source=False):
         return ERROR('local identity is not valid or not exist')
     r = my_id.getLocalIdentity().serialize_json()
     if include_xml_source:
-        r['xml'] = my_id.getLocalIdentity().serialize()
+        r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
     return RESULT([r, ])
 
 
-def identity_create(username):
+def identity_create(username, preferred_servers=[]):
     from lib import misc
     from userid import my_id
     from userid import id_registrator
-
     try:
         username = str(username)
     except:
@@ -394,12 +396,12 @@ def identity_create(username):
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity creation FAILED')
             r = my_id.getLocalIdentity().serialize_json()
-            r['xml'] = my_id.getLocalIdentity().serialize()
+            r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             ret.callback(RESULT([r, ]))
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
-    my_id_registrator.A('start', (username, ))
+    my_id_registrator.A('start', username=username, preferred_servers=preferred_servers)
     return ret
 
 
@@ -482,7 +484,7 @@ def identity_recover(private_key_source, known_idurl=None):
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity recovery FAILED')
             r = my_id.getLocalIdentity().serialize_json()
-            r['xml'] = my_id.getLocalIdentity().serialize()
+            r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             ret.callback(RESULT([r, ]))
             return
 
@@ -1549,7 +1551,8 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         if _Debug:
             lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (
                 active_share.key_id, callback_id,))
-        active_share.remove_connected_callback(callback_id)
+        from twisted.internet import reactor  # @UnresolvedImport
+        reactor.callLater(0, active_share.remove_connected_callback, callback_id)  # @UndefinedVariable
         _start_restore()
         return True
 
@@ -3115,7 +3118,7 @@ def event_send(event_id, json_data=None):
     if json_data and strng.is_string(json_data):
         json_length = len(json_data)
         try:
-            json_payload = json.loads(strng.to_text(json_data or '{}'))
+            json_payload = jsn.loads(strng.to_text(json_data or '{}'))
         except:
             return ERROR('json data payload is not correct')
     evt = events.send(event_id, data=json_payload)
@@ -3542,26 +3545,22 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
 def dht_node_find(node_id_64=None):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
-    import base64
     from dht import dht_service
     if node_id_64 is None:
         node_id = dht_service.random_key()
-        node_id_64 = base64.b64encode(node_id)
+        node_id_64 = node_id
     else:
-        try:
-            node_id = base64.b64decode(node_id_64)
-        except:
-            node_id = node_id_64
+        node_id = node_id_64
     ret = Deferred()
 
     def _cb(response):
         try:
             if isinstance(response, list):
                 return ret.callback(OK({
-                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'my_dht_id': dht_service.node().id,
                     'lookup': node_id_64, 
                     'closest_nodes': [{
-                        'dht_id': base64.b64encode(c.id),
+                        'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
                 }))
@@ -3584,10 +3583,13 @@ def dht_node_find(node_id_64=None):
 def dht_value_get(key, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
-    import base64
     from dht import dht_service
     from dht import dht_records
     ret = Deferred()
+
+    record_rules = dht_records.get_rules(record_type)
+    if not record_rules:
+        return ERROR('record must be have correct type and known validation rules')
 
     def _cb(value):
         if isinstance(value, dict):
@@ -3595,9 +3597,8 @@ def dht_value_get(key, record_type='skip_validation'):
                 lg.out(_DebugLevel, 'api.dht_value_get OK: %r' % value)
             return ret.callback(OK({
                 'read': 'success',
-                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(key),
                 'value': value,
             }))
         closest_nodes = []
@@ -3607,11 +3608,10 @@ def dht_value_get(key, record_type='skip_validation'):
             lg.out(_DebugLevel, 'api.dht_value_get ERROR: %r' % value)
         return ret.callback(OK({
             'read': 'failed',
-            'my_dht_id': base64.b64encode(dht_service.node().id),
+            'my_dht_id': dht_service.node().id,
             'key': strng.to_text(key, errors='ignore'),
-            'key_64': base64.b64encode(key),
             'closest_nodes': [{
-                'dht_id': base64.b64encode(c.id),
+                'dht_id': c.id,
                 'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
             } for c in closest_nodes],
         }))
@@ -3623,8 +3623,9 @@ def dht_value_get(key, record_type='skip_validation'):
 
     d = dht_service.get_valid_data(
         key=key,
-        rules=dht_records.get_rules(record_type),
+        rules=record_rules,
         raise_for_result=False,
+        return_details=True,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)
@@ -3634,9 +3635,10 @@ def dht_value_get(key, record_type='skip_validation'):
 def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
+
     if not isinstance(value, dict):
         try:
-            value = json.loads(value)
+            value = jsn.loads(value)
         except Exception as exc:
             lg.exc()
             return ERROR('input value must be a json')
@@ -3645,10 +3647,13 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     except Exception as exc:
         return ERROR(exc)
 
-    import base64
     from dht import dht_service
     from dht import dht_records
     ret = Deferred()
+
+    record_rules = dht_records.get_rules(record_type)
+    if not record_rules:
+        return ERROR('record must be have correct type and known validation rules')
 
     def _cb(response):
         try:
@@ -3657,12 +3662,11 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                     lg.out(_DebugLevel, 'api.dht_value_set OK: %r' % response)
                 return ret.callback(OK({
                     'write': 'success' if len(response) > 0 else 'failed',
-                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'my_dht_id': dht_service.node().id,
                     'key': strng.to_text(key, errors='ignore'),
-                    'key_64': base64.b64encode(key),
                     'value': value,
                     'closest_nodes': [{
-                        'dht_id': base64.b64encode(c.id),
+                        'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
                 }))
@@ -3679,7 +3683,10 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
             try:
                 errmsg = err.value.subFailure.getErrorMessage()
             except:
-                errmsg = 'store operation failed'
+                try:
+                    errmsg = err.getErrorMessage()
+                except:
+                    errmsg = 'store operation failed'
             try:
                 nodes = err.value
             except:
@@ -3687,16 +3694,15 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
             closest_nodes = []
             if nodes and isinstance(nodes, list) and hasattr(nodes[0], 'address') and hasattr(nodes[0], 'port'):
                 closest_nodes = [{
-                    'dht_id': base64.b64encode(c.id),
+                    'dht_id': c.id,
                     'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                 } for c in nodes]
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
             return ret.callback(ERROR(errmsg, extra_fields={
                 'write': 'failed',
-                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(key),
                 'closest_nodes': closest_nodes,
             }))
         except Exception as exc:
@@ -3707,7 +3713,7 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
         key=key,
         json_data=value,
         expire=expire or dht_service.KEY_EXPIRE_MAX_SECONDS,
-        rules=dht_records.get_rules(record_type),
+        rules=record_rules,
         collect_results=True,
     )
     d.addCallback(_cb)

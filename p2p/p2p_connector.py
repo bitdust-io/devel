@@ -70,7 +70,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -339,7 +339,7 @@ class P2PConnector(automat.Automat):
         if driver.is_on('service_entangled_dht'):
             from dht import dht_service
             # propagate.write_to_dht()
-            dht_service.set_node_data(b'idurl', my_id.getLocalID())
+            dht_service.set_node_data('idurl', my_id.getLocalID())
         d = propagate.start(wide=True)
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 

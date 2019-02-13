@@ -87,8 +87,8 @@ class SharedDataService(LocalService):
         return False
 
     def _on_files_received(self, newpacket, info):
-        import json
         from logs import lg
+        from lib import serialization
         from main import settings
         from main import events
         from p2p import p2p_service
@@ -141,7 +141,7 @@ class SharedDataService(LocalService):
         if block.CreatorID == trusted_customer_idurl:
             # this is a trusted guy sending some shared files to me
             try:
-                json_data = json.loads(raw_files, encoding='utf-8')
+                json_data = serialization.BytesToDict(raw_files, keys_to_text=True)
                 json_data['items']
             except:
                 lg.exc()

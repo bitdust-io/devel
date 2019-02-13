@@ -404,7 +404,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
 
     if len(args) == 1 or args[1].lower() in ['info', '?', 'show', 'print', ]:
         if my_id.isLocalIdentityReady():
-            print_text(my_id.getLocalIdentity().serialize())
+            print_text(my_id.getLocalIdentity().serialize(as_text=True))
         else:
             print_text('local identity is not valid or not exist')
         return 0
@@ -467,7 +467,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         automat.objects().clear()
         my_id.loadLocalIdentity()
         if my_id.isLocalIdentityReady():
-            print_text('\n' + my_id.getLocalIdentity().serialize())
+            print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
         else:
             print_text('identity creation FAILED')
         return 0
@@ -506,7 +506,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         automat.objects().clear()
         my_id.loadLocalIdentity()
         if my_id.isLocalIdentityReady():
-            print_text('\n' + my_id.getLocalIdentity().serialize())
+            print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
         else:
             print_text('identity recovery FAILED')
         return 0

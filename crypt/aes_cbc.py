@@ -60,7 +60,7 @@ def encrypt_json(raw_data, secret_16bytes_key):
 
 
 def decrypt_json(encrypted_data, secret_16bytes_key):
-    dct = serialization.BytesToDict(encrypted_data)
+    dct = serialization.BytesToDict(encrypted_data, keys_to_text=True)
     cipher = AES.new(
         key=secret_16bytes_key,
         mode=AES.MODE_CBC,

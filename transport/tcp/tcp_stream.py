@@ -33,7 +33,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -212,8 +212,8 @@ class TCPFileStream():
         from transport.tcp import tcp_connection
         inp = BytesIO(payload)
         try:
-            file_id = struct.unpack('i', inp.read(4))[0]
-            file_size = struct.unpack('i', inp.read(4))[0]
+            file_id = int(struct.unpack('i', inp.read(4))[0])
+            file_size = int(struct.unpack('i', inp.read(4))[0])
         except:
             inp.close()
             lg.exc()
@@ -237,12 +237,15 @@ class TCPFileStream():
     def ok_received(self, payload):
         inp = BytesIO(payload)
         try:
-            file_id = struct.unpack('i', inp.read(4))[0]
+            file_id = int(struct.unpack('i', inp.read(4))[0])
         except:
             inp.close()
             lg.exc()
             return
         inp.close()
+        if file_id not in self.outboxFiles:
+            lg.warn('did not found %r in outboxFiles: %r' % (file_id, self.outboxFiles.keys()))
+            return
         self.outboxFiles[file_id].ok_received = True
         if not self.outboxFiles[file_id].registration:
             self.outbox_file_done(file_id, 'finished')
@@ -250,7 +253,7 @@ class TCPFileStream():
     def abort_received(self, payload):
         inp = BytesIO(payload)
         try:
-            file_id = struct.unpack('i', inp.read(4))[0]
+            file_id = int(struct.unpack('i', inp.read(4))[0])
         except:
             inp.close()
             lg.exc()

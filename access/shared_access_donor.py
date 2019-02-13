@@ -55,7 +55,6 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import time
-import json
 
 #------------------------------------------------------------------------------
 
@@ -64,6 +63,7 @@ from logs import lg
 from automats import automat
 
 from lib import packetid
+from lib import serialization
 
 from main import events
 
@@ -322,7 +322,8 @@ class SharedAccessDonor(automat.Automat):
             to_json=True,
             filter_cb=lambda path_id, path, info: True if info.key_id == self.key_id else False,
         )
-        raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
+        # raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
+        raw_list_files = serialization.DictToBytes(json_list_files, keys_to_text=True, values_to_text=True)
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_donor.doSendMyListFiles prepared list of files for %s :\n%s' % (
                 self.remote_idurl, raw_list_files))

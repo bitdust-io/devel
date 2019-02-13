@@ -240,7 +240,7 @@ def saveLocalIdentity():
     if not _LocalIdentity.Valid():
         lg.err('local identity is not valid')
         return
-    xmlid = _LocalIdentity.serialize()
+    xmlid = _LocalIdentity.serialize(as_text=True)
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     bpio.WriteTextFile(filename, xmlid)
     lg.out(6, "my_id.saveLocalIdentity %d bytes wrote to %s" % (len(xmlid), filename))

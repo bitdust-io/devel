@@ -28,30 +28,39 @@ import requests
 from ..testsupport import tunnel_url
 
 
-def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=60, sleep_sec=2, accepted_mistakes=0):
-    count = 0
-    response = None
-    while True:
-        if count >= retries:
-            assert False, 'customer family [%s] [%s] was not re-published correctly again after %d attempts, customer [%s] still see wrong info' % (
-                customer_node, expected_ecc_map, count, observer_node, )
+def validate_customer_family(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=20, sleep_sec=3, accepted_mistakes=1):
+
+    def _validate(obs):
+        response = None
+        count = 0
+        while True:
+            if count >= retries:
+                print('\nfailed after %d retries' % count)
+                return False
+            response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
+            assert response.status_code == 200
+            assert response.json()['status'] == 'OK', response.json()
+            # print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_node, obs, pprint.pformat(response.json())))
+            if not response.json()['result']:
+                count += 1
+                time.sleep(sleep_sec)
+                continue
+            ss = response.json()['result']['suppliers']
+            if len(ss) != expected_suppliers_number or (ss.count('') > accepted_mistakes and expected_suppliers_number > 2):
+                print('\n%r' % response.json())
+                count += 1
+                time.sleep(sleep_sec)
+                continue
+            assert response.json()['result']['customer_idurl'] == 'http://is:8084/%s.xml' % customer_node, response.json()['result']['customer_idurl']
+            assert response.json()['result']['ecc_map'] == expected_ecc_map, response.json()['result']['ecc_map']
             break
-        response = requests.get(url=tunnel_url(observer_node, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
-        assert response.status_code == 200
-        assert response.json()['status'] == 'OK', response.json()
-        # print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_node, observer_node, pprint.pformat(response.json())))
-        if not response.json()['result']:
-            count += 1
-            time.sleep(sleep_sec)
-            continue
-        if len(response.json()['result']['suppliers']) != expected_suppliers_number or response.json()['result']['suppliers'].count('') > accepted_mistakes:
-            print('\n%r' % response.json())
-            count += 1
-            time.sleep(sleep_sec)
-            continue
-        assert response.json()['result']['customer_idurl'] == 'http://is:8084/%s.xml' % customer_node, response.json()['result']['customer_idurl']
-        assert response.json()['result']['ecc_map'] == expected_ecc_map, response.json()['result']['ecc_map']
-        break
+        return True
+
+    if not _validate(observer_node):
+        if not _validate('supplier_1'):
+            assert False, 'customer family [%s] [%s] was not re-published correctly, observer [%s] and another node still see wrong info' % (
+                customer_node, expected_ecc_map, observer_node, )
+
     return True
 
 

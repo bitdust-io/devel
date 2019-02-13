@@ -159,7 +159,7 @@ class StunServer(automat.Automat):
             externalPort = int(bpio.ReadTextFile(settings.ExternalUDPPortFilename()))
         except:
             externalPort = self.listen_port
-        dht_service.set_node_data(b'stun_port', externalPort)
+        dht_service.set_node_data('stun_port', externalPort)
 
     def doStop(self, *args, **kwargs):
         """

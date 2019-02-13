@@ -157,7 +157,7 @@ class SupplierRelationsService(LocalService):
         from supplier import family_member
         from userid import my_id
         try:
-            json_payload = serialization.BytesToDict(newpacket.Payload)
+            json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
             contacts_type = strng.to_text(json_payload['type'])
             contacts_space = strng.to_text(json_payload['space'])
         except:

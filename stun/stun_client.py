@@ -75,6 +75,8 @@ from lib import udp
 
 from main import settings
 
+from services import driver
+
 from dht import dht_service
 
 #------------------------------------------------------------------------------
@@ -295,14 +297,14 @@ class StunClient(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client.doRequestStunPortNumbers')
+            lg.out(_DebugLevel + 4, 'stun_client.doRequestStunPortNumbers')
         for node in self.stun_nodes:
             if node.id in self.deferreds:
                 lg.warn('Already requested stun_port from %r' % node)
                 continue
             if _Debug:
-                lg.out(_DebugLevel + 10, '    from %s' % node)
-            d = node.request(b'stun_port')
+                lg.out(_DebugLevel + 4, '    from %s' % node)
+            d = node.request('stun_port')
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node.id] = d
 
@@ -311,7 +313,7 @@ class StunClient(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client.doAddStunServer %s' % str(*args, **kwargs))
+            lg.out(_DebugLevel + 4, 'stun_client.doAddStunServer %s' % str(*args, **kwargs))
         self.stun_servers.append(args[0])
 
     def doStun(self, *args, **kwargs):
@@ -320,11 +322,11 @@ class StunClient(automat.Automat):
         """
         if args and args[0] is not None:
             if _Debug:
-                lg.out(_DebugLevel + 10, 'stun_client.doStun to one stun_server: %s' % str(*args, **kwargs))
+                lg.out(_DebugLevel + 4, 'stun_client.doStun to one stun_server: %s' % str(*args, **kwargs))
             udp.send_command(self.listen_port, udp.CMD_STUN, b'', *args, **kwargs)
             return
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client.doStun to %d stun_servers' % (
+            lg.out(_DebugLevel + 4, 'stun_client.doStun to %d stun_servers' % (
                 len(self.stun_servers)))  # , self.stun_servers))
         for address in self.stun_servers:
             if address is None:
@@ -382,7 +384,7 @@ class StunClient(automat.Automat):
             lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %s' % (
                 len(self.stun_results), str(self.my_address)))
         if _Debug:
-            lg.out(_DebugLevel + 10, '    %s' % str(result))
+            lg.out(_DebugLevel + 4, '    %s' % str(result))
         for cb in self.callbacks:
             cb(result[0], result[1], result[2], result[3])
         self.callbacks = []
@@ -419,7 +421,7 @@ class StunClient(automat.Automat):
         if prev_key and prev_key in self.deferreds:
             self.deferreds.pop(prev_key)
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client._find_random_nodes tries=%d result_list=%d' % (tries, len(result_list)))
+            lg.out(_DebugLevel + 4, 'stun_client._find_random_nodes tries=%d result_list=%d' % (tries, len(result_list)))
         if tries <= 0 or len(result_list) >= self.minimum_needed_servers:
             if len(result_list) > 0:
                 self.automat('found-some-nodes', result_list)
@@ -434,7 +436,7 @@ class StunClient(automat.Automat):
 
     def _find_random_node(self):
         if _Debug:
-            lg.out(_DebugLevel + 10, 'stun_client._find_random_node')
+            lg.out(_DebugLevel + 4, 'stun_client._find_random_node')
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)
         d.addCallback(self._some_nodes_found)
@@ -455,26 +457,37 @@ class StunClient(automat.Automat):
         self.automat('dht-nodes-not-found')
 
     def _stun_port_received(self, result, node):
+        if _Debug:
+            lg.out(_DebugLevel, 'stun_client._stun_port_received  %r from %s' % (result, node, ))
         self.deferreds.pop(node.id, None)
         if not isinstance(result, dict):
             return
         try:
-            port = int(result[b'stun_port'])
+            port = int(result['stun_port'])
             address = node.address
         except:
-            if _Debug:
-                lg.out(_DebugLevel, 'stun_client._stun_port_received ERROR result=%s from node: %s' % (
-                    str(result), node))
+            lg.exc()
             return
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client._stun_port_received  %s at %s' % (address, port, ))
+            lg.out(_DebugLevel, '        new stun port server found  %s:%s' % (address, port, ))
         self.automat('port-number-received', (address, port))
 
 #------------------------------------------------------------------------------
 
-def safe_stun(udp_port=None, dht_port=None, ):
+def safe_stun(udp_port=None, dht_port=None, result_defer=None):
     from twisted.internet.defer import Deferred
-    result = Deferred()
+    result = result_defer or Deferred()
+
+    if driver.is_started('service_entangled_dht'):
+        if dht_service.node()._joinDeferred and not dht_service.node()._joinDeferred.called:
+            dht_service.node()._joinDeferred.addCallback(lambda ok: safe_stun(udp_port=udp_port, dht_port=dht_port, result_defer=result))
+            dht_service.node()._joinDeferred.addErrback(result.errback)
+            return result
+
+    if not driver.is_on('service_entangled_dht'):
+        result.errback(Exception('service_entangled_dht() is not started'))
+        return result
+    
     try:
         settings.init()
         dht_port = dht_port or settings.getDHTPort()
