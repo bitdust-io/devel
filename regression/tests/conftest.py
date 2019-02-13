@@ -713,11 +713,11 @@ def report_all_nodes(event_loop):
     # ]))
     for node in ALL_NODES:
         print_exceptions_one_node(node)
-    # event_loop.run_until_complete(asyncio.wait([
-    #     asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
-    # ]))
-    for node in ALL_NODES:
-        report_one_node(node)
+    event_loop.run_until_complete(asyncio.wait([
+        asyncio.ensure_future(report_one_node_async(node, event_loop)) for node in ALL_NODES
+    ]))
+    # for node in ALL_NODES:
+    #     report_one_node(node)
 
 #------------------------------------------------------------------------------
 
@@ -738,10 +738,13 @@ def global_wrapper(event_loop):
 
     if os.environ.get('OPEN_TUNNELS', '1') == '1':
         open_all_tunnels(event_loop)
+
     if os.environ.get('STOP_NODES', '1') == '1':
         stop_all_nodes(event_loop)
+
     if os.environ.get('CLEAN_NODES', '1') == '1':
         clean_all_nodes(event_loop, skip_checks=True)
+
     if os.environ.get('START_NODES', '1') == '1':
         start_all_nodes(event_loop)
     
