@@ -1,18 +1,22 @@
 __package__="txrestapi"
 
+from six import PY2, b
+
 import txrestapi  # @UnresolvedImport
 import re
 import json
 import base64
 import os.path
 import doctest
-from six import PY2, b, u
+
 from twisted.internet import reactor  # @UnresolvedImport
 from twisted.internet.defer import inlineCallbacks
 from twisted.web.resource import Resource, NoResource
 from twisted.web.server import Request, Site
 from twisted.web.client import getPage
 from twisted.trial import unittest
+
+
 from .resource import APIResource
 from .json_resource import JsonAPIResource
 from .methods import GET, PUT
@@ -228,7 +232,7 @@ class TestAPI(APIResource):
 
 class DecoratorsTest(unittest.TestCase):
     def _listen(self, site):
-        return reactor.listenTCP(0, site, interface="127.0.0.1")
+        return reactor.listenTCP(0, site, interface="127.0.0.1")  # @UndefinedVariable
 
     def setUp(self):
         r = TestAPI()

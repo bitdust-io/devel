@@ -36,7 +36,7 @@ import six
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -384,7 +384,7 @@ def delete_key(key):
 
 def read_json_response(response, key, result_defer=None, as_bytes=False):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.read_json_response [%r] : %r' % (key, response))
+        lg.out(_DebugLevel + 6, 'dht_service.read_json_response [%r] : %r' % (key, response))
     value = None
     if isinstance(response, list):
         if _Debug:
@@ -527,7 +527,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         lg.exc()
         raise ValueError('input data is not a json value: %r' % value)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (key, json_new_value, ))
+        lg.out(_DebugLevel + 8, 'dht_service.validate_before_store key=[%s] json=%r' % (key, json_new_value, ))
     new_record_type = json_new_value.get('type')
     if not new_record_type:
         if _Debug:

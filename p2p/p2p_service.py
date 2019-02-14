@@ -854,9 +854,7 @@ def Contacts(request, info):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s] : %r' % (
-            len(request.Payload), request.PacketID,
-            serialization.BytesToDict(request.Payload, keys_to_text=True, values_to_text=True)))
+        lg.out(_DebugLevel, 'p2p_service.Contacts %d bytes in [%s]' % (len(request.Payload), request.PacketID))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
 
