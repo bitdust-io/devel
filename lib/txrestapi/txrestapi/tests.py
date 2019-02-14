@@ -1,5 +1,6 @@
-import txrestapi
 __package__="txrestapi"
+
+import txrestapi  # @UnresolvedImport
 import re
 import json
 import base64
