@@ -162,7 +162,7 @@ def connect(seed_nodes=[]):
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.connect STARTING with %d known nodes:' % (len(seed_nodes)))
         for onenode in seed_nodes:
-            lg.out(_DebugLevel, '    %r' % onenode)
+            lg.out(_DebugLevel, '    %s:%s' % onenode)
 
     def _on_join_success(live_contacts, resolved_seed_nodes):
         if _Debug:
@@ -190,7 +190,7 @@ def connect(seed_nodes=[]):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.connect RESOLVED %d live nodes' % (len(resolved_seed_nodes)))
             for onenode in resolved_seed_nodes:
-                lg.out(_DebugLevel, '    %r' % onenode)
+                lg.out(_DebugLevel, '    %s:%s' % onenode)
         if not resolved_seed_nodes:
             resolved_seed_nodes = None 
         d = node().joinNetwork(resolved_seed_nodes)
