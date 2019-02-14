@@ -2,6 +2,23 @@ Change Log
 ==========
 
 
+2019-02-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* BitDust is Python3 compatible now!
+* reorganization in dht_service.py
+* switched kademlia DHT keys from binary digest() to string hexdigest() format
+* get rid of pickle in kademlia DHT
+* switched kademlia DHT KBucket size from 8 to 4
+* get rid of builtin json module in favor of lib.serialization and lib.jsn
+* switched OptimizedTreeRoutingTable() to TreeRoutingTable()
+* introduce "revision" field in DHT DB: check/update "revision" on closest nodes on every search
+* do not publish my identity source in DHT, only my IDURL
+* print all stored in DHT key:value pairs from all nodes after regression test finished
+* redirecting stdout to .bitdust/logs/stdout.log file for "bitdust daemon" command
+* added timeout=30 parameter to api.share_grant()
+* changed dependecies of service_keys_registry() - moved up in the services tree
+
+
 
 2019-01-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
