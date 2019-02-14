@@ -36,7 +36,7 @@ import six
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -170,9 +170,9 @@ def connect(seed_nodes=[]):
                 lg.warn('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
             else: 
                 if len(live_contacts) > 0 and live_contacts[0]:
-                    lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!')
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 else:
-                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!')
+                    lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                     lg.warn('No live DHT contacts found...  your node is NOT CONNECTED TO DHT NETWORK')
             lg.out(_DebugLevel, 'alive DHT nodes: %s' % pprint.pformat(live_contacts))
             lg.out(_DebugLevel, 'resolved SEED nodes: %r' % resolved_seed_nodes)
@@ -316,27 +316,26 @@ def split_key(key_str):
 
 def on_success(result, method, key, *args, **kwargs):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.on_success   %s(%s)    result is %s' % (method, key, type(result), ))
+        lg.out(_DebugLevel, 'dht_service.on_success   %s(%r)    result is %s' % (method, key, type(result), ))
     return result
 
 
 def on_error(x, method, key):
-    if _Debug:
+    try:
+        errmsg = x.value.subFailure.getErrorMessage()
+    except:
         try:
-            errmsg = x.value.subFailure.getErrorMessage()
+            errmsg = x.getErrorMessage()
         except:
             try:
-                errmsg = x.getErrorMessage()
+                errmsg = x.value
             except:
                 try:
-                    errmsg = x.value
+                    errmsg = str(x)
                 except:
-                    try:
-                        errmsg = str(x)
-                    except:
-                        errmsg = 'Unknown Error'
-        lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%r' % (
-            method, key, errmsg))
+                    errmsg = 'Unknown Error'
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.on_error   %s(%s)   returned an ERROR:\n%r' % (method, key, errmsg))
     return x
 
 #------------------------------------------------------------------------------
@@ -346,7 +345,7 @@ def get_value(key):
         return fail(Exception('DHT service is off'))
     count('get_value_%s' % key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.get_value key=[%s], counter=%d' % (key, counter('get_value_%s' % key)))
+        lg.out(_DebugLevel, 'dht_service.get_value key=[%r]' % key)
     d = node().iterativeFindValue(key_to_hash(key), rpc='findValue')
     d.addCallback(on_success, 'get_value', key)
     d.addErrback(on_error, 'get_value', key)
@@ -359,8 +358,7 @@ def set_value(key, value, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect_results=
     count('set_value_%s' % key)
     sz_bytes = len(value)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds, counter=%d' % (
-            key, sz_bytes, expire, counter('set_value_%s' % key)))
+        lg.out(_DebugLevel, 'dht_service.set_value key=[%s] with %d bytes for %d seconds' % (key, sz_bytes, expire, ))
     if expire < KEY_EXPIRE_MIN_SECONDS:
         expire = KEY_EXPIRE_MIN_SECONDS
     if expire > KEY_EXPIRE_MAX_SECONDS:
@@ -376,7 +374,7 @@ def delete_key(key):
         return fail(Exception('DHT service is off'))
     count('delete_key_%s' % key)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.delete_key [%s], counter=%d' % (key, counter('delete_key_%s' % key)))
+        lg.out(_DebugLevel, 'dht_service.delete_key [%s]' % key)
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(on_success, 'delete_value', key)
     d.addErrback(on_error, 'delete_key', key)
@@ -386,7 +384,7 @@ def delete_key(key):
 
 def read_json_response(response, key, result_defer=None, as_bytes=False):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.read_json_response [%r] : %r' % (key, response))
+        lg.out(_DebugLevel + 6, 'dht_service.read_json_response [%r] : %r' % (key, response))
     value = None
     if isinstance(response, list):
         if _Debug:
@@ -444,8 +442,7 @@ def set_json_value(key, json_data, age=0, expire=KEY_EXPIRE_MAX_SECONDS, collect
     except:
         return fail(Exception('bad input json data'))
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] with %d bytes' % (
-            key, len(str(value))))
+        lg.out(_DebugLevel, 'dht_service.set_json_value key=[%s] with %d bytes' % (key, len(str(value))))
     return set_value(key=key, value=value, age=age, expire=expire, collect_results=collect_results)
 
 #------------------------------------------------------------------------------
@@ -530,8 +527,7 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
         lg.exc()
         raise ValueError('input data is not a json value: %r' % value)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_before_store key=[%s] json=%r' % (
-            key, json_new_value, ))
+        lg.out(_DebugLevel + 8, 'dht_service.validate_before_store key=[%s] json=%r' % (key, json_new_value, ))
     new_record_type = json_new_value.get('type')
     if not new_record_type:
         if _Debug:
@@ -617,46 +613,43 @@ def validate_data_written(store_results, key, json_data, result_defer):
     """
     Will be executed on sender side for each (key,value) set request on DHT
     """
-    try:
-        nodes = store_results
-        results_collected = False
-        if isinstance(store_results, tuple):
-            results_collected = True
-            nodes = store_results[0]
-        if _Debug:
-            lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  collected=%s  nodes=%r' % (
-                key, results_collected, nodes, ))
-        if results_collected:
-            for result in store_results[1]:
-                try:
-                    success = strng.to_text(result[0])
-                    response = result[1]
-                    success_str = repr(success)
-                    response_str = repr(response)
-                except Exception as exc:
-                    lg.exc()
-                    result_defer.errback(exc)
-                    return None
-                if success_str.count('TimeoutError') or response_str.count('TimeoutError'):
-                    continue
-                if not success:
-                    if _Debug:
-                        lg.out(_DebugLevel, '    store operation failed: %r' % response)
-                    result_defer.errback(ValueError(response))
-                    return None
-                if response != 'OK':
-                    if _Debug:
-                        lg.out(_DebugLevel, '    store operation failed, unexpected response received: %r' % response)
-                    result_defer.errback(ValueError(response))
-                    return None
-            result_defer.callback(nodes)
-            return None
-        if isinstance(store_results, list):
-            result_defer.callback(nodes)
-            return None
-    except:
-        lg.exc()
-        result_defer.errback(store_results)
+    nodes = store_results
+    results_collected = False
+    if isinstance(store_results, tuple):
+        results_collected = True
+        nodes = store_results[0]
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.validate_data_written key=[%s]  %s  collected=%s  nodes=%r' % (
+            key, type(store_results), results_collected, nodes, ))
+    if results_collected:
+        for result in store_results[1]:
+            try:
+                success = strng.to_text(result[0])
+                response = result[1]
+                success_str = repr(success)
+                response_str = repr(response)
+            except Exception as exc:
+                lg.exc()
+                result_defer.errback(exc)
+                return None
+            if success_str.count('TimeoutError') or response_str.count('TimeoutError'):
+                continue
+            if not success:
+                if _Debug:
+                    lg.out(_DebugLevel, '    store operation failed: %r' % response)
+                result_defer.errback(ValueError(response))
+                return None
+            if response != 'OK':
+                if _Debug:
+                    lg.out(_DebugLevel, '    store operation failed, unexpected response received: %r' % response)
+                result_defer.errback(ValueError(response))
+                return None
+        result_defer.callback(nodes)
+        return None
+    if isinstance(store_results, list):
+        result_defer.callback(nodes)
+    else:
+        result_defer.errback(Exception('store operation failed, result is %s' % type(store_results)))
     return None
 
 

@@ -448,7 +448,7 @@ class FamilyMember(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'family_memeber.doNotifyConnected\n    my_info=%r\n    dht_info=%r\n    requests=%r' % (
+            lg.out(_DebugLevel, 'family_memeber.doNotifyConnected\n            my_info=%r\n            dht_info=%r\n            requests=%r' % (
                 self.my_info, self.dht_info, self.requests, ))
         to_be_closed = False
         if self.current_request['command'] == 'family-leave':
@@ -836,12 +836,14 @@ class FamilyMember(automat.Automat):
         self.automat('family-refresh')
 
     def _on_dht_read_success(self, dht_result):
-        if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_read_success  result: %r' % dht_result)
         if dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0:
+            if _Debug:
+                lg.out(_DebugLevel, 'family_member._on_dht_read_success  result with %d suppliers' % len(dht_result.get('suppliers', [])))
             self.dht_info = dht_result
             self.automat('dht-value-exist', dht_result)
         else:
+            if _Debug:
+                lg.out(_DebugLevel, 'family_member._on_dht_read_success  result with %s' % type(dht_result))
             self.dht_info = None
             self.automat('dht-value-not-exist', None)
 
