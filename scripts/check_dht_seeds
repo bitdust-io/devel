@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo "";
+
+for srv in `python -c "import dht.known_nodes; s=dht.known_nodes.default_nodes(); print(' '.join(['{}:{}'.format(i[0], i[1]) for i in s]))"`; do
+
+    echo "$srv"
+    rndudpport=`echo $$RANDOM % 10000 + 10000 | bc`
+    rm -rf /tmp/bitdust_dht_smoketest
+    # TODO: bad solution... this way we will pollute DHT network with "fake" nodes
+    # ~/.bitdust/venv/bin/python dht/dht_service.py ping --dhtdb=/tmp/bitdust_dht_smoketest --udpport=$$rndudpport --seeds="$srv";
+
+done

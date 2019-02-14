@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "running '$1'"
+
+/bin/bash -c "$1"

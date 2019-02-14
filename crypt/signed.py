@@ -49,7 +49,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -268,7 +268,7 @@ class Packet(object):
         Create a string from packet object.
         This is useful when need to save the packet on disk or send via network.
         """
-        src = serialization.DictToBytes({
+        dct = {
             'm': self.Command,
             'o': self.OwnerID,
             'c': self.CreatorID,
@@ -278,9 +278,10 @@ class Packet(object):
             'r': self.RemoteID,
             'k': self.KeyID,
             's': self.Signature,
-        })
+        }        
         if _Debug:
-            lg.out(_DebugLevel, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
+            lg.out(_DebugLevel, 'signed.Serialize %r' % dct)
+        src = serialization.DictToBytes(dct)
         return src
 
     def __len__(self):
@@ -308,21 +309,22 @@ def Unserialize(data):
     if data is None:
         return None
 
+    dct = serialization.BytesToDict(data, keys_to_text=True)
+
     if _Debug:
-        lg.out(_DebugLevel, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
+        lg.out(_DebugLevel, 'signed.Unserialize %r' % dct)
 
     try:
-        json_data = serialization.BytesToDict(data, keys_to_text=True)
         newobject = Packet(
-            Command=strng.to_text(json_data['m']),
-            OwnerID=json_data['o'],
-            CreatorID=json_data['c'],
-            PacketID=strng.to_text(json_data['i']),
-            Date=strng.to_text(json_data['d']),
-            Payload=json_data['p'],
-            RemoteID=json_data['r'],
-            KeyID=strng.to_text(json_data['k']),
-            Signature=json_data['s'],
+            Command=strng.to_text(dct['m']),
+            OwnerID=dct['o'],
+            CreatorID=dct['c'],
+            PacketID=strng.to_text(dct['i']),
+            Date=strng.to_text(dct['d']),
+            Payload=dct['p'],
+            RemoteID=dct['r'],
+            KeyID=strng.to_text(dct['k']),
+            Signature=dct['s'],
         )
     except:
         lg.exc()

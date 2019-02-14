@@ -79,7 +79,7 @@ def OK(result='', message=None, status='OK', extra_fields=None):
         o.update(extra_fields)
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda'):
+    if api_method.count('lambda') or api_method.startswith('_'):
         api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
         lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
@@ -1262,6 +1262,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=parts['key_alias'])
     pathIDfull = packetid.MakeBackupID(customerID, pathID)
     if open_share and parts['key_alias'] != 'master':
+        if not driver.is_on('service_shared_data'):
+            return ERROR('service_shared_data() is not started')
         from access import shared_access_coordinator
         active_share = shared_access_coordinator.get_active_share(keyID)
         if not active_share:
@@ -1557,6 +1559,9 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         return True
 
     def _open_share():
+        if not driver.is_on('service_shared_data'):
+            ret.callback(ERROR('service_shared_data() is not started'))
+            return False
         from access import shared_access_coordinator
         active_share = shared_access_coordinator.get_active_share(key_id)
         if not active_share:
@@ -1741,13 +1746,15 @@ def share_create(owner_id=None, key_size=2048):
 def share_grant(trusted_remote_user, key_id, timeout=30):
     """
     """
-    from twisted.internet import reactor  # @UnresolvedImport
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
+    from twisted.internet import reactor  # @UnresolvedImport
+    key_id = strng.to_text(key_id)
+    trusted_remote_user = strng.to_text(trusted_remote_user)
     if not key_id.startswith('share_'):
         return ERROR('invalid share name')
     from userid import global_id
-    remote_idurl = trusted_remote_user
+    remote_idurl = strng.to_bin(trusted_remote_user)
     if trusted_remote_user.count('@'):
         glob_id = global_id.ParseGlobalID(trusted_remote_user)
         remote_idurl = glob_id['idurl']
@@ -1776,6 +1783,7 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
 def share_open(key_id):
     """
     """
+    key_id = strng.to_text(key_id)
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
@@ -1808,6 +1816,7 @@ def share_open(key_id):
 def share_close(key_id):
     """
     """
+    key_id = strng.to_text(key_id)
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):

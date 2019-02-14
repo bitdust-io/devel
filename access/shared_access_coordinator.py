@@ -162,6 +162,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.glob_id = global_id.ParseGlobalID(self.key_id)
         self.customer_idurl = self.glob_id['idurl']
         self.known_suppliers_list = []
+        self.known_ecc_map = None
         super(SharedAccessCoordinator, self).__init__(
             name="%s$%s" % (self.glob_id['key_alias'], self.glob_id['user']),
             state='AT_STARTUP',
@@ -179,6 +180,7 @@ class SharedAccessCoordinator(automat.Automat):
             'idurl': self.customer_idurl,
             'state': self.state,
             'suppliers': self.known_suppliers_list,
+            'ecc_map': self.known_ecc_map,
         }
 
     def add_connected_callback(self, callback_id, callback_method):
@@ -366,6 +368,7 @@ class SharedAccessCoordinator(automat.Automat):
         except:
             lg.exc()
             return
+        self.known_ecc_map = args[0].get('ecc_map')
         for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:

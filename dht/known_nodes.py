@@ -48,7 +48,7 @@ def default_nodes():
     from lib import serialization
     from lib import strng
     from main import settings
-    from logs import lg
+    # from logs import lg
     networks_json = serialization.BytesToDict(
         local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')),
         keys_to_text=True,
@@ -63,7 +63,7 @@ def default_nodes():
     dht_seeds = []
     for dht_seed in network_info['dht-seeds']:
         dht_seeds.append((strng.to_bin(dht_seed['host']), dht_seed['udp_port'], ))
-    lg.info('Active network is [%s]   dht_seeds=%s' % (my_network, dht_seeds, ))
+    # lg.info('Active network is [%s]   dht_seeds=%s' % (my_network, dht_seeds, ))
     return dht_seeds
 
 
@@ -119,8 +119,8 @@ def nodes():
             overridden_dht_nodes.append((dht_node_host, dht_node_port, ))
 
     if overridden_dht_nodes:
-        from logs import lg
-        lg.info('DHT seeds was overridden in local settings: %s' % overridden_dht_nodes)
+        # from logs import lg
+        # lg.info('DHT seeds was overridden in local settings: %s' % overridden_dht_nodes)
         return overridden_dht_nodes
 
     return default_nodes()

@@ -56,10 +56,10 @@ class IdentityPropagateService(LocalService):
         return True
 
     def start(self):
+        from logs import lg
         from userid import my_id
         my_id.loadLocalIdentity()
         if my_id._LocalIdentity is None:
-            from logs import lg
             lg.warn('Loading local identity failed - need to create an identity first')
             return False
         from contacts import identitycache
@@ -68,6 +68,8 @@ class IdentityPropagateService(LocalService):
         contactsdb.init()
         from p2p import propagate
         propagate.init()
+        from userid import known_servers
+        lg.info('known ID servers are : %r' % known_servers.by_host())
         return True
 
     def stop(self):
