@@ -335,11 +335,10 @@ class P2PConnector(automat.Automat):
 
     def doPropagateMyIdentity(self, *args, **kwargs):
         # TODO: need to run this actions one by one, not in parallel - use Defered chain
+        if driver.is_on('service_entangled_dht'):
+            from dht import dht_service
+            dht_service.set_node_data('idurl', my_id.getLocalID())
         propagate.update()
-        # if driver.is_on('service_entangled_dht'):
-        #     from dht import dht_service
-        #     # propagate.write_to_dht()
-        #     dht_service.set_node_data('idurl', my_id.getLocalID())
         d = propagate.start(wide=True)
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 
