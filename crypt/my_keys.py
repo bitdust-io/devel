@@ -539,23 +539,13 @@ def get_key_info(key_id, include_private=False):
         raise Exception('incorrect key_id format')
     key_object = known_keys().get(key_id)
     if not key_object:
-        key_id_form_1 = make_key_id(
+        key_id_full = make_key_id(
             alias=key_alias,
             creator_idurl=creator_idurl,
-            output_format=global_id._FORMAT_GLOBAL_ID_KEY_USER,
         )
-        key_id_form_2 = make_key_id(
-            alias=key_alias,
-            creator_idurl=creator_idurl,
-            output_format=global_id._FORMAT_GLOBAL_ID_USER_KEY,
-        )
-        key_object = known_keys().get(key_id_form_1)
+        key_object = known_keys().get(key_id_full)
         if key_object:
-            key_id = key_id_form_1
-        else:
-            key_object = known_keys().get(key_id_form_2)
-            if key_object:
-                key_id = key_id_form_2
+            key_id = key_id_full
     if not key_object:
         raise Exception('key not found')
     key_info = make_key_info(key_object, key_id=key_id, include_private=include_private, )

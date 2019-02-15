@@ -832,7 +832,7 @@ def get_node_data(key):
             lg.out(_DebugLevel, 'dht_service.get_node_data local node is not ready')
         return None
     count('get_node_data')
-    key = strng.to_bin(key)
+    key = strng.to_text(key)
     if key not in node().data:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.get_node_data key=[%s] not exist' % key)
@@ -850,7 +850,7 @@ def set_node_data(key, value):
             lg.out(_DebugLevel, 'dht_service.set_node_data local node is not ready')
         return False
     count('set_node_data')
-    key = strng.to_bin(key)
+    key = strng.to_text(key)
     node().data[key] = value
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.set_node_data key=[%s] wrote %d bytes, counter=%d' % (
@@ -864,7 +864,7 @@ def delete_node_data(key):
             lg.out(_DebugLevel, 'dht_service.delete_node_data local node is not ready')
         return False
     count('delete_node_data')
-    key = strng.to_bin(key)
+    key = strng.to_text(key)
     if key not in node().data:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.delete_node_data key=[%s] not exist' % key)
@@ -970,19 +970,16 @@ class DHTNode(EntangledNode):
     def request(self, key):
         count('request')
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%s]' % strng.to_text(key, errors='ignore')[:10])
-
+            lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r]' % key)
         if 'request' in self.rpc_callbacks:
             self.rpc_callbacks['request'](
                 key=key,
             )
-
         value = get_node_data(key)
         if value is None:
             value = 0
         if _Debug:
-            lg.out(_DebugLevel, '    read internal value, counter=%d' % counter('request'))
-
+            lg.out(_DebugLevel, '    read internal value: %r' % value)
         return {key: value, }
 
     @rpcmethod
