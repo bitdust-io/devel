@@ -29,9 +29,6 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 
 
 def test_file_shared_from_customer_1_to_customer_4():
-    # TODO:
-    return True
-
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
@@ -61,21 +58,23 @@ def test_file_shared_from_customer_1_to_customer_4():
             'remote_path': remote_path,
             'local_path': local_path,
             'wait_result': '1',
+            'open_share': '1',
         },
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nfile/upload/start/v1 remote_path=%s local_path=%s : %r\n' % (remote_path, local_path, response.json(), ))
 
-    time.sleep(1)
+    time.sleep(5)
 
-    for i in range(20):
+    for i in range(10):
         response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),
             json={
                 'remote_path': remote_path,
                 'destination_folder': '/customer_1',
                 'wait_result': '1',
+                'open_share': '1',
             },
         )
         assert response.status_code == 200
@@ -107,15 +106,16 @@ def test_file_shared_from_customer_1_to_customer_4():
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
 
-    time.sleep(5)
+    time.sleep(1)
 
-    for i in range(20):
+    for i in range(10):
         response = requests.post(
             url=tunnel_url('customer_4', 'file/download/start/v1'),
             json={
                 'remote_path': remote_path,
                 'destination_folder': download_volume,
                 'wait_result': '1',
+                'open_share': '1',
             },
         )
         assert response.status_code == 200

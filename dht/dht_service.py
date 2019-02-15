@@ -891,7 +891,10 @@ def dump_local_db(value_as_json=False):
                     itm['value'] = jsn.loads_text(itm['value'], errors='ignore')
                 except:
                     itm['value'] = strng.to_text(itm['value'])
+        itm['scope'] = 'global'
         l.append(itm)
+    for k, v in node().data.items():
+        l.append({'key': k, 'value': v, 'scope': 'node', })
     return l
 
 #------------------------------------------------------------------------------
