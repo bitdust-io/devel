@@ -986,7 +986,7 @@ def RepaintingProcess(on_off):
         minDelay = 8.0
     _RepaintingTaskDelay = misc.LoopAttenuation(_RepaintingTaskDelay, len(_UpdatedBackupIDs) > 0, minDelay, 8.0)
     _UpdatedBackupIDs.clear()
-    _RepaintingTask = reactor.callLater(_RepaintingTaskDelay, RepaintingProcess, True)
+    _RepaintingTask = reactor.callLater(_RepaintingTaskDelay, RepaintingProcess, True)  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 

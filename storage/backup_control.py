@@ -777,6 +777,11 @@ def RunTask():
         return False
     if len(jobs()) >= MAXIMUM_JOBS_STARTED:
         return False
+    if b'' in contactsdb.suppliers() or '' in contactsdb.suppliers():
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.RunTask found empty supplier, retry after 5 sec')
+        reactor.callLater(5, RunTask)  # @UndefinedVariable
+        return False
     T = tasks().pop(0)
     message = T.run()
     if message:

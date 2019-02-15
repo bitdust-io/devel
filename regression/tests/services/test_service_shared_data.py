@@ -29,10 +29,23 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 
 
 def test_file_shared_from_customer_1_to_customer_4():
-    return True
-
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
+    count = 0
+    while True:
+        if count > 10:
+            assert False, 'customer_1 failed to hire enough suppliers after many attempts'
+            return 
+        response = requests.get(url=tunnel_url('customer_1', 'supplier/list/v1'))
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\n\nsupplier/list/v1 : %s\n' % response.json())
+        if len(response.json()['result']) == 2:
+            assert True
+            break
+        count += 1
+        time.sleep(5)
 
     response = requests.post(url=tunnel_url('customer_1', 'share/create/v1'), json={'key_size': 1024, }, )
     assert response.status_code == 200
