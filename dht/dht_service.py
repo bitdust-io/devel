@@ -36,7 +36,7 @@ import six
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -982,11 +982,12 @@ class DHTNode(EntangledNode):
             value = 0
         if _Debug:
             lg.out(_DebugLevel, '    read internal value, counter=%d' % counter('request'))
+
         return {key: value, }
 
     @rpcmethod
     def verify_update(self, key, value, originalPublisherID=None,
-                      age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
+                            age=0, expireSeconds=KEY_EXPIRE_MAX_SECONDS, **kwargs):
         count('request')
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.verify_update key=[%s]' % strng.to_text(key, errors='ignore')[:10])
@@ -1129,6 +1130,18 @@ def main(options=None, args=None):
                     find_node(key_to_hash(args[1])).addBoth(_r)
                 elif cmd == 'ping':
                     find_node(random_key()).addBoth(_r)
+                elif cmd == 'get_node_data':
+                    pprint.pprint(get_node_data(args[1]))
+                elif cmd == 'observe_data':
+                    def _p(val, n):
+                        print('observed', n, val)
+                    def _o(result):
+                        for n in result:
+                            d = n.request(args[2])
+                            d.addCallback(_p, n)
+                    d = find_node(key_to_hash(args[1]))
+                    d.addErrback(_r)
+                    d.addCallback(_o)
                 elif cmd == 'discover':
                     def _l(x):
                         lg.info(x)

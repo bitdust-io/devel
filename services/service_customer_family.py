@@ -70,7 +70,6 @@ class SupplierRelationsService(LocalService):
             if not fm:
                 fm = family_member.create_family(customer_idurl)
             fm.automat('init')
-            # fm.automat('family-refresh')
             local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             fm.automat('family-join', {
                 'supplier_idurl': my_id.getLocalIDURL(),
