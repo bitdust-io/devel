@@ -910,7 +910,8 @@ def ScanBlocksToSend(backupID):
     Opposite method - search for pieces which is not yet delivered to remote suppliers.
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
-    if '' in contactsdb.suppliers(customer_idurl=customer_idurl):
+    if '' in contactsdb.suppliers(customer_idurl=customer_idurl) or b'' in contactsdb.suppliers(customer_idurl=customer_idurl):
+        lg.warn('found empty suppliers, SKIP')
         return {}
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
     supplierActiveArray = GetActiveArray(customer_idurl=customer_idurl)

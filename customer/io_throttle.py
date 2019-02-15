@@ -51,7 +51,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -415,12 +415,12 @@ class SupplierQueue:
                 lg.out(_DebugLevel, "io_throttle.SupplierSendFile %s is offline, so packet %s is failed" % (
                     self.remoteName, packetID))
             if callOnFail is not None:
-                reactor.callLater(0, callOnFail, self.remoteID, packetID, 'offline')
+                reactor.callLater(0, callOnFail, self.remoteID, packetID, 'offline')  # @UndefinedVariable
             return False
         if packetID in self.fileSendQueue:
             lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnFail is not None:
-                reactor.callLater(0, callOnFail, self.remoteID, packetID, 'in queue')
+                reactor.callLater(0, callOnFail, self.remoteID, packetID, 'in queue')  # @UndefinedVariable
             return False
         self.fileSendQueue.append(packetID)
         self.fileSendDict[packetID] = FileToSend(
@@ -565,7 +565,7 @@ class SupplierQueue:
             settings.MinimumSendingDelay(),
             settings.MaximumSendingDelay())
         # attenuation
-        self.sendTask = reactor.callLater(self.sendTaskDelay, self.SendingTask)
+        self.sendTask = reactor.callLater(self.sendTaskDelay, self.SendingTask)  # @UndefinedVariable
 
     def DoSend(self):
         #out(6, 'io_throttle.DoSend')
@@ -577,19 +577,19 @@ class SupplierQueue:
         if self.sendTaskDelay > 1.0:
             self.sendTask.cancel()
             self.sendTask = None
-            reactor.callLater(0, self.SendingTask)
+            reactor.callLater(0, self.SendingTask)  # @UndefinedVariable
 
     def SupplierRequestFile(self, callOnReceived, creatorID, packetID, ownerID):
         if self.shutdown:
             if _Debug:
                 lg.out(_DebugLevel, "io_throttle.SupplierRequestFile finishing to %s, shutdown is True" % self.remoteName)
             if callOnReceived:
-                reactor.callLater(0, callOnReceived, packetID, 'shutdown')
+                reactor.callLater(0, callOnReceived, packetID, 'shutdown')  # @UndefinedVariable
             return False
         if packetID in self.fileRequestQueue:
             lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnReceived:
-                reactor.callLater(0, callOnReceived, packetID, 'in queue')
+                reactor.callLater(0, callOnReceived, packetID, 'in queue')  # @UndefinedVariable
             return False
         self.fileRequestQueue.append(packetID)
         self.fileRequestDict[packetID] = FileToRequest(
@@ -691,7 +691,7 @@ class SupplierQueue:
             settings.MinimumReceivingDelay(),
             settings.MaximumReceivingDelay())
         # attenuation
-        self.requestTask = reactor.callLater(self.requestTaskDelay, self.RequestTask)
+        self.requestTask = reactor.callLater(self.requestTaskDelay, self.RequestTask)  # @UndefinedVariable
 
     def DoRequest(self):
         #out(6, 'io_throttle.DoRequest')
@@ -721,7 +721,7 @@ class SupplierQueue:
                     lg.out(_DebugLevel, "io_throttle.DeleteBackupSendings removed %s from %s sending queue, %d more items" % (
                         packetID, self.remoteName, len(self.fileSendQueue)))
         if len(self.fileSendQueue) > 0:
-            reactor.callLater(0, self.DoSend)
+            reactor.callLater(0, self.DoSend)  # @UndefinedVariable
             # self.DoSend()
 
     def DeleteBackupRequests(self, backupName):
@@ -749,7 +749,7 @@ class SupplierQueue:
                         pkt_out, pkt_out.remote_idurl, ))
                     pkt_out.automat('cancel')
         if len(self.fileRequestQueue) > 0:
-            reactor.callLater(0, self.DoRequest)
+            reactor.callLater(0, self.DoRequest)  # @UndefinedVariable
 
     def OutboxStatus(self, pkt_out, status, error):
         packetID = global_id.CanonicalID(pkt_out.outpacket.PacketID)
@@ -802,11 +802,11 @@ class SupplierQueue:
         if newpacket.Command == commands.Ack():
             self.fileSendDict[packetID].result = 'acked'
             if self.fileSendDict[packetID].callOnAck:
-                reactor.callLater(0, self.fileSendDict[packetID].callOnAck, newpacket, newpacket.OwnerID, packetID)
+                reactor.callLater(0, self.fileSendDict[packetID].callOnAck, newpacket, newpacket.OwnerID, packetID)  # @UndefinedVariable
         elif newpacket.Command == commands.Fail():
             self.fileSendDict[packetID].result = 'failed'
             if self.fileSendDict[packetID].callOnFail:
-                reactor.callLater(0, self.fileSendDict[packetID].callOnFail, newpacket.CreatorID, packetID, 'failed')
+                reactor.callLater(0, self.fileSendDict[packetID].callOnFail, newpacket.CreatorID, packetID, 'failed')  # @UndefinedVariable
         from customer import supplier_connector
         sc = supplier_connector.by_idurl(newpacket.OwnerID)
         if sc:
@@ -843,7 +843,7 @@ class SupplierQueue:
         if why == 'timeout':
             contact_status.PacketSendingTimeout(RemoteID, PacketID)
         if fileToSend.callOnFail:
-            reactor.callLater(0, fileToSend.callOnFail, RemoteID, PacketID, why)
+            reactor.callLater(0, fileToSend.callOnFail, RemoteID, PacketID, why)  # @UndefinedVariable
         self.DoSend()
         # self.RunSend()
         if _Debug:
@@ -975,7 +975,7 @@ class IOThrottle:
         if not os.path.exists(fileName):
             lg.err("%s not exist" % fileName)
             if callOnFail is not None:
-                reactor.callLater(.01, callOnFail, remoteID, packetID, 'not exist')
+                reactor.callLater(.01, callOnFail, remoteID, packetID, 'not exist')  # @UndefinedVariable
             return False
         if remoteID not in list(self.supplierQueues.keys()):
             self.supplierQueues[remoteID] = SupplierQueue(remoteID, self.creatorID)
@@ -997,7 +997,7 @@ class IOThrottle:
             if os.path.exists(filename):
                 lg.warn("%s already exist " % filename)
                 if callOnReceived:
-                    reactor.callLater(0, callOnReceived, packetID, 'exist')
+                    reactor.callLater(0, callOnReceived, packetID, 'exist')  # @UndefinedVariable
                 return False
         if remoteID not in list(self.supplierQueues.keys()):
             # made a new queue for this man

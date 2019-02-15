@@ -402,7 +402,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        if '' in contactsdb.suppliers():
+        if '' in contactsdb.suppliers() or b'' in contactsdb.suppliers():
             if _Debug:
                 lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
             self.automat('restart')

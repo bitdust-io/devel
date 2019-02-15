@@ -440,7 +440,7 @@ class BackupRebuilder(automat.Automat):
         # remember how many requests we did on this iteration
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
-        if '' in contactsdb.suppliers(customer_idurl=self.currentCustomerIDURL):
+        if '' in contactsdb.suppliers(customer_idurl=self.currentCustomerIDURL) or b'' in contactsdb.suppliers(customer_idurl=self.currentCustomerIDURL):
             lg.out(8, 'backup_rebuilder._request_files SKIP - empty supplier')
             self.automat('no-requests')
             return
