@@ -1,11 +1,11 @@
 #!/bin/bash
 
-IFS=$'\n' read -d '' -r -a nodes < nodes.txt
+IFS=$'\n' read -d '' -r -a nodes < $1
 
 echo "target nodes:"
 echo "${nodes[@]}"
 
-copy_files="./grepnkill ./deploy ./random_identity ./see ./states ./monitor"
+copy_files="./grepnkill ./deploy ./random_identity ./see ./states ./monitor ./up ./exec ./stop ./daemon"
 echo "will copy those file with scp to each node: $copy_files"
 
 for node in ${nodes[@]}

@@ -315,6 +315,7 @@ class FamilyMember(automat.Automat):
         self.dht_info = None
         self.my_info = None
         self.transaction = None
+        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         self.refresh_task = LoopingCall(self._on_family_refresh_task)
 
     def doPush(self, event, *args, **kwargs):
@@ -356,7 +357,6 @@ class FamilyMember(automat.Automat):
         self.transaction = self._do_increment_revision(possible_transaction)
         if _Debug:
             lg.out(_DebugLevel, 'family_member._do_build_transaction : %r' % self.transaction)
-        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         if self.transaction:
             known_ecc_map = self.transaction.get('ecc_map')
             if known_ecc_map:
@@ -560,7 +560,7 @@ class FamilyMember(automat.Automat):
         return {
             'revision': 0,
             'publisher_idurl': my_id.getLocalIDURL(),  # I will be a publisher of the first revision
-            'suppliers': request.get('family_snapshot'),
+            'suppliers': request.get('family_snapshot') or [],
             'ecc_map': request.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
         }
@@ -568,7 +568,7 @@ class FamilyMember(automat.Automat):
     def _do_create_possible_revision(self, latest_revision):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
         possible_position = local_customer_meta_info.get('position', -1) or -1
-        possible_suppliers = local_customer_meta_info.get('family_snapshot')
+        possible_suppliers = local_customer_meta_info.get('family_snapshot') or []
         if possible_position > 0 and my_id.getLocalIDURL() not in possible_suppliers:
             if len(possible_suppliers) > possible_position:
                 possible_suppliers[possible_position] = my_id.getLocalIDURL()
@@ -933,7 +933,7 @@ class FamilyMember(automat.Automat):
             ecc_map = inp['customer_ecc_map']
             supplier_idurl = inp['supplier_idurl']
             supplier_position = inp['supplier_position']
-            family_snapshot = inp.get('family_snapshot')
+            family_snapshot = inp.get('family_snapshot') or []
         except:
             lg.exc()
             return None

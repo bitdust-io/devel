@@ -124,6 +124,8 @@ from customer import data_receiver
 from raid import raid_worker
 from raid import eccmap
 
+from services import driver
+
 #------------------------------------------------------------------------------
 
 class RestoreWorker(automat.Automat):
@@ -346,14 +348,24 @@ class RestoreWorker(automat.Automat):
             all_known_eccmaps = list(known_eccmap_dict.items())
             all_known_eccmaps.sort(key=lambda i: i[1], reverse=True)
             self.EccMap = eccmap.eccmap(all_known_eccmaps[0][0])
-            lg.info('eccmap %s recognized from suppliers meta info' % self.EccMap)
+            lg.info('eccmap %r recognized from suppliers meta info' % self.EccMap)
         else:
-            num_suppliers = len(self.known_suppliers)
-            if num_suppliers not in eccmap.GetPossibleSuppliersCount():
-                num_suppliers = settings.DefaultDesiredSuppliers()
-            self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(num_suppliers))
-            lg.warn('no meta info found, guessed eccmap %s from %d known suppliers' % (
-                self.EccMap, len(self.known_suppliers)))
+            known_ecc_map = None
+            if driver.is_on('service_shared_data'):
+                from access import shared_access_coordinator
+                active_share = shared_access_coordinator.get_active_share(self.key_id)
+                if active_share:
+                    known_ecc_map = active_share.known_ecc_map
+            if known_ecc_map:
+                self.EccMap = eccmap.eccmap(known_ecc_map)
+                lg.info('eccmap %r recognized from active share %r' % (self.EccMap, active_share, ))
+            else:
+                num_suppliers = len(self.known_suppliers)
+                if num_suppliers not in eccmap.GetPossibleSuppliersCount():
+                    num_suppliers = settings.DefaultDesiredSuppliers()
+                self.EccMap = eccmap.eccmap(eccmap.GetEccMapName(num_suppliers))
+                lg.warn('no meta info found, guessed eccmap %r from %d known suppliers' % (
+                    self.EccMap, len(self.known_suppliers)))
         if data_receiver.A():
             data_receiver.A().addStateChangedCallback(self._on_data_receiver_state_changed)
 

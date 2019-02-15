@@ -41,7 +41,7 @@ def default_nodes():
     from lib import serialization
     from lib import strng
     from main import settings
-    from logs import lg
+    # from logs import lg
     networks_json = serialization.BytesToDict(
         local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')),
         keys_to_text=True,
@@ -56,7 +56,7 @@ def default_nodes():
     identity_servers = {}
     for identity_server in network_info['identity-servers']:
         identity_servers[strng.to_bin(identity_server['host'])] = (identity_server['http_port'], identity_server['tcp_port'], )
-    lg.info('Active network is [%s]   identity_servers=%s' % (my_network, identity_servers, ))
+    # lg.info('Active network is [%s]   identity_servers=%s' % (my_network, identity_servers, ))
     return identity_servers
 
 
@@ -110,8 +110,6 @@ def by_host():
             overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
 
     if overridden_identity_servers:
-        from logs import lg
-        lg.info('Identity servers was overridden in local settings: %s' % overridden_identity_servers)
         _KnownServers = overridden_identity_servers
         return _KnownServers
 

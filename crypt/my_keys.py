@@ -376,7 +376,7 @@ def encrypt(key_id, inp):
     Encrypt ``inp`` string using given private key ID.
 
     :param key_id: private key id to be used
-    :param inp: raw input string to be encrypted
+    :param inp: raw binary input string to be encrypted
 
     Return encrypted string.
     """

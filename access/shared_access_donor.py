@@ -64,6 +64,7 @@ from automats import automat
 
 from lib import packetid
 from lib import serialization
+from lib import strng
 
 from main import events
 
@@ -230,8 +231,8 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        self.remote_idurl = kwargs['trusted_idurl']
-        self.key_id = kwargs['key_id']
+        self.remote_idurl = strng.to_bin(kwargs['trusted_idurl'])
+        self.key_id = strng.to_text(kwargs['key_id'])
         self.result_defer = kwargs.get('result_defer', None)
 
     def doInsertInboxCallback(self, *args, **kwargs):
@@ -320,7 +321,7 @@ class SharedAccessDonor(automat.Automat):
         """
         json_list_files = backup_fs.Serialize(
             to_json=True,
-            filter_cb=lambda path_id, path, info: True if info.key_id == self.key_id else False,
+            filter_cb=lambda path_id, path, info: True if strng.to_text(info.key_id) == strng.to_text(self.key_id) else False,
         )
         # raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
         raw_list_files = serialization.DictToBytes(json_list_files, keys_to_text=True, values_to_text=True)
@@ -351,7 +352,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        lg.info('share key [%s] with %s finished with SUCCESS !!!!!' % (self.key_id, self.remote_idurl, ))
+        lg.info('share key [%s] with %r finished with SUCCESS !!!!!' % (self.key_id, self.remote_idurl, ))
         events.send('private-key-shared', dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,

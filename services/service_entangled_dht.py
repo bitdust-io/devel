@@ -49,6 +49,7 @@ class EntangledDHTService(LocalService):
         ]
 
     def start(self):
+        from logs import lg
         from dht import dht_service
         from dht import known_nodes
         from main import settings
@@ -56,6 +57,7 @@ class EntangledDHTService(LocalService):
         conf().addCallback('services/entangled-dht/udp-port', self._on_udp_port_modified)
         dht_service.init(udp_port=settings.getDHTPort(), db_file_path=settings.DHTDBFile())
         known_seeds = known_nodes.nodes()
+        lg.info('known seed nodes are : %r' % known_seeds)        
         d = dht_service.connect(seed_nodes=known_seeds)
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)
