@@ -99,7 +99,8 @@ def test_upload_download_file_with_master_customer_1():
     else:
         assert False, 'download was not successful: %r' % response.json()
 
-    print('customer_1:%s' % local_path, 'customer_1:%s' % downloaded_file)
     local_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % local_path)[0].strip()
+    print('customer_1:%s' % local_path, local_file_src)
     downloaded_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % downloaded_file)[0].strip()
+    print('customer_1:%s' % downloaded_file, downloaded_file_src)
     assert local_file_src == downloaded_file_src, (local_file_src, downloaded_file_src, )
