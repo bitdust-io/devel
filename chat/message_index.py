@@ -54,6 +54,8 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from lib import strng
+
 #------------------------------------------------------------------------------
 
 if six.PY2:
@@ -116,7 +118,7 @@ class BaseHashIndex(HashIndex):
 class BaseMD5Index(BaseHashIndex):
 
     def transform_key(self, key):
-        return md5(key).digest()
+        return md5(strng.to_bin(key)).digest()
 
 #------------------------------------------------------------------------------
 
@@ -153,7 +155,7 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
         super(BaseMD5DoubleKeyIndex, self).__init__(*args, **kwargs)
 
     def transform_key(self, key):
-        return md5(key).digest()
+        return md5(strng.to_bin(key)).digest()
 
     def make_key_value(self, data):
         try:
