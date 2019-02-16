@@ -22,6 +22,7 @@
 
 
 import time
+import datetime
 import subprocess
 import asyncio
 import json
@@ -174,5 +175,5 @@ def tunnel_port(node):
 
 
 def tunnel_url(node, endpoint):
-    print('\n[%s]: %s' % (node, endpoint, ))
+    print('\n%s [%s]: %s' % (datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint, ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'

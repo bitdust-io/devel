@@ -58,8 +58,8 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -183,72 +183,74 @@ class DataSender(automat.Automat):
                 log.close()
             return
         for customer_idurl in contactsdb.known_customers():
-            if '' not in contactsdb.suppliers(customer_idurl):
-                from storage import backup_matrix
-                for backupID in misc.sorted_backup_ids(
-                        list(backup_matrix.local_files().keys()), True):
-                    this_customer_idurl = packetid.CustomerIDURL(backupID)
-                    if this_customer_idurl != customer_idurl:
+            if b'' in contactsdb.suppliers(customer_idurl) or '' in contactsdb.suppliers(customer_idurl):
+                log.write(u'found empty supplier for customer %r, SKIP' % customer_idurl)
+                continue
+            from storage import backup_matrix
+            for backupID in misc.sorted_backup_ids(
+                    list(backup_matrix.local_files().keys()), True):
+                this_customer_idurl = packetid.CustomerIDURL(backupID)
+                if this_customer_idurl != customer_idurl:
+                    continue
+                packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
+                if _Debug:
+                    log.write(u'%s\n' % packetsBySupplier)
+                for supplierNum in packetsBySupplier.keys():
+                    supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+                    if not supplier_idurl:
+                        lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (
+                            supplierNum, backupID, customer_idurl))
                         continue
-                    packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
-                    if _Debug:
-                        log.write(u'%s\n' % packetsBySupplier)
-                    for supplierNum in packetsBySupplier.keys():
-                        supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
-                        if not supplier_idurl:
-                            lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%s' % (
-                                supplierNum, backupID, customer_idurl))
+                    for packetID in packetsBySupplier[supplierNum]:
+                        backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
+                        if backupID_ != backupID:
+                            lg.warn('unexpected backupID supplierNum=%s for %s, customer_idurl=%r' % (
+                                packetID, backupID, customer_idurl))
                             continue
-                        for packetID in packetsBySupplier[supplierNum]:
-                            backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
-                            if backupID_ != backupID:
-                                lg.warn('unexpected backupID supplierNum=%s for %s, customer_idurl=%s' % (
-                                    packetID, backupID, customer_idurl))
-                                continue
-                            if supplierNum_ != supplierNum:
-                                lg.warn('unexpected supplierNum %s for %s, customer_idurl=%s' % (
-                                    packetID, backupID, customer_idurl))
-                                continue
-                            if io_throttle.HasPacketInSendQueue(
-                                    supplier_idurl, packetID):
-                                if _Debug:
-                                    log.write(u'%s already in sending queue for %s\n' % (packetID, supplier_idurl))
-                                continue
-                            if not io_throttle.OkToSend(supplier_idurl):
-                                if _Debug:
-                                    log.write(u'skip, not ok to send %s\n' % supplier_idurl)
-                                continue
-                            customerGlobalID, pathID = packetid.SplitPacketID(packetID)
-                            # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
-                            # if len(tranByID) > 3:
-                            #     log.write(u'transfers by %s: %d\n' % (supplier_idurl, len(tranByID)))
-                            #     continue
-                            customerGlobalID, pathID = packetid.SplitPacketID(packetID)
-                            filename = os.path.join(
-                                settings.getLocalBackupsDir(),
-                                customerGlobalID,
-                                pathID,
-                            )
-                            if not os.path.isfile(filename):
-                                if _Debug:
-                                    log.write(u'%s is not a file\n' % filename)
-                                continue
-                            if io_throttle.QueueSendFile(
-                                filename,
-                                packetID,
-                                supplier_idurl,
-                                my_id.getLocalID(),
-                                self._packetAcked,
-                                self._packetFailed,
-                            ):
-                                if _Debug:
-                                    log.write(u'io_throttle.QueueSendFile %s\n' % packetID)
-                            else:
-                                if _Debug:
-                                    log.write(u'io_throttle.QueueSendFile FAILED %s\n' % packetID)
-                            # lg.out(6, '  %s for %s' % (packetID, backupID))
-                            # DEBUG
-                            # break
+                        if supplierNum_ != supplierNum:
+                            lg.warn('unexpected supplierNum %s for %s, customer_idurl=%r' % (
+                                packetID, backupID, customer_idurl))
+                            continue
+                        if io_throttle.HasPacketInSendQueue(
+                                supplier_idurl, packetID):
+                            if _Debug:
+                                log.write(u'%s already in sending queue for %r\n' % (packetID, supplier_idurl))
+                            continue
+                        if not io_throttle.OkToSend(supplier_idurl):
+                            if _Debug:
+                                log.write(u'skip, not ok to send %s\n' % supplier_idurl)
+                            continue
+                        customerGlobalID, pathID = packetid.SplitPacketID(packetID)
+                        # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
+                        # if len(tranByID) > 3:
+                        #     log.write(u'transfers by %s: %d\n' % (supplier_idurl, len(tranByID)))
+                        #     continue
+                        customerGlobalID, pathID = packetid.SplitPacketID(packetID)
+                        filename = os.path.join(
+                            settings.getLocalBackupsDir(),
+                            customerGlobalID,
+                            pathID,
+                        )
+                        if not os.path.isfile(filename):
+                            if _Debug:
+                                log.write(u'%s is not a file\n' % filename)
+                            continue
+                        if io_throttle.QueueSendFile(
+                            filename,
+                            packetID,
+                            supplier_idurl,
+                            my_id.getLocalID(),
+                            self._packetAcked,
+                            self._packetFailed,
+                        ):
+                            if _Debug:
+                                log.write(u'io_throttle.QueueSendFile %s\n' % packetID)
+                        else:
+                            if _Debug:
+                                log.write(u'io_throttle.QueueSendFile FAILED %s\n' % packetID)
+                        # lg.out(6, '  %s for %s' % (packetID, backupID))
+                        # DEBUG
+                        # break
 
         self.automat('scan-done')
         if _Debug:

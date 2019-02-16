@@ -42,6 +42,21 @@ def test_upload_download_file_with_master_customer_1():
     downloaded_file = '%s/%s' % (download_volume, virtual_file)
     assert not os.path.exists(downloaded_file)
 
+    count = 0
+    while True:
+        if count > 10:
+            assert False, 'customer_1 failed to hire enough suppliers after many attempts'
+            return 
+        response = requests.get(url=tunnel_url('customer_1', 'supplier/list/v1'))
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\n\nsupplier/list/v1 : %s\n' % response.json())
+        if len(response.json()['result']) == 2:
+            assert True
+            break
+        count += 1
+        time.sleep(5)
+
     response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
@@ -56,6 +71,8 @@ def test_upload_download_file_with_master_customer_1():
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
+    
+    time.sleep(3)
 
     for i in range(20):
         response = requests.post(

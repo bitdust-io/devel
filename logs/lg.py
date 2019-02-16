@@ -156,7 +156,7 @@ def args(level, *args, **kwargs):
     message = kwargs.pop('message', None)
     funcargs = []
     for k, v in enumerate(args):
-        funcargs.append('"%s"' % v)
+        funcargs.append('%s' % v)
     for k, v in kwargs:
         funcargs.append('%s=%s' % (k, v))
     funcname = '%s.%s' % (modul, caller)
