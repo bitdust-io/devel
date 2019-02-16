@@ -918,11 +918,9 @@ class DHTNode(EntangledNode):
     def expire(self):
         now = utime.get_sec1970()
         expired_keys = []
-
         h = hashlib.sha1()
         h.update(b'nodeState')
         nodeStateKey = h.hexdigest()
-
         for key in self._dataStore.keys():
             if key == nodeStateKey:
                 continue
@@ -936,10 +934,8 @@ class DHTNode(EntangledNode):
                         expired_keys.append(key)
         for key in expired_keys:
             if _Debug:
-                lg.out(_DebugLevel, 'dht_service.expire   [%s] removed' % base64.b32encode(key))
+                lg.out(_DebugLevel, 'dht_service.expire   [%s] removed' % key)
             del self._dataStore[key]
-        # if _DebugLevel <= 10:
-        #     lg.out(_DebugLevel, 'DHT counters last %d sec: %s' % (int(KEY_EXPIRE_MIN_SECONDS / 2), drop_counters()))
 
     @rpcmethod
     def store(self, key, value, originalPublisherID=None,

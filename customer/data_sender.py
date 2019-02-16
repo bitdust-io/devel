@@ -175,23 +175,33 @@ class DataSender(automat.Automat):
                 lg.out(_DebugLevel, '        _ShutdownFlag is True\n')
             self.automat('scan-done')
             return
-        progress = 0 
+        from storage import backup_matrix
+        backup_matrix.ReadLocalFiles()
+        progress = 0
         for customer_idurl in contactsdb.known_customers():
-            if b'' in contactsdb.suppliers(customer_idurl) or '' in contactsdb.suppliers(customer_idurl):
+            known_suppliers = contactsdb.suppliers(customer_idurl)
+            if b'' in known_suppliers or '' in known_suppliers:
                 if _Debug:
                     lg.out(_DebugLevel, '        found empty supplier for customer %r, SKIP' % customer_idurl)
                 continue
-            from storage import backup_matrix
-            for backupID in misc.sorted_backup_ids(
-                    list(backup_matrix.local_files().keys()), True):
+            known_backups = misc.sorted_backup_ids(list(backup_matrix.local_files().keys()), True)
+            if _Debug:
+                lg.out(_DebugLevel, '        found %d known suppliers for customer %r with %d backups' % (
+                    len(known_suppliers), customer_idurl, len(known_backups)))
+            for backupID in known_backups:
                 this_customer_idurl = packetid.CustomerIDURL(backupID)
                 if this_customer_idurl != customer_idurl:
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
                 if _Debug:
-                    lg.out(_DebugLevel, '        %s\n' % packetsBySupplier)
+                    lg.out(_DebugLevel, '        %s' % packetsBySupplier)
                 for supplierNum in packetsBySupplier.keys():
-                    supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+                    # supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
+                    try:
+                        supplier_idurl = known_suppliers[supplierNum]
+                    except:
+                        lg.exc()
+                        continue
                     if not supplier_idurl:
                         lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (
                             supplierNum, backupID, customer_idurl))
@@ -206,10 +216,9 @@ class DataSender(automat.Automat):
                             lg.warn('unexpected supplierNum %s for %s, customer_idurl=%r' % (
                                 packetID, backupID, customer_idurl))
                             continue
-                        if io_throttle.HasPacketInSendQueue(
-                                supplier_idurl, packetID):
+                        if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
                             if _Debug:
-                                lg.out(_DebugLevel, '        %s already in sending queue for %r\n' % (packetID, supplier_idurl))
+                                lg.out(_DebugLevel, '        %s already in sending queue for %r' % (packetID, supplier_idurl))
                             continue
                         if not io_throttle.OkToSend(supplier_idurl):
                             if _Debug:
@@ -240,15 +249,12 @@ class DataSender(automat.Automat):
                         ):
                             progress += 1
                             if _Debug:
-                                lg.out(_DebugLevel, '        io_throttle.QueueSendFile %s\n' % packetID)
+                                lg.out(_DebugLevel, '        io_throttle.QueueSendFile %s' % packetID)
                         else:
                             if _Debug:
-                                lg.out(_DebugLevel, '        io_throttle.QueueSendFile FAILED %s\n' % packetID)
-                        # lg.out(6, '  %s for %s' % (packetID, backupID))
-                        # DEBUG
-                        # break
+                                lg.out(_DebugLevel, '        io_throttle.QueueSendFile FAILED %s' % packetID)
         if _Debug:
-            lg.out(_DebugLevel, '    progress=%s' % progress)
+            lg.out(_DebugLevel, 'data_sender.doScanAndQueue progress=%s' % progress)
         self.automat('scan-done')
 
 #     def doPrintStats(self, *args, **kwargs):

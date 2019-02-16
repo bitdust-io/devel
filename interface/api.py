@@ -1269,7 +1269,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
                 keyID, log_events=True, publish_events=True, )
-        active_share.automat('restart')
+        if active_share.state != 'CONNECTED':
+            active_share.automat('restart')
     if wait_result:
         d = Deferred()
         tsk = backup_control.StartSingle(
