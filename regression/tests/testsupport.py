@@ -174,5 +174,5 @@ def tunnel_port(node):
 
 
 def tunnel_url(node, endpoint):
-    print('\n[%s]: %s' % (node, endpoint, ))
+    print('\n%s [%s]: %s' % (time.strftime("%H:%M:%S"), node, endpoint, ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'

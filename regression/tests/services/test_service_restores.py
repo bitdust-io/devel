@@ -71,6 +71,8 @@ def test_upload_download_file_with_master_customer_1():
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
+    
+    time.sleep(3)
 
     for i in range(20):
         response = requests.post(
