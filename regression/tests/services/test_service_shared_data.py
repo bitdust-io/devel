@@ -29,8 +29,6 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 
 
 def test_file_shared_from_customer_1_to_customer_4():
-    return True
-
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
@@ -44,6 +42,9 @@ def test_file_shared_from_customer_1_to_customer_4():
         assert response.json()['status'] == 'OK', response.json()
         print('\n\nsupplier/list/v1 : %s\n' % response.json())
         if len(response.json()['result']) == 2:
+            for s in response.json()['result']:
+                assert s['supplier_state'] == 'CONNECTED'
+                assert s['contact_state'] == 'CONNECTED'
             assert True
             break
         count += 1
@@ -62,7 +63,6 @@ def test_file_shared_from_customer_1_to_customer_4():
     remote_path = '%s:%s' % (key_id, virtual_file)
     download_volume = '/customer_4'
     downloaded_file = '%s/%s' % (download_volume, virtual_file)
-    assert not os.path.exists(downloaded_file)
 
     response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
@@ -150,6 +150,7 @@ def test_file_shared_from_customer_1_to_customer_4():
     else:
         assert False, 'failed to download shared file: %r' % response.json()
 
-    local_file_hash = run_ssh_command_and_wait('customer_1', 'sha1sum %s' % local_path)[0].strip().split(' ')[0].strip()
-    downloaded_file_hash = run_ssh_command_and_wait('customer_4', 'sha1sum %s' % downloaded_file)[0].strip().split(' ')[0].strip()
-    assert local_file_hash == downloaded_file_hash, (local_file_hash, downloaded_file_hash, )
+    print('customer_1:%s' % local_path, 'customer_4:%s' % downloaded_file)
+    local_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % local_path)[0].strip()
+    downloaded_file_src = run_ssh_command_and_wait('customer_4', 'cat %s' % downloaded_file)[0].strip()
+    assert local_file_src == downloaded_file_src, (local_file_src, downloaded_file_src, )

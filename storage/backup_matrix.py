@@ -59,7 +59,7 @@ from io import BytesIO
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -209,7 +209,7 @@ def GetActiveArray(customer_idurl=None):
     the current state of supplier.
     """
     from p2p import contact_status
-    activeArray = [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    activeArray = [0, ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     for i in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
@@ -1288,9 +1288,9 @@ def GetLocalDataArray(backupID, blockNum):
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in local_files():
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0, ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     if blockNum not in local_files()[backupID]:
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0, ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     return local_files()[backupID][blockNum]['D']
 
 

@@ -157,6 +157,9 @@ regression_errors_all:
 regression_states_all:
 	make -C regression/ logs_all_states
 
+regression_logs_fetch:
+	make -C regression/ logs_fetch
+
 dht_network_up:
 	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
 

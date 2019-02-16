@@ -32,6 +32,7 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 def test_upload_download_file_with_master_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     key_id = 'master$customer_1@is_8084'
     shared_volume = '/customer_1'
     origin_filename = 'file_customer_1.txt'
@@ -40,7 +41,6 @@ def test_upload_download_file_with_master_customer_1():
     remote_path = '%s:%s' % (key_id, virtual_file)
     download_volume = '/customer_1'
     downloaded_file = '%s/%s' % (download_volume, virtual_file)
-    assert not os.path.exists(downloaded_file)
 
     count = 0
     while True:
@@ -52,6 +52,9 @@ def test_upload_download_file_with_master_customer_1():
         assert response.json()['status'] == 'OK', response.json()
         print('\n\nsupplier/list/v1 : %s\n' % response.json())
         if len(response.json()['result']) == 2:
+            for s in response.json()['result']:
+                assert s['supplier_state'] == 'CONNECTED'
+                assert s['contact_state'] == 'CONNECTED'
             assert True
             break
         count += 1
@@ -96,6 +99,7 @@ def test_upload_download_file_with_master_customer_1():
     else:
         assert False, 'download was not successful: %r' % response.json()
 
-    local_file_hash = run_ssh_command_and_wait('customer_1', 'sha1sum %s' % local_path)[0].strip().split(' ')[0].strip()
-    downloaded_file_hash = run_ssh_command_and_wait('customer_1', 'sha1sum %s' % downloaded_file)[0].strip().split(' ')[0].strip()
-    assert local_file_hash == downloaded_file_hash, (local_file_hash, downloaded_file_hash, )
+    print('customer_1:%s' % local_path, 'customer_1:%s' % downloaded_file)
+    local_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % local_path)[0].strip()
+    downloaded_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % downloaded_file)[0].strip()
+    assert local_file_src == downloaded_file_src, (local_file_src, downloaded_file_src, )

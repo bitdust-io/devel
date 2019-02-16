@@ -437,7 +437,7 @@ def DefaultEccMapName():
     This is a ecc map name used by default.
     Must comply with ``DefaultDesiredSuppliers()``.
     """
-    return 'ecc/4x4'
+    return 'ecc/2x2'
 
 
 def DefaultDesiredSuppliers():
@@ -449,7 +449,7 @@ def DefaultDesiredSuppliers():
 
     Must comply with ``DefaultEccMapName()``
     """
-    return 4
+    return 2
 
 
 def DefaultLocaltesterLoop():
