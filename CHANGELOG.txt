@@ -2,6 +2,16 @@ Change Log
 ==========
 
 
+2019-02-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug found and fixed in customer/data_sender.py
+* get rid of data_sender.log
+* all suppliers must be already hired before you start uploading
+* few more py3 bug fixes
+* more stability in service_shared_data() 
+
+
+
 2019-02-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * BitDust is Python3 compatible now!
