@@ -54,7 +54,6 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from io import open
 
 #------------------------------------------------------------------------------
 
@@ -85,7 +84,7 @@ from main import settings
 
 from p2p import contact_status
 
-from . import io_throttle
+from customer import io_throttle
 
 #------------------------------------------------------------------------------
 
@@ -171,20 +170,16 @@ class DataSender(automat.Automat):
         global _ShutdownFlag
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
-        if _Debug:
-            log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
-            log.write(u'doScanAndQueue %s\n' % time.asctime())  # .decode('utf-8')
         if _ShutdownFlag:
             if _Debug:
-                log.write(u'doScanAndQueue _ShutdownFlag is True\n')
+                lg.out(_DebugLevel, '        _ShutdownFlag is True\n')
             self.automat('scan-done')
-            if _Debug:
-                log.flush()
-                log.close()
             return
+        progress = 0 
         for customer_idurl in contactsdb.known_customers():
             if b'' in contactsdb.suppliers(customer_idurl) or '' in contactsdb.suppliers(customer_idurl):
-                log.write(u'found empty supplier for customer %r, SKIP' % customer_idurl)
+                if _Debug:
+                    lg.out(_DebugLevel, '        found empty supplier for customer %r, SKIP' % customer_idurl)
                 continue
             from storage import backup_matrix
             for backupID in misc.sorted_backup_ids(
@@ -194,7 +189,7 @@ class DataSender(automat.Automat):
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
                 if _Debug:
-                    log.write(u'%s\n' % packetsBySupplier)
+                    lg.out(_DebugLevel, '        %s\n' % packetsBySupplier)
                 for supplierNum in packetsBySupplier.keys():
                     supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
                     if not supplier_idurl:
@@ -214,11 +209,11 @@ class DataSender(automat.Automat):
                         if io_throttle.HasPacketInSendQueue(
                                 supplier_idurl, packetID):
                             if _Debug:
-                                log.write(u'%s already in sending queue for %r\n' % (packetID, supplier_idurl))
+                                lg.out(_DebugLevel, '        %s already in sending queue for %r\n' % (packetID, supplier_idurl))
                             continue
                         if not io_throttle.OkToSend(supplier_idurl):
                             if _Debug:
-                                log.write(u'skip, not ok to send %s\n' % supplier_idurl)
+                                lg.out(_DebugLevel, '        skip, not ok to send %s\n' % supplier_idurl)
                             continue
                         customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                         # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
@@ -233,7 +228,7 @@ class DataSender(automat.Automat):
                         )
                         if not os.path.isfile(filename):
                             if _Debug:
-                                log.write(u'%s is not a file\n' % filename)
+                                lg.out(_DebugLevel, '        %s is not a file\n' % filename)
                             continue
                         if io_throttle.QueueSendFile(
                             filename,
@@ -243,19 +238,18 @@ class DataSender(automat.Automat):
                             self._packetAcked,
                             self._packetFailed,
                         ):
+                            progress += 1
                             if _Debug:
-                                log.write(u'io_throttle.QueueSendFile %s\n' % packetID)
+                                lg.out(_DebugLevel, '        io_throttle.QueueSendFile %s\n' % packetID)
                         else:
                             if _Debug:
-                                log.write(u'io_throttle.QueueSendFile FAILED %s\n' % packetID)
+                                lg.out(_DebugLevel, '        io_throttle.QueueSendFile FAILED %s\n' % packetID)
                         # lg.out(6, '  %s for %s' % (packetID, backupID))
                         # DEBUG
                         # break
-
-        self.automat('scan-done')
         if _Debug:
-            log.flush()
-            log.close()
+            lg.out(_DebugLevel, '    progress=%s' % progress)
+        self.automat('scan-done')
 
 #     def doPrintStats(self, *args, **kwargs):
 #         """
