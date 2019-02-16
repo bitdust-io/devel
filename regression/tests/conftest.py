@@ -460,8 +460,8 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2):
     run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')
     run_ssh_command_and_wait(node, f'bitdust set services/customer/suppliers-number {num_suppliers}')
     # create randomized file to test file upload/download
-    run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt')
-    run_ssh_command_and_wait(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/second_file_{node}.txt')
+    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/file_{node}.txt')
+    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt')
     # start BitDust daemon and create new identity for supplier
     start_daemon(node)
     health_check(node)
@@ -489,8 +489,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     await run_ssh_command_and_wait_async(node, 'bitdust set services/customer/enabled true', loop)
     await run_ssh_command_and_wait_async(node, f'bitdust set services/customer/suppliers-number {num_suppliers}', loop)
     # create randomized file to test file upload/download
-    await run_ssh_command_and_wait_async(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/file_{node}.txt', loop)
-    await run_ssh_command_and_wait_async(node, f'dd bs=1024 count=1 skip=0 if=/dev/urandom of=/{node}/second_file_{node}.txt', loop)
+    await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/file_{node}.txt', loop)
+    await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt', loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
     await health_check_async(node, loop)
