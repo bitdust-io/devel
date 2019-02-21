@@ -231,6 +231,19 @@ class SharedAccessCoordinator(automat.Automat):
                 self.state = 'DHT_LOOKUP'
                 self.doInit(*args, **kwargs)
                 self.doDHTLookupSuppliers(*args, **kwargs)
+        #---DHT_LOOKUP---
+        elif self.state == 'DHT_LOOKUP':
+            if event == 'customer-list-files-received':
+                self.doProcessCustomerListFiles(*args, **kwargs)
+            elif event == 'dht-lookup-ok':
+                self.state = 'SUPPLIERS?'
+                self.doConnectCustomerSuppliers(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'fail' or event == 'timer-1min':
+                self.state = 'DISCONNECTED'
+                self.doReportDisconnected(*args, **kwargs)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'supplier-connected':
@@ -279,19 +292,6 @@ class SharedAccessCoordinator(automat.Automat):
                 self.doReportDisconnected(*args, **kwargs)
             elif event == 'customer-list-files-received':
                 self.doProcessCustomerListFiles(*args, **kwargs)
-        #---DHT_LOOKUP---
-        elif self.state == 'DHT_LOOKUP':
-            if event == 'customer-list-files-received':
-                self.doProcessCustomerListFiles(*args, **kwargs)
-            elif event == 'dht-lookup-ok':
-                self.state = 'SUPPLIERS?'
-                self.doConnectCustomerSuppliers(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-1min':
-                self.state = 'DISCONNECTED'
-                self.doReportDisconnected(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
