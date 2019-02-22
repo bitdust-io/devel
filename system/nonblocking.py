@@ -44,6 +44,7 @@ import errno
 import time
 import subprocess
 import traceback
+import platform
 
 #------------------------------------------------------------------------------
 
@@ -61,7 +62,7 @@ PIPE_CLOSED = 2
 
 #------------------------------------------------------------------------------
 
-if getattr(subprocess, 'mswindows', None):
+if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == "Windows":
     from win32file import ReadFile, WriteFile
     from win32pipe import PeekNamedPipe
     from win32api import TerminateProcess, OpenProcess, CloseHandle
