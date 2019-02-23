@@ -62,7 +62,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class Block(object):
             SessionKey='',
             SessionKeyType=None,
             LastBlock=True,
-            Data='',
+            Data=b'',
             EncryptKey=None,
             DecryptKey=None,
             EncryptedSessionKey=None,
@@ -143,7 +143,7 @@ class Block(object):
                 self.EncryptedSessionKey = my_keys.encrypt(strng.to_text(EncryptKey), SessionKey)
             else:
                 self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
-        if EncryptedData and Length:
+        if EncryptedData and Length is not None:
             self.Length = Length
             self.EncryptedData = EncryptedData
         else:

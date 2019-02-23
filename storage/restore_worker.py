@@ -422,6 +422,9 @@ class RestoreWorker(automat.Automat):
             lg.exc()
             self.automat('block-failed')
             return
+        if not newblock:
+            self.automat('block-failed')
+            return
         self.automat('block-restored', (newblock, filename, ))
 
     def doRequestPackets(self, *args, **kwargs):
