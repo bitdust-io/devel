@@ -197,13 +197,11 @@ class TCPFileStream():
         from transport.tcp import tcp_connection
         file_ids_to_remove = list(self.inboxFiles.keys())
         for file_id in file_ids_to_remove:
-            # self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id)+' '+reason)
+            # self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id) + b' ' + strng.to_bin(reason))
             self.inbox_file_done(file_id, 'failed', reason)
         file_ids_to_remove = list(self.outboxFiles.keys())
         for file_id in file_ids_to_remove:
-            self.send_data(
-                tcp_connection.CMD_ABORT, struct.pack(
-                    'i', file_id) + ' ' + reason)
+            self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id) + b' ' + strng.to_bin(reason))
             self.outbox_file_done(file_id, 'failed', reason)
 
     def data_received(self, payload):
@@ -224,8 +222,7 @@ class TCPFileStream():
             if len(self.inboxFiles) >= 2 * MAX_SIMULTANEOUS_OUTGOING_FILES:
                 # too many incoming files, seems remote guy is cheating - drop
                 # that session!
-                lg.warn('too many incoming files, close connection %s' %
-                        str(self.connection))
+                lg.warn('too many incoming files, close connection %s' % str(self.connection))
                 self.connection.automat('disconnect')
                 return
             self.create_inbox_file(file_id, file_size)
@@ -285,16 +282,11 @@ class TCPFileStream():
         if self.inboxFiles[file_id].is_done():
             infile = self.inboxFiles[file_id]
             self.close_inbox_file(file_id)
-            self.report_inbox_file(
-                infile.transfer_id,
-                'finished',
-                infile.get_bytes_received())
+            self.report_inbox_file(infile.transfer_id, 'finished', infile.get_bytes_received())
 
     def on_inbox_file_register_failed(self, err, file_id):
         if _Debug:
-            lg.warn(
-                'failed to register, file_id=%s err:\n%s' %
-                (str(file_id), str(err)))
+            lg.warn('failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
             lg.out(_DebugLevel - 8, '        close session %s' % self.session)
         self.connection.automat('disconnect')
 
@@ -341,23 +333,13 @@ class TCPFileStream():
         else:
             lg.warn('incoming TCP file %s not exist' % file_id)
 
-    def report_outbox_file(
-            self,
-            transfer_id,
-            status,
-            bytes_sent,
-            error_message=None):
+    def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):
         from transport.tcp import tcp_interface
         # lg.out(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         tcp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
-    def report_inbox_file(
-            self,
-            transfer_id,
-            status,
-            bytes_received,
-            error_message=None):
+    def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
         from transport.tcp import tcp_interface
         # lg.out(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         tcp_interface.interface_unregister_file_receiving(
@@ -490,10 +472,7 @@ class OutboxFile():
 
     def start(self):
         self.sender = FileSender(self)
-        d = self.sender.beginFileTransfer(
-            self.fout,
-            self.stream.connection.transport,
-            self.sender.transform_data)
+        d = self.sender.beginFileTransfer(self.fout, self.stream.connection.transport, self.sender.transform_data)
         d.addCallback(self.transfer_finished)
         d.addErrback(self.transfer_failed)
 

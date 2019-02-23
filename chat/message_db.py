@@ -230,6 +230,10 @@ def recreate_db(chat_history_dir):
     if os.path.isdir(temp_dir):
         bpio._dir_remove(temp_dir)
     tmpdb = regenerate_indexes(temp_dir)
+    try:
+        db().close()
+    except:
+        pass
     rewrite_indexes(db(), tmpdb)
     bpio._dir_remove(temp_dir)
     try:
