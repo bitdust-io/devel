@@ -386,7 +386,7 @@ def restart(service_name, wait_timeout=None):
     restart_result = Deferred()
 
     def _on_started(start_result, stop_result, dependencies_results):
-        lg.out(4, 'driver.restart._on_started : %s with %s' % (service_name, start_result))
+        lg.out(4, 'driver.restart._on_started : %s with %s, dependencies_results=%r' % (service_name, start_result, dependencies_results))
         try:
             stop_resp = {stop_result[0][1]: stop_result[0][0], }
         except:
@@ -433,7 +433,7 @@ def restart(service_name, wait_timeout=None):
 
     dl = []
     if _StopingDeferred:
-        dl.append(_StartingDeferred)
+        dl.append(_StopingDeferred)
     if _StartingDeferred:
         dl.append(_StartingDeferred)
     if wait_timeout:

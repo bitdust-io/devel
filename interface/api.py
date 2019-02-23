@@ -2412,23 +2412,22 @@ def service_start(service_name):
 
         {'status': 'OK', 'result': 'service_tcp_connections was switched on'}
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'api.service_start : %s' % service_name)
     from main import config
     svc = driver.services().get(service_name, None)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_start %s not found' % service_name)
+        lg.warn('service "%s" not found' % service_name)
         return ERROR('service "%s" was not found' % service_name)
     if svc.state == 'ON':
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_start %s already started' % service_name)
+        lg.warn('service "%s" already started' % service_name)
         return ERROR('service "%s" already started' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_start %s already enabled' % service_name)
+        lg.warn('service "%s" already enabled' % service_name)
         return ERROR('service "%s" already enabled' % service_name)
     config.conf().setBool(svc.config_path, True)
     return OK('"%s" was switched on' % service_name)
@@ -2447,23 +2446,22 @@ def service_stop(service_name):
 
         {'status': 'OK', 'result': 'service_tcp_connections was switched off'}
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'api.service_stop : %s' % service_name)
     from main import config
     svc = driver.services().get(service_name, None)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_stop %s not found' % service_name)
+        lg.warn('service "%s" not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_stop config item %s was not found' % svc.config_path)
+        lg.warn('config item "%s" was not found' % svc.config_path)
         return ERROR('config item "%s" was not found' % svc.config_path)
     if current_config is False:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_stop %s already disabled' % service_name)
+        lg.warn('service "%s" already disabled' % service_name)
         return ERROR('service "%s" already disabled' % service_name)
     config.conf().setBool(svc.config_path, False)
     return OK('"%s" was switched off' % service_name)
@@ -2479,21 +2477,20 @@ def service_restart(service_name, wait_timeout=10):
         {'status': 'OK', 'result': 'service_tcp_connections was restarted'}
     """
     svc = driver.services().get(service_name, None)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.service_restart : %s' % service_name)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_restart %s not found' % service_name)
+        lg.warn('service "%s" not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=wait_timeout)
     d.addCallback(
-        lambda resp: ret.callback(
-            OK(resp)))
+        lambda resp: ret.callback(OK(resp)))
     d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+        lambda err: ret.callback(ERROR(err.getErrorMessage())))
     return ret
 
 #------------------------------------------------------------------------------
