@@ -79,8 +79,8 @@ def decrypt_json(encrypted_data, secret_16bytes_key):
         base64.b64decode(dct['ct'].encode('utf-8'))
     )
     raw_data = Padding.unpad(
-        padded_data,
-        AES.block_size,
+        padded_data=padded_data,
+        block_size=AES.block_size,
     )
     # TODO: remove salt from raw_data
     return raw_data
