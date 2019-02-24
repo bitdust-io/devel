@@ -46,34 +46,44 @@ from lib import serialization
 
 def encrypt_json(raw_data, secret_16bytes_key):
     # TODO: add salt to raw_data
+    padded_data = Padding.pad(
+        data_to_pad=raw_data,
+        block_size=AES.block_size,
+    )
     cipher = AES.new(
         key=secret_16bytes_key,
         mode=AES.MODE_CBC,
     )
-    ct_bytes = cipher.encrypt(Padding.pad(raw_data, AES.block_size))
+    ct_bytes = cipher.encrypt(padded_data)
     dct = {
         'iv': base64.b64encode(cipher.iv).decode('utf-8'),
         'ct': base64.b64encode(ct_bytes).decode('utf-8'),
     }
-    raw = serialization.DictToBytes(dct)
-    return raw
+    encrypted_data = serialization.DictToBytes(dct, encoding='utf-8')
+    return encrypted_data
 
 
 def decrypt_json(encrypted_data, secret_16bytes_key):
-    dct = serialization.BytesToDict(encrypted_data, keys_to_text=True)
+    dct = serialization.BytesToDict(
+        encrypted_data,
+        encoding='utf-8',
+        keys_to_text=True,
+        values_to_text=True,
+    )
     cipher = AES.new(
         key=secret_16bytes_key,
         mode=AES.MODE_CBC,
-        iv=base64.b64decode(dct['iv']),
+        iv=base64.b64decode(dct['iv'].encode('utf-8')),
     )
-    result = Padding.unpad(
-        cipher.decrypt(
-            base64.b64decode(dct['ct'])
-        ),
+    padded_data = cipher.decrypt(
+        base64.b64decode(dct['ct'].encode('utf-8'))
+    )
+    raw_data = Padding.unpad(
+        padded_data,
         AES.block_size,
     )
     # TODO: remove salt from raw_data
-    return result
+    return raw_data
 
 #------------------------------------------------------------------------------
 

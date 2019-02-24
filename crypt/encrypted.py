@@ -261,7 +261,7 @@ class Block(object):
             's': self.Signature,
         }
         if _Debug:
-            lg.out(_DebugLevel, 'encrypted.Serialize %r' % dct)
+            lg.out(_DebugLevel, 'encrypted.Serialize %s' % repr(dct)[:1000])
         return serialization.DictToBytes(dct, encoding='utf-8')
 
 #------------------------------------------------------------------------------
@@ -273,7 +273,7 @@ def Unserialize(data, decrypt_key=None):
     """
     dct = serialization.BytesToDict(data, keys_to_text=True, encoding='utf-8')
     if _Debug:
-        lg.out(_DebugLevel, 'encrypted.Unserialize %r' % dct)
+        lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:1000])
     try:
         newobject = Block(
             CreatorID=dct['c'],
