@@ -232,12 +232,16 @@ def main():
     Use command line arguments to get the command from ``bpmain``.
     """
     ostype = platform.uname()[0]
+
     if ostype == 'Windows':
-        try:
-            import msvcrt
-            msvcrt.setmode(1, os.O_BINARY)
-        except:
-            pass
+        if six.PY3:
+            sys.stdout = sys.stdout.buffer
+        else:
+            try:
+                import msvcrt
+                msvcrt.setmode(1, os.O_BINARY)  # @UndefinedVariable
+            except:
+                pass
 
     else:
         if six.PY3:
@@ -245,7 +249,7 @@ def main():
 
     if len(sys.argv) < 4:
         printlog('bppipe extract <archive path> <output dir>\n')
-        printlog('bppipe <subdirs / nosubdirs> <"none" / "bz2"/"gz"> <folder/file path> [archive filename]\n')
+        printlog('bppipe <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n')
         return 2
 
     try:
