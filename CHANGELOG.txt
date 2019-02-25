@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2019-02-25 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 and windows bug fixes
+* bump twisted version to 18.7.0
+* fallback scenario in chat history to be able to recreate local db in case of migrations
+
+
+
 2019-02-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug found and fixed in customer/data_sender.py
