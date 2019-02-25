@@ -231,9 +231,9 @@ def disconnect():
 def close_connections():
     """
     """
-    for sc in started_connections().values():
+    for sc in list(started_connections().values()):
         sc.connector.disconnect()
-    for oclist in opened_connections().values():
+    for oclist in list(opened_connections().values()):
         for oc in oclist:
             oc.automat('disconnect')
             oc.automat('connection-lost')

@@ -245,7 +245,7 @@ def recreate_db(chat_history_dir):
         _LocalStorage.custom_header = message_index.make_custom_header()
         try:
             _LocalStorage.destroy()
-        except DatabaseConflict:
+        except:
             pass
         _LocalStorage.create()
 

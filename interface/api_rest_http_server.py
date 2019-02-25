@@ -122,7 +122,12 @@ def _request_data(request, mandatory_keys=[], default_value={}):
             raise Exception('mandatory json input missed: %s' % mandatory_keys)
         return default_value
     try:
-        data = serialization.BytesToDict(input_request_data, keys_to_text=True, values_to_text=True)
+        data = serialization.BytesToDict(
+            input_request_data,
+            encoding='utf-8',
+            keys_to_text=True,
+            values_to_text=True,
+        )
     except:
         raise Exception('invalid json input')
     for k in mandatory_keys:
