@@ -449,6 +449,7 @@ font-family: "Tw Cen MT", "Century Gothic", Futura, Arial, sans-serif;}
                 idhost += b':%d' % idport
             src += '<a href="http://%s/"><nobr>%s</nobr></a>&nbsp;&nbsp;\n' % (strng.to_text(idhost), strng.to_text(idhost))
         src += '</p>'
+        src += '<!--CLIENT_HOST=%s:%s-->\n' % (request.client.host, request.client.port)
         src += '</body>\n</html>'
         del files
         return strng.to_bin(src)

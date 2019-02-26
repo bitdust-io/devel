@@ -485,6 +485,7 @@ class IdRegistrator(automat.Automat):
             if self.free_idurls[0].count(b'localhost:') or self.free_idurls[0].count(b'127.0.0.1:'):
                 # if you wish to create a local identity you do not need to stun external IP at all
                 self.automat('stun-success', '127.0.0.1')
+                return True
 
         def save(result):
             lg.out(4, '            external IP : %s' % result)
@@ -506,6 +507,7 @@ class IdRegistrator(automat.Automat):
         d = stun_client.safe_stun(udp_port=rnd_udp_port, dht_port=rnd_dht_port)
         d.addCallback(save)
         d.addErrback(lambda _: self.automat('stun-failed'))
+        return True
 
     def doCreateMyIdentity(self, *args, **kwargs):
         """
