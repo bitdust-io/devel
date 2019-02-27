@@ -96,12 +96,12 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
 
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
-        real_CreateProcess = _dumbwin32proc.win32process.CreateProcess
+        real_CreateProcess = _dumbwin32proc.win32process.CreateProcess  # @UndefinedVariable
 
         def fake_createprocess(_appName, _commandLine, _processAttributes,
                                _threadAttributes, _bInheritHandles, creationFlags,
                                _newEnvironment, _currentDirectory, startupinfo):
-            import win32con
+            import win32con  # @UnresolvedImport
             flags = win32con.CREATE_NO_WINDOW
             return real_CreateProcess(_appName, _commandLine,
                                       _processAttributes, _threadAttributes,
@@ -112,7 +112,7 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
     if process_protocol is None:
         process_protocol = ChildProcessProtocol(child_name)
     try:
-        Process = reactor.spawnProcess(process_protocol, executable, cmdargs, path=base_dir)
+        Process = reactor.spawnProcess(process_protocol, executable, cmdargs, path=base_dir)  # @UndefinedVariable
     except:
         lg.out(1, 'child_process.run ERROR executing: %s' % str(cmdargs))
         lg.exc()
@@ -162,7 +162,7 @@ def pipe(cmdargs):
     lg.out(6, "child_process.pipe %s" % str(cmdargs))
     try:
         if bpio.Windows():
-            import win32process
+            import win32process  # @UnresolvedImport
             p = nonblocking.Popen(
                 cmdargs,
                 shell=True,
@@ -194,7 +194,7 @@ def detach(cmdargs):
     lg.out(2, "child_process.detach %s" % str(cmdargs))
     try:
         if bpio.Windows():
-            import win32process
+            import win32process  # @UnresolvedImport
             p = nonblocking.Popen(
                 cmdargs,
                 shell=False,
