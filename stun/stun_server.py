@@ -153,13 +153,14 @@ class StunServer(automat.Automat):
         self.listen_port = args[0]
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).add_callback(self._datagramReceived)
+            lg.info('callback added to listen on UDP port %d' % self.listen_port)
         else:
             lg.err('udp port %s is not opened' % self.listen_port)
-        try:
-            externalPort = int(bpio.ReadTextFile(settings.ExternalUDPPortFilename()))
-        except:
-            lg.exc()
-            externalPort = self.listen_port
+        # try:
+        #     externalPort = int(bpio.ReadTextFile(settings.ExternalUDPPortFilename()))
+        # except:
+        #     lg.exc()
+        externalPort = self.listen_port
         dht_service.set_node_data('stun_port', externalPort)
 
     def doStop(self, *args, **kwargs):
