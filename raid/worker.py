@@ -153,6 +153,10 @@ class Manager(object):
             lg.info('will use %s as multiprocessing executable' % venv_python_path)
             multiprocessing.set_executable(venv_python_path)
 
+        multiprocessing.set_start_method('spawn')
+        multiprocessing.util.log_to_stderr(multiprocessing.util.DEBUG)
+
+        # self.processor = multiprocessing.get_context("spawn").Pool(ncpus)
         self.processor = multiprocessing.Pool(ncpus)
         #: implement queue per Manager instance
         # self.queue = multiprocessing.Queue()
