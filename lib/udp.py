@@ -91,9 +91,9 @@ def listen(port, proto=None):
         lg.out(6, '            %s' % str(list(listeners().keys())))
         return listeners()[port]
     if proto is None:
-        listeners()[port] = reactor.listenUDP(port, CommandsProtocol())
+        listeners()[port] = reactor.listenUDP(port, CommandsProtocol())  # @UndefinedVariable
     else:
-        listeners()[port] = reactor.listenUDP(port, proto)
+        listeners()[port] = reactor.listenUDP(port, proto)  # @UndefinedVariable
     listeners()[port].port = port
     lg.out(6, 'udp.listen on port %d started' % port)
     return listeners()[port]
@@ -368,14 +368,17 @@ def main():
     def ping(fromport, toaddr):
         print('ping')
         send_command(fromport, CMD_PING, b'ping', toaddr)
+
     if len(sys.argv) > 2:
         addr = sys.argv[2].split(':')
         addr = (addr[0], int(addr[1]))
         listen(listnport)
         task.LoopingCall(ping, listnport, addr).start(1, False)
+
     else:
         restart(listnport)
         # task.LoopingCall(restart, listnport).start(5)
+
     reactor.run()
 
 if __name__ == "__main__":

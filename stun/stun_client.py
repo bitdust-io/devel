@@ -513,7 +513,7 @@ def udp_dht_stun(udp_port=None, dht_port=None, result_defer=None):
             'details': details,
         }
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.udp_dht_stun   SUCCESS: %r' % ret)
+            lg.out(_DebugLevel, 'stun_client.udp_dht_stun   result : %r' % ret)
         result_defer.callback(ret)
         return None
 
