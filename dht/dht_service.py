@@ -44,7 +44,6 @@ import os
 import sys
 import hashlib
 import random
-import base64
 import optparse
 import pprint
 

@@ -3489,10 +3489,14 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 r['tcp']['sessions'] = sessions
                 r['tcp']['streams'] = streams
         if show_udp:
+            from lib import udp
             r['udp'] = {
                 'sessions': [],
                 'streams': [],
+                'ports': [],
             }
+            for one_listener in udp.listeners().values():
+                r['udp']['ports'].append(one_listener.port)
             if driver.is_on('service_udp_transport'):
                 sessions = []
                 for s in gateway.list_active_sessions('udp'):

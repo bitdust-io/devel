@@ -158,6 +158,7 @@ class StunServer(automat.Automat):
         try:
             externalPort = int(bpio.ReadTextFile(settings.ExternalUDPPortFilename()))
         except:
+            lg.exc()
             externalPort = self.listen_port
         dht_service.set_node_data('stun_port', externalPort)
 
