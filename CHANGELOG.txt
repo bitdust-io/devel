@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+
+
+2019-03-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* use asyncio for test suit initialization to run tests faster
+* fix in stun_server() machine
+* populate opened UDP ports in network/info/v1 API
+* fallback flow in stun method : use ID servers to recognize my external IP
+
+
+
 2019-02-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added fallback flow in stun method - use ID servers to recognize my external IP
