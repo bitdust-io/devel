@@ -86,8 +86,6 @@ def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compres
         compress = 'none'
     if arcname is None:
         arcname = os.path.basename(directorypath)
-    arcname = strng.to_bin(arcname)
-    directorypath = strng.to_bin(directorypath)
     # lg.out(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
     if bpio.Windows():
         if bpio.isFrozen():
@@ -104,6 +102,7 @@ def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compres
         return None
     # lg.out(14, "backup_tar.backuptar going to execute %s" % str(cmdargs))
     # p = child_process.run('bppipe', cmdargs[2:])
+    cmdargs = [strng.to_bin(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
@@ -120,8 +119,6 @@ def backuptarfile(filepath, arcname=None, compress=None):
         compress = 'none'
     if arcname is None:
         arcname = os.path.basename(filepath)
-    arcname = strng.to_bin(arcname)
-    filepath = strng.to_bin(filepath)
     # lg.out(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
     if bpio.Windows():
         if bpio.isFrozen():
@@ -138,6 +135,7 @@ def backuptarfile(filepath, arcname=None, compress=None):
         return None
     # lg.out(12, "backup_tar.backuptarfile going to execute %s" % str(cmdargs))
     # p = run(cmdargs)
+    cmdargs = [strng.to_bin(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
@@ -164,6 +162,7 @@ def extracttar(tarfile, outdir):
         lg.out(1, 'backup_tar.extracttar ERROR %s is not found' % commandpath)
         return None
     # p = run(cmdargs)
+    cmdargs = [strng.to_bin(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 

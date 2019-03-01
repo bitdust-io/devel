@@ -281,7 +281,7 @@ class Packet(object):
         }        
         if _Debug:
             lg.out(_DebugLevel, 'signed.Serialize %r' % dct)
-        src = serialization.DictToBytes(dct)
+        src = serialization.DictToBytes(dct, encoding='latin1')
         return src
 
     def __len__(self):
@@ -309,7 +309,7 @@ def Unserialize(data):
     if data is None:
         return None
 
-    dct = serialization.BytesToDict(data, keys_to_text=True)
+    dct = serialization.BytesToDict(data, keys_to_text=True, encoding='latin1')
 
     if _Debug:
         lg.out(_DebugLevel, 'signed.Unserialize %r' % dct)
