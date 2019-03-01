@@ -321,14 +321,16 @@ class TCPFileStream():
 
     def close_outbox_file(self, file_id):
         if self.outboxFiles.get(file_id):
-            self.outboxFiles[file_id].close()
+            if self.outboxFiles[file_id].fout:
+                self.outboxFiles[file_id].close()
             del self.outboxFiles[file_id]
         else:
             lg.warn('outgoing TCP file %s not exist' % file_id)
 
     def close_inbox_file(self, file_id):
         if self.inboxFiles.get(file_id):
-            self.inboxFiles[file_id].close()
+            if self.inboxFiles[file_id].fin:
+                self.inboxFiles[file_id].close()
             del self.inboxFiles[file_id]
         else:
             lg.warn('incoming TCP file %s not exist' % file_id)
@@ -548,8 +550,12 @@ class FileSender(basic.FileSender):
     def resumeProducing(self):
         chunk = b''
         if self.file:
-            #             try:
-            chunk = self.file.read(self.CHUNK_SIZE)
+            try:
+                chunk = self.file.read(self.CHUNK_SIZE)
+            except:
+                lg.exc()
+                chunk = None
+
 #             except:
 #                 lg.exc()
 #                 return

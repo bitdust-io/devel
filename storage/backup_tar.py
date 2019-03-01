@@ -85,7 +85,9 @@ def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compres
     if compress is None:
         compress = 'none'
     if arcname is None:
-        arcname = strng.to_text(os.path.basename(directorypath))
+        arcname = os.path.basename(directorypath)
+    arcname = strng.to_bin(arcname)
+    directorypath = strng.to_bin(directorypath)
     # lg.out(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
     if bpio.Windows():
         if bpio.isFrozen():
@@ -117,7 +119,9 @@ def backuptarfile(filepath, arcname=None, compress=None):
     if compress is None:
         compress = 'none'
     if arcname is None:
-        arcname = strng.to_text(os.path.basename(filepath))
+        arcname = os.path.basename(filepath)
+    arcname = strng.to_bin(arcname)
+    filepath = strng.to_bin(filepath)
     # lg.out(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
     if bpio.Windows():
         if bpio.isFrozen():
@@ -194,8 +198,8 @@ def main():
         _read(p)
 
     from twisted.internet import reactor  # @UnresolvedImport
-    reactor.callLater(0, _go)
-    reactor.run()
+    reactor.callLater(0, _go)  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":
