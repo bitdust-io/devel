@@ -36,7 +36,7 @@ def test_file_shared_from_customer_1_to_customer_4():
     while True:
         if count > 10:
             assert False, 'customer_1 failed to hire enough suppliers after many attempts'
-            return 
+            return
         response = requests.get(url=tunnel_url('customer_1', 'supplier/list/v1'))
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
