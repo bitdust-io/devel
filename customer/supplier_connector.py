@@ -51,14 +51,13 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
 import os
 import math
-import json
 
 #------------------------------------------------------------------------------
 
@@ -73,6 +72,7 @@ from main import settings
 from lib import strng
 from lib import nameurl
 from lib import diskspace
+from lib import serialization
 
 from contacts import contactsdb
 
@@ -415,25 +415,27 @@ class SupplierConnector(automat.Automat):
         if not self.queue_subscribe:
             self.automat('fail')
             return
-        service_info = {'items': [{
-            'scope': 'consumer',
-            'action': 'start',
-            'consumer_id': strng.to_text(my_id.getGlobalID()),
-        }, {
-            'scope': 'consumer',
-            'action': 'add_callback',
-            'consumer_id': strng.to_text(my_id.getGlobalID()),
-            'method': strng.to_text(my_id.getLocalID()),
-        }, {
-            'scope': 'consumer',
-            'action': 'subscribe',
-            'consumer_id': strng.to_text(my_id.getGlobalID()),
-            'queue_id': global_id.MakeGlobalQueueID(
-                queue_alias='supplier-file-modified',
-                owner_id=my_id.getGlobalID(),
-                supplier_id=global_id.MakeGlobalID(idurl=self.supplier_idurl),
-            ),
-        }, ], }
+        service_info = {
+            'items': [{
+                'scope': 'consumer',
+                'action': 'start',
+                'consumer_id': strng.to_text(my_id.getGlobalID()),
+            }, {
+                'scope': 'consumer',
+                'action': 'add_callback',
+                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'method': strng.to_text(my_id.getLocalID()),
+            }, {
+                'scope': 'consumer',
+                'action': 'subscribe',
+                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'queue_id': global_id.MakeGlobalQueueID(
+                    queue_alias='supplier-file-modified',
+                    owner_id=my_id.getGlobalID(),
+                    supplier_id=global_id.MakeGlobalID(idurl=self.supplier_idurl),
+                ),
+            }, ],
+        }
         p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_p2p_notifications',
@@ -448,25 +450,27 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        service_info = json.dumps({'items': [{
-            'scope': 'consumer',
-            'action': 'unsubscribe',
-            'consumer_id': strng.to_text(my_id.getGlobalID()),
-            'queue_id': global_id.MakeGlobalQueueID(
-                queue_alias='supplier-file-modified',
-                owner_id=my_id.getGlobalID(),
-                supplier_id=global_id.MakeGlobalID(idurl=self.supplier_idurl),
-            ),
-        }, {
-            'scope': 'consumer',
-            'action': 'remove_callback',
-            'consumer_id': strng.to_text(my_id.getGlobalID()),
-            'method': strng.to_text(my_id.getLocalID()),
-        }, {
-            'scope': 'consumer',
-            'action': 'stop',
-            'consumer_id': strng.to_text(my_id.getGlobalID()),
-        }, ], })
+        service_info = {
+            'items': [{
+                'scope': 'consumer',
+                'action': 'unsubscribe',
+                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'queue_id': global_id.MakeGlobalQueueID(
+                    queue_alias='supplier-file-modified',
+                    owner_id=my_id.getGlobalID(),
+                    supplier_id=global_id.MakeGlobalID(idurl=self.supplier_idurl),
+                ),
+            }, {
+                'scope': 'consumer',
+                'action': 'remove_callback',
+                'consumer_id': strng.to_text(my_id.getGlobalID()),
+                'method': strng.to_text(my_id.getLocalID()),
+            }, {
+                'scope': 'consumer',
+                'action': 'stop',
+                'consumer_id': strng.to_text(my_id.getGlobalID()),
+            }, ],
+        }
         p2p_service.SendCancelService(
             remote_idurl=self.supplier_idurl,
             service_name='service_p2p_notifications',

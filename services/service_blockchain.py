@@ -47,8 +47,9 @@ class BlockchainService(LocalService):
     # flag_public_key_transaction_sent = False
 
     def dependent_on(self):
-        return ['service_tcp_connections',
-                ]
+        return [
+            'service_tcp_connections',
+        ]
 
     def installed(self):
         try:
@@ -95,14 +96,14 @@ class BlockchainService(LocalService):
         if config.conf().getBool('services/blockchain/wallet/enabled'):
             pybc_service.start_wallet(config.conf().getInt('services/blockchain/wallet/port'), pybc_service.node(), pybc_service.wallet())
         if config.conf().getBool('services/blockchain/miner/enabled'):
-            reactor.callFromThread(pybc_service.generate_block,
+            reactor.callFromThread(pybc_service.generate_block,  # @UndefinedVariable
                                    json_data={},
                                    with_inputs=True,
                                    repeat=True, )
         events.add_subscriber(self._on_local_identity_modified, 'local-identity-modified')
         events.add_subscriber(self._on_blockchain_forward, 'blockchain-forward')
         events.add_subscriber(self._on_blockchain_sync, 'blockchain-sync')
-        reactor.callLater(0, self._do_check_register_my_identity)
+        reactor.callLater(0, self._do_check_register_my_identity)  # @UndefinedVariable
         return True
 
     def stop(self):

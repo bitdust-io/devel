@@ -41,7 +41,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -147,7 +147,7 @@ def receive(options):
         lg.exc()
         return None
     try:
-        _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))
+        _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))  # @UndefinedVariable
         _MyHost = net_misc.pack_address((options['host'].split(b':')[0], int(_InternalPort)))
         tcp_interface.interface_receiving_started(_MyHost, options)
 
@@ -188,7 +188,7 @@ def connect_to(host, keep_alive=True):
         lg.out(_DebugLevel, 'tcp_node.connect_to "%s", keep_alive=%s' % (host, keep_alive))
     connection = TCPFactory(host, keep_alive=keep_alive)
     started_connections()[host] = connection
-    connection.connector = reactor.connectTCP(host[0], host[1], connection, timeout=_ConnectionTimeout)
+    connection.connector = reactor.connectTCP(host[0], host[1], connection, timeout=_ConnectionTimeout)  # @UndefinedVariable
     return False
 
 
@@ -231,9 +231,9 @@ def disconnect():
 def close_connections():
     """
     """
-    for sc in started_connections().values():
+    for sc in list(started_connections().values()):
         sc.connector.disconnect()
-    for oclist in opened_connections().values():
+    for oclist in list(opened_connections().values()):
         for oc in oclist:
             oc.automat('disconnect')
             oc.automat('connection-lost')
@@ -273,7 +273,7 @@ def send(filename, remoteaddress, description=None, keep_alive=True):
     connection = TCPFactory(remoteaddress, keep_alive=keep_alive)
     started_connections()[remoteaddress] = connection
     connection.add_outbox_file(filename, description, result_defer, keep_alive)
-    connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection, timeout=_ConnectionTimeout)
+    connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection, timeout=_ConnectionTimeout)  # @UndefinedVariable
     if not keep_alive:
         if _Debug:
             lg.out(_DebugLevel, 'tcp_node.send opened a single connection to %s, %d already started and %d opened' % (

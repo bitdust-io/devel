@@ -55,7 +55,7 @@ def run(nodes):
 def main():
     settings.init()
 
-    lg.set_debug_level(1)
+    lg.set_debug_level(12)
 
     dht_service.init(udp_port=14441, db_file_path=settings.DHTDBFile())
 

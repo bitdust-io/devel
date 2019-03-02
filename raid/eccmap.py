@@ -250,6 +250,11 @@ def GetEccMapName(suppliers_number):
     return __suppliers2eccmap[suppliers_number]
 
 
+def GetPossibleSuppliersCount():
+    global __suppliers2eccmap
+    return __suppliers2eccmap.keys()
+
+
 def GetEccMapSuppliersNumber(eccmapname):
     """
     Reverse method, return a suppliers number for that map.

@@ -42,8 +42,6 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import os
-import cgi
-import json
 
 #------------------------------------------------------------------------------
 
@@ -55,6 +53,10 @@ from twisted.web.server import Site
 from logs import lg
 
 from interface import api
+
+from lib import strng
+from lib import jsn
+from lib import serialization
 
 from lib.txrestapi.txrestapi.json_resource import JsonAPIResource
 from lib.txrestapi.txrestapi.methods import GET, POST, PUT, DELETE, ALL
@@ -101,7 +103,10 @@ def _request_arg(request, key, default='', mandatory=False):
     args = request.args or {}
     if key in args:
         values = args.get(key, [default, ])
-        return values[0] if values else default
+        return strng.to_text(values[0]) if values else default
+    if strng.to_bin(key) in args:
+        values = args.get(strng.to_bin(key), [default, ])
+        return strng.to_text(values[0]) if values else default
     if mandatory:
         raise Exception('mandatory url query argument missed: %s' % key)
     return default
@@ -117,7 +122,12 @@ def _request_data(request, mandatory_keys=[], default_value={}):
             raise Exception('mandatory json input missed: %s' % mandatory_keys)
         return default_value
     try:
-        data = json.loads(request.content.getvalue())
+        data = serialization.BytesToDict(
+            input_request_data,
+            encoding='utf-8',
+            keys_to_text=True,
+            values_to_text=True,
+        )
     except:
         raise Exception('invalid json input')
     for k in mandatory_keys:
@@ -159,12 +169,17 @@ class BitDustRESTHTTPServer(JsonAPIResource):
 
     def log_request(self, request, callback, args):
         if _Debug:
+            _args = jsn.dict_items_to_text(request.args)
+            if not _args:
+                _args = _request_data(request)
+            else:
+                _args = {k : (v[0] if (v and isinstance(v, list)) else v) for k, v in _args.items()}
             try:
-                _args = request.args or _request_data(request)
-                lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
-                    request.method, request.uri, callback.im_func.func_name, _args))
+                func_name = callback.im_func.func_name
             except:
-                pass
+                func_name = callback.__name__
+            lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
+                request.method.decode(), request.uri.decode(), func_name, _args))
         return None
 
     #------------------------------------------------------------------------------
@@ -218,7 +233,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/c/g$')
     @GET('^/config/get/v1$')
     def config_get_v1(self, request):
-        return api.config_get(key=cgi.escape(dict({} or request.args).get('key', [''])[0]),)
+        # cgi.escape(dict({} or request.args).get('key', [''])[0]),)
+        return api.config_get(key=_request_arg(request, 'key', mandatory=True))
 
     @POST('^/c/s/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/$')
     @POST('^/config/set/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/v1$')
@@ -441,7 +457,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             remote_path=data['remote_path'],
             destination_path=data.get('destination_folder', None),
             wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]),
-            open_share=bool(data.get('open_share', '1') in ['1', 'true', ]),
+            open_share=bool(data.get('open_share', '0') in ['1', 'true', ]),
         )
 
     @POST('^/f/d/c$')
@@ -483,6 +499,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.share_grant(
             trusted_remote_user=data.get('trusted_global_id') or data.get('trusted_idurl') or data.get('trusted_id'),
             key_id=data['key_id'],
+            timeout=data.get('timeout', 30),
         )
 
     @POST('^/sh/o$')
@@ -867,6 +884,11 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             expire=data.get('expire', None),
             record_type=data.get('record_type', 'skip_validation'),
         )
+
+    @GET('^/d/d/d$')
+    @GET('^/dht/db/dump/v1$')
+    def dht_db_dump_v1(self, request):
+        return api.dht_local_db_dump()
 
     #------------------------------------------------------------------------------
 

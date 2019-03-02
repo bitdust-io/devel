@@ -97,8 +97,8 @@ class Test(TestCase):
         from lib import serialization
         data1 = os.urandom(1024)
         dct1 = {'d': {'data': data1, }, }
-        raw = serialization.DictToBytes(dct1)
-        dct2 = serialization.BytesToDict(raw)
+        raw = serialization.DictToBytes(dct1, encoding='latin1')
+        dct2 = serialization.BytesToDict(raw, encoding='latin1')
         data2 = dct2['d']['data']
         self.assertEqual(data1, data2)
 

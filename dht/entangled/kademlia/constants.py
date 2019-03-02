@@ -27,10 +27,10 @@ specific constants, and do not affect general Kademlia operation.
 alpha = 3
 
 #: Maximum number of contacts stored in a bucket; this should be an even number
-k = 8
+k = 4
 
 #: Timeout for network operations (in seconds)
-rpcTimeout = 5
+rpcTimeout = 7
 
 # Delay between iterations of iterative node lookups (for loose parallelism)  (in seconds)
 iterativeLookupDelay = rpcTimeout / 2

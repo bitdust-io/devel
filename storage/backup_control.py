@@ -733,7 +733,7 @@ class Task():
             backup_fs.Calculate()
             Save()
         jobs()[self.backupID].automat('start')
-        reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
+        reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)  # @UndefinedVariable
         lg.out(4, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (
             self.number, self.pathID, dataID, itemInfo.size, self.localPath))
         return None
@@ -776,6 +776,11 @@ def RunTask():
     if len(tasks()) == 0:
         return False
     if len(jobs()) >= MAXIMUM_JOBS_STARTED:
+        return False
+    if b'' in contactsdb.suppliers() or '' in contactsdb.suppliers():
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.RunTask found empty supplier, retry after 5 sec')
+        reactor.callLater(5, RunTask)  # @UndefinedVariable
         return False
     T = tasks().pop(0)
     message = T.run()
@@ -828,7 +833,7 @@ def AbortPendingTask(pathID):
 
 #------------------------------------------------------------------------------
 
-def OnFoundFolderSize(pth, sz, *args, **kwargs):
+def OnFoundFolderSize(pth, sz, arg):
     """
     This is a callback, fired from ``lib.dirsize.ask()`` method after finish
     calculating of folder size.
@@ -899,8 +904,8 @@ def OnJobDone(backupID, result):
         from storage import backup_monitor
         lg.warn('restarting backup_monitor() machine because no tasks left')
         backup_monitor.A('restart')
-    reactor.callLater(0, RunTask)
-    reactor.callLater(0, FireTaskFinishedCallbacks, remotePath, version, result)
+    reactor.callLater(0, RunTask)  # @UndefinedVariable
+    reactor.callLater(0, FireTaskFinishedCallbacks, remotePath, version, result)  # @UndefinedVariable
 
 
 def OnJobFailed(backupID, err):
@@ -916,8 +921,8 @@ def OnTaskFailed(pathID, result):
     Called when backup process get failed somehow.
     """
     lg.out(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
-    reactor.callLater(0, RunTask)
-    reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)
+    reactor.callLater(0, RunTask)  # @UndefinedVariable
+    reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)  # @UndefinedVariable
 
 
 def OnBackupBlockReport(backupID, blockNum, result):
@@ -998,8 +1003,8 @@ def StartSingle(pathID, localPath=None, keyID=None):
     """
     from storage import backup_monitor
     t = PutTask(pathID=pathID, localPath=localPath, keyID=keyID)
-    reactor.callLater(0, RunTask)
-    reactor.callLater(0, backup_monitor.A, 'restart')
+    reactor.callLater(0, RunTask)  # @UndefinedVariable
+    reactor.callLater(0, backup_monitor.A, 'restart')  # @UndefinedVariable
     return t
 
 
@@ -1021,8 +1026,8 @@ def StartRecursive(pathID, keyID=None):
                 startedtasks.append(t)
 
     backup_fs.TraverseByID(visitor)
-    reactor.callLater(0, RunTask)
-    reactor.callLater(0, backup_monitor.A, 'restart')
+    reactor.callLater(0, RunTask)  # @UndefinedVariable
+    reactor.callLater(0, backup_monitor.A, 'restart')  # @UndefinedVariable
     lg.out(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
 
@@ -1136,7 +1141,7 @@ def test2():
     For tests.
     """
     # reactor.callLater(1, StartDirRecursive, 'c:/temp')
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 

@@ -102,6 +102,8 @@ try:
     from system import bpio
     from lib import nameurl
     from lib import misc
+    from lib import jsn
+    from storage import accounting
     from userid import global_id
     from main import settings
     from contacts import contactsdb
@@ -123,16 +125,16 @@ def SpaceTime():
     old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = bpio._read_dict(settings.CustomersSpaceFile())
+    space = accounting.read_customers_quotas()
     if space is None:
-        printlog('SpaceTime ERROR can not read file ' + settings.CustomersSpaceFile())
+        printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
         return
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         printlog('SpaceTime ERROR customers folder not exist')
         return
     remove_list = {}
-    used_space = {}
+    used_space = accounting.read_customers_usage()
     for customer_filename in os.listdir(customers_dir):
         onecustdir = os.path.join(customers_dir, customer_filename)
         if not os.path.isdir(onecustdir):
@@ -206,7 +208,7 @@ def SpaceTime():
         except:
             printlog('SpaceTime ERROR removing ' + path)
     del remove_list
-    bpio._write_dict(settings.CustomersUsedSpaceFile(), used_space)
+    accounting.update_customers_usage(used_space)
 
 #------------------------------------------------------------------------------
 
@@ -215,7 +217,7 @@ def UpdateCustomers():
     """
     Test packets after list of customers was changed.
     """
-    space = bpio._read_dict(settings.CustomersSpaceFile())
+    space = accounting.read_customers_quotas()
     if space is None:
         printlog('UpdateCustomers ERROR space file can not be read')
         return

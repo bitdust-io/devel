@@ -113,10 +113,10 @@ def UrlMake(protocol='', machine='', port='', filename='', parts=None):
     """
     if parts is not None:
         protocol, machine, port, filename = parts
-    url = protocol + '://' + machine
-    if port != '':
-        url += ':' + str(port)
-    if filename != '':
+    url = protocol + '://' + strng.to_text(machine)
+    if port:
+        url += ':' + strng.to_text(port)
+    if filename:
         url += '/' + filename
     return strng.to_bin(url)
 

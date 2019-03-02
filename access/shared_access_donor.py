@@ -37,6 +37,8 @@ EVENTS:
     * :red:`list-files-ok`
     * :red:`priv-key-ok`
     * :red:`timer-10sec`
+    * :red:`timer-15sec`
+    * :red:`timer-2sec`
     * :red:`timer-5sec`
     * :red:`user-identity-cached`
 """
@@ -53,7 +55,6 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import time
-import json
 
 #------------------------------------------------------------------------------
 
@@ -62,6 +63,8 @@ from logs import lg
 from automats import automat
 
 from lib import packetid
+from lib import serialization
+from lib import strng
 
 from main import events
 
@@ -90,8 +93,10 @@ class SharedAccessDonor(automat.Automat):
     """
 
     timers = {
+        'timer-2sec': (2.0, ['PUB_KEY']),
         'timer-10sec': (10.0, ['PRIV_KEY', 'LIST_FILES']),
-        'timer-5sec': (5.0, ['PUB_KEY', 'PING', 'AUDIT', 'CACHE']),
+        'timer-15sec': (15.0, ['PUB_KEY']),
+        'timer-5sec': (5.0, ['PING', 'AUDIT', 'CACHE']),
     }
 
     def __init__(self, debug_level=0, log_events=False, publish_events=False, **kwargs):
@@ -158,13 +163,13 @@ class SharedAccessDonor(automat.Automat):
         elif self.state == 'PUB_KEY':
             if event == 'ack':
                 self.doCheckAllAcked(*args, **kwargs)
-            elif event == 'all-suppliers-acked' or ( event == 'timer-5sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
-                self.state = 'PRIV_KEY'
-                self.doSendPrivKeyToUser(*args, **kwargs)
-            elif event == 'fail' or ( event == 'timer-5sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
+            elif event == 'fail' or ( event == 'timer-15sec' and not self.isSomeSuppliersAcked(*args, **kwargs) ):
                 self.state = 'CLOSED'
                 self.doReportFailed(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'all-suppliers-acked' or ( event == 'timer-2sec' and self.isSomeSuppliersAcked(*args, **kwargs) ):
+                self.state = 'PRIV_KEY'
+                self.doSendPrivKeyToUser(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -226,7 +231,9 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        self.remote_idurl, self.key_id, self.result_defer = args[0]
+        self.remote_idurl = strng.to_bin(kwargs['trusted_idurl'])
+        self.key_id = strng.to_text(kwargs['key_id'])
+        self.result_defer = kwargs.get('result_defer', None)
 
     def doInsertInboxCallback(self, *args, **kwargs):
         """
@@ -314,9 +321,10 @@ class SharedAccessDonor(automat.Automat):
         """
         json_list_files = backup_fs.Serialize(
             to_json=True,
-            filter_cb=lambda path_id, path, info: True if info.key_id == self.key_id else False,
+            filter_cb=lambda path_id, path, info: True if strng.to_text(info.key_id) == strng.to_text(self.key_id) else False,
         )
-        raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
+        # raw_list_files = json.dumps(json_list_files, indent=2, encoding='utf-8')
+        raw_list_files = serialization.DictToBytes(json_list_files, keys_to_text=True, values_to_text=True, encoding='utf-8')
         if _Debug:
             lg.out(_DebugLevel, 'shared_access_donor.doSendMyListFiles prepared list of files for %s :\n%s' % (
                 self.remote_idurl, raw_list_files))
@@ -344,6 +352,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
+        lg.info('share key [%s] with %r finished with SUCCESS !!!!!' % (self.key_id, self.remote_idurl, ))
         events.send('private-key-shared', dict(
             global_id=global_id.UrlToGlobalID(self.remote_idurl),
             remote_idurl=self.remote_idurl,
@@ -356,41 +365,27 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        if self.result_defer:
-            if args and args[0]:
-                events.send('private-key-share-failed', dict(
-                    global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                    remote_idurl=self.remote_idurl,
-                    key_id=self.key_id,
-                    reason=args[0],
-                ))
-                self.result_defer.errback(Exception(*args, **kwargs))
+        lg.warn('share key [%s] with %s FAILED: %s' % (self.key_id, self.remote_idurl, args, ))
+        reason = 'share key failed with unknown reason'
+        if args and args[0]:
+            reason = args[0]
+        else:
+            if self.remote_identity is None:
+                reason='remote id caching failed',
             else:
-                if self.remote_identity is None:
-                    events.send('private-key-share-failed', dict(
-                        global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                        remote_idurl=self.remote_idurl,
-                        key_id=self.key_id,
-                        reason='remote id caching failed',
-                    ))
-                    self.result_defer.errback(Exception('remote id caching failed'))
+                if self.ping_response is None:
+                    reason='remote node not responding',
                 else:
-                    if self.ping_response is None:
-                        events.send('private-key-share-failed', dict(
-                            global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                            remote_idurl=self.remote_idurl,
-                            key_id=self.key_id,
-                            reason='remote node not responding',
-                        ))
-                        self.result_defer.errback(Exception('remote node not responding'))
-                    else:
-                        events.send('private-key-share-failed', dict(
-                            global_id=global_id.UrlToGlobalID(self.remote_idurl),
-                            remote_idurl=self.remote_idurl,
-                            key_id=self.key_id,
-                            reason='failed',
-                        ))
-                        self.result_defer.errback(Exception('failed'))
+                    if self.suppliers_responses:
+                        reason = 'connection timeout with my suppliers'
+        events.send('private-key-share-failed', dict(
+            global_id=global_id.UrlToGlobalID(self.remote_idurl),
+            remote_idurl=self.remote_idurl,
+            key_id=self.key_id,
+            reason=reason,
+        ))
+        if self.result_defer:
+            self.result_defer.errback(Exception(reason))
 
     def doDestroyMe(self, *args, **kwargs):
         """

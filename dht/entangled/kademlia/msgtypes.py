@@ -20,13 +20,15 @@ import six
 import hashlib
 import random
 
+from . import encoding  # @UnresolvedImport
+
 
 class Message(object):
     """ Base class for messages - all "unknown" messages use this class """
 
     def __init__(self, rpcID, nodeID):
-        self.id = rpcID
-        self.nodeID = nodeID
+        self.id = encoding.to_text(rpcID)
+        self.nodeID = encoding.to_text(nodeID)
 
 
 class RequestMessage(Message):
@@ -36,9 +38,9 @@ class RequestMessage(Message):
 
     def __init__(self, nodeID, method, methodArgs, rpcID=None):
         if rpcID is None:
-            hash = hashlib.sha1()
-            hash.update(str(random.getrandbits(255)).encode())
-            rpcID = hash.digest()
+            hsh = hashlib.sha1()
+            hsh.update(str(random.getrandbits(255)).encode())
+            rpcID = hsh.hexdigest()
         Message.__init__(self, rpcID, nodeID)
         self.request = method
         self.args = methodArgs

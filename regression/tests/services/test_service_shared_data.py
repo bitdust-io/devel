@@ -21,6 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import os
+import pytest
 import time
 import requests
 
@@ -28,8 +29,26 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 
 
 def test_file_shared_from_customer_1_to_customer_4():
-    # TODO: to be continue
-    return True
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+
+    count = 0
+    while True:
+        if count > 10:
+            assert False, 'customer_1 failed to hire enough suppliers after many attempts'
+            return
+        response = requests.get(url=tunnel_url('customer_1', 'supplier/list/v1'))
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\n\nsupplier/list/v1 : %s\n' % response.json())
+        if len(response.json()['result']) == 2:
+            for s in response.json()['result']:
+                assert s['supplier_state'] == 'CONNECTED'
+                assert s['contact_state'] == 'CONNECTED'
+            assert True
+            break
+        count += 1
+        time.sleep(5)
 
     response = requests.post(url=tunnel_url('customer_1', 'share/create/v1'), json={'key_size': 1024, }, )
     assert response.status_code == 200
@@ -44,7 +63,6 @@ def test_file_shared_from_customer_1_to_customer_4():
     remote_path = '%s:%s' % (key_id, virtual_file)
     download_volume = '/customer_4'
     downloaded_file = '%s/%s' % (download_volume, virtual_file)
-    assert not os.path.exists(downloaded_file)
 
     response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
@@ -56,54 +74,84 @@ def test_file_shared_from_customer_1_to_customer_4():
         json={
             'remote_path': remote_path,
             'local_path': local_path,
-            'wait_result': True,
+            'wait_result': '1',
+            'open_share': '1',
         },
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nfile/upload/start/v1 remote_path=%s local_path=%s : %r\n' % (remote_path, local_path, response.json(), ))
 
-    for i in range(20):
-        response = requests.put(
-            url=tunnel_url('customer_1', 'share/grant/v1'),
+    time.sleep(5)
+
+    for i in range(10):
+        response = requests.post(
+            url=tunnel_url('customer_1', 'file/download/start/v1'),
             json={
-                'trusted_global_id': 'customer_4@is_8084',
-                'key_id': key_id,
+                'remote_path': remote_path,
+                'destination_folder': '/customer_1',
+                'wait_result': '1',
+                'open_share': '1',
             },
         )
         assert response.status_code == 200
-        if response.json()['status'] == 'OK':
-            assert response.json()['status'] == 'OK', response.json()
-            print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
-            break
-        print('\nretry share/grant/v1\n')
-        time.sleep(1)
-    else:
-        assert False, 'failed to grant access to shared file: %r' % response.json()
+        print('\n\nfile/download/start/v1 remote_path=%s destination_folder=%s : %s\n' % (remote_path, '/customer_1', response.json(), ))
 
-    for i in range(20):
+        if response.json()['status'] == 'OK':
+            print('\n\nfile/download/start/v1 remote_path=%s destination_folder=%s : %r\n' % (remote_path, '/customer_1', response.json(), ))
+            break
+
+        if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
+            time.sleep(5)
+        else:
+            assert False, response.json()
+
+    else:
+        assert False, 'failed to download uploaded file: %r' % response.json()
+
+    time.sleep(1)
+
+    response = requests.put(
+        url=tunnel_url('customer_1', 'share/grant/v1'),
+        json={
+            'trusted_global_id': 'customer_4@is_8084',
+            'key_id': key_id,
+        },
+        timeout=40,
+    )
+    assert response.status_code == 200
+    assert response.json()['status'] == 'OK', response.json()
+    print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
+
+    time.sleep(1)
+
+    for i in range(10):
         response = requests.post(
             url=tunnel_url('customer_4', 'file/download/start/v1'),
             json={
                 'remote_path': remote_path,
                 'destination_folder': download_volume,
-                'wait_result': True,
+                'wait_result': '1',
+                'open_share': '1',
             },
         )
         assert response.status_code == 200
+        print('\n\nfile/download/start/v1 remote_path=%s destination_folder=%s : %s\n' % (remote_path, download_volume, response.json(), ))
 
         if response.json()['status'] == 'OK':
             print('\n\nfile/download/start/v1 remote_path=%s destination_folder=%s : %r\n' % (remote_path, download_volume, response.json(), ))
             break
 
-        if response.json()['errors'][0].startswith('download shared file is not possible yet, retry...'):
-            time.sleep(1)
+        if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
+            time.sleep(5)
         else:
             assert False, response.json()
 
     else:
         assert False, 'failed to download shared file: %r' % response.json()
 
-    local_file_hash = run_ssh_command_and_wait('customer_1', 'sha1sum %s' % local_path)[0].strip().split(' ')[0].strip()
-    downloaded_file_hash = run_ssh_command_and_wait('customer_4', 'sha1sum %s' % downloaded_file)[0].strip().split(' ')[0].strip()
-    assert local_file_hash == downloaded_file_hash, (local_file_hash, downloaded_file_hash, )
+    local_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % local_path)[0].strip()
+    print('customer_1:%s' % local_path, local_file_src)
+    downloaded_file_src = run_ssh_command_and_wait('customer_4', 'cat %s' % downloaded_file)[0].strip()
+    print('customer_4:%s' % downloaded_file, downloaded_file_src)
+    assert local_file_src == downloaded_file_src, (local_file_src, downloaded_file_src, )

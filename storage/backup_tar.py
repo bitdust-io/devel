@@ -85,7 +85,7 @@ def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compres
     if compress is None:
         compress = 'none'
     if arcname is None:
-        arcname = strng.to_text(os.path.basename(directorypath))
+        arcname = os.path.basename(directorypath)
     # lg.out(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
     if bpio.Windows():
         if bpio.isFrozen():
@@ -100,8 +100,7 @@ def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compres
     if not os.path.isfile(commandpath):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
         return None
-    # lg.out(14, "backup_tar.backuptar going to execute %s" % str(cmdargs))
-    # p = child_process.run('bppipe', cmdargs[2:])
+    cmdargs = [strng.to_text(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
@@ -117,7 +116,7 @@ def backuptarfile(filepath, arcname=None, compress=None):
     if compress is None:
         compress = 'none'
     if arcname is None:
-        arcname = strng.to_text(os.path.basename(filepath))
+        arcname = os.path.basename(filepath)
     # lg.out(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
     if bpio.Windows():
         if bpio.isFrozen():
@@ -134,6 +133,7 @@ def backuptarfile(filepath, arcname=None, compress=None):
         return None
     # lg.out(12, "backup_tar.backuptarfile going to execute %s" % str(cmdargs))
     # p = run(cmdargs)
+    cmdargs = [strng.to_text(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
@@ -160,6 +160,7 @@ def extracttar(tarfile, outdir):
         lg.out(1, 'backup_tar.extracttar ERROR %s is not found' % commandpath)
         return None
     # p = run(cmdargs)
+    cmdargs = [strng.to_text(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
@@ -194,8 +195,8 @@ def main():
         _read(p)
 
     from twisted.internet import reactor  # @UnresolvedImport
-    reactor.callLater(0, _go)
-    reactor.run()
+    reactor.callLater(0, _go)  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
 
 
 if __name__ == "__main__":

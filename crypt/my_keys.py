@@ -115,7 +115,7 @@ def is_key_registered(key_id, include_master=True):
     """
     Returns True if this key is known.
     """
-    if include_master and key_id == global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias='master'):
+    if include_master and (key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master'):
         return True
     return key_id in known_keys()
 
@@ -123,7 +123,7 @@ def is_key_registered(key_id, include_master=True):
 def is_key_private(key_id, include_master=True):
     if not is_key_registered(key_id):
         return False
-    if include_master and key_id == global_id.MakeGlobalID(idurl=my_id.getLocalID(), key_alias='master'):
+    if include_master and (key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master'):
         return True
     return not key_obj(key_id).isPublic()
 
@@ -376,7 +376,7 @@ def encrypt(key_id, inp):
     Encrypt ``inp`` string using given private key ID.
 
     :param key_id: private key id to be used
-    :param inp: raw input string to be encrypted
+    :param inp: raw binary input string to be encrypted
 
     Return encrypted string.
     """
@@ -415,7 +415,7 @@ def decrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
-    if key_id == 'master$%s' % my_id.getGlobalID():  # master$user@host.org
+    if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
@@ -531,31 +531,21 @@ def get_key_info(key_id, include_private=False):
     """
     Returns dictionary with full key info or raise an Exception.
     """
-    key_id = str(key_id)
-    if key_id == 'master':
+    key_id = strng.to_text(key_id)
+    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master'):
         return make_master_key_info(include_private=include_private)
     key_alias, creator_idurl = split_key_id(key_id)
     if not key_alias or not creator_idurl:
         raise Exception('incorrect key_id format')
     key_object = known_keys().get(key_id)
     if not key_object:
-        key_id_form_1 = make_key_id(
+        key_id_full = make_key_id(
             alias=key_alias,
             creator_idurl=creator_idurl,
-            output_format=global_id._FORMAT_GLOBAL_ID_KEY_USER,
         )
-        key_id_form_2 = make_key_id(
-            alias=key_alias,
-            creator_idurl=creator_idurl,
-            output_format=global_id._FORMAT_GLOBAL_ID_USER_KEY,
-        )
-        key_object = known_keys().get(key_id_form_1)
+        key_object = known_keys().get(key_id_full)
         if key_object:
-            key_id = key_id_form_1
-        else:
-            key_object = known_keys().get(key_id_form_2)
-            if key_object:
-                key_id = key_id_form_2
+            key_id = key_id_full
     if not key_object:
         raise Exception('key not found')
     key_info = make_key_info(key_object, key_id=key_id, include_private=include_private, )
@@ -564,7 +554,7 @@ def get_key_info(key_id, include_private=False):
 
 def read_key_info(key_json):
     try:
-        key_id = str(key_json['key_id'])
+        key_id = strng.to_text(key_json['key_id'])
         include_private = bool(key_json['include_private'])
         if include_private:
             raw_openssh_string = str(key_json['private'])

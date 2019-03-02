@@ -230,8 +230,8 @@ def run(args):
     print_text('\n##### Create fresh virtual environment in "%s"' % venv_path)
     make_venv_cmd = 'virtualenv -p {} {}'.format(current_python, venv_path)
     if on_windows:
-        virtualenv_bin = '"%s"' % os.path.join(base_dir, 'python', 'Scripts', 'virtualenv.exe')
-        make_venv_cmd = "{} --system-site-packages {}".format(virtualenv_bin, venv_path)
+        python_exe = '"%s"' % os.path.join(base_dir, 'python', 'python.exe')
+        make_venv_cmd = "{} -m virtualenv --system-site-packages {}".format(python_exe, venv_path)
 
     print_text('\n##### Executing "{}"'.format(make_venv_cmd))
     status = os.system(make_venv_cmd)

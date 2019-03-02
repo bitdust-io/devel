@@ -102,20 +102,21 @@ def InstallLocale():
         return False
     try:
         import sys
-        reload(sys)
-        if Windows():
-            if hasattr(sys, "setdefaultencoding"):
-                import locale
-                denc = locale.getpreferredencoding()
-                if not denc:
-                    sys.setdefaultencoding('UTF8')
-                else:
-                    sys.setdefaultencoding(denc)
-        else:
-            sys.setdefaultencoding('UTF8')
+        if sys.version_info[0] == 2:
+            reload(sys)  # @UndefinedVariable
+            if Windows():
+                if hasattr(sys, "setdefaultencoding"):
+                    import locale
+                    denc = locale.getpreferredencoding()
+                    if not denc:
+                        sys.setdefaultencoding('UTF8')
+                    else:
+                        sys.setdefaultencoding(denc)
+            else:
+                sys.setdefaultencoding('UTF8')
         LocaleInstalled = True
     except:
-        pass
+        lg.exc()
     return LocaleInstalled
 
 
@@ -182,7 +183,7 @@ def windows_version():
     Useful to detect current Windows version: XP, Vista, 7 or 8.
     """
     if getattr(sys, 'getwindowsversion', None) is not None:
-        return sys.getwindowsversion()[0]
+        return sys.getwindowsversion()[0]  # @UndefinedVariable
     return 0
 
 
@@ -317,9 +318,9 @@ def getDirectorySize(directory, include_subfolders=True):
     Platform dependent way to calculate folder size.
     """
     if Windows():
-        import win32file
-        import win32con
-        import pywintypes
+        import win32file  # @UnresolvedImport
+        import win32con  # @UnresolvedImport
+        import pywintypes  # @UnresolvedImport
         DIR_EXCLUDES = set(['.', '..'])
         MASK = win32con.FILE_ATTRIBUTE_DIRECTORY | win32con.FILE_ATTRIBUTE_SYSTEM
         REQUIRED = win32con.FILE_ATTRIBUTE_DIRECTORY
@@ -598,7 +599,7 @@ def LowerPriority():
     Platform dependent method to lower the priority of the running process.
     """
     try:
-        sys.getwindowsversion()
+        sys.getwindowsversion()  # @UndefinedVariable
     except:
         isWindows = False
     else:
@@ -607,9 +608,9 @@ def LowerPriority():
         # Based on:
         #   "Recipe 496767: Set Process Priority In Windows" on ActiveState
         #   http://code.activestate.com/recipes/496767/
-        import win32api
-        import win32process
-        import win32con
+        import win32api  # @UnresolvedImport
+        import win32process  # @UnresolvedImport
+        import win32con  # @UnresolvedImport
         pid = win32api.GetCurrentProcessId()
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
         win32process.SetPriorityClass(handle, win32process.BELOW_NORMAL_PRIORITY_CLASS)
@@ -620,15 +621,15 @@ def LowerPriority():
 
 def HigherPriority():
     try:
-        sys.getwindowsversion()
+        sys.getwindowsversion()  # @UndefinedVariable
     except:
         isWindows = False
     else:
         isWindows = True
     if isWindows:
-        import win32api
-        import win32process
-        import win32con
+        import win32api  # @UnresolvedImport
+        import win32process  # @UnresolvedImport
+        import win32con  # @UnresolvedImport
         pid = win32api.GetCurrentProcessId()
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
         win32process.SetPriorityClass(handle, win32process.REALTIME_PRIORITY_CLASS)
@@ -652,7 +653,7 @@ def shortPath(path):
             return strng.to_text(os.path.join(res, os.path.basename(path_)))
         return strng.to_text(path_)
     try:
-        import win32api
+        import win32api  # @UnresolvedImport
         spath = win32api.GetShortPathName(path_)
         return strng.to_text(spath)
     except:
@@ -671,7 +672,7 @@ def longPath(path):
     if not os.path.exists(path_):
         return strng.to_text(path_)
     try:
-        import win32api
+        import win32api  # @UnresolvedImport
         lpath = win32api.GetLongPathName(path_)
         return strng.to_text(lpath)
     except:
@@ -944,8 +945,8 @@ def listLocalDrivesWindows():
         return []
     rootlist = []
     try:
-        import win32api
-        import win32file
+        import win32api  # @UnresolvedImport
+        import win32file  # @UnresolvedImport
         drives = (drive for drive in win32api.GetLogicalDriveStrings().split("\000") if drive)
         for drive in drives:
             if win32file.GetDriveType(drive) == 3:
@@ -961,7 +962,7 @@ def listRemovableDrivesWindows():
     """
     l = []
     try:
-        import win32file
+        import win32file  # @UnresolvedImport
         drivebits = win32file.GetLogicalDrives()
         for d in range(1, 26):
             mask = 1 << d
@@ -1149,7 +1150,7 @@ def find_process_win32(applist):
     """
     pidsL = []
     try:
-        import win32com.client
+        import win32com.client  # @UnresolvedImport
         objWMI = win32com.client.GetObject("winmgmts:\\\\.\\root\\CIMV2")
         colProcs = objWMI.ExecQuery("SELECT * FROM Win32_Process")
         for Item in colProcs:
@@ -1187,7 +1188,7 @@ def kill_process_win32(pid):
     Call to system Windows API ``TerminateProcess`` method.
     """
     try:
-        from win32api import TerminateProcess, OpenProcess, CloseHandle
+        from win32api import TerminateProcess, OpenProcess, CloseHandle  # @UnresolvedImport
     except:
         lg.exc()
         return False
@@ -1252,7 +1253,7 @@ def detect_number_of_cpu_cores():
                 return ncpus
         else:
             # MacOS X
-            return int(os.popen2("sysctl -n hw.ncpu")[1].read())
+            return int(os.popen2("sysctl -n hw.ncpu")[1].read())  # @UndefinedVariable
     # for Windows
     if "NUMBER_OF_PROCESSORS" in os.environ:
         ncpus = int(os.environ["NUMBER_OF_PROCESSORS"])

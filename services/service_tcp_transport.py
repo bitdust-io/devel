@@ -45,9 +45,10 @@ class TCPTransportService(LocalService):
     proto = 'tcp'
 
     def dependent_on(self):
-        return ['service_tcp_connections',
-                'service_gateway',
-                ]
+        return [
+            'service_tcp_connections',
+            'service_gateway',
+        ]
 
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
@@ -61,7 +62,7 @@ class TCPTransportService(LocalService):
         self.transport = network_transport.NetworkTransport('tcp', self.interface)
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
-        reactor.callLater(0, self.transport.automat, 'start')
+        reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
         conf().addCallback('services/tcp-transport/enabled',
                            self._on_enabled_disabled)
         conf().addCallback('services/tcp-transport/receiving-enabled',

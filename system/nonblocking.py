@@ -44,6 +44,7 @@ import errno
 import time
 import subprocess
 import traceback
+import platform
 
 #------------------------------------------------------------------------------
 
@@ -61,10 +62,10 @@ PIPE_CLOSED = 2
 
 #------------------------------------------------------------------------------
 
-if getattr(subprocess, 'mswindows', None):
-    from win32file import ReadFile, WriteFile
-    from win32pipe import PeekNamedPipe
-    from win32api import TerminateProcess, OpenProcess, CloseHandle
+if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == "Windows":
+    from win32file import ReadFile, WriteFile  # @UnresolvedImport
+    from win32pipe import PeekNamedPipe  # @UnresolvedImport
+    from win32api import TerminateProcess, OpenProcess, CloseHandle  # @UnresolvedImport
     import msvcrt
 else:
     import select
@@ -148,7 +149,7 @@ class Popen(subprocess.Popen):
         Under Linux use built-in method ``fcntl.fcntl`` to make the pipe
         read/write non blocking.
         """
-        if getattr(subprocess, 'mswindows', None):
+        if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == "Windows":
             return
         conn, maxsize = self.get_conn_maxsize('stdout', None)
         if conn is None:
@@ -157,13 +158,15 @@ class Popen(subprocess.Popen):
         if not conn.closed:
             fcntl.fcntl(conn, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
-    if getattr(subprocess, 'mswindows', None):
+
+    if getattr(subprocess, 'mswindows', None) or platform.uname()[0] == "Windows":
+
         def send(self, input):
             if not self.stdin:
                 return None
 
             try:
-                x = msvcrt.get_osfhandle(self.stdin.fileno())
+                x = msvcrt.get_osfhandle(self.stdin.fileno())  # @UndefinedVariable
                 (errCode, written) = WriteFile(x, input)
             except:
                 return None
@@ -176,7 +179,7 @@ class Popen(subprocess.Popen):
                 return None
 
             try:
-                x = msvcrt.get_osfhandle(conn.fileno())
+                x = msvcrt.get_osfhandle(conn.fileno())  # @UndefinedVariable
                 (read, nAvail, nMessage) = PeekNamedPipe(x, 0)
                 if maxsize < nAvail:
                     nAvail = maxsize
@@ -195,7 +198,7 @@ class Popen(subprocess.Popen):
             if conn is None:
                 return PIPE_CLOSED
             try:
-                x = msvcrt.get_osfhandle(conn.fileno())
+                x = msvcrt.get_osfhandle(conn.fileno())  # @UndefinedVariable
             except:
                 return PIPE_CLOSED
             try:
@@ -214,6 +217,7 @@ class Popen(subprocess.Popen):
                 CloseHandle(handle)
             except:
                 pass
+
 
     else:
         def send(self, input):
@@ -277,7 +281,7 @@ def ExecuteString(execstr):
     An old method.
     """
     try:
-        import win32process
+        import win32process  # @UnresolvedImport
         return Popen(
             execstr,
             stdin=subprocess.PIPE,

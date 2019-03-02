@@ -300,6 +300,9 @@ class NicknameHolder(automat.Automat):
 
     def _dht_read_result(self, value, key):
         self.dht_read_defer = None
+        if not value:
+            self.automat('dht-read-failed')
+            return
         try:
             v = strng.to_bin(value['idurl'])
         except:

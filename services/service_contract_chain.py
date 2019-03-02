@@ -44,8 +44,9 @@ class ContractChainService(LocalService):
     config_path = 'services/contract-chain/enabled'
 
     def dependent_on(self):
-        return ['service_nodes_lookup',
-                ]
+        return [
+            'service_nodes_lookup',
+        ]
 
     def start(self):
         from twisted.internet.defer import Deferred

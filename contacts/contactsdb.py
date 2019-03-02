@@ -615,7 +615,8 @@ def save_customers(path=None, save_meta_info=False):
     lst = list(map(strng.to_text, lst))
     bpio._write_list(path, lst)
     if save_meta_info:
-        local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo))
+        local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
+            _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.save_customers : %r' % lst)
 
@@ -633,7 +634,8 @@ def load_customers(path=None):
     lst = list(map(strng.to_bin, lst))
     set_customers(lst)
     _CustomersMetaInfo = jsn.loads(
-        local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}'
+        local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}',
+        keys_to_bin=True,
     )
     lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
 
@@ -765,7 +767,8 @@ def add_customer_meta_info(customer_idurl, info):
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
                 customer_idurl, info, ))
         _CustomersMetaInfo[customer_idurl].update(info)
-    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo, indent=2, sort_keys=True, ))
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
+        _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
     return _CustomersMetaInfo
 
 
@@ -780,7 +783,8 @@ def remove_customer_meta_info(customer_idurl):
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.remove_customer_meta_info   erase existing meta info for customer %r' % customer_idurl)
     _CustomersMetaInfo.pop(customer_idurl)
-    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(_CustomersMetaInfo, indent=2, sort_keys=True, ))
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
+        _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
     return True
 
 

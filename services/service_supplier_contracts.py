@@ -44,9 +44,10 @@ class SupplierContractsService(LocalService):
     config_path = 'services/supplier-contracts/enabled'
 
     def dependent_on(self):
-        return ['service_supplier',
-                'service_contract_chain',
-                ]
+        return [
+            'service_supplier',
+            'service_contract_chain',
+        ]
 
     def start(self):
         from main import events
