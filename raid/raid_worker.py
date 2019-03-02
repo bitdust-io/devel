@@ -55,7 +55,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -77,11 +77,10 @@ from system import bpio
 
 from automats import automat
 
-from raid.worker import Manager
-
-from . import read
-from . import make
-from . import rebuild
+from raid import worker
+from raid import read
+from raid import make
+from raid import rebuild
 
 #------------------------------------------------------------------------------
 
@@ -172,7 +171,13 @@ def A(event=None, *args, **kwargs):
         if event is None or event != 'init':
             return None
         # set automat name and starting state here
-        _RaidWorker = RaidWorker('raid_worker', 'AT_STARTUP', 6, True)
+        _RaidWorker = RaidWorker(
+            name='raid_worker',
+            state='AT_STARTUP',
+            debug_level=6,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _RaidWorker.automat(event, *args, **kwargs)
     return _RaidWorker
@@ -298,7 +303,7 @@ class RaidWorker(automat.Automat):
             # TODO: make an option in the software settings
             ncpus = int(ncpus / 2.0)
 
-        self.processor = Manager(ncpus=ncpus)
+        self.processor = worker.Manager(ncpus=ncpus)
 
         self.automat('process-started')
 
@@ -327,8 +332,9 @@ class RaidWorker(automat.Automat):
         global _MODULES
 
         if len(self.activetasks) >= self.processor.ncpus:
-            lg.out(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
-                len(self.activetasks), self.processor.ncpus))
+            if _Debug:
+                lg.out(_DebugLevel, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
+                    len(self.activetasks), self.processor.ncpus))
             return
 
         try:
@@ -345,8 +351,9 @@ class RaidWorker(automat.Automat):
         )
 
         self.activetasks[task_id] = (proc, cmd, params)
-        lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
-            task_id, len(self.activetasks), self.processor.ncpus))
+        if _Debug:
+            lg.out(_DebugLevel, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
+                task_id, len(self.activetasks), self.processor.ncpus))
         reactor.callLater(0.01, self.automat, 'task-started', task_id)  # @UndefinedVariable
 
     def doReportTaskDone(self, *args, **kwargs):
@@ -358,11 +365,13 @@ class RaidWorker(automat.Automat):
             cb = self.callbacks.pop(task_id)
             reactor.callLater(0, cb, cmd, params, result)  # @UndefinedVariable
             if result is not None:
-                lg.out(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
-                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
+                if _Debug:
+                    lg.out(_DebugLevel, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+                        len(self.callbacks), len(self.tasks), len(self.activetasks)))
             else:
-                lg.out(12, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
-                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
+                if _Debug:
+                    lg.out(_DebugLevel, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
+                        len(self.callbacks), len(self.tasks), len(self.activetasks)))
         except:
             lg.exc()
 
@@ -389,14 +398,16 @@ class RaidWorker(automat.Automat):
         _RaidWorker = None
 
     def _job_done(self, task_id, cmd, params, result):
-        lg.out(6, 'raid_worker._job_done %r : %r active:%r' % (
-            task_id, result, list(self.activetasks.keys())))
+        if _Debug:
+            lg.out(_DebugLevel, 'raid_worker._job_done %r : %r active:%r' % (
+                task_id, result, list(self.activetasks.keys())))
         self.automat('task-done', (task_id, cmd, params, result))
 
     def _kill_processor(self):
         if self.processor:
             self.processor.terminate()
-            lg.out(12, 'raid_worker._kill_processor processor was destroyed')
+            if _Debug:
+                lg.out(_DebugLevel, 'raid_worker._kill_processor processor was destroyed')
 
 
 #------------------------------------------------------------------------------
