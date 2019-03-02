@@ -1240,7 +1240,7 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
                 cmdargs.remove('daemon')
             if detach:
                 from system import child_process
-                cmdargs = [strng.to_bin(a) for a in cmdargs]
+                cmdargs = [strng.to_text(a) for a in cmdargs]
                 lg.out(0, 'run : %r' % cmdargs)
                 return child_process.detach(cmdargs)
             lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
