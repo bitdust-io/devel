@@ -53,8 +53,8 @@ class Contact(object):
         return str(self)
 
     def __str__(self):
-        return '%s at <%s:%d>' % (
-            self.__class__.__name__, self.address, self.port)
+        return '<%s at %r:%d>' % (
+            self.id[:6], self.address, self.port)
 
     def __getattr__(self, name):
         """
@@ -71,12 +71,6 @@ class Contact(object):
         This happens via this contact's C{_networkProtocol} object (i.e. the
         host Node's C{_protocol} object).
         """
-#        import sys, os
-#        cod = sys._getframe().f_back.f_code
-#        modul = os.path.basename(cod.co_filename).replace('.py', '')
-#        caller = cod.co_name
-#        print 'contact.__getattr__ from %s.%s' % (modul, caller)
         def _sendRPC(*args, **kwargs):
-            #            print 'sendRPC', name, self.address, self.port, self.commTime
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
         return _sendRPC

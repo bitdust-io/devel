@@ -14,7 +14,7 @@ from twisted.python import log as twlog
 
 
 def _to_text(v):
-    if not isinstance(v, six.text_type):
+    if isinstance(v, six.binary_type):
         v = v.decode()
     return v
 

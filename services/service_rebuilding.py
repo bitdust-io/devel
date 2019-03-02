@@ -44,8 +44,9 @@ class RebuildingService(LocalService):
     config_path = 'services/rebuilding/enabled'
 
     def dependent_on(self):
-        return ['service_data_motion',
-                ]
+        return [
+            'service_data_motion',
+        ]
 
     def start(self):
         from raid import raid_worker

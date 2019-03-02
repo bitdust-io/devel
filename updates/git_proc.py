@@ -312,10 +312,10 @@ def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=No
                                _threadAttributes, _bInheritHandles, creationFlags,
                                _newEnvironment, _currentDirectory, startupinfo):
             import win32con
-            import _subprocess
+            import subprocess
             flags = win32con.CREATE_NO_WINDOW
-            startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = _subprocess.SW_HIDE
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
             return real_CreateProcess(_appName, _commandLine,
                                       _processAttributes, _threadAttributes,
                                       _bInheritHandles, flags, _newEnvironment,

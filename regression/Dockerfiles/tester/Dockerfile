@@ -22,7 +22,7 @@
 
 FROM python:3.6
 
-RUN apt-get update -y && apt-get install -y mosh openssh-client curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y && apt-get install -y mosh openssh-client curl nano && rm -rf /var/lib/apt/lists/*
 
 COPY ./regression/requirements-test.txt /requirements-test.txt
 

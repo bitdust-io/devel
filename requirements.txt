@@ -1,4 +1,4 @@
-twisted==18.4.0
+twisted==18.7.0
 service_identity
 pycryptodomex
 pyparsing
@@ -6,3 +6,4 @@ appdirs
 psutil
 cffi
 six
+

@@ -44,8 +44,9 @@ class RestoreMonitorService(LocalService):
     config_path = 'services/restores/enabled'
 
     def dependent_on(self):
-        return ['service_backups',
-                ]
+        return [
+            'service_backups',
+        ]
 
     def start(self):
         from storage import restore_monitor

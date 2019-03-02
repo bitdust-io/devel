@@ -72,7 +72,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 6
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -85,7 +85,6 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in network_connector.py')
 
 from twisted.internet import threads
-from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------
 

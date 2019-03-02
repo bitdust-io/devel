@@ -1,0 +1,18 @@
+#!/bin/bash
+
+IFS=$'\n' read -d '' -r -a nodes < $2
+
+echo "target nodes:"
+echo "${nodes[@]}"
+
+echo "target command: $1"
+
+for node in ${nodes[@]}
+do
+  echo ""
+  echo "----------------------------------------------------"
+  echo "[$node] START"
+  ssh $node "$1 $node"
+  echo "[$node] DONE"
+  echo ""
+done

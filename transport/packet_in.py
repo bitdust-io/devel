@@ -70,6 +70,7 @@ from main import events
 from automats import automat
 
 from lib import nameurl
+from lib import strng
 
 from system import bpio
 from system import tmpfile
@@ -410,7 +411,7 @@ class PacketIn(automat.Automat):
             try:
                 fd, _ = tmpfile.make('error', extension='.inbox')
                 data = bpio.ReadBinaryFile(self.filename)
-                os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
+                os.write(fd, strng.to_bin('from %s:%s %s\n' % (self.proto, self.host, self.status)))
                 os.write(fd, data)
                 os.close(fd)
             except:

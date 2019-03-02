@@ -2,7 +2,7 @@ FROM bitdust_perf/base
 
 ENV DHT_SEED_1='dht_seed_1:14441'
 ENV DHT_SEED_2='dht_seed_2:14441'
-ENV PYTHONPATH=/bitdust
+ENV PYTHONPATH=/app/bitdust
 
 #ENTRYPOINT /root/.bitdust/venv/bin/python tests/dht/test_producer.py
 ENTRYPOINT sleep infinity

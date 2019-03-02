@@ -105,27 +105,14 @@ def init():
         try:
             db().open()
         except:
-            temp_dir = os.path.join(settings.ChatHistoryDir(), 'tmp')
-            if os.path.isdir(temp_dir):
-                bpio._dir_remove(temp_dir)
-            tmpdb = regenerate_indexes(temp_dir)
-            rewrite_indexes(db(), tmpdb)
-            bpio._dir_remove(temp_dir)
-            try:
-                db().open()
-                db().reindex()
-            except:
-                # really bad... we will lose whole data
-                _LocalStorage = Database(chat_history_dir)
-                _LocalStorage.custom_header = message_index.make_custom_header()
-                try:
-                    _LocalStorage.destroy()
-                except DatabaseConflict:
-                    pass
-                _LocalStorage.create()
+            lg.err('failed to open database, local DB will be recreated')
+            recreate_db(chat_history_dir)
     else:
         db().create()
-    refresh_indexes(db())
+    if not refresh_indexes(db()):
+        lg.err('failed to refresh indexes, local DB will be recreated')
+        recreate_db(chat_history_dir)
+        refresh_indexes(db())
 
 
 def shutdown():
@@ -202,6 +189,7 @@ def refresh_indexes(db_instance):
     """
     if _Debug:
         lg.out(_DebugLevel, 'message_db.refresh_indexes in %s' % db_instance.path)
+    ok = True
     for ind, ind_class in message_index.definitions():
         ind_obj = ind_class(db_instance.path, ind)
         if ind not in db_instance.indexes_names:
@@ -213,9 +201,14 @@ def refresh_indexes(db_instance):
                 if _Debug:
                     lg.out(_DebugLevel, '        index skipped %s' % ind)
         else:
-            db_instance.edit_index(ind_obj, reindex=True)
+            try:
+                db_instance.edit_index(ind_obj, reindex=True)
+            except:
+                ok = False
+                break
             if _Debug:
                 lg.out(_DebugLevel, '        updated index %s' % ind)
+    return ok
 
 
 def regenerate_indexes(temp_dir):
@@ -227,6 +220,34 @@ def regenerate_indexes(temp_dir):
     refresh_indexes(tmpdb)
     tmpdb.close()
     return tmpdb
+
+
+def recreate_db(chat_history_dir):
+    """
+    """
+    global _LocalStorage
+    temp_dir = os.path.join(settings.ChatHistoryDir(), 'tmp')
+    if os.path.isdir(temp_dir):
+        bpio._dir_remove(temp_dir)
+    tmpdb = regenerate_indexes(temp_dir)
+    try:
+        db().close()
+    except:
+        pass
+    rewrite_indexes(db(), tmpdb)
+    bpio._dir_remove(temp_dir)
+    try:
+        db().open()
+        db().reindex()
+    except:
+        # really bad... we will lose whole data
+        _LocalStorage = Database(chat_history_dir)
+        _LocalStorage.custom_header = message_index.make_custom_header()
+        try:
+            _LocalStorage.destroy()
+        except:
+            pass
+        _LocalStorage.create()
 
 #------------------------------------------------------------------------------
 

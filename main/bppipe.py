@@ -68,6 +68,54 @@ _ExcludeFunction = None
 
 #------------------------------------------------------------------------------
 
+if sys.version_info[0] == 3:
+    text_type = str
+    binary_type = bytes
+else:
+    text_type = unicode  # @UndefinedVariable
+    binary_type = str
+
+#------------------------------------------------------------------------------
+
+def is_text(s):
+    """
+    Return `True` if `s` is a text value:
+    + `unicode()` in Python2
+    + `str()` in Python3
+    """
+    return isinstance(s, text_type)
+
+
+def is_bin(s):
+    """
+    Return `True` if `s` is a binary value:
+    + `str()` in Python2
+    + `bytes()` in Python3
+    """
+    return isinstance(s, binary_type)
+
+
+def is_string(s):
+    """
+    Return `True` if `s` is text or binary type (not integer, class, list, etc...)
+    """
+    return is_text(s) or is_bin(s)
+
+
+def to_text(s, encoding='utf-8', errors='strict'):
+    """
+    If ``s`` is binary type - decode it to unicode - "text" type in Python3 terms.
+    If ``s`` is not binary and not text calls `str(s)` to build text representation.
+    """
+    if s is None:
+        return s
+    if not is_string(s):
+        s = text_type(s)
+    if is_text(s):
+        return s
+    return s.decode(encoding=encoding, errors=errors)
+
+
 def sharedPath(filename, subdir='logs'):
     global AppData
     if AppData == '':
@@ -97,12 +145,12 @@ def printlog(txt, mode='a'):
     """
     Write a line to the log file.
     """
-    try:
-        LogFile = open(logfilepath(), mode)
-        LogFile.write(txt)
-        LogFile.close()
-    except:
-        pass
+    # try:
+    LogFile = open(logfilepath(), mode)
+    LogFile.write(to_text(txt))
+    LogFile.close()
+    # except:
+    #     pass
 
 
 def printexc():
@@ -183,9 +231,9 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
         mode += compression
     _, filename = os.path.split(sourcepath)
     if arcname is None:
-        arcname = six.text_type(filename)
+        arcname = to_text(filename)
     else:
-        arcname = six.text_type(arcname)
+        arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
     tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
     tar.add(
@@ -201,7 +249,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
             if not os.path.isdir(subpath):
                 tar.add(
                     name=subpath,
-                    arcname=six.text_type(os.path.join(arcname, subfile)),
+                    arcname=to_text(os.path.join(arcname, subfile)),
                     recursive=False,
                     filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
                 )
@@ -232,12 +280,16 @@ def main():
     Use command line arguments to get the command from ``bpmain``.
     """
     ostype = platform.uname()[0]
+
     if ostype == 'Windows':
-        try:
-            import msvcrt
-            msvcrt.setmode(1, os.O_BINARY)
-        except:
-            pass
+        if six.PY3:
+            sys.stdout = sys.stdout.buffer
+        else:
+            try:
+                import msvcrt
+                msvcrt.setmode(1, os.O_BINARY)  # @UndefinedVariable
+            except:
+                pass
 
     else:
         if six.PY3:
@@ -245,7 +297,7 @@ def main():
 
     if len(sys.argv) < 4:
         printlog('bppipe extract <archive path> <output dir>\n')
-        printlog('bppipe <subdirs / nosubdirs> <"none" / "bz2"/"gz"> <folder/file path> [archive filename]\n')
+        printlog('bppipe <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n')
         return 2
 
     try:

@@ -83,7 +83,7 @@ from io import BytesIO
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -354,18 +354,20 @@ class backup(automat.Automat):
         """
         Action method.
         """
-
         def _doBlock():
             dt = time.time()
             raw_bytes = self.currentBlockData.getvalue()
+#             if not raw_bytes:
+#                 lg.err('current block data is empty')
+#                 raise ValueError('current block data is empty')
             block = encrypted.Block(
-                my_id.getLocalID(),
-                self.backupID,
-                self.blockNumber,
-                key.NewSessionKey(),
-                key.SessionKeyType(),
-                self.stateEOF,
-                raw_bytes,
+                CreatorID=my_id.getLocalID(),
+                BackupID=self.backupID,
+                BlockNumber=self.blockNumber,
+                SessionKey=key.NewSessionKey(),
+                SessionKeyType=key.SessionKeyType(),
+                LastBlock=self.stateEOF,
+                Data=raw_bytes,
                 EncryptKey=self.keyID,
             )
             del raw_bytes

@@ -63,7 +63,7 @@ import six
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -114,7 +114,7 @@ class Block(object):
             SessionKey='',
             SessionKeyType=None,
             LastBlock=True,
-            Data='',
+            Data=b'',
             EncryptKey=None,
             DecryptKey=None,
             EncryptedSessionKey=None,
@@ -131,15 +131,19 @@ class Block(object):
         self.LastBlock = bool(LastBlock)
         self.SessionKeyType = SessionKeyType or key.SessionKeyType()
         if EncryptedSessionKey:
+            # this block to be decrypted after receiving
             self.EncryptedSessionKey = EncryptedSessionKey
         else:
+            # this block to be encrypted before sending
             if callable(EncryptKey):
                 self.EncryptedSessionKey = EncryptKey(SessionKey)
             elif isinstance(EncryptKey, six.string_types):
                 self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
+            elif isinstance(EncryptKey, six.binary_type):
+                self.EncryptedSessionKey = my_keys.encrypt(strng.to_text(EncryptKey), SessionKey)
             else:
                 self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
-        if EncryptedData and Length:
+        if EncryptedData and Length is not None:
             self.Length = Length
             self.EncryptedData = EncryptedData
         else:
@@ -245,17 +249,20 @@ class Block(object):
         Create a string that stores all data fields of that ``encrypted.Block``
         object.
         """
-        return serialization.DictToBytes({
+        dct = {
             'c': self.CreatorID,
             'b': self.BackupID,
             'n': self.BlockNumber,
             'e': self.LastBlock,
-            'k': base64.b64encode(self.EncryptedSessionKey).decode('utf-8'),
+            'k': strng.to_text(base64.b64encode(strng.to_bin(self.EncryptedSessionKey))),
             't': self.SessionKeyType,
             'l': self.Length,
             'p': self.EncryptedData,
             's': self.Signature,
-        })
+        }
+        if _Debug:
+            lg.out(_DebugLevel, 'encrypted.Serialize %s' % repr(dct)[:500])
+        return serialization.DictToBytes(dct, encoding='utf-8')
 
 #------------------------------------------------------------------------------
 
@@ -264,13 +271,15 @@ def Unserialize(data, decrypt_key=None):
     """
     A method to create a ``encrypted.Block`` instance from input string.
     """
-    dct = serialization.BytesToDict(data)
+    dct = serialization.BytesToDict(data, keys_to_text=True, encoding='utf-8')
+    if _Debug:
+        lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:500])
     try:
         newobject = Block(
             CreatorID=dct['c'],
             BackupID=strng.to_text(dct['b']),
             BlockNumber=dct['n'],
-            EncryptedSessionKey=base64.b64decode(dct['k']),
+            EncryptedSessionKey=base64.b64decode(strng.to_bin(dct['k'])),
             SessionKeyType=dct['t'],
             Length=dct['l'],
             EncryptedData=dct['p'],

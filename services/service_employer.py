@@ -44,9 +44,10 @@ class EmployerService(LocalService):
     config_path = 'services/employer/enabled'
 
     def dependent_on(self):
-        return ['service_customer',
-                'service_nodes_lookup',
-                ]
+        return [
+            'service_customer',
+            'service_nodes_lookup',
+        ]
 
     def start(self):
         from customer import fire_hire
@@ -110,16 +111,16 @@ class EmployerService(LocalService):
         #     self._do_notify_supplier_position(evt.data['new_idurl'], evt.data['position'], )
         self._do_cleanup_dht_suppliers()
 
-    def _on_my_dht_relations_discovered(self, discovered_suppliers_list):
+    def _on_my_dht_relations_discovered(self, dht_result):
         from p2p import p2p_service
         from contacts import contactsdb
         from logs import lg
-        if not discovered_suppliers_list:
-            lg.warn('not dht records found for my customer family')
+        if not (dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0):
+            lg.warn('no dht records found for my customer family')
             return
         suppliers_to_be_dismissed = set()
         # clean up old suppliers
-        for idurl in discovered_suppliers_list['suppliers']:
+        for idurl in dht_result['suppliers']:
             if not idurl:
                 continue
             if not contactsdb.is_supplier(idurl):

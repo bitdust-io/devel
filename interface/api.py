@@ -45,7 +45,6 @@ _DebugLevel = 8
 import os
 import sys
 import time
-import json
 import gc
 
 from twisted.internet.defer import Deferred
@@ -80,7 +79,7 @@ def OK(result='', message=None, status='OK', extra_fields=None):
         o.update(extra_fields)
     o = on_api_result_prepared(o)
     api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda'):
+    if api_method.count('lambda') or api_method.startswith('_'):
         api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
         lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
@@ -101,7 +100,11 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     if api_method.count('lambda'):
         api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
+        try:
+            sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
+        except:
+            sample = strng.to_text(0, errors='ignore')[:150]
+        lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample))
     return o
 
 
@@ -364,15 +367,14 @@ def identity_get(include_xml_source=False):
         return ERROR('local identity is not valid or not exist')
     r = my_id.getLocalIdentity().serialize_json()
     if include_xml_source:
-        r['xml'] = my_id.getLocalIdentity().serialize()
+        r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
     return RESULT([r, ])
 
 
-def identity_create(username):
+def identity_create(username, preferred_servers=[]):
     from lib import misc
     from userid import my_id
     from userid import id_registrator
-
     try:
         username = str(username)
     except:
@@ -394,12 +396,12 @@ def identity_create(username):
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity creation FAILED')
             r = my_id.getLocalIdentity().serialize_json()
-            r['xml'] = my_id.getLocalIdentity().serialize()
+            r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             ret.callback(RESULT([r, ]))
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
-    my_id_registrator.A('start', (username, ))
+    my_id_registrator.A('start', username=username, preferred_servers=preferred_servers)
     return ret
 
 
@@ -482,7 +484,7 @@ def identity_recover(private_key_source, known_idurl=None):
             if not my_id.isLocalIdentityReady():
                 return ERROR('identity recovery FAILED')
             r = my_id.getLocalIdentity().serialize_json()
-            r['xml'] = my_id.getLocalIdentity().serialize()
+            r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             ret.callback(RESULT([r, ]))
             return
 
@@ -1260,12 +1262,15 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     customerID = global_id.MakeGlobalID(customer=parts['customer'], key_alias=parts['key_alias'])
     pathIDfull = packetid.MakeBackupID(customerID, pathID)
     if open_share and parts['key_alias'] != 'master':
+        if not driver.is_on('service_shared_data'):
+            return ERROR('service_shared_data() is not started')
         from access import shared_access_coordinator
         active_share = shared_access_coordinator.get_active_share(keyID)
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
                 keyID, log_events=True, publish_events=True, )
-        active_share.automat('restart')
+        if active_share.state != 'CONNECTED':
+            active_share.automat('restart')
     if wait_result:
         d = Deferred()
         tsk = backup_control.StartSingle(
@@ -1506,14 +1511,13 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         return True
     
     def _start_restore():
+        if _Debug:
+            lg.out(_DebugLevel, 'api.file_download_start._start_restore %s to %s, wait_result=%s' % (
+                backupID, destination_path, wait_result))
         if wait_result:
-            if _Debug:
-                lg.out(_DebugLevel, 'api.file_download_start %s to %s, wait_result=True' % (backupID, destination_path))
             restore_monitor.Start(backupID, destination_path, keyID=key_id, callback=_on_result)
             control.request_update([('pathID', knownPath), ])
             return ret
-        if _Debug:
-            lg.out(_DebugLevel, 'api.download_start %s to %s' % (backupID, destination_path))
         restore_monitor.Start(backupID, destination_path, keyID=key_id, )
         control.request_update([('pathID', knownPath), ])
         ret.callback(OK(
@@ -1529,21 +1533,15 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
         ))
         return True
     
-    def _share_state_changed(callback_id, active_share, oldstate, newstate, event_string, *args, **kwargs):
-        if oldstate != newstate and newstate == 'CONNECTED':
+    def _on_share_connected(active_share, callback_id, result):
+        if _Debug:
+            lg.out(_DebugLevel, 'api.download_start._on_share_connected callback_id=%s result=%s' % (callback_id, result, ))
+        if not result:
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start share %s is CONNECTED, removing callback %s' % (
-                    active_share.key_id, callback_id,))
-            active_share.removeStateChangedCallback(callback_id=callback_id)
-            _start_restore()
-            return True
-        if oldstate != newstate and newstate == 'DISCONNECTED':
-            if _Debug:
-                lg.out(_DebugLevel, 'api.download_start share %s is DISCONNECTED, removing callback %s' % (
-                    active_share.key_id, callback_id,))
-            active_share.removeStateChangedCallback(callback_id=callback_id)
+                lg.out(_DebugLevel, '    share %s is now DISCONNECTED, removing callback %s' % (active_share.key_id, callback_id,))
+            active_share.remove_connected_callback(callback_id)
             ret.callback(ERROR(
-                'downloading version "%s" failed, result: %s' % (backupID, 'share disconnected'),
+                'downloading version "%s" failed, result: %s' % (backupID, 'share is disconnected'),
                 extra_fields={
                     'key_id': active_share.key_id,
                     'backup_id': backupID,
@@ -1553,31 +1551,40 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                 },
             ))
             return True
-        return False
+        if _Debug:
+            lg.out(_DebugLevel, '        share %s is now CONNECTED, removing callback %s and starting restore process' % (
+                active_share.key_id, callback_id,))
+        from twisted.internet import reactor  # @UnresolvedImport
+        reactor.callLater(0, active_share.remove_connected_callback, callback_id)  # @UndefinedVariable
+        _start_restore()
+        return True
 
     def _open_share():
+        if not driver.is_on('service_shared_data'):
+            ret.callback(ERROR('service_shared_data() is not started'))
+            return False
         from access import shared_access_coordinator
         active_share = shared_access_coordinator.get_active_share(key_id)
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
-                key_id, log_events=True, publish_events=True, )
+                key_id=key_id,
+                log_events=True,
+                publish_events=True,
+            )
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start opened new share : %s' % active_share.key_id)
+                lg.out(_DebugLevel, 'api.download_start._open_share opened new share : %s' % active_share.key_id)
         else:
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start found existing share : %s' % active_share.key_id)
+                lg.out(_DebugLevel, 'api.download_start._open_share found existing share : %s' % active_share.key_id)
         if active_share.state != 'CONNECTED':
             cb_id = 'file_download_start_' + str(time.time())
-            active_share.addStateChangedCallback(
-                cb=lambda o, n, e, a: _share_state_changed(cb_id, active_share, o, n, e, a),
-                callback_id=cb_id,
-            )
+            active_share.add_connected_callback(cb_id, lambda _id, _result: _on_share_connected(active_share, _id, _result))
             active_share.automat('restart')
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start added callback %s to the active share : %s' % (cb_id, active_share.key_id))
+                lg.out(_DebugLevel, 'api.download_start._open_share added callback %s to the active share : %s' % (cb_id, active_share.key_id))
         else:
             if _Debug:
-                lg.out(_DebugLevel, 'api.download_start existing share %s is currently CONNECTED' % active_share.key_id)
+                lg.out(_DebugLevel, 'api.download_start._open_share existing share %s is currently CONNECTED' % active_share.key_id)
             _start_restore()
         return True
 
@@ -1737,15 +1744,18 @@ def share_create(owner_id=None, key_size=2048):
     ), message='new share "%s" was generated successfully' % key_id, )
 
 
-def share_grant(trusted_remote_user, key_id):
+def share_grant(trusted_remote_user, key_id, timeout=30):
     """
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
+    from twisted.internet import reactor  # @UnresolvedImport
+    key_id = strng.to_text(key_id)
+    trusted_remote_user = strng.to_text(trusted_remote_user)
     if not key_id.startswith('share_'):
-        return ERROR('invlid share name')
+        return ERROR('invalid share name')
     from userid import global_id
-    remote_idurl = trusted_remote_user
+    remote_idurl = strng.to_bin(trusted_remote_user)
     if trusted_remote_user.count('@'):
         glob_id = global_id.ParseGlobalID(trusted_remote_user)
         remote_idurl = glob_id['idurl']
@@ -1755,24 +1765,26 @@ def share_grant(trusted_remote_user, key_id):
     ret = Deferred()
 
     def _on_shared_access_donor_success(result):
-        ret.callback(OK() if result else ERROR('failed'))
+        ret.callback(OK() if result else ERROR(result))
         return None
 
     def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR('failed'))
+        ret.callback(ERROR(str(err)))
         return None
 
     d = Deferred()
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
+    d.addTimeout(timeout, clock=reactor)
     shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=True, )
-    shared_access_donor_machine.automat('init', (remote_idurl, key_id, d, ))
+    shared_access_donor_machine.automat('init', trusted_idurl=remote_idurl, key_id=key_id, result_defer=d)
     return ret
 
 
 def share_open(key_id):
     """
     """
+    key_id = strng.to_text(key_id)
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
@@ -1805,6 +1817,7 @@ def share_open(key_id):
 def share_close(key_id):
     """
     """
+    key_id = strng.to_text(key_id)
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
     if not key_id.startswith('share_'):
@@ -2399,23 +2412,22 @@ def service_start(service_name):
 
         {'status': 'OK', 'result': 'service_tcp_connections was switched on'}
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'api.service_start : %s' % service_name)
     from main import config
     svc = driver.services().get(service_name, None)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_start %s not found' % service_name)
+        lg.warn('service "%s" not found' % service_name)
         return ERROR('service "%s" was not found' % service_name)
     if svc.state == 'ON':
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_start %s already started' % service_name)
+        lg.warn('service "%s" already started' % service_name)
         return ERROR('service "%s" already started' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_start %s already enabled' % service_name)
+        lg.warn('service "%s" already enabled' % service_name)
         return ERROR('service "%s" already enabled' % service_name)
     config.conf().setBool(svc.config_path, True)
     return OK('"%s" was switched on' % service_name)
@@ -2434,23 +2446,22 @@ def service_stop(service_name):
 
         {'status': 'OK', 'result': 'service_tcp_connections was switched off'}
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'api.service_stop : %s' % service_name)
     from main import config
     svc = driver.services().get(service_name, None)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_stop %s not found' % service_name)
+        lg.warn('service "%s" not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     current_config = config.conf().getBool(svc.config_path)
     if current_config is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_stop config item %s was not found' % svc.config_path)
+        lg.warn('config item "%s" was not found' % svc.config_path)
         return ERROR('config item "%s" was not found' % svc.config_path)
     if current_config is False:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_stop %s already disabled' % service_name)
+        lg.warn('service "%s" already disabled' % service_name)
         return ERROR('service "%s" already disabled' % service_name)
     config.conf().setBool(svc.config_path, False)
     return OK('"%s" was switched off' % service_name)
@@ -2466,21 +2477,20 @@ def service_restart(service_name, wait_timeout=10):
         {'status': 'OK', 'result': 'service_tcp_connections was restarted'}
     """
     svc = driver.services().get(service_name, None)
+    if _Debug:
+        lg.out(_DebugLevel, 'api.service_restart : %s' % service_name)
     if svc is None:
         service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'api.service_restart %s not found' % service_name)
+        lg.warn('service "%s" not found' % service_name)
         return ERROR('service "%s" not found' % service_name)
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=wait_timeout)
     d.addCallback(
-        lambda resp: ret.callback(
-            OK(resp)))
+        lambda resp: ret.callback(OK(resp)))
     d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+        lambda err: ret.callback(ERROR(err.getErrorMessage())))
     return ret
 
 #------------------------------------------------------------------------------
@@ -3115,7 +3125,7 @@ def event_send(event_id, json_data=None):
     if json_data and strng.is_string(json_data):
         json_length = len(json_data)
         try:
-            json_payload = json.loads(strng.to_text(json_data or '{}'))
+            json_payload = jsn.loads(strng.to_text(json_data or '{}'))
         except:
             return ERROR('json data payload is not correct')
     evt = events.send(event_id, data=json_payload)
@@ -3479,10 +3489,14 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                 r['tcp']['sessions'] = sessions
                 r['tcp']['streams'] = streams
         if show_udp:
+            from lib import udp
             r['udp'] = {
                 'sessions': [],
                 'streams': [],
+                'ports': [],
             }
+            for one_listener in udp.listeners().values():
+                r['udp']['ports'].append(one_listener.port)
             if driver.is_on('service_udp_transport'):
                 sessions = []
                 for s in gateway.list_active_sessions('udp'):
@@ -3542,26 +3556,22 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
 def dht_node_find(node_id_64=None):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
-    import base64
     from dht import dht_service
     if node_id_64 is None:
         node_id = dht_service.random_key()
-        node_id_64 = base64.b64encode(node_id)
+        node_id_64 = node_id
     else:
-        try:
-            node_id = base64.b64decode(node_id_64)
-        except:
-            node_id = node_id_64
+        node_id = node_id_64
     ret = Deferred()
 
     def _cb(response):
         try:
             if isinstance(response, list):
                 return ret.callback(OK({
-                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'my_dht_id': dht_service.node().id,
                     'lookup': node_id_64, 
                     'closest_nodes': [{
-                        'dht_id': base64.b64encode(c.id),
+                        'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
                 }))
@@ -3584,10 +3594,13 @@ def dht_node_find(node_id_64=None):
 def dht_value_get(key, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
-    import base64
     from dht import dht_service
     from dht import dht_records
     ret = Deferred()
+
+    record_rules = dht_records.get_rules(record_type)
+    if not record_rules:
+        return ERROR('record must be have correct type and known validation rules')
 
     def _cb(value):
         if isinstance(value, dict):
@@ -3595,9 +3608,8 @@ def dht_value_get(key, record_type='skip_validation'):
                 lg.out(_DebugLevel, 'api.dht_value_get OK: %r' % value)
             return ret.callback(OK({
                 'read': 'success',
-                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(key),
                 'value': value,
             }))
         closest_nodes = []
@@ -3607,11 +3619,10 @@ def dht_value_get(key, record_type='skip_validation'):
             lg.out(_DebugLevel, 'api.dht_value_get ERROR: %r' % value)
         return ret.callback(OK({
             'read': 'failed',
-            'my_dht_id': base64.b64encode(dht_service.node().id),
+            'my_dht_id': dht_service.node().id,
             'key': strng.to_text(key, errors='ignore'),
-            'key_64': base64.b64encode(key),
             'closest_nodes': [{
-                'dht_id': base64.b64encode(c.id),
+                'dht_id': c.id,
                 'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
             } for c in closest_nodes],
         }))
@@ -3623,8 +3634,9 @@ def dht_value_get(key, record_type='skip_validation'):
 
     d = dht_service.get_valid_data(
         key=key,
-        rules=dht_records.get_rules(record_type),
+        rules=record_rules,
         raise_for_result=False,
+        return_details=True,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)
@@ -3634,9 +3646,10 @@ def dht_value_get(key, record_type='skip_validation'):
 def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     if not driver.is_on('service_entangled_dht'):
         return ERROR('service_entangled_dht() is not started')
+
     if not isinstance(value, dict):
         try:
-            value = json.loads(value)
+            value = jsn.loads(value)
         except Exception as exc:
             lg.exc()
             return ERROR('input value must be a json')
@@ -3645,10 +3658,13 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
     except Exception as exc:
         return ERROR(exc)
 
-    import base64
     from dht import dht_service
     from dht import dht_records
     ret = Deferred()
+
+    record_rules = dht_records.get_rules(record_type)
+    if not record_rules:
+        return ERROR('record must be have correct type and known validation rules')
 
     def _cb(response):
         try:
@@ -3657,12 +3673,11 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                     lg.out(_DebugLevel, 'api.dht_value_set OK: %r' % response)
                 return ret.callback(OK({
                     'write': 'success' if len(response) > 0 else 'failed',
-                    'my_dht_id': base64.b64encode(dht_service.node().id),
+                    'my_dht_id': dht_service.node().id,
                     'key': strng.to_text(key, errors='ignore'),
-                    'key_64': base64.b64encode(key),
                     'value': value,
                     'closest_nodes': [{
-                        'dht_id': base64.b64encode(c.id),
+                        'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
                 }))
@@ -3679,7 +3694,10 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
             try:
                 errmsg = err.value.subFailure.getErrorMessage()
             except:
-                errmsg = 'store operation failed'
+                try:
+                    errmsg = err.getErrorMessage()
+                except:
+                    errmsg = 'store operation failed'
             try:
                 nodes = err.value
             except:
@@ -3687,16 +3705,15 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
             closest_nodes = []
             if nodes and isinstance(nodes, list) and hasattr(nodes[0], 'address') and hasattr(nodes[0], 'port'):
                 closest_nodes = [{
-                    'dht_id': base64.b64encode(c.id),
+                    'dht_id': c.id,
                     'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                 } for c in nodes]
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % errmsg)
             return ret.callback(ERROR(errmsg, extra_fields={
                 'write': 'failed',
-                'my_dht_id': base64.b64encode(dht_service.node().id),
+                'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
-                'key_64': base64.b64encode(key),
                 'closest_nodes': closest_nodes,
             }))
         except Exception as exc:
@@ -3707,11 +3724,18 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
         key=key,
         json_data=value,
         expire=expire or dht_service.KEY_EXPIRE_MAX_SECONDS,
-        rules=dht_records.get_rules(record_type),
+        rules=record_rules,
         collect_results=True,
     )
     d.addCallback(_cb)
     d.addErrback(_eb)
     return ret
+
+
+def dht_local_db_dump():
+    if not driver.is_on('service_entangled_dht'):
+        return ERROR('service_entangled_dht() is not started')
+    from dht import dht_service
+    return RESULT(dht_service.dump_local_db(value_as_json=True))
 
 #------------------------------------------------------------------------------

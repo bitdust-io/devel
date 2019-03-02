@@ -331,7 +331,7 @@ class FireHire(automat.Automat):
         # lg.out(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
         # contactsdb.num_suppliers(), len(self.dismiss_list),
         # settings.getSuppliersNumberDesired()))
-        if '' in contactsdb.suppliers():
+        if b'' in contactsdb.suppliers() or '' in contactsdb.suppliers():
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty supplier!!!')
             return True
@@ -411,7 +411,7 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        return contactsdb.num_suppliers() > 0 and contactsdb.suppliers().count(b'') < contactsdb.num_suppliers()
+        return contactsdb.num_suppliers() > 0 and (contactsdb.suppliers().count(b'') + contactsdb.suppliers().count('')) < contactsdb.num_suppliers()
 
     def doSaveConfig(self, *args, **kwargs):
         """
@@ -472,7 +472,7 @@ class FireHire(automat.Automat):
         redundant_suppliers = set()
         # if you have some empty suppliers need to get rid of them,
         # but no need to dismiss anyone at the moment.
-        if '' in contactsdb.suppliers() or None in contactsdb.suppliers():
+        if '' in contactsdb.suppliers() or None in contactsdb.suppliers() or b'' in contactsdb.suppliers():
             lg.warn('SKIP, found empty supplier')
             self.automat('made-decision', [])
             return

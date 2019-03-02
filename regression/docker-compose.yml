@@ -22,91 +22,112 @@
 
 version: "3.4"
 
-
-x-common: &common
-  context: ./../
-
-
 services:
 
-  identity-server:
+  _base_image:
     build:
-      <<: *common
       dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/identity-server
+      context: ./../
+    image: bitdust-baseimage
+    entrypoint: ""
+    command: /bin/false
+
+  identity-server:
+    image: bitdust-baseimage
     ports:
         - "22201:22"
 
 
 
   stun_1:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/stun
+    image: bitdust-baseimage
     ports:
       - "22211:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
 
   stun_2:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/stun
+    image: bitdust-baseimage
     ports:
       - "22212:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
 
 
+
+  dht_seed_0:
+    image: bitdust-baseimage
+    ports:
+      - "22220:22"
 
   dht_seed_1:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/dht_seed
+    image: bitdust-baseimage
     ports:
       - "22221:22"
+    links:
+      - "dht_seed_0"
 
   dht_seed_2:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/dht_seed
+    image: bitdust-baseimage
     ports:
       - "22222:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
+
+  dht_seed_3:
+    image: bitdust-baseimage
+    ports:
+      - "22223:22"
+    links:
+      - "dht_seed_0"
+      - "dht_seed_1"
+      - "dht_seed_2"
+
+  dht_seed_4:
+    image: bitdust-baseimage
+    ports:
+      - "22224:22"
+    links:
+      - "dht_seed_0"
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "dht_seed_3"
 
 
 
   proxy_server_1:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/proxy_server
+    image: bitdust-baseimage
     ports:
       - "22231:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   proxy_server_2:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/proxy_server
+    image: bitdust-baseimage
     ports:
       - "22232:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -114,113 +135,113 @@ services:
 
 
   supplier_1:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22241:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   supplier_2:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22242:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   supplier_3:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22243:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   supplier_4:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22244:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   supplier_5:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22245:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   supplier_6:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22246:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   supplier_7:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22247:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
 
   supplier_8:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/supplier
+    image: bitdust-baseimage
     ports:
       - "22248:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -228,15 +249,15 @@ services:
 
 
   customer_1:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/customer
+    image: bitdust-baseimage
     ports:
       - "22251:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -244,15 +265,15 @@ services:
       - customer_1:/customer_1
 
   customer_2:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/customer
+    image: bitdust-baseimage
     ports:
       - "22252:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -260,15 +281,15 @@ services:
       - customer_2:/customer_2
 
   customer_3:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/customer
+    image: bitdust-baseimage
     ports:
       - "22253:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -276,15 +297,15 @@ services:
       - customer_3:/customer_3
 
   customer_4:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/customer
+    image: bitdust-baseimage
     ports:
       - "22254:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
@@ -292,33 +313,66 @@ services:
       - customer_4:/customer_4
 
   customer_5:
-    build:
-      <<: *common
-      dockerfile: regression/Dockerfiles/bitdust_install/Dockerfile
-    image: bitdust/customer
+    image: bitdust-baseimage
     ports:
       - "22255:22"
     links:
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
     volumes:
       - customer_5:/customer_5
 
+  customer_backup:
+    image: bitdust-baseimage
+    ports:
+      - "22256:22"
+    links:
+      - "dht_seed_0"
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
+      - "stun_1"
+      - "stun_2"
+      - "identity-server:is"
+    volumes:
+      - customer_backup:/customer_backup
 
+  customer_restore:
+    image: bitdust-baseimage
+    ports:
+      - "22257:22"
+    links:
+      - "dht_seed_0"
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
+      - "stun_1"
+      - "stun_2"
+      - "identity-server:is"
+    volumes:
+      - customer_restore:/customer_restore
 
   tester:
     build:
-      <<: *common
+      context: ./../
       dockerfile: regression/Dockerfiles/tester/Dockerfile
     links:
       - "identity-server:is"
       - "stun_1"
       - "stun_2"
+      - "dht_seed_0"
       - "dht_seed_1"
       - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
       - "supplier_1"
       - "supplier_2"
       - "supplier_3"
@@ -332,6 +386,8 @@ services:
       - "customer_3"
       - "customer_4"
       - "customer_5"
+      - "customer_backup"
+      - "customer_restore"
     image: bitdust/tester
     cap_add:
       - SYS_PTRACE
@@ -342,10 +398,11 @@ services:
       - customer_3:/customer_3
       - customer_4:/customer_4
       - customer_5:/customer_5
+      - customer_backup:/customer_backup
+      - customer_restore:/customer_restore
 
     stdin_open: true
     tty: true
-
 
 
 
@@ -355,4 +412,5 @@ volumes:
   customer_3:
   customer_4:
   customer_5:
-
+  customer_backup:
+  customer_restore:

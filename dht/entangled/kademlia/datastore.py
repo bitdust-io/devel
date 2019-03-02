@@ -15,16 +15,15 @@
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
 from __future__ import absolute_import
-import six
+
 try:
     from UserDict import DictMixin
 except ImportError:
     from collections import MutableMapping as DictMixin
+
 import sqlite3
-import six.moves.cPickle as pickle
-# import pickle
 import os
-# import codecs
+import json
 
 from . import constants  # @UnresolvedImport
 from . import encoding  # @UnresolvedImport
@@ -36,7 +35,11 @@ except:
     buffer = memoryview
 
 
+PROTOCOL_VERSION = 1
+
 PICKLE_PROTOCOL = 2
+
+_Debug = False
 
 
 class DataStore(DictMixin):
@@ -117,6 +120,7 @@ class DataStore(DictMixin):
         """
 
 
+
 class DictDataStore(DataStore):
     """
     A datastore using an in-memory Python dictionary.
@@ -183,20 +187,21 @@ class DictDataStore(DataStore):
         try:
             row = self._dict[key]
             result = dict(
-                key=row[0],
-                value=str(row[1]),
+                key=row[0].encode(),
+                value=row[1],
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=row[4],
+                originalPublisherID=None if not row[4] else row[4].encode(),
             )
         except:
             return None
         return result
 
 
-class SQLiteDataStore(DataStore):
+
+class SQLiteVersionedJsonDataStore(DataStore):
     """
-    Example of a SQLite database-based datastore.
+    SQLite database-based datastore.
     """
 
     def __init__(self, dbFile=':memory:'):
@@ -208,10 +213,37 @@ class SQLiteDataStore(DataStore):
         createDB = not os.path.exists(dbFile)
         self._db = sqlite3.connect(dbFile)
         self._db.isolation_level = None
-        self._db.text_factory = str
+        self._db.text_factory = encoding.to_text
         if createDB:
-            self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID)')
+            self.create_table()
+            if _Debug:
+                print('[DHT DB]   Created empty table for DHT records')
         self._cursor = self._db.cursor()
+
+    def _dbQuery(self, key, columnName):
+        try:
+            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
+                'reqKey': key,
+            })
+            row = self._cursor.fetchone()
+            value = row[0]
+        except:
+            raise KeyError(key)
+        else:
+            return value
+
+    def __getitem__(self, key):
+        v = self._dbQuery(key, 'value')
+        v = json.loads(v)
+        return v['d']
+
+    def __delitem__(self, key):
+        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
+            'reqKey': key,
+        })
+
+    def create_table(self):
+        self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision)')
 
     def keys(self):
         """
@@ -221,13 +253,7 @@ class SQLiteDataStore(DataStore):
         try:
             self._cursor.execute("SELECT key FROM data")
             for row in self._cursor:
-#                 key = row[0]
-#                 if not isinstance(key, six.text_type):
-#                     key = key.decode()
-#                 decodedKey = codecs.decode(key, 'hex')            
-#                 keys.append(decodedKey)
-                # keys.append(row[0].decode('hex'))
-                keys.append(encoding.decode_hex(row[0]))
+                keys.append(row[0])
         finally:
             return keys
 
@@ -257,116 +283,18 @@ class SQLiteDataStore(DataStore):
         """
         return int(self._dbQuery(key, 'originallyPublished'))
 
-    def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID, **kwargs):
-        # Encode the key so that it doesn't corrupt the database
-        # encodedKey = key.encode('hex')
-#         if not isinstance(key, six.binary_type):
-#             key = key.encode()
-#         encodedKey = codecs.encode(key, 'hex')
-        encodedKey = encoding.encode_hex(key)
-        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
-        if self._cursor.fetchone() is None:
-            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (
-                encodedKey,
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-            ))
-        else:
-            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=? WHERE key=?', (
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
-                lastPublished,
-                originallyPublished,
-                originalPublisherID,
-                encodedKey,
-            ))
-
-    def _dbQuery(self, key, columnName, unpickle=False):
-        try:
-#             if not isinstance(key, six.binary_type):
-#                 key = key.encode()
-#             encodedKey = codecs.encode(key, 'hex')
-            self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {
-                # 'reqKey': key.encode('hex'),
-#                 'reqKey': encodedKey,
-                'reqKey': encoding.encode_hex(key), 
-            })
-            row = self._cursor.fetchone()
-            value = row[0]
-        except TypeError:
-            raise KeyError(key)
-        else:
-            if unpickle:
-                if six.PY2:
-                    if isinstance(value, buffer):
-                        value = str(value)
-                    return pickle.loads(value)
-                else:
-                    return pickle.loads(value, encoding='bytes')
-            else:
-                return value
-
-    def __getitem__(self, key):
-        return self._dbQuery(key, 'value', unpickle=True)
-
-    def __delitem__(self, key):
-#         if not isinstance(key, six.binary_type):
-#             key = key.encode()
-#         encodedKey = codecs.encode(key, 'hex')
-        self._cursor.execute("DELETE FROM data WHERE key=:reqKey", {
-            # 'reqKey': key.encode('hex'),
-#             'reqKey': encodedKey,
-            'reqKey': encoding.encode_hex(key),
-        })
-
-    def getItem(self, key):
-        try:
-#             if not isinstance(key, six.binary_type):
-#                 key = key.encode()
-#             encodedKey = codecs.encode(key, 'hex')
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-                # 'reqKey': key.encode('hex'),
-                # 'reqKey': encodedKey,
-                'reqKey': encoding.encode_hex(key),
-            })
-            row = self._cursor.fetchone()
-            result = dict(
-                key=row[0],
-                value=str(row[1]),
-                lastPublished=row[2],
-                originallyPublished=row[3],
-                originalPublisherID=row[4],
-            )
-        except:
-            return None
-        return result
-
-
-class SQLiteExpiredDataStore(SQLiteDataStore):
-    """
-    Example of a SQLite database-based datastore.
-    """
-
-    def __init__(self, dbFile=':memory:'):
-        """
-        @param dbFile: The name of the file containing the SQLite database; if
-                       unspecified, an in-memory database is used.
-        @type dbFile: str
-        """
-        createDB = not os.path.exists(dbFile)
-        self._db = sqlite3.connect(dbFile)
-        self._db.isolation_level = None
-        self._db.text_factory = str
-        if createDB:
-            self._db.execute('CREATE TABLE data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds)')
-        self._cursor = self._db.cursor()
-        
-
     def expireSeconds(self, key):
         """
         """
         return int(self._dbQuery(key, 'expireSeconds'))
+
+    def revision(self, key):
+        """
+        """
+        try:
+            return int(self._dbQuery(key, 'revision'))
+        except KeyError:
+            return 0
 
     def setItem(self,
                 key,
@@ -376,53 +304,79 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
                 originalPublisherID,
                 expireSeconds=constants.dataExpireSecondsDefaut,
                 **kwargs):
-        # Encode the key so that it doesn't corrupt the database
-        # encodedKey = key.encode('hex')
-#         if not isinstance(key, six.binary_type):
-#             key = key.encode()
-#         encodedKey = codecs.encode(key, 'hex')
-        encodedKey = encoding.encode_hex(key)
-        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
+        key_hex = encoding.to_text(key)
+        new_revision = kwargs.get('revision', None)
+        if new_revision is None:
+            new_revision = self.revision(key) + 1
+        self._cursor.execute("select key from data where key=:reqKey", {'reqKey': key_hex})
+        opID = originalPublisherID or None
         if self._cursor.fetchone() is None:
-            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds) VALUES (?, ?, ?, ?, ?, ?)', (
-                encodedKey,
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+            self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID, expireSeconds, revision) VALUES (?, ?, ?, ?, ?, ?, ?)', (
+                key_hex,
+                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
                 lastPublished,
                 originallyPublished,
-                originalPublisherID,
+                opID,
                 expireSeconds,
+                new_revision,
             ))
+            if _Debug:
+                print('[DHT DB]       setItem  stored new value for key [%s] with revision %d' % (key, new_revision))
         else:
-            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=? WHERE key=?', (
-                buffer(pickle.dumps(value, PICKLE_PROTOCOL)),
+            self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=?, expireSeconds=?, revision=? WHERE key=?', (
+                json.dumps({'k': key_hex, 'd': value, 'v': PROTOCOL_VERSION, }, ),
                 lastPublished,
                 originallyPublished,
-                originalPublisherID,
+                opID,
                 expireSeconds,
-                encodedKey,
+                new_revision,
+                key_hex,
             ))
+            if _Debug:
+                print('[DHT DB]        setItem  updated existing value for key [%s] with revision %d' % (key, new_revision))
 
     def getItem(self, key):
-        try:
-            # if not isinstance(key, six.binary_type):
-            #     key = key.encode()
-            # encodedKey = codecs.encode(key, 'hex')            
-            self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
-                # 'reqKey': key.encode('hex'),
-                # 'reqKey': encodedKey,
-                'reqKey': encoding.encode_hex(key),
-            })
-            row = self._cursor.fetchone()
-            result = dict(
-                key=row[0],
-                value=str(row[1]),
-                lastPublished=row[2],
-                originallyPublished=row[3],
-                originalPublisherID=row[4],
-                expireSeconds=row[5],
-            )
-        except:
+        key_hex = key
+        key_hex = encoding.to_text(key)
+        self._cursor.execute("SELECT * FROM data WHERE key=:reqKey", {
+            'reqKey': key_hex,
+        })
+
+        row = self._cursor.fetchone()
+        if not row:
+            if _Debug:
+                print('[DHT DB]         getItem [%s]  return None : did not found key in dataStore' % key)
             return None
+
+        v = row[1]
+        if isinstance(v, buffer):
+            v = encoding.to_text(v)
+
+        v = json.loads(v)
+        
+        # TODO: check / verify v['k'] against key_hex
+        # TODO: check / verify v['v'] against PROTOCOL_VERSION
+
+        value = v['d']
+
+        key_orig = row[0]
+
+        # TODO: check / verify key_orig against key
+
+        opID = row[4] or None
+
+        result = dict(
+            key=key_orig,
+            value=value,
+            lastPublished=row[2],
+            originallyPublished=row[3],
+            originalPublisherID=opID,
+            expireSeconds=row[5],
+            revision=row[6],
+        )
+
+        if _Debug:
+            print('[DHT DB]               getItem   found one record for key [%s], revision is %d' % (key, row[6]))
         return result
 
     def getAllItems(self):
@@ -430,13 +384,27 @@ class SQLiteExpiredDataStore(SQLiteDataStore):
         rows = self._cursor.fetchall()
         items = []
         for row in rows:
+
+            v = row[1]
+            if isinstance(v, buffer):
+                v = encoding.to_text(v)
+
+            v = json.loads(v)
+            
+            # TODO: check / verify v['k'] against key_hex
+            # TODO: check / verify v['v'] against PROTOCOL_VERSION
+    
+            value = v['d']
+
+            _k = row[0]
+            _opID = row[4] or None
+
             items.append(dict(
-                key=row[0],
-                value=str(row[1]),
+                value=value,
                 lastPublished=row[2],
                 originallyPublished=row[3],
-                originalPublisherID=row[4],
+                originalPublisherID=_opID,
                 expireSeconds=row[5],
+                revision=row[6],
             ))
         return items
-

@@ -59,7 +59,7 @@ from io import BytesIO
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -209,7 +209,7 @@ def GetActiveArray(customer_idurl=None):
     the current state of supplier.
     """
     from p2p import contact_status
-    activeArray = [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+    activeArray = [0, ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     for i in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
@@ -910,7 +910,8 @@ def ScanBlocksToSend(backupID):
     Opposite method - search for pieces which is not yet delivered to remote suppliers.
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
-    if '' in contactsdb.suppliers(customer_idurl=customer_idurl):
+    if '' in contactsdb.suppliers(customer_idurl=customer_idurl) or b'' in contactsdb.suppliers(customer_idurl=customer_idurl):
+        lg.warn('found empty suppliers, SKIP')
         return {}
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
     supplierActiveArray = GetActiveArray(customer_idurl=customer_idurl)
@@ -985,7 +986,7 @@ def RepaintingProcess(on_off):
         minDelay = 8.0
     _RepaintingTaskDelay = misc.LoopAttenuation(_RepaintingTaskDelay, len(_UpdatedBackupIDs) > 0, minDelay, 8.0)
     _UpdatedBackupIDs.clear()
-    _RepaintingTask = reactor.callLater(_RepaintingTaskDelay, RepaintingProcess, True)
+    _RepaintingTask = reactor.callLater(_RepaintingTaskDelay, RepaintingProcess, True)  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 
@@ -1287,9 +1288,9 @@ def GetLocalDataArray(backupID, blockNum):
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
     if backupID not in local_files():
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0, ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     if blockNum not in local_files()[backupID]:
-        return [0] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
+        return [0, ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     return local_files()[backupID][blockNum]['D']
 
 

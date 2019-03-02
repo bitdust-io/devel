@@ -44,9 +44,10 @@ class IPPortResponderService(LocalService):
     config_path = 'services/ip-port-responder/enabled'
 
     def dependent_on(self):
-        return ['service_udp_datagrams',
-                'service_entangled_dht',
-                ]
+        return [
+            'service_udp_datagrams',
+            'service_entangled_dht',
+        ]
 
     def start(self):
         from stun import stun_server

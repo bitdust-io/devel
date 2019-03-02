@@ -162,6 +162,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.glob_id = global_id.ParseGlobalID(self.key_id)
         self.customer_idurl = self.glob_id['idurl']
         self.known_suppliers_list = []
+        self.known_ecc_map = None
         super(SharedAccessCoordinator, self).__init__(
             name="%s$%s" % (self.glob_id['key_alias'], self.glob_id['user']),
             state='AT_STARTUP',
@@ -179,7 +180,14 @@ class SharedAccessCoordinator(automat.Automat):
             'idurl': self.customer_idurl,
             'state': self.state,
             'suppliers': self.known_suppliers_list,
+            'ecc_map': self.known_ecc_map,
         }
+
+    def add_connected_callback(self, callback_id, callback_method):
+        self.connected_callbacks[callback_id] = callback_method
+
+    def remove_connected_callback(self, callback_id):
+        self.connected_callbacks.pop(callback_id, None)
 
     def init(self):
         """
@@ -187,6 +195,7 @@ class SharedAccessCoordinator(automat.Automat):
         at creation phase of shared_access_coordinator() machine.
         """
         self.result_defer = None
+        self.connected_callbacks = {}
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -222,6 +231,19 @@ class SharedAccessCoordinator(automat.Automat):
                 self.state = 'DHT_LOOKUP'
                 self.doInit(*args, **kwargs)
                 self.doDHTLookupSuppliers(*args, **kwargs)
+        #---DHT_LOOKUP---
+        elif self.state == 'DHT_LOOKUP':
+            if event == 'customer-list-files-received':
+                self.doProcessCustomerListFiles(*args, **kwargs)
+            elif event == 'dht-lookup-ok':
+                self.state = 'SUPPLIERS?'
+                self.doConnectCustomerSuppliers(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'fail' or event == 'timer-1min':
+                self.state = 'DISCONNECTED'
+                self.doReportDisconnected(*args, **kwargs)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'supplier-connected':
@@ -239,7 +261,7 @@ class SharedAccessCoordinator(automat.Automat):
                 self.state = 'LIST_FILES?'
             elif ( event == 'all-suppliers-connected' or ( event == 'timer-3sec' and self.isAnySupplierConnected(*args, **kwargs) ) ) and self.isAnyFilesShared(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doRequestRandomPacket(*args, **kwargs)
+                self.doReportConnected(*args, **kwargs)
         #---LIST_FILES?---
         elif self.state == 'LIST_FILES?':
             if event == 'supplier-connected':
@@ -263,26 +285,13 @@ class SharedAccessCoordinator(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'ack' and self.isPacketValid(*args, **kwargs):
                 self.state = 'CONNECTED'
-                self.doReportSuccess(*args, **kwargs)
+                self.doReportConnected(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'fail' or ( event == 'ack' and not self.isPacketValid(*args, **kwargs) ):
                 self.state = 'DISCONNECTED'
                 self.doReportDisconnected(*args, **kwargs)
             elif event == 'customer-list-files-received':
                 self.doProcessCustomerListFiles(*args, **kwargs)
-        #---DHT_LOOKUP---
-        elif self.state == 'DHT_LOOKUP':
-            if event == 'customer-list-files-received':
-                self.doProcessCustomerListFiles(*args, **kwargs)
-            elif event == 'dht-lookup-ok':
-                self.state = 'SUPPLIERS?'
-                self.doConnectCustomerSuppliers(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'fail' or event == 'timer-1min':
-                self.state = 'DISCONNECTED'
-                self.doReportDisconnected(*args, **kwargs)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
             if event == 'shutdown':
@@ -338,6 +347,7 @@ class SharedAccessCoordinator(automat.Automat):
         Action method.
         """
         # TODO : put in a seprate state in the state machine
+        self.result_defer = kwargs.get('result_defer', None) 
         identitycache.immediatelyCaching(self.customer_idurl)
 
     def doDHTLookupSuppliers(self, *args, **kwargs):
@@ -346,7 +356,7 @@ class SharedAccessCoordinator(automat.Automat):
         """
         d = dht_relations.read_customer_suppliers(self.customer_idurl)
         # TODO: add more validations of dht_result
-        d.addCallback(lambda dht_result: self.automat('dht-lookup-ok', dht_result))
+        d.addCallback(self._on_read_customer_suppliers)
         d.addErrback(lambda err: self.automat('fail', err))
 
     def doConnectCustomerSuppliers(self, *args, **kwargs):
@@ -358,6 +368,7 @@ class SharedAccessCoordinator(automat.Automat):
         except:
             lg.exc()
             return
+        self.known_ecc_map = args[0].get('ecc_map')
         for supplier_idurl in self.known_suppliers_list:
             sc = supplier_connector.by_idurl(supplier_idurl, customer_idurl=self.customer_idurl)
             if sc is None:
@@ -412,13 +423,17 @@ class SharedAccessCoordinator(automat.Automat):
         # to one of suppliers - this way we can be sure that shared data is available
         self.automat('ack')
 
-    def doReportSuccess(self, *args, **kwargs):
+    def doReportConnected(self, *args, **kwargs):
         """
         Action method.
         """
         events.send('share-connected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.callback(True)
+        for cb_id in list(self.connected_callbacks.keys()):
+            cb = self.connected_callbacks.get(cb_id)
+            if cb:
+                cb(cb_id, True)
 
     def doReportDisconnected(self, *args, **kwargs):
         """
@@ -427,6 +442,10 @@ class SharedAccessCoordinator(automat.Automat):
         events.send('share-disconnected', dict(self.to_json()))
         if self.result_defer:
             self.result_defer.errback(Exception('disconnected'))
+        for cb_id in list(self.connected_callbacks.keys()):
+            if cb_id in self.connected_callbacks:
+                cb = self.connected_callbacks[cb_id]
+                cb(cb_id, False)
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -434,6 +453,14 @@ class SharedAccessCoordinator(automat.Automat):
         """
         self.result_defer = None
         self.unregister()
+
+    def _on_read_customer_suppliers(self, dht_value):
+        if _Debug:
+            lg.args(_DebugLevel, dht_value)
+        if dht_value and isinstance(dht_value, dict) and len(dht_value.get('suppliers', [])) > 0:
+            self.automat('dht-lookup-ok', dht_value)
+        else:
+            self.automat('fail', Exception('customers suppliers not found in DHT'))
 
     def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
         if _Debug:

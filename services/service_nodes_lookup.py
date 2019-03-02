@@ -47,11 +47,12 @@ class NodesLookupService(LocalService):
         # TODO:
         # in future we can use other methods to discover nodes
         # it can be hard-coded list of nodes
-        # blockchains, or some kind of broadcasting, or other ways
+        # blockchains, or some kind of broadcasting solution, or other ways
         # then we redefine that logic in lookup_method
-        return ['service_entangled_dht',
-                'service_p2p_hookups',
-                ]
+        return [
+            'service_entangled_dht',
+            'service_p2p_hookups',
+        ]
 
     def start(self):
         from p2p import lookup

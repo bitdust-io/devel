@@ -33,7 +33,8 @@ DOCKER_COMPOSE=$(shell which docker-compose)
 VENV=${HOME}/.bitdust/venv
 PIP=${VENV}/bin/pip
 PIP_NEW=venv/bin/pip
-PYTHON_VERSION=python2.7
+# REGRESSION_PY_VER=3.6
+VENV_PYTHON_VERSION=python2.7
 CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
@@ -68,7 +69,7 @@ venv: $(VENV_BASE)
 
 $(VENV_DIR):
 	@rm -rf venv
-	@virtualenv -p $(PYTHON_VERSION) venv
+	@virtualenv -p $(VENV_PYTHON_VERSION) venv
 	@touch $@
 
 $(VENV_BASE): $(VENV_DIR) $(REQUIREMENTS_TXT)
@@ -102,18 +103,7 @@ test_tox: clean tox
 test_tox/%: venv_install pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
 
-test_docker:
-	make -C tests/e2e/ -j2 test
-
-test_docker_1:
-	make -C tests/e2e/ -j2 test_1
-	docker-compose -p "namespace1" logs
-
-test_docker_2:
-	make -C tests/e2e/ -j2 test_2
-	docker-compose -p "namespace2" logs
-
-test: $(VENV_TEST)
+test_unit: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
@@ -121,111 +111,54 @@ test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -p "test_raid_worker.py" -v
 
 test_regression:
-	make -C regression/ test
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
 
 regression_test:
-	make -C regression/ test
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
 
-regression_rerun:
-	make -C regression/ test_all
+regression_build:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ build
+
+regression_run:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ run
+
+regression_prepare:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ prepare
+
+regression_try:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ try
+
+regression_test_one/%:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test_one/$*
+
+regression_try_one/%:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ try_one/$*
 
 regression_clean:
-	make -C regression/ clean
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean
+
+regression_clean_unused:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean_unused_images
 
 regression_log_one/%:
 	@echo "### [identity-server] #########################################################################"
-	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/main.log
+	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/stdout.log
 
-regression_log_states_one/%:
+regression_states_one/%:
 	@echo "### [identity-server] #########################################################################"
 	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/automats.log
 
 regression_logs_all:
-    # TODO: keep up to date with docker-compose links
-	@echo "### [identity-server] #########################################################################"
-	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/main.log
-	@echo "### [dht_seed1] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/main.log
-	@echo "### [dht_seed2] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec dht_seed_2 cat /root/.bitdust/logs/main.log
-	@echo "### [stun_1] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec stun_1 cat /root/.bitdust/logs/main.log
-	@echo "### [stun_2] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec stun_2 cat /root/.bitdust/logs/main.log
-	@echo "### [proxy_server_1] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec proxy_server_1 cat /root/.bitdust/logs/main.log
-	@echo "### [proxy_server_2] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec proxy_server_2 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_1] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_1 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_2] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_2 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_3] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_3 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_4] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_4 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_5] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_5 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_6] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_6 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_7] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_7 cat /root/.bitdust/logs/main.log
-	@echo "### [supplier_8] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_8 cat /root/.bitdust/logs/main.log
-	@echo "### [customer_1] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_1 cat /root/.bitdust/logs/main.log
-	@echo "### [customer_2] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_2 cat /root/.bitdust/logs/main.log
-	@echo "### [customer_3] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_3 cat /root/.bitdust/logs/main.log
-	@echo "### [customer_4] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/main.log
-	@echo "### [customer_5] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/main.log
+	make -C regression/ logs_all_stdout
 
-regression_logs_all_states:
-    # TODO: keep up to date with docker-compose links
-	@echo "### [identity-server] #########################################################################"
-	docker-compose -f regression/docker-compose.yml exec identity-server cat /root/.bitdust/logs/automats.log
-	@echo "### [dht_seed1] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec dht_seed_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [dht_seed2] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec dht_seed_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [stun_1] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec stun_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [stun_2] ##################################################################################"
-	docker-compose -f regression/docker-compose.yml exec stun_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [proxy_server_1] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec proxy_server_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [proxy_server_2] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec proxy_server_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_1] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_2] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_3] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_3 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_4] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_4 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_5] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_5 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_6] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_6 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_7] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_7 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_8] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec supplier_8 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_1] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_2] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_3] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_3 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_4] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_4 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_5] ##############################################################################"
-	docker-compose -f regression/docker-compose.yml exec customer_5 cat /root/.bitdust/logs/automats.log
+regression_errors_all:
+	make -C regression/ logs_all_stderr
 
+regression_states_all:
+	make -C regression/ logs_all_states
+
+regression_logs_fetch:
+	make -C regression/ logs_fetch
 
 dht_network_up:
 	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
@@ -278,8 +211,5 @@ link:
 	@chmod +x ~/.bitdust/bitdust
 	@echo "created executable script in ${HOME}/.bitdust/bitdust"
 
-smoketest:
-	@for srv in `$(PYTHON) -c "import userid.known_servers; s=userid.known_servers.by_host(); print(' '.join(['{}:{}'.format(i, s[i][0]) for i in s]))"`; do echo "\n$$srv"; curl -I --connect-timeout 10 $$srv 2>/dev/null | grep "HTTP"; done
-
-smoketestdht:
-	@for srv in `$(PYTHON) -c "import dht.known_nodes; s=dht.known_nodes.default_nodes(); print(' '.join(['{}:{}'.format(i[0], i[1]) for i in s]))"`; do echo "\n$$srv"; rndudpport=`echo $$RANDOM % 10000 + 10000 | bc`; rm -rf /tmp/bitdust_dht_smoketest; ~/.bitdust/venv/bin/python dht/dht_service.py ping --dhtdb=/tmp/bitdust_dht_smoketest --udpport=$$rndudpport --seeds="$$srv"; done
+health_id_servers:
+	@./scripts/ping_id_servers

@@ -44,9 +44,10 @@ class BackupDBService(LocalService):
     config_path = 'services/backup-db/enabled'
 
     def dependent_on(self):
-        return ['service_list_files',
-                'service_data_motion',
-                ]
+        return [
+            'service_list_files',
+            'service_data_motion',
+        ]
 
     def start(self):
         from storage import index_synchronizer

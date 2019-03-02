@@ -201,11 +201,10 @@ class CustomersRejector(automat.Automat):
         removed_customers = []
         spent_bytes = 0
         donated_bytes = settings.getDonatedBytes()
-        if os.path.isfile(settings.CustomersSpaceFile()):
-            space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
-        else:
+        space_dict = accounting.read_customers_quotas()
+        if not space_dict:
             space_dict = {b'free': donated_bytes}
-        used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
+        used_dict = accounting.read_customers_usage()
         lg.out(8, 'customers_rejector.doTestMyCapacity donated=%d' % donated_bytes)
         try:
             int(space_dict[b'free'])
@@ -223,7 +222,7 @@ class CustomersRejector(automat.Automat):
         lg.out(8, '        spent=%d' % spent_bytes)
         if spent_bytes < donated_bytes:
             space_dict[b'free'] = donated_bytes - spent_bytes
-            bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
+            accounting.write_customers_quotas(space_dict)
             lg.out(8, '        space is OK !!!!!!!!')
             self.automat('space-enough')
             return
