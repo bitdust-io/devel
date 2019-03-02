@@ -100,9 +100,7 @@ def backuptardir(directorypath, arcname=None, recursive_subfolders=True, compres
     if not os.path.isfile(commandpath):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
         return None
-    # lg.out(14, "backup_tar.backuptar going to execute %s" % str(cmdargs))
-    # p = child_process.run('bppipe', cmdargs[2:])
-    cmdargs = [strng.to_bin(a) for a in cmdargs]
+    cmdargs = [strng.to_text(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
@@ -135,7 +133,7 @@ def backuptarfile(filepath, arcname=None, compress=None):
         return None
     # lg.out(12, "backup_tar.backuptarfile going to execute %s" % str(cmdargs))
     # p = run(cmdargs)
-    cmdargs = [strng.to_bin(a) for a in cmdargs]
+    cmdargs = [strng.to_text(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
@@ -162,7 +160,7 @@ def extracttar(tarfile, outdir):
         lg.out(1, 'backup_tar.extracttar ERROR %s is not found' % commandpath)
         return None
     # p = run(cmdargs)
-    cmdargs = [strng.to_bin(a) for a in cmdargs]
+    cmdargs = [strng.to_text(a) for a in cmdargs]
     p = child_process.pipe(cmdargs)
     return p
 
