@@ -44,9 +44,10 @@ class CoinsAccountantService(LocalService):
     config_path = 'services/accountant/enabled'
 
     def dependent_on(self):
-        return ['service_broadcasting',
-                'service_blockchain',
-                ]
+        return [
+            'service_broadcasting',
+            'service_blockchain',
+        ]
 
     def start(self):
         from coins import coins_db

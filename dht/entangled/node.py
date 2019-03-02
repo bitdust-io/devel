@@ -298,7 +298,7 @@ class EntangledNode(Node):
 
 if __name__ == '__main__':
     import twisted.internet.reactor
-    from kademlia.datastore import SQLiteDataStore  # @UnresolvedImport
+    from kademlia.datastore import SQLiteVersionedJsonDataStore  # @UnresolvedImport
     import sys
     import os
     if len(sys.argv) < 2:
@@ -330,7 +330,7 @@ if __name__ == '__main__':
 
     # if os.path.isfile('/tmp/dbFile%s.db' % sys.argv[1]):
     #     os.remove('/tmp/dbFile%s.db' % sys.argv[1])
-    dataStore = SQLiteDataStore(dbFile='/tmp/dbFile%s.db' % sys.argv[1])
+    dataStore = SQLiteVersionedJsonDataStore(dbFile='/tmp/dbFile%s.db' % sys.argv[1])
     node = EntangledNode(udpPort=int(sys.argv[1]), dataStore=dataStore)
     #node = EntangledNode( udpPort=int(sys.argv[1]) )
     node.joinNetwork(knownNodes)

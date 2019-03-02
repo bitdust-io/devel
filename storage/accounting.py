@@ -54,6 +54,7 @@ from system import diskusage
 from lib import diskspace
 from lib import misc
 from lib import strng
+from lib import jsn
 
 from main import settings
 
@@ -71,13 +72,11 @@ def init():
 
 
 def read_customers_quotas():
-    space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
-    space_dict_bin = {strng.to_bin(k): v for k, v in space_dict.items()}
-    return space_dict_bin
+    space_dict = jsn.dict_keys_to_bin(bpio._read_dict(settings.CustomersSpaceFile(), {}))
+    return space_dict
 
 def write_customers_quotas(new_space_dict):
-    new_space_dict_text = {strng.to_text(k): v for k, v in new_space_dict.items()}
-    return bpio._write_dict(settings.CustomersSpaceFile(), new_space_dict_text)
+    return bpio._write_dict(settings.CustomersSpaceFile(), jsn.dict_keys_to_text(new_space_dict))
 
 
 def get_customer_quota(customer_idurl):
@@ -88,10 +87,12 @@ def get_customer_quota(customer_idurl):
         return None
 
 
-def check_create_customers_quotas():
+def check_create_customers_quotas(donated_bytes=None):
     if not os.path.isfile(settings.CustomersSpaceFile()):
-        bpio._write_dict(settings.CustomersSpaceFile(),
-                         {b'free': settings.getDonatedBytes()})
+        bpio._write_dict(settings.CustomersSpaceFile(), {
+            b'free': donated_bytes or settings.getDonatedBytes(),
+        })
+        lg.info('created a new customers quotas file: %s' % settings.CustomersSpaceFile())
         return True
     return False
 
@@ -136,11 +137,11 @@ def validate_customers_quotas(space_dict=None):
 
 
 def read_customers_usage():
-    return bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
+    return jsn.dict_keys_to_bin(bpio._read_dict(settings.CustomersUsedSpaceFile(), {}))
 
 
 def update_customers_usage(new_space_usage_dict):
-    return bpio._write_dict(settings.CustomersUsedSpaceFile(), new_space_usage_dict)
+    return bpio._write_dict(settings.CustomersUsedSpaceFile(), jsn.dict_keys_to_text(new_space_usage_dict))
 
 
 def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
@@ -155,10 +156,12 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
         try:
             files_size = int(used_dict.get(idurl, 0))
         except:
+            lg.exc()
             files_size = 0
         try:
             ratio = float(files_size) / float(allocated_bytes)
         except:
+            lg.exc()
             continue
         used_space_ratio_dict[idurl] = ratio
     return used_space_ratio_dict

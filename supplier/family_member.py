@@ -30,14 +30,16 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 6
+_Debug = False
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
 DHT_RECORD_REFRESH_INTERVAL = 2 * 60
 
 #------------------------------------------------------------------------------
+
+import re
 
 from twisted.internet.task import LoopingCall
 
@@ -313,6 +315,7 @@ class FamilyMember(automat.Automat):
         self.dht_info = None
         self.my_info = None
         self.transaction = None
+        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         self.refresh_task = LoopingCall(self._on_family_refresh_task)
 
     def doPush(self, event, *args, **kwargs):
@@ -354,7 +357,6 @@ class FamilyMember(automat.Automat):
         self.transaction = self._do_increment_revision(possible_transaction)
         if _Debug:
             lg.out(_DebugLevel, 'family_member._do_build_transaction : %r' % self.transaction)
-        self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         if self.transaction:
             known_ecc_map = self.transaction.get('ecc_map')
             if known_ecc_map:
@@ -439,22 +441,14 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        d = dht_relations.write_customer_suppliers(
-            customer_idurl=self.customer_idurl,
-            suppliers_list=self.transaction['suppliers'],
-            ecc_map=self.transaction['ecc_map'],
-            revision=self.transaction['revision'],
-            publisher_idurl=self.transaction['publisher_idurl'],
-        )
-        d.addCallback(self._on_dht_write_success)
-        d.addErrback(self._on_dht_write_failed)
+        self._do_write_transaction(0)
 
     def doNotifyConnected(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'family_memeber.doNotifyConnected\n    my_info=%r\n    dht_info=%r\n    requests=%r' % (
+            lg.out(_DebugLevel, 'family_memeber.doNotifyConnected\n            my_info=%r\n            dht_info=%r\n            requests=%r' % (
                 self.my_info, self.dht_info, self.requests, ))
         to_be_closed = False
         if self.current_request['command'] == 'family-leave':
@@ -524,63 +518,63 @@ class FamilyMember(automat.Automat):
         if not inp:
             return None
         if not inp or not isinstance(inp, dict):
-            return None  # self._do_prepare_my_default_info()
+            return None
         out = inp.copy()
         try:
             my_revision = int(out['revision'])
             if my_revision < 1:
                 raise Exception('invalid revision')
-        except:
-            lg.exc()
-            # out['revision'] = 0
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             suppliers = out['suppliers']
             if not isinstance(suppliers, list) or len(suppliers) < 1:
                 raise Exception('must include some suppliers')
-        except:
-            lg.exc()
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             ecc_map = out['ecc_map']
             if ecc_map and ecc_map not in eccmap.EccMapNames():
                 raise Exception('invalid ecc_map name')
-        except:
-            lg.exc()
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             out['publisher_idurl']
             # TODO: if I am a publisher - revision number must be the same as my info
-        except:
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
         try:
             customer_idurl = out['customer_idurl']
             if customer_idurl != self.customer_idurl:
                 raise Exception('invalid customer_idurl')
-        except:
+        except Exception as exc:
+            lg.warn(str(exc))
             return None
-
         return out
 
     def _do_create_first_revision(self, request):
         return {
             'revision': 0,
-            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of the first revision
-            'suppliers': request.get('family_snapshot'),
-            'ecc_map': request['ecc_map'],
+            'publisher_idurl': my_id.getLocalIDURL(),  # I will be a publisher of the first revision
+            'suppliers': request.get('family_snapshot') or [],
+            'ecc_map': request.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
         }
 
     def _do_create_possible_revision(self, latest_revision):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = local_customer_meta_info.get('position', -1)
-        possible_suppliers = local_customer_meta_info.get('family_snapshot')
+        possible_position = local_customer_meta_info.get('position', -1) or -1
+        possible_suppliers = local_customer_meta_info.get('family_snapshot') or []
         if possible_position > 0 and my_id.getLocalIDURL() not in possible_suppliers:
             if len(possible_suppliers) > possible_position:
                 possible_suppliers[possible_position] = my_id.getLocalIDURL()
         return {
             'revision': latest_revision,
-            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
+            'publisher_idurl': my_id.getLocalIDURL(),  # I will be a publisher of that revision
             'suppliers': possible_suppliers,
             'ecc_map': local_customer_meta_info.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
@@ -588,7 +582,7 @@ class FamilyMember(automat.Automat):
 
     def _do_create_revision_from_another_supplier(self, another_revision, another_suppliers, another_ecc_map):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = local_customer_meta_info.get('position', -1)
+        possible_position = local_customer_meta_info.get('position', -1) or -1
         if possible_position >= 0:
             try:
                 another_suppliers[possible_position] = my_id.getLocalIDURL()
@@ -601,7 +595,7 @@ class FamilyMember(automat.Automat):
             })
         return {
             'revision': int(another_revision),
-            'publisher_idurl': my_id.getLocalIDURL(), # I will be a publisher of that revision
+            'publisher_idurl': my_id.getLocalIDURL(),  # I will be a publisher of that revision
             'suppliers': another_suppliers,
             'ecc_map': another_ecc_map,
             'customer_idurl': self.customer_idurl,
@@ -702,6 +696,9 @@ class FamilyMember(automat.Automat):
             return None
 
         expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(merged_info['ecc_map'])
+        if not merged_info['suppliers']:
+            merged_info['suppliers'] = [b'', ] * expected_suppliers_count
+
         if len(merged_info['suppliers']) < expected_suppliers_count:
             merged_info['suppliers'] += [b'', ] * (expected_suppliers_count - len(merged_info['suppliers']))
         else:
@@ -824,16 +821,29 @@ class FamilyMember(automat.Automat):
         lg.err('invalid request command')
         return None
 
+    def _do_write_transaction(self, retries):
+        d = dht_relations.write_customer_suppliers(
+            customer_idurl=self.customer_idurl,
+            suppliers_list=self.transaction['suppliers'],
+            ecc_map=self.transaction['ecc_map'],
+            revision=self.transaction['revision'],
+            publisher_idurl=self.transaction['publisher_idurl'],
+        )
+        d.addCallback(self._on_dht_write_success)
+        d.addErrback(self._on_dht_write_failed, retries)
+
     def _on_family_refresh_task(self):
         self.automat('family-refresh')
 
     def _on_dht_read_success(self, dht_result):
-        if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_read_success  result: %r' % dht_result)
-        if dht_result:
+        if dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0:
+            if _Debug:
+                lg.out(_DebugLevel, 'family_member._on_dht_read_success  result with %d suppliers' % len(dht_result.get('suppliers', [])))
             self.dht_info = dht_result
             self.automat('dht-value-exist', dht_result)
         else:
+            if _Debug:
+                lg.out(_DebugLevel, 'family_member._on_dht_read_success  result with %s' % type(dht_result))
             self.dht_info = None
             self.automat('dht-value-not-exist', None)
 
@@ -851,9 +861,33 @@ class FamilyMember(automat.Automat):
         self.transaction = None
         self.automat('dht-write-ok', dht_result)
 
-    def _on_dht_write_failed(self, err):
+    def _on_dht_write_failed(self, err, retries):
+        try:
+            errmsg = err.value.subFailure.getErrorMessage()
+        except:
+            try:
+                errmsg = err.getErrorMessage()
+            except:
+                try:
+                    errmsg = err.value
+                except:
+                    errmsg = str(err)
+        err_msg = strng.to_text(errmsg)
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_write_failed')
+            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %s' % err_msg)
+        if err_msg.count('current revision is') and retries < 3:
+            try:
+                current_revision = re.search("current revision is (\d+?)", err_msg).group(1)
+                current_revision = int(current_revision)
+            except:
+                lg.exc()
+                current_revision = self.transaction['revision']
+            current_revision += 1
+            self.transaction['revision'] = current_revision
+            if _Debug:
+                lg.warn('recognized "DHT write operation failed" because of late revision, increase revision to %d and retry' % current_revision)
+            self._do_write_transaction(retries + 1)
+            return
         self.transaction = None
         self.dht_info = None
         self.automat('dht-write-fail')
@@ -899,7 +933,7 @@ class FamilyMember(automat.Automat):
             ecc_map = inp['customer_ecc_map']
             supplier_idurl = inp['supplier_idurl']
             supplier_position = inp['supplier_position']
-            family_snapshot = inp.get('family_snapshot')
+            family_snapshot = inp.get('family_snapshot') or []
         except:
             lg.exc()
             return None
@@ -946,7 +980,7 @@ class FamilyMember(automat.Automat):
         if response.PacketID in self.suppliers_requests:
             self.suppliers_requests.remove(response.PacketID)
         try:
-            json_payload = serialization.BytesToDict(response.Payload)
+            json_payload = serialization.BytesToDict(response.Payload, keys_to_text=True)
             ecc_map = strng.to_text(json_payload['ecc_map'])
             suppliers_list = list(map(strng.to_bin, json_payload['suppliers']))
         except:

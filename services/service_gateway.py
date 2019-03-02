@@ -44,8 +44,9 @@ class GatewayService(LocalService):
     config_path = 'services/gateway/enabled'
 
     def dependent_on(self):
-        return ['service_network',
-                ]
+        return [
+            'service_network',
+        ]
 
     def installed(self):
         from userid import my_id

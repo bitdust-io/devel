@@ -39,10 +39,14 @@ def default_nodes():
     from system import bpio
     from system import local_fs
     from lib import serialization
+    from lib import strng
     from main import settings
-    from logs import lg
+    # from logs import lg
     networks_json = serialization.BytesToDict(
-        local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')))
+        local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')),
+        keys_to_text=True,
+        values_to_text=True,
+    )
     my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
     if not my_network:
         my_network = 'main'
@@ -51,8 +55,8 @@ def default_nodes():
     network_info = networks_json[my_network]
     identity_servers = {}
     for identity_server in network_info['identity-servers']:
-        identity_servers[identity_server['host']] = (identity_server['http_port'], identity_server['tcp_port'], )
-    lg.info('Active network is [%s]   identity_servers=%s' % (my_network, identity_servers, ))
+        identity_servers[strng.to_bin(identity_server['host'])] = (identity_server['http_port'], identity_server['tcp_port'], )
+    # lg.info('Active network is [%s]   identity_servers=%s' % (my_network, identity_servers, ))
     return identity_servers
 
 
@@ -78,13 +82,17 @@ def by_host():
     This way you can create your own BitDust network, under your full control.
     """
     global _KnownServers
+    from main import config
+    from lib import strng
+
     if _KnownServers is not None:
         return _KnownServers
+
     try:
-        from main import config
         overridden_identity_servers_str = str(config.conf().getData('services/identity-propagate/known-servers'))
     except:
         overridden_identity_servers_str = ''
+
     if not overridden_identity_servers_str:
         _KnownServers = default_nodes()
         return _KnownServers
@@ -94,7 +102,7 @@ def by_host():
         if id_server_str.strip():
             try:
                 id_server = id_server_str.strip().split(':')
-                id_server_host = id_server[0].strip()
+                id_server_host = strng.to_bin(id_server[0].strip())
                 id_server_web_port = int(id_server[1].strip())
                 id_server_tcp_port = int(id_server[2].strip())
             except:
@@ -102,8 +110,6 @@ def by_host():
             overridden_identity_servers[id_server_host] = (id_server_web_port, id_server_tcp_port, )
 
     if overridden_identity_servers:
-        from logs import lg
-        lg.info('Identity servers was overridden in local settings: %s' % overridden_identity_servers)
         _KnownServers = overridden_identity_servers
         return _KnownServers
 

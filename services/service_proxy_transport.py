@@ -48,8 +48,10 @@ class ProxyTransportService(LocalService):
         self.starting_deferred = None
 
     def dependent_on(self):
-        depends = ['service_identity_propagate',
-                   'service_nodes_lookup', ]
+        depends = [
+            'service_identity_propagate',
+            'service_nodes_lookup',
+        ]
         depends.extend(self._available_transports())
         return depends
 
@@ -69,7 +71,7 @@ class ProxyTransportService(LocalService):
         self.transport = network_transport.NetworkTransport('proxy', proxy_interface.GateInterface())
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
-        reactor.callLater(0, self.transport.automat, 'start')
+        reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
         conf().addCallback('services/proxy-transport/enabled',
                            self._on_enabled_disabled)
         conf().addCallback('services/proxy-transport/sending-enabled',

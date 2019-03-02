@@ -44,8 +44,9 @@ class TCPConnectionsService(LocalService):
     config_path = 'services/tcp-connections/enabled'
 
     def dependent_on(self):
-        return ['service_network',
-                ]
+        return [
+            'service_network',
+        ]
 
     def start(self):
         from main.config import conf

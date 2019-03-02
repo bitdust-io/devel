@@ -52,6 +52,8 @@ EVENTS:
 
 from __future__ import absolute_import
 import six
+
+import os
 import sys
 
 try:
@@ -254,10 +256,18 @@ class Shutdowner(automat.Automat):
         def do_restart(param):
             from lib import misc
             from system import bpio
+            from main import settings
+            settings.init()
+            appdata = settings.BaseDir()
             detach = False
             if bpio.Windows():
                 detach = True
-            misc.DoRestart(param, detach=detach)
+            misc.DoRestart(
+                param,
+                detach=detach,
+                std_out=os.path.join(appdata, 'logs', 'stdout.log'),
+                std_err=os.path.join(appdata, 'logs', 'stderr.log'),
+            )
 
         def shutdown_finished(x, param):
             lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")

@@ -58,6 +58,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from lib import net_misc
+from lib import strng
 
 from userid import identity
 
@@ -249,24 +250,24 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
-    xml_src = str(xml_src.strip())
+    xml_src = strng.to_text(xml_src.strip())
     if idurl in _OverriddenIdentities:
         if _OverriddenIdentities[idurl] == xml_src:
             if _Debug:
                 lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s", no changes' % idurl)
             return False
         if _Debug:
-            lg.out(4, 'identitycache.OverrideIdentity replacing overriden identity "%s" with new one' % idurl)
+            lg.out(4, 'identitycache.OverrideIdentity replacing overriden identity %r with new one' % idurl)
             lg.out(4, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
             lg.out(4, '\nOVERRIDDEN NEW:\n' + xml_src)
     else:
-        orig = identitydb.get(idurl).serialize() if identitydb.has_idurl(idurl) else ''
+        orig = identitydb.get(idurl).serialize(as_text=True) if identitydb.has_idurl(idurl) else ''
         if orig and orig == xml_src:
             if _Debug:
-                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s" , overriden copy is the same as original' % idurl)
+                lg.out(4, 'identitycache.OverrideIdentity SKIPPED %r , overridden copy is the same as original' % idurl)
             return False
         if _Debug:
-            lg.out(4, 'identitycache.OverrideIdentity replacing original identity for "%s"' % idurl)
+            lg.out(4, 'identitycache.OverrideIdentity replacing original identity for %r' % idurl)
             lg.out(4, '\nORIGINAL:\n' + orig)
             lg.out(4, '\nNEW:\n' + xml_src)
     _OverriddenIdentities[idurl] = xml_src
@@ -283,7 +284,7 @@ def StopOverridingIdentity(idurl):
     if _Debug:
         lg.out(4, 'identitycache.StopOverridingIdentity   removed overridden source for %s' % idurl)
         if result:
-            lg.out('    previous overridden identity was %d bytes' % len(result))
+            lg.out(4, '    previous overridden identity was %d bytes' % len(result))
         lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
     return result
 

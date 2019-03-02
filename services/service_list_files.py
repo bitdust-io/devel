@@ -44,8 +44,9 @@ class ListFilesService(LocalService):
     config_path = 'services/list-files/enabled'
 
     def dependent_on(self):
-        return ['service_customer',
-                ]
+        return [
+            'service_customer',
+        ]
 
     def start(self):
         from customer import list_files_orator

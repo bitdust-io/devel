@@ -44,8 +44,9 @@ class CustomerPatrolService(LocalService):
     config_path = 'services/customer-patrol/enabled'
 
     def dependent_on(self):
-        return ['service_supplier',
-                ]
+        return [
+            'service_supplier',
+        ]
 
     def start(self):
         from supplier import customers_rejector

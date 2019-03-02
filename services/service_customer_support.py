@@ -44,8 +44,9 @@ class CustomerSupportService(LocalService):
     config_path = 'services/customer-support/enabled'
 
     def dependent_on(self):
-        return ['service_customer_patrol',
-                ]
+        return [
+            'service_customer_patrol',
+        ]
 
     def start(self):
         from supplier import customer_assistant

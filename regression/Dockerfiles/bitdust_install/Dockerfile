@@ -27,8 +27,9 @@ FROM python:${PYTHON_VERSION}
 
 
 RUN apt-get update && apt-get install -y \
-    curl openssh-server mosh \
- && rm -rf /var/lib/apt/lists/*
+    curl openssh-server mosh nano \
+ && rm -rf /var/lib/apt/lists/* \
+ && pip install virtualenv
 
 RUN mkdir /var/run/sshd \
     && echo 'AuthorizedKeysFile %h/.ssh/authorized_keys' >> /etc/ssh/sshd_config \

@@ -288,6 +288,9 @@ class NicknameObserver(automat.Automat):
         if self.dht_read_defer is None:
             return
         self.dht_read_defer = None
+        if not value:
+            self.automat('dht-read-failed')
+            return
         try:
             v = value['idurl']
         except:

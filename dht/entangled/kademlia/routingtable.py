@@ -18,10 +18,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 import time
 import random
-# import codecs
 
 from . import constants  # @UnresolvedImport
-from . import encoding  # @UnresolvedImport
 from . import kbucket  # @UnresolvedImport
 from .protocol import TimeoutError  # @UnresolvedImport
 
@@ -61,12 +59,8 @@ class RoutingTable(object):
         @return: XOR result of two long variables
         @rtype: long
         """
-        valKeyOne = int(encoding.encode_hex(keyOne), 16)
-        valKeyTwo = int(encoding.encode_hex(keyTwo), 16)
-        # valKeyOne = int(keyOne.encode('hex'), 16)
-        # valKeyOne = int(codecs.encode(keyOne, 'hex'), 16)
-        # valKeyTwo = int(keyTwo.encode('hex'), 16)
-        # valKeyTwo = int(codecs.encode(keyTwo, 'hex'), 16)
+        valKeyOne = int(keyOne, 16)
+        valKeyTwo = int(keyTwo, 16)
         return valKeyOne ^ valKeyTwo
 
     def findCloseNodes(self, key, count, _rpcNodeID=None):
@@ -248,6 +242,11 @@ class TreeRoutingTable(RoutingTable):
         #    bucketIndex = 0 #TODO: maybe not allow this to continue?
         # else:
         bucketIndex = self._kbucketIndex(key)
+
+        if _Debug:
+            print('                        findCloseNodes %r   _rpcNodeID=%r   bucketIndex=%d' % (
+                key, _rpcNodeID if _rpcNodeID else None, bucketIndex, ))   
+
         closestNodes = self._buckets[bucketIndex].getContacts(constants.k, _rpcNodeID)
         # This method must return k contacts (even if we have the node with the specified key as node ID),
         # unless there is less than k remote nodes in the routing table
@@ -257,14 +256,21 @@ class TreeRoutingTable(RoutingTable):
         # Fill up the node list to k nodes, starting with the closest neighbouring nodes known
         while len(closestNodes) < constants.k and (canGoLower or canGoHigher):
             # TODO: this may need to be optimized
+            more_contacts = []
             if canGoLower:
-                closestNodes.extend(self._buckets[bucketIndex - i].getContacts(constants.k - len(closestNodes), _rpcNodeID))
+                more_contacts = self._buckets[bucketIndex - i].getContacts(constants.k - len(closestNodes), _rpcNodeID)
+                closestNodes.extend(more_contacts)
                 canGoLower = bucketIndex - (i + 1) >= 0
             if canGoHigher:
-                closestNodes.extend(self._buckets[bucketIndex + i].getContacts(constants.k - len(closestNodes), _rpcNodeID))
+                more_contacts = self._buckets[bucketIndex + i].getContacts(constants.k - len(closestNodes), _rpcNodeID)
+                closestNodes.extend(more_contacts)
                 canGoHigher = bucketIndex + (i + 1) < len(self._buckets)
             i += 1
-        if _Debug: print('findCloseNodes %r  _rpcNodeID=%r   result=%r' % (key, _rpcNodeID, closestNodes, ))
+            if _Debug:
+                print('                        canGoLower=%s canGoHigher=%s more_contacts=%r' % (
+                    canGoLower, canGoHigher, more_contacts, ))
+        if _Debug:
+            print('                                result=%r' % closestNodes)
         return closestNodes
 
     def getContact(self, contactID):
@@ -324,7 +330,8 @@ class TreeRoutingTable(RoutingTable):
         try:
             self._buckets[bucketIndex].removeContact(contactID)
         except ValueError:
-            # print 'removeContact(): Contact not in routing table'
+            if _Debug:
+                print('removeContact(%r): Contact not in routing table bucketIndex=%r' % (contactID, bucketIndex))
             return
 
     def touchKBucket(self, key):
@@ -349,9 +356,7 @@ class TreeRoutingTable(RoutingTable):
         @return: The index of the k-bucket responsible for the specified key
         @rtype: int
         """
-        # valKey = int(key.encode('hex'), 16)
-        # valKey = int(codecs.encode(key, 'hex'), 16)
-        valKey = int(encoding.encode_hex(key), 16)
+        valKey = int(key, 16)
         i = 0
         for bucket in self._buckets:
             if bucket.keyInRange(valKey):
@@ -375,10 +380,7 @@ class TreeRoutingTable(RoutingTable):
             randomID = randomID[:-1]
         if len(randomID) % 2 != 0:
             randomID = '0' + randomID
-        # randomID = randomID.decode('hex')
-        # randomID = codecs.decode(randomID, 'hex')
-        randomID = encoding.decode_hex(randomID)
-        randomID = (20 - len(randomID)) * b'\x00' + randomID
+        randomID = (40 - len(randomID)) * '0' + randomID
         return randomID
 
     def _splitBucket(self, oldBucketIndex):

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo "running 'up' on $1"
+
+cd ~/bitdust
+git fetch --all
+git reset --hard origin/master
+cd ..

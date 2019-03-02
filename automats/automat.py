@@ -354,23 +354,6 @@ class Automat(object):
                 event=event_string,
             ))
 
-    def register(self):
-        """
-        Put reference to this automat instance into a global dictionary.
-        """
-        set_object(self.index, self)
-        if self.publish_events:
-            self.addStateChangedCallback(self._on_state_change)
-        return self.index
-
-    def unregister(self):
-        """
-        Removes reference to this instance from global dictionary tracking all state machines.
-        """
-        self.removeStateChangedCallback(self._on_state_change)
-        clear_object(self.index)
-        return True
-
     def __del__(self):
         """
         Calls state changed callback and removes state machine from the index.
@@ -413,6 +396,23 @@ class Automat(object):
         Define this method in subclass to execute some code when creating a
         new instance of Automat class.
         """
+
+    def register(self):
+        """
+        Put reference to this automat instance into a global dictionary.
+        """
+        set_object(self.index, self)
+        if self.publish_events:
+            self.addStateChangedCallback(self._on_state_change)
+        return self.index
+
+    def unregister(self):
+        """
+        Removes reference to this instance from global dictionary tracking all state machines.
+        """
+        self.removeStateChangedCallback(self._on_state_change)
+        clear_object(self.index)
+        return True
 
     def destroy(self, dead_state='NOT_EXIST'):
         """

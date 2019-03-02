@@ -673,7 +673,7 @@ class UDPStream(automat.Automat):
             #--- RECEIVE DATA HERE!
         block_id = inpt.read(4)
         try:
-            block_id = struct.unpack('i', block_id)[0]
+            block_id = int(struct.unpack('i', block_id)[0])
         except:
             lg.exc()
             if _Debug:
@@ -756,14 +756,14 @@ class UDPStream(automat.Automat):
         raw_bytes = inpt.read(1)
         if len(raw_bytes) > 0:
             #--- read EOF state from ACK
-            eof_flag = struct.unpack('?', raw_bytes)[0]
+            eof_flag = bool(struct.unpack('?', raw_bytes)[0])
         if True:
             while True:
                 raw_bytes = inpt.read(4)
                 if len(raw_bytes) == 0:
                     break
             #--- read block id from ACK
-                block_id = struct.unpack('i', raw_bytes)[0]
+                block_id = int(struct.unpack('i', raw_bytes)[0])
                 if block_id >= 0:
                     acks.append(block_id)
                 elif block_id == -1:
@@ -772,13 +772,13 @@ class UDPStream(automat.Automat):
                     if not raw_bytes:
                         lg.warn('wrong ack: not found pause time')
                         break
-                    pause_time = struct.unpack('f', raw_bytes)[0]
+                    pause_time = float(struct.unpack('f', raw_bytes)[0])
             #--- read remote bandwith limit from ACK
                     raw_bytes = inpt.read(4)
                     if not raw_bytes:
                         lg.warn('wrong ack: not found remote bandwith limit')
                         break
-                    remote_side_limit_receiving = struct.unpack('f', raw_bytes)[0]
+                    remote_side_limit_receiving = float(struct.unpack('f', raw_bytes)[0])
                 else:
                     lg.warn('incorrect block_id received: %r' % block_id)
         if len(acks) > 0:

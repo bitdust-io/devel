@@ -44,17 +44,14 @@ class IdentityServerService(LocalService):
     config_path = 'services/identity-server/enabled'
 
     def init(self):
-        # self.debug_level = 2
         self.log_events = True
 
     def dependent_on(self):
-        return ['service_tcp_connections',
-                ]
+        return [
+            'service_tcp_connections',
+        ]
 
     def installed(self):
-        # from userid import my_id
-        # if not my_id.isLocalIdentityReady():
-        #     return False
         return True
 
     def enabled(self):
@@ -64,8 +61,7 @@ class IdentityServerService(LocalService):
     def start(self):
         from userid import id_server
         from main import settings
-        id_server.A('init', (settings.getIdServerWebPort(),
-                             settings.getIdServerTCPPort()))
+        id_server.A('init', (settings.getIdServerWebPort(), settings.getIdServerTCPPort(), ))
         id_server.A('start')
         return True
 

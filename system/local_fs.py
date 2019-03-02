@@ -34,6 +34,7 @@
 
 from __future__ import absolute_import
 from io import open
+import six
 
 #------------------------------------------------------------------------------
 
@@ -155,8 +156,9 @@ def WriteTextFile(filepath, data):
         except:
             lg.exc()
             return False
-    fout = open(temp_path, 'w')
-    fout.write(strng.to_text(data))
+    fout = open(temp_path, 'wt')
+    text_data = strng.to_text(data)
+    fout.write(text_data)
     fout.flush()
     os.fsync(fout)
     fout.close()
@@ -180,7 +182,7 @@ def ReadTextFile(filename):
     if not os.access(filename, os.R_OK):
         return u''
     try:
-        infile = open(filename, 'r')
+        infile = open(filename, 'rt')
         data = infile.read()
         infile.close()
         return strng.to_text(data)

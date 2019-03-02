@@ -55,7 +55,6 @@ _DebugLevel = 20
 
 import sys
 import time
-import json
 
 from collections import OrderedDict
 
@@ -522,7 +521,7 @@ def push_signed_message(producer_id, queue_id, data, creation_time=None):
             OwnerID=producer_id,
             CreatorID=producer_id,
             PacketID=packetid.UniqueID(),
-            Payload=serialization.DictToBytes(data),
+            Payload=serialization.DictToBytes(data, keys_to_text=True),
             RemoteID=queue_id,
             KeyID=producer_id,
         )
@@ -545,7 +544,7 @@ def pop_signed_message(queue_id, message_id):
     if not signed_data.Valid():
         raise Exception('unserialized message is not valid')
     try:
-        existing_message.payload = json.loads(signed_data.Payload)
+        existing_message.payload = serialization.BytesToDict(signed_data.Payload, keys_to_text=True)
     except:
         raise Exception('failed reading message json data')
     return existing_message
@@ -579,7 +578,7 @@ def on_notification_failed(err, consumer_id, queue_id, message_id):
 
 def on_event_packet_received(newpacket, info, status, error_message):
     try:
-        e_json = serialization.BytesToDict(newpacket.Payload)
+        e_json = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
         event_id = strng.to_text(e_json['event_id'])
         payload = e_json['payload']
         queue_id = strng.to_text(e_json.get('queue_id'))
