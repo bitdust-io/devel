@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 # rebuild.py
 #
 # Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
@@ -76,24 +76,6 @@ class my_decorator_class(object):
         return res
 
 
-# def _initializer_worker(queue_cancel):
-#     print(os.getpid(), '_initializer_worker', queue_cancel)
-#
-#     def func():
-#         while True:
-#             value = pipea.recv()
-#             print(os.getpid(), 'value', value)
-#             # tid = joinable_cancel_task.get()
-#             process = multiprocessing.current_process()
-#             print('kill process %s. tid - %s' % (process.pid, value))
-#             os.kill(process.pid, signal.SIGTERM)
-#             time.sleep(1)
-#
-#     thread = Thread(target=func)
-#     thread.daemon = True
-#     thread.start()
-
-
 def func_thread(tasks, pool):
     while True:
         try:
@@ -145,6 +127,14 @@ class Manager(object):
     def __init__(self, ncpus):
         self._ncpus = ncpus
 
+        if six.PY34:
+            try:
+                multiprocessing.set_start_method('spawn')
+            except RuntimeError:
+                pass
+
+        multiprocessing.util.log_to_stderr(multiprocessing.util.SUBDEBUG)
+
         from system import bpio
         if bpio.Windows():
             from system import deploy
@@ -154,6 +144,7 @@ class Manager(object):
             multiprocessing.set_executable(venv_python_path)
 
         self.processor = multiprocessing.Pool(ncpus)
+
         #: implement queue per Manager instance
         # self.queue = multiprocessing.Queue()
 

@@ -332,8 +332,7 @@ class RaidWorker(automat.Automat):
         global _MODULES
 
         if len(self.activetasks) >= self.processor.ncpus:
-            if _Debug:
-                lg.out(_DebugLevel, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
+            lg.warn('SKIP active=%d cpus=%d' % (
                     len(self.activetasks), self.processor.ncpus))
             return
 
@@ -348,6 +347,7 @@ class RaidWorker(automat.Automat):
             func,
             params,
             callback=lambda result: self._job_done(task_id, cmd, params, result),
+            error_callback=lambda err: self._job_failed(task_id, cmd, params, err),
         )
 
         self.activetasks[task_id] = (proc, cmd, params)
@@ -399,9 +399,14 @@ class RaidWorker(automat.Automat):
 
     def _job_done(self, task_id, cmd, params, result):
         if _Debug:
-            lg.out(_DebugLevel, 'raid_worker._job_done %r : %r active:%r' % (
-                task_id, result, list(self.activetasks.keys())))
+            lg.out(_DebugLevel, 'raid_worker._job_done %r : %r active:%r cmd=%r params=%r' % (
+                task_id, result, list(self.activetasks.keys()), cmd, params))
         self.automat('task-done', (task_id, cmd, params, result))
+
+    def _job_failed(self, task_id, cmd, params, err):
+        lg.err('task %r FAILED : %r   active:%r cmd=%r params=%r' % (
+            task_id, err, list(self.activetasks.keys()), cmd, params))
+        self.automat('shutdown')
 
     def _kill_processor(self):
         if self.processor:
