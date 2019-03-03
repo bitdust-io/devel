@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 # rebuild.py
 #
 # Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
@@ -128,7 +128,11 @@ class Manager(object):
         self._ncpus = ncpus
 
         if six.PY34:
-            multiprocessing.set_start_method('spawn')
+            try:
+                multiprocessing.set_start_method('spawn')
+            except RuntimeError:
+                pass
+
         multiprocessing.util.log_to_stderr(multiprocessing.util.SUBDEBUG)
 
         from system import bpio
