@@ -127,7 +127,8 @@ class Manager(object):
     def __init__(self, ncpus):
         self._ncpus = ncpus
 
-        multiprocessing.set_start_method('spawn')
+        if six.PY34:
+            multiprocessing.set_start_method('spawn')
         multiprocessing.util.log_to_stderr(multiprocessing.util.SUBDEBUG)
 
         from system import bpio
