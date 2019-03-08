@@ -107,8 +107,7 @@ test_unit: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
-	$(PYTHON_NEW) -m unittest discover -p "test_raid.py" -v
-	$(PYTHON_NEW) -m unittest discover -p "test_raid_worker.py" -v
+	$(PYTHON_NEW) -m unittest tests.test_raid_worker
 
 test_regression:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
