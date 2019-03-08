@@ -64,6 +64,7 @@ from six.moves import range
 
 import os
 import sys
+import traceback
 
 #------------------------------------------------------------------------------
 
@@ -74,30 +75,9 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from logs import lg
-
-from raid import eccmap
+import raid.eccmap
 
 #------------------------------------------------------------------------------
-
-_ECCMAP = {}
-
-#------------------------------------------------------------------------------
-
-def geteccmap(name):
-    global _ECCMAP
-    if name not in _ECCMAP:
-        _ECCMAP[name] = eccmap.eccmap(name)
-    return _ECCMAP[name]
-
-#------------------------------------------------------------------------------
-
-def shutdown():
-    global _ECCMAP
-    _ECCMAP.clear()
-
-#------------------------------------------------------------------------------
-
 
 def ReadBinaryFile(filename):
     """
@@ -114,9 +94,8 @@ def ReadBinaryFile(filename):
 
 def RebuildOne(inlist, listlen, outfilename):
     readsize = 1  # vary from 1 byte to 4 bytes
-    # range(listlen)   # just need a list of this size
-    raidfiles = [''] * listlen
-    raidreads = [''] * listlen  # range(listlen)
+    raidfiles = [''] * listlen  # just need a list of this size
+    raidreads = [''] * listlen
     for filenum in range(listlen):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
@@ -128,6 +107,7 @@ def RebuildOne(inlist, listlen, outfilename):
                     pass
             return False
     rebuildfile = open(outfilename, "wb")
+    progress = 0
     while True:
         for k in range(listlen):
             raidreads[k] = raidfiles[k].read(2048)
@@ -145,9 +125,11 @@ def RebuildOne(inlist, listlen, outfilename):
                 out_byte = chr(xor)
             rebuildfile.write(out_byte)
             i += readsize
+            progress += 1
     for filenum in range(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
+    # open('/tmp/raid.log', 'a').write('RebuildOne inlist=%s progress=%d\n' % (repr(inlist), progress))
     return True
 
 
@@ -167,7 +149,7 @@ def raidread(
         blockNumber,
         data_parity_dir):
     try:
-        myeccmap = eccmap.eccmap(eccmapname)
+        myeccmap = raid.eccmap.eccmap(eccmapname)
         GoodFiles = list(range(0, 200))
         MakingProgress = 1
         while MakingProgress == 1:
@@ -222,7 +204,7 @@ def raidread(
         return GoodDSegs
 
     except:
-        lg.exc()
+        traceback.print_exc()
         return None
 
 
