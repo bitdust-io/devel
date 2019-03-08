@@ -9,9 +9,11 @@ matrix:
   - name: "2.7"
     python: "2.7"
     env: REGRESSION_PY_VER=2.7.15
+    env: VENV_PYTHON_VERSION=python2.7
   - name: "3.6"
     python: "3.6"
     env: REGRESSION_PY_VER=3.6
+    env: VENV_PYTHON_VERSION=python3.6
 
 before_install:
   - set -e
