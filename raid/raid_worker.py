@@ -61,6 +61,7 @@ _DebugLevel = 8
 
 import os
 import sys
+import threading
 
 from six.moves import range
 
@@ -71,13 +72,20 @@ except:
 
 #------------------------------------------------------------------------------
 
-from logs import lg
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-from system import bpio
+#------------------------------------------------------------------------------
+
+from logs import lg
 
 from automats import automat
 
-from raid import worker
+from system import bpio
+
+from main import settings
+
 from raid import read
 from raid import make
 from raid import rebuild
@@ -85,31 +93,24 @@ from raid import rebuild
 #------------------------------------------------------------------------------
 
 _MODULES = (
-    'os',
-    'sys',
-    'StringIO',
-    'struct',
-    'logs.lg',
     'raid.read',
     'raid.make',
     'raid.rebuild',
     'raid.eccmap',
-    'raid.utils',
-    'main.settings',
-    'system.bpio',
-    'lib.misc',
-    'lib.packetid',
+    'raid.raidutils',
+    'os',
+    'sys',
     'copy',
     'array',
+    'traceback',
+    'six',
+    'io',
 )
 
 _VALID_TASKS = {
-    'make': (make.do_in_memory,
-             (make.RoundupFile, make.ReadBinaryFile, make.WriteFile, make.ReadBinaryFileAsArray)),
-    'read': (read.raidread,
-             (read.RebuildOne, read.ReadBinaryFile,)),
-    'rebuild': (rebuild.rebuild,
-                ()),
+    'make': (make.do_in_memory, (make.RoundupFile, make.ReadBinaryFile, make.WriteFile, make.ReadBinaryFileAsArray, )),
+    'read': (read.raidread, (read.RebuildOne, read.ReadBinaryFile, )),
+    'rebuild': (rebuild.rebuild, ()),
 }
 
 #------------------------------------------------------------------------------
@@ -303,7 +304,17 @@ class RaidWorker(automat.Automat):
             # TODO: make an option in the software settings
             ncpus = int(ncpus / 2.0)
 
-        self.processor = worker.Manager(ncpus=ncpus)
+        if True:
+            from parallelp import pp
+            self.processor = pp.Server(
+                secret='bitdust',
+                ncpus=ncpus,
+                loglevel=lg.get_loging_level(_DebugLevel),
+                logfile=settings.ParallelPLogFilename(),
+            )
+        else:
+            from raid import worker
+            self.processor = worker.Manager(ncpus=ncpus)
 
         self.automat('process-started')
 
@@ -331,9 +342,9 @@ class RaidWorker(automat.Automat):
         global _VALID_TASKS
         global _MODULES
 
-        if len(self.activetasks) >= self.processor.ncpus:
+        if len(self.activetasks) >= self.processor.get_ncpus():
             lg.warn('SKIP active=%d cpus=%d' % (
-                    len(self.activetasks), self.processor.ncpus))
+                    len(self.activetasks), self.processor.get_ncpus()))
             return
 
         try:
@@ -345,35 +356,35 @@ class RaidWorker(automat.Automat):
 
         proc = self.processor.submit(
             func,
-            params,
+            args=params,
+            depfuncs=depfuncs,
+            modules=_MODULES,
             callback=lambda result: self._job_done(task_id, cmd, params, result),
-            error_callback=lambda err: self._job_failed(task_id, cmd, params, err),
+            # error_callback=lambda err: self._job_failed(task_id, cmd, params, err),
         )
 
         self.activetasks[task_id] = (proc, cmd, params)
         if _Debug:
-            lg.out(_DebugLevel, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
-                task_id, len(self.activetasks), self.processor.ncpus))
+            lg.out(_DebugLevel, 'raid_worker.doStartTask %r active=%d cpus=%d %s' % (
+                task_id, len(self.activetasks), self.processor.get_ncpus(), threading.currentThread().getName()))
+
         reactor.callLater(0.01, self.automat, 'task-started', task_id)  # @UndefinedVariable
 
     def doReportTaskDone(self, *args, **kwargs):
         """
         Action method.
         """
-        try:
-            task_id, cmd, params, result = args[0]
-            cb = self.callbacks.pop(task_id)
-            reactor.callLater(0, cb, cmd, params, result)  # @UndefinedVariable
-            if result is not None:
-                if _Debug:
-                    lg.out(_DebugLevel, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
-                        len(self.callbacks), len(self.tasks), len(self.activetasks)))
-            else:
-                if _Debug:
-                    lg.out(_DebugLevel, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
-                        len(self.callbacks), len(self.tasks), len(self.activetasks)))
-        except:
-            lg.exc()
+        task_id, cmd, params, result = args[0]
+        cb = self.callbacks.pop(task_id)
+        reactor.callLater(0, cb, cmd, params, result)  # @UndefinedVariable
+        if result is not None:
+            if _Debug:
+                lg.out(_DebugLevel, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
 
     def doReportTasksFailed(self, *args, **kwargs):
         """
@@ -399,9 +410,9 @@ class RaidWorker(automat.Automat):
 
     def _job_done(self, task_id, cmd, params, result):
         if _Debug:
-            lg.out(_DebugLevel, 'raid_worker._job_done %r : %r active:%r cmd=%r params=%r' % (
-                task_id, result, list(self.activetasks.keys()), cmd, params))
-        self.automat('task-done', (task_id, cmd, params, result))
+            lg.out(_DebugLevel, 'raid_worker._job_done %r : %r active:%r cmd=%r params=%r %s' % (
+                task_id, result, list(self.activetasks.keys()), cmd, params, threading.currentThread().getName()))
+        reactor.callFromThread(self.automat, 'task-done', (task_id, cmd, params, result))  # @UndefinedVariable
 
     def _job_failed(self, task_id, cmd, params, err):
         lg.err('task %r FAILED : %r   active:%r cmd=%r params=%r' % (
@@ -410,21 +421,37 @@ class RaidWorker(automat.Automat):
 
     def _kill_processor(self):
         if self.processor:
-            self.processor.terminate()
+            self.processor.destroy()
             if _Debug:
                 lg.out(_DebugLevel, 'raid_worker._kill_processor processor was destroyed')
 
 
 #------------------------------------------------------------------------------
 
+def _read_done(cmd, taskdata, result):
+    lg.out(0, '_read_done %r %r %r' % (cmd, taskdata, result))
+    A('shutdown')
+    reactor.stop()  # @UndefinedVariable
+
+
+def _make_done(cmd, taskdata, result):
+    lg.out(0, '_make_done %r %r %r' % (cmd, taskdata, result))
+    reactor.callLater(0.5, add_task, 'read', ('/tmp/destination.txt', 'ecc/18x18', 'F12345678', '5', '/tmp/raidtest'), _read_done)  # @UndefinedVariable
+
 
 def main():
-    def _cb(cmd, taskdata, result):
-        print(cmd, taskdata, result)
+    import base64
+
     bpio.init()
     lg.set_debug_level(20)
+
+    os.system('rm -rf /tmp/raidtest')
+    os.system('mkdir -p /tmp/raidtest/F12345678')
+    open('/tmp/source.txt', 'w').write(base64.b64encode(os.urandom(1000)).decode())
+
     reactor.callWhenRunning(A, 'init')  # @UndefinedVariable
-    reactor.callLater(0.5, A, 'new-task', ('make', _cb, ('sdfsdf', '45', '324', '45')))  # @UndefinedVariable
+    reactor.callLater(0.5, add_task, 'make', ('/tmp/source.txt', 'ecc/18x18', 'F12345678', '5', '/tmp/raidtest/F12345678'), _make_done)  # @UndefinedVariable
+
     reactor.run()  # @UndefinedVariable
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import time
 import subprocess
 
 
-class Test(TestCase):
+class TestMakeRead(TestCase):
 
     def setUp(self):
         t = time.time()

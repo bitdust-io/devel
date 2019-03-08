@@ -50,7 +50,6 @@
 
 from __future__ import absolute_import
 from io import open
-from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -68,31 +67,10 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
-from logs import lg
-
-from raid import eccmap
-from raid import raidutils
+import raid.eccmap
+import raid.raidutils
 
 #------------------------------------------------------------------------------
-
-_ECCMAP = {}
-
-#------------------------------------------------------------------------------
-
-def geteccmap(name):
-    global _ECCMAP
-    if name not in _ECCMAP:
-        _ECCMAP[name] = eccmap.eccmap(name)
-    return _ECCMAP[name]
-
-#------------------------------------------------------------------------------
-
-def shutdown():
-    global _ECCMAP
-    _ECCMAP.clear()
-
-#------------------------------------------------------------------------------
-
 
 def RoundupFile(filename, stepsize):
     """
@@ -162,7 +140,7 @@ def ReadBinaryFileAsArray(filename):
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     try:
         INTSIZE = 4
-        myeccmap = eccmap.eccmap(eccmapname)
+        myeccmap = raid.eccmap.eccmap(eccmapname)
         # any padding at end and block.Length fixes
         RoundupFile(filename, myeccmap.datasegments * INTSIZE)
         wholefile = ReadBinaryFileAsArray(filename)
@@ -172,7 +150,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     
         #: dict of data segments
         sds = {}
-        for seg_num, chunk in enumerate(raidutils.chunks(wholefile, int(seglength / 4))):
+        for seg_num, chunk in enumerate(raid.raidutils.chunks(wholefile, int(seglength / 4))):
             FileName = targetDir + '/' + str(blockNumber) + '-' + str(seg_num) + '-Data'
             with open(FileName, "wb") as f:
                 chunk_to_write = copy.copy(chunk)
@@ -180,7 +158,7 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
                 sds[seg_num] = iter(chunk)
                 f.write(chunk_to_write)
     
-        psds_list = raidutils.build_parity(
+        psds_list = raid.raidutils.build_parity(
             sds, int(seglength / INTSIZE), myeccmap.datasegments, myeccmap, myeccmap.paritysegments)
     
         dataNum = len(sds)
@@ -194,13 +172,12 @@ def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
         return dataNum, parityNum
 
     except:
-        lg.exc()
+        import traceback
+        traceback.print_exc()
         return -1, -1
 
 
 def main():
-    from logs import lg
-    lg.set_debug_level(18)
     do_in_memory(
         filename=sys.argv[1],
         eccmapname=sys.argv[2],

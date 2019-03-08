@@ -591,10 +591,14 @@ class BackupRebuilder(automat.Automat):
         lg.out(10, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
             (BlockNumber, self.blockIndex, str(self.workingBlocksQueue))))
         task_params = (
-            self.currentBackupID, BlockNumber, eccmap.Current(),
+            self.currentBackupID,
+            BlockNumber,
+            eccmap.Current().name,
             backup_matrix.GetActiveArray(),
             backup_matrix.GetRemoteMatrix(self.currentBackupID, BlockNumber),
-            backup_matrix.GetLocalMatrix(self.currentBackupID, BlockNumber),)
+            backup_matrix.GetLocalMatrix(self.currentBackupID, BlockNumber),
+            settings.getLocalBackupsDir(),
+        )
         raid_worker.add_task(
             'rebuild',
             task_params,
