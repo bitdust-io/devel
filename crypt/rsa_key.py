@@ -147,6 +147,7 @@ class RSAKey(object):
         return signature_raw
 
     def verify(self, signature, message, signature_as_digits=True):
+        signature_bytes = signature
         if signature_as_digits:
             signature_text = strng.to_text(signature)
             signature_int = int(signature_text)
@@ -163,7 +164,8 @@ class RSAKey(object):
             result = True
         except (ValueError, TypeError, ):
             if _Debug:
-                lg.exc()
+                lg.exc(msg='signature=%r\nmessage=%r\nsignature_as_digits=%r\n' % (
+                    signature, message, signature_as_digits))
             result = False
         return result
 
