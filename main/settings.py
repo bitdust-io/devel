@@ -236,6 +236,13 @@ def TransportLog():
     return os.path.join(LogsDir(), 'transport.log')
 
 
+def ParallelPLogFilename():
+    """
+    Log from parallelp workers goes here, raid code is executed inside child processes.
+    """
+    return os.path.join(LogsDir(), 'parallelp.log')
+
+
 def LocalTesterLogFilename():
     """
     A file name path where bptester.py will write its logs.

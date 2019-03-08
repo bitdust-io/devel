@@ -142,7 +142,7 @@ class RestoreWorker(automat.Automat):
                  OutputFile,
                  KeyID=None,
                  debug_level=_DebugLevel,
-                 log_events=_Debug,
+                 log_events=False,
                  log_transitions=_Debug,
                  publish_events=False,
                  **kwargs):

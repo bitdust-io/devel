@@ -1,0 +1,34 @@
+Parallel Python and Py2EXE
+--------------------------
+
+This project is demostration how to bundle a program which is using Parallel Python (parallelpython.com) into the .exe via py2exe.
+
+* Requirement (what I have used):
+
+Windows XP, Python 2.5 from python.org, py2exe module
+
+* Introduction:
+
+Parallel Python starts new processes with subprocess.popen() function (on a local machine). The input and output is encoded with "pickle" and transfered via pipe between the processes. Traditionaly the new workers are started as: "python -u ppworker.py" with complete path.
+Location of python interpreter is detected as sys.executable, location of ppworker.py is derived from __file__.
+
+Pickle must be able to read the source code of the function, so .pyc is not enough. A simple proxy function with available source code is enough.
+Details: http://www.parallelpython.com/component/option,com_smf/Itemid,29/topic,206.0
+
+Py2exe exectuble is a stripped version of python interpreter, renamed according your script name (so script.exe instead of python.exe). Your script is embeded inside of the .exe file resources and executed during the start of the exe. All dependent python modules are compiled into .pyc/.pyo and zipped into library.zip (which can have different name or can be bundled in the .exe resources as well). Details: http://www.py2exe.org/index.cgi/FAQ
+
+* Usage:
+
+python setup.py
+
+cd dist
+sum_primes.exe
+
+* Notes:
+
+In the setup.py is an extra "zip" step to include the source code of function necessary for pickle functionality used in parallel python.
+
+We must distribute the python.exe binary as well, because py2exe does not correctly implement the "unbuffered" option.
+Once the "python -u" equivalent is available via py2exe, we have more options:
+ - Distribute special ppworker.exe (compiled from ppworker.py)
+ - Implement something like http://docs.python.org/dev/library/multiprocessing.html#multiprocessing.freeze%5Fsupport for pp.

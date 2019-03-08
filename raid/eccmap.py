@@ -53,13 +53,15 @@ Numbering is from 0 to 63 for range of 64.
 
 from __future__ import absolute_import
 from __future__ import print_function
-import os
-import re
-import threading
-
-from logs import lg
 from six.moves import range
 from io import open
+
+import os
+import re
+# import threading
+import traceback
+
+# from logs import lg
 
 #------------------------------------------------------------------------------
 
@@ -308,7 +310,8 @@ def ReadTextFile(filename):
         # Windows/Linux trouble with text files
         return data.replace('\r\n', '\n')
     except:
-        lg.exc()
+        # lg.exc()
+        traceback.print_exc()
     return ''
 
 #------------------------------------------------------------------------------
@@ -334,13 +337,13 @@ class eccmap:
         self.type = 0             # 0 is data+parity on same nodes, 1 is different
         self.from_memory(self.name)
         self.convert()
-        lg.out(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
+        # lg.out(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
 
-    def __del__(self):
-        try:
-            lg.out(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
-        except:
-            pass
+    # def __del__(self):
+    #     try:
+    #         # lg.out(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
+    #     except:
+    #         pass
 
     def __repr__(self):
         return '%s' % self.name
@@ -398,8 +401,9 @@ class eccmap:
                     if datanum > maxdata:
                         maxdata = datanum
                 except (TypeError, ValueError):
-                    lg.out(1, 'eccmap.from_memory ERROR')
-                    lg.exc()
+                    # lg.out(1, 'eccmap.from_memory ERROR')
+                    # lg.exc()
+                    traceback.print_exc()
             if oneset:
                 self.ParityToData.append(oneset)
                 maxparity += 1
@@ -432,7 +436,8 @@ class eccmap:
                     if datanum > maxdata:
                         maxdata = datanum
                 except (TypeError, ValueError):
-                    lg.exc()
+                    # lg.exc()
+                    traceback.print_exc()
             if oneset:
                 self.ParityToData.append(oneset)
                 maxparity += 1
@@ -539,7 +544,8 @@ class eccmap:
                         if DataSegs[DataNum] != 1:  # if this data is missing
                             missing += 1  # increase count of those missing in this parity
                     except:
-                        lg.exc()
+                        # lg.exc()
+                        traceback.print_exc()
                         return False
                         #     keep track of the last missing in case only one is missing
                 if missing == 1:                # if missing exactly 1 of datas in parity, we can fix the data, have work to do
@@ -552,7 +558,8 @@ class eccmap:
                         if DataSegs[DataNum] != 1:  # if this data is missing
                             missing += 1  # increase count of those missing in this parity
                     except:
-                        lg.exc()
+                        # lg.exc()
+                        traceback.print_exc()
                         return False
                         #     keep track of the last missing in case only one is missing
                 if missing == 0:                # if missing none of the data for this parity, we have work to do
@@ -587,6 +594,7 @@ class eccmap:
                     if (len(bestParityMap) == 0) or (len(Parity) < len(bestParityMap)):
                         bestParityNum = paritynum
                         bestParityMap = Parity
+        # open('/tmp/raid.log', 'a').write('bestParityNum=%r bestParityMap=%r\n' % (bestParityNum, bestParityMap))
         return bestParityNum, bestParityMap
 
 #------------------------------------------------------------------------------

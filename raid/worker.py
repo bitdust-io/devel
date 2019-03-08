@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 # rebuild.py
 #
 # Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
@@ -20,17 +20,37 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-import multiprocessing
-import time
-import traceback
-from collections import OrderedDict
-from threading import Thread, Lock
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
 import six
 
-queue = multiprocessing.Queue()
+#------------------------------------------------------------------------------
 
-lock = Lock()
+_Debug = True
+_DebugLevel = 6
 
+#------------------------------------------------------------------------------
+
+import os
+import time
+import traceback
+import multiprocessing
+
+from collections import OrderedDict
+
+from threading import Thread, Lock
+
+#------------------------------------------------------------------------------
+
+from logs import lg
+
+#------------------------------------------------------------------------------
+
+_WorkerQueue = multiprocessing.Queue()
+_WorkerLock = Lock()
+
+#------------------------------------------------------------------------------
 
 class my_decorator_class(object):
 
@@ -49,40 +69,22 @@ class my_decorator_class(object):
             res = e
         finally:
             try:
-                queue.put(1)
+                _WorkerQueue.put(1)
             except Exception:
                 print('worker got Exception in queue -- exiting')
 
         return res
 
 
-# def _initializer_worker(queue_cancel):
-#     print(os.getpid(), '_initializer_worker', queue_cancel)
-#
-#     def func():
-#         while True:
-#             value = pipea.recv()
-#             print(os.getpid(), 'value', value)
-#             # tid = joinable_cancel_task.get()
-#             process = multiprocessing.current_process()
-#             print('kill process %s. tid - %s' % (process.pid, value))
-#             os.kill(process.pid, signal.SIGTERM)
-#             time.sleep(1)
-#
-#     thread = Thread(target=func)
-#     thread.daemon = True
-#     thread.start()
-
-
 def func_thread(tasks, pool):
     while True:
         try:
-            queue.get()
+            _WorkerQueue.get()
         except (EOFError, OSError, IOError):
             print('publisher got EOFError or OSError or IOError -- exiting')
             break
 
-        with lock:
+        with _WorkerLock:
             try:
                 task = tasks.popitem(last=False)
             except KeyError:
@@ -90,27 +92,30 @@ def func_thread(tasks, pool):
 
         if task:
             func, params, callback, error_callback, task_id = task[1]
-
+            if _Debug:
+                lg.out(_DebugLevel, 'raid.worker.func_thread is going to apply task %s' % task_id)
             if six.PY3:
                 pool.apply_async(func=func, args=params + (task_id,), callback=callback, error_callback=error_callback)
             else:
                 pool.apply_async(func=func, args=params + (task_id,), callback=callback)
         else:
             try:
-                queue.put(1)
+                _WorkerQueue.put(1)
             except Exception:
                 print('publisher got Exception with queue -- exiting')
                 break
 
             time.sleep(0.1)
 
-    print('close pool')
     pool.terminate()
 
 
 class Task(object):
+
     def __init__(self, task_id):
         self.task_id = task_id
+        if _Debug:
+            lg.out(_DebugLevel, 'raid.worker.Task created  task_id=%s' % task_id)
 
     @property
     def tid(self):
@@ -118,10 +123,28 @@ class Task(object):
 
 
 class Manager(object):
+
     def __init__(self, ncpus):
         self._ncpus = ncpus
 
+        if six.PY34:
+            try:
+                multiprocessing.set_start_method('spawn')
+            except RuntimeError:
+                pass
+
+        multiprocessing.util.log_to_stderr(multiprocessing.util.SUBDEBUG)
+
+        from system import bpio
+        if bpio.Windows():
+            from system import deploy
+            deploy.init_base_dir()
+            venv_python_path = os.path.join(deploy.current_base_dir(), 'venv', 'Scripts', 'BitDustNode.exe')
+            lg.info('will use %s as multiprocessing executable' % venv_python_path)
+            multiprocessing.set_executable(venv_python_path)
+
         self.processor = multiprocessing.Pool(ncpus)
+
         #: implement queue per Manager instance
         # self.queue = multiprocessing.Queue()
 
@@ -136,13 +159,12 @@ class Manager(object):
 
     def _propagate_queue(self):
         for i in range(self.ncpus):
-            queue.put(1)
+            _WorkerQueue.put(1)
 
     def submit(self, func, params, callback, error_callback=None):
-        with lock:
+        with _WorkerLock:
             self.task_id += 1
             self.tasks[self.task_id] = (my_decorator_class(target=func), params, callback, error_callback, self.task_id)
-
         return Task(self.task_id)
 
     @property
@@ -153,7 +175,7 @@ class Manager(object):
         self.processor.terminate()
 
     def cancel(self, task_id):
-        with lock:
+        with _WorkerLock:
             try:
                 del self.tasks[task_id]
             except KeyError:

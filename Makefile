@@ -34,7 +34,7 @@ VENV=${HOME}/.bitdust/venv
 PIP=${VENV}/bin/pip
 PIP_NEW=venv/bin/pip
 # REGRESSION_PY_VER=3.6
-VENV_PYTHON_VERSION=python2.7
+# VENV_PYTHON_VERSION=python3.6
 CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
@@ -107,8 +107,7 @@ test_unit: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
-	$(PYTHON_NEW) -m unittest discover -p "test_raid.py" -v
-	$(PYTHON_NEW) -m unittest discover -p "test_raid_worker.py" -v
+	$(PYTHON_NEW) -m unittest tests.test_raid_worker
 
 test_regression:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
