@@ -33,6 +33,10 @@ import six
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+
+#------------------------------------------------------------------------------
+
 def dict_keys_to_text(dct, encoding='utf-8', errors='strict'):
     """
     Returns dict where all keys are converted to text strings.
@@ -190,28 +194,36 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
     if values_to_text:
         obj = dict_values_to_text(obj, encoding=encoding, errors=enc_errors)
 
-    if six.PY2:
-        return json.dumps(
-            obj=obj,
-            indent=indent,
-            separators=separators,
-            sort_keys=sort_keys,
-            ensure_ascii=ensure_ascii,
-            default=_to_text,
-            encoding=encoding,
-            **kw
-        )
-
-    else:
-        return json.dumps(
-            obj=obj,
-            indent=indent,
-            separators=separators,
-            sort_keys=sort_keys,
-            ensure_ascii=ensure_ascii,
-            default=_to_text,
-            **kw
-        )
+    try:
+        if six.PY2:
+            return json.dumps(
+                obj=obj,
+                indent=indent,
+                separators=separators,
+                sort_keys=sort_keys,
+                ensure_ascii=ensure_ascii,
+                default=_to_text,
+                encoding=encoding,
+                **kw
+            )
+        else:
+            return json.dumps(
+                obj=obj,
+                indent=indent,
+                separators=separators,
+                sort_keys=sort_keys,
+                ensure_ascii=ensure_ascii,
+                default=_to_text,
+                **kw
+            )
+    except Exception as exc:
+        if _Debug:
+            import os
+            import tempfile
+            fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_dumps_', text=True)
+            os.write(fd, repr(obj))
+            os.close(fd)
+        raise exc
 
 
 #------------------------------------------------------------------------------
@@ -230,11 +242,20 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
             return {(k.encode(encoding) if isinstance(k, six.text_type) else k) : v for k, v in dct.items()}
         return dct
 
-    return json.loads(
-        s=s,
-        object_hook=_to_bin,
-        **kw
-    )
+    try:
+        return json.loads(
+            s=s,
+            object_hook=_to_bin,
+            **kw
+        )
+    except Exception as exc:
+        if _Debug:
+            import os
+            import tempfile
+            fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
+            os.write(fd, s)
+            os.close(fd)
+        raise exc
 
 #------------------------------------------------------------------------------
 
@@ -246,8 +267,17 @@ def loads_text(s, encoding='utf-8', **kw):
 
     enc_errors = kw.pop('errors', 'strict')
 
-    return json.loads(
-        s=s,
-        object_hook=lambda itm: dict_items_to_text(itm, encoding=encoding, errors=enc_errors),
-        **kw
-    )
+    try:
+        return json.loads(
+            s=s,
+            object_hook=lambda itm: dict_items_to_text(itm, encoding=encoding, errors=enc_errors),
+            **kw
+        )
+    except Exception as exc:
+        if _Debug:
+            import os
+            import tempfile
+            fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
+            os.write(fd, s)
+            os.close(fd)
+        raise exc
