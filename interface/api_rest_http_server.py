@@ -463,7 +463,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             remote_path=data['remote_path'],
             destination_path=data.get('destination_folder', None),
             wait_result=bool(data.get('wait_result', '0') in ['1', 'true', ]),
-            open_share=bool(data.get('open_share', '0') in ['1', 'true', ]),
+            open_share=bool(data.get('open_share', '1') in ['1', 'true', ]),
         )
 
     @POST('^/f/d/c$')

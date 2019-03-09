@@ -41,7 +41,7 @@ from io import BytesIO
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
 
-_Debug = True
+_Debug = False
 
 import sys
 import os

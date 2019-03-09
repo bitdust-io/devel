@@ -121,7 +121,12 @@ def A(event=None, *args, **kwargs):
     global _BackupRebuilder
     if _BackupRebuilder is None:
         _BackupRebuilder = BackupRebuilder(
-            'backup_rebuilder', 'STOPPED', _DebugLevel)
+            name='backup_rebuilder',
+            state='STOPPED',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _BackupRebuilder.automat(event, *args, **kwargs)
     return _BackupRebuilder
