@@ -141,14 +141,11 @@ class _Task(object):
         """
         if self.sresult is not None:
             raw = self.sresult
-            # if isinstance(raw, six.text_type):
-            #     raw = raw.encode('latin1')
             try:
                 self.result, sout = json.loads(raw)['v']
             except:
                 traceback.print_exc()
                 print(raw)
-            # self.result, sout = pickle.loads(raw)
             if len(sout) > 0:
                 print(sout, end=' ')
         else:
@@ -171,7 +168,6 @@ class _Worker(object):
         """
         self.restart_on_free = restart_on_free
         self.pickle_proto = pickle_proto
-        # print '_Worker', self.command, os.path.abspath('.')
         self.start()
 
     def start(self):
@@ -192,7 +188,6 @@ class _Worker(object):
                     universal_newlines=False,
                     creationflags=win32process.CREATE_NO_WINDOW,
                     env=my_env,
-                    # encoding='latin1',
                 )
                 self.t = pptransport.PipeTransport(proc.stdout, proc.stdin)
             else:
@@ -220,14 +215,11 @@ class _Worker(object):
                         stderr=subprocess.PIPE,
                         universal_newlines=False,
                         env=my_env,
-                        # encoding='latin1',
                     )
                     self.t = pptransport.PipeTransport(proc.stdout, proc.stdin)
         else:
             self.t = pptransport.PipeTransport(*popen2.popen3(self.command)[:2])
         self.pid = int(self.t.receive())
-        # self.t.send(str(self.pickle_proto))
-        # self.t.send(str(self.pickle_proto).encode('latin1'))
         self.is_free = True
         logging.info('Started new worker: %s with %s', self.pid, self.t)
 
@@ -271,7 +263,6 @@ class _RWorker(pptransport.CSocketTransport):
         self.secret = secret
         self.address = (host, port)
         self.id = host + ":" + six.text_type(port)
-        # self.id = host + ":" + str(port)
         logging.info("Creating Rworker id=%s persistent=%s"
                      % (self.id, persistent))
         self.connect(message)
@@ -304,7 +295,6 @@ class _RWorker(pptransport.CSocketTransport):
                     logging.info("Deleting from queue Rworker %s"
                                  % (self.id, ))
                     return False
-#                print sys.excepthook(*sys.exc_info())
                 logging.info("Failed to reconnect with "
                              "(host=%s, port=%i), will try again in %i s"
                              % (self.host, self.port, _RECONNECT_WAIT_TIME))
@@ -404,7 +394,7 @@ class Server(object):
             raise TypeError("ppservers argument must be a tuple")
 
         self.__initlog(loglevel, logstream=logstream, logfile=logfile)
-        logging.info("Creating server instance (pp-" + version + ")")
+        logging.info("Creating server instance (pp-" + version + ")" + repr(self))
         self.__tid = 0
         self.__active_tasks = 0
         self.__active_tasks_lock = six.moves._thread.allocate_lock()

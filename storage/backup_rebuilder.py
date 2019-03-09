@@ -599,13 +599,7 @@ class BackupRebuilder(automat.Automat):
             backup_matrix.GetLocalMatrix(self.currentBackupID, BlockNumber),
             settings.getLocalBackupsDir(),
         )
-        raid_worker.add_task(
-            'rebuild',
-            task_params,
-            lambda cmd,
-            params,
-            result: self._block_finished(result, params),
-        )
+        raid_worker.add_task('rebuild', task_params, lambda cmd, params, result: self._block_finished(result, params))
 
     def _block_finished(self, result, params):
         if not result:

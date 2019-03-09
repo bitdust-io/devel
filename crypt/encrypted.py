@@ -279,6 +279,7 @@ def Unserialize(data, decrypt_key=None):
             CreatorID=dct['c'],
             BackupID=strng.to_text(dct['b']),
             BlockNumber=dct['n'],
+            LastBlock=dct['e'],
             EncryptedSessionKey=base64.b64decode(strng.to_bin(dct['k'])),
             SessionKeyType=dct['t'],
             Length=dct['l'],

@@ -79,6 +79,10 @@ import raid.eccmap
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+
+#------------------------------------------------------------------------------
+
 def ReadBinaryFile(filename):
     """
     """
@@ -129,7 +133,8 @@ def RebuildOne(inlist, listlen, outfilename):
     for filenum in range(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
-    # open('/tmp/raid.log', 'a').write('RebuildOne inlist=%s progress=%d\n' % (repr(inlist), progress))
+    if _Debug:
+        open('/tmp/raid.log', 'a').write(u'RebuildOne inlist=%r progress=%d\n' % (repr(inlist), progress))
     return True
 
 
@@ -149,6 +154,8 @@ def raidread(
         blockNumber,
         data_parity_dir):
     try:
+        if _Debug:
+            open('/tmp/raid.log', 'a').write(u'raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
         myeccmap = raid.eccmap.eccmap(eccmapname)
         GoodFiles = list(range(0, 200))
         MakingProgress = 1
@@ -201,10 +208,13 @@ def raidread(
                 moredata = open(FileName, "rb").read()
                 output.write(moredata)
         output.close()
+        if _Debug:
+            open('/tmp/raid.log', 'a').write(u'GoodDSegs=%d\n' % GoodDSegs)
         return GoodDSegs
 
     except:
-        traceback.print_exc()
+        if _Debug:
+            open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
         return None
 
 

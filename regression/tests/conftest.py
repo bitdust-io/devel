@@ -98,7 +98,7 @@ ALL_ROLES = {
         'supplier_8',
     ],
     'customers': [
-        {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, },
+        {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, 'block_size': '10 KB', },
         {'name': 'customer_2', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
         {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },

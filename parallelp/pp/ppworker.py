@@ -41,6 +41,8 @@ from io import BytesIO
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
 
+_Debug = True
+
 import sys
 import os
 import json
@@ -65,13 +67,14 @@ def preprocess(msg):
             try:
                 globals()[module.split('.')[0]] = __import__(module)
             except:
-                # open('/tmp/raid.log', 'a').write(traceback.format_exc())
+                if _Debug:
+                    open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
                 # print("An error has occured during the module import")
                 sys.excepthook(*sys.exc_info())
         return fname, fobjs
     except Exception as exc:
-        pass
-        # open('/tmp/raid.log', 'a').write(traceback.format_exc() + '\n\n%s' % msg)
+        if _Debug:
+            open('/tmp/raid.log', 'a').write(u'%s\n%s\n' % (traceback.format_exc(), msg))            
 
 
 class _WorkerProcess(object):
@@ -121,8 +124,8 @@ class _WorkerProcess(object):
                 self.sout.truncate(0)
         except:
             # print("Fatal error has occured during the function execution")
-            # import traceback
-            # open('/tmp/raid.log', 'a').write(traceback.format_exc())
+            if _Debug:
+                open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
             sys.excepthook(*sys.exc_info())
             __result = None
             __sresult = json.dumps({'v': (__result, self.sout.getvalue().decode('latin1')), })
