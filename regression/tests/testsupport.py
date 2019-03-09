@@ -29,7 +29,7 @@ import json
 
 
 #------------------------------------------------------------------------------
-import aiohttp
+import aiohttp  # @UnresolvedImport
 import requests
 
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
@@ -603,7 +603,7 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2, bloc
     if block_size:
         run_ssh_command_and_wait(node, f'bitdust set services/backups/block-size {block_size}')
     # create randomized file to test file upload/download
-    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(100000)).decode())" > /{node}/file_{node}.txt')
+    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(30000)).decode())" > /{node}/file_{node}.txt')
     run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt')
     # start BitDust daemon and create new identity for supplier
     start_daemon(node)
@@ -634,7 +634,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     if block_size:
         await run_ssh_command_and_wait_async(node, f'bitdust set services/backups/block-size {block_size}', loop)
     # create randomized file to test file upload/download
-    await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(100000)).decode())" > /{node}/file_{node}.txt', loop)
+    await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(30000)).decode())" > /{node}/file_{node}.txt', loop)
     await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt', loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)

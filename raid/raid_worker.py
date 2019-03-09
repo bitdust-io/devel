@@ -54,7 +54,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ def A(event=None, *args, **kwargs):
         _RaidWorker = RaidWorker(
             name='raid_worker',
             state='AT_STARTUP',
-            debug_level=6,
+            debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
         )
