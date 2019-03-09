@@ -83,8 +83,8 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 missingParity[supplierNum] = 1
 
         if _Debug:
-            open('/tmp/raid.log', 'a').write('missingData=%r missingParity=%r\n' % (missingData, missingParity))
-            open('/tmp/raid.log', 'a').write('localData=%r localParity=%r\n' % (localData, localParity))
+            open('/tmp/raid.log', 'a').write(u'missingData=%r missingParity=%r\n' % (missingData, missingParity))
+            open('/tmp/raid.log', 'a').write(u'localData=%r localParity=%r\n' % (localData, localParity))
 
         # This made an attempt to rebuild the missing pieces
         # from pieces we have on hands.

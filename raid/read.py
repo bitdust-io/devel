@@ -134,7 +134,7 @@ def RebuildOne(inlist, listlen, outfilename):
         raidfiles[filenum].close()
     rebuildfile.close()
     if _Debug:
-        open('/tmp/raid.log', 'a').write('RebuildOne inlist=%s progress=%d\n' % (repr(inlist), progress))
+        open('/tmp/raid.log', 'a').write(u'RebuildOne inlist=%r progress=%d\n' % (repr(inlist), progress))
     return True
 
 
@@ -155,7 +155,7 @@ def raidread(
         data_parity_dir):
     try:
         if _Debug:
-            open('/tmp/raid.log', 'a').write('raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
+            open('/tmp/raid.log', 'a').write(u'raidread OutputFileName=%s blockNumber=%s eccmapname=%s\n' % (repr(OutputFileName), blockNumber, eccmapname))
         myeccmap = raid.eccmap.eccmap(eccmapname)
         GoodFiles = list(range(0, 200))
         MakingProgress = 1
@@ -209,12 +209,12 @@ def raidread(
                 output.write(moredata)
         output.close()
         if _Debug:
-            open('/tmp/raid.log', 'a').write('GoodDSegs=%d\n' % GoodDSegs)
+            open('/tmp/raid.log', 'a').write(u'GoodDSegs=%d\n' % GoodDSegs)
         return GoodDSegs
 
     except:
         if _Debug:
-            open('/tmp/raid.log', 'a').write(traceback.format_exc())
+            open('/tmp/raid.log', 'a').write(u'%s\n' % traceback.format_exc())
         return None
 
 

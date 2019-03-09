@@ -144,7 +144,7 @@ def ReadBinaryFileAsArray(filename):
 def do_in_memory(filename, eccmapname, version, blockNumber, targetDir):
     try:
         if _Debug:
-            open('/tmp/raid.log', 'a').write('do_in_memory filename=%s eccmapname=%s blockNumber=%s\n' % (repr(filename), eccmapname, blockNumber))
+            open('/tmp/raid.log', 'a').write(u'do_in_memory filename=%s eccmapname=%s blockNumber=%s\n' % (repr(filename), eccmapname, blockNumber))
         INTSIZE = 4
         myeccmap = raid.eccmap.eccmap(eccmapname)
         # any padding at end and block.Length fixes

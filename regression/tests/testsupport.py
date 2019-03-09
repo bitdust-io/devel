@@ -583,7 +583,7 @@ async def start_supplier_async(node, identity_name, loop):
     print(f'\nSTARTED SUPPLIER [{node}]\n')
 
 
-def start_customer(node, identity_name, join_network=True, num_suppliers=2):
+def start_customer(node, identity_name, join_network=True, num_suppliers=2, block_size=None):
     print(f'\nNEW CUSTOMER {identity_name} at [{node}]\n')
     # use short key to run tests faster
     run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')
@@ -600,8 +600,10 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2):
     # enable customer service and prepare tests
     run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')
     run_ssh_command_and_wait(node, f'bitdust set services/customer/suppliers-number {num_suppliers}')
+    if block_size:
+        run_ssh_command_and_wait(node, f'bitdust set services/backups/block-size {block_size}')
     # create randomized file to test file upload/download
-    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/file_{node}.txt')
+    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(100000)).decode())" > /{node}/file_{node}.txt')
     run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt')
     # start BitDust daemon and create new identity for supplier
     start_daemon(node)
@@ -612,7 +614,7 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2):
     print(f'\nSTARTED CUSTOMER [{node}]\n')
 
 
-async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2):
+async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
@@ -629,8 +631,10 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     # enable customer service and prepare tests
     await run_ssh_command_and_wait_async(node, 'bitdust set services/customer/enabled true', loop)
     await run_ssh_command_and_wait_async(node, f'bitdust set services/customer/suppliers-number {num_suppliers}', loop)
+    if block_size:
+        await run_ssh_command_and_wait_async(node, f'bitdust set services/backups/block-size {block_size}', loop)
     # create randomized file to test file upload/download
-    await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/file_{node}.txt', loop)
+    await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(100000)).decode())" > /{node}/file_{node}.txt', loop)
     await run_ssh_command_and_wait_async(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt', loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
@@ -664,6 +668,7 @@ async def start_one_customer_async(customer, loop):
         identity_name=customer['name'],
         join_network=customer['join_network'],
         num_suppliers=customer['num_suppliers'],
+        block_size=customer.get('block_size'),
         loop=loop,
     )
 
