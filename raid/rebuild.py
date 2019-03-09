@@ -38,6 +38,10 @@ import raid.eccmap
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+
+#------------------------------------------------------------------------------
+
 def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix, localBackupsDir):
     try:
         customer, _, localPath = backupID.rpartition(':')
@@ -78,8 +82,9 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
             if remoteParity[supplierNum] != 1:
                 missingParity[supplierNum] = 1
 
-        # open('/tmp/raid.log', 'a').write('missingData=%r missingParity=%r\n' % (missingData, missingParity))
-        # open('/tmp/raid.log', 'a').write('localData=%r localParity=%r\n' % (localData, localParity))
+        if _Debug:
+            open('/tmp/raid.log', 'a').write('missingData=%r missingParity=%r\n' % (missingData, missingParity))
+            open('/tmp/raid.log', 'a').write('localData=%r localParity=%r\n' % (localData, localParity))
 
         # This made an attempt to rebuild the missing pieces
         # from pieces we have on hands.

@@ -58,10 +58,11 @@ from io import open
 
 import os
 import re
-# import threading
 import traceback
 
-# from logs import lg
+#------------------------------------------------------------------------------
+
+_Debug = True
 
 #------------------------------------------------------------------------------
 
@@ -594,7 +595,8 @@ class eccmap:
                     if (len(bestParityMap) == 0) or (len(Parity) < len(bestParityMap)):
                         bestParityNum = paritynum
                         bestParityMap = Parity
-        # open('/tmp/raid.log', 'a').write('bestParityNum=%r bestParityMap=%r\n' % (bestParityNum, bestParityMap))
+        if _Debug:
+            open('/tmp/raid.log', 'a').write('bestParityNum=%r bestParityMap=%r\n' % (bestParityNum, bestParityMap))
         return bestParityNum, bestParityMap
 
 #------------------------------------------------------------------------------

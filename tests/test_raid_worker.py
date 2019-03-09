@@ -23,14 +23,13 @@ class TestRaidWorker(TestCase):
         lg.set_debug_level(20)
 
         def _read_done(cmd, taskdata, result):
-            # self.assertEqual(result, num_suppliers)
             if read_success:
                 self.assertEqual(open('/tmp/source.txt', 'r').read(), open('/tmp/destination.txt', 'r').read())
             else:
                 self.assertNotEqual(open('/tmp/source.txt', 'r').read(), open('/tmp/destination.txt', 'r').read())
-            # os.system('rm -rf /tmp/source.txt')
-            # os.system('rm -rf /tmp/destination.txt')
-            # os.system('rm -rf /tmp/raidtest')
+            os.system('rm -rf /tmp/source.txt')
+            os.system('rm -rf /tmp/destination.txt')
+            os.system('rm -rf /tmp/raidtest')
             reactor.callLater(0, raid_worker.A, 'shutdown')  # @UndefinedVariable
             reactor.callLater(0.1, test_result.callback, True)  # @UndefinedVariable
             return True

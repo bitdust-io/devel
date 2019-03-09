@@ -178,8 +178,14 @@ class BitDustRESTHTTPServer(JsonAPIResource):
                 func_name = callback.im_func.func_name
             except:
                 func_name = callback.__name__
-            lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
-                request.method.decode(), request.uri.decode(), func_name, _args))
+            if _Debug:
+                uri = request.uri.decode()
+                if uri not in [
+                    '/event/listen/electron/v1',
+                    '/network/connected/v1',
+                ] or _DebugLevel > 10: 
+                    lg.out(_DebugLevel, '*** %s:%s   will execute   api.%s(%r)' % (
+                        request.method.decode(), uri, func_name, _args))
         return None
 
     #------------------------------------------------------------------------------

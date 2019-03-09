@@ -305,7 +305,11 @@ class backup(automat.Automat):
                 raise Exception('backup.pipe is None')
             if self.pipe.state() == nonblocking.PIPE_CLOSED:
                 if _Debug:
-                    lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
+                    lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_CLOSED')
+                return b''
+            if self.pipe.state() == nonblocking.PIPE_EMPTY:
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_EMPTY !!!!!!!!!!!!!!!!!!!!!!!!')
                 return b''
             if self.pipe.state() == nonblocking.PIPE_READY2READ:
                 try:
@@ -405,8 +409,7 @@ class backup(automat.Automat):
         outputpath = os.path.join(
             settings.getLocalBackupsDir(), self.customerGlobalID, self.pathID, self.version)
         task_params = (filename, self.eccmap.name, self.version, newblock.BlockNumber, outputpath)
-        raid_worker.add_task('make', task_params,
-                             lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
+        raid_worker.add_task('make', task_params, lambda cmd, params, result: self._raidmakeCallback(params, result, dt))
         self.automat('block-raid-started', newblock)
         del serializedblock
         if _Debug:

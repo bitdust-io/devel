@@ -545,10 +545,7 @@ class RestoreWorker(automat.Automat):
         os.close(fd)
         inputpath = os.path.join(settings.getLocalBackupsDir(), self.customer_id, self.path_id)
         task_params = (outfilename, self.EccMap.name, self.version, self.block_number, inputpath)
-        raid_worker.add_task(
-            'read',
-            task_params,
-            lambda cmd, params, result: self._on_block_restored(result, outfilename))
+        raid_worker.add_task('read', task_params, lambda cmd, params, result: self._on_block_restored(result, outfilename))
 
     def doRemoveTempFile(self, *args, **kwargs):
         """
