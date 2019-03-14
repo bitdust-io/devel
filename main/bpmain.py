@@ -251,10 +251,13 @@ def run_twisted_reactor():
     lg.out(2, 'bpmain.run_twisted_reactor Twisted reactor stopped')
 
 
-def run(UI='', options=None, args=None, overDict=None, executablePath=None):
+def run(UI='', options=None, args=None, overDict=None, executablePath=None, start_reactor=True):
     init(UI, options, args, overDict, executablePath)
-    run_twisted_reactor()
-    result = shutdown()
+    if start_reactor:
+        run_twisted_reactor()
+        result = shutdown()
+    else:
+        result = True
     return result
 
 #------------------------------------------------------------------------------
@@ -536,7 +539,7 @@ def copyright_text():
 #--- THIS IS THE ENTRY POINT OF THE PROGRAM! ---------------------------------------------------------
 
 
-def main(executable_path=None):
+def main(executable_path=None, start_reactor=True):
     """
     THIS IS THE ENTRY POINT OF THE PROGRAM!
     """
@@ -668,7 +671,7 @@ def main(executable_path=None):
         # if cmd == 'show' or cmd == 'open':
         # UI = 'show'
         try:
-            ret = run(UI, opts, args, overDict, executable_path)
+            ret = run(UI, opts, args, overDict, executable_path, start_reactor)
         except:
             lg.exc()
             ret = 1
