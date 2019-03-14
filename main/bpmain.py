@@ -552,13 +552,14 @@ def main(executable_path=None, start_reactor=True):
     cmd = ''
     if len(args) > 0:
         cmd = args[0].lower()
+
     #---install---
     if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
         from system import deploy
         return deploy.run(args)
 
     try:
-        from logs import lg
+        from system import deploy
     except:
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
@@ -566,11 +567,35 @@ def main(executable_path=None, start_reactor=True):
         from distutils.sysconfig import get_python_lib
         sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
         try:
-            from logs import lg
+            from system import deploy
         except:
             print('ERROR! can not import working code.  Python Path:')
             print('\n'.join(sys.path))
             return 1
+
+    if opts.appdir:
+        appdata = opts.appdir
+        AppDataDir = appdata
+
+    else:
+        curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
+        appdatafile = os.path.join(curdir, 'appdata')
+        # defaultappdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+        defaultappdata = deploy.base_dir_portable()
+        appdata = defaultappdata
+        if os.path.isfile(appdatafile):
+            try:
+                appdata = os.path.abspath(open(appdatafile, 'rb').read().strip())
+            except:
+                appdata = defaultappdata
+            if not os.path.isdir(appdata):
+                appdata = defaultappdata
+        AppDataDir = appdata
+
+    #---BitDust Home
+    deploy.init_base_dir(base_dir=AppDataDir)
+
+    from logs import lg
 
     # init IO module, update locale
     from system import bpio
@@ -586,24 +611,6 @@ def main(executable_path=None, start_reactor=True):
             # twisted_log.startLogging(sys.stdout)
         except:
             lg.warn('python-twisted is not installed')
-
-    if opts.appdir:
-        appdata = opts.appdir
-        AppDataDir = appdata
-
-    else:
-        curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
-        appdatafile = os.path.join(curdir, 'appdata')
-        defaultappdata = os.path.join(os.path.expanduser('~'), '.bitdust')
-        appdata = defaultappdata
-        if os.path.isfile(appdatafile):
-            try:
-                appdata = os.path.abspath(open(appdatafile, 'rb').read().strip())
-            except:
-                appdata = defaultappdata
-            if not os.path.isdir(appdata):
-                appdata = defaultappdata
-        AppDataDir = appdata
 
     # ask to count time for each log line from that moment, not absolute time
     lg.life_begins()
