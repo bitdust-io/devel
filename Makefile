@@ -198,8 +198,8 @@ docker/%:
 	$(DOCKER_COMPOSE) run --rm app make $*
 
 setup.py: venv_install
-	$(PYTHON) setup_gen.py
-	@$(PYTHON) setup.py check --restructuredtext
+	$(PYTHON_NEW) setup_gen.py
+	@$(PYTHON_NEW) setup.py check --restructuredtext
 
 fullclean:
 	@rm -rfv ~/.bitdust/
