@@ -208,6 +208,13 @@ def Mac():
     return ostype() == "Darwin"
 
 
+def Android():
+    """
+    Return True if running on Android inside Kivy.
+    """
+    return 'ANDROID_ARGUMENT' in os.environ
+
+
 def isFrozen():
     """
     Return True if BitDust is running from exe, not from sources.
