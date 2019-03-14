@@ -107,9 +107,11 @@ def base_dir_portable():
         return os.path.join(os.path.expanduser('~'), '.bitdust')
 
     elif platform.uname()[0] == "Linux":
-        if 'ANDROID_APP_PATH' in os.environ:
-            # We are on Android, it must be in /data/user/0/org.kivy.bitdust/files/app/.bitdust/
-            return os.path.join(os.environ.get('ANDROID_APP_PATH'), '.bitdust')
+        if 'ANDROID_ARGUMENT' in os.environ:
+            # We are on Android, it must be in /storage/emulated/0/.bitdust/
+            # I also tried /data/user/0/org.kivy.bitdust/files/app/.bitdust/ but then I can't browse files from other apps
+            # return os.path.join(os.environ.get('ANDROID_APP_PATH'), '.bitdust')
+            return os.path.join('/storage/emulated/0', '.bitdust')
 
         # This should be okay : /home/veselin/.bitdust/
         return os.path.join(os.path.expanduser('~'), '.bitdust')
