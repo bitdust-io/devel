@@ -171,13 +171,14 @@ class SupplierService(LocalService):
             lg.warn("broken customers file")
             return p2p_service.SendFail(newpacket, 'broken customers file')
         if customer_idurl in current_customers:
-            free_bytes += int(space_dict[customer_idurl])
+            free_bytes += int(space_dict.get(customer_idurl, 0))
             space_dict[b'free'] = free_bytes
             current_customers.remove(customer_idurl)
             space_dict.pop(customer_idurl)
             new_customer = False
         else:
             new_customer = True
+        lg.out(8, '    new_customer=%s current_allocated_bytes=%s' % (new_customer, space_dict.get(customer_idurl), ))
         from supplier import local_tester
         if free_bytes <= bytes_for_customer:
             contactsdb.update_customers(current_customers)
@@ -218,8 +219,9 @@ class SupplierService(LocalService):
             lg.warn('customer public key was not provided in the request')
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
-            lg.out(8, "    NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s family_snapshot=%r !!!!!!!!!!!!!!" % (
-                customer_idurl, family_position, ecc_map, family_snapshot, ))
+            lg.out(8, "    NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
+                customer_idurl, family_position, ecc_map, bytes_for_customer))
+            lg.out(8, "        family_snapshot=%r !!!!!!!!!!!!!!" % family_snapshot, )
             events.send('new-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
@@ -229,8 +231,9 @@ class SupplierService(LocalService):
                 key_id=customer_public_key_id,
             ))
         else:
-            lg.out(8, "    OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s family_snapshot=%r !!!!!!!!!!!!!!" % (
-                customer_idurl, family_position, ecc_map, family_snapshot, ))
+            lg.out(8, "    OLD CUSTOMER: ACCEPTED  %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
+                customer_idurl, family_position, ecc_map, bytes_for_customer))
+            lg.out(8, "        family_snapshot=%r !!!!!!!!!!!!!!" % family_snapshot)
             events.send('existing-customer-accepted', dict(
                 idurl=customer_idurl,
                 allocated_bytes=bytes_for_customer,
