@@ -222,7 +222,7 @@ class DataSender(automat.Automat):
                             continue
                         if not io_throttle.OkToSend(supplier_idurl):
                             if _Debug:
-                                lg.out(_DebugLevel, '        skip, not ok to send %s\n' % supplier_idurl)
+                                lg.out(_DebugLevel + 6, '        skip, not ok to send %s\n' % supplier_idurl)
                             continue
                         customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                         # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])

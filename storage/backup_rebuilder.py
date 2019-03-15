@@ -619,28 +619,37 @@ class BackupRebuilder(automat.Automat):
             lg.exc()
             reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
             return
+        lg.out(10, 'backup_rebuilder._block_finished   backupID=%r  blockNumber=%r  newData=%r' % (
+            _backupID, _blockNumber, newData))
+        lg.out(10, '        localData=%r  localParity=%r' % (localData, localParity))
         if newData:
             from storage import backup_matrix
             from customer import data_sender
             count = 0
             customer_idurl = packetid.CustomerIDURL(_backupID)
             for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
-                if localData[supplierNum] == 1 and reconstructedData[
-                        supplierNum] == 1:
-                    backup_matrix.LocalFileReport(
-                        None, _backupID, _blockNumber, supplierNum, 'Data')
+                try:
+                    localData[supplierNum]
+                    localParity[supplierNum]
+                    reconstructedData[supplierNum]
+                    reconstructedParity[supplierNum]
+                except:
+                    lg.err('invalid result from the task: %s' % repr(params))
+                    lg.out(10, 'result is %s' % repr(result))
+                    lg.exc()
+                    continue
+                if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
+                    backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Data')
                     count += 1
-                if localParity[supplierNum] == 1 and reconstructedParity[
-                        supplierNum] == 1:
-                    backup_matrix.LocalFileReport(
-                        None, _backupID, _blockNumber, supplierNum, 'Parity')
+                if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
+                    backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Parity')
                     count += 1
             self.blocksSucceed.append(_blockNumber)
             data_sender.A('new-data')
-            lg.out(10, 'backup_rebuilder._block_finished !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
+            lg.out(10, '        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
                 count, self.blockIndex))
         else:
-            lg.out(10, 'backup_rebuilder._block_finished NO CHANGES, blockIndex=%d' % self.blockIndex)
+            lg.out(10, '        NO CHANGES, blockIndex=%d' % self.blockIndex)
         self.blockIndex -= 1
         reactor.callLater(0, self._start_one_block)  # @UndefinedVariable
 
