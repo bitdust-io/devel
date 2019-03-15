@@ -404,8 +404,7 @@ class FireHire(automat.Automat):
                       diskspace.GetBytesFromString(settings.getNeededString()))
         if None in self.configs:
             return True
-        return self.configs[0] != curconfigs[
-            0] or self.configs[1] != curconfigs[1]
+        return self.configs[0] != curconfigs[0] or self.configs[1] != curconfigs[1]
 
     def isExistSomeSuppliers(self, *args, **kwargs):
         """
@@ -419,8 +418,8 @@ class FireHire(automat.Automat):
         """
         self.configs = (
             settings.getSuppliersNumberDesired(),
-            diskspace.GetBytesFromString(
-                settings.getNeededString()))
+            diskspace.GetBytesFromString(settings.getNeededString()),
+        )
 
     def doConnectSuppliers(self, *args, **kwargs):
         """
@@ -437,6 +436,9 @@ class FireHire(automat.Automat):
                     supplier_idurl=supplier_idurl,
                     customer_idurl=my_id.getLocalID(),
                 )
+            else:
+                sc.needed_bytes = None
+                sc.do_calculate_needed_bytes()
             sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
             sc.automat(

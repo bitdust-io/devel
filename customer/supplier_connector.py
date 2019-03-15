@@ -72,7 +72,6 @@ from main import settings
 from lib import strng
 from lib import nameurl
 from lib import diskspace
-from lib import serialization
 
 from contacts import contactsdb
 
@@ -165,20 +164,7 @@ class SupplierConnector(automat.Automat):
         self.needed_bytes = needed_bytes
         self.key_id = key_id
         self.queue_subscribe = queue_subscribe
-        if self.needed_bytes is None:
-            total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
-            num_suppliers = -1
-            if self.customer_idurl == my_id.getLocalIDURL():
-                num_suppliers = settings.getSuppliersNumberDesired()
-            else:
-                known_ecc_map = contactsdb.get_customer_meta_info(customer_idurl).get('ecc_map')
-                if known_ecc_map:
-                    num_suppliers = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
-            if num_suppliers > 0:
-                self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
-            else:
-                raise Exception('not possible to determine needed_bytes value to be requested from that supplier')
-                # self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
+        self.do_calculate_needed_bytes()
         name = 'supplier_%s_%s' % (
             nameurl.GetName(self.supplier_idurl),
             diskspace.MakeStringFromBytes(self.needed_bytes).replace(' ', ''),
@@ -239,6 +225,22 @@ class SupplierConnector(automat.Automat):
     def remove_callback(self, name):
         if name in list(self.callbacks.keys()):
             self.callbacks.pop(name)
+
+    def do_calculate_needed_bytes(self):
+        if self.needed_bytes is None:
+            total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
+            num_suppliers = -1
+            if self.customer_idurl == my_id.getLocalIDURL():
+                num_suppliers = settings.getSuppliersNumberDesired()
+            else:
+                known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map')
+                if known_ecc_map:
+                    num_suppliers = eccmap.GetEccMapSuppliersNumber(known_ecc_map)
+            if num_suppliers > 0:
+                self.needed_bytes = int(math.ceil(2.0 * total_bytes_needed / float(num_suppliers)))
+            else:
+                raise Exception('not possible to determine needed_bytes value to be requested from that supplier')
+                # self.needed_bytes = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
 
     def A(self, event, *args, **kwargs):
         #---NO_SERVICE---
