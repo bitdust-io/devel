@@ -1021,6 +1021,8 @@ class IOThrottle:
         """
         for idurl in self.supplierQueues.keys():
             if self.supplierQueues[idurl].HasSendingFiles():
+                if _Debug:
+                    lg.out(_DebugLevel, 'io_throttle.IsSendingQueueEmpty   supplier %r has sending files' % idurl)
                 return False
         return True
 

@@ -540,8 +540,9 @@ class FireHire(automat.Automat):
             self.automat('made-decision', [])
             return
         critical_offline_suppliers_count = eccmap.GetFireHireErrors(number_desired)
-        # TODO:  temporary disabled because of an issue: too aggressive replacing suppliers who still have the data
-        if False:  # len(offline_suppliers) >= critical_offline_suppliers_count:
+        if len(offline_suppliers) >= critical_offline_suppliers_count:
+            # TODO: check that issue
+            # too aggressive replacing suppliers who still have the data
             one_dead_supplier = offline_suppliers.pop()
             lg.warn('found "CRITICALLY_OFFLINE" supplier %s, max offline limit is %d' % (
                 one_dead_supplier, critical_offline_suppliers_count, ))

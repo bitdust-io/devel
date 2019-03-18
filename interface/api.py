@@ -201,7 +201,7 @@ def process_health():
         {'status': 'OK' }
     """
     if _Debug:
-        lg.out(_DebugLevel, 'api.process_health')
+        lg.out(_DebugLevel + 10, 'api.process_health')
     return OK()
 
 
@@ -798,7 +798,8 @@ def files_sync():
     return OK('the main files sync loop has been restarted')
 
 
-def files_list(remote_path=None, key_id=None, recursive=True, all_customers=False):
+def files_list(remote_path=None, key_id=None, recursive=True, all_customers=False,
+               include_uploads=False, include_downloads=False, ):
     """
     Returns list of known files registered in the catalog under given `remote_path` folder.
     By default returns items from root of the catalog.
@@ -841,10 +842,11 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     if not driver.is_on('service_backups'):
         return ERROR('service_backups() is not started')
     if _Debug:
-        lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s recursive=%s all_customers=%s' % (
-            remote_path, key_id, recursive, all_customers))
+        lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s' % (
+            remote_path, key_id, recursive, all_customers, include_uploads, include_downloads, ))
     from storage import backup_fs
     from system import bpio
+    from lib import misc
     from userid import global_id
     from crypt import my_keys
     result = []
@@ -897,7 +899,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             real_customer_id = global_id.UrlToGlobalID(customer_idurl)
         full_glob_id = global_id.MakeGlobalID(path=i['path_id'], customer=real_customer_id, key_alias=key_alias, )
         full_remote_path = global_id.MakeGlobalID(path=i['path'], customer=real_customer_id, key_alias=key_alias, )
-        result.append({
+        r = {
             'remote_path': full_remote_path,
             'global_id': full_glob_id,
             'customer': real_customer_id,
@@ -913,7 +915,68 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             'key_alias': key_alias,
             'childs': i['childs'],
             'versions': i['versions'],
-        })
+            'uploads': {
+                'running': [],
+                'pending': [],
+            },
+            'downloads': [],
+        }
+        if include_uploads:
+            from storage import backup_control
+            backup_control.tasks()
+            running = []
+            for backupID in backup_control.FindRunningBackup(pathID=full_glob_id):
+                j = backup_control.jobs().get(backupID)
+                if j:
+                    running.append({
+                        'backup_id': j.backupID,
+                        'key_id': j.keyID,
+                        'source_path': j.sourcePath,
+                        'eccmap': j.eccmap.name,
+                        'pipe': 'closed' if not j.pipe else j.pipe.state(),
+                        'block_size': j.blockSize,
+                        'aborting': j.ask4abort,
+                        'terminating': j.terminating,
+                        'eof_state': j.stateEOF,
+                        'reading': j.stateReading,
+                        'closed': j.closed,
+                        'work_blocks': len(j.workBlocks),
+                        'block_number': j.blockNumber,
+                        'bytes_processed': j.dataSent,
+                        'progress': misc.percent2string(j.progress()),
+                        'total_size': j.totalSize,
+                    })
+            pending = []
+            t = backup_control.GetPendingTask(full_glob_id)
+            if t:
+                pending.append({
+                    'task_id': t.number,
+                    'path_id': t.pathID,
+                    'source_path': t.localPath,
+                    'created': time.asctime(time.localtime(t.created)),
+                })
+            r['uploads']['running'] = running
+            r['uploads']['pending'] = pending
+        if include_downloads:
+            from storage import restore_monitor
+            downloads = []
+            for backupID in restore_monitor.FindWorking(pathID=full_glob_id):
+                d = restore_monitor.GetWorkingRestoreObject(backupID)
+                if d:
+                    downloads.append({
+                        'backup_id': d.backup_id,
+                        'creator_id': d.creator_id,
+                        'path_id': d.path_id,
+                        'version': d.version,
+                        'block_number': d.block_number,
+                        'bytes_processed': d.bytes_written,
+                        'created': time.asctime(time.localtime(d.Started)),
+                        'aborted': d.abort_flag,
+                        'done': d.done_flag,
+                        'eccmap': '' if not d.EccMap else d.EccMap.name,
+                    })
+            r['downloads'] = downloads
+        result.append(r)        
     if _Debug:
         lg.out(_DebugLevel, '    %d items returned' % len(result))
     return RESULT(result)
@@ -1014,16 +1077,16 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
             d = restore_monitor.GetWorkingRestoreObject(backupID)
             if d:
                 downloads.append({
-                    'backup_id': r.backup_id,
-                    'creator_id': r.creator_id,
-                    'path_id': r.path_id,
-                    'version': r.version,
-                    'block_number': r.block_number,
-                    'bytes_processed': r.bytes_written,
-                    'created': time.asctime(time.localtime(r.Started)),
-                    'aborted': r.abort_flag,
-                    'done': r.done_flag,
-                    'eccmap': '' if not r.EccMap else r.EccMap.name,
+                    'backup_id': d.backup_id,
+                    'creator_id': d.creator_id,
+                    'path_id': d.path_id,
+                    'version': d.version,
+                    'block_number': d.block_number,
+                    'bytes_processed': d.bytes_written,
+                    'created': time.asctime(time.localtime(d.Started)),
+                    'aborted': d.abort_flag,
+                    'done': d.done_flag,
+                    'eccmap': '' if not d.EccMap else d.EccMap.name,
                 })
         r['downloads'] = downloads
     if _Debug:
