@@ -162,9 +162,15 @@ class DataSender(automat.Automat):
 
     def isQueueEmpty(self, *args, **kwargs):
         if not args or not args[0]:
-            return io_throttle.IsSendingQueueEmpty()
+            is_empty = io_throttle.IsSendingQueueEmpty()
+            if _Debug:
+                lg.out(_DebugLevel, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
+            return is_empty
         remoteID, _ = args[0]
-        return io_throttle.OkToSend(remoteID)
+        can_send_to = io_throttle.OkToSend(remoteID)
+        if _Debug:
+            lg.out(_DebugLevel, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (can_send_to, remoteID, ))
+        return can_send_to
 
     def doScanAndQueue(self, *args, **kwargs):
         global _ShutdownFlag

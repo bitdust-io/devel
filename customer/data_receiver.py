@@ -39,7 +39,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -62,7 +62,14 @@ def A(event=None, *args, **kwargs):
     if event is None and not args:
         return _DataReceiver
     if _DataReceiver is None:
-        _DataReceiver = DataReceiver(publish_events=True, log_events=_Debug, debug_level=_DebugLevel)
+        _DataReceiver = DataReceiver(
+            name='data_receiver',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+            publish_events=False,
+        )
     if event is not None:
         _DataReceiver.automat(event, *args, **kwargs)
     return _DataReceiver
@@ -73,19 +80,6 @@ class DataReceiver(automat.Automat):
     """
     This class implements all the functionality of ``data_receiver()`` state machine.
     """
-
-    def __init__(self, debug_level=0, log_events=False, publish_events=False, **kwargs):
-        """
-        Builds `data_receiver()` state machine.
-        """
-        super(DataReceiver, self).__init__(
-            name="data_receiver",
-            state="AT_STARTUP",
-            debug_level=debug_level,
-            log_events=log_events,
-            publish_events=publish_events,
-            **kwargs
-        )
 
     def A(self, event, *args, **kwargs):
         """

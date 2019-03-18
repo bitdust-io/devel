@@ -1455,21 +1455,9 @@ def ExtractVersions(pathID, item_info, path_exist=None, customer_id=None):
             'label': version_label,
             'time': version_time,
             'size': version_size,
+            # 'blocks': version_maxblocknum + 1,
         })
         versions.append(backup_info_dict)
-        # item_status += version_status + ' '
-#         versions.append({
-#             'backup_id': backupID,
-#             # 'backupid': backupID,  # temporary to not brake UI
-#             'label': version_label,
-#             'time': version_time,
-#             'size': version_size,
-#             'status': version_status,
-#             'state': version_state,
-#             'blocks': version_maxblocknum + 1,
-#         })
-    # if not item_status:
-        # item_status = '-'
     item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
     return (item_size, item_time, versions)
 
