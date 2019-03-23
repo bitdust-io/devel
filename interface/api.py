@@ -82,7 +82,11 @@ def OK(result='', message=None, status='OK', extra_fields=None):
     if api_method.count('lambda') or api_method.startswith('_'):
         api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
-        lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
+        if api_method not in [
+            'process_health',
+            'network_connected',
+        ] or _DebugLevel > 10:
+            lg.out(_DebugLevel, 'api.%s return OK(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
 
 
@@ -2603,18 +2607,38 @@ def packets_list():
     from transport import packet_out
     result = []
     for pkt_out in packet_out.queue():
+        items = []
+        for itm in pkt_out.items:
+            items.append({
+                'transfer_id': itm.transfer_id,
+                'proto': itm.proto,
+                'host': itm.host,
+                'size': itm.size,
+                'bytes_sent': itm.bytes_sent,
+            })
         result.append({
-            'name': pkt_out.outpacket.Command,
+            'direction': 'outgoing',
+            'command': pkt_out.outpacket.Command,
+            'packet_id': pkt_out.outpacket.PacketID,
             'label': pkt_out.label,
-            'from_to': 'to',
             'target': pkt_out.remote_idurl,
+            'description': pkt_out.description,
+            'label': pkt_out.label,
+            'response_timeout': pkt_out.response_timeout,
+            'items': items,
         })
     for pkt_in in list(packet_in.inbox_items().values()):
         result.append({
-            'name': pkt_in.transfer_id,
+            'direction': 'incoming',
+            'transfer_id': pkt_in.transfer_id,
             'label': pkt_in.label,
-            'from_to': 'from',
             'target': pkt_in.sender_idurl,
+            'label': pkt_in.label,
+            'timeout': pkt_in.timeout,
+            'proto': pkt_in.proto,
+            'host': pkt_in.host,
+            'size': pkt_in.size,
+            'bytes_received': pkt_in.bytes_received,
         })
     return RESULT(result)
 
@@ -3259,7 +3283,7 @@ def network_connected(wait_timeout=5):
     In case of some network issues method will return result asap.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'api.network_connected  wait_timeout=%r' % wait_timeout)
+        lg.out(_DebugLevel + 10, 'api.network_connected  wait_timeout=%r' % wait_timeout)
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
     from twisted.internet import reactor  # @UnresolvedImport

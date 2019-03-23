@@ -148,7 +148,8 @@ def PacketReport(sendORrequest, supplier_idurl, packetID, result):
     Called from other methods here to notify about packets events.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'io_throttle.PacketReport %s : %s' % (packetID, supplier_idurl))
+        lg.out(_DebugLevel, 'io_throttle.PacketReport %s:%s %s to/from %s' % (
+            sendORrequest, result, packetID, supplier_idurl))
     global _PacketReportCallbackFunc
     if _PacketReportCallbackFunc is not None:
         _PacketReportCallbackFunc(sendORrequest, supplier_idurl, packetID, result)
@@ -441,7 +442,9 @@ class SupplierQueue:
         if self._runSend:
             return
         self._runSend = True
-        #out(6, 'io_throttle.RunSend')
+        if _Debug:
+            lg.out(_DebugLevel, 'io_throttle.RunSend\n    fileSendQueue=%r\n    sendFailedPacketIDs=%r' % (
+                self.fileSendQueue, self.sendFailedPacketIDs))
         packetsFialed = {}
         packetsToRemove = set()
         packetsSent = 0
@@ -1022,7 +1025,8 @@ class IOThrottle:
         for idurl in self.supplierQueues.keys():
             if self.supplierQueues[idurl].HasSendingFiles():
                 if _Debug:
-                    lg.out(_DebugLevel, 'io_throttle.IsSendingQueueEmpty   supplier %r has sending files' % idurl)
+                    lg.out(_DebugLevel, 'io_throttle.IsSendingQueueEmpty   supplier %r has sending files:\n%r' % (
+                        idurl, self.supplierQueues[idurl].fileSendQueue))
                 return False
         return True
 
@@ -1032,6 +1036,9 @@ class IOThrottle:
         """
         for idurl in self.supplierQueues.keys():
             if not self.supplierQueues[idurl].HasRequestedFiles():
+                if _Debug:
+                    lg.out(_DebugLevel, 'io_throttle.IsRequestQueueEmpty   supplier %r has requested files:\n%r' % (
+                        idurl, self.supplierQueues[idurl].fileRequestQueue))
                 return False
         return True
 
