@@ -63,7 +63,7 @@ class DataMotionService(LocalService):
         from customer import data_receiver
         data_receiver.A('shutdown')
         data_sender.SetShutdownFlag()
-        data_sender.Destroy()
+        data_sender.A('shutdown')
         io_throttle.shutdown()
         return True
 

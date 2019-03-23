@@ -439,12 +439,12 @@ class IndexSynchronizer(automat.Automat):
             self.automat('all-responded')
 
     def _on_supplier_acked(self, newpacket, info):
+        self.sending_suppliers.discard(newpacket.OwnerID)
         sc = supplier_connector.by_idurl(newpacket.OwnerID)
         if sc:
             sc.automat(newpacket.Command.lower(), newpacket)
         else:
-            raise Exception('not found supplier connector')
-        self.sending_suppliers.discard(newpacket.OwnerID)
+            lg.warn('did not found supplier connector for %r' % newpacket.OwnerID)
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
                 newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
