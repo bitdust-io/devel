@@ -41,10 +41,11 @@ def test_file_shared_from_customer_1_to_customer_4():
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
         print('\n\nsupplier/list/v1 : %s\n' % response.json())
-        if len(response.json()['result']) == 2:
-            for s in response.json()['result']:
-                assert s['supplier_state'] == 'CONNECTED'
-                assert s['contact_state'] == 'CONNECTED'
+        num_connected = 0
+        for s in response.json()['result']:
+            if s['supplier_state'] == 'CONNECTED' and s['contact_state'] == 'CONNECTED':
+                num_connected += 1
+        if num_connected == 2:
             assert True
             break
         count += 1
