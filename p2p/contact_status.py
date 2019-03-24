@@ -343,22 +343,24 @@ class ContactStatus(automat.Automat):
     def A(self, event, *args, **kwargs):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'sent-failed' and self.isDataPacket(*args, **kwargs) and self.Fails<3:
-                self.Fails+=1
-            elif event == 'ping-failed' or ( event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(*args, **kwargs) ):
+            if event == 'ping-failed' or ( event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(*args, **kwargs) ):
                 self.state = 'OFFLINE'
                 self.PingRequired=False
                 self.doNotifyRefresh(*args, **kwargs)
             elif event == 'inbox-packet':
                 self.doRememberIncomingTime(*args, **kwargs)
-            elif event == 'ping' or ( event == 'outbox-packet' and not self.isPingPacket(*args, **kwargs) and self.isAckExpected(*args, **kwargs) and not self.isRecentIncomings(*args, **kwargs) ):
-                self.PingRequired=True
-                self.doPing(*args, **kwargs)
-            elif event == 'outbox-packet' and self.isPingPacket(*args, **kwargs):
+            elif event == 'outbox-packet' and self.isPingPacket(*args, **kwargs) and self.PingRequired:
                 self.state = 'PING'
                 self.AckCounter=0
                 self.PingRequired=False
                 self.doNotifyRefresh(*args, **kwargs)
+            elif event == 'outbox-packet' and not self.isPingPacket(*args, **kwargs) and self.isAckExpected(*args, **kwargs) and not self.isRecentIncomings(*args, **kwargs):
+                self.doPingLater(*args, **kwargs)
+            elif event == 'ping':
+                self.PingRequired=True
+                self.doPing(*args, **kwargs)
+            elif event == 'sent-failed' and self.Fails<3 and self.isDataPacket(*args, **kwargs):
+                self.Fails+=1
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'outbox-packet' and self.isPingPacket(*args, **kwargs):
@@ -469,6 +471,12 @@ class ContactStatus(automat.Automat):
         """
         self.time_incoming = time.time()
 
+    def doPingLater(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        reactor.callLater(0, self.automat, 'ping')  # @UndefinedVariable
+
     def _on_ping_success(self, result):
         try:
             response, info = result
@@ -490,7 +498,6 @@ class ContactStatus(automat.Automat):
         return None
 
 #------------------------------------------------------------------------------
-
 
 
 def OutboxStatus(pkt_out, status, error=''):
