@@ -264,8 +264,8 @@ async def start_daemon_async(node, loop):
 def health_check(node):
     count = 0
     while True:
-        if count > 10:
-            assert False, f'node {node} is not healthy after 10 attempts'
+        if count > 60:
+            assert False, f'node {node} is not healthy after many attempts'
         try:
             response = requests.get(tunnel_url(node, 'process/health/v1'))
         except Exception as exc:
@@ -284,13 +284,14 @@ async def health_check_async(node, event_loop):
         count = 0
         while True:
             print(f'health_check_async {node}  with count={count}\n')
-            if count > 10:
-                assert False, f'node {node} is not healthy after 10 attempts'
+            if count > 60:
+                print(f'node {node} is not healthy after many attempts')
+                assert False, f'node {node} is not healthy after many attempts'
             try:
                 response = await client.get(tunnel_url(node, 'process/health/v1'))
                 response_json = await response.json()
             except aiohttp.ServerDisconnectedError:
-                pass
+                print(f'node {node} is not started yet, count={count}\n')
             else:
                 if response.status == 200 and response_json['status'] == 'OK':
                     break
@@ -303,8 +304,8 @@ async def health_check_async(node, event_loop):
 def create_identity(node, identity_name):
     count = 0
     while True:
-        if count > 10:
-            assert False, f'node {node} failed to create identity after 10 retries'
+        if count > 60:
+            assert False, f'node {node} failed to create identity after many retries'
         response = requests.post(
             url=tunnel_url(node, 'identity/create/v1'),
             json={
@@ -326,7 +327,7 @@ def create_identity(node, identity_name):
 
 async def create_identity_async(node, identity_name, event_loop):
     async with aiohttp.ClientSession(loop=event_loop) as client:
-        for i in range(10):
+        for i in range(60):
             response_identity = await client.post(tunnel_url(node, 'identity/create/v1'), json={'username': identity_name})
             assert response_identity.status == 200
 
@@ -352,8 +353,8 @@ def connect_network(node):
     response = requests.get(url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
     assert response.json()['status'] == 'ERROR'
     while True:
-        if count > 10:
-            assert False, f'node {node} failed to connect to the network after few retries'
+        if count > 60:
+            assert False, f'node {node} failed to connect to the network after many retries'
         response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=5'))
         if response.json()['status'] == 'OK':
             break
@@ -369,7 +370,7 @@ async def connect_network_async(node, loop):
         response_json = await response.json()
         assert response_json['status'] == 'ERROR'
 
-        for i in range(20):
+        for i in range(60):
             response = await client.get(f'http://{node}:8180/network/connected/v1?wait_timeout=1')
             response_json = await response.json()
             if response_json['status'] == 'OK':
