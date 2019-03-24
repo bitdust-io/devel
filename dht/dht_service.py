@@ -168,7 +168,7 @@ def connect(seed_nodes=[]):
             if isinstance(live_contacts, dict):
                 lg.warn('Unexpected result from joinNetwork: %s' % pprint.pformat(live_contacts))
             else: 
-                if len(live_contacts) > 0 and live_contacts[0]:
+                if live_contacts and len(live_contacts) > 0 and live_contacts[0]:
                     lg.out(_DebugLevel, 'dht_service.connect DHT JOIN SUCCESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 else:
                     lg.out(_DebugLevel, 'dht_service.connect DHT JOINED, but still OFFLINE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -214,10 +214,12 @@ def disconnect():
     global _MyNode
     if not node():
         return False
-    node().expire_task.stop()
+    if node().expire_task and node().expire_task.running:
+        node().expire_task.stop()
     if node().refresher and node().refresher.active():
         node().refresher.cancel()
-    node().listener.stopListening()
+    if node().listener:
+        node().listener.stopListening()
     return True
 
 

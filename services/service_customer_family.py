@@ -89,7 +89,7 @@ class SupplierRelationsService(LocalService):
         events.remove_subscriber(self._on_new_customer_accepted)
         events.remove_subscriber(self._on_existing_customer_accepted)
         events.remove_subscriber(self._on_existing_customer_terminated)
-        for fm in family_member.families():
+        for fm in family_member.families().values():
             fm.automat('shutdown')
         return True
 
