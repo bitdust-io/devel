@@ -57,6 +57,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     if stderr:
         print('STDERR: %r' % stderr.decode())
     # assert not stderr
+    print(f'\nssh_command on [{host}] : {cmd}')
     return stdout.decode(), stderr.decode()
 
 
@@ -73,7 +74,7 @@ def run_ssh_command_and_wait(host, cmd):
     )
     output, err = ssh_proc.communicate()
     if err:
-        print('STDERR: %r' % err.decode())
+        print('\nSTDERR: %r' % err.decode())
     # assert not err
     return output.decode(), err.decode()
 
@@ -97,7 +98,7 @@ async def open_tunnel_async(node, local_port, loop):
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
     # _NextSSHTunnelPort += 1
-    print(f'open_tunnel [{node}] on port {local_port} with {ssh_proc}\n')
+    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
     return ssh_proc
 
 
@@ -114,7 +115,7 @@ def open_tunnel(node):
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
     _NextSSHTunnelPort += 1
-    print(f'open_tunnel [{node}] on port {local_port} with {ssh_proc}\n')
+    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
 
 
 async def open_one_tunnel_async(node, local_port, loop):
@@ -132,7 +133,7 @@ def close_tunnel(node):
         assert False, 'ssh tunnel process for that node was not found'
     close_ssh_port_forwarding(node, _SSHTunnels[node])
     _SSHTunnels.pop(node)
-    print(f'close_tunnel [{node}] OK\n')
+    print(f'\nclose_tunnel [{node}] OK')
 
 
 def save_tunnels_ports():
@@ -245,7 +246,7 @@ def start_daemon(node):
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
-    print(f'start_daemon [{node}] OK\n')
+    print(f'\nstart_daemon [{node}] OK\n')
 
 
 async def start_daemon_async(node, loop):
@@ -257,7 +258,7 @@ async def start_daemon_async(node, loop):
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
-    print(f'start_daemon_async [{node}] OK\n')
+    print(f'\nstart_daemon_async [{node}] OK\n')
 
 
 def health_check(node):
@@ -272,16 +273,17 @@ def health_check(node):
             response = None
         if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
-        print(f'node {node} process not started yet, try again after 1 sec.\n')
+        print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
         time.sleep(1)
         count += 1
-    print(f'process/health/v1 [{node}] : OK\n')
+    print(f'\nprocess/health/v1 [{node}] : OK')
 
 
 async def health_check_async(node, event_loop):
     async with aiohttp.ClientSession(loop=event_loop) as client:
         count = 0
         while True:
+            print(f'health_check_async {node}  with count={count}\n')
             if count > 10:
                 assert False, f'node {node} is not healthy after 10 attempts'
             try:
