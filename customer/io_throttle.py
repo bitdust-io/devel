@@ -85,11 +85,10 @@ from userid import global_id
 
 from p2p import commands
 from p2p import p2p_service
-from p2p import contact_status
+from p2p import online_status
 
 from crypt import signed
 
-from transport import gateway
 from transport import callback
 from transport import packet_out
 
@@ -393,7 +392,7 @@ class SupplierQueue:
             if _Debug:
                 lg.out(_DebugLevel, "io_throttle.SupplierSendFile finishing to %s, shutdown is True" % self.remoteName)
             return False
-        if contact_status.isOffline(self.remoteID):
+        if online_status.isOffline(self.remoteID):
             if _Debug:
                 lg.out(_DebugLevel, "io_throttle.SupplierSendFile %s is offline, so packet %s is failed" % (
                     self.remoteName, packetID))
@@ -833,7 +832,7 @@ class SupplierQueue:
         # transport_control.RemoveInterest(fileToSend.remoteID, fileToSend.packetID)
         # callback.remove_interest(fileToSend.remoteID, fileToSend.packetID)
         if why == 'timeout':
-            contact_status.PacketSendingTimeout(RemoteID, PacketID)
+            online_status.PacketSendingTimeout(RemoteID, PacketID)
         if fileToSend.callOnFail:
             reactor.callLater(0, fileToSend.callOnFail, RemoteID, PacketID, why)  # @UndefinedVariable
         self.DoSend()

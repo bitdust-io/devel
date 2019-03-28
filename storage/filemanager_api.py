@@ -143,12 +143,12 @@ def _config(params):
 
 def _stats(params):
     from contacts import contactsdb
-    from p2p import contact_status
+    from p2p import online_status
     from lib import diskspace
     result = {}
     result['suppliers'] = contactsdb.num_suppliers()
     result['max_suppliers'] = settings.getSuppliersNumberDesired()
-    result['online_suppliers'] = contact_status.countOnlineAmong(contactsdb.suppliers())
+    result['online_suppliers'] = online_status.countOnlineAmong(contactsdb.suppliers())
     result['customers'] = contactsdb.num_customers()
     result['bytes_donated'] = settings.getDonatedBytes()
     result['value_donated'] = diskspace.MakeStringFromBytes(settings.getDonatedBytes())

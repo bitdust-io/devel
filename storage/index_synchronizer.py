@@ -96,7 +96,7 @@ from automats import automat
 from lib import nameurl
 
 from p2p import commands
-from p2p import contact_status
+from p2p import online_status
 from p2p import p2p_service
 
 from system import bpio
@@ -305,7 +305,7 @@ class IndexSynchronizer(automat.Automat):
         for supplierId in contactsdb.suppliers():
             if not supplierId:
                 continue
-            if not contact_status.isOnline(supplierId):
+            if online_status.isOffline(supplierId):
                 continue
             pkt_out = p2p_service.SendRetreive(
                 localID,
@@ -360,7 +360,7 @@ class IndexSynchronizer(automat.Automat):
         for supplierId in contactsdb.suppliers():
             if not supplierId:
                 continue
-            if not contact_status.isOnline(supplierId):
+            if online_status.isOffline(supplierId):
                 continue
             newpacket, pkt_out = p2p_service.SendData(
                 raw_data=Payload,

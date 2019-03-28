@@ -1918,11 +1918,14 @@ def friend_list():
         contact_status_label = None
         contact_state = None
         if driver.is_on('service_identity_propagate'):
-            from p2p import contact_status
-            state_machine_inst = contact_status.getInstance(idurl)
-            if state_machine_inst:
-                contact_status_label = contact_status.stateToLabel(state_machine_inst.state)
-                contact_state = state_machine_inst.state
+            from p2p import online_status
+            if online_status.isKnown(idurl):
+                contact_state = online_status.getCurrentState(idurl)
+                contact_status_label = online_status.getStatusLabel(idurl)
+            # state_machine_inst = contact_status.getInstance(idurl)
+            # if state_machine_inst:
+            #     contact_status_label = contact_status.stateToLabel(state_machine_inst.state)
+            #     contact_state = state_machine_inst.state
         result.append({
             'idurl': idurl,
             'global_id': glob_id['customer'],
@@ -1997,7 +2000,7 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
         return ERROR('service_customer() is not started')
     from contacts import contactsdb
     from customer import supplier_connector
-    from p2p import contact_status
+    from p2p import online_status
     from lib import misc
     from userid import my_id
     from userid import global_id
@@ -2033,10 +2036,13 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
             'contact_status': None,
             'contact_state': None,
         }
-        if contact_status.isKnown(supplier_idurl):
-            cur_state = contact_status.getInstance(supplier_idurl).state
-            r['contact_status'] = contact_status.stateToLabel(cur_state)
-            r['contact_state'] = cur_state
+        if online_status.isKnown(supplier_idurl):
+            r['contact_status'] = online_status.getStatusLabel(supplier_idurl)
+            r['contact_state'] = online_status.getCurrentState(supplier_idurl)
+        # if contact_status.isKnown(supplier_idurl):
+        #     cur_state = contact_status.getInstance(supplier_idurl).state
+        #     r['contact_status'] = contact_status.stateToLabel(cur_state)
+        #     r['contact_state'] = cur_state
         if verbose:
             _files, _total, _report = backup_matrix.GetSupplierStats(pos, customer_idurl=customer_idurl)
             r['listfiles'] = misc.readSupplierData(supplier_idurl, 'listfiles', customer_idurl)
@@ -2170,7 +2176,7 @@ def customers_list(verbose=False):
     if not driver.is_on('service_supplier'):
         return ERROR('service_supplier() is not started')
     from contacts import contactsdb
-    from p2p import contact_status
+    from p2p import online_status
     from userid import global_id
     results = []
     for pos, customer_idurl in enumerate(contactsdb.customers()):
@@ -2191,10 +2197,13 @@ def customers_list(verbose=False):
             'contact_status': None,
             'contact_state': None,
         }
-        if contact_status.isKnown(customer_idurl):
-            cur_state = contact_status.getInstance(customer_idurl).state
-            r['contact_status'] = contact_status.stateToLabel(cur_state)
-            r['contact_state'] = cur_state
+        if online_status.isKnown(customer_idurl):
+            r['contact_status'] = online_status.getStatusLabel(customer_idurl)
+            r['contact_state'] = online_status.getCurrentState(customer_idurl)
+        # if contact_status.isKnown(customer_idurl):
+        #     cur_state = contact_status.getInstance(customer_idurl).state
+        #     r['contact_status'] = contact_status.stateToLabel(cur_state)
+        #     r['contact_state'] = cur_state
         results.append(r)
     return RESULT(results)
 
@@ -2866,19 +2875,19 @@ def user_status(idurl_or_global_id):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
-    from p2p import contact_status
+    from p2p import online_status
     from userid import global_id
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
-    if not contact_status.isKnown(idurl):
+    if not online_status.isKnown(idurl):
         return ERROR('unknown user')
-    state_machine_inst = contact_status.getInstance(idurl)
-    if not state_machine_inst:
-        return ERROR('error fetching user status')
+    # state_machine_inst = contact_status.getInstance(idurl)
+    # if not state_machine_inst:
+    #     return ERROR('error fetching user status')
     return RESULT([{
-        'contact_status': contact_status.stateToLabel(state_machine_inst.state),
-        'contact_state': state_machine_inst.state,
+        'contact_status': online_status.getStatusLabel(idurl),
+        'contact_state': online_status.getCurrentState(idurl),
         'idurl': idurl,
         'global_id': global_id.UrlToGlobalID(idurl),
     }])
@@ -2889,12 +2898,12 @@ def user_status_check(idurl_or_global_id, timeout=5):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
-    from p2p import contact_status
+    from p2p import online_status
     from userid import global_id
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
-    peer_status = contact_status.getInstance(idurl)
+    peer_status = online_status.getInstance(idurl)
     if not peer_status:
         return ERROR('failed to check peer status')
     ret = Deferred()
@@ -2908,18 +2917,18 @@ def user_status_check(idurl_or_global_id, timeout=5):
             idurl=idurl,
             global_id=global_id.UrlToGlobalID(idurl),
             contact_state=newstate,
-            contact_status=contact_status.stateToLabel(newstate),
+            contact_status=online_status.stateToLabel(newstate),
         )))
         return None
 
     def _do_clean(x):
         peer_status.removeStateChangedCallback(_on_peer_status_state_changed)
-        return x
+        return None
 
-    ret.addCallback(_do_clean)
+    ret.addBoth(_do_clean)
 
     peer_status.addStateChangedCallback(_on_peer_status_state_changed)
-    peer_status.automat('ping', timeout)
+    peer_status.automat('ping-now', timeout)
     return ret
 
 
@@ -3477,7 +3486,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
         if not driver.is_on('service_p2p_hookups'):
             return ERROR('service_p2p_hookups() is not started')
         from contacts import contactsdb
-        from p2p import contact_status
+        from p2p import online_status
         if show_suppliers:
             connected = 0
             items = []
@@ -3487,7 +3496,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     'global_id': global_id.UrlToGlobalID(idurl),
                     'state': None
                 }
-                inst = contact_status.getInstance(idurl)
+                inst = online_status.getInstance(idurl)
                 if inst:
                     i['state'] = inst.state
                     if inst.state == 'CONNECTED':
@@ -3509,7 +3518,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     'global_id': global_id.UrlToGlobalID(idurl),
                     'state': None
                 }
-                inst = contact_status.getInstance(idurl)
+                inst = online_status.getInstance(idurl)
                 if inst:
                     i['state'] = inst.state
                     if inst.state == 'CONNECTED':
@@ -3530,7 +3539,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                     'global_id': global_id.UrlToGlobalID(idurl),
                     'state': None
                 }
-                inst = contact_status.getInstance(idurl)
+                inst = online_status.getInstance(idurl)
                 if inst:
                     i['state'] = inst.state
                     if inst.state == 'CONNECTED':

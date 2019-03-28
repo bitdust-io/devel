@@ -60,7 +60,7 @@ from automats import automat
 from contacts import contactsdb
 
 from p2p import p2p_service
-from p2p import contact_status
+from p2p import online_status
 from p2p import p2p_connector
 
 from services import driver
@@ -167,7 +167,7 @@ class ListFilesOrator(automat.Automat):
         _RequestedListFilesPacketIDs.clear()
         for idurl in contactsdb.suppliers():
             if idurl:
-                if contact_status.isOnline(idurl):
+                if online_status.isOnline(idurl):
                     p2p_service.SendListFiles(target_supplier=idurl)
                     _RequestedListFilesPacketIDs.add(idurl)
                 else:

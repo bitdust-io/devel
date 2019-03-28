@@ -195,9 +195,9 @@ def increase_rating(idurl, alive_state):
 def rate_all_users():
     lg.out(4, 'ratings.rate_all_users')
     monthStr = time.strftime('%B')
-    from p2p import contact_status
+    from p2p import online_status
     for idurl in contactsdb.contacts_full():
-        isalive = contact_status.isOnline(idurl)
+        isalive = online_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
         month_percent = 100.0 * float(malive) / float(mall)
         total_percent = 100.0 * float(talive) / float(tall)

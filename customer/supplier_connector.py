@@ -81,7 +81,7 @@ from crypt import my_keys
 
 from p2p import commands
 from p2p import p2p_service
-from p2p import contact_status
+from p2p import online_status
 
 from raid import eccmap
 
@@ -197,9 +197,14 @@ class SupplierConnector(automat.Automat):
         self._last_known_family_position = None
         self._last_known_ecc_map = None
         self._last_known_family_snapshot = None
-        contact_peer = contact_status.getInstance(self.supplier_idurl)
-        if contact_peer:
-            contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
+        online_status.add_online_status_listener_callback(
+            idurl=self.supplier_idurl,
+            callback_method=self._on_online_status_state_changed,
+        )
+        
+        # contact_peer = contact_status.getInstance(self.supplier_idurl)
+        # if contact_peer:
+        #     contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -539,9 +544,13 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        contact_peer = contact_status.getInstance(self.supplier_idurl)
-        if contact_peer:
-            contact_peer.removeStateChangedCallback(self._on_contact_status_state_changed)
+        online_status.remove_online_status_listener_callbackove_(
+            idurl=self.supplier_idurl,
+            callback_method=self._on_online_status_state_changed,
+        )
+        # contact_peer = contact_status.getInstance(self.supplier_idurl)
+        # if contact_peer:
+        #     contact_peer.removeStateChangedCallback(self._on_contact_status_state_changed)
         connectors(self.customer_idurl).pop(self.supplier_idurl)
         self.request_packet_id = None
         self.supplier_idurl = None
@@ -562,9 +571,9 @@ class SupplierConnector(automat.Automat):
         else:
             self.automat('fail', None)
 
-    def _on_contact_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
+    def _on_online_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
             if _Debug:
-                lg.out(12, 'supplier_connector._on_contact_status_state_changed %s : %s->%s, reconnecting now' % (
+                lg.out(10, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
                     self.supplier_idurl, oldstate, newstate))
             self.automat('connect')
