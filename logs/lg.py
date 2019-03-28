@@ -53,6 +53,7 @@ _OriginalStdOut = None
 _StdOutPrev = None
 _LogFile = None
 _LogFileName = None
+_AllLogFiles = {}
 _StoreExceptionsEnabled = True
 _WebStreamFunc = None
 _ShowTime = True
@@ -71,7 +72,7 @@ def fqn(o):
 
 #------------------------------------------------------------------------------
 
-def out(level, msg, nl='\n'):
+def out(level, msg, nl='\n', log_name='main'):
     """
     The core method, most useful thing in any project :-))) Print a text line
     to the log file or console.
@@ -92,6 +93,7 @@ def out(level, msg, nl='\n'):
     global _LogsEnabled
     global _UseColors
     global _GlobalDebugLevel
+    global _AllLogFiles
     if not _LogsEnabled:
         return
     s = msg
@@ -102,7 +104,7 @@ def out(level, msg, nl='\n'):
         level -= 1
     if level:
         s = ' ' * level + s
-    if _ShowTime and level > 0:
+    if _ShowTime:
         tm_string = time.strftime('%H:%M:%S')
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
@@ -121,26 +123,44 @@ def out(level, msg, nl='\n'):
         currentThreadName = threading.currentThread().getName()
         s = s + ' {%s}' % currentThreadName.lower()
     if is_debug(level):
-        if _LogFile is not None:
-            o = s + nl
-            if sys.version_info[0] == 3:
-                if not isinstance(o, str):
-                    o = o.decode('utf-8')
-            else:
-                if not isinstance(o, unicode):  # @UndefinedVariable
-                    o = o.decode('utf-8')
-            _LogFile.write(o)
-            _LogFile.flush()
+        if log_name == 'main':
+            if _LogFile is not None:
+                o = s + nl
+                if sys.version_info[0] == 3:
+                    if not isinstance(o, str):
+                        o = o.decode('utf-8')
+                else:
+                    if not isinstance(o, unicode):  # @UndefinedVariable
+                        o = o.decode('utf-8')
+                _LogFile.write(o)
+                _LogFile.flush()
+        else:
+            if _LogFileName:
+                if log_name not in _AllLogFiles:
+                    filename = os.path.join(os.path.dirname(_LogFileName), log_name + '.log') 
+                    if not os.path.isdir(os.path.dirname(os.path.abspath(filename))):
+                        os.makedirs(os.path.dirname(os.path.abspath(filename)))
+                    _AllLogFiles[log_name] = open(os.path.abspath(filename), 'w')
+                o = s + nl
+                if sys.version_info[0] == 3:
+                    if not isinstance(o, str):
+                        o = o.decode('utf-8')
+                else:
+                    if not isinstance(o, unicode):  # @UndefinedVariable
+                        o = o.decode('utf-8')
+                _AllLogFiles[log_name].write(o)
+                _AllLogFiles[log_name].flush()
         if not _RedirectStdOut and not _NoOutput:
-            try:
+            if log_name == 'main':
                 s = s + nl
-                sys.stdout.write(s)
-            except:
                 try:
-                    sys.stdout.write(format_exception() + '\n\n' + s)
+                    sys.stdout.write(s)
                 except:
-                    # very bad stuff... we can't write anything to std out
-                    pass
+                    try:
+                        sys.stdout.write(format_exception() + '\n\n' + s)
+                    except:
+                        # very bad stuff... we can't write anything to std out
+                        pass
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
@@ -517,11 +537,16 @@ def close_log_file():
     Closes opened log file.
     """
     global _LogFile
+    global _AllLogFiles
     if not _LogFile:
         return
     _LogFile.flush()
     _LogFile.close()
     _LogFile = None
+    for logfile in _AllLogFiles.values():
+        logfile.flush()
+        logfile.close()
+    _AllLogFiles.clear()
 
 
 def log_file():

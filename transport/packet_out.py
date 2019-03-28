@@ -86,6 +86,7 @@ from contacts import contactsdb
 from contacts import identitycache
 
 from userid import my_id
+from userid import global_id
 
 from main import settings
 from main import events
@@ -714,18 +715,27 @@ class PacketOut(automat.Automat):
         if None in self.callbacks:
             for cb in self.callbacks[None]:
                 cb(self)
+        if _Debug:
+            lg.out(0, '  \033[0;49;95mTIMEOUT %s(%s) sending to %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, global_id.UrlToGlobalID(self.remote_idurl)), log_name='packet')
 
     def doReportDoneWithAck(self, *args, **kwargs):
         """
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
+        if _Debug:
+            lg.out(0, '  \033[0;49;33mOUT %s(%s) with %d bytes to %s with ACK\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl)), log_name='packet')
 
     def doReportDoneNoAck(self, *args, **kwargs):
         """
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
+        if _Debug:
+            lg.out(0, '  \033[0;49;90mOUT %s(%s) with %d bytes to %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl)), log_name='packet')
 
     def doReportFailed(self, *args, **kwargs):
         """
@@ -736,6 +746,9 @@ class PacketOut(automat.Automat):
         except:
             msg = 'failed'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
+        if _Debug:
+            lg.out(0, '  \033[0;49;91mFAILED %s(%s) with %d bytes to %s : %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl), msg), log_name='packet')
 
     def doReportCancelled(self, *args, **kwargs):
         """
@@ -747,6 +760,9 @@ class PacketOut(automat.Automat):
         else:
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
+        if _Debug:
+            lg.out(0, '  \033[0;49;97mOUT %s(%s) with %d bytes CANCELLED to %s : %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl), msg), log_name='packet')
 
     def doErrMsg(self, event, *args, **kwargs):
         """

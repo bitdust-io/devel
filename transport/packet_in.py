@@ -75,6 +75,8 @@ from lib import strng
 from system import bpio
 from system import tmpfile
 
+from userid import global_id
+
 from contacts import contactsdb
 from contacts import identitycache
 
@@ -174,6 +176,9 @@ def process(newpacket, info):
         if _Debug:
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
         return None
+    if _Debug:
+        lg.out(0, '  \033[0;49;32m IN %s(%s) with %d bytes from %s\033[0m' % (
+            newpacket.Command, newpacket.PacketID, info.bytes_received, global_id.UrlToGlobalID(info.sender_idurl)), log_name='packet')
     if newpacket.Command == commands.Identity():
         if newpacket.RemoteID != my_id.getLocalIDURL():
             if _Debug:

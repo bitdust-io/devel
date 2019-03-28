@@ -2,6 +2,29 @@ Change Log
 ==========
 
 
+2019-03-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* improved config/list/v1 endpoint
+* changed contact_status() state machine and added bug fix in family_member()
+* added more info in file/list/v1 api,
+* enabled CRITICALLY_OFFLINE supplier replacing feature (#291)
+* bug fix in service_employer()  (#290)
+* home folder on Android is /storage/emulated/0/ (#288)
+* updated setup.py (#286)
+* added more flexibility in main.bpmain (#285)
+* bug fix in crypt.encrypted.Block unserialize, clean up in parallelp code (#283)
+* added more logging for jsn serialization and signatures verification issues debugging (#282)
+* rebuilt raid_worker() to use parallelp instead of multiprocessing (#281)
+* fixed .travis.yml
+* able to set python version for unit tests on travis
+* rebuilt raid_worker() to use parallelp instead of multiprocessing
+* copied and adopted parallelp 1.5.7 sources in the code base, thanks to Vitalii Vanovschi
+* removed pybc blockchain files, we are moving towards Bismuth project
+* fix bug in chat messages (#279)
+* passing text arguments to child_process() (#277)
+* fixes in raid and backup/restore pipe  (#274)
+
+
 
 2019-03-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
