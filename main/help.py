@@ -293,7 +293,6 @@ examples:
   set needed                               print your needed space size
   set services/backups/max-copies 4        set number of backup copies for every folder
   set services/customer/suppliers-number   print number of your suppliers
-  set logs/stream-enabled False            turn off web server for program logs
   set list                                 list all available options
 
 '''

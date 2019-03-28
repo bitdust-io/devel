@@ -39,10 +39,9 @@ def raw():
     Higher values will produce more log messages.
 {logs/memdebug-enabled} enable memory debugger
     Enabled this and go to http://127.0.0.1:[memdebug port number] to watch memory usage.
-    This feature is disabled at the moment.
+    Requires "cherrypy" and "dowser" python packages to be installed inside ~/.bitdust/venv/.
 {logs/memprofile-enabled} enable memory profiler
     Use "guppy" package to profile memory usage.
-    This feature is disabled at the moment.
 {logs/stream-enabled} enable web logs
     Enabled this and go to http://127.0.0.1:[logs port number] to browse the program log.
     Need to restart the program.
@@ -51,11 +50,11 @@ def raw():
     Your personal information.
 {personal/betatester} betatester
     Are you agree to participate in the BitDust project testing?
-    We are going to provide some bonuses to people who help us at this stage.
+    We are going to provide some bonuses to people who help us at this stage, to be decided later.
 {personal/name} name
     Set your name if you wish.
 {personal/surname} surname
-    Set your surname if you wish.
+    Set your family name if you wish.
 {personal/nickname} nickname
     Set your nickname to private messaging.
     If you leave this blank your identity address will be used to form a nickname.
@@ -96,7 +95,7 @@ def raw():
     A "0" value means unlimited number of copies, be sure you have enough amount of donated space on remote machines.
 {services/backups/keep-local-copies-enabled} keep local copies
     Enable this to keep a copy of every new backup on your local HDD as well as on remote machines of your suppliers.
-    This increases data reliablity, rebuilding performance and decrease network load,
+    This increases data reliability, rebuilding performance and decrease network load,
     but consumes space on your HDD.
     Every one Mb of source data uploaded will consume two Mb on your local HDD.
 {services/backups/wait-suppliers-enabled} wait suppliers 24 hours
@@ -110,7 +109,7 @@ def raw():
 
 {services/identity-server} own identity server
     You can start own Identity server and store identity files of other users on your machine to support the BitDustwork.
-{services/identity-server/enabled} ebable identity server
+{services/identity-server/enabled} enable identity server
     Enable this to start "identity-server" service.
 {services/identity-server/host} identity server hostname
     Set a domain name of your machine if you have it.
@@ -129,8 +128,8 @@ def raw():
 {services/customer/suppliers-number} number of suppliers
     Number of remote suppliers which keeps your backups.
     You can ser one of the following values: 2, 4, 7, 13, 18, 26, 64.
-    Right now we have only 16 testing machines in the network, so last three values is not usefull yet.
-    <font color=red>WARNING!</font> You will lost all your existing backups after changing suppliers number.
+    Right now we have only few testing nodes in the network, so high values is not working yet.
+    WARNING! You will lost all your existing backups after changing suppliers number.
 
 {services/network} network service
     "Network" service settings.
