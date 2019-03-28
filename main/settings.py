@@ -331,7 +331,7 @@ def MaximumSendingDelay():
     Higher values should decrease the network speed, but save CPU
     resources.
     """
-    return 2.0
+    return 4.0
 
 
 def MinimumReceivingDelay():
@@ -1981,7 +1981,7 @@ def enableMemoryProfile(enable=None):
     """
     if enable is None:
         return config.conf().getBool('logs/memprofile-enabled')
-    config.conf().setData('logs/memprofile-enabled', str(enable))
+    return config.conf().setData('logs/memprofile-enabled', str(enable))
 
 
 def getECCSuppliersNumbers():
@@ -2358,9 +2358,9 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('logs/memdebug-enabled', 'false')
     config.conf().setDefaultValue('logs/memdebug-port', '9996')
     config.conf().setDefaultValue('logs/memprofile-enabled', 'false')
-    config.conf().setDefaultValue('logs/stream-enabled', 'true')
+    config.conf().setDefaultValue('logs/stream-enabled', 'false')
     config.conf().setDefaultValue('logs/stream-port', DefaultWebLogPort())
-    config.conf().setDefaultValue('logs/traffic-enabled', 'true')
+    config.conf().setDefaultValue('logs/traffic-enabled', 'false')
     config.conf().setDefaultValue('logs/traffic-port', DefaultWebTrafficPort())
 
     config.conf().setDefaultValue('paths/backups', '')

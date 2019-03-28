@@ -356,7 +356,10 @@ def config_list(sort=False):
     r = [{
         'key': key,
         'value': str(r[key]).replace('\n', '\\n'),
-        'type': config.conf().getTypeLabel(key)} for key in list(r.keys())]
+        'type': config.conf().getTypeLabel(key),
+        'label': config.conf().getLabel(key),
+        'info': config.conf().getInfo(key),
+    } for key in list(r.keys())]
     if sort:
         r = sorted(r, key=lambda i: i['key'])
     return RESULT(r)

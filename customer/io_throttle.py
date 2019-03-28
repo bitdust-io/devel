@@ -424,7 +424,7 @@ class SupplierQueue:
             return
         self._runSend = True
         if _Debug:
-            lg.out(_DebugLevel, 'io_throttle.RunSend\n    fileSendQueue=%r\n    sendFailedPacketIDs=%r' % (
+            lg.out(_DebugLevel + 6, 'io_throttle.RunSend\n    fileSendQueue=%r\n    sendFailedPacketIDs=%r' % (
                 self.fileSendQueue, self.sendFailedPacketIDs))
         packetsToBeFailed = {}
         packetsToRemove = set()
@@ -478,14 +478,6 @@ class SupplierQueue:
             # prepare the packet
             # dt = time.time()
             Payload = bpio.ReadBinaryFile(fileToSend.fileName)
-            # newpacket = signed.Packet(
-            #     commands.Data(),
-            #     fileToSend.ownerID,
-            #     self.creatorID,
-            #     fileToSend.packetID,
-            #     Payload,
-            #     fileToSend.remoteID,
-            # )
             p2p_service.SendData(
                 raw_data=Payload,
                 ownerID=fileToSend.ownerID,

@@ -28,8 +28,8 @@ in the memory.
 """
 
 from __future__ import absolute_import
-import cherrypy
-import dowser
+import cherrypy  # @UnresolvedImport
+import dowser  # @UnresolvedImport
 
 
 def start(port):

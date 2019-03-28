@@ -385,16 +385,16 @@ class Initializer(automat.Automat):
             # twisted_log.defaultObserver.stop()
         if settings.getDebugLevel() > 10:
             defer.setDebugging(True)
-#        if settings.enableMemoryProfile():
-#            try:
-#                from guppy import hpy
-#                hp = hpy()
-#                hp.setrelheap()
-#                lg.out(2, 'hp.heap():\n'+str(hp.heap()))
-#                lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-#                lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
-#            except:
-#                lg.out(2, "guppy package is not installed")
+        if settings.enableMemoryProfile():
+            try:
+                from guppy import hpy  # @UnresolvedImport
+                hp = hpy()
+                hp.setrelheap()
+                lg.out(2, 'hp.heap():\n'+str(hp.heap()))
+                lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+                lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+            except:
+                lg.out(2, "guppy package is not installed")
 
     def _on_software_code_updated(self, evt):
         lg.out(2, 'initializer._on_software_code_updated will RESTART BitDust now! "source-code-fetched" event received')

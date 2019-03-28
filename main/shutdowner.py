@@ -71,6 +71,7 @@ from automats import automat
 from automats import global_state
 
 from main import initializer
+from main import settings
 
 #------------------------------------------------------------------------------
 
@@ -148,6 +149,8 @@ class Shutdowner(automat.Automat):
         self.flagApp = False
         self.flagReactor = False
         self.shutdown_param = None
+        self.enableMemoryProfile = settings.enableMemoryProfile()
+
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('SHUTDOWN ' + newstate)
@@ -216,6 +219,7 @@ class Shutdowner(automat.Automat):
 
     def doShutdown(self, *args, **kwargs):
         lg.out(2, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
+
         param = args[0]
         if self.shutdown_param is not None:
             param = self.shutdown_param
@@ -243,6 +247,17 @@ class Shutdowner(automat.Automat):
         lg.out(2, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
             len(automat.objects()), '\n        '.join(
                 ['%d: %r' % (k, automat.objects()[k]) for k in automat.objects().keys()])))
+
+        if self.enableMemoryProfile:
+            try:
+                from guppy import hpy  # @UnresolvedImport
+                hp = hpy()
+                hp.setrelheap()
+                lg.out(2, 'hp.heap():\n'+str(hp.heap()))
+                lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+                lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+            except:
+                lg.out(2, "guppy package is not installed")
 
     #------------------------------------------------------------------------------
 
