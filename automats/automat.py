@@ -658,6 +658,7 @@ class Automat(object):
             self._state_callbacks[key] = []
         if cb not in self._state_callbacks[key]:
             self._state_callbacks[key].append((callback_id, cb, ))
+        return True
 
     def removeStateChangedCallback(self, cb=None, callback_id=None):
         """

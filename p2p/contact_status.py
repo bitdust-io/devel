@@ -67,7 +67,6 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
-import os
 import sys
 import time
 
@@ -329,6 +328,7 @@ class ContactStatus(automat.Automat):
     def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False):
         self.idurl = idurl
         self.time_connected = None
+        self.time_incoming = None
         automat.Automat.__init__(self, name, state,
                                  debug_level=debug_level,
                                  log_events=log_events,
@@ -343,33 +343,38 @@ class ContactStatus(automat.Automat):
     def A(self, event, *args, **kwargs):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'sent-failed' and self.isDataPacket(*args, **kwargs) and self.Fails<3:
-                self.Fails+=1
-            elif event == 'ping-failed' or ( event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(*args, **kwargs) ):
+            if event == 'ping-failed' or ( event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(*args, **kwargs) ):
                 self.state = 'OFFLINE'
                 self.PingRequired=False
-                self.doRepaint(*args, **kwargs)
-            elif event == 'ping':
-                self.PingRequired=True
-                self.doPing(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
+            elif event == 'inbox-packet':
+                self.doRememberIncomingTime(*args, **kwargs)
             elif event == 'outbox-packet' and self.isPingPacket(*args, **kwargs) and self.PingRequired:
                 self.state = 'PING'
                 self.AckCounter=0
                 self.PingRequired=False
-                self.doRepaint(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
+            elif event == 'outbox-packet' and not self.isPingPacket(*args, **kwargs) and self.isAckExpected(*args, **kwargs) and not self.isRecentIncomings(*args, **kwargs):
+                self.doPingLater(*args, **kwargs)
+            elif event == 'ping':
+                self.PingRequired=True
+                self.doPing(*args, **kwargs)
+            elif event == 'sent-failed' and self.Fails<3 and self.isDataPacket(*args, **kwargs):
+                self.Fails+=1
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'outbox-packet' and self.isPingPacket(*args, **kwargs):
                 self.state = 'PING'
                 self.PingRequired=False
                 self.AckCounter=0
-                self.doRepaint(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
             elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
                 self.PingRequired=False
                 self.Fails=0
-                self.doRememberTime(*args, **kwargs)
-                self.doRepaint(*args, **kwargs)
+                self.doRememberConnectedTime(*args, **kwargs)
+                self.doRememberIncomingTime(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
             elif event == 'ping':
                 self.doPing(*args, **kwargs)
         #---PING---
@@ -380,26 +385,28 @@ class ContactStatus(automat.Automat):
             elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
                 self.Fails=0
-                self.doRememberTime(*args, **kwargs)
-                self.doRepaint(*args, **kwargs)
+                self.doRememberConnectedTime(*args, **kwargs)
+                self.doRememberIncomingTime(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
             elif event == 'file-sent':
                 self.AckCounter+=1
             elif event == 'sent-failed' and self.AckCounter>1:
                 self.AckCounter-=1
             elif event == 'ping-failed' or event == 'timer-10sec' or ( event == 'sent-failed' and self.AckCounter==1 ):
                 self.state = 'OFFLINE'
-                self.doRepaint(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
         #---ACK?---
         elif self.state == 'ACK?':
             if event == 'inbox-packet':
                 self.state = 'CONNECTED'
                 self.Fails=0
-                self.doRememberTime(*args, **kwargs)
-                self.doRepaint(*args, **kwargs)
+                self.doRememberConnectedTime(*args, **kwargs)
+                self.doRememberIncomingTime(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
             elif event == 'outbox-packet' and self.isPingPacket(*args, **kwargs):
                 self.state = 'PING'
                 self.AckCounter=0
-                self.doRepaint(*args, **kwargs)
+                self.doNotifyRefresh(*args, **kwargs)
             elif event == 'ping-failed' or event == 'timer-10sec':
                 self.state = 'OFFLINE'
         return None
@@ -418,6 +425,21 @@ class ContactStatus(automat.Automat):
         pkt_out, _, _ = args[0]
         return pkt_out.outpacket.Command not in [ commands.Ack(), ]
 
+    def isRecentIncomings(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        if not self.time_incoming:
+            return False
+        return time.time() - self.time_incoming > 20
+
+    def isAckExpected(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        pkt_out = args[0]
+        return commands.IsAckExpected(pkt_out.outpacket.Command)
+
     def doPing(self, *args, **kwargs):
         """
         Action method.
@@ -430,18 +452,30 @@ class ContactStatus(automat.Automat):
         d.addCallback(self._on_ping_success)
         d.addErrback(self._on_ping_failed)
 
-    def doRememberTime(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        self.time_connected = time.time()
-
-    def doRepaint(self, *args, **kwargs):
+    def doNotifyRefresh(self, *args, **kwargs):
         """
         Action method.
         """
         from main import control
         control.request_update([('contact', self.idurl)])
+
+    def doRememberConnectedTime(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.time_connected = time.time()
+
+    def doRememberIncomingTime(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.time_incoming = time.time()
+
+    def doPingLater(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        reactor.callLater(0, self.automat, 'ping')  # @UndefinedVariable
 
     def _on_ping_success(self, result):
         try:

@@ -920,7 +920,13 @@ class FamilyMember(automat.Automat):
             lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
         my_position_in_transaction = another_suppliers_list.index(my_id.getLocalIDURL())
-        my_known_position = self.my_info['suppliers'].index(my_id.getLocalIDURL())
+        try:
+            my_known_position = self.my_info['suppliers'].index(my_id.getLocalIDURL())
+        except:
+            my_known_position = None
+        if not my_known_position:
+            lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
+            return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
         if my_position_in_transaction != my_known_position:
             lg.warn('another supplier is trying to put my IDURL on another position in the family of customer %s' % self.customer_idurl)
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))

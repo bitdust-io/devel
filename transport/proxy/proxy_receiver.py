@@ -90,7 +90,7 @@ from crypt import encrypted
 
 from p2p import commands
 from p2p import lookup
-from p2p import contact_status
+from p2p import online_status
 from p2p import propagate
 
 from contacts import identitycache
@@ -434,11 +434,21 @@ class ProxyReceiver(automat.Automat):
             lg.warn('current identity was stored as my-original-identity')
         self.request_service_packet_id = []
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
-        if contact_status.isKnown(self.router_idurl):
-            contact_status.A(self.router_idurl).addStateChangedCallback(
-                self._on_router_contact_status_connected, newstate='CONNECTED')
-            contact_status.A(self.router_idurl).addStateChangedCallback(
-                self._on_router_contact_status_offline, newstate='OFFLINE')
+        if online_status.isKnown(self.router_idurl):
+            online_status.add_online_status_listener_callback(
+                idurl=self.router_idurl,
+                callback_method=self._on_router_contact_status_connected,
+                newstate='CONNECTED',
+            )
+            online_status.add_online_status_listener_callback(
+                idurl=self.router_idurl,
+                callback_method=self._on_router_contact_status_offline,
+                newstate='OFFLINE',
+            )
+            # contact_status.A(self.router_idurl).addStateChangedCallback(
+            #     self._on_router_contact_status_connected, newstate='CONNECTED')
+            # contact_status.A(self.router_idurl).addStateChangedCallback(
+            #     self._on_router_contact_status_offline, newstate='OFFLINE')
         active_router_sessions = gateway.find_active_session(info.proto, info.host)
         if active_router_sessions:
             self.router_connection_info = {
@@ -466,9 +476,18 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        if contact_status.isKnown(self.router_idurl):
-            contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_connected)
-            contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_offline)
+        if online_status.isKnown(self.router_idurl):
+            online_status.remove_online_status_listener_callbackove_(
+                idurl=self.router_idurl,
+                callback_method=self._on_router_contact_status_connected,
+            )
+            online_status.remove_online_status_listener_callbackove_(
+                idurl=self.router_idurl,
+                callback_method=self._on_router_contact_status_offline,
+            )
+        # if contact_status.isKnown(self.router_idurl):
+        #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_connected)
+        #     contact_status.A(self.router_idurl).removeStateChangedCallback(self._on_router_contact_status_offline)
         WriteMyOriginalIdentitySource('')
         config.conf().setString('services/proxy-transport/current-router', '')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
@@ -795,10 +814,10 @@ class ProxyReceiver(automat.Automat):
         return False
 
     def _on_router_contact_status_connected(self, oldstate, newstate, event_string, *args, **kwargs):
-        pass
+        lg.info('router %r contact status online: %s->%s after "%s"' % (self.router_idurl, oldstate, newstate, event_string, ))
 
     def _on_router_contact_status_offline(self, oldstate, newstate, event_string, *args, **kwargs):
-        lg.warn('router contact status offline: %s->%s after "%s"' % (oldstate, newstate, event_string, ))
+        lg.warn('router %r contact status offline: %s->%s after "%s"' % (self.router_idurl, oldstate, newstate, event_string, ))
         # self.automat('router-disconnected')
 
     def _on_router_session_disconnected(self, oldstate, newstate, event_string, *args, **kwargs):

@@ -116,7 +116,7 @@ from userid import global_id
 
 from crypt import encrypted
 
-from p2p import contact_status
+from p2p import online_status
 from p2p import propagate
 
 from customer import data_receiver
@@ -440,7 +440,7 @@ class RestoreWorker(automat.Automat):
             if not SupplierID:
                 lg.warn('unknown supplier at position %s' % SupplierNumber)
                 continue
-            if contact_status.isOffline(SupplierID):
+            if online_status.isOffline(SupplierID):
                 lg.warn('offline supplier: %s' % SupplierID)
                 continue
             if self.OnHandData[SupplierNumber]:
@@ -453,7 +453,7 @@ class RestoreWorker(automat.Automat):
             if not SupplierID:
                 lg.warn('unknown supplier at position %s' % SupplierNumber)
                 continue
-            if contact_status.isOffline(SupplierID):
+            if online_status.isOffline(SupplierID):
                 lg.warn('offline supplier: %s' % SupplierID)
                 continue
             if self.OnHandParity[SupplierNumber]:

@@ -47,6 +47,7 @@ EVENTS:
     * :red:`new-data`
     * :red:`restart`
     * :red:`scan-done`
+    * :red:`shutdown`
     * :red:`timer-1min`
     * :red:`timer-1sec`
 """
@@ -82,7 +83,7 @@ from userid import my_id
 
 from main import settings
 
-from p2p import contact_status
+from p2p import online_status
 
 from customer import io_throttle
 
@@ -93,7 +94,6 @@ _ShutdownFlag = False
 
 #------------------------------------------------------------------------------
 
-
 def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
@@ -102,7 +102,7 @@ def A(event=None, *args, **kwargs):
     if _DataSender is None:
         _DataSender = DataSender(
             name='data_sender',
-            state='READY',
+            state='AT_STARTUP',
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -112,28 +112,15 @@ def A(event=None, *args, **kwargs):
     return _DataSender
 
 
-def Destroy():
-    """
-    Destroy the state machine and remove the instance from memory.
-    """
-    global _DataSender
-    if _DataSender is None:
-        return
-    _DataSender.destroy()
-    del _DataSender
-    _DataSender = None
-
-
 class DataSender(automat.Automat):
     """
     A class to manage process of sending data packets to remote suppliers.
     """
     timers = {
         'timer-1min': (60, ['READY']),
-        'timer-1min': (60, ['READY']),
         'timer-1sec': (1.0, ['SENDING']),
     }
-    statistic = {}
+
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         global_state.set_global_state('DATASEND ' + newstate)
@@ -141,11 +128,16 @@ class DataSender(automat.Automat):
     def A(self, event, *args, **kwargs):
         #---READY---
         if self.state == 'READY':
-            if event == 'new-data' or event == 'timer-1min' or event == 'restart':
+            if event == 'new-data' or event == 'timer-1min':
                 self.state = 'SCAN_BLOCKS'
                 self.doScanAndQueue(*args, **kwargs)
-            elif event == 'init':
-                pass
+            elif event == 'restart':
+                self.state = 'SCAN_BLOCKS'
+                self.doCleanUpSendingQueue(*args, **kwargs)
+                self.doScanAndQueue(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
         #---SCAN_BLOCKS---
         elif self.state == 'SCAN_BLOCKS':
             if event == 'scan-done' and self.isQueueEmpty(*args, **kwargs):
@@ -153,11 +145,34 @@ class DataSender(automat.Automat):
                 self.doRemoveUnusedFiles(*args, **kwargs)
             elif event == 'scan-done' and not self.isQueueEmpty(*args, **kwargs):
                 self.state = 'SENDING'
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doCleanUpSendingQueue(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'restart':
+                self.doCleanUpSendingQueue(*args, **kwargs)
+                self.doScanAndQueue(*args, **kwargs)
         #---SENDING---
         elif self.state == 'SENDING':
-            if event == 'restart' or ( ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data' ) and self.isQueueEmpty(*args, **kwargs) ):
+            if event == 'restart':
+                self.state = 'SCAN_BLOCKS'
+                self.doCleanUpSendingQueue(*args, **kwargs)
+                self.doScanAndQueue(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doCleanUpSendingQueue(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data' ) and self.isQueueEmpty(*args, **kwargs):
                 self.state = 'SCAN_BLOCKS'
                 self.doScanAndQueue(*args, **kwargs)
+        #---AT_STARTUP---
+        elif self.state == 'AT_STARTUP':
+            if event == 'init':
+                self.state = 'READY'
+                self.doInit(*args, **kwargs)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
         return None
 
     def isQueueEmpty(self, *args, **kwargs):
@@ -172,7 +187,16 @@ class DataSender(automat.Automat):
             lg.out(_DebugLevel, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (can_send_to, remoteID, ))
         return can_send_to
 
+    def doInit(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.statistic = {}
+
     def doScanAndQueue(self, *args, **kwargs):
+        """
+        Action method.
+        """
         global _ShutdownFlag
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
@@ -275,6 +299,9 @@ class DataSender(automat.Automat):
 #            lg.out(0, 'transfers: ' + s[:120])
 
     def doRemoveUnusedFiles(self, *args, **kwargs):
+        """
+        Action method.
+        """
         # we want to remove files for this block
         # because we only need them during rebuilding
         if settings.getBackupsKeepLocalCopies() is True:
@@ -284,8 +311,7 @@ class DataSender(automat.Automat):
         if settings.getGeneralWaitSuppliers() is True:
             from customer import fire_hire
             # but he want to be sure - all suppliers are green for a long time
-            if len(contact_status.listOfflineSuppliers()) > 0 or time.time(
-            ) - fire_hire.GetLastFireTime() < 24 * 60 * 60:
+            if len(online_status.listOfflineSuppliers()) > 0 or (time.time() - fire_hire.GetLastFireTime() < 24 * 60 * 60):
                 # some people are not there or we do not have stable team yet
                 # do not remove the files because we need it to rebuild
                 return
@@ -336,6 +362,18 @@ class DataSender(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, '    %d files were removed' % count)
         backup_matrix.ReadLocalFiles()
+
+    def doCleanUpSendingQueue(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        io_throttle.DeleteAllSuppliers()
+
+    def doDestroyMe(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.statistic = {}
 
     def _packetAcked(self, packet, ownerID, packetID):
         from storage import backup_matrix

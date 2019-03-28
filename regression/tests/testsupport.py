@@ -57,6 +57,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     if stderr:
         print('STDERR: %r' % stderr.decode())
     # assert not stderr
+    print(f'\nssh_command on [{host}] : {cmd}')
     return stdout.decode(), stderr.decode()
 
 
@@ -73,7 +74,7 @@ def run_ssh_command_and_wait(host, cmd):
     )
     output, err = ssh_proc.communicate()
     if err:
-        print('STDERR: %r' % err.decode())
+        print('\nSTDERR: %r' % err.decode())
     # assert not err
     return output.decode(), err.decode()
 
@@ -97,7 +98,7 @@ async def open_tunnel_async(node, local_port, loop):
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
     # _NextSSHTunnelPort += 1
-    print(f'open_tunnel [{node}] on port {local_port} with {ssh_proc}\n')
+    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
     return ssh_proc
 
 
@@ -114,7 +115,7 @@ def open_tunnel(node):
     _SSHTunnels[node] = ssh_proc
     _NodeTunnelPort[node] = local_port
     _NextSSHTunnelPort += 1
-    print(f'open_tunnel [{node}] on port {local_port} with {ssh_proc}\n')
+    print(f'\nopen_tunnel [{node}] on port {local_port} with {ssh_proc}')
 
 
 async def open_one_tunnel_async(node, local_port, loop):
@@ -132,7 +133,7 @@ def close_tunnel(node):
         assert False, 'ssh tunnel process for that node was not found'
     close_ssh_port_forwarding(node, _SSHTunnels[node])
     _SSHTunnels.pop(node)
-    print(f'close_tunnel [{node}] OK\n')
+    print(f'\nclose_tunnel [{node}] OK')
 
 
 def save_tunnels_ports():
@@ -245,7 +246,7 @@ def start_daemon(node):
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
-    print(f'start_daemon [{node}] OK\n')
+    print(f'\nstart_daemon [{node}] OK\n')
 
 
 async def start_daemon_async(node, loop):
@@ -257,14 +258,14 @@ async def start_daemon_async(node, loop):
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
         bitdust_daemon[0].strip().startswith('new BitDust process will be started in daemon mode')
     )
-    print(f'start_daemon_async [{node}] OK\n')
+    print(f'\nstart_daemon_async [{node}] OK\n')
 
 
 def health_check(node):
     count = 0
     while True:
-        if count > 10:
-            assert False, f'node {node} is not healthy after 10 attempts'
+        if count > 60:
+            assert False, f'node {node} is not healthy after many attempts'
         try:
             response = requests.get(tunnel_url(node, 'process/health/v1'))
         except Exception as exc:
@@ -272,23 +273,25 @@ def health_check(node):
             response = None
         if response and response.status_code == 200 and response.json()['status'] == 'OK':
             break
-        print(f'node {node} process not started yet, try again after 1 sec.\n')
+        print(f'\nnode {node} process not started yet, try again after 1 sec.\n')
         time.sleep(1)
         count += 1
-    print(f'process/health/v1 [{node}] : OK\n')
+    print(f'\nprocess/health/v1 [{node}] : OK')
 
 
 async def health_check_async(node, event_loop):
     async with aiohttp.ClientSession(loop=event_loop) as client:
         count = 0
         while True:
-            if count > 10:
-                assert False, f'node {node} is not healthy after 10 attempts'
+            print(f'health_check_async {node}  with count={count}\n')
+            if count > 60:
+                print(f'node {node} is not healthy after many attempts')
+                assert False, f'node {node} is not healthy after many attempts'
             try:
                 response = await client.get(tunnel_url(node, 'process/health/v1'))
                 response_json = await response.json()
             except aiohttp.ServerDisconnectedError:
-                pass
+                print(f'node {node} is not started yet, count={count}\n')
             else:
                 if response.status == 200 and response_json['status'] == 'OK':
                     break
@@ -301,8 +304,8 @@ async def health_check_async(node, event_loop):
 def create_identity(node, identity_name):
     count = 0
     while True:
-        if count > 10:
-            assert False, f'node {node} failed to create identity after 10 retries'
+        if count > 60:
+            assert False, f'node {node} failed to create identity after many retries'
         response = requests.post(
             url=tunnel_url(node, 'identity/create/v1'),
             json={
@@ -324,7 +327,7 @@ def create_identity(node, identity_name):
 
 async def create_identity_async(node, identity_name, event_loop):
     async with aiohttp.ClientSession(loop=event_loop) as client:
-        for i in range(10):
+        for i in range(60):
             response_identity = await client.post(tunnel_url(node, 'identity/create/v1'), json={'username': identity_name})
             assert response_identity.status == 200
 
@@ -350,8 +353,8 @@ def connect_network(node):
     response = requests.get(url=tunnel_url(node, 'network/connected/v1?wait_timeout=1'))
     assert response.json()['status'] == 'ERROR'
     while True:
-        if count > 10:
-            assert False, f'node {node} failed to connect to the network after few retries'
+        if count > 60:
+            assert False, f'node {node} failed to connect to the network after many retries'
         response = requests.get(tunnel_url(node, 'network/connected/v1?wait_timeout=5'))
         if response.json()['status'] == 'OK':
             break
@@ -367,7 +370,7 @@ async def connect_network_async(node, loop):
         response_json = await response.json()
         assert response_json['status'] == 'ERROR'
 
-        for i in range(20):
+        for i in range(60):
             response = await client.get(f'http://{node}:8180/network/connected/v1?wait_timeout=1')
             response_json = await response.json()
             if response_json['status'] == 'OK':

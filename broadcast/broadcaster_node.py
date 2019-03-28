@@ -63,7 +63,7 @@ from automats import automat
 
 from main import config
 
-from p2p import contact_status
+from p2p import online_status
 from p2p import commands
 
 from transport import callback
@@ -179,7 +179,7 @@ class BroadcasterNode(automat.Automat):
         Condition method.
         """
         for idurl in self.connected_broadcasters:
-            if contact_status.isOnline(idurl):
+            if online_status.isOnline(idurl):
                 # if at least one broadcaster is connected
                 # we assume the line is still active
                 return True

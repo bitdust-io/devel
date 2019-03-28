@@ -112,7 +112,7 @@ from storage import backup_control
 from userid import global_id
 from userid import my_id
 
-from p2p import contact_status
+from p2p import online_status
 
 #------------------------------------------------------------------------------
 
@@ -407,7 +407,7 @@ class BackupMonitor(automat.Automat):
                 lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
             self.automat('restart')
             return
-        if contact_status.listOfflineSuppliers():
+        if online_status.listOfflineSuppliers():
             if time.time() - self.last_execution_time > 60:
                 # re-sync every 1 min. if at least on supplier is dead
                 if _Debug:

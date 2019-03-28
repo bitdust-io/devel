@@ -92,21 +92,30 @@ def init():
     P2PCommandAcks[Contacts()] = [Contacts(), Ack(), Fail(), ]
 
 
-def IsCommand(s):
+def IsCommand(com):
     """
-    Check to see if ``s`` is a valid command.
+    Check to see if ``com`` is a valid command.
     """
     global P2PCommandAcks
     if len(P2PCommandAcks) == 0:
         init()
-    return s in P2PCommandAcks
+    return com in P2PCommandAcks
 
 
 def IsCommandAck(com, ack):
+    """
+    """
     global P2PCommandAcks
     if len(P2PCommandAcks) == 0:
         init()
     return ack in P2PCommandAcks.get(com, [])
+
+
+def IsAckExpected(com):
+    """
+    """
+    expected = P2PCommandAcks.get(com, [])
+    return Ack() in expected
 
 #------------------------------------------------------------------------------
 

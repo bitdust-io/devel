@@ -205,17 +205,17 @@ def GetActiveArray(customer_idurl=None):
     Loops all suppliers and returns who is alive at the moment.
 
     Return a list with integers: 0 for offline suppler and 1 if he is
-    available right now. Uses ``p2p.contact_status.isOnline()`` to see
+    available right now. Uses ``p2p.online_status.isOnline()`` to see
     the current state of supplier.
     """
-    from p2p import contact_status
+    from p2p import online_status
     activeArray = [0, ] * contactsdb.num_suppliers(customer_idurl=customer_idurl)
     for i in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         suplier_idurl = contactsdb.supplier(i, customer_idurl=customer_idurl)
         if not suplier_idurl:
             activeArray[i] = 0
             continue
-        if contact_status.isOnline(suplier_idurl):
+        if online_status.isOnline(suplier_idurl):
             activeArray[i] = 1
         else:
             activeArray[i] = 0

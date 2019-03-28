@@ -56,7 +56,7 @@ from twisted.internet.defer import Deferred
 from logs import lg
 
 from p2p import commands
-from p2p import contact_status
+from p2p import online_status
 from p2p import propagate
 
 from lib import packetid
@@ -422,7 +422,7 @@ def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
     else:
         is_expired = time.time() - _LastUserPingTime[remote_idurl] > _PingTrustIntervalSeconds
     remote_identity = identitycache.FromCache(remote_idurl)
-    if is_expired or remote_identity is None or not contact_status.isOnline(remote_idurl):
+    if is_expired or remote_identity is None or not online_status.isOnline(remote_idurl):
         d = propagate.PingContact(remote_idurl, timeout=timeout or 5)
         d.addCallback(lambda response_tuple: on_ping_success(response_tuple, remote_idurl))
         d.addCallback(lambda response_tuple: do_send_message(
