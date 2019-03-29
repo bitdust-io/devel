@@ -177,8 +177,9 @@ def process(newpacket, info):
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
         return None
     if _Debug:
-        lg.out(0, '  \033[0;49;32m IN %s(%s) with %d bytes from %s\033[0m' % (
-            newpacket.Command, newpacket.PacketID, info.bytes_received, global_id.UrlToGlobalID(info.sender_idurl)), log_name='packet')
+        lg.out(2, '        \033[0;49;92m IN %s(%s) with %d bytes from %s TID:%s\033[0m' % (
+            newpacket.Command, newpacket.PacketID, info.bytes_received,
+            global_id.UrlToGlobalID(info.sender_idurl), info.transfer_id), log_name='packet')
     if newpacket.Command == commands.Identity():
         if newpacket.RemoteID != my_id.getLocalIDURL():
             if _Debug:
@@ -405,6 +406,9 @@ class PacketIn(automat.Automat):
         """
         from transport import gateway
         self.status, self.bytes_received, self.error_message = args[0]
+        if _Debug:
+            lg.out(4, '        \033[2;49;90mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
+                self.bytes_received, self.proto, self.host, self.transfer_id), log_name='packet')
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
         if newpacket is None:
@@ -458,15 +462,22 @@ class PacketIn(automat.Automat):
             status = 'failed'
             bytes_received = 0
         p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        lg.out(18, 'packet_in.doReportFailed WARNING %s with %s' % (self.transfer_id, status))
+        if _Debug:
+            lg.out(2, '        \033[0;49;31mFAILED with status "%s" from %s://%s TID:%s\033[0m' % (
+                status, self.proto, self.host, self.transfer_id), log_name='packet')
 
     def doReportCacheFailed(self, *args, **kwargs):
         """
         Action method.
         """
         if args and args[0]:
-            status, bytes_received, _ = args[0]
+            status, bytes_received, msg = args[0]
             p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
+        if _Debug:
+            lg.out(2, '        \033[0;49;31mCACHE FAILED with "%s" for %s TID:%s\033[0m' % (
+                msg, self.sender_idurl, self.transfer_id), log_name='packet')
 
     def doDestroyMe(self, *args, **kwargs):
         """

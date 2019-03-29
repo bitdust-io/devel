@@ -104,7 +104,7 @@ def out(level, msg, nl='\n', log_name='main'):
         level -= 1
     if level:
         s = ' ' * level + s
-    if _ShowTime:
+    if _ShowTime and level > 0:
         tm_string = time.strftime('%H:%M:%S')
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
