@@ -375,7 +375,8 @@ class FixedTypesConfig(NotifiableConfig):
             self._types = config_types.defaults()
             self._labels = config_types.labels()
         except:
-            pass
+            self._types = {}
+            self._labels = {}
 
     def types(self):
         return
@@ -386,11 +387,90 @@ class FixedTypesConfig(NotifiableConfig):
     def setType(self, key, typ):
         self._types[key] = typ
 
-    def getType(self, entry):
-        return self._types.get(entry, 0)
+    def getType(self, entryPath):
+        return self._types.get(entryPath, 0)
 
-    def getTypeLabel(self, entry):
-        return self._labels.get(self.getType(entry))
+    def getTypeLabel(self, entryPath):
+        return self._labels.get(self.getType(entryPath))
+
+    def getTypeMetaInfo(self, entryPath):
+        from main import config_types
+        typ = self.getType(entryPath)
+        if not typ:
+            return {}
+        if typ in [config_types.TYPE_STRING,
+                   config_types.TYPE_TEXT,
+                   config_types.TYPE_UNDEFINED,
+                   config_types.TYPE_PASSWORD,
+                   config_types.TYPE_INTEGER,
+                   config_types.TYPE_BOOLEAN, ]:
+            return {}
+        if typ == config_types.TYPE_POSITIVE_INTEGER:
+            return {'min': 0, }
+        if typ == config_types.TYPE_PORT_NUMBER:
+            return {'min': 1, 'max': 65535, }
+        if typ == config_types.TYPE_NON_ZERO_POSITIVE_INTEGER:
+            return {'min': 1, }
+        if typ in [config_types.TYPE_FOLDER_PATH, config_types.TYPE_FILE_PATH, ]:
+            # TODO: to be decided later
+            return {}
+        elif typ == config_types.TYPE_COMBO_BOX:
+            if entryPath == 'services/customer/suppliers-number':
+                return {'possible_values': [2, 4, 7, 13, 18, 26, 64, ], }
+            else:
+                raise TypeError('unexpected option type for %r' % entryPath)
+        return {}
+
+    def getValueOfType(self, entryPath):
+        from main import config_types
+        typ = self.getType(entryPath)
+        value = None
+        if not typ or typ in [config_types.TYPE_STRING,
+                              config_types.TYPE_TEXT,
+                              config_types.TYPE_UNDEFINED, ]:
+            value = self.getData(entryPath)
+        elif typ in [config_types.TYPE_BOOLEAN, ]:
+            value = self.getBool(entryPath)
+        elif typ in [config_types.TYPE_INTEGER,
+                     config_types.TYPE_POSITIVE_INTEGER,
+                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
+                     config_types.TYPE_PORT_NUMBER, ]:
+            value = self.getInt(entryPath)
+        elif typ in [config_types.TYPE_FOLDER_PATH,
+                     config_types.TYPE_FILE_PATH,
+                     config_types.TYPE_COMBO_BOX,
+                     config_types.TYPE_PASSWORD, ]:
+            value = self.getString(entryPath)
+        else:
+            value = self.getData(entryPath)
+        return value
+
+    def setValueOfType(self, entryPath, value):
+        from main import config_types
+        typ = self.getType(entryPath)
+        if not typ or typ in [config_types.TYPE_STRING,
+                              config_types.TYPE_TEXT,
+                              config_types.TYPE_UNDEFINED, ]:
+            self.setData(entryPath, strng.text_type(value))
+        elif typ in [config_types.TYPE_BOOLEAN, ]:
+            if strng.is_string(value):
+                vl = strng.to_text(value).strip().lower() == 'true'
+            else:
+                vl = bool(value)
+            self.setBool(entryPath, vl)
+        elif typ in [config_types.TYPE_INTEGER,
+                     config_types.TYPE_POSITIVE_INTEGER,
+                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
+                     config_types.TYPE_PORT_NUMBER, ]:
+            self.setInt(entryPath, int(value))
+        elif typ in [config_types.TYPE_FOLDER_PATH,
+                     config_types.TYPE_FILE_PATH,
+                     config_types.TYPE_COMBO_BOX,
+                     config_types.TYPE_PASSWORD, ]:
+            self.setString(entryPath, value)
+        else:
+            self.setData(entryPath, strng.text_type(value))
+        return True
 
 #------------------------------------------------------------------------------
 
@@ -465,6 +545,18 @@ class DetailedConfig(CachedConfig):
 
     def getInfo(self, entryPath):
         return self._infos.get(entryPath, '')
+
+    def toJson(self, entryPath):
+        result = {
+            'key': entryPath,
+            'value': self.getValueOfType(entryPath),
+            'type': self.getTypeLabel(entryPath),
+            'label': self.getLabel(entryPath),
+            'info': self.getInfo(entryPath),
+            'default': self.getDefaultValue(entryPath),
+        }
+        result.update(self.getTypeMetaInfo(entryPath))
+        return result
 
 #------------------------------------------------------------------------------
 

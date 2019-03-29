@@ -234,39 +234,11 @@ def config_get(key):
     if _Debug:
         lg.out(_DebugLevel, 'api.config_get [%s]' % key)
     from main import config
-    from main import config_types
     if key and not config.conf().exist(key):
         return ERROR('option "%s" not exist' % key)
 
-    def _get_item(key):
-        typ = config.conf().getType(key)
-        typ_label = config.conf().getTypeLabel(key)
-        value = None
-        if not typ or typ in [config_types.TYPE_STRING,
-                              config_types.TYPE_TEXT,
-                              config_types.TYPE_UNDEFINED, ]:
-            value = config.conf().getData(key)
-        elif typ in [config_types.TYPE_BOOLEAN, ]:
-            value = config.conf().getBool(key)
-        elif typ in [config_types.TYPE_INTEGER,
-                     config_types.TYPE_POSITIVE_INTEGER,
-                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
-            value = config.conf().getInt(key)
-        elif typ in [config_types.TYPE_FOLDER_PATH,
-                     config_types.TYPE_FILE_PATH,
-                     config_types.TYPE_COMBO_BOX,
-                     config_types.TYPE_PASSWORD, ]:
-            value = config.conf().getString(key)
-        else:
-            value = config.conf().getData(key)
-        return {
-            'key': key,
-            'value': value,
-            'type': typ_label,
-        }
-
     if key and not config.conf().hasChilds(key):
-        return RESULT([_get_item(key), ], )
+        return RESULT([config.conf().toJson(key), ], )
     childs = []
     for child in config.conf().listEntries(key):
         if config.conf().hasChilds(child):
@@ -275,7 +247,7 @@ def config_get(key):
                 'childs': len(config.conf().listEntries(child)),
             })
         else:
-            childs.append(_get_item(key))
+            childs.append(config.conf().toJson(child))
     return RESULT(childs)
 
 
@@ -289,42 +261,14 @@ def config_set(key, value):
     """
     key = str(key)
     from main import config
-    from main import config_types
     v = {}
     if config.conf().exist(key):
-        v['old_value'] = config.conf().getData(key)
-    typ = config.conf().getType(key)
+        v['old_value'] = config.conf().getValueOfType(key)
     typ_label = config.conf().getTypeLabel(key)
     if _Debug:
         lg.out(_DebugLevel, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
-    if not typ or typ in [config_types.TYPE_STRING,
-                          config_types.TYPE_TEXT,
-                          config_types.TYPE_UNDEFINED, ]:
-        config.conf().setData(key, strng.text_type(value))
-    elif typ in [config_types.TYPE_BOOLEAN, ]:
-        if strng.is_string(value):
-            vl = strng.to_text(value).strip().lower() == 'true'
-        else:
-            vl = bool(value)
-        config.conf().setBool(key, vl)
-    elif typ in [config_types.TYPE_INTEGER,
-                 config_types.TYPE_POSITIVE_INTEGER,
-                 config_types.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
-        config.conf().setInt(key, int(value))
-    elif typ in [config_types.TYPE_FOLDER_PATH,
-                 config_types.TYPE_FILE_PATH,
-                 config_types.TYPE_COMBO_BOX,
-                 config_types.TYPE_PASSWORD, ]:
-        config.conf().setString(key, value)
-    else:
-        config.conf().setData(key, strng.text_type(value))
-    v.update({'key': key,
-              'value': config.conf().getData(key),
-              'type': config.conf().getTypeLabel(key)
-              # 'code': config.conf().getType(key),
-              # 'label': config.conf().getLabel(key),
-              # 'info': config.conf().getInfo(key),
-              })
+    config.conf().setValueOfType(key, value)
+    v.update(config.conf().toJson(key))
     return RESULT([v, ])
 
 
@@ -353,13 +297,7 @@ def config_list(sort=False):
         lg.out(_DebugLevel, 'api.config_list')
     from main import config
     r = config.conf().cache()
-    r = [{
-        'key': key,
-        'value': str(r[key]).replace('\n', '\\n'),
-        'type': config.conf().getTypeLabel(key),
-        'label': config.conf().getLabel(key),
-        'info': config.conf().getInfo(key),
-    } for key in list(r.keys())]
+    r = [config.conf().toJson(key) for key in list(r.keys())]
     if sort:
         r = sorted(r, key=lambda i: i['key'])
     return RESULT(r)
@@ -2404,7 +2342,7 @@ def automats_list():
 #------------------------------------------------------------------------------
 
 
-def services_list():
+def services_list(show_configs=False):
     """
     Returns detailed info about all currently running network services.
 
@@ -2429,15 +2367,23 @@ def services_list():
             'state': 'ON'
         }]}
     """
-    result = [{
-        'index': svc.index,
-        'name': name,
-        'state': svc.state,
-        'enabled': svc.enabled(),
-        'installed': svc.installed(),
-        'config_path': svc.config_path,
-        'depends': svc.dependent_on()
-    } for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0])]
+    from main import config
+    result = []
+    for name, svc in sorted(list(driver.services().items()), key=lambda i: i[0]):
+        svc_info = {
+            'index': svc.index,
+            'name': name,
+            'state': svc.state,
+            'enabled': svc.enabled(),
+            'installed': svc.installed(),
+            'depends': svc.dependent_on()
+        }
+        if show_configs:
+            svc_configs = []
+            for child in config.conf().listEntries(svc.config_path.replace('/enabled', '')):
+                svc_configs.append(config.conf().toJson(child))
+            svc_info['configs'] = svc_configs
+        result.append(svc_info)
     if _Debug:
         lg.out(_DebugLevel, 'api.services_list responded with %d items' % len(result))
     return RESULT(result)
