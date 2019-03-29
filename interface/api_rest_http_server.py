@@ -738,7 +738,9 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/service/v1$')
     @GET('^/service/list/v1$')
     def service_list_v1(self, request):
-        return api.services_list()
+        return api.services_list(
+            show_configs=bool(_request_arg(request, 'config', '0') in ['1', 'true', ]),
+        )
 
     @GET('^/svc/i/(?P<service_name>[^/]+)/$')
     @GET('^/service/info/(?P<service_name>[^/]+)/v1$')
