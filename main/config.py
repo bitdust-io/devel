@@ -387,11 +387,39 @@ class FixedTypesConfig(NotifiableConfig):
     def setType(self, key, typ):
         self._types[key] = typ
 
-    def getType(self, entry):
-        return self._types.get(entry, 0)
+    def getType(self, entryPath):
+        return self._types.get(entryPath, 0)
 
-    def getTypeLabel(self, entry):
-        return self._labels.get(self.getType(entry))
+    def getTypeLabel(self, entryPath):
+        return self._labels.get(self.getType(entryPath))
+
+    def getTypeMetaInfo(self, entryPath):
+        from main import config_types
+        typ = self.getType(entryPath)
+        if not typ:
+            return {}
+        if typ in [config_types.TYPE_STRING,
+                   config_types.TYPE_TEXT,
+                   config_types.TYPE_UNDEFINED,
+                   config_types.TYPE_PASSWORD,
+                   config_types.TYPE_INTEGER,
+                   config_types.TYPE_BOOLEAN, ]:
+            return {}
+        if typ == config_types.TYPE_POSITIVE_INTEGER:
+            return {'min': 0, }
+        if typ == config_types.TYPE_PORT_NUMBER:
+            return {'min': 1, 'max': 65535, }
+        if typ == config_types.TYPE_NON_ZERO_POSITIVE_INTEGER:
+            return {'min': 1, }
+        if typ in [config_types.TYPE_FOLDER_PATH, config_types.TYPE_FILE_PATH, ]:
+            # TODO: to be decided later
+            return {}
+        elif typ == config_types.TYPE_COMBO_BOX:
+            if entryPath == 'services/customer/suppliers-number':
+                return {'possible_values': [2, 4, 7, 13, 18, 26, 64, ], }
+            else:
+                raise TypeError('unexpected option type for %r' % entryPath)
+        return {}
 
     def getValueOfType(self, entryPath):
         from main import config_types
@@ -405,7 +433,8 @@ class FixedTypesConfig(NotifiableConfig):
             value = self.getBool(entryPath)
         elif typ in [config_types.TYPE_INTEGER,
                      config_types.TYPE_POSITIVE_INTEGER,
-                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
+                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
+                     config_types.TYPE_PORT_NUMBER, ]:
             value = self.getInt(entryPath)
         elif typ in [config_types.TYPE_FOLDER_PATH,
                      config_types.TYPE_FILE_PATH,
@@ -431,7 +460,8 @@ class FixedTypesConfig(NotifiableConfig):
             self.setBool(entryPath, vl)
         elif typ in [config_types.TYPE_INTEGER,
                      config_types.TYPE_POSITIVE_INTEGER,
-                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
+                     config_types.TYPE_NON_ZERO_POSITIVE_INTEGER,
+                     config_types.TYPE_PORT_NUMBER, ]:
             self.setInt(entryPath, int(value))
         elif typ in [config_types.TYPE_FOLDER_PATH,
                      config_types.TYPE_FILE_PATH,
@@ -517,13 +547,16 @@ class DetailedConfig(CachedConfig):
         return self._infos.get(entryPath, '')
 
     def toJson(self, entryPath):
-        return {
+        result = {
             'key': entryPath,
             'value': self.getValueOfType(entryPath),
             'type': self.getTypeLabel(entryPath),
             'label': self.getLabel(entryPath),
             'info': self.getInfo(entryPath),
+            'default': self.getDefaultValue(entryPath),
         }
+        result.update(self.getTypeMetaInfo(entryPath))
+        return result
 
 #------------------------------------------------------------------------------
 
