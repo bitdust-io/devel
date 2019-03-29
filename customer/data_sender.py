@@ -209,6 +209,11 @@ class DataSender(automat.Automat):
         backup_matrix.ReadLocalFiles()
         progress = 0
         for customer_idurl in contactsdb.known_customers():
+            if customer_idurl != my_id.getLocalIDURL():
+                # TODO: check that later
+                if _Debug:
+                    lg.out(_DebugLevel + 6, '    skip sending to another customer: %r' % customer_idurl)
+                continue
             known_suppliers = contactsdb.suppliers(customer_idurl)
             if b'' in known_suppliers or '' in known_suppliers:
                 if _Debug:
@@ -224,7 +229,7 @@ class DataSender(automat.Automat):
                     continue
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
                 if _Debug:
-                    lg.out(_DebugLevel, '        %s' % packetsBySupplier)
+                    lg.out(_DebugLevel, '        packets for customer %r : %s' % (customer_idurl, packetsBySupplier))
                 for supplierNum in packetsBySupplier.keys():
                     # supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
                     try:
