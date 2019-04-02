@@ -302,6 +302,24 @@ def config_list(sort=False):
         r = sorted(r, key=lambda i: i['key'])
     return RESULT(r)
 
+
+def config_tree():
+    """
+    Returns all options as a tree.
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'api.config_list')
+    from main import config
+    r = {}
+    for key in config.conf().cache():
+        cursor = r
+        for part in key.split('/'):
+            if part not in cursor:
+                cursor[part] = {}
+            cursor = cursor[part]
+        cursor.update(config.conf().toJson(key))
+    return RESULT(result=[r, ])
+
 #------------------------------------------------------------------------------
 
 def identity_get(include_xml_source=False):

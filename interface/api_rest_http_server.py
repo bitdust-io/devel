@@ -222,6 +222,11 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def config_list_v1(self, request):
         return api.config_list(sort=True)
 
+    @GET('^/c/t$')
+    @GET('^/config/tree/v1$')
+    def config_tree_v1(self, request):
+        return api.config_tree()
+
     @GET('^/c/g/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/$')
     @GET('^/config/get/(?P<key1>[^/]+)/(?P<key2>[^/]+)/(?P<key3>[^/]+)/v1$')
     def config_get_l3_v1(self, request, key1, key2, key3):
