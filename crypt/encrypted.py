@@ -62,7 +62,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -137,9 +137,9 @@ class Block(object):
             # this block to be encrypted before sending
             if callable(EncryptKey):
                 self.EncryptedSessionKey = EncryptKey(SessionKey)
-            elif isinstance(EncryptKey, six.string_types):
+            elif strng.is_text(EncryptKey):
                 self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
-            elif isinstance(EncryptKey, six.binary_type):
+            elif strng.is_bin(EncryptKey):
                 self.EncryptedSessionKey = my_keys.encrypt(strng.to_text(EncryptKey), SessionKey)
             else:
                 self.EncryptedSessionKey = key.EncryptLocalPublicKey(SessionKey)
@@ -173,8 +173,10 @@ class Block(object):
         """
         if callable(self.DecryptKey):
             return self.DecryptKey(self.EncryptedSessionKey)
-        elif isinstance(self.DecryptKey, six.string_types):
+        elif strng.is_text(self.DecryptKey):
             return my_keys.decrypt(self.DecryptKey, self.EncryptedSessionKey)
+        elif strng.is_bin(self.DecryptKey):
+            return my_keys.decrypt(strng.to_text(self.DecryptKey), self.EncryptedSessionKey)
         return key.DecryptLocalPrivateKey(self.EncryptedSessionKey)
 
     def GenerateHashBase(self):
@@ -261,7 +263,7 @@ class Block(object):
             's': self.Signature,
         }
         if _Debug:
-            lg.out(_DebugLevel, 'encrypted.Serialize %s' % repr(dct)[:500])
+            lg.out(_DebugLevel, 'encrypted.Serialize %s' % repr(dct)[:100])
         return serialization.DictToBytes(dct, encoding='utf-8')
 
 #------------------------------------------------------------------------------
@@ -273,7 +275,7 @@ def Unserialize(data, decrypt_key=None):
     """
     dct = serialization.BytesToDict(data, keys_to_text=True, encoding='utf-8')
     if _Debug:
-        lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:500])
+        lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:100])
     try:
         newobject = Block(
             CreatorID=dct['c'],
@@ -289,5 +291,7 @@ def Unserialize(data, decrypt_key=None):
         )
     except:
         lg.exc()
+        if _Debug:
+            lg.out(_DebugLevel, repr(dct))
         return None
     return newobject

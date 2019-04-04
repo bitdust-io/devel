@@ -551,10 +551,9 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
-        try:
-            filename = args[0][1]
-        except:
+        if not args or not len(args) > 1:
             return
+        filename = args[1]
         if filename:
             tmpfile.throw_out(filename, 'block restored')
         if settings.getBackupsKeepLocalCopies():
@@ -627,10 +626,15 @@ class RestoreWorker(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.doReportFailed')
+            lg.out(_DebugLevel, 'restore_worker.doReportFailed : %r' % args)
         self.done_flag = True
         self.MyDeferred.callback('failed')
-        events.send('restore-failed', dict(backup_id=self.backup_id, block_number=self.block_number, reason=args[0]))
+        events.send('restore-failed', dict(
+            backup_id=self.backup_id,
+            block_number=self.block_number,
+            args=args,
+            reason='failed',
+        ))
 
     def doDestroyMe(self, *args, **kwargs):
         """
