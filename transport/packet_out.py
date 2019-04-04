@@ -731,8 +731,8 @@ class PacketOut(automat.Automat):
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         if _Debug:
-            lg.out(2, '\033[0;49;95mOUT %s(%s) with %d bytes to %s (ACK received) TID:%r\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(2, '\033[0;49;95mOUT %s(%s) with %s bytes to %s (ACK received) TID:%r\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet')
 
     def doReportDoneNoAck(self, *args, **kwargs):
@@ -741,8 +741,8 @@ class PacketOut(automat.Automat):
         """
         callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
         if _Debug:
-            lg.out(2, '\033[0;49;95mOUT %s(%s) with %d bytes to %s TID:%r\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(2, '\033[0;49;95mOUT %s(%s) with %s bytes to %s TID:%r\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet')
 
     def doReportFailed(self, *args, **kwargs):
@@ -755,8 +755,8 @@ class PacketOut(automat.Automat):
             msg = 'failed'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
         if _Debug:
-            lg.out(2, '\033[0;49;91mFAILED %s(%s) with %d bytes to %s TID:%r : %s\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(2, '\033[0;49;91mFAILED %s(%s) with %s bytes to %s TID:%r : %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results], msg), log_name='packet')
 
     def doReportCancelled(self, *args, **kwargs):
@@ -770,8 +770,8 @@ class PacketOut(automat.Automat):
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
         if _Debug:
-            lg.out(2, '\033[0;49;97mOUT %s(%s) with %d bytes CANCELED to %s TID:%r : %s\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(2, '\033[0;49;97mOUT %s(%s) with %s bytes CANCELED to %s TID:%r : %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results], msg), log_name='packet')
 
     def doErrMsg(self, event, *args, **kwargs):
