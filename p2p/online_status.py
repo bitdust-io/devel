@@ -50,12 +50,12 @@ every remote contact and monitor his status.
 EVENTS:
     * :red:`inbox-packet`
     * :red:`init`
+    * :red:`offline-check`
     * :red:`ping-failed`
     * :red:`ping-now`
     * :red:`shutdown`
     * :red:`timer-15sec`
     * :red:`timer-1min`
-    * :red:`timer-30sec`
 """
 
 
@@ -77,6 +77,8 @@ try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in online_status.py')
+
+from twisted.internet.task import LoopingCall
 
 #------------------------------------------------------------------------------
 
@@ -109,6 +111,7 @@ _StatusLabels = {
 
 _OnlineStatusDict = {}
 _ShutdownFlag = False
+_OfflineCheckTask = None
 
 #------------------------------------------------------------------------------
 
@@ -117,24 +120,29 @@ def init():
     """
     Needs to be called before other methods here.
     """
+    global _OfflineCheckTask
     lg.out(4, 'online_status.init')
     callback.insert_inbox_callback(1, Inbox)  # try to not overwrite top callback in the list, but stay on top
-    # callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
+    _OfflineCheckTask = LoopingCall(RunOfflineChecks)
+    _OfflineCheckTask.start(10, now=False)
 
 
 def shutdown():
     """
     Called from top level code when the software is finishing.
     """
+    global _OfflineCheckTask
     global _ShutdownFlag
     global _OnlineStatusDict
     lg.out(4, 'online_status.shutdown')
+    _OfflineCheckTask.stop()
+    del _OfflineCheckTask
+    _OfflineCheckTask = None
     callback.remove_inbox_callback(Inbox)
-    # callback.remove_outbox_callback(Outbox)
     callback.remove_queue_item_status_callback(OutboxStatus)
-    for A in list(_OnlineStatusDict.values()):
-        A.automat('shutdown')
+    for o_status in list(_OnlineStatusDict.values()):
+        o_status.automat('shutdown')
     _OnlineStatusDict.clear()
     _ShutdownFlag = True
 
@@ -360,7 +368,8 @@ def OutboxStatus(pkt_out, status, error=''):
     if status == 'finished':
         if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
             check_create(pkt_out.outpacket.RemoteID)
-            lg.warn('packet %s was "unanswered", sending "ping-failed" event to %s' % (pkt_out, A(pkt_out.outpacket.RemoteID), ))
+            if _Debug:
+                lg.out(_DebugLevel, 'online_status.OutboxStatus packet %s was "unanswered"' % pkt_out)
             A(pkt_out.outpacket.RemoteID, 'ping-failed', (pkt_out, status, error))
         # else:
         #     A(pkt_out.outpacket.RemoteID, 'sent-done', (pkt_out, status, error))
@@ -393,40 +402,6 @@ def Inbox(newpacket, info, status, message):
     return False
 
 
-# def Outbox(pkt_out):
-#     """
-#     Called when some ``packet`` is placed in the sending queue.
-# 
-#     This packet can be our Identity packet - this is a sort of PING operation
-#     to try to connect with that man.
-#     """
-#     global _ShutdownFlag
-#     if _ShutdownFlag:
-#         return False
-#     if pkt_out.outpacket.RemoteID == my_id.getLocalID():
-#         return False
-#     if pkt_out.outpacket.CreatorID != my_id.getLocalID():
-#         return False
-#     A(pkt_out.outpacket.RemoteID, 'outbox-packet', pkt_out)
-#     return False
-
-
-# def FileSent(workitem, args):
-#     """
-#     This is called when transport_control starts the file transfer to some
-#     peer.
-# 
-#     Used to count how many times you PING him.
-#     """
-#     global _ShutdownFlag
-#     if _ShutdownFlag:
-#         return False
-#     if workitem.remoteid == my_id.getLocalID():
-#         return False
-#     A(workitem.remoteid, 'file-sent', (workitem, args))
-#     return True
-
-
 def PacketSendingTimeout(remoteID, packetID):
     """
     Called from ``p2p.io_throttle`` when some packet is timed out.
@@ -441,6 +416,27 @@ def PacketSendingTimeout(remoteID, packetID):
     check_create(remoteID)
     # TODO: do something in that case ... send event "ping-now" ?
     A(remoteID, 'sent-timeout', packetID)
+    return True
+
+#------------------------------------------------------------------------------
+
+def RunOfflineChecks():
+    for o_status in list(_OnlineStatusDict.values()):
+        if o_status.state != 'OFFLINE':
+            # if user is online or checking: do nothing
+            continue
+        if not o_status.latest_check_time:
+            # if no checks done yet but he is offline: ping user
+            o_status.automat('offline-check')
+            continue
+        if time.time() - o_status.latest_check_time > 10 * 60:
+            # user is offline and latest check was sent a while ago: lets try to ping user again
+            o_status.automat('offline-check')
+            continue
+        if o_status.latest_inbox_time and time.time() - o_status.latest_inbox_time < 60:
+            # user is offline, but we know that he was online recently: lets try to ping him again
+            o_status.automat('offline-check')
+            continue
     return True
 
 #------------------------------------------------------------------------------
@@ -478,7 +474,6 @@ class OnlineStatus(automat.Automat):
 
     timers = {
         'timer-1min': (60, ['CONNECTED']),
-        'timer-30sec': (30.0, ['OFFLINE']),
         'timer-15sec': (15.0, ['PING?']),
         }
 
@@ -488,6 +483,7 @@ class OnlineStatus(automat.Automat):
         """
         self.idurl = idurl
         self.latest_inbox_time = None
+        self.latest_check_time = None
         super(OnlineStatus, self).__init__(
             name=name,
             state=state,
@@ -562,7 +558,8 @@ class OnlineStatus(automat.Automat):
             elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
                 self.doRememberTime(*args, **kwargs)
-            elif event == 'timer-30sec':
+            elif event == 'offline-check':
+                self.doRememberCheckTime(*args, **kwargs)
                 self.doPing(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -595,6 +592,12 @@ class OnlineStatus(automat.Automat):
         """
         self.latest_inbox_time = time.time()
 
+    def doRememberCheckTime(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.latest_check_time = time.time()
+
     def doInit(self, *args, **kwargs):
         """
         Action method.
@@ -607,7 +610,6 @@ class OnlineStatus(automat.Automat):
         self.idurl = None
         self.latest_inbox_time = None
         self.destroy()
-
 
     def _on_ping_success(self, result):
         try:

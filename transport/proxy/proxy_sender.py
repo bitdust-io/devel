@@ -256,7 +256,7 @@ class ProxySender(automat.Automat):
             return None
         if proxy_receiver.A() and proxy_receiver.A().state != 'LISTEN':
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP because proxy_receiver state is not LISTEN')
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet DELLAYED because proxy_receiver state is not LISTEN yet')
             return self._add_pending_packet(outpacket, wide, callbacks)
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
