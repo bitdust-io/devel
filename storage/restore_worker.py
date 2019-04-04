@@ -555,7 +555,8 @@ class RestoreWorker(automat.Automat):
             filename = args[0][1]
         except:
             return
-        tmpfile.throw_out(filename, 'block restored')
+        if filename:
+            tmpfile.throw_out(filename, 'block restored')
         if settings.getBackupsKeepLocalCopies():
             return
         from . import backup_rebuilder

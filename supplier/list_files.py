@@ -43,7 +43,7 @@ from logs import lg
 
 from system import bpio
 
-from lib import nameurl
+from lib import strng
 from lib import packetid
 from lib import misc
 
@@ -121,7 +121,7 @@ def PackListFiles(plaintext, method):
     if method == "Text":
         return plaintext
     elif method == "Compressed":
-        return zlib.compress(plaintext)
+        return zlib.compress(strng.to_bin(plaintext))
     return ''
 
 
@@ -129,7 +129,7 @@ def UnpackListFiles(payload, method):
     if method == "Text":
         return payload
     elif method == "Compressed":
-        return zlib.decompress(payload)
+        return strng.to_text(zlib.decompress(strng.to_bin(payload)))
     return payload
 
 #------------------------------------------------------------------------------
