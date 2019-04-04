@@ -120,7 +120,13 @@ class CustomerAssistant(automat.Automat):
             nameurl.GetName(self.customer_idurl),
             diskspace.MakeStringFromBytes(self.donated_bytes).replace(' ', ''),
         )
-        super(CustomerAssistant, self).__init__(name, 'AT_STARTUP', _DebugLevel, _Debug)
+        super(CustomerAssistant, self).__init__(
+            name=name,
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=False,
+            log_transitions=_Debug,
+        )
 
     def init(self):
         """

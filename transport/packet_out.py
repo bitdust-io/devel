@@ -731,7 +731,7 @@ class PacketOut(automat.Automat):
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         if _Debug:
-            lg.out(2, '\033[0;49;95mOUT %s(%s) with %d bytes to %s with ACK TID:%r\033[0m' % (
+            lg.out(2, '\033[0;49;95mOUT %s(%s) with %d bytes to %s (ACK received) TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize, global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet')
 
