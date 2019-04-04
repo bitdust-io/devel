@@ -260,9 +260,9 @@ def erase(name, filename, why='no reason'):
         try:
             _FilesDict[name].pop(filename, '')
         except:
-            lg.warn('we do not know about file %s in sub folder %s' % (filename, name))
+            lg.warn('we do not know about file [%s] in sub folder %s, we tried because %s' % (filename, name, why))
     else:
-        lg.warn('we do not know sub folder: [%s]' % name)
+        lg.warn('we do not know sub folder: %s, we tried because %s' % (name, why))
 
     if not os.path.exists(filename):
         lg.warn('[%s] not exist' % filename)
@@ -270,7 +270,7 @@ def erase(name, filename, why='no reason'):
 
     if os.path.isfile(filename):
         if not os.access(filename, os.W_OK):
-            lg.warn('%s no write permissions' % filename)
+            lg.warn('[%s] no write permissions' % filename)
             return
         try:
             os.remove(filename)
@@ -286,7 +286,7 @@ def erase(name, filename, why='no reason'):
             lg.out(_DebugLevel, 'tmpfile.erase recursive [%s] : "%s"' % (filename, why))
 
     else:
-        raise Exception('%s not exist' % filename)
+        raise Exception('[%s] not exist' % filename)
 
 
 def throw_out(filepath, why='dont know'):
