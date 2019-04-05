@@ -1356,8 +1356,6 @@ def IterateIDs(iterID=None):
     """
     if iterID is None:
         iterID = fsID()
-#     customer_idurl = customerIDURLFromRootItemID(iterID)
-#     customer_id = global_id.UrlToGlobalID(customer_idurl)
 
     def recursive_iterate(i, path_id, path):
         name = None
