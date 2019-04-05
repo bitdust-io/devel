@@ -42,6 +42,7 @@ _DebugLevel = 10
 
 import sys
 import time
+import base64
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -59,6 +60,7 @@ from p2p import commands
 from p2p import online_status
 from p2p import propagate
 
+from lib import strng
 from lib import packetid
 from lib import utime
 from lib import serialization
@@ -267,7 +269,7 @@ class PrivateMessage(object):
         dct = {
             'r': self.recipient,
             's': self.sender,
-            'k': self.encrypted_session,
+            'k': strng.to_text(base64.b64encode(strng.to_bin(self.encrypted_session))),
             'p': self.encrypted_body,
         }
         return serialization.DictToBytes(dct, encoding='utf-8')
@@ -278,7 +280,7 @@ class PrivateMessage(object):
             dct = serialization.BytesToDict(input_string, keys_to_text=True, encoding='utf-8')
             _recipient = dct['r']
             _sender = dct['s']
-            _encrypted_session_key = dct['k']
+            _encrypted_session_key=base64.b64decode(strng.to_bin(dct['k']))
             _encrypted_body = dct['p']
             message_obj = PrivateMessage(
                 recipient_global_id=_recipient,
@@ -346,13 +348,14 @@ def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, respo
         result_defer.callback(response)
 
 
-def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None):
+def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None, error=None):
     global _LastUserPingTime
-    lg.err('message %s failed to %s : %s with %s' % (packet_id, recipient_global_id, response, info, ))
+    lg.err('message %s failed sending to %s in %s / %s because %r' % (
+        packet_id, recipient_global_id, response, info, error, ))
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
-        result_defer.errback(Exception(response or 'timeout'))
+        result_defer.errback(Exception(response or str(error)))
 
 #------------------------------------------------------------------------------
 
@@ -390,9 +393,11 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
         commands.Ack(): lambda response, info: on_message_delivered(
             remote_idurl, json_data, recipient_global_id, packet_id, response, info, result_defer, ),
         commands.Fail(): lambda response, info: on_message_failed(
-            remote_idurl, json_data, recipient_global_id, packet_id, response, info, result_defer, ),
+            remote_idurl, json_data, recipient_global_id, packet_id, response, info,
+            result_defer=result_defer, error='fail received'),
         None: lambda pkt_out: on_message_failed(
-            remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer, ),  # timeout
+            remote_idurl, json_data, recipient_global_id, packet_id, None, None,
+            result_defer=result_defer, error='timeout', ),  # timeout
     })
     try:
         for cp in _OutgoingMessageCallbacks:
@@ -428,13 +433,13 @@ def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
         d.addCallback(lambda response_tuple: do_send_message(
             json_data, recipient_global_id, packet_id, timeout, result_defer=ret))
         d.addErrback(lambda err: on_message_failed(
-            remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret))
+            remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret, error=err))
         return ret
     try:
         do_send_message(json_data, recipient_global_id, packet_id, timeout, ret)
     except Exception as exc:
         lg.warn(str(exc))
-        on_message_failed(remote_idurl, json_data, recipient_global_id, packet_id, None, None, )
+        on_message_failed(remote_idurl, json_data, recipient_global_id, packet_id, None, None, error=exc)
         ret.errback(exc)
     return ret
 
