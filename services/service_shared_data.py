@@ -178,24 +178,35 @@ class SharedDataService(LocalService):
             return False
         # need to detect supplier position from the list of packets
         # and place that supplier on the correct position in contactsdb
-        real_supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
+        supplier_pos = backup_matrix.DetectSupplierPosition(supplier_raw_list_files)
         known_supplier_pos = contactsdb.supplier_position(external_supplier_idurl, trusted_customer_idurl)
-        if real_supplier_pos >= 0:
-            if known_supplier_pos >= 0 and known_supplier_pos != real_supplier_pos:
+        if supplier_pos >= 0:
+            if known_supplier_pos >= 0 and known_supplier_pos != supplier_pos:
                 lg.warn('external supplier %s position is not matching to list files, rewriting for customer %s' % (
                     external_supplier_idurl, trusted_customer_idurl))
-                contactsdb.erase_supplier(
-                    idurl=external_supplier_idurl,
-                    customer_idurl=trusted_customer_idurl,
-                )
-            contactsdb.add_supplier(
-                idurl=external_supplier_idurl,
-                position=real_supplier_pos,
-                customer_idurl=trusted_customer_idurl,
-            )
-            contactsdb.save_suppliers(customer_idurl=trusted_customer_idurl)
+            # TODO: we should remove that bellow because we do not need it
+            #     service_customer_family() should take care of suppliers list for trusted customer
+            #     so we need to just read that list from DHT
+            #     contactsdb.erase_supplier(
+            #         idurl=external_supplier_idurl,
+            #         customer_idurl=trusted_customer_idurl,
+            #     )
+            # contactsdb.add_supplier(
+            #     idurl=external_supplier_idurl,
+            #     position=supplier_pos,
+            #     customer_idurl=trusted_customer_idurl,
+            # )
+            # contactsdb.save_suppliers(customer_idurl=trusted_customer_idurl)
         else:
-            lg.warn('not possible to detect external supplier position for customer %s' % trusted_customer_idurl)
+            lg.warn('not possible to detect external supplier position for customer %s from received list files, known position is %s' % (
+                trusted_customer_idurl, known_supplier_pos))
+            supplier_pos = known_supplier_pos
+        backup_matrix.ReadRawListFiles(
+            supplier_pos,
+            supplier_raw_list_files,
+            customer_idurl=trusted_customer_idurl,
+            is_in_sync=True,
+        )
         # finally send ack packet back
         p2p_service.SendAck(newpacket)
         lg.info('received list of packets from external supplier %s for customer %s' % (external_supplier_idurl, trusted_customer_idurl))

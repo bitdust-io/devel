@@ -302,10 +302,8 @@ def Save(filepath=None):
 
 def IncomingSupplierListFiles(newpacket, list_files_global_id):
     """
-    Called by ``p2p.p2p_service`` when command "Files" were received from one
-    of our suppliers.
-
-    This is an answer from given supplier (after our request) to get a
+    Called when command "Files" were received from one of my suppliers.
+    This is an answer from given supplier (after my request) to get a
     list of our files stored on his machine.
     """
     from p2p import p2p_service
