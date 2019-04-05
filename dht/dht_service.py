@@ -252,9 +252,9 @@ def drop_counters():
 #------------------------------------------------------------------------------
 
 def on_host_resolved(ip, port, host, result_list, total_hosts, result_defer):
-    if not isinstance(ip, six.string_types) or port is None:
+    if not strng.is_string(ip) or port is None:
         result_list.append(None)
-        lg.warn('"%s" failed to resolve' % host)
+        lg.warn('%r failed to resolve' % host)
     else:
         result_list.append((ip, port, ))
     if len(result_list) != total_hosts:
@@ -263,7 +263,7 @@ def on_host_resolved(ip, port, host, result_list, total_hosts, result_defer):
 
 
 def on_host_failed(err, host, result_list, total_hosts, result_defer):
-    lg.warn('"%s" failed to resolve: %s' % (host, err))
+    lg.warn('%r failed to resolve: %r' % (host, err))
     result_list.append(None)
     if len(result_list) != total_hosts:
         return None
@@ -277,7 +277,7 @@ def resolve_hosts(nodes_list):
         return result_defer
     result_list = []
     for node_tuple in nodes_list:
-        d = reactor.resolve(node_tuple[0])  #@UndefinedVariable
+        d = reactor.resolve(strng.to_text(node_tuple[0]))  #@UndefinedVariable
         d.addCallback(on_host_resolved, node_tuple[1], node_tuple[0], result_list, len(nodes_list), result_defer)
         d.addErrback(on_host_failed, node_tuple[0], result_list, len(nodes_list), result_defer)
     return result_defer

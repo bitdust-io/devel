@@ -81,7 +81,8 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.init')
-    load_local_keys()
+    # load_local_keys()
+    scan_local_keys()
 
 
 def shutdown():
@@ -100,7 +101,10 @@ def key_obj(key_id=None):
         return known_keys()
     if key_id not in known_keys():
         raise Exception('key not found')
-    return known_keys().get(key_id)
+    if known_keys()[key_id] is None:
+        if not load_key(key_id):
+            raise Exception('key load failed: %s' % key_id)
+    return known_keys()[key_id]
 
 
 def known_keys():
@@ -193,6 +197,53 @@ def is_valid_key_id(global_key_id):
 
 #------------------------------------------------------------------------------
 
+def scan_local_keys(keys_folder=None):
+    """
+    """
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
+    if _Debug:
+        lg.out(_DebugLevel, 'my_keys.scan_local_keys will read files from %s' % keys_folder)
+    known_keys().clear()
+    count = 0
+    for key_filename in os.listdir(keys_folder):
+        key_id = key_filename.replace('.private', '').replace('.public', '')
+        if not is_valid_key_id(key_id):
+            lg.warn('key_id is not valid: %s' % key_id)
+            continue
+        known_keys()[key_id] = None
+        count += 1
+    if _Debug:
+        lg.out(_DebugLevel, '    %d keys found' % count)
+
+
+def load_key(key_id, keys_folder=None):
+    """
+    """
+    if not is_valid_key_id(key_id):
+        lg.warn('key_id is not valid: %s' % key_id)
+        return False
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
+    key_filepath = os.path.join(keys_folder, '%s.private' % key_id)
+    if not os.path.exists(key_filepath):
+        key_filepath = os.path.join(keys_folder, '%s.public' % key_id)
+    try:
+        key_object = rsa_key.RSAKey()
+        key_object.fromFile(key_filepath)
+    except:
+        lg.exc()
+        return False
+    if not key_object.isPublic():
+        if not validate_key(key_object):
+            lg.warn('validation failed for %s' % key_filepath)
+            return False
+    known_keys()[key_id] = key_object
+    if _Debug:
+        lg.out(_DebugLevel, 'my_keys.load_key %r from %s' % (key_id, keys_folder, ))
+    return True
+
+
 def load_local_keys(keys_folder=None):
     """
     """
@@ -204,6 +255,10 @@ def load_local_keys(keys_folder=None):
     count = 0
     for key_filename in os.listdir(keys_folder):
         key_filepath = os.path.join(keys_folder, key_filename)
+        key_id = key_filename.replace('.private', '').replace('.public', '')
+        if not is_valid_key_id(key_id):
+            lg.warn('key_id is not valid: %s' % key_id)
+            continue
         try:
             key_object = rsa_key.RSAKey()
             key_object.fromFile(key_filepath)
@@ -214,14 +269,11 @@ def load_local_keys(keys_folder=None):
             if not validate_key(key_object):
                 lg.warn('validation failed for %s' % key_filepath)
                 continue
-        key_id = key_filename.replace('.private', '').replace('.public', '')
-        if not is_valid_key_id(key_id):
-            lg.warn('key_id is not valid: %s' % key_id)
-            continue
         known_keys()[key_id] = key_object
         count += 1
     if _Debug:
         lg.out(_DebugLevel, '    %d keys loaded' % count)
+    return count
 
 
 def save_keys_local(keys_folder=None):
@@ -233,6 +285,9 @@ def save_keys_local(keys_folder=None):
         lg.out(_DebugLevel, 'my_keys.save_keys_local will store all known keys in %s' % keys_folder)
     count = 0
     for key_id, key_object in known_keys().items():
+        if key_object is None:
+            lg.warn('can not save key %s because it is not loaded yet' % key_id)
+            continue
         if key_object.isPublic():
             key_filepath = os.path.join(keys_folder, key_id + '.public')
         else:
@@ -242,6 +297,7 @@ def save_keys_local(keys_folder=None):
         count += 1
     if _Debug:
         lg.out(_DebugLevel, '    %d keys saved' % count)
+    return count
 
 #------------------------------------------------------------------------------
 
@@ -271,7 +327,7 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
         return None
-    if isinstance(key_object_or_string, six.string_types):
+    if strng.is_string(key_object_or_string):
         lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
             key_id, len(key_object_or_string)))
         key_object = unserialize_key_to_object(key_object_or_string)
@@ -344,10 +400,12 @@ def sign(key_id, inp):
     Sign some ``inp`` string with given key.
     This will call PyCrypto method ``Crypto.PublicKey.RSA.sign``.
     """
-    key_object = known_keys().get(key_id)
-    if not key_object:
-        lg.warn('key %s is unknown' % key_id)
-        return None
+    if key_id not in known_keys():
+        raise Exception('key %s is unknown' % key_id)
+    if known_keys()[key_id] is None:
+        if not load_key(key_id):
+            raise Exception('key load failed: %s' % key_id)
+    key_object = known_keys()[key_id]
     result = key_object.sign(inp)
     return result
 
@@ -362,10 +420,12 @@ def verify(key_id, hashcode, signature):
 
     Return True if signature is correct, otherwise False.
     """
-    key_object = known_keys().get(key_id)
-    if not key_object:
-        lg.warn('key %s is unknown' % key_id)
-        return False
+    if key_id not in known_keys():
+        raise Exception('key %s is unknown' % key_id)
+    if known_keys()[key_id] is None:
+        if not load_key(key_id):
+            raise Exception('key load failed: %s' % key_id)
+    key_object = known_keys()[key_id]
     result = key_object.verify(signature, hashcode)
     return result
 
@@ -392,10 +452,12 @@ def encrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
         return key.EncryptLocalPublicKey(inp)
-    key_object = known_keys().get(key_id)
-    if not key_object:
-        lg.warn('key %s is unknown' % key_id)
-        return None
+    if key_id not in known_keys():
+        raise Exception('key %s is unknown' % key_id)
+    if known_keys()[key_id] is None:
+        if not load_key(key_id):
+            raise Exception('key load failed: %s' % key_id)
+    key_object = known_keys()[key_id]
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
     result = key_object.encrypt(inp)
@@ -423,10 +485,12 @@ def decrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
-    key_object = known_keys().get(key_id)
-    if not key_object:
-        lg.warn('key %s is unknown' % key_id)
-        return None
+    if key_id not in known_keys():
+        raise Exception('key %s is unknown' % key_id)
+    if known_keys()[key_id] is None:
+        if not load_key(key_id):
+            raise Exception('key load failed: %s' % key_id)
+    key_object = known_keys()[key_id]
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes with key %s' % (len(inp), key_id, ))
     result = key_object.decrypt(inp)
@@ -437,10 +501,12 @@ def decrypt(key_id, inp):
 def serialize_key(key_id):
     """
     """
-    key_object = known_keys().get(key_id)
-    if not key_object:
-        lg.warn('key %s is unknown' % key_id)
-        return None
+    if key_id not in known_keys():
+        raise Exception('key %s is unknown' % key_id)
+    if known_keys()[key_id] is None:
+        if not load_key(key_id):
+            raise Exception('key load failed: %s' % key_id)
+    key_object = known_keys()[key_id]
     return key_object.toPrivateString()
 
 
@@ -459,15 +525,11 @@ def unserialize_key_to_object(raw_string):
 
 def get_public_key_raw(key_id):
     kobj = key_obj(key_id)
-    if not kobj:
-        raise ValueError('key not exist')
     return kobj.toPublicString()
 
 
 def get_private_key_raw(key_id):
     kobj = key_obj(key_id)
-    if not kobj:
-        raise ValueError('key not exist')
     if kobj.isPublic():
         raise ValueError('not a private key')
     return kobj.toPrivateString()
@@ -532,22 +594,22 @@ def get_key_info(key_id, include_private=False):
     Returns dictionary with full key info or raise an Exception.
     """
     key_id = strng.to_text(key_id)
-    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master'):
+    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getGlobalID():
         return make_master_key_info(include_private=include_private)
     key_alias, creator_idurl = split_key_id(key_id)
     if not key_alias or not creator_idurl:
         raise Exception('incorrect key_id format')
-    key_object = known_keys().get(key_id)
-    if not key_object:
-        key_id_full = make_key_id(
+    if key_id not in known_keys():
+        key_id = make_key_id(
             alias=key_alias,
             creator_idurl=creator_idurl,
         )
-        key_object = known_keys().get(key_id_full)
-        if key_object:
-            key_id = key_id_full
-    if not key_object:
-        raise Exception('key not found')
+    if key_id not in known_keys():
+        raise Exception('key %s is unknown' % key_id)
+    if known_keys()[key_id] is None:
+        if not load_key(key_id):
+            raise Exception('key load failed: %s' % key_id)
+    key_object = known_keys()[key_id]
     key_info = make_key_info(key_object, key_id=key_id, include_private=include_private, )
     return key_info
 
