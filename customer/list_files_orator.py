@@ -57,13 +57,16 @@ from twisted.internet.defer import maybeDeferred
 from logs import lg
 
 from automats import automat
+
 from contacts import contactsdb
+
+from main import events
+
+from services import driver
 
 from p2p import p2p_service
 from p2p import online_status
 from p2p import p2p_connector
-
-from services import driver
 
 #------------------------------------------------------------------------------
 
@@ -112,10 +115,12 @@ class ListFilesOrator(automat.Automat):
         self.log_transitions = True
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
-        #global_state.set_global_state('ORATOR ' + newstate)
         if driver.is_on('service_backups'):
+            # TODO: rebuild using "list-files-orator-state-changed" event
             from storage import backup_monitor
             backup_monitor.A('list_files_orator.state', newstate)
+        if newstate == 'SAW_FILES' and oldstate != newstate:
+            events.send('my-list-files-refreshed', data={})
 
     def A(self, event, *args, **kwargs):
         #---NO_FILES---
@@ -168,6 +173,7 @@ class ListFilesOrator(automat.Automat):
         for idurl in contactsdb.suppliers():
             if idurl:
                 if online_status.isOnline(idurl):
+                    lg.out(6, 'list_files_orator.doRequestRemoteFiles from my supplier %s' % idurl)
                     p2p_service.SendListFiles(target_supplier=idurl)
                     _RequestedListFilesPacketIDs.add(idurl)
                 else:

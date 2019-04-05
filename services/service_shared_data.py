@@ -53,11 +53,13 @@ class SharedDataService(LocalService):
         from transport import callback
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
+        events.add_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
         return True
 
     def stop(self):
         from main import events
         from transport import callback
+        events.remove_subscriber(self._on_my_list_files_refreshed)
         events.remove_subscriber(self._on_supplier_modified)
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
@@ -79,6 +81,28 @@ class SharedDataService(LocalService):
             for key_id in my_keys_to_be_republished:
                 d = key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)
                 d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
+
+    def _on_my_list_files_refreshed(self, evt):
+        from access import shared_access_coordinator
+        from customer import supplier_connector
+        from p2p import p2p_service
+        for key_id in shared_access_coordinator.list_active_shares():
+            cur_share = shared_access_coordinator.get_active_share(key_id)
+            if not cur_share:
+                continue
+            if cur_share.state != 'CONNECTED':
+                continue
+            for supplier_idurl in cur_share.known_suppliers_list:
+                sc = supplier_connector.by_idurl(
+                    supplier_idurl,
+                    customer_idurl=cur_share.customer_idurl,
+                )
+                if sc is not None and sc.state == 'CONNECTED':
+                    p2p_service.SendListFiles(
+                        target_supplier=supplier_idurl,
+                        customer_idurl=cur_share.customer_idurl,
+                        key_id=cur_share.key_id,
+                    )
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands
