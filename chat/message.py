@@ -427,7 +427,10 @@ def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
     else:
         is_expired = time.time() - _LastUserPingTime[remote_idurl] > _PingTrustIntervalSeconds
     remote_identity = identitycache.FromCache(remote_idurl)
-    if is_expired or remote_identity is None or not online_status.isOnline(remote_idurl):
+    is_online = online_status.isOnline(remote_idurl)
+    lg.out(4, "    is_expired=%r  remote_identity=%r  is_online=%r" % (
+        is_expired, bool(remote_identity), is_online, ))
+    if is_expired or remote_identity is None or not is_online:
         d = propagate.PingContact(remote_idurl, timeout=timeout or 5)
         d.addCallback(lambda response_tuple: on_ping_success(response_tuple, remote_idurl))
         d.addCallback(lambda response_tuple: do_send_message(
