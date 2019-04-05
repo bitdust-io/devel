@@ -252,9 +252,9 @@ def drop_counters():
 #------------------------------------------------------------------------------
 
 def on_host_resolved(ip, port, host, result_list, total_hosts, result_defer):
-    if not isinstance(ip, six.string_types) or port is None:
+    if not strng.is_string(ip) or port is None:
         result_list.append(None)
-        lg.warn('"%s" failed to resolve' % host)
+        lg.warn('%r failed to resolve' % host)
     else:
         result_list.append((ip, port, ))
     if len(result_list) != total_hosts:
