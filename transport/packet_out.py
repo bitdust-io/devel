@@ -787,15 +787,16 @@ class PacketOut(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        events.send('outbox-packet-finished', data=dict(
-            description=self.description,
-            packet_id=self.outpacket.PacketID,
-            command=self.outpacket.Command,
-            creator_id=self.outpacket.CreatorID,
-            date=self.outpacket.Date,
-            size=len(self.outpacket.Payload),
-            remote_id=self.outpacket.RemoteID,
-        ))
+        if False:
+            events.send('outbox-packet-finished', data=dict(
+                description=self.description,
+                packet_id=self.outpacket.PacketID,
+                command=self.outpacket.Command,
+                creator_id=self.outpacket.CreatorID,
+                date=self.outpacket.Date,
+                size=len(self.outpacket.Payload),
+                remote_id=self.outpacket.RemoteID,
+            ))
         if self not in self.outpacket.Packets:
             lg.warn('packet_out not connected to the packet')
         else:

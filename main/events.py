@@ -39,8 +39,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 10
+_Debug = True
+_DebugLevel = 18
 
 #------------------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ from lib import utime
 
 #------------------------------------------------------------------------------
 
-MAX_PENDING_EVENTS_PER_CONSUMER = 20
+MAX_PENDING_EVENTS_PER_CONSUMER = 100
 
 #------------------------------------------------------------------------------
 
@@ -83,6 +83,7 @@ def init():
     if _Debug:
         lg.out(_DebugLevel, 'events.init')
     add_subscriber(push_event)
+
 
 def shutdown():
     """
@@ -115,6 +116,7 @@ def add_subscriber(subscriber_callback, event_id='*'):
         subscribers()[event_id] = []
     subscribers()[event_id].append(subscriber_callback)
 
+
 def remove_subscriber(subscriber_callback, event_id='*'):
     """
     """
@@ -130,6 +132,7 @@ def remove_subscriber(subscriber_callback, event_id='*'):
                 subscribers()[event_id].remove(subscriber_callback)
                 removed = True
     return removed
+
 
 def clear_subscribers(event_id='*'):
     """
@@ -170,6 +173,7 @@ def dispatch(evt):
         else:
             lg.out(_DebugLevel, 'events.dispatch {} was handled by {} subscribers'.format(
                 evt.event_id, handled))
+        lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)[:100]), log_name='event')
     return handled
 
 
@@ -177,7 +181,7 @@ def send(event_id, data=None, created=None):
     """
     """
     evt = Event(event_id, data=data, created=created)
-    reactor.callWhenRunning(dispatch, evt)
+    reactor.callWhenRunning(dispatch, evt)  # @UndefinedVariable
     return evt
 
 #------------------------------------------------------------------------------
@@ -203,7 +207,7 @@ def consume_events(consumer_id):
     if _Debug:
         lg.out(_DebugLevel, 'events.consume_events added callback for consumer "%s", %d total callbacks' % (
             consumer_id, len(consumers_callbacks()[consumer_id])))
-    reactor.callLater(0, pop_event)
+    reactor.callLater(0, pop_event)  # @UndefinedVariable
     return d
 
 
@@ -222,7 +226,7 @@ def push_event(event_object):
         if _Debug:
             lg.out(_DebugLevel, 'events.push_event "%s" for consumer "%s", %d pending events' % (
                 event_object.event_id, consumer_id, len(event_queue()[consumer_id])))
-    reactor.callLater(0, pop_event)
+    reactor.callLater(0, pop_event)  # @UndefinedVariable
 
 
 def pop_event():
@@ -237,7 +241,7 @@ def pop_event():
             consumers_callbacks().pop(consumer_id)
             event_queue().pop(consumer_id)
             if _Debug:
-                lg.out(_DebugLevel, 'events.pop_event STOPPED consumer "%s", too much pending messages but no callbacks' % consumer_id)
+                lg.out(_DebugLevel, 'events.pop_event STOPPED consumer "%s", too many pending messages but no callbacks' % consumer_id)
             continue
         for consumer_callback in registered_callbacks:
             if not consumer_callback:

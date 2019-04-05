@@ -435,14 +435,15 @@ class PacketIn(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel + 2, 'packet_in.doReadAndUnserialize: %s' % newpacket)
         self.automat('valid-inbox-packet', newpacket)
-        events.send('inbox-packet-recevied', data=dict(
-            packet_id=newpacket.PacketID,
-            command=newpacket.Command,
-            creator_id=newpacket.CreatorID,
-            date=newpacket.Date,
-            size=len(newpacket.Payload),
-            remote_id=newpacket.RemoteID,
-        ))
+        if False:
+            events.send('inbox-packet-recevied', data=dict(
+                packet_id=newpacket.PacketID,
+                command=newpacket.Command,
+                creator_id=newpacket.CreatorID,
+                date=newpacket.Date,
+                size=len(newpacket.Payload),
+                remote_id=newpacket.RemoteID,
+            ))
 
     def doReportReceived(self, *args, **kwargs):
         """
