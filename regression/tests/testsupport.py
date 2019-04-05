@@ -371,7 +371,7 @@ async def connect_network_async(node, loop):
         assert response_json['status'] == 'ERROR'
 
         for i in range(60):
-            response = await client.get(f'http://{node}:8180/network/connected/v1?wait_timeout=1')
+            response = await client.get(tunnel_url(node, '/network/connected/v1?wait_timeout=1'))
             response_json = await response.json()
             if response_json['status'] == 'OK':
                 print(f"network/connected/v1 {node}: got status OK\n")
@@ -411,6 +411,8 @@ async def stop_daemon_async(node, loop, skip_checks=False):
             ) or (
                 bitdust_stop[0].strip().startswith('found main BitDust process:') and
                 bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+            ) or (
+                bitdust_stop[0].strip() == 'BitDust is not running at the moment'
             )
         )
     print(f'stop_daemon [{node}] OK\n')

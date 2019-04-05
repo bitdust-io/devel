@@ -112,8 +112,8 @@ ALL_ROLES = {
 def open_all_tunnels(event_loop):
     _begin = time.time()
     print('\nStarting all SSH tunnels\n')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(ts.open_one_tunnel_async(node, 10000+pos, event_loop)) for pos, node in enumerate(ALL_NODES)
+    event_loop.run_until_complete(asyncio.gather(*[
+        ts.open_one_tunnel_async(node, 10000+pos, event_loop) for pos, node in enumerate(ALL_NODES)
     ]))
     print('\nAll SSH tunnels opened in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -121,11 +121,11 @@ def open_all_tunnels(event_loop):
 def clean_all_nodes(event_loop, skip_checks=False):
     _begin = time.time()
     print('\nCleaning all nodes')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(ts.clean_one_node_async(node, event_loop=event_loop)) for node in ALL_NODES
+    event_loop.run_until_complete(asyncio.gather(*[
+        ts.clean_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
     ]))
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(ts.clean_one_customer_async(node['name'], event_loop=event_loop)) for node in ALL_ROLES['customers']
+    event_loop.run_until_complete(asyncio.gather(*[
+        ts.clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customers']
     ]))
 
     print('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
@@ -145,30 +145,30 @@ def start_all_nodes(event_loop):
         )
     print('\nALL DHT SEEDS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
+    event_loop.run_until_complete(asyncio.gather(*[
         ts.start_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES['identity-servers']
     ]))
-    print('\nALL ID SERVERS STARTED\n')
+    print(f'\nALL ID SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
+    event_loop.run_until_complete(asyncio.gather(*[
         ts.start_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES['stun-servers']
     ]))
-    print('\nALL STUN SERVERS STARTED\n')
+    print(f'\nALL STUN SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
+    event_loop.run_until_complete(asyncio.gather(*[
         ts.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
     ]))
-    print('\nALL PROXY SERVERS STARTED\n')
+    print(f'\nALL PROXY SERVERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(ts.start_one_supplier_async(supplier, event_loop)) for supplier in ALL_ROLES['suppliers']
+    event_loop.run_until_complete(asyncio.gather(*[
+        ts.start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES['suppliers']
     ]))
-    print('\nALL SUPPLIERS STARTED\n')
+    print(f'\nALL SUPPLIERS STARTED\n')
 
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(ts.start_one_customer_async(customer, event_loop)) for customer in ALL_ROLES['customers']
+    event_loop.run_until_complete(asyncio.gather(*[
+        ts.start_one_customer_async(customer, event_loop) for customer in ALL_ROLES['customers']
     ]))
-    print('\nALL CUSTOMERS STARTED\n')
+    print(f'\nALL CUSTOMERS STARTED\n')
 
     print('\nDONE! ALL NODES STARTED in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -176,8 +176,8 @@ def start_all_nodes(event_loop):
 def stop_all_nodes(event_loop):
     _begin = time.time()
     print('\nstop all nodes\n')
-    event_loop.run_until_complete(asyncio.wait([
-        asyncio.ensure_future(ts.stop_daemon_async(node, event_loop)) for node in ALL_NODES
+    event_loop.run_until_complete(asyncio.gather(*[
+        ts.stop_daemon_async(node, event_loop) for node in ALL_NODES
     ]))
     print('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
 
