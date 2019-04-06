@@ -123,6 +123,8 @@ def setLocalIdentity(ident):
     _LocalName = _LocalIdentity.getIDName()
     if modified:
         events.send('local-identity-modified', dict(old=old_json, new=_LocalIdentity.serialize_json()))
+    else:
+        events.send('local-identity-set', dict(old=old_json, new=_LocalIdentity.serialize_json()))
 
 
 def setLocalIdentityXML(idxml):
@@ -232,18 +234,20 @@ def saveLocalIdentity():
     global _LocalIdentity
     if not isLocalIdentityReady():
         lg.warn("ERROR local identity not exist!")
-        return
+        return False
     if not _LocalIdentity.isCorrect():
         lg.warn('local identity is not correct')
-        return
+        return False
     _LocalIdentity.sign()
     if not _LocalIdentity.Valid():
         lg.err('local identity is not valid')
-        return
+        return False
     xmlid = _LocalIdentity.serialize(as_text=True)
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     bpio.WriteTextFile(filename, xmlid)
+    events.send('local-identity-written', dict(idurl=_LocalIdentity.getIDURL(), filename=filename))
     lg.out(6, "my_id.saveLocalIdentity %d bytes wrote to %s" % (len(xmlid), filename))
+    return True
 
 
 def forgetLocalIdentity():
@@ -252,10 +256,11 @@ def forgetLocalIdentity():
     global _LocalIdentity
     if not isLocalIdentityReady():
         lg.out(2, "my_id.forgetLocalIdentity ERROR localidentity not exist!")
-        return
+        return False
     lg.out(6, "my_id.saveLocalIdentity")
     _LocalIdentity = None
-    events.send('local-identity-deleted', dict())
+    events.send('local-identity-cleaned', dict())
+    return True
 
 
 def eraseLocalIdentity():
@@ -271,6 +276,7 @@ def eraseLocalIdentity():
     except:
         lg.exc()
         return False
+    events.send('local-identity-erased', dict())
     lg.out(6, "my_id.eraseLocalIdentity file %s was deleted" % filename)
     return True
 
