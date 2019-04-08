@@ -164,7 +164,7 @@ class SharedAccessCoordinator(automat.Automat):
         self.known_suppliers_list = []
         self.known_ecc_map = None
         super(SharedAccessCoordinator, self).__init__(
-            name="%s$%s" % (self.glob_id['key_alias'], self.glob_id['user']),
+            name="%s$%s" % (self.glob_id['key_alias'][:10], self.glob_id['customer']),
             state='AT_STARTUP',
             debug_level=debug_level,
             log_events=log_events,

@@ -625,15 +625,19 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
+        if args and len(args) > 0 and args[0] == 'abort':
+            reason = 'abort'
+        else:
+            reason = 'failed'
         if _Debug:
-            lg.out(_DebugLevel, 'restore_worker.doReportFailed : %r' % args)
+            lg.out(_DebugLevel, 'restore_worker.doReportFailed : %s' % reason)
         self.done_flag = True
-        self.MyDeferred.callback('failed')
+        self.MyDeferred.callback(reason)
         events.send('restore-failed', dict(
             backup_id=self.backup_id,
             block_number=self.block_number,
             args=args,
-            reason='failed',
+            reason=reason,
         ))
 
     def doDestroyMe(self, *args, **kwargs):

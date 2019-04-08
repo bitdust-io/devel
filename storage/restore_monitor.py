@@ -215,7 +215,7 @@ def Abort(backupID):
         lg.warn('%s not found in working list' % backupID)
         return False
     r = _WorkingBackupIDs[backupID]
-    r.abort()
+    r.automat('abort', 'abort')
     lg.out(8, 'restore_monitor.Abort %s' % backupID)
     return True
 
