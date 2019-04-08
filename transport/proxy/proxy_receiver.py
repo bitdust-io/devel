@@ -88,12 +88,15 @@ from crypt import key
 from crypt import signed
 from crypt import encrypted
 
+from services import driver
+
 from p2p import commands
 from p2p import lookup
 from p2p import online_status
 from p2p import propagate
 
 from contacts import identitycache
+from contacts import contactsdb
 
 from transport import callback
 from transport import packet_in
@@ -689,7 +692,12 @@ class ProxyReceiver(automat.Automat):
     def _on_nodes_lookup_finished(self, idurls):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished : %r' % idurls)
+#         excluded_idurls = []
+#         if driver.is_on('service_customer'):
+#             excluded_idurls.extend(contactsdb.suppliers())
         for idurl in idurls:
+#             if idurl in excluded_idurls:
+#                 continue
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
@@ -729,44 +737,6 @@ class ProxyReceiver(automat.Automat):
         else:
             self.automat('nodes-not-found')
 
-#         if _Debug:
-#             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
-#         # DEBUG
-#         self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
-#         return
-#         new_key = dht_service.random_key()
-#         d = dht_service.find_node(new_key)
-#         d.addCallback(self._some_nodes_found)
-#         d.addErrback(lambda x: self.automat('nodes-not-found'))
-#         return d
-#
-#     def _some_nodes_found(self, nodes):
-#         if _Debug:
-#             lg.out(_DebugLevel, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
-#         if len(nodes) > 0:
-#             node = random.choice(nodes)
-#             d = node.request(b'idurl')
-#             d.addCallback(self._got_remote_idurl)
-#             d.addErrback(lambda x: self.automat('nodes-not-found'))
-#         else:
-#             self.automat('nodes-not-found')
-#         return nodes
-#
-#     def _got_remote_idurl(self, response):
-#         if _Debug:
-#             lg.out(_DebugLevel, 'proxy_receiver._got_remote_idurl response=%s' % str(response) )
-#         try:
-#             idurl = response['idurl']
-#         except:
-#             idurl = None
-#         if not idurl or idurl == 'None':
-#             self.automat('nodes-not-found')
-#             return response
-#         d = identitycache.immediatelyCaching(idurl)
-#         d.addCallback(lambda src: self.automat('found-one-node', idurl))
-#         d.addErrback(lambda x: self.automat('nodes-not-found'))
-#         return response
-
     def _on_request_service_ack(self, response, info):
         if response.PacketID not in self.request_service_packet_id:
             lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
@@ -800,12 +770,6 @@ class ProxyReceiver(automat.Automat):
             self.automat('router-id-received', (newpacket, info))
             self.latest_packet_received = time.time()
             return True
-        # TODO: if this is a response from supplier - this must be skipped here
-        # if newpacket.Command == commands.Fail() and \
-        #         newpacket.CreatorID == self.router_idurl and \
-        #         newpacket.RemoteID == my_id.getLocalID():
-        #     self.automat('service-refused', (newpacket, info))
-        #     return True
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
         if newpacket.Command == commands.Relay():

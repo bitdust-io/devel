@@ -30,7 +30,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -60,6 +60,7 @@ from contacts import contactsdb
 from dht import dht_relations
 
 from userid import my_id
+from userid import global_id
 
 from raid import eccmap
 
@@ -128,9 +129,7 @@ class FamilyMember(automat.Automat):
         self.customer_idurl = customer_idurl
         self.supplier_idurl = my_id.getLocalIDURL()
         super(FamilyMember, self).__init__(
-            name="family_member_%s_%s" % (
-                nameurl.GetName(self.customer_idurl),
-                nameurl.GetName(my_id.getLocalIDURL()), ),
+            name="family_member_%s" % global_id.UrlToGlobalID(self.customer_idurl),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,

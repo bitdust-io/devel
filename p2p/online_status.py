@@ -98,6 +98,7 @@ from p2p import propagate
 from transport import callback
 
 from userid import my_id
+from userid import global_id
 
 #------------------------------------------------------------------------------
 
@@ -455,7 +456,7 @@ def A(idurl, event=None, *args, **kwargs):
             return None
         _OnlineStatusDict[idurl] = OnlineStatus(
             idurl=idurl,
-            name='online_%s' % nameurl.GetName(idurl),
+            name='online_%s' % global_id.UrlToGlobalID(idurl),
             state='AT_STARTUP',
             debug_level=_DebugLevel,
             log_events=False,

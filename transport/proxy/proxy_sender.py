@@ -297,12 +297,12 @@ class ProxySender(automat.Automat):
         )
         block_encrypted = block.Serialize()
         newpacket = signed.Packet(
-            commands.Relay(),
-            outpacket.OwnerID,
-            my_id.getLocalID(),
-            outpacket.PacketID,
-            block_encrypted,
-            router_idurl,
+            Command=commands.Relay(),
+            OwnerID=outpacket.OwnerID,
+            CreatorID=my_id.getLocalID(),
+            PacketID=outpacket.PacketID,
+            Payload=block_encrypted,
+            RemoteID=router_idurl,
         )
         routed_packet = packet_out.create(
             outpacket,
