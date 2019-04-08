@@ -281,6 +281,8 @@ def UrlToGlobalID(url, include_key=False):
     _, host, port, filename = nameurl.UrlParse(url)
     if filename.count('.'):
         username = filename.split('.')[0]
+    else:
+        username = filename
     if port:
         host = '%s_%s' % (host, port)
     if include_key:

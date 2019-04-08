@@ -1294,7 +1294,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         active_share = shared_access_coordinator.get_active_share(keyID)
         if not active_share:
             active_share = shared_access_coordinator.SharedAccessCoordinator(
-                keyID, log_events=True, publish_events=True, )
+                keyID, log_events=True, publish_events=False, )
         if active_share.state != 'CONNECTED':
             active_share.automat('restart')
     if wait_result:
@@ -1595,7 +1595,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             active_share = shared_access_coordinator.SharedAccessCoordinator(
                 key_id=key_id,
                 log_events=True,
-                publish_events=True,
+                publish_events=False,
             )
             if _Debug:
                 lg.out(_DebugLevel, 'api.download_start._open_share opened new share : %s' % active_share.key_id)
@@ -1657,7 +1657,8 @@ def file_download_stop(remote_path):
         if not versions:
             versions.extend(item.get_versions())
         for version in versions:
-            backupIDs.append(packetid.MakeBackupID(customerGlobalID, pathID, version))
+            backupIDs.append(packetid.MakeBackupID(customerGlobalID, pathID, version,
+                                                   key_alias=glob_path['key_alias']))
     else:
         remotePath = bpio.remotePath(glob_path['path'])
         knownPathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(glob_path['idurl']))
@@ -1672,7 +1673,8 @@ def file_download_stop(remote_path):
         if not versions:
             versions.extend(item.get_versions())
         for version in versions:
-            backupIDs.append(packetid.MakeBackupID(glob_path['customer'], knownPathID, version))
+            backupIDs.append(packetid.MakeBackupID(glob_path['customer'], knownPathID, version,
+                                                   key_alias=glob_path['key_alias']))
     if not backupIDs:
         return ERROR('not found any remote versions for "%s"' % remote_path)
     r = []
@@ -1802,7 +1804,7 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     d.addCallback(_on_shared_access_donor_success)
     d.addErrback(_on_shared_access_donor_failed)
     d.addTimeout(timeout, clock=reactor)
-    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=True, )
+    shared_access_donor_machine = shared_access_donor.SharedAccessDonor(log_events=True, publish_events=False, )
     shared_access_donor_machine.automat('init', trusted_idurl=remote_idurl, key_id=key_id, result_defer=d)
     return ret
 
@@ -1820,7 +1822,7 @@ def share_open(key_id):
     new_share = False
     if not active_share:
         new_share = True
-        active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=True, )
+        active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=False, )
     ret = Deferred()
 
     def _on_shared_access_coordinator_state_changed(oldstate, newstate, event_string, *args, **kwargs):
