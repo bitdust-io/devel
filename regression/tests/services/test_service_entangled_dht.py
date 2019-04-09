@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # test_service_customer_family.py
 #
-# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
+# Copyright (C) 2008-2019 Stanislav Evseev, Veselin Penev  https://bitdust.io
 #
 # This file (test_service_customer_family.py) is part of BitDust Software.
 #

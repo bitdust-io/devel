@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # dht_records.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (dht_records.py) is part of BitDust Software.
 #

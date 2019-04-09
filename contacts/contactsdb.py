@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # contactsdb.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (contactsdb.py) is part of BitDust Software.
 #

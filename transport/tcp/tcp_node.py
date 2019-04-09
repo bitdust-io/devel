@@ -2,7 +2,7 @@
 # tcp_node.py
 #
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (tcp_node.py) is part of BitDust Software.
 #

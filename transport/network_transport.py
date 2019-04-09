@@ -2,7 +2,7 @@
 # network_transport.py
 #
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (network_transport.py) is part of BitDust Software.
 #
