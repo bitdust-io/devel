@@ -3021,6 +3021,11 @@ def nickname_set(nickname):
 #------------------------------------------------------------------------------
 
 def message_history(user):
+    """
+    Returns chat history with that user.
+    """
+    if not driver.is_on('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
     from chat import message_db
     from userid import my_id, global_id
     from crypt import my_keys

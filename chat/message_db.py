@@ -310,7 +310,8 @@ def insert(message_json):
 
 def remove(message_json):
     # TODO: first need to lookup to get _id and _rev fields
-    return db().delete()
+    # return db().delete(...)
+    return False
 
 
 def exist(message_json):
