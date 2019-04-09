@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # global_id.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (global_id.py) is part of BitDust Software.
 #

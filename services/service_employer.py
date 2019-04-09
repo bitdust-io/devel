@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # service_employer.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (service_employer.py) is part of BitDust Software.
 #

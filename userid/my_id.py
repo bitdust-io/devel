@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # my_id.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (my_id.py) is part of BitDust Software.
 #
@@ -33,7 +33,6 @@ module:: my_id
 from __future__ import absolute_import
 import os
 import sys
-import string
 import time
 
 #------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # customer_contract_executor.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (customer_contract_executor.py) is part of BitDust Software.
 #

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # broadcasters_finder.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (broadcasters_finder.py) is part of BitDust Software.
 #

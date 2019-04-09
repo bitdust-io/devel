@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # raidmake.py
 #
-# Copyright (C) 2008-2018 Veselin Penev, https://bitdust.io
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
 # This file (make.py) is part of BitDust Software.
 #
