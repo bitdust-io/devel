@@ -206,6 +206,8 @@ class IU_TreeBasedIndex(Index):
         self.buckets.seek(leaf_start)
         data = self.buckets.read(
             self.elements_counter_size + 2 * self.pointer_size)
+        if not data:
+            return 0, 0, 0
         nr_of_elements, prev_l, next_l = struct.unpack(
             '<' + self.elements_counter_format + 2 * self.pointer_format,
             data)
@@ -214,6 +216,8 @@ class IU_TreeBasedIndex(Index):
     def _read_node_nr_of_elements_and_children_flag(self, start):
         self.buckets.seek(start)
         data = self.buckets.read(self.elements_counter_size + self.flag_size)
+        if not data:
+            return 0, 0
         nr_of_elements, children_flag = struct.unpack(
             '<' + self.elements_counter_format + self.flag_format,
             data)
@@ -222,6 +226,8 @@ class IU_TreeBasedIndex(Index):
     def _read_leaf_nr_of_elements(self, start):
         self.buckets.seek(start)
         data = self.buckets.read(self.elements_counter_size)
+        if not data:
+            return 0
         nr_of_elements = struct.unpack(
             '<' + self.elements_counter_format, data)
         return nr_of_elements[0]
