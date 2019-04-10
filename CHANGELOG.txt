@@ -2,6 +2,22 @@ Change Log
 ==========
 
 
+2019-04-09 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* updated Copyright period to 2008-2019
+* bug fix in /message/history/v1
+* added test for search users
+* made regression test setup more reliable
+* do not load all local keys at startup
+* reading remote matrix for shared files to be able to show availability  
+* updated online_status() automat : reduce amount of "ping" packets sent to offline users
+* added /config/tree/v1 endpoint
+* improved config/*/v1 and service/list/v1 endpoints
+* added ~/.bitdust/logs/packet.log to debug/monitor p2p traffic
+* added ~/.bitdust/logs/event.log
+
+
+
 2019-03-28 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * improved config/list/v1 endpoint
