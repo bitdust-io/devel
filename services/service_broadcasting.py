@@ -53,6 +53,10 @@ class BroadcastingService(LocalService):
             'service_nodes_lookup',
         ]
 
+    def installed(self):
+        # TODO: to be continue...
+        return False
+
     def start(self):
         from twisted.internet.defer import Deferred
         from broadcast import broadcasters_finder

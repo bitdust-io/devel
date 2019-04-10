@@ -52,17 +52,8 @@ class BlockchainService(LocalService):
         ]
 
     def installed(self):
-        try:
-            import os
-            import sys
-            dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-            blockchain_dir = os.path.abspath(os.path.join(dirpath, 'blockchain'))
-            if blockchain_dir not in sys.path:
-                sys.path.insert(0, blockchain_dir)
-            from blockchain import pybc_service
-        except:
-            return False
-        return True
+        # TODO: to be continue...
+        return False
 
     def start(self):
         import os

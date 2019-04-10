@@ -50,7 +50,7 @@ class HTTPConnectionsService(LocalService):
 
     def start(self):
         from main.config import conf
-        conf().addCallback('services/http-connections/http-port', self._on_tcp_port_modified)
+        conf().addCallback('services/http-connections/http-port', self._on_http_port_modified)
         return True
 
     def stop(self):
@@ -58,7 +58,7 @@ class HTTPConnectionsService(LocalService):
         conf().removeCallback('services/http-connections/http-port')
         return True
 
-    def _on_tcp_port_modified(self, path, value, oldvalue, result):
+    def _on_http_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
         lg.out(2, 'service_http_connections._on_http_port_modified : %s->%s : %s' % (oldvalue, value, path))

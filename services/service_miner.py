@@ -49,6 +49,10 @@ class MinerService(LocalService):
             'service_blockchain',
         ]
 
+    def installed(self):
+        # TODO: to be continue...
+        return False
+
     def start(self):
         from coins import coins_miner
         coins_miner.A('init')

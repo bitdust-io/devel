@@ -49,6 +49,10 @@ class CoinsAccountantService(LocalService):
             'service_blockchain',
         ]
 
+    def installed(self):
+        # TODO: to be continue...
+        return False
+
     def start(self):
         from coins import coins_db
         from coins import accountant_node

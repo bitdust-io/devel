@@ -49,6 +49,10 @@ class CustomerContractsService(LocalService):
             'service_contract_chain',
         ]
 
+    def installed(self):
+        # TODO: to be continue...
+        return False
+
     def start(self):
         from main import events
         from contacts import contactsdb
