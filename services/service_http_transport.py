@@ -54,6 +54,10 @@ class HTTPTransportService(LocalService):
             'service_gateway',
         ]
 
+    def installed(self):
+        # TODO: to be continue...
+        return False
+
     def start(self):
         from twisted.internet import reactor  # @UnresolvedImport
         from twisted.internet.defer import Deferred

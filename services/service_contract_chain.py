@@ -48,6 +48,10 @@ class ContractChainService(LocalService):
             'service_nodes_lookup',
         ]
 
+    def installed(self):
+        # TODO: to be continue...
+        return False
+
     def start(self):
         from twisted.internet.defer import Deferred
         from coins import contract_chain_consumer
