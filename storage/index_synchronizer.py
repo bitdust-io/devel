@@ -107,9 +107,7 @@ from userid import global_id
 from contacts import contactsdb
 
 from main import settings
-
-from transport import gateway
-from transport import packet_out
+from main import events
 
 from crypt import encrypted
 from crypt import signed
@@ -185,6 +183,8 @@ class IndexSynchronizer(automat.Automat):
         Method to catch the moment when index_synchronizer() state were
         changed.
         """
+        if newstate == 'IN_SYNC!' and oldstate != newstate:
+            events.send('my-backup-index-synchronized', data={})
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """

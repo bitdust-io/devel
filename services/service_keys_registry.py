@@ -43,6 +43,8 @@ class KeysRegistryService(LocalService):
     service_name = 'service_keys_registry'
     config_path = 'services/keys-registry/enabled'
 
+    last_time_keys_synchronized = None
+
     def dependent_on(self):
         return [
             'service_p2p_notifications',
@@ -51,14 +53,24 @@ class KeysRegistryService(LocalService):
     def start(self):
         from access import key_ring
         from transport import callback
+        from main import events
         key_ring.init()
         callback.add_outbox_callback(self._on_outbox_packet_sent)
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        events.add_subscriber(self._on_key_generated, 'key-generated')
+        events.add_subscriber(self._on_key_registered, 'key-registered')
+        events.add_subscriber(self._on_key_erased, 'key-erased')
+        events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         return True
 
     def stop(self):
         from access import key_ring
         from transport import callback
+        from main import events
+        events.remove_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
+        events.remove_subscriber(self._on_key_erased, 'key-erased')
+        events.remove_subscriber(self._on_key_registered, 'key-registered')
+        events.remove_subscriber(self._on_key_generated, 'key-generated')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_outbox_callback(self._on_outbox_packet_sent)
         key_ring.shutdown()
@@ -72,9 +84,9 @@ class KeysRegistryService(LocalService):
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def _on_outbox_packet_sent(self, pkt_out):
-        # TODO: work in progress
         from p2p import commands
         if pkt_out.outpacket.Command == commands.Key():
+            # TODO: work in progress : need to store history of all keys transfers
             return True
         return False
 
@@ -82,7 +94,28 @@ class KeysRegistryService(LocalService):
         from p2p import commands
         from access import key_ring
         if newpacket.Command == commands.Key():
+            # TODO: work in progress : need to store history of all keys transfers
             return key_ring.on_key_received(newpacket, info, status, error_message)
         elif newpacket.Command == commands.AuditKey():
             return key_ring.on_audit_key_received(newpacket, info, status, error_message)
         return False
+
+    def _on_key_generated(self, evt):
+        from access import key_ring
+        key_ring.do_backup_key(key_id=evt.data['key_id'])
+
+    def _on_key_registered(self, evt):
+        from access import key_ring
+        key_ring.do_backup_key(key_id=evt.data['key_id'])
+
+    def _on_key_erased(self, evt):
+        from access import key_ring
+        key_ring.do_delete_key(key_id=evt.data['key_id'], is_private=evt.data['is_private'])
+
+    def _on_my_backup_index_synchronized(self, evt):
+        import time
+        if self.last_time_keys_synchronized and time.time() - self.last_time_keys_synchronized < 60:
+            return
+        from access import key_ring
+        key_ring.do_synchronize_keys()
+        self.last_time_keys_synchronized = time.time()

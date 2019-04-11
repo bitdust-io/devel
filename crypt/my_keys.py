@@ -43,7 +43,6 @@ _DebugLevel = 4
 import os
 import sys
 import gc
-import six
 import base64
 
 #------------------------------------------------------------------------------
@@ -62,6 +61,7 @@ from lib import misc
 from lib import strng
 
 from main import settings
+from main import events
 
 from crypt import key
 from crypt import rsa_key
@@ -318,6 +318,7 @@ def generate_key(key_id, key_size=4096, keys_folder=None):
     bpio.WriteTextFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s generated, saved to %s' % (key_id, key_filepath))
+    events.send('key-generated', data=dict(key_id=key_id, ))
     return key_object
 
 
@@ -350,6 +351,7 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
         bpio.WriteTextFile(key_filepath, key_string)
     if _Debug:
         lg.out(_DebugLevel, '    key %s added, saved to %s' % (key_id, key_filepath))
+    events.send('key-registered', data=dict(key_id=key_id, ))
     return key_filepath
 
 
@@ -363,8 +365,10 @@ def erase_key(key_id, keys_folder=None):
         keys_folder = settings.KeyStoreDir()
     if key_obj(key_id).isPublic():
         key_filepath = os.path.join(keys_folder, key_id + '.public')
+        is_private = False
     else:
         key_filepath = os.path.join(keys_folder, key_id + '.private')
+        is_private = True
     try:
         os.remove(key_filepath)
     except:
@@ -374,6 +378,7 @@ def erase_key(key_id, keys_folder=None):
     gc.collect()
     if _Debug:
         lg.out(_DebugLevel, '    key %s removed, file %s deleted' % (key_id, key_filepath))
+    events.send('key-erased', data=dict(key_id=key_id, is_private=is_private))
     return True
 
 

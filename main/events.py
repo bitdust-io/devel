@@ -115,6 +115,7 @@ def add_subscriber(subscriber_callback, event_id='*'):
     if event_id not in subscribers():
         subscribers()[event_id] = []
     subscribers()[event_id].append(subscriber_callback)
+    return True
 
 
 def remove_subscriber(subscriber_callback, event_id='*'):

@@ -85,15 +85,6 @@ class HTTPTransportService(LocalService):
         t.automat('shutdown')
         return True
 
-    def installed(self):
-        from logs import lg
-        try:
-            from transport.http import http_interface
-        except:
-            lg.exc()
-            return False
-        return True
-
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         if self.starting_deferred:
             if newstate in ['LISTENING', 'OFFLINE', ]:
