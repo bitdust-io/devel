@@ -512,8 +512,7 @@ def do_backup_key(key_id, keys_folder=None):
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_create(global_key_path)
     if res['status'] != 'OK':
-        lg.err('failed to create path "%s" in the catalog: %s' % (
-            global_key_path, res['errors']))
+        lg.err('failed to create path "%s" in the catalog: %r' % (global_key_path, res))
         return False
     res = api.file_upload_start(
         local_path=local_key_filepath,
@@ -522,7 +521,7 @@ def do_backup_key(key_id, keys_folder=None):
         open_share=False,
     )
     if res['status'] != 'OK':
-        lg.err('failed to upload key "%s": %s' % (global_key_path, res['errors']))
+        lg.err('failed to upload key "%s": %r' % (global_key_path, res))
         return False
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_backup_key key_id=%s : %r' % (key_id, res))
@@ -566,9 +565,9 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
                 result.errback(Exception('failed to download key "%s": %s' % (key_id, res)))
             return None
         if res['status'] != 'OK':
-            lg.err('failed to download key "%s": %s' % (key_id, res['errors']))
+            lg.err('failed to download key "%s": %r' % (key_id, res))
             if wait_result:
-                result.errback(Exception('failed to download key "%s": %s' % (key_id, res['errors'])))
+                result.errback(Exception('failed to download key "%s": %r' % (key_id, res)))
             return None
         if not my_keys.load_key(key_id, keys_folder):
             lg.err('failed to read key "%s" from local folder "%s"' % (key_id, keys_folder))
@@ -599,7 +598,7 @@ def do_delete_key(key_id, is_private):
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_delete(global_key_path)
     if res['status'] != 'OK':
-        lg.err('failed to delete key "%s": %s' % (global_key_path, res['errors']))
+        lg.err('failed to delete key "%s": %r' % (global_key_path, res))
         return False
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_delete_key key_id=%s  is_private=%r : %r' % (key_id, is_private, res))

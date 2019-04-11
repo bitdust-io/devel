@@ -52,19 +52,19 @@ class KeysStorageService(LocalService):
         ]
 
     def start(self):
+        from twisted.internet.defer import Deferred
         from main import events
-        from access import key_ring
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
         events.add_subscriber(self._on_key_erased, 'key-erased')
         events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
-        d = key_ring.do_synchronize_keys(wait_result=True)
-        d.addCallback(self._on_keys_synchronized)
-        d.addErrback(self._on_keys_synchronize_failed)
-        return d
+        events.add_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
+        self.starting_deferred = Deferred()
+        return self.starting_deferred
 
     def stop(self):
         from main import events
+        events.remove_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
         events.remove_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.remove_subscriber(self._on_key_erased, 'key-erased')
         events.remove_subscriber(self._on_key_registered, 'key-registered')
@@ -86,24 +86,47 @@ class KeysStorageService(LocalService):
         from access import key_ring
         key_ring.do_delete_key(key_id=evt.data['key_id'], is_private=evt.data['is_private'])
 
+    def _do_synchronize_keys(self):
+        from access import key_ring
+        d = key_ring.do_synchronize_keys(wait_result=True)
+        d.addCallback(self._on_keys_synchronized)
+        d.addErrback(self._on_keys_synchronize_failed)
+
     def _on_my_backup_index_synchronized(self, evt):
         import time
-        if self.last_time_keys_synchronized and time.time() - self.last_time_keys_synchronized < 60:
+        if self.starting_deferred:
+            self._do_synchronize_keys()
             return
-        from access import key_ring
-        if key_ring.do_synchronize_keys():
-            d = key_ring.do_synchronize_keys(wait_result=True)
-            d.addCallback(self._on_keys_synchronized)
-            d.addErrback(self._on_keys_synchronize_failed)
+        if not self.last_time_keys_synchronized:
+            self._do_synchronize_keys()
+            return
+        if time.time() - self.last_time_keys_synchronized > 5 * 60:
+            self._do_synchronize_keys()
+            return
+
+    def _on_my_backup_index_out_of_sync(self, evt):
+        from logs import lg
+        lg.warn('not possible to synchronize keys because backup index is out of sync')
+        if self.starting_deferred:
+            self.starting_deferred.errback(Exception('not possible to synchronize keys because backup index is out of sync'))
+            self.starting_deferred = None
 
     def _on_keys_synchronized(self, x):
         import time
         from logs import lg
-        lg.info('all keys synchronized, last time that happens %d seconds ago' % (time.time() - self.last_time_keys_synchronized))
+        from main import events
+        lg.info('all keys synchronized')
         self.last_time_keys_synchronized = time.time()
-        return x
+        if self.starting_deferred:
+            self.starting_deferred.callback(True)
+            self.starting_deferred = None
+        events.send('my-keys-synchronized', data=dict())
+        return None
 
     def _on_keys_synchronize_failed(self, err):
         from logs import lg
         lg.err(err)
-        return err
+        if self.starting_deferred:
+            self.starting_deferred.errback(err)
+            self.starting_deferred = None
+        return None

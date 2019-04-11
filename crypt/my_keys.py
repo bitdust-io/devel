@@ -81,7 +81,6 @@ def init():
     """
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.init')
-    # load_local_keys()
     scan_local_keys()
 
 

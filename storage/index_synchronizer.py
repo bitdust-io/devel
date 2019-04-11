@@ -185,6 +185,8 @@ class IndexSynchronizer(automat.Automat):
         """
         if newstate == 'IN_SYNC!' and oldstate != newstate:
             events.send('my-backup-index-synchronized', data={})
+        if newstate == 'NO_INFO' and oldstate in ['REQUEST?', 'SENDING', ]:
+            events.send('my-backup-index-out-of-sync', data={})
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """

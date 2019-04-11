@@ -45,33 +45,25 @@ class PrivateMessagesService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_p2p_hookups',
+            'service_keys_registry',
             'service_entangled_dht',
         ]
 
     def start(self):
         from transport import callback
         from chat import message
-        from chat import message_keeper
-        from chat import message_db
         from chat import nickname_holder
         message.init()
-        message_db.init()
         nickname_holder.A('set')
         callback.append_inbox_callback(self._on_inbox_packet_received)
-        message_keeper.init()
         return True
 
     def stop(self):
         from transport import callback
         from chat import message
-        from chat import message_keeper
-        from chat import message_db
         from chat import nickname_holder
-        message_keeper.shutdown()
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
-        message_db.shutdown()
         message.shutdown()
         return True
 
