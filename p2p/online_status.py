@@ -507,7 +507,7 @@ class OnlineStatus(automat.Automat):
         Method to catch the moment when `online_status()` state were changed.
         """
         if _Debug:
-            lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate, newstate))
+            lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """

@@ -72,9 +72,9 @@ class KeysRegistryService(LocalService):
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def _on_outbox_packet_sent(self, pkt_out):
-        # TODO: work in progress
         from p2p import commands
         if pkt_out.outpacket.Command == commands.Key():
+            # TODO: work in progress : need to store history of all keys transfers
             return True
         return False
 
@@ -82,6 +82,7 @@ class KeysRegistryService(LocalService):
         from p2p import commands
         from access import key_ring
         if newpacket.Command == commands.Key():
+            # TODO: work in progress : need to store history of all keys transfers
             return key_ring.on_key_received(newpacket, info, status, error_message)
         elif newpacket.Command == commands.AuditKey():
             return key_ring.on_audit_key_received(newpacket, info, status, error_message)

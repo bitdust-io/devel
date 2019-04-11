@@ -56,27 +56,24 @@ class CustomerService(LocalService):
 
     def start(self):
         from contacts import contactsdb
-        from crypt import my_keys
         from customer import supplier_connector
-        from logs import lg
-        from main import settings
         from userid import my_id
-        customer_key_id = my_id.getGlobalID(key_alias='customer')
-        if not my_keys.is_key_registered(customer_key_id):
-            lg.warn('customer key was not found, generate new key: %s' % customer_key_id)
-            my_keys.generate_key(customer_key_id, key_size=settings.getPrivateKeySize())
-        for pos, supplier_idurl in enumerate(contactsdb.suppliers()):
+        from main import events
+        for _, supplier_idurl in enumerate(contactsdb.suppliers()):
             if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl, customer_idurl=my_id.getLocalID()):
                 supplier_connector.create(
                     supplier_idurl=supplier_idurl,
                     customer_idurl=my_id.getLocalID(),
                 )
+        events.add_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         # TODO: read from dht and connect to other suppliers - from other customers who shared data to me
         return True
 
     def stop(self):
         from customer import supplier_connector
         from userid import my_id
+        from main import events
+        events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         for sc in supplier_connector.connectors(my_id.getLocalID()).values():
             sc.automat('shutdown')
         # TODO: disconnect other suppliers
@@ -90,3 +87,13 @@ class CustomerService(LocalService):
             if sc.state in ['CONNECTED', ]:
                 return True
         return False
+
+    def _on_my_keys_synchronized(self, evt):
+        from crypt import my_keys
+        from userid import my_id
+        from logs import lg
+        from main import settings
+        customer_key_id = my_id.getGlobalID(key_alias='customer')
+        if not my_keys.is_key_registered(customer_key_id):
+            lg.info('customer key was not found, generate new key: %s' % customer_key_id)
+            my_keys.generate_key(customer_key_id, key_size=settings.getPrivateKeySize())

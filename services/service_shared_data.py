@@ -45,7 +45,7 @@ class SharedDataService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_restores',
+            'service_keys_storage',
         ]
 
     def start(self):

@@ -349,7 +349,7 @@ class SupplierConnector(automat.Automat):
         newpacket = args[0]
         if strng.to_text(newpacket.Payload).startswith('accepted'):
             if _Debug:
-                lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.supplier_idurl)
+                lg.out(6, 'supplier_connector.isServiceAccepted !!! supplier %s connected' % self.supplier_idurl)
             return True
         return False
 
@@ -361,7 +361,7 @@ class SupplierConnector(automat.Automat):
         if newpacket.Command == commands.Ack():
             if strng.to_text(newpacket.Payload).startswith('accepted'):
                 if _Debug:
-                    lg.out(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.supplier_idurl)
+                    lg.out(6, 'supplier_connector.isServiceCancelled !!! supplier %s disconnected' % self.supplier_idurl)
                 return True
         return False
 

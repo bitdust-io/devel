@@ -54,8 +54,6 @@ from interface import api
 
 from services import driver
 
-from crypt import my_keys
-
 from userid import my_id
 from userid import global_id
 
@@ -68,8 +66,6 @@ def init():
     lg.out(4, "message_keeper.init")
     message.AddIncomingMessageCallback(on_incoming_message)
     message.AddOutgoingMessageCallback(on_outgoing_message)
-    if not my_keys.is_key_registered(messages_key_id()):
-        my_keys.generate_key(messages_key_id(), key_size=settings.getPrivateKeySize())
 
 
 def shutdown():
@@ -129,12 +125,11 @@ def backup_incoming_message(private_message_object, message_id):
     global_message_path = global_id.MakeGlobalID(customer=messages_key_id(), path=remote_path_for_message)
     res = api.file_create(global_message_path)
     if res['status'] != 'OK':
-        lg.warn('failed to create path "%s" in the catalog: %s' % (
-            global_message_path, res['errors']))
+        lg.warn('failed to create path "%s" in the catalog: %r' % (global_message_path, res))
         return False
     res = api.file_upload_start(local_msg_filename, global_message_path, wait_result=False)
     if res['status'] != 'OK':
-        lg.warn('failed to upload message "%s": %s' % (global_message_path, res['errors']))
+        lg.warn('failed to upload message "%s": %r' % (global_message_path, res))
         return False
     return True
 
@@ -157,12 +152,11 @@ def backup_outgoing_message(private_message_object, message_id):
     global_message_path = global_id.MakeGlobalID(customer=messages_key_id(), path=remote_path_for_message)
     res = api.file_create(global_message_path)
     if res['status'] != 'OK':
-        lg.warn('failed to create path "%s" in the catalog: %s' % (
-            global_message_path, res['errors']))
+        lg.warn('failed to create path "%s" in the catalog: %r' % (global_message_path, res))
         return False
     res = api.file_upload_start(local_msg_filename, global_message_path, wait_result=False)
     if res['status'] != 'OK':
-        lg.warn('failed to upload message "%s": %s' % (global_message_path, res['errors']))
+        lg.warn('failed to upload message "%s": %r' % (global_message_path, res))
         return False
     return True
 

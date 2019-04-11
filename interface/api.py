@@ -494,6 +494,8 @@ def key_get(key_id, include_private=False):
             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
         }]}
     """
+    if not driver.is_on('service_keys_registry'):
+        return ERROR('service_keys_registry() is not started')
     if _Debug:
         lg.out(_DebugLevel, 'api.key_get')
     from crypt import my_keys
@@ -533,6 +535,8 @@ def keys_list(sort=False, include_private=False):
              'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
         }]}
     """
+    if not driver.is_on('service_keys_registry'):
+        return ERROR('service_keys_registry() is not started')
     if _Debug:
         lg.out(_DebugLevel, 'api.keys_list')
     from crypt import my_keys
@@ -573,6 +577,8 @@ def key_create(key_alias, key_size=None, include_private=False):
             'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKsdAIBSjfAdfguw...'
         }]}
     """
+    if not driver.is_on('service_keys_registry'):
+        return ERROR('service_keys_registry() is not started')
     from crypt import my_keys
     from main import settings
     from userid import my_id
@@ -607,6 +613,8 @@ def key_erase(key_id):
          'message': 'private key "ccc2" was erased successfully',
         }
     """
+    if not driver.is_on('service_keys_registry'):
+        return ERROR('service_keys_registry() is not started')
     from crypt import my_keys
     key_id = str(key_id)
     if _Debug:
@@ -1328,7 +1336,7 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         localPath=local_path,
         keyID=keyID,
     )
-    tsk.result_defer.addCallback(lambda result: lg.warn(
+    tsk.result_defer.addCallback(lambda result: lg.info(
         'callback from api.file_upload_start.task(%s) done with %s' % (result[0], result[1], )))
     tsk.result_defer.addErrback(lambda result: lg.err(
         'errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1], )))
@@ -3024,8 +3032,8 @@ def message_history(user):
     """
     Returns chat history with that user.
     """
-    if not driver.is_on('service_private_messages'):
-        return ERROR('service_private_messages() is not started')
+    if not driver.is_on('service_message_history'):
+        return ERROR('service_message_history() is not started')
     from chat import message_db
     from userid import my_id, global_id
     from crypt import my_keys
