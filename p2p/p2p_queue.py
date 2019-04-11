@@ -654,9 +654,9 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
     ret = Deferred()
 
-    if isinstance(callback_method, six.string_types):
+    if strng.is_string(callback_method):
         p2p_service.SendEvent(
-            remote_idurl=str(callback_method),
+            remote_idurl=strng.to_bin(callback_method),
             event_id=event_id,
             payload=existing_message.payload,
             producer_id=existing_message.producer_id,

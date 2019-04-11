@@ -125,6 +125,8 @@ def is_key_registered(key_id, include_master=True):
 
 
 def is_key_private(key_id, include_master=True):
+    """
+    """
     if not is_key_registered(key_id):
         return False
     if include_master and (key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master'):
@@ -226,8 +228,10 @@ def load_key(key_id, keys_folder=None):
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     key_filepath = os.path.join(keys_folder, '%s.private' % key_id)
+    is_private = True
     if not os.path.exists(key_filepath):
         key_filepath = os.path.join(keys_folder, '%s.public' % key_id)
+        is_private = False
     try:
         key_object = rsa_key.RSAKey()
         key_object.fromFile(key_filepath)
@@ -240,7 +244,7 @@ def load_key(key_id, keys_folder=None):
             return False
     known_keys()[key_id] = key_object
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.load_key %r from %s' % (key_id, keys_folder, ))
+        lg.out(_DebugLevel, 'my_keys.load_key %r  is_private=%r  from %s' % (key_id, is_private, keys_folder, ))
     return True
 
 

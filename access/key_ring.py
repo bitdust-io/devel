@@ -43,7 +43,7 @@ import os
 import sys
 import base64
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList, fail, succeed
 
 #------------------------------------------------------------------------------
 
@@ -494,9 +494,6 @@ def on_audit_key_received(newpacket, info, status, error_message):
 def do_backup_key(key_id, keys_folder=None):
     """
     """
-    if not driver.is_on('service_backups'):
-        lg.warn('service_backups is not started')
-        return False
     if key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master':
         lg.err('master key must never leave local host')
         return False
@@ -532,14 +529,13 @@ def do_backup_key(key_id, keys_folder=None):
     return True
 
 
-def do_restore_key(key_id, is_private, keys_folder=None):
+def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
     """
     """
-    if not driver.is_on('service_backups'):
-        lg.warn('service_backups is not started')
-        return False
     if my_keys.is_key_registered(key_id):
         lg.err('local key already exist: "%s"' % key_id)
+        if wait_result:
+            return fail(Exception('local key already exist: "%s"' % key_id))
         return False
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
@@ -549,37 +545,52 @@ def do_restore_key(key_id, is_private, keys_folder=None):
         remote_path_for_key = os.path.join('.keys', '%s.public' % key_id)
     global_key_path = global_id.MakeGlobalID(
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
-    d = api.file_download_start(
+    ret = api.file_download_start(
         remote_path=global_key_path,
         destination_path=keys_folder,
         wait_result=True,
         open_share=False,
     )
+    if not isinstance(ret, Deferred):
+        lg.err('failed to download key "%s": %s' % (key_id, ret))
+        if wait_result:
+            return fail(Exception('failed to download key "%s": %s' % (key_id, ret)))
+        return False
+
+    result = Deferred()
 
     def _on_result(res):
         if not isinstance(res, dict):
             lg.err('failed to download key "%s": %s' % (key_id, res))
+            if wait_result:
+                result.errback(Exception('failed to download key "%s": %s' % (key_id, res)))
             return None
         if res['status'] != 'OK':
             lg.err('failed to download key "%s": %s' % (key_id, res['errors']))
+            if wait_result:
+                result.errback(Exception('failed to download key "%s": %s' % (key_id, res['errors'])))
             return None
         if not my_keys.load_key(key_id, keys_folder):
             lg.err('failed to read key "%s" from local folder "%s"' % (key_id, keys_folder))
+            if wait_result:
+                result.errback(Exception('failed to read key "%s" from local folder "%s"' % (key_id, keys_folder)))
             return None
         if _Debug:
             lg.out(_DebugLevel, 'key_ring.do_restore_key._on_result key_id=%s  is_private=%r : %r' % (key_id, is_private, res))
+        if wait_result:
+            result.callback(res)
         return None
 
-    d.addBoth(_on_result)
-    return True
+    ret.addBoth(_on_result)
+
+    if not wait_result:
+        return True
+    return result
 
 
 def do_delete_key(key_id, is_private):
     """
     """
-    if not driver.is_on('service_backups'):
-        lg.warn('service_backups is not started')
-        return False
     if is_private:
         remote_path_for_key = os.path.join('.keys', '%s.private' % key_id)
     else:
@@ -595,43 +606,60 @@ def do_delete_key(key_id, is_private):
     return True
 
 
-def do_synchronize_keys(keys_folder=None):
+def do_synchronize_keys(keys_folder=None, wait_result=False):
     """
     """
-    if not driver.is_on('service_backup_db'):
-        lg.warn('service_backup_db is not started')
-        return False
     from storage import backup_fs
+    from storage import index_synchronizer
+    from storage import backup_control
+    is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+    if not is_in_sync:
+        lg.warn('backup index database is not synchronized yet')
+        if wait_result:
+            return fail(Exception('backup index database is not synchronized yet'))
+        return False
     if not backup_fs.Exists('.keys'):
         if not api.file_create('.keys', as_folder=True):
             lg.err('failed to create ".keys" folder in the catalog')
+            if wait_result:
+                return fail(Exception('failed to create ".keys" folder in the catalog'))
             return False
         lg.info('created new remote folder ".keys" in the catalog')
     if not backup_fs.IsDir('.keys'):
         lg.err('remote folder ".keys" not exist in the catalog')
+        if wait_result:
+            return fail(Exception('remote folder ".keys" not exist in the catalog'))
         return False
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     lookup = backup_fs.ListChildsByPath(path='.keys', recursive=False, )
     restored_count = 0
     saved_count = 0
+    keys_to_be_restored = []
     for i in lookup:
         if i['path'].endswith('.public'):
-            key_id = i['path'].replace('.public', '')
+            is_private = False
+            key_id = i['path'].replace('.public', '').replace('.keys/', '')
         else:
-            key_id = i['path'].replace('.private', '')
+            is_private = True
+            key_id = i['path'].replace('.private', '').replace('.keys/', '')
         if my_keys.is_key_registered(key_id):
             continue
-        if not do_restore_key(key_id, keys_folder):
-            continue
+        res = do_restore_key(key_id, is_private, keys_folder=keys_folder, wait_result=wait_result)
         restored_count += 1
+        if wait_result:
+            keys_to_be_restored.append(res)
+            continue
+        if not res:
+            lg.err('failed to synchronize keys')
+            return False
     for key_id in my_keys.known_keys().keys():
         is_key_stored = False
         for i in lookup:
             if i['path'].endswith('.public'):
-                stored_key_id = i['path'].replace('.public', '')
+                stored_key_id = i['path'].replace('.public', '').replace('.keys/', '')
             else:
-                stored_key_id = i['path'].replace('.private', '')
+                stored_key_id = i['path'].replace('.private', '').replace('.keys/', '')
             if stored_key_id == key_id:
                 is_key_stored = True
                 break
@@ -640,4 +668,8 @@ def do_synchronize_keys(keys_folder=None):
                 saved_count += 1
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_synchronize_keys restored_count=%d saved_count=%d' % (restored_count, saved_count, ))
-    return restored_count, saved_count
+    if not wait_result:
+        return True
+    if not keys_to_be_restored:
+        return succeed(True)
+    return DeferredList(keys_to_be_restored, fireOnOneErrback=True, consumeErrors=True)

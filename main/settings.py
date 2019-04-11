@@ -2448,7 +2448,11 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/keys-registry/enabled', 'true')
 
+    config.conf().setDefaultValue('services/keys-storage/enabled', 'true')
+
     config.conf().setDefaultValue('services/list-files/enabled', 'true')
+
+    config.conf().setDefaultValue('services/message-history/enabled', 'true')
 
     config.conf().setDefaultValue('services/miner/enabled', 'false')
 
