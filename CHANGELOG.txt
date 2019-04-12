@@ -2,6 +2,17 @@ Change Log
 ==========
 
 
+2019-04-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added new feature: backup/restore/sync my keys to suppliers encrypting with my "master" key (#313)
+* reorganized service_private_messages()
+* populate "my-keys-synchronized" event
+* added service_keys_storage()
+* added service_message_history()
+* disabled few unused services, development to be contunue later (#312)
+
+
+
 2019-04-09 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * updated Copyright period to 2008-2019
