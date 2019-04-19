@@ -349,8 +349,13 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        login = kwargs['username']
-        self.preferred_servers = [s.strip() for s in kwargs.get('preferred_servers', [])]
+        if args:
+            login = args[0]['username']
+            preferred_servers = args[0].get('preferred_servers', [])
+        else:
+            login = kwargs['username']
+            preferred_servers = kwargs.get('preferred_servers', [])
+        self.preferred_servers = [s.strip() for s in preferred_servers]
         if not self.known_servers:
             self.known_servers = known_servers.by_host()
         if not self.preferred_servers:
