@@ -158,11 +158,11 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
         lg.warn('wrong key_id')
         result.errback(Exception('wrong key_id'))
         return result
-    key_object = my_keys.known_keys().get(key_id)
-    if key_object is None:
+    if not my_keys.is_key_registered(key_id):
         lg.warn('unknown key: "%s"' % key_id)
         result.errback(Exception('unknown key: "%s"' % key_id))
         return result
+    key_object = my_keys.key_obj(key_id)
     try:
         key_json = my_keys.make_key_info(key_object, key_id=key_id, include_private=include_private)
     except Exception as exc:
