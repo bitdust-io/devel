@@ -42,6 +42,8 @@ from __future__ import absolute_import
 _Debug = True
 _DebugLevel = 18
 
+_EventLogFileEnabled = True
+
 #------------------------------------------------------------------------------
 
 import sys
@@ -174,7 +176,8 @@ def dispatch(evt):
         else:
             lg.out(_DebugLevel, 'events.dispatch {} was handled by {} subscribers'.format(
                 evt.event_id, handled))
-        lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)[:100]), log_name='event')
+    if _EventLogFileEnabled:
+        lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)), log_name='event')
     return handled
 
 

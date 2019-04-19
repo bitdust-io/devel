@@ -405,9 +405,17 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
+        service_info = {}
+        my_customer_key_id = my_id.getGlobalID(key_alias='customer')
+        if my_keys.is_key_registered(my_customer_key_id):
+            service_info['customer_public_key'] = my_keys.get_key_info(
+                key_id=my_customer_key_id,
+                include_private=False,
+            )
         request = p2p_service.SendCancelService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
+            json_payload=service_info,
             callbacks={
                 commands.Ack(): self._supplier_acked,
                 commands.Fail(): self._supplier_failed,

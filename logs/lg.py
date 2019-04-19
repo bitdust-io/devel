@@ -169,6 +169,18 @@ def out(level, msg, nl='\n', log_name='main'):
     return None
 
 
+def dbg(message):
+    cod = sys._getframe().f_back.f_code
+    modul = os.path.basename(cod.co_filename).replace('.py', '')
+    caller = cod.co_name
+    funcname = '%s.%s' % (modul, caller)
+    o = '%s' % funcname
+    if message:
+        o += ' : ' + message
+    out(0, o)
+    return o
+
+
 def args(level, *args, **kwargs):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
