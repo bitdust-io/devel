@@ -68,7 +68,7 @@ class KeysRegistryService(LocalService):
         # TODO: work in progress
         from main import events
         from p2p import p2p_service
-        events.send('key-registry-request', dict(idurl=newpacket.OwnerID))
+        # events.send('key-registry-request', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
 
     def _on_outbox_packet_sent(self, pkt_out):

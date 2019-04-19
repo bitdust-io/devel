@@ -323,6 +323,7 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         )
         input_data = block.Data()
     except:
+        lg.exc()
         lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR decrypting data from %s' % newpacket)
         return False
     src = list_files.UnpackListFiles(input_data, settings.ListFilesFormat())

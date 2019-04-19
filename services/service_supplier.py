@@ -147,6 +147,7 @@ class SupplierService(LocalService):
                     key_id, customer_idurl, target_customer_idurl, ))
                 p2p_service.SendFail(newpacket, 'under construction')
                 return False
+            self._do_register_customer_key(customer_public_key_id, customer_public_key)
             # do not create connection with that customer, only accept the request
             lg.info('external customer %s requested access to shared data at %s' % (customer_id, key_id, ))
             return p2p_service.SendAck(newpacket, 'accepted')
@@ -206,17 +207,7 @@ class SupplierService(LocalService):
             'family_snapshot': family_snapshot,
         })
         accounting.write_customers_quotas(space_dict)
-        if customer_public_key_id:
-            my_keys.erase_key(customer_public_key_id)
-            try:
-                if not my_keys.is_key_registered(customer_public_key_id):
-                    key_id, key_object = my_keys.read_key_info(customer_public_key)
-                    if not my_keys.register_key(key_id, key_object):
-                        lg.err('failed to register customer public key')
-            except:
-                lg.exc()
-        else:
-            lg.warn('customer public key was not provided in the request')
+        self._do_register_customer_key(customer_public_key_id, customer_public_key)
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
             lg.out(8, "    NEW CUSTOMER: ACCEPTED   %s family_position=%s ecc_map=%s allocated_bytes=%s" % (
@@ -251,7 +242,14 @@ class SupplierService(LocalService):
         from p2p import p2p_service
         from contacts import contactsdb
         from storage import accounting
+        from crypt import my_keys
         customer_idurl = newpacket.OwnerID
+        try:
+            customer_public_key = json_payload['customer_public_key']
+            customer_public_key_id = customer_public_key['key_id']
+        except:
+            customer_public_key = None
+            customer_public_key_id = None
         if not contactsdb.is_customer(customer_idurl):
             lg.warn("got packet from %s, but he is not a customer" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
@@ -274,6 +272,8 @@ class SupplierService(LocalService):
         contactsdb.save_customers()
         space_dict.pop(customer_idurl)
         accounting.write_customers_quotas(space_dict)
+        if customer_public_key_id:
+            my_keys.erase_key(customer_public_key_id)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
@@ -332,6 +332,28 @@ class SupplierService(LocalService):
                     glob_path['idurl'], customerIDURL))
         filename = self._do_construct_filename(customerGlobID, packetID, keyAlias)
         return filename
+
+    def _do_register_customer_key(self, customer_public_key_id, customer_public_key):
+        """
+        Check/refresh/store customer public key locally.
+        """
+        from crypt import my_keys
+        from logs import lg
+        if not customer_public_key_id:
+            lg.dbg('customer public key was not provided in the request')
+            return
+        if my_keys.is_key_registered(customer_public_key_id):
+            known_customer_public_key = my_keys.get_public_key_raw(customer_public_key_id)
+            if known_customer_public_key == customer_public_key:
+                lg.dbg('customer public key %r already known' % customer_public_key_id)
+                return
+            lg.warn('rewriting customer public key %r' % customer_public_key_id)
+            my_keys.erase_key(customer_public_key_id)
+        key_id, key_object = my_keys.read_key_info(customer_public_key)
+        if my_keys.register_key(key_id, key_object):
+            lg.info('new customer public key registered: %r' % customer_public_key_id)
+        else:
+            lg.err('failed to register customer public key: %r' % customer_public_key_id)
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands

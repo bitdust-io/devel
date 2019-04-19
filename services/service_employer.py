@@ -114,6 +114,8 @@ class EmployerService(LocalService):
     def _on_my_dht_relations_discovered(self, dht_result):
         from p2p import p2p_service
         from contacts import contactsdb
+        from userid import my_id
+        from crypt import my_keys
         from logs import lg
         if not (dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0):
             lg.warn('no dht records found for my customer family')
@@ -127,9 +129,17 @@ class EmployerService(LocalService):
                 lg.warn('dht relation with %s is not valid anymore' % idurl)
                 suppliers_to_be_dismissed.add(idurl)
         for supplier_idurl in suppliers_to_be_dismissed:
+            service_info = {}
+            my_customer_key_id = my_id.getGlobalID(key_alias='customer')
+            if my_keys.is_key_registered(my_customer_key_id):
+                service_info['customer_public_key'] = my_keys.get_key_info(
+                    key_id=my_customer_key_id,
+                    include_private=False,
+                )
             p2p_service.SendCancelService(
                 remote_idurl=supplier_idurl,
                 service_name='service_supplier',
+                json_payload=service_info,
             )
 #             p2p_service.SendCancelService(
 #                 remote_idurl=idurl,

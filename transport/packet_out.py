@@ -62,6 +62,8 @@ from six.moves import range
 _Debug = True
 _DebugLevel = 10
 
+_PacketLogFileEnabled = True
+
 #------------------------------------------------------------------------------
 
 import os
@@ -686,8 +688,8 @@ class PacketOut(automat.Automat):
         callback.run_finish_file_sending_callbacks(
             self, self.popped_item, self.popped_item.status,
             self.popped_item.bytes_sent, self.popped_item.error_message)
-        if _Debug:
-            lg.out(4, '\033[2;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[2;49;90mSENT %d bytes to %s://%s TID:%s\033[0m' % (
                 self.popped_item.bytes_sent, self.popped_item.proto, self.popped_item.host, self.popped_item.transfer_id), log_name='packet')
         self.popped_item = None
 
@@ -699,8 +701,8 @@ class PacketOut(automat.Automat):
             p2p_stats.count_outbox(self.remote_idurl, item.proto, 'failed', 0)
             callback.run_finish_file_sending_callbacks(
                 self, item, 'failed', 0, self.error_message)
-            if _Debug:
-                lg.out(4, '\033[2;49;90mCANCELED %s://%s TID:%s\033[0m' % (
+            if _PacketLogFileEnabled:
+                lg.out(0, '\033[2;49;90mCANCELED %s://%s TID:%s\033[0m' % (
                     item.proto, item.host, item.transfer_id), log_name='packet')
 
     def doReportResponse(self, *args, **kwargs):
@@ -721,8 +723,8 @@ class PacketOut(automat.Automat):
         if None in self.callbacks:
             for cb in self.callbacks[None]:
                 cb(self)
-        if _Debug:
-            lg.out(4, '\033[2;49;90mTIMEOUT %s(%s) sending to %s\033[0m' % (
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[2;49;90mTIMEOUT %s(%s) sending to %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, global_id.UrlToGlobalID(self.remote_idurl)), log_name='packet')
 
     def doReportDoneWithAck(self, *args, **kwargs):
@@ -730,8 +732,8 @@ class PacketOut(automat.Automat):
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
-        if _Debug:
-            lg.out(2, '\033[0;49;95mOUT %s(%s) with %s bytes to %s (ACK received) TID:%r\033[0m' % (
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes to %s (ACK received) TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet')
 
@@ -740,8 +742,8 @@ class PacketOut(automat.Automat):
         Action method.
         """
         callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
-        if _Debug:
-            lg.out(2, '\033[0;49;95mOUT %s(%s) with %s bytes to %s TID:%r\033[0m' % (
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes to %s TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet')
 
@@ -754,8 +756,8 @@ class PacketOut(automat.Automat):
         except:
             msg = 'failed'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
-        if _Debug:
-            lg.out(2, '\033[0;49;91mFAILED %s(%s) with %s bytes to %s TID:%r : %s\033[0m' % (
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[0;49;91mFAILED %s(%s) with %s bytes to %s TID:%r : %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results], msg), log_name='packet')
 
@@ -769,8 +771,8 @@ class PacketOut(automat.Automat):
         else:
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
-        if _Debug:
-            lg.out(2, '\033[0;49;97mOUT %s(%s) with %s bytes CANCELED to %s TID:%r : %s\033[0m' % (
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[0;49;97mOUT %s(%s) with %s bytes CANCELED to %s TID:%r : %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results], msg), log_name='packet')
 
