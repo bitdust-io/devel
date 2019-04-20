@@ -77,6 +77,7 @@ class SharedDataService(LocalService):
                     continue
                 _glob_id = global_id.ParseGlobalID(key_id)
                 if _glob_id['idurl'] == my_id.getLocalIDURL():
+                    # only send public keys of my own shares
                     my_keys_to_be_republished.append(key_id)
             for key_id in my_keys_to_be_republished:
                 d = key_ring.transfer_key(key_id, trusted_idurl=evt.data['new_idurl'], include_private=False)

@@ -542,6 +542,8 @@ def keys_list(sort=False, include_private=False):
     from crypt import my_keys
     r = []
     for key_id, key_object in my_keys.known_keys().items():
+        if not key_object:
+            key_object = my_keys.key_obj(key_id)
         key_alias, creator_idurl = my_keys.split_key_id(key_id)
         if not key_alias or not creator_idurl:
             lg.warn('incorrect key_id: %s' % key_id)
