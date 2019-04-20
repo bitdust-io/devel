@@ -112,18 +112,24 @@ def setLocalIdentity(ident):
         return
     modified = False
     old_json = {}
+    new_json = {}
     if _LocalIdentity:
         current_src = _LocalIdentity.serialize()
         if current_src != ident.serialize():
             modified = True
-            old_json = _LocalIdentity.serialize_json()
+            li_json = _LocalIdentity.serialize_json()
+            old_json['revision'] = li_json['revision']
+            old_json['contacts'] = li_json['contacts']
     _LocalIdentity = ident
     _LocalIDURL = _LocalIdentity.getIDURL()
     _LocalName = _LocalIdentity.getIDName()
+    li_json = _LocalIdentity.serialize_json()
+    new_json['revision'] = li_json['revision']
+    new_json['contacts'] = li_json['contacts']
     if modified:
-        events.send('local-identity-modified', dict(old=old_json, new=_LocalIdentity.serialize_json()))
+        events.send('local-identity-modified', dict(old=old_json, new=new_json))
     else:
-        events.send('local-identity-set', dict(old=old_json, new=_LocalIdentity.serialize_json()))
+        events.send('local-identity-set', new_json)
 
 
 def setLocalIdentityXML(idxml):
@@ -244,6 +250,7 @@ def saveLocalIdentity():
     xmlid = _LocalIdentity.serialize(as_text=True)
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     bpio.WriteTextFile(filename, xmlid)
+    setTransportOrder(getOrderFromContacts(_LocalIdentity))
     events.send('local-identity-written', dict(idurl=_LocalIdentity.getIDURL(), filename=filename))
     lg.out(6, "my_id.saveLocalIdentity %d bytes wrote to %s" % (len(xmlid), filename))
     return True
@@ -540,11 +547,11 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=F
 
     Also increase revision number by one - others may keep track of my modifications.
     """
-    # getting current copy of local identity
-    lid = identity_object or getLocalIdentity()
     # remember the current identity - full XML source code
-    current_identity_xmlsrc = lid.serialize()
+    current_identity_xmlsrc = getLocalIdentity().serialize()
     lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long' % len(current_identity_xmlsrc))
+    # getting a copy of local identity to be modified or another object to be used
+    lid = identity_object or identity.identity(xmlsrc=current_identity_xmlsrc)
     # create a full list of needed transport methods
     # to be able to accept incoming traffic from other nodes
     new_contacts, new_order = buildProtoContacts(lid, skip_transports=skip_transports)
@@ -591,8 +598,8 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=F
         if save_identity:
             saveLocalIdentity()
             # NOW TEST IT!
-            forgetLocalIdentity()
-            loadLocalIdentity()
+            # forgetLocalIdentity()
+            # loadLocalIdentity()
             lg.out(4, '    LOCAL IDENTITY CORRECT: %r' % getLocalIdentity().isCorrect())
             lg.out(4, '    LOCAL IDENTITY VALID: %r' % getLocalIdentity().Valid())
     lg.info('my identity HAS %sBEEN changed' % (('' if changed else 'NOT ')))

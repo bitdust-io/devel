@@ -177,7 +177,7 @@ def dispatch(evt):
             lg.out(_DebugLevel, 'events.dispatch {} was handled by {} subscribers'.format(
                 evt.event_id, handled))
     if _EventLogFileEnabled:
-        lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)), log_name='event')
+        lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
     return handled
 
 

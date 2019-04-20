@@ -181,7 +181,7 @@ def process(newpacket, info):
     if _PacketLogFileEnabled:
         lg.out(0, '        \033[0;49;92m IN %s(%s) with %d bytes from %s TID:%s\033[0m' % (
             newpacket.Command, newpacket.PacketID, info.bytes_received,
-            global_id.UrlToGlobalID(info.sender_idurl), info.transfer_id), log_name='packet')
+            global_id.UrlToGlobalID(info.sender_idurl), info.transfer_id), log_name='packet', showtime=True)
     if newpacket.Command == commands.Identity():
         if newpacket.RemoteID != my_id.getLocalIDURL():
             if _Debug:
@@ -409,8 +409,8 @@ class PacketIn(automat.Automat):
         from transport import gateway
         self.status, self.bytes_received, self.error_message = args[0]
         if _PacketLogFileEnabled:
-            lg.out(0, '        \033[2;49;90mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
-                self.bytes_received, self.proto, self.host, self.transfer_id), log_name='packet')
+            lg.out(0, '     \033[2;49;90mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
+                self.bytes_received, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
         if newpacket is None:
@@ -468,7 +468,7 @@ class PacketIn(automat.Automat):
         lg.out(18, 'packet_in.doReportFailed WARNING %s with %s' % (self.transfer_id, status))
         if _PacketLogFileEnabled:
             lg.out(0, '        \033[0;49;31mFAILED with status "%s" from %s://%s TID:%s\033[0m' % (
-                status, self.proto, self.host, self.transfer_id), log_name='packet')
+                status, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
 
     def doReportCacheFailed(self, *args, **kwargs):
         """
@@ -480,7 +480,7 @@ class PacketIn(automat.Automat):
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
         if _PacketLogFileEnabled:
             lg.out(0, '        \033[0;49;31mCACHE FAILED with "%s" for %s TID:%s\033[0m' % (
-                msg, self.sender_idurl, self.transfer_id), log_name='packet')
+                msg, self.sender_idurl, self.transfer_id), log_name='packet', showtime=True)
 
     def doDestroyMe(self, *args, **kwargs):
         """

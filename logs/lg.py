@@ -72,7 +72,7 @@ def fqn(o):
 
 #------------------------------------------------------------------------------
 
-def out(level, msg, nl='\n', log_name='main'):
+def out(level, msg, nl='\n', log_name='main', showtime=False):
     """
     The core method, most useful thing in any project :-))) Print a text line
     to the log file or console.
@@ -104,7 +104,7 @@ def out(level, msg, nl='\n', log_name='main'):
         level -= 1
     if level:
         s = ' ' * level + s
-    if _ShowTime and level > 0:
+    if ( _ShowTime and level > 0 ) or showtime:
         tm_string = time.strftime('%H:%M:%S')
         if _LifeBeginsTime != 0:
             dt = time.time() - _LifeBeginsTime
@@ -118,6 +118,8 @@ def out(level, msg, nl='\n', log_name='main'):
             _UseColors = platform.uname()[0] != 'Windows'
         if _UseColors:
             tm_string = '\033[2;32m%s\033[0m' % tm_string
+        if level == 0:
+            tm_string += '  '
         s = tm_string + s
     if is_debug(30):
         currentThreadName = threading.currentThread().getName()
