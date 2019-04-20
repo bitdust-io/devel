@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2019-04-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor changes in logging and events
+* bug fix in my_keys (#317)
+* make sure suppliers receive and register my customer public key every time (#316)
+
+
+
 2019-04-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added new feature: backup/restore/sync my keys to suppliers encrypting with my "master" key (#313)
