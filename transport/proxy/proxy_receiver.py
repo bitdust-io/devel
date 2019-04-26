@@ -88,15 +88,12 @@ from crypt import key
 from crypt import signed
 from crypt import encrypted
 
-from services import driver
-
 from p2p import commands
 from p2p import lookup
 from p2p import online_status
 from p2p import propagate
 
 from contacts import identitycache
-from contacts import contactsdb
 
 from transport import callback
 from transport import packet_in

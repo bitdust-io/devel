@@ -50,8 +50,6 @@ from twisted.python.failure import Failure
 
 from logs import lg
 
-from lib import net_misc
-
 from main import settings
 
 from contacts import identitycache

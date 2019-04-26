@@ -106,6 +106,7 @@ from system import tmpfile
 
 from main import settings
 from main import control
+from main import events
 
 from crypt import signed
 
@@ -226,7 +227,7 @@ def start():
             else:
                 if _Debug:
                     lg.out(4, '    %r is ready' % transp)
-    reactor.callLater(5, packets_timeout_loop)
+    reactor.callLater(5, packets_timeout_loop)  # @UndefinedVariable
     return result
 
 
@@ -252,7 +253,7 @@ def cold_start():
             else:
                 if _Debug:
                     lg.out(4, '    %r is ready, try next one' % transp)
-    reactor.callLater(5, packets_timeout_loop)
+    reactor.callLater(5, packets_timeout_loop)  # @UndefinedVariable
     return result
 
 
@@ -666,7 +667,7 @@ def packets_timeout_loop():
     delay = 5
     if _Debug:
         delay = 1
-    _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)
+    _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)  # @UndefinedVariable
     for pkt_in in list(packet_in.inbox_items().values()):
         if pkt_in.is_timed_out():
             if _Debug:
@@ -750,6 +751,10 @@ def on_transport_initialized(proto, xmlrpcurl=None):
     """
     """
     transport(proto).automat('transport-initialized', xmlrpcurl)
+    events.send('gateway-transport-initialized', data=dict(
+        proto=proto,
+        rpc_url=xmlrpcurl,
+    ))
     return True
 
 
@@ -759,6 +764,11 @@ def on_receiving_started(proto, host, options_modified=None):
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_started %r host=%r' % (proto.upper(), host))
     transport(proto).automat('receiving-started', (proto, host, options_modified))
+    events.send('gateway-receiving-started', data=dict(
+        proto=proto,
+        host=host,
+        options=options_modified,
+    ))
     return True
 
 
@@ -768,6 +778,10 @@ def on_receiving_failed(proto, error_code=None):
     if _Debug:
         lg.out(_DebugLevel - 2, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
+    events.send('gateway-receiving-failed', data=dict(
+        proto=proto,
+        error=error_code,
+    ))
     return True
 
 
@@ -778,6 +792,10 @@ def on_disconnected(proto, result=None):
         lg.out(_DebugLevel - 2, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     if proto in transports():
         transport(proto).automat('stopped')
+    events.send('gateway-disconnected', data=dict(
+        proto=proto,
+        result=result,
+    ))
     return True
 
 
@@ -997,7 +1015,7 @@ class TransportGateLocalProxy():
             r = maybeDeferred(m, *args)
             r.addCallback(_d.callback)
             r.addErrback(_d.errback)
-        reactor.callLater(0, _call)
+        reactor.callLater(0, _call)  # @UndefinedVariable
         return _d
 
 #------------------------------------------------------------------------------
@@ -1077,7 +1095,7 @@ def main():
         lib.udp.listen(options.udpport)
         import dht.dht_service
         dht.dht_service.init(options.dhtport)
-    reactor.addSystemEventTrigger('before', 'shutdown', shutdown)
+    reactor.addSystemEventTrigger('before', 'shutdown', shutdown)  # @UndefinedVariable
     init()
     start()
     globals()['num_in'] = 0
@@ -1102,13 +1120,13 @@ def main():
         def new_state_changed(oldstate, newstate, event, *args, **kwargs):
             old_state_changed(oldstate, newstate, event, *args, **kwargs)
             if newstate == 'LISTENING':
-                reactor.callLater(1, _s)
+                reactor.callLater(1, _s)  # @UndefinedVariable
         transport('udp').state_changed = new_state_changed
         # t = task.LoopingCall(_s)
         # reactor.callLater(5, t.start, 60, True)
         # reactor.callLater(2, t.stop)
 
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
 
 #------------------------------------------------------------------------------
 

@@ -61,10 +61,9 @@ from automats import automat
 
 from lib import udp
 from lib import strng
+from lib import misc
 
 from main import settings
-
-from stun import stun_client
 
 from dht import dht_service
 
@@ -133,6 +132,7 @@ class UDPNode(automat.Automat):
         self.my_address = None
         self.options = {}
         if driver.is_on('service_my_ip_port'):
+            from stun import stun_client
             self.my_address = stun_client.A().getMyExternalAddress()
         self.notified = False
         self.IncomingPosition = -1
@@ -234,8 +234,10 @@ class UDPNode(automat.Automat):
         except:
             lg.exc()
             return False
-        if address in stun_client.A().stun_servers:
-            return True
+        if driver.is_on('service_my_ip_port'):
+            from stun import stun_client
+            if address in stun_client.A().stun_servers:
+                return True
         active_sessions = udp_session.get(address)
         return len(active_sessions) > 0
 
@@ -299,7 +301,11 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
-        stun_client.A('start', self._stun_finished)
+        if driver.is_on('service_my_ip_port'):
+            from stun import stun_client
+            stun_client.A('start', self._stun_finished)
+        else:
+            self.automat('stun-success', ('unknown', misc.readExternalIP() or '127.0.0.1', settings.getUDPPort()))
 
     def doStartNewConnector(self, *args, **kwargs):
         """
