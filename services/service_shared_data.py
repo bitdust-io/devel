@@ -178,16 +178,16 @@ class SharedDataService(LocalService):
                 from_json=True,
             )
             p2p_service.SendAck(newpacket)
-            events.send('shared-list-files-received', dict(
-                customer_idurl=trusted_customer_idurl,
-                new_items=count,
-            ))
             if count == 0:
                 lg.warn('no files were imported during file sharing')
             else:
                 backup_control.Save()
                 lg.info('imported %d shared files from %s, key_id=%s' % (
                     count, trusted_customer_idurl, incoming_key_id, ))
+            events.send('shared-list-files-received', dict(
+                customer_idurl=trusted_customer_idurl,
+                new_items=count,
+            ))
             return True
         # otherwise this must be an external supplier sending us a files he stores for trusted customer
         external_supplier_idurl = block.CreatorID

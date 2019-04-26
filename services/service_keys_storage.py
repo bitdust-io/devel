@@ -62,7 +62,7 @@ class KeysStorageService(LocalService):
         self.starting_deferred = Deferred()
         from storage import index_synchronizer
         if index_synchronizer.A().state == 'IN_SYNC!':
-            self._on_keys_synchronized(True)
+            self._do_synchronize_keys()
             return True
         if index_synchronizer.A().state == 'NO_INFO':
             index_synchronizer.A('pull')
