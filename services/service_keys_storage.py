@@ -60,6 +60,12 @@ class KeysStorageService(LocalService):
         events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.add_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
         self.starting_deferred = Deferred()
+        from storage import index_synchronizer
+        if index_synchronizer.A().state == 'IN_SYNC!':
+            self._on_keys_synchronized(True)
+            return True
+        if index_synchronizer.A().state == 'NO_INFO':
+            index_synchronizer.A('pull')
         return self.starting_deferred
 
     def stop(self):
