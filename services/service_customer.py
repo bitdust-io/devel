@@ -89,11 +89,12 @@ class CustomerService(LocalService):
         return False
 
     def _on_my_keys_synchronized(self, evt):
-        from crypt import my_keys
-        from userid import my_id
         from logs import lg
         from main import settings
+        from access import key_ring
+        from crypt import my_keys
+        from userid import my_id
         customer_key_id = my_id.getGlobalID(key_alias='customer')
-        if not my_keys.is_key_registered(customer_key_id):
-            lg.info('customer key was not found, generate new key: %s' % customer_key_id)
+        if not my_keys.is_key_registered(customer_key_id) and key_ring.is_my_keys_in_sync():
+            lg.info('customer key was not found but we know that all keys are in sync, generate new key: %s' % customer_key_id)
             my_keys.generate_key(customer_key_id, key_size=settings.getPrivateKeySize())

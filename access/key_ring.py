@@ -58,8 +58,6 @@ from logs import lg
 from lib import strng
 from lib import serialization
 
-from system import tmpfile
-
 from main import settings
 
 from contacts import identitycache
@@ -75,9 +73,11 @@ from crypt import encrypted
 from userid import global_id
 from userid import my_id
 
-from services import driver
-
 from interface import api
+
+#------------------------------------------------------------------------------
+
+_MyKeysInSync = False
 
 #------------------------------------------------------------------------------
 
@@ -89,6 +89,18 @@ def init():
 
 def shutdown():
     lg.out(4, 'key_ring.shutdown')
+
+
+#------------------------------------------------------------------------------
+
+def is_my_keys_in_sync():
+    global _MyKeysInSync
+    return _MyKeysInSync
+
+
+def set_my_keys_in_sync_flag(flag):
+    global _MyKeysInSync
+    _MyKeysInSync = flag
 
 #-------------------------------------------------------------------------------
 
