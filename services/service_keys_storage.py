@@ -55,6 +55,7 @@ class KeysStorageService(LocalService):
         from twisted.internet.defer import Deferred
         from storage import index_synchronizer
         from main import events
+        self.starting_deferred = Deferred()
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
         events.add_subscriber(self._on_key_erased, 'key-erased')
@@ -63,7 +64,6 @@ class KeysStorageService(LocalService):
         if index_synchronizer.A().state == 'NO_INFO':
             # it can be that machine is offline... we must start here, but expect to be online soon and sync keys later 
             return True
-        self.starting_deferred = Deferred()
         if index_synchronizer.A().state == 'IN_SYNC!':
             # if we already online and backup index in sync - refresh keys asap
             self._do_synchronize_keys()
