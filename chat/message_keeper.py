@@ -57,6 +57,8 @@ from services import driver
 from userid import my_id
 from userid import global_id
 
+from crypt import my_keys
+
 from chat import message
 from chat import message_db
 
@@ -113,6 +115,9 @@ def backup_incoming_message(private_message_object, message_id):
     if not driver.is_on('service_backups'):
         lg.warn('service_backups is not started')
         return False
+    if not my_keys.is_key_registered(messages_key_id()):
+        lg.warn('key to store messages was not found')
+        return False
     serialized_message = private_message_object.serialize()
     local_msg_folder = os.path.join(settings.ChatChannelsDir(), private_message_object.recipient, 'in')
     if not bpio._dir_exist(local_msg_folder):
@@ -139,6 +144,9 @@ def backup_outgoing_message(private_message_object, message_id):
     """
     if not driver.is_on('service_backups'):
         lg.warn('service_backups is not started')
+        return False
+    if not my_keys.is_key_registered(messages_key_id()):
+        lg.warn('key to store messages was not found')
         return False
     serialized_message = private_message_object.serialize()
     local_msg_folder = os.path.join(settings.ChatChannelsDir(), private_message_object.recipient, 'out')

@@ -53,19 +53,20 @@ class KeysStorageService(LocalService):
 
     def start(self):
         from twisted.internet.defer import Deferred
+        from storage import index_synchronizer
         from main import events
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
         events.add_subscriber(self._on_key_erased, 'key-erased')
         events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.add_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
-        self.starting_deferred = Deferred()
-        from storage import index_synchronizer
-        if index_synchronizer.A().state == 'IN_SYNC!':
-            self._do_synchronize_keys()
-            return True
         if index_synchronizer.A().state == 'NO_INFO':
-            index_synchronizer.A('pull')
+            # it can be that machine is offline... we must start here, but expect to be online soon and sync keys later 
+            return True
+        self.starting_deferred = Deferred()
+        if index_synchronizer.A().state == 'IN_SYNC!':
+            # if we already online and backup index in sync - refresh keys asap
+            self._do_synchronize_keys()
         return self.starting_deferred
 
     def stop(self):
@@ -112,27 +113,37 @@ class KeysStorageService(LocalService):
 
     def _on_my_backup_index_out_of_sync(self, evt):
         from logs import lg
-        lg.warn('not possible to synchronize keys because backup index is out of sync')
+        from main import events
+        from access import key_ring
+        key_ring.set_my_keys_in_sync_flag(False)
         if self.starting_deferred:
             self.starting_deferred.errback(Exception('not possible to synchronize keys because backup index is out of sync'))
             self.starting_deferred = None
+        events.send('my-keys-out-of-sync', data=dict())
+        lg.warn('not possible to synchronize keys because backup index is out of sync')
 
     def _on_keys_synchronized(self, x):
         import time
         from logs import lg
         from main import events
-        lg.info('all keys synchronized')
+        from access import key_ring
+        key_ring.set_my_keys_in_sync_flag(True)
         self.last_time_keys_synchronized = time.time()
         if self.starting_deferred:
             self.starting_deferred.callback(True)
             self.starting_deferred = None
         events.send('my-keys-synchronized', data=dict())
+        lg.info('all keys synchronized')
         return None
 
     def _on_keys_synchronize_failed(self, err):
         from logs import lg
-        lg.err(err)
+        from main import events
+        from access import key_ring
+        key_ring.set_my_keys_in_sync_flag(False)
         if self.starting_deferred:
             self.starting_deferred.errback(err)
             self.starting_deferred = None
+        events.send('my-keys-out-of-sync', data=dict())
+        lg.err(err)
         return None

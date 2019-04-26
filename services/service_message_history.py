@@ -50,18 +50,18 @@ class KeysStorageService(LocalService):
         ]
 
     def start(self):
+        from main import events
         from chat import message_db
         from chat import message_keeper
-        from main import events
         message_db.init()
         message_keeper.init()
         events.add_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         return True
 
     def stop(self):
+        from main import events
         from chat import message_db
         from chat import message_keeper
-        from main import events
         events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         message_keeper.shutdown()
         message_db.shutdown()
@@ -71,10 +71,11 @@ class KeysStorageService(LocalService):
         return True
 
     def _on_my_keys_synchronized(self, evt):
-        from crypt import my_keys
         from logs import lg
         from main import settings
+        from access import key_ring
+        from crypt import my_keys
         from chat import message_keeper
-        if not my_keys.is_key_registered(message_keeper.messages_key_id()):
-            lg.info('key to store messages was not found, generate new key: %s' % message_keeper.messages_key_id())
+        if not my_keys.is_key_registered(message_keeper.messages_key_id()) and key_ring.is_my_keys_in_sync():
+            lg.info('key to store messages was not found but we know that all my keys are in sync, generate a new key: %s' % message_keeper.messages_key_id())
             my_keys.generate_key(message_keeper.messages_key_id(), key_size=settings.getPrivateKeySize())

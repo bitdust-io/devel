@@ -49,16 +49,16 @@ class KeysRegistryService(LocalService):
         ]
 
     def start(self):
-        from access import key_ring
         from transport import callback
+        from access import key_ring
         key_ring.init()
         callback.add_outbox_callback(self._on_outbox_packet_sent)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
-        from access import key_ring
         from transport import callback
+        from access import key_ring
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_outbox_callback(self._on_outbox_packet_sent)
         key_ring.shutdown()
@@ -66,7 +66,7 @@ class KeysRegistryService(LocalService):
 
     def request(self, json_payload, newpacket, info):
         # TODO: work in progress
-        from main import events
+        # from main import events
         from p2p import p2p_service
         # events.send('key-registry-request', dict(idurl=newpacket.OwnerID))
         return p2p_service.SendAck(newpacket, 'accepted')
