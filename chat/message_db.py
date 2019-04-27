@@ -40,7 +40,7 @@ import six
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -108,6 +108,7 @@ def init():
             lg.err('failed to open database, local DB will be recreated')
             recreate_db(chat_history_dir)
     else:
+        lg.info('create fresh local DB')
         db().create()
     if not refresh_indexes(db()):
         lg.err('failed to refresh indexes, local DB will be recreated')
@@ -219,6 +220,7 @@ def regenerate_indexes(temp_dir):
     tmpdb.create()
     refresh_indexes(tmpdb)
     tmpdb.close()
+    lg.info('local DB indexes regenerated in %r' % temp_dir)
     return tmpdb
 
 
@@ -251,6 +253,7 @@ def recreate_db(chat_history_dir):
             _LocalStorage.create()
         except Exception as exc:
             lg.warn('failed to create local storage: %r' % exc)
+    lg.info('local DB re-created in %r' % chat_history_dir)
 
 #------------------------------------------------------------------------------
 

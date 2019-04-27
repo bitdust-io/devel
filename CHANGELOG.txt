@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2019-04-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* populating few more events from transport.gateway  (#320)
+* more fixes in network services (#319)
+
+
+
 2019-04-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * minor changes in logging and events
