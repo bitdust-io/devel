@@ -1,0 +1,22 @@
+#!/bin/bash
+
+cd ../../bitdust
+echo
+echo "##### promote changes from one repository to another"
+./import ../bitdust.devel/
+find . -type f -name "*.py" -exec sed -i '' -e 's/_Debug = True/_Debug = False/g' {} +
+
+cd ..
+echo
+echo "##### compare repositories"
+diff --brief -r bitdust/ bitdust.devel/ | grep -v ".DS_Store" | grep -v "site-packages" | grep -v ".git" | grep -v "__pycache__" | grep -v ".pyc" | grep "Only in"
+
+cd bitdust.devel/
+echo
+echo "##### building history"
+./history ../bitdust/
+head -10 HISTORY.TXT
+
+echo
+echo "##### now edit CHANGELOG.txt file and run ./release_start"
+echo
