@@ -18,5 +18,5 @@ echo "##### building history"
 head -10 HISTORY.TXT
 
 echo
-echo "##### now edit CHANGELOG.txt file and run ./release_start"
+echo "##### now edit and save bitdust.devel/CHANGELOG.txt file and run ./release_start"
 echo
