@@ -85,13 +85,14 @@ class UDPTransportService(LocalService):
         return True
 
     def installed(self):
-        from logs import lg
-        try:
-            from transport.udp import udp_interface
-        except:
-            lg.exc()
-            return False
-        return True
+        return False
+    # from logs import lg
+        # try:
+        #     from transport.udp import udp_interface
+        # except:
+        #     lg.exc()
+        #     return False
+        # return True
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         if self.starting_deferred:
