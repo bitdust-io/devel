@@ -78,12 +78,14 @@ if six.PY2:
         IndexNotFoundException, DatabaseIsNotOpened,
         PreconditionsException, DatabaseConflict,
     )
+    from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
 else:
     from CodernityDB3.database import (
         Database, RecordNotFound, RecordDeleted,
         IndexNotFoundException, DatabaseIsNotOpened,
         PreconditionsException, DatabaseConflict,
     )
+    from CodernityDB3.database_super_thread_safe import SuperThreadSafeDatabase
 
 #------------------------------------------------------------------------------
 
@@ -91,13 +93,13 @@ _LocalStorage = None
 
 #------------------------------------------------------------------------------
 
-def init():
+def init(reindex=True):
     global _LocalStorage
     if _LocalStorage is not None:
         lg.warn('local storage already initialized')
         return
     chat_history_dir = os.path.join(settings.ChatHistoryDir(), 'current')
-    _LocalStorage = Database(chat_history_dir)
+    _LocalStorage = SuperThreadSafeDatabase(chat_history_dir)
     _LocalStorage.custom_header = message_index.make_custom_header()
     if _Debug:
         lg.out(_DebugLevel, 'message_db.init in %s' % chat_history_dir)
@@ -110,10 +112,11 @@ def init():
     else:
         lg.info('create fresh local DB')
         db().create()
-    if not refresh_indexes(db()):
-        lg.err('failed to refresh indexes, local DB will be recreated')
-        recreate_db(chat_history_dir)
-        refresh_indexes(db())
+    if reindex:
+        if not refresh_indexes(db()):
+            lg.err('failed to refresh indexes, local DB will be recreated')
+            recreate_db(chat_history_dir)
+            refresh_indexes(db())
 
 
 def shutdown():
@@ -199,12 +202,14 @@ def refresh_indexes(db_instance):
                 if _Debug:
                     lg.out(_DebugLevel, '        added index %s' % ind)
             except:
+                lg.exc()
                 if _Debug:
                     lg.out(_DebugLevel, '        index skipped %s' % ind)
         else:
             try:
                 db_instance.edit_index(ind_obj, reindex=True)
             except:
+                lg.exc()
                 ok = False
                 break
             if _Debug:
@@ -215,7 +220,7 @@ def refresh_indexes(db_instance):
 def regenerate_indexes(temp_dir):
     """
     """
-    tmpdb = Database(temp_dir)
+    tmpdb = SuperThreadSafeDatabase(temp_dir)
     tmpdb.custom_header = message_index.make_custom_header()
     tmpdb.create()
     refresh_indexes(tmpdb)
@@ -243,7 +248,7 @@ def recreate_db(chat_history_dir):
         db().reindex()
     except:
         # really bad... we will lose whole data
-        _LocalStorage = Database(chat_history_dir)
+        _LocalStorage = SuperThreadSafeDatabase(chat_history_dir)
         _LocalStorage.custom_header = message_index.make_custom_header()
         try:
             _LocalStorage.destroy()

@@ -32,21 +32,20 @@ DOCKER_COMPOSE=$(shell which docker-compose)
 
 VENV=${HOME}/.bitdust/venv
 PIP=${VENV}/bin/pip
-PIP_NEW=venv/bin/pip
+PIP_NEW=${VENV}/bin/pip
 # REGRESSION_PY_VER=3.6
 # VENV_PYTHON_VERSION=python3.6
 CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
-PYTHON_NEW="venv/bin/python"
+PYTHON_NEW="${VENV}/bin/python"
 TOX_PY_LIST="$(shell $(TOX) -l | grep ^py | xargs | sed -e 's/ /,/g')"
 
 REQUIREMENTS_TEST:=requirements/requirements-testing.txt
 REQUIREMENTS_TXT:=requirements.txt
 
-VENV_BASE=venv/.venv_base
-VENV_TEST=venv/.venv_test
-VENV_DIR=venv/.venv_dir
+VENV_BASE=${VENV}/.venv_base
+VENV_TEST=${VENV}/.venv_test
 
 
 .DEFAULT_GOAL := install
@@ -55,7 +54,7 @@ VENV_DIR=venv/.venv_dir
 
 install:
 	@echo "Building BitDust environment and installing requirements"
-	python bitdust.py deploy
+	@if [ "$(VENV_PYTHON_VERSION)" = "python2.7" ]; then python bitdust.py install; else python3 bitdust.py install; fi
 
 venv_install: install
 
@@ -67,13 +66,7 @@ tox: venv_install setup.py
 
 venv: $(VENV_BASE)
 
-$(VENV_DIR):
-	@rm -rf venv
-	@virtualenv -p $(VENV_PYTHON_VERSION) venv
-	@touch $@
-
-$(VENV_BASE): $(VENV_DIR) $(REQUIREMENTS_TXT)
-	@$(PIP_NEW) install -r $(REQUIREMENTS_TXT)
+$(VENV_BASE): install
 	@touch $@
 
 $(VENV_TEST): $(VENV_BASE) $(REQUIREMENTS_TEST)
@@ -89,7 +82,7 @@ docsclean:
 	@rm -fr docs/_build/
 
 clean: pyclean docsclean
-	@echo "Cleanup current BitDust environemt"
+	@echo "Cleanup current BitDust environment"
 	@rm -rf ${VENV}
 
 venv_off:

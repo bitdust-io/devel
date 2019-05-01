@@ -31,6 +31,7 @@ import marshal
 import io
 import struct
 import shutil
+import codecs
 
 from CodernityDB3.storage import IU_Storage, DummyStorage
 
@@ -563,7 +564,7 @@ class IU_HashIndex(Index):
 
     def make_key(self, key):
         if isinstance(key, six.text_type):
-            return bytes(key, 'utf-8')
+            return codecs.encode(key, 'utf-8')
         return key
 
     def make_key_value(self, data):

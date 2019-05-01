@@ -24,6 +24,8 @@ import marshal
 import os
 import io
 import shutil
+import codecs
+
 from .storage import IU_Storage
 
 from CodernityDB3.env import cdb_environment
@@ -184,7 +186,7 @@ class IU_TreeBasedIndex(Index):
         if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
         if isinstance(key, six.text_type):
-            key = bytes(key, 'utf-8')
+            key = codecs.encode(key, 'utf-8')
         if isinstance(status, six.text_type):
             status = status.encode()
 
@@ -239,7 +241,7 @@ class IU_TreeBasedIndex(Index):
         flag_left, key, pointer_right = struct.unpack(
             '<' + self.single_node_record_format, data)
         if isinstance(key, six.text_type):
-            key = bytes(key, 'utf-8')
+            key = codecs.encode(key, 'utf-8')
         return flag_left, key, pointer_right
 
     def _read_single_leaf_record(self, leaf_start, key_index):
@@ -252,7 +254,7 @@ class IU_TreeBasedIndex(Index):
         key, doc_id, start, size, status = struct.unpack(
             b'<' + str(self.single_leaf_record_format).encode(), data)
         if isinstance(key, six.text_type):
-            key = bytes(key, 'utf-8')
+            key = codecs.encode(key, 'utf-8')
         return key, doc_id, start, size, status
 
     def _calculate_key_position(self, start, key_index, flag):
@@ -1722,7 +1724,7 @@ class IU_TreeBasedIndex(Index):
 
     def _find_key(self, key):
         if isinstance(key, six.text_type):
-            key = bytes(key, 'utf-8')
+            key = codecs.encode(key, 'utf-8')
         containing_leaf_start = self._find_leaf_with_first_key_occurence(key)
         nr_of_elements, prev_leaf, next_leaf = (
             self._read_leaf_nr_of_elements_and_neighbours(
@@ -2053,7 +2055,7 @@ class IU_TreeBasedIndex(Index):
         ## print("------", type(key)) # TODO
         ## print(self) # TODO
         if isinstance(key, six.text_type):
-            key = bytes(key, 'utf-8')
+            key = codecs.encode(key, 'utf-8')
         ## print("K:" * 10, k) # TODO
         return self._find_key(self.make_key(key))
 
@@ -2237,7 +2239,7 @@ class IU_MultiTreeBasedIndex(IU_TreeBasedIndex):
 
     def get(self, key):
         if isinstance(key, six.text_type):
-            key = bytes(key, 'utf-8')
+            key = codecs.encode(key, 'utf-8')
         return super(IU_MultiTreeBasedIndex, self).get(key)
 
     def make_key_value(self, data):

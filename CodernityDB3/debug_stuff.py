@@ -26,6 +26,7 @@ from functools import wraps
 import json
 from six.moves import range
 from io import open
+import codecs
 
 
 class DebugTreeBasedIndex(TreeBasedIndex):
@@ -142,7 +143,7 @@ def database_step_by_step(db_obj, path=None):
                 except:
                     packed = json.dumps((funct_name,
                                          meth_args, kwargs_copy, None))
-                    f_obj.write(bytes('%s\n' % packed, 'utf-8'))
+                    f_obj.write(codecs.encode('%s\n' % packed, 'utf-8'))
                     f_obj.flush()
                     raise
                 else:

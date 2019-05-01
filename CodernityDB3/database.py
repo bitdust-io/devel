@@ -20,6 +20,7 @@ from __future__ import print_function
 import six
 import os
 import io
+import codecs
 from inspect import getsource
 
 # for custom indexes
@@ -49,6 +50,7 @@ from random import randrange
 
 import warnings
 import collections
+import codecs
 
 
 def header_for_indexes(index_name, index_class, db_custom="", ind_custom="", classes_code=""):
@@ -266,7 +268,7 @@ class Database(object):
             if os.path.exists(ind_path_f):
                 os.rename(ind_path_f, ind_path_f + '_last')  # save last working index code
             with io.FileIO(ind_path_f, 'w') as f:
-                f.write(bytes(new_index, 'utf-8'))
+                f.write(codecs.encode(new_index, 'utf-8'))
 
             ind_obj = self._read_index_single(p, ind_path + '.py')
 
@@ -748,8 +750,8 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         key, value = index_data
         try:
             index.delete(doc_id, key)
-        except TryReindexException:
-            print("Error in _single_delete_index")
+        except TryReindexException as exc:
+            print("Error in _single_delete_index: %r" % exc)
             return
 
     def _delete_id_index(self, _id, _rev, data):
@@ -919,7 +921,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
             raise PreconditionsException("Can't update without _rev or _id")
         _rev = data['_rev']
         try:
-            # _rev = bytes(_rev)
+            # _rev = codecs.encode(_rev)
             pass
         except:
             self.__not_opened()
@@ -943,9 +945,8 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
         """
         # if not self.indexes_names.has_key(index_name):
         #     raise DatabaseException, "Invalid index name"
-
         if isinstance(key, six.text_type):
-            key = bytes(key, 'utf-8')
+            key = codecs.encode(key, 'utf-8')
         try:
             ind = self.indexes_names[index_name]
         except KeyError:
