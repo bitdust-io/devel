@@ -225,7 +225,10 @@ def run(args):
 
     if os.path.exists(venv_path):
         print_text('\n##### Clean up existing Python virtual environment in "%s"' % venv_path)
-        status = os.system('rm -rf {}'.format(venv_path))
+        if on_windows:
+            status = os.system('rmdir /S /Q "{}"'.format(venv_path))
+        else:
+            status = os.system('rm -rf {}'.format(venv_path))
         if status != 0:
             print_text('\n##### Clean up of existing virtual environment files failed!\n')
             return status
