@@ -314,7 +314,7 @@ def exception(level, maxTBlevel, exc_info):
             out(level, l.replace('\n', ''))
     if trbk:
         try:
-            f_locals = repr(trbk.tb_next.tb_next.tb_frame.f_locals)[:1000]
+            f_locals = str(repr(trbk.tb_next.tb_next.tb_frame.f_locals))[:1000]
         except:
             f_locals = ''
         if f_locals:

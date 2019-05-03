@@ -49,6 +49,8 @@ _DebugLevel = 12
 import os
 import sys
 import time
+import pprint
+
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -192,7 +194,6 @@ def WriteIndex(filepath=None, encoding='utf-8'):
         encoding=encoding,
     )
     if _Debug:
-        import pprint
         lg.out(_DebugLevel, pprint.pformat(json_data))
     return bpio.WriteTextFile(filepath, src)
 
@@ -220,7 +221,6 @@ def ReadIndex(text_data, encoding='utf-8'):
         lg.exc()
         json_data = text_data
     if _Debug:
-        import pprint
         lg.out(_DebugLevel, pprint.pformat(json_data))
     for customer_id in json_data.keys():
         if customer_id == 'items':
@@ -1125,7 +1125,6 @@ def test():
 #    print backup_fs.numberfiles()
 #    print backup_fs.sizefiles()
 #    print backup_fs.sizebackups()
-    import pprint
     pprint.pprint(backup_fs.fsID())
     pprint.pprint(backup_fs.fs())
     print(backup_fs.GetByID('0'))

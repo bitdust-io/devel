@@ -221,7 +221,11 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
             import os
             import tempfile
             fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_dumps_', text=True)
-            os.write(fd, repr(obj))
+            try:
+                raw_text = repr(obj)
+            except:
+                raw_text = repr(type(obj))
+            os.write(fd, raw_text)
             os.close(fd)
         raise exc
 

@@ -61,7 +61,9 @@ class NetworkService(LocalService):
     def stop(self):
         from p2p import network_connector
         network_connector.Destroy()
-        self.task.stop()
+        if self.task and self.task.running:
+            self.task.stop()
+            self.task = None
         return True
 
     def _do_check_network_interfaces(self):

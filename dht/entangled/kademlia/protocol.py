@@ -291,9 +291,15 @@ class KademliaProtocol(protocol.DatagramProtocol):
     def _write(self, data, address):
         if self._counter:
             self._counter('_write')
-        self.transport.write(data, address)
+        try:
+            self.transport.write(data, address)
+        except Exception as exc:
+            if _Debug:
+                print('ERROR sending UDP datagram: %r' % exc)
+            return False
         if _Debug:
             print('                            dht._write %d bytes to %s' % (len(data), str(address)))
+        return True
 
     def _sendResponse(self, contact, rpcID, response):
         """
