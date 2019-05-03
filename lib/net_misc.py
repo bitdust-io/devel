@@ -1001,14 +1001,14 @@ def getIfconfig(iface='en0'):
         return None
     ip = ''
     if result:
-        strs = result.split('\n')
+        strs = result.split(b'\n')
         for line in strs:
             # remove \t, space...
             line = line.strip()
-            if line.startswith('inet '):
-                a = line.find(' ')
+            if line.startswith(b'inet '):
+                a = line.find(b' ')
                 ipStart = a + 1
-                ipEnd = line.find(' ', ipStart)
+                ipEnd = line.find(b' ', ipStart)
                 if a != -1 and ipEnd != -1:
                     ip = line[ipStart:ipEnd]
                     break
