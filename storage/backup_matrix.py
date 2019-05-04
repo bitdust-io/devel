@@ -368,9 +368,11 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                                 version=None,
                             )
                         )
-                        lg.out(2, '        F%s - remove, not found in the index' % pth)
+                        if _Debug:
+                            lg.out(2, '        F%s - remove, not found in the index' % pth)
                     else:
-                        lg.warn('F%s not found in the index, but we are not in sync, skip' % pth)
+                        if _Debug:
+                            lg.out(2, '        F%s - skip removing, not found in the index, but we are not in sync' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
             try:
@@ -387,9 +389,11 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                             version=None,
                         )
                     )
-                    lg.out(2, '        D%s - remove, not found in the index' % pth)
+                    if _Debug:
+                        lg.out(2, '        D%s - remove, not found in the index' % pth)
                 else:
-                    lg.warn('D%s not found in the index, but we are not in sync, skip' % pth)
+                    if _Debug:
+                        lg.out(2, '        D%s - skip removing, not found in the index, but we are not in sync' % pth)
         elif typ == 'V':
             # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
@@ -418,7 +422,8 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
             if lineSupplierNum != supplierNum:
                 # this mean supplier have old files and we do not need those files
                 backups2remove.add(backupID)
-                lg.out(2, '        V%s - remove, different supplier number' % backupID)
+                if _Debug:
+                    lg.out(2, '        V%s - remove, different supplier number' % backupID)
                 continue
             iter_path = backup_fs.WalkByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
             if iter_path is None:
@@ -433,9 +438,11 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                             version=None,
                         )
                     )
-                    lg.out(2, '        V%s - remove, path not found in the index' % remotePath)
+                    if _Debug:
+                        lg.out(2, '        V%s - remove, path not found in the index' % remotePath)
                 else:
-                    lg.warn('V%s path is not found in the index, but we are not in sync, skip' % remotePath)
+                    if _Debug:
+                        lg.out(2, '        V%s - skip removing, path is not found in the index, but we are not in sync' % remotePath)
                 continue
             item, _ = iter_path
             if isinstance(item, dict):
@@ -446,9 +453,11 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
             if not item or not item.has_version(versionName):
                 if is_in_sync:
                     backups2remove.add(backupID)
-                    lg.out(2, '        V%s - remove, version is not found in the index' % backupID)
+                    if _Debug:
+                        lg.out(2, '        V%s - remove, version is not found in the index' % backupID)
                 else:
-                    lg.warn('V%s version is not found in the index, but we are not in sync, skip' % backupID)
+                    if _Debug:
+                        lg.out(2, '        V%s - skip removing, we are not in sync, but version is not found in the index' % backupID)
                 continue
             item_version_info = item.get_version_info(versionName)
             missingBlocksSet = {'Data': set(), 'Parity': set()}
