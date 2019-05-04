@@ -38,12 +38,11 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
 import six
-import os
 import sys
 
 try:
@@ -53,7 +52,6 @@ except:
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import fail, succeed
-from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -363,12 +361,12 @@ def main():
 
     if len(sys.argv) >= 4 and sys.argv[1] == 'connect':
         tcp_node.connect_to(net_misc.normalize_address((sys.argv[2], int(sys.argv[3]))))
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         return
 
     if len(sys.argv) >= 5 and sys.argv[1] == 'send':
         tcp_node.send(sys.argv[2], net_misc.normalize_address((sys.argv[3], int(sys.argv[4]))))
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         return
 
     print('Usage:')
