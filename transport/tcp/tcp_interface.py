@@ -38,12 +38,11 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------
 
 import six
-import os
 import sys
 
 try:
@@ -53,7 +52,6 @@ except:
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import fail, succeed
-from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
