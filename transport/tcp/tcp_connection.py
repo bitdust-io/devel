@@ -42,7 +42,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ from lib import net_misc
 
 #------------------------------------------------------------------------------
 
-MAX_SIMULTANEOUS_CONNECTIONS = 250
+FIRST_PRIORITY_SHORT_FILE_SIZE = 64 * 1024
 
 CMD_HELLO = b'h'
 CMD_WAZAP = b'w'
@@ -446,7 +446,42 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             return False
         from transport.tcp import tcp_stream
         has_reads = False
-        while len(self.outboxQueue) > 0 and len(self.stream.outboxFiles) < tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES:
+        # first try to send all small files we have in the queue (smaller than 64K)
+        short_files_limit = tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES
+        while len(self.outboxQueue) > 0 and len(self.stream.outboxFiles) < short_files_limit:
+            # do not remove item from the queue, first check file size
+            filename, description, result_defer, keep_alive = self.outboxQueue[0]
+            # we have a queue of files to be sent
+            # somehow file may be removed before we start sending it
+            # so we check it here and skip not existed files
+            if not os.path.isfile(filename):
+                # and remove it from the queue
+                self.outboxQueue.pop(0)
+                has_reads = True
+                self.failed_outbox_queue_item(filename, description, 'file not exist')
+                if not keep_alive:
+                    self.automat('shutdown')
+                continue
+            try:
+                filesize = os.path.getsize(filename)
+            except:
+                # can not get file size, and remove it from the queue
+                self.outboxQueue.pop(0)
+                has_reads = True
+                self.failed_outbox_queue_item(filename, description, 'can not get file size')
+                if not keep_alive:
+                    self.automat('shutdown')
+                continue
+            if filesize > FIRST_PRIORITY_SHORT_FILE_SIZE:
+                # if file is large we skip here and try to send it normally
+                continue
+            # remove it from the queue
+            self.outboxQueue.pop(0)
+            has_reads = True
+            self.stream.create_outbox_file(filename, filesize, description, result_defer, keep_alive)
+        # now if we still have some large files in the queue do not wait to finish and send in parallel with small files 
+        long_files_limit = int(tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES / 2.0) + 1
+        while len(self.outboxQueue) > 0 and len(self.stream.outboxFiles) < long_files_limit:
             filename, description, result_defer, keep_alive = self.outboxQueue.pop(0)
             has_reads = True
             # we have a queue of files to be sent

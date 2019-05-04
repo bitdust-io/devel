@@ -33,7 +33,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ MAX_PROCESS_STREAMS_DELAY = 1
 # TODO: at the moment for TCP - only one file per connection at once
 # need to switch from basic.FileSender to something more advanced
 # consider using Twisted AMP
-MAX_SIMULTANEOUS_OUTGOING_FILES = 1
+MAX_SIMULTANEOUS_OUTGOING_FILES = 10
 
 #------------------------------------------------------------------------------
 

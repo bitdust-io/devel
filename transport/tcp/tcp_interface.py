@@ -363,12 +363,12 @@ def main():
 
     if len(sys.argv) >= 4 and sys.argv[1] == 'connect':
         tcp_node.connect_to(net_misc.normalize_address((sys.argv[2], int(sys.argv[3]))))
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         return
 
     if len(sys.argv) >= 5 and sys.argv[1] == 'send':
         tcp_node.send(sys.argv[2], net_misc.normalize_address((sys.argv[3], int(sys.argv[4]))))
-        reactor.run()
+        reactor.run()  # @UndefinedVariable
         return
 
     print('Usage:')
