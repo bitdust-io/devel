@@ -100,6 +100,7 @@ from p2p import commands
 
 from lib import nameurl
 from lib import misc
+from lib import strng
 
 from system import bpio
 from system import tmpfile
@@ -140,6 +141,7 @@ def transport(proto):
     """
     """
     global _TransportsDict
+    proto = strng.to_text(proto)
     return _TransportsDict[proto]
 
 
@@ -343,8 +345,9 @@ def attach(transport_instance):
     """
     global _TransportsDict
     global _AvailableTransports
-    _AvailableTransports[transport_instance.proto] = True
-    _TransportsDict[transport_instance.proto] = transport_instance
+    proto = strng.to_text(transport_instance.proto)
+    _AvailableTransports[proto] = True
+    _TransportsDict[proto] = transport_instance
     if _Debug:
         lg.out(4, 'gateway.attach : %r' % transport_instance)
 
@@ -354,14 +357,15 @@ def detach(transport_instance):
     """
     global _TransportsDict
     global _AvailableTransports
-    if transport_instance.proto not in list(_AvailableTransports.keys()):
-        lg.warn('transport [%s] not available' % transport_instance.proto)
+    proto = strng.to_text(transport_instance.proto)
+    if proto not in list(_AvailableTransports.keys()):
+        lg.warn('transport [%s] not available' % proto)
         return
-    if transport_instance.proto not in list(_TransportsDict.keys()):
-        lg.warn('transport [%s] not attached' % transport_instance.proto)
+    if proto not in list(_TransportsDict.keys()):
+        lg.warn('transport [%s] not attached' % proto)
         return
-    _AvailableTransports.pop(transport_instance.proto)
-    _TransportsDict.pop(transport_instance.proto)
+    _AvailableTransports.pop(proto)
+    _TransportsDict.pop(proto)
     if _Debug:
         lg.out(4, 'gateway.detach : %r' % transport_instance)
 

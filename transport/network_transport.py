@@ -87,7 +87,7 @@ class NetworkTransport(automat.Automat):
     fast = True
 
     def __init__(self, proto, interface, state_changed_callback=None):
-        self.proto = proto
+        self.proto = strng.to_text(proto)
         self.host = None
         self.interface = interface
         self.state_changed_callback = None
@@ -104,7 +104,7 @@ class NetworkTransport(automat.Automat):
     def call(self, method_name, *args):
         method = getattr(self.interface, method_name, None)
         if method is None:
-            lg.err('method %s not found in protos' % (method_name, self.proto))
+            lg.err('method %s not found in %r transport' % (method_name, self.proto))
             return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
         return method(*args)
 
@@ -284,9 +284,10 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        p, self.host, self.options = args[0]
-        if p != self.proto:
-            lg.warn('wrong protocol')
+        proto, self.host, self.options = args[0]
+        proto = strng.to_text(proto)
+        if proto != self.proto:
+            lg.warn('wrong protocol: %r' % proto)
 
     def doDestroyMe(self, *args, **kwargs):
         """
