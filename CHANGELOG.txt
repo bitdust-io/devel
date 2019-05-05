@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2019-05-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* speed up tcp transport (#329)
+* implemented MultipleFilesSender() producer and set MAX_SIMULTANEOUS_OUTGOING_FILES = 10
+
+
+
 2019-05-03 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * on windows we must use "rmdir /S /Q xxx" during deployment (#325)
