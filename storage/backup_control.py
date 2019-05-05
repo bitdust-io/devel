@@ -373,10 +373,8 @@ def IncomingSupplierBackupIndex(newpacket):
             supplier_revision = int(supplier_revision)
         else:
             supplier_revision = -1
-        # inpt.seek(0)
     except:
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
-        lg.out(2, '\n' + padded_data)
         lg.exc()
         try:
             inpt.close()
