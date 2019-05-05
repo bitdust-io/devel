@@ -693,7 +693,7 @@ def main(executable_path=None, start_reactor=True):
             bpio.shutdown()
             return 0
         from lib import misc
-        lg.out(0, 'new BitDust process will be started in daemon mode, finishing current process\n')
+        lg.out(0, 'new BitDust process will be started in daemon mode\n')
         bpio.shutdown()
         result = misc.DoRestart(
             detach=True,
