@@ -251,7 +251,7 @@ def SendServers():
     My identity file can be stored in different locations, see the "sources"
     field.
 
-    So I can use different identity servers to store more secure. This
+    So I can use different identity servers to store more secure and reliable. This
     method will send my identity file to all my identity servers via
     transport_tcp.
     """
@@ -312,7 +312,7 @@ def SlowSendSuppliers(delay=1, customer_idurl=None):
             return
         # transport_control.ClearAliveTime(idurl)
         SendToID(idurl, Payload=payload, wide=True)
-        reactor.callLater(delay, _send, index + 1, payload, delay)
+        reactor.callLater(delay, _send, index + 1, payload, delay)  # @UndefinedVariable
 
     _SlowSendIsWorking = True
     payload = strng.to_bin(my_id.getLocalIdentity().serialize())
@@ -338,7 +338,7 @@ def SlowSendCustomers(delay=1):
             return
         # transport_control.ClearAliveTime(idurl)
         SendToID(idurl, Payload=payload, wide=True)
-        reactor.callLater(delay, _send, index + 1, payload, delay)
+        reactor.callLater(delay, _send, index + 1, payload, delay)  # @UndefinedVariable
 
     _SlowSendIsWorking = True
     payload = strng.to_bin(my_id.getLocalIdentity().serialize())

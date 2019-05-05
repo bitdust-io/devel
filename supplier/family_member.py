@@ -51,7 +51,6 @@ from automats import automat
 
 from main import settings
 
-from lib import nameurl
 from lib import serialization
 from lib import strng
 

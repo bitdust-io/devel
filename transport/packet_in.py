@@ -477,6 +477,10 @@ class PacketIn(automat.Automat):
         if args and args[0]:
             status, bytes_received, msg = args[0]
             p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        else:
+            status = 'failed'
+            bytes_received = 0
+            msg = 'unknown reason'
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
         if _PacketLogFileEnabled:
             lg.out(0, '        \033[0;49;31mCACHE FAILED with "%s" for %s TID:%s\033[0m' % (
