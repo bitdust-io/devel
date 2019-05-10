@@ -357,7 +357,7 @@ def identity_create(username, preferred_servers=[]):
         if newstate == 'DONE':
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
-                return ERROR('identity creation FAILED')
+                return ERROR('identity creation failed, please try again later')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
             ret.callback(RESULT([r, ]))

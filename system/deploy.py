@@ -266,14 +266,16 @@ def run(args):
     print_text('\n##### Executing "{}"'.format(requirements_cmd))
     status = os.system(requirements_cmd)
     if status != 0:
+        # TODO: try to detect package manager on target OS and give more correct info: debian/mandrake/OSX
         depends = [
-            'git',
             'gcc',
+            'build-essential',
+            'libssl-dev',
+            'libffi-dev',
             'python-dev',
             'python-virtualenv',
         ]
-        print_text('\n##### Please install those binary packages manually and try again:\n')
-        # TODO: try to detect package manager on target OS: debian/mandrake/OSX
+        print_text('\n##### Please try to install those binary packages manually and try again:\n')
         print_text('    sudo apt-get install %s\n\n' % (' '.join(depends)))
         return status
 

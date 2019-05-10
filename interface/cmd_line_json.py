@@ -471,7 +471,7 @@ def cmd_identity(opts, args, overDict, running, executablePath):
         if my_id.isLocalIdentityReady():
             print_text('\n' + my_id.getLocalIdentity().serialize(as_text=True))
         else:
-            print_text('identity creation FAILED')
+            print_text('identity creation failed, please try again later')
         return 0
 
     def _recover():
