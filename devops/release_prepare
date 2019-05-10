@@ -16,7 +16,7 @@ cd bitdust.devel/
 echo
 echo "##### building history"
 ./history ../bitdust/
-head -10 HISTORY.TXT
+head -15 HISTORY.TXT
 
 echo
 echo "##### now you need to use 'git add / git rm' in public BitDust repository to confirm changes"
