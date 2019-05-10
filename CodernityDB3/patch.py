@@ -32,11 +32,11 @@ def __patch(obj, name, new):
 
 def patch_cache_lfu(lock_obj):
     """
-    Patnches cache mechanizm to be thread safe (gevent ones also)
+    Patches cache mechanism to be thread safe (gevent ones also)
 
     .. note::
 
-       It's internal CodernityDB mechanizm, it will be called when needed
+       It's internal CodernityDB mechanism, it will be called when needed
 
     """
     from . import lfu_cache

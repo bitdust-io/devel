@@ -831,7 +831,7 @@ you should check index code.""" % (index.name, ex), RuntimeWarning)
     def _single_reindex_index(self, index, data):
         doc_id, rev, start, size, status = self.id_ind.get(
             data['_id'])  # it's cached so it's ok
-        print(status)
+        # print(status)
         if status != b'd' and status != b'u':
             self._single_insert_index(index, data, doc_id)
 
