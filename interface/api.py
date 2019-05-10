@@ -3409,7 +3409,7 @@ def network_connected(wait_timeout=5):
             svc_info = service_info(service_name)
             svc_state = svc_info['result'][0]['state']
         except:
-            lg.exc()
+            lg.exc('service "%s" test failed' % service_name)
             ret.callback(ERROR('disconnected', extra_fields={'reason': '{}_info_error'.format(service_name)}))
             return None
         if svc_state != 'ON':

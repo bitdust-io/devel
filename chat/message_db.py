@@ -93,7 +93,7 @@ _LocalStorage = None
 
 #------------------------------------------------------------------------------
 
-def init(reindex=True):
+def init(reindex=True, recreate=True):
     global _LocalStorage
     if _LocalStorage is not None:
         lg.warn('local storage already initialized')
@@ -107,14 +107,21 @@ def init(reindex=True):
         try:
             db().open()
         except:
-            lg.err('failed to open database, local DB will be recreated')
+            lg.exc()
+            lg.err('failed to open database')
+            if not recreate:
+                raise Exception('failed to open database')
+            lg.info('local DB will be recreated now')
             recreate_db(chat_history_dir)
     else:
         lg.info('create fresh local DB')
         db().create()
     if reindex:
         if not refresh_indexes(db()):
-            lg.err('failed to refresh indexes, local DB will be recreated')
+            lg.err('failed to refresh indexes')
+            if not recreate:
+                raise Exception('failed to refresh indexes')
+            lg.info('local DB will be recreated')
             recreate_db(chat_history_dir)
             refresh_indexes(db())
 
@@ -188,7 +195,7 @@ def rewrite_indexes(db_instance, source_db_instance):
                 lg.out(_DebugLevel, '        wrote index %s from %s' % (index_name, source_index_path))
 
 
-def refresh_indexes(db_instance):
+def refresh_indexes(db_instance, rewrite=True):
     """
     """
     if _Debug:
@@ -202,18 +209,16 @@ def refresh_indexes(db_instance):
                 if _Debug:
                     lg.out(_DebugLevel, '        added index %s' % ind)
             except:
-                lg.exc()
-                if _Debug:
-                    lg.out(_DebugLevel, '        index skipped %s' % ind)
+                lg.exc('failed adding index "%r"' % ind)
         else:
-            try:
-                db_instance.edit_index(ind_obj, reindex=True)
-            except:
-                lg.exc()
-                ok = False
-                break
-            if _Debug:
-                lg.out(_DebugLevel, '        updated index %s' % ind)
+            if rewrite:
+                try:
+                    db_instance.destroy_index(ind)
+                    db_instance.add_index(ind_obj, create=True)
+                    if _Debug:
+                        lg.out(_DebugLevel, '        updated index %s' % ind)
+                except:
+                    lg.exc('failed rewriting index "%r"' % ind)
     return ok
 
 

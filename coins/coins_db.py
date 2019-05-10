@@ -193,7 +193,8 @@ def refresh_indexes(db_instance):
                 if _Debug:
                     lg.out(_DebugLevel, '        index skipped %s' % ind)
         else:
-            db_instance.edit_index(ind_obj, reindex=True)
+            db_instance.destroy_index(ind)
+            db_instance.add_index(ind_obj, create=True)
             if _Debug:
                 lg.out(_DebugLevel, '        updated index %s' % ind)
 
