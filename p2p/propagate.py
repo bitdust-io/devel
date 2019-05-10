@@ -55,14 +55,13 @@ _DebugLevel = 8
 
 import os
 import sys
-import time
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
     sys.exit('Error initializing twisted.internet.reactor in propagate.py')
 
-from twisted.internet.defer import DeferredList, Deferred, TimeoutError
+from twisted.internet.defer import DeferredList, Deferred
 
 #------------------------------------------------------------------------------
 
@@ -140,12 +139,14 @@ def fetch(list_ids):
     """
     Request a list of identity files.
     """
-    lg.out(6, "propagate.fetch identities for %d users" % len(list_ids))
+    lg.out(6, "propagate.fetch %d identities" % len(list_ids))
     dl = []
     for url in list_ids:
-        if url:
-            if not identitycache.FromCache(url):
-                dl.append(identitycache.scheduleForCaching(url))
+        if not url:
+            continue
+        if identitycache.FromCache(url):
+            continue
+        dl.append(identitycache.scheduleForCaching(url))
     return DeferredList(dl, consumeErrors=True)
 
 

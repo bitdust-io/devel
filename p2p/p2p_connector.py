@@ -75,6 +75,12 @@ _DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
+import time
+
+from twisted.internet.defer import Deferred, DeferredList, succeed  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from system import bpio
@@ -96,9 +102,9 @@ from services import driver
 
 from userid import my_id
 
-from . import propagate
-from . import ratings
-from . import network_connector
+from p2p import propagate
+from p2p import ratings
+from p2p import network_connector
 
 #------------------------------------------------------------------------------
 
@@ -309,29 +315,7 @@ class P2PConnector(automat.Automat):
     def doUpdateMyIdentity(self, *args, **kwargs):
         if _Debug:
             lg.out(4, 'p2p_connector.doUpdateMyIdentity')
-        contacts_changed = False
-        old_contacts = list(my_id.getLocalIdentity().getContacts())
-        identity_changed = my_id.rebuildLocalIdentity()
-        if not identity_changed and len(active_protos()) > 0:
-            self.automat('my-id-updated', (False, False))
-            return
-        new_contacts = my_id.getLocalIdentity().getContacts()
-        if len(old_contacts) != len(new_contacts):
-            contacts_changed = True
-        if not contacts_changed:
-            for pos in range(len(old_contacts)):
-                if old_contacts[pos] != new_contacts[pos]:
-                    contacts_changed = True
-                    break
-        if contacts_changed:
-            # erase all stats about received packets
-            # if some contacts in my identity has been changed
-            if _Debug:
-                lg.out(4, '    my contacts were changed, erase active_protos() flags')
-            active_protos().clear()
-        if _Debug:
-            lg.out(4, '    identity HAS %sBEEN CHANGED' % ('' if identity_changed else 'NOT '))
-        self.automat('my-id-updated', (contacts_changed, identity_changed))
+        self._update_my_identity()
 
     def doPropagateMyIdentity(self, *args, **kwargs):
         # TODO: need to run those actions one by one, not in parallel - use Defered chain
@@ -499,3 +483,44 @@ class P2PConnector(automat.Automat):
 #        # if 'transport.transport-udp.transport-udp-port' in s and settings.enableUDP():
 #        #     return True
 #        return False
+# 
+#     def _ping_my_identity_sources(self):
+#         if self.last_time_ping_my_identity_sources and time.time() - self.last_time_ping_my_identity_sources < 60 * 10:
+#             return succeed(None)
+#         self.last_time_ping_my_identity_sources = time.time()
+#         my_sources = my_id.getLocalIdentity().getSources()
+#         dl = []
+#         for idurl in my_sources:
+#             d = net_misc.getPageTwisted(idurl, timeout=5)
+#             dl.append(d)
+#         return DeferredList(dl, consumeErrors=True)
+
+    def _update_my_identity(self):
+        # TODO: to be continue
+        # from p2p import id_rotator
+        # id_rotate_result = Deferred()
+        # id_rotator.A('run', result_defer=id_rotate_result)
+
+        contacts_changed = False
+        old_contacts = list(my_id.getLocalIdentity().getContacts())
+        identity_changed = my_id.rebuildLocalIdentity()
+        if not identity_changed and len(active_protos()) > 0:
+            self.automat('my-id-updated', (False, False))
+            return
+        new_contacts = my_id.getLocalIdentity().getContacts()
+        if len(old_contacts) != len(new_contacts):
+            contacts_changed = True
+        if not contacts_changed:
+            for pos in range(len(old_contacts)):
+                if old_contacts[pos] != new_contacts[pos]:
+                    contacts_changed = True
+                    break
+        if contacts_changed:
+            # erase all stats about received packets
+            # if some contacts in my identity has been changed
+            if _Debug:
+                lg.out(4, '    my contacts were changed, erase active_protos() flags')
+            active_protos().clear()
+        if _Debug:
+            lg.out(4, '    identity HAS %sBEEN CHANGED' % ('' if identity_changed else 'NOT '))
+        self.automat('my-id-updated', (contacts_changed, identity_changed))
