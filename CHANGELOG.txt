@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2019-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* logging bug fix
+* few bug fixes found in Renato's RaspberryPI logs  (#331)
+
+
+
 2019-05-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * speed up tcp transport (#329)
