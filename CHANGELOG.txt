@@ -4,6 +4,14 @@ Change Log
 
 2019-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* workaround fix in CodernityDB  (#336)
+* fix in backup_rebuilder when changing supplietrs number
+* bug fix in tcp_stream  (#334)
+
+
+
+2019-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * logging bug fix
 * few bug fixes found in Renato's RaspberryPI logs  (#331)
 
