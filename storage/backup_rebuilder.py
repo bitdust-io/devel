@@ -622,6 +622,7 @@ class BackupRebuilder(automat.Automat):
         lg.out(10, 'backup_rebuilder._block_finished   backupID=%r  blockNumber=%r  newData=%r' % (
             _backupID, _blockNumber, newData))
         lg.out(10, '        localData=%r  localParity=%r' % (localData, localParity))
+        err = False
         if newData:
             from storage import backup_matrix
             from customer import data_sender
@@ -634,16 +635,20 @@ class BackupRebuilder(automat.Automat):
                     reconstructedData[supplierNum]
                     reconstructedParity[supplierNum]
                 except:
+                    err = True
                     lg.err('invalid result from the task: %s' % repr(params))
                     lg.out(10, 'result is %s' % repr(result))
-                    lg.exc()
-                    continue
+                    break
                 if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
                     backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Data')
                     count += 1
                 if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
                     backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Parity')
                     count += 1
+            if err:
+                lg.out(10, 'found ERROR! seems suppliers were changed, stop rebuilding')
+                reactor.callLater(0, self._finish_rebuilding)  # @UndefinedVariable
+                return
             self.blocksSucceed.append(_blockNumber)
             data_sender.A('new-data')
             lg.out(10, '        !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
