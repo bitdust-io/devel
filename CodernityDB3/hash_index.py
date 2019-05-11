@@ -163,6 +163,7 @@ class IU_HashIndex(Index):
 
         :param key: the key to find
         """
+        # print('_find_key %r' % key)
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
@@ -176,11 +177,11 @@ class IU_HashIndex(Index):
                 return None, None, 0, 0, 'u'
             found_at, doc_id, l_key, start, size, status, _next = self._locate_key(
                 key, location)
-            if status == b'd':  # when first record from many is deleted
+            if status == b'd' or status == 'd':  # when first record from many is deleted
                 while True:
                     found_at, doc_id, l_key, start, size, status, _next = self._locate_key(
                         key, _next)
-                    if status != b'd':
+                    if status != b'd' and status != 'd':
                         break
             return doc_id, l_key, start, size, status
         else:
@@ -206,7 +207,7 @@ class IU_HashIndex(Index):
             except IndexException:
                 break
             else:
-                if status != b'd':
+                if status != b'd' and status != 'd':
                     if l_key == key:  # in case of hash function conflicts
                         offset -= 1
                 location = _next
@@ -219,7 +220,7 @@ class IU_HashIndex(Index):
             except IndexException:
                 break
             else:
-                if status != b'd':
+                if status != b'd' and status != 'd':
                     if l_key == key:  # in case of hash function conflicts
                         yield doc_id, start, size, status
                         limit -= 1
@@ -314,7 +315,7 @@ class IU_HashIndex(Index):
             data = self.buckets.read(self.entry_line_size)
             # todo, maybe partial read there...
             doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(data)
-            if not _next or status == b'd':
+            if not _next or (status == b'd' or status == 'd'):
                 return self.buckets.tell() - self.entry_line_size, doc_id, l_key, start, size, status, _next
             else:
                 location = _next  # go to next record
@@ -430,7 +431,8 @@ class IU_HashIndex(Index):
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
-        return self._find_key(self.make_key(key))
+        doc_id, l_key, start, size, status = self._find_key(self.make_key(key))
+        return doc_id, l_key, start, size, status
 
     def get_many(self, key, limit=1, offset=0):
         return self._find_key_many(self.make_key(key), limit, offset)
@@ -446,7 +448,7 @@ class IU_HashIndex(Index):
             except IndexException:
                 break
             else:
-                if status != b'd':
+                if status != b'd' and status != 'd':
                     offset -= 1
         while limit:
             curr_data = self.buckets.read(self.entry_line_size)
@@ -457,7 +459,7 @@ class IU_HashIndex(Index):
             except IndexException:
                 break
             else:
-                if status != b'd':
+                if status != b'd' and status != 'd':
                     yield doc_id, key, start, size, status
                     limit -= 1
 
@@ -510,6 +512,7 @@ class IU_HashIndex(Index):
         else:
             # case happens when trying to delete element with new index key in data
             # after adding new index to database without reindex
+            # print("failed to delete doc_id=%r  key=%r" % (doc_id, key))
             raise TryReindexException()
         found_at, _doc_id, _key, start, size, status, _next = self._locate_doc_id(doc_id, key, location)
         self.buckets.seek(found_at)
@@ -568,7 +571,7 @@ class IU_HashIndex(Index):
         return key
 
     def make_key_value(self, data):
-        return '1', data
+        return b'1', data
 
     def _clear_cache(self):
         self._find_key.clear()
@@ -657,7 +660,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
                 data)
             if l_key == key:
                 raise IndexException("The '%s' key already exists" % key)
-            if not _next or status == b'd':
+            if not _next or (status == b'd' or status == 'd'):
                 return self.buckets.tell() - self.entry_line_size, l_key, rev, start, size, status, _next
             else:
                 location = _next  # go to next record
@@ -812,7 +815,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
             except IndexException:
                 break
             else:
-                if status != b'd':
+                if status != b'd' and status != 'd':
                     offset -= 1
 
         while limit:
@@ -824,7 +827,11 @@ class IU_UniqueHashIndex(IU_HashIndex):
             except IndexException:
                 break
             else:
-                if status != b'd':
+                if status != b'd' and status != 'd':
+                    if isinstance(rev, six.binary_type):
+                        rev = rev.decode()
+                    if isinstance(doc_id, six.binary_type):
+                        doc_id = doc_id.decode()
                     yield doc_id, rev, start, size, status
                     limit -= 1
 
@@ -835,18 +842,19 @@ class IU_UniqueHashIndex(IU_HashIndex):
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
-
         self.update(key, '00000000', start, size, b'd')
 
     def make_key_value(self, data):
         _id = data['_id']
         try:
-            _id = data['_id'].encode()
+            _id = data['_id']
+            if isinstance(_id, six.text_type):
+                _id = _id.encode()
         except:
             raise IndexPreconditionsException(
                 "_id must be valid string/bytes object")
-        if len(_id) != 32:
-            raise IndexPreconditionsException("Invalid _id lenght")
+        if not isinstance(_id, bytes) or len(_id) != 32:
+            raise IndexPreconditionsException("Invalid _id type or lenght")
         del data['_id']
         del data['_rev']
         return _id, data

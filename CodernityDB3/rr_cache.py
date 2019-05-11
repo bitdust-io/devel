@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+import six
 import functools
 from random import choice
 from six.moves import range
@@ -27,36 +28,26 @@ def cache1lvl(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(key, *args, **kwargs):
-            # if isinstance(key, bytes):
-            #     key = key.decode()
-            # print("cachedddd", key) ## TODO
+            # print('rr_cache.1lvl.wrapper %r %r' % (user_function.__name__, key))
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             try:
-                #result = cache1lvl[key]
                 result = cache1lvl[key]
             except KeyError:
                 if len(cache1lvl) == maxsize:
                     for i in range(maxsize // 10 or 1):
                         del cache1lvl[choice(list(cache1lvl.keys()))]
-                ## print("#" * 10, key) # TODO
-                ## print(user_function) # TODO
-                ## print("cache1lvl", key, user_function) # TODO
-                ## print(cache1lvl) # TODO
                 cache1lvl[key] = user_function(key, *args, **kwargs)
-                ## print(cache1lvl) # TODO
                 result = cache1lvl[key]
-                ## print("result caching", result) # TODO
-#               result = user_function(obj, key, *args, **kwargs)
-            # if isinstance(result, bytes):
-            #     result = key.decode()
-            ## print("r" * 20, result) # TODO
             return result
 
         def clear():
             cache1lvl.clear()
 
         def delete(key):
-            # if isinstance(key, bytes):
-            #     key = key.decode()
+            # print('rr_cache.1lvl.delete %r %r' % (user_function.__name__, key))
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             try:
                 del cache1lvl[key]
                 return True
@@ -77,10 +68,13 @@ def cache2lvl(maxsize=100):
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
 #            return user_function(*args, **kwargs)
+            key = args[0]
+            # print('rr_cache.2lvl.wrapper %r %r' % (user_function.__name__, key))
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             try:
-                result = cache[args[0]][args[1]]
+                result = cache[key][args[1]]
             except KeyError:
-#                print(wrapper.cache_size)
                 if wrapper.cache_size == maxsize:
                     to_delete = maxsize // 10 or 1
                     for i in range(to_delete):
@@ -90,12 +84,11 @@ def cache2lvl(maxsize=100):
                         if not cache[key1]:
                             del cache[key1]
                     wrapper.cache_size -= to_delete
-#                print(wrapper.cache_size)
                 result = user_function(*args, **kwargs)
                 try:
-                    cache[args[0]][args[1]] = result
+                    cache[key][args[1]] = result
                 except KeyError:
-                    cache[args[0]] = {args[1]: result}
+                    cache[key] = {args[1]: result}
                 wrapper.cache_size += 1
             return result
 
@@ -104,6 +97,9 @@ def cache2lvl(maxsize=100):
             wrapper.cache_size = 0
 
         def delete(key, inner_key=None):
+            # print('rr_cache.2lvl.delete %r %r' % (user_function.__name__, key))
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             if inner_key:
                 try:
                     del cache[key][inner_key]
