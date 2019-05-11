@@ -100,6 +100,8 @@ class BaseHashIndex(HashIndex):
         super(BaseHashIndex, self).__init__(*args, **kwargs)
 
     def transform_key(self, key):
+        if isinstance(key, six.text_type):
+            key = key.encode()            
         return key
 
     def make_key_value(self, data):
@@ -111,6 +113,8 @@ class BaseHashIndex(HashIndex):
             lg.exc()
 
     def make_key(self, key):
+        if isinstance(key, six.text_type):
+            key = key.encode()            
         return self.transform_key(key)
 
 #------------------------------------------------------------------------------
@@ -118,6 +122,8 @@ class BaseHashIndex(HashIndex):
 class BaseMD5Index(BaseHashIndex):
 
     def transform_key(self, key):
+        if isinstance(key, six.text_type):
+            key = key.encode()            
         return md5(strng.to_bin(key)).digest()
 
 #------------------------------------------------------------------------------
@@ -139,6 +145,8 @@ class BaseTimeIndex(TreeBasedIndex):
             lg.exc()
 
     def make_key(self, key):
+        if isinstance(key, six.text_type):
+            key = key.encode()            
         return key
 
 #------------------------------------------------------------------------------
@@ -155,14 +163,20 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
         super(BaseMD5DoubleKeyIndex, self).__init__(*args, **kwargs)
 
     def transform_key(self, key):
+        if isinstance(key, six.text_type):
+            key = key.encode()            
         return md5(strng.to_bin(key)).digest()
 
     def make_key_value(self, data):
         try:
             key_a = data[self.role_a][self.field_a]
             key_b = data[self.role_b][self.field_b]
-            version_1 = '{}:{}'.format(key_a, key_b)
-            version_2 = '{}:{}'.format(key_b, key_a)
+            if isinstance(key_a, six.text_type):
+                key_a = key_a.encode()            
+            if isinstance(key_b, six.text_type):
+                key_b = key_b.encode()            
+            version_1 = b'{}:{}'.format(key_a, key_b)
+            version_2 = b'{}:{}'.format(key_b, key_a)
             out = set()
             out.add(self.transform_key(version_1))
             out.add(self.transform_key(version_2))
@@ -173,6 +187,8 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
             lg.exc()
 
     def make_key(self, key):
+        if isinstance(key, six.text_type):
+            key = key.encode()            
         return self.transform_key(key)
 
 #------------------------------------------------------------------------------

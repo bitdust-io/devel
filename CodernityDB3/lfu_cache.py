@@ -17,6 +17,7 @@
 
 
 from __future__ import absolute_import
+import six
 import functools
 from heapq import nsmallest
 from operator import itemgetter
@@ -41,6 +42,9 @@ def cache1lvl(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(key, *args, **kwargs):
+            # print('lfu_cache1lvl.wrapper %r' % key)
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             try:
                 result = cache[key]
             except KeyError:
@@ -61,6 +65,9 @@ def cache1lvl(maxsize=100):
             use_count.clear()
 
         def delete(key):
+            # print('lfu_cache1lvl.delete %r' % key)
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             try:
                 del cache[key]
                 del use_count[key]
@@ -93,8 +100,12 @@ def cache2lvl(maxsize=100):
         @functools.wraps(user_function)
         def wrapper(*args, **kwargs):
 #            return user_function(*args, **kwargs)
+            key = args[0]
+            # print('cache2lvl.wrapper %r' % key)
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             try:
-                result = cache[args[0]][args[1]]
+                result = cache[key][args[1]]
             except KeyError:
                 if wrapper.cache_size == maxsize:
                     to_delete = maxsize // 10 or 1
@@ -108,12 +119,12 @@ def cache2lvl(maxsize=100):
                     wrapper.cache_size -= to_delete
                 result = user_function(*args, **kwargs)
                 try:
-                    cache[args[0]][args[1]] = result
+                    cache[key][args[1]] = result
                 except KeyError:
-                    cache[args[0]] = {args[1]: result}
+                    cache[key] = {args[1]: result}
                 wrapper.cache_size += 1
             finally:
-                use_count[args[0]][args[1]] += 1
+                use_count[key][args[1]] += 1
             return result
 
         def clear():
@@ -121,6 +132,9 @@ def cache2lvl(maxsize=100):
             use_count.clear()
 
         def delete(key, inner_key=None):
+            # print('cache2lvl.delete %r' % key)
+            if isinstance(key, six.text_type):
+                key = key.encode()            
             if inner_key is not None:
                 try:
                     del cache[key][inner_key]

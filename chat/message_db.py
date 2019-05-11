@@ -78,14 +78,14 @@ if six.PY2:
         IndexNotFoundException, DatabaseIsNotOpened,
         PreconditionsException, DatabaseConflict,
     )
-    from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
+    # from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
 else:
     from CodernityDB3.database import (
         Database, RecordNotFound, RecordDeleted,
         IndexNotFoundException, DatabaseIsNotOpened,
         PreconditionsException, DatabaseConflict,
     )
-    from CodernityDB3.database_super_thread_safe import SuperThreadSafeDatabase
+    # from CodernityDB3.database_super_thread_safe import SuperThreadSafeDatabase
 
 #------------------------------------------------------------------------------
 
@@ -99,7 +99,8 @@ def init(reindex=True, recreate=True):
         lg.warn('local storage already initialized')
         return
     chat_history_dir = os.path.join(settings.ChatHistoryDir(), 'current')
-    _LocalStorage = SuperThreadSafeDatabase(chat_history_dir)
+    # _LocalStorage = SuperThreadSafeDatabase(chat_history_dir)
+    _LocalStorage = Database(chat_history_dir)
     _LocalStorage.custom_header = message_index.make_custom_header()
     if _Debug:
         lg.out(_DebugLevel, 'message_db.init in %s' % chat_history_dir)
@@ -195,7 +196,7 @@ def rewrite_indexes(db_instance, source_db_instance):
                 lg.out(_DebugLevel, '        wrote index %s from %s' % (index_name, source_index_path))
 
 
-def refresh_indexes(db_instance, rewrite=True):
+def refresh_indexes(db_instance, rewrite=True, reindex=True):
     """
     """
     if _Debug:
@@ -213,8 +214,10 @@ def refresh_indexes(db_instance, rewrite=True):
         else:
             if rewrite:
                 try:
-                    db_instance.destroy_index(ind)
-                    db_instance.add_index(ind_obj, create=True)
+                    # db_instance.destroy_index(ind)
+                    # db_instance.add_index(ind_obj, create=True)
+                    # db_instance.reindex_index(ind)
+                    db_instance.edit_index(ind_obj, reindex=False)
                     if _Debug:
                         lg.out(_DebugLevel, '        updated index %s' % ind)
                 except:
@@ -225,7 +228,7 @@ def refresh_indexes(db_instance, rewrite=True):
 def regenerate_indexes(temp_dir):
     """
     """
-    tmpdb = SuperThreadSafeDatabase(temp_dir)
+    tmpdb = Database(temp_dir)
     tmpdb.custom_header = message_index.make_custom_header()
     tmpdb.create()
     refresh_indexes(tmpdb)
@@ -253,7 +256,7 @@ def recreate_db(chat_history_dir):
         db().reindex()
     except:
         # really bad... we will lose whole data
-        _LocalStorage = SuperThreadSafeDatabase(chat_history_dir)
+        _LocalStorage = Database(chat_history_dir)
         _LocalStorage.custom_header = message_index.make_custom_header()
         try:
             _LocalStorage.destroy()

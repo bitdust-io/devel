@@ -46,8 +46,6 @@ class ShardedIndex(Index):
         except KeyError:
             raise Exception("ind_class must be given")
         else:
-            # if not isinstance(ind_class, bytes):
-            #     ind_class = ind_class.__name__
             self.ind_class = ind_class
         if 'use_make_keys' in kwargs:
             self.use_make_keys = kwargs.pop('use_make_keys')

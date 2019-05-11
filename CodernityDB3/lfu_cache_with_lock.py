@@ -17,6 +17,7 @@
 
 
 from __future__ import absolute_import
+import six
 import functools
 from heapq import nsmallest
 from operator import itemgetter
@@ -50,6 +51,9 @@ def create_cache1lvl(lock_obj):
 
             @functools.wraps(user_function)
             def wrapper(key, *args, **kwargs):
+                # print('lfu_cache_with_lock.1lvl.wrapper %r' % key)
+                if isinstance(key, six.text_type):
+                    key = key.encode()            
                 try:
                     result = cache[key]
                 except KeyError:
@@ -72,6 +76,9 @@ def create_cache1lvl(lock_obj):
                 use_count.clear()
 
             def delete(key):
+                # print('lfu_cache_with_lock.1lvl.delete %r' % key)
+                if isinstance(key, six.text_type):
+                    key = key.encode()            
                 try:
                     del cache[key]
                     del use_count[key]
@@ -99,8 +106,12 @@ def create_cache2lvl(lock_obj):
 
             @functools.wraps(user_function)
             def wrapper(*args, **kwargs):
+                key = args[0]
+                # print('lfu_cache_with_lock.2lvl.delete %r' % key)
+                if isinstance(key, six.text_type):
+                    key = key.encode()            
                 try:
-                    result = cache[args[0]][args[1]]
+                    result = cache[key][args[1]]
                 except KeyError:
                     with lock:
                         if wrapper.cache_size == maxsize:
@@ -116,13 +127,13 @@ def create_cache2lvl(lock_obj):
                             wrapper.cache_size -= to_delete
                         result = user_function(*args, **kwargs)
                         try:
-                            cache[args[0]][args[1]] = result
+                            cache[key][args[1]] = result
                         except KeyError:
-                            cache[args[0]] = {args[1]: result}
-                        use_count[args[0]][args[1]] += 1
+                            cache[key] = {args[1]: result}
+                        use_count[key][args[1]] += 1
                         wrapper.cache_size += 1
                 else:
-                    use_count[args[0]][args[1]] += 1
+                    use_count[key][args[1]] += 1
                 return result
 
             def clear():
@@ -130,6 +141,9 @@ def create_cache2lvl(lock_obj):
                 use_count.clear()
 
             def delete(key, *args):
+                # print('lfu_cache_with_lock.2lvl.delete %r' % key)
+                if isinstance(key, six.text_type):
+                    key = key.encode()            
                 if args:
                     try:
                         del cache[key][args[0]]
