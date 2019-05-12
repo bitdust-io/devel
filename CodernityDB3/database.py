@@ -703,6 +703,7 @@ for ID index. You should update that index \
         except Exception as ex:
             warnings.warn("""Problem during insert for `%s`, ex = `%r`, you should check index code.""" % (index.name, ex), RuntimeWarning)
             should_index = None
+        # print('_single_insert_index %r %r %r' % (index, should_index, doc_id))
         if should_index:
             key, value = should_index
             index.insert_with_storage(doc_id, key, value)
@@ -730,6 +731,7 @@ for ID index. You should update that index \
         Performs insert operation on all indexes in order
         """
         _id = self._insert_id_index(_rev, data)
+        # print('database._insert_indexes %r' % _id)
         for index in self.indexes[1:]:
             self._single_insert_index(index, data, _id)
 
@@ -901,6 +903,7 @@ for ID index. You should update that index \
         assert _id is not None
         data['_rev'] = _rev  # for make_key_value compat with update / delete
         data['_id'] = _id
+        # print('database.insert %r %r' % (_id, _rev))
         self._insert_indexes(_rev, data)
         ret = {'_id': _id, '_rev': _rev}
         data.update(ret)
@@ -948,6 +951,7 @@ for ID index. You should update that index \
         """
         # if not self.indexes_names.has_key(index_name):
         #     raise DatabaseException, "Invalid index name"
+        # print('database.get %r key=%r' % (index_name, key))
         if isinstance(key, six.text_type):
             key = codecs.encode(key, 'utf-8')
         try:
@@ -1056,6 +1060,7 @@ for ID index. You should update that index \
         while True:
             try:
                 doc_id, unk, start, size, status = next(gen)
+                # print('database.all %r doc_id=%r unk=%r start=%r size=%r status=%r' % (index_name, doc_id, unk, start, size, status))
             except StopIteration:
                 break
             else:

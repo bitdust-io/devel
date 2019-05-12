@@ -449,6 +449,8 @@ class IU_TreeBasedIndex(Index):
         """
         Binary search implementation used in all get functions
         """
+        if isinstance(key, six.text_type):
+            key = codecs.encode(key, 'utf-8')
         imin, imax = 0, nr_of_elements - 1
         buffer_start, buffer_end = self._set_buffer_limits()
         candidate_start, candidate_index, move_buffer = \

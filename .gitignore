@@ -12,6 +12,7 @@ push
 *_off.py
 COMMITS.txt
 HISTORY.txt
+build/
 .identities/
 release/
 screenshots/
