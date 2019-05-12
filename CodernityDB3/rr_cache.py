@@ -28,11 +28,12 @@ def cache1lvl(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(key, *args, **kwargs):
-            # print('rr_cache.1lvl.wrapper %r %r' % (user_function.__name__, key))
+            # print('rr_cache.1lvl.wrapper %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
                 key = key.encode()            
             try:
                 result = cache1lvl[key]
+                # print('rr_cache.1lvl.wrapper found result')
             except KeyError:
                 if len(cache1lvl) == maxsize:
                     for i in range(maxsize // 10 or 1):
@@ -45,7 +46,7 @@ def cache1lvl(maxsize=100):
             cache1lvl.clear()
 
         def delete(key):
-            # print('rr_cache.1lvl.delete %r %r' % (user_function.__name__, key))
+            # print('rr_cache.1lvl.delete %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
                 key = key.encode()            
             try:
@@ -69,11 +70,12 @@ def cache2lvl(maxsize=100):
         def wrapper(*args, **kwargs):
 #            return user_function(*args, **kwargs)
             key = args[0]
-            # print('rr_cache.2lvl.wrapper %r %r' % (user_function.__name__, key))
+            # print('rr_cache.2lvl.wrapper %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
                 key = key.encode()            
             try:
                 result = cache[key][args[1]]
+                # print('rr_cache.2lvl.wrapper found result')
             except KeyError:
                 if wrapper.cache_size == maxsize:
                     to_delete = maxsize // 10 or 1
@@ -97,7 +99,7 @@ def cache2lvl(maxsize=100):
             wrapper.cache_size = 0
 
         def delete(key, inner_key=None):
-            # print('rr_cache.2lvl.delete %r %r' % (user_function.__name__, key))
+            # print('rr_cache.2lvl.delete %r %r' % (user_function, key))
             if isinstance(key, six.text_type):
                 key = key.encode()            
             if inner_key:

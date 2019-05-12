@@ -82,49 +82,40 @@ def definitions():
 
 def make_custom_header():
     src = '\n'
-    src += 'from chat.message_index import BaseHashIndex\n'
-    src += 'from chat.message_index import BaseMD5Index\n'
     src += 'from chat.message_index import BaseTimeIndex\n'
+    src += 'from chat.message_index import BaseMD5Index\n'
     src += 'from chat.message_index import BaseMD5DoubleKeyIndex\n'
     return src
 
 #------------------------------------------------------------------------------
 
-class BaseHashIndex(HashIndex):
+class BaseMD5Index(HashIndex):
     role = None
     field = None
-    key_format = '16s'
+    key_format = '32s'
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = self.key_format
-        super(BaseHashIndex, self).__init__(*args, **kwargs)
-
-    def transform_key(self, key):
-        if isinstance(key, six.text_type):
-            key = key.encode()            
-        return key
+        super(BaseMD5Index, self).__init__(*args, **kwargs)
 
     def make_key_value(self, data):
         try:
-            return self.transform_key(data[self.role][self.field]), None
+            key = data[self.role][self.field]
+            if isinstance(key, six.text_type):
+                key = key.encode()
+            k = md5(key).hexdigest()
+            return k, {}
         except (AttributeError, ValueError, KeyError, IndexError, ):
             return None
-        except Exception:
+        except Exception as exc:
             lg.exc()
+            raise exc
 
     def make_key(self, key):
         if isinstance(key, six.text_type):
-            key = key.encode()            
-        return self.transform_key(key)
-
-#------------------------------------------------------------------------------
-
-class BaseMD5Index(BaseHashIndex):
-
-    def transform_key(self, key):
-        if isinstance(key, six.text_type):
-            key = key.encode()            
-        return md5(strng.to_bin(key)).digest()
+            key = key.encode()
+        k = md5(key).hexdigest()
+        return k
 
 #------------------------------------------------------------------------------
 
@@ -138,15 +129,14 @@ class BaseTimeIndex(TreeBasedIndex):
 
     def make_key_value(self, data):
         try:
-            return data[self.role]['time'], None
+            key = data[self.role]['time']
+            return key, None
         except (ValueError, KeyError, IndexError, ):
             return None
         except Exception:
             lg.exc()
 
     def make_key(self, key):
-        if isinstance(key, six.text_type):
-            key = key.encode()            
         return key
 
 #------------------------------------------------------------------------------
@@ -156,7 +146,7 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
     field_a = None
     role_b = None
     field_b = None
-    key_format = '16s'
+    key_format = '32s'
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = self.key_format
@@ -164,19 +154,15 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
 
     def transform_key(self, key):
         if isinstance(key, six.text_type):
-            key = key.encode()            
-        return md5(strng.to_bin(key)).digest()
+            key = key.encode()
+        return md5(key).hexdigest().encode()
 
     def make_key_value(self, data):
         try:
             key_a = data[self.role_a][self.field_a]
             key_b = data[self.role_b][self.field_b]
-            if isinstance(key_a, six.text_type):
-                key_a = key_a.encode()            
-            if isinstance(key_b, six.text_type):
-                key_b = key_b.encode()            
-            version_1 = b'{}:{}'.format(key_a, key_b)
-            version_2 = b'{}:{}'.format(key_b, key_a)
+            version_1 = '{}:{}'.format(key_a, key_b)
+            version_2 = '{}:{}'.format(key_b, key_a)
             out = set()
             out.add(self.transform_key(version_1))
             out.add(self.transform_key(version_2))
@@ -187,8 +173,6 @@ class BaseMD5DoubleKeyIndex(MultiTreeBasedIndex):
             lg.exc()
 
     def make_key(self, key):
-        if isinstance(key, six.text_type):
-            key = key.encode()            
         return self.transform_key(key)
 
 #------------------------------------------------------------------------------

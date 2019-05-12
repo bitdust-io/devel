@@ -27,6 +27,7 @@ from CodernityDB3.index import (Index,
                                IndexPreconditionsException)
 
 import os
+import hashlib
 import marshal
 import io
 import struct
@@ -163,7 +164,7 @@ class IU_HashIndex(Index):
 
         :param key: the key to find
         """
-        # print('_find_key %r' % key)
+        # print('IU_HashIndex._find_key %r' % key)
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
@@ -188,6 +189,7 @@ class IU_HashIndex(Index):
             return None, None, 0, 0, 'u'
 
     def _find_key_many(self, key, limit=1, offset=0):
+        # print('IU_HashIndex._find_key_many %r' % key)
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
@@ -228,10 +230,15 @@ class IU_HashIndex(Index):
 
     def _calculate_position(self, key):
         # Fix types
+        if isinstance(key, int):
+            key = str(key)
         if isinstance(key, six.text_type):
             key = key.encode()
-
-        return abs(hash(key) & self.hash_lim) * self.bucket_line_size + self._start_ind
+        pos = abs(int(hashlib.md5(key).hexdigest(), 16) & self.hash_lim) * self.bucket_line_size + self._start_ind
+        # pos = abs(hash(key) & self.hash_lim) * self.bucket_line_size + self._start_ind
+        # print('IU_HashIndex._calculate_position hash_lim=%r bucket_line_size=%r _start_ind=%r  %r -> %r' % (
+        #     self.hash_lim, self.bucket_line_size, self._start_ind, key, pos))
+        return pos
 
     # TODO add cache!
     def _locate_key(self, key, start):
@@ -253,13 +260,16 @@ class IU_HashIndex(Index):
             # todo, maybe partial read there...
             try:
                 doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(data)
+                # print('IU_HashIndex._locate_key key=%r %r doc_id=%r l_key=%r start=%r size=%r status=%r _next=%r' % (key, self.name, doc_id, l_key, start, size, status, _next))
             except struct.error:
+                # print('ElemNotFound 1')
                 raise ElemNotFound(
                     "Not found")  # not found but might be also broken
             if l_key == key:
                 break
             else:
                 if not _next:
+                    # print('ElemNotFound 2')
                     # not found
                     raise ElemNotFound("Not found")
                 else:
@@ -290,14 +300,14 @@ class IU_HashIndex(Index):
                 l_doc_id, l_key, start, size, status, _next = self.entry_struct.unpack(data)
             except:
                 raise DocIdNotFound(
-                    "Doc_id '%s' for '%s' not found" % (doc_id, key))
+                    "Doc_id %r for %r not found" % (doc_id, key))
             if l_doc_id == doc_id and l_key == key:  # added for consistency
                 break
             else:
                 if not _next:
                     # not found
                     raise DocIdNotFound(
-                        "Doc_id '%s' for '%s' not found" % (doc_id, key))
+                        "Doc_id %r for %r not found" % (doc_id, key))
                 else:
                     location = _next  # go to next record
         return location, doc_id, l_key, start, size, status, _next
@@ -321,6 +331,7 @@ class IU_HashIndex(Index):
                 location = _next  # go to next record
 
     def update(self, doc_id, key, u_start=0, u_size=0, u_status='o'):
+        # print('IU_HashIndex.update %r' % key)
         # Fix types
         if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
@@ -336,7 +347,7 @@ class IU_HashIndex(Index):
         if curr_data:
             location = self.bucket_struct.unpack(curr_data)[0]
         else:
-            raise ElemNotFound("Location '%s' not found" % doc_id)
+            raise ElemNotFound("Location %r not found" % doc_id)
         found_at, _doc_id, _key, start, size, status, _next = self._locate_doc_id(doc_id, key, location)
         self.buckets.seek(found_at)
         self.buckets.write(self.entry_struct.pack(doc_id,
@@ -351,6 +362,7 @@ class IU_HashIndex(Index):
         return True
 
     def insert(self, doc_id, key, start, size, status='o'):
+        # print('IU_HashIndex.insert %r' % key)
         # Fix types
         if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
@@ -438,6 +450,7 @@ class IU_HashIndex(Index):
         return self._find_key_many(self.make_key(key), limit, offset)
 
     def all(self, limit=-1, offset=0):
+        # print('hash_index.all data_start=%r entry_line_size=%r key_format=%r' % (self.data_start, self.entry_line_size, self.key_format))
         self.buckets.seek(self.data_start)
         while offset:
             curr_data = self.buckets.read(self.entry_line_size)
@@ -445,7 +458,9 @@ class IU_HashIndex(Index):
                 break
             try:
                 doc_id, key, start, size, status, _next = self.entry_struct.unpack(curr_data)
-            except IndexException:
+                # print('hash_index.all while offset doc_id=%r key=%r start=%r size=%r status=%r next=%r' % (doc_id, key, start, size, status, _next))
+            except IndexException as exc:
+                # print('IndexException while offset: %r' % exc)
                 break
             else:
                 if status != b'd' and status != 'd':
@@ -456,7 +471,9 @@ class IU_HashIndex(Index):
                 break
             try:
                 doc_id, key, start, size, status, _next = self.entry_struct.unpack(curr_data)
+                # print('hash_index.all while limit doc_id=%r key=%r start=%r size=%r status=%r next=%r' % (doc_id, key, start, size, status, _next))
             except IndexException:
+                # print('IndexException while limit: %r' % exc)
                 break
             else:
                 if status != b'd' and status != 'd':
@@ -498,6 +515,7 @@ class IU_HashIndex(Index):
         return
 
     def delete(self, doc_id, key, start=0, size=0):
+        # print('IU_HashIndex.delete %r' % key)
         # Fix types
         if isinstance(doc_id, six.text_type):
             doc_id = doc_id.encode()
@@ -614,6 +632,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
         :param key: the key to find
         """
         # Fix types
+        # print('IU_UniqueHashIndex._find_key %r' % key)
         if isinstance(key, six.text_type):
             key = key.encode()
 
@@ -659,7 +678,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
             l_key, rev, start, size, status, _next = self.entry_struct.unpack(
                 data)
             if l_key == key:
-                raise IndexException("The '%s' key already exists" % key)
+                raise IndexException("The %r key already exists" % key)
             if not _next or (status == b'd' or status == 'd'):
                 return self.buckets.tell() - self.entry_line_size, l_key, rev, start, size, status, _next
             else:
@@ -685,19 +704,24 @@ class IU_UniqueHashIndex(IU_HashIndex):
             # todo, maybe partial read there...
             try:
                 l_key, rev, start, size, status, _next = self.entry_struct.unpack(data)
+                # print('IU_UniqueHashIndex._locate_key %r key=%r start=%r location=%r l_key=%r rev=%r start=%r size=%r status=%r _next=%r' % (
+                #     self.name, key, start, location, l_key, rev, start, size, status, _next))
             except struct.error:
-                raise ElemNotFound("Location '%s' not found" % key)
+                # print("Location %r not found 1" % key)
+                raise ElemNotFound("Location %r not found" % key)
             if l_key == key:
                 break
             else:
                 if not _next:
                     # not found
-                    raise ElemNotFound("Location '%s' not found" % key)
+                    # print("Location %r not found 2" % key)
+                    raise ElemNotFound("Location %r not found" % key)
                 else:
                     location = _next  # go to next record
         return self.buckets.tell() - self.entry_line_size, l_key, rev, start, size, status, _next
 
     def update(self, key, rev, u_start=0, u_size=0, u_status='o'):
+        # print('IU_UniqueHashIndex.update %r' % key)
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
@@ -714,7 +738,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
         if curr_data:
             location = self.bucket_struct.unpack(curr_data)[0]
         else:
-            raise ElemNotFound("Location '%s' not found" % key)
+            raise ElemNotFound("Location %r not found" % key)
         found_at, _key, _rev, start, size, status, _next = self._locate_key(
             key, location)
         if u_start == 0:
@@ -733,6 +757,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
         return True
 
     def insert(self, key, rev, start, size, status='o'):
+        # print('IU_UniqueHashIndex.insert %r' % key)
         # Fix types
         if isinstance(key, six.text_type):
             key = key.encode()
@@ -812,6 +837,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
                 break
             try:
                 doc_id, rev, start, size, status, next = self.entry_struct.unpack(curr_data)
+                # print('IU_UniqueHashIndex.all while offset %r doc_id=%r rev=%r start=%r size=%r status=%r next=%r' % (self.name, doc_id, rev, start, size, status, next))
             except IndexException:
                 break
             else:
@@ -824,6 +850,7 @@ class IU_UniqueHashIndex(IU_HashIndex):
                 break
             try:
                 doc_id, rev, start, size, status, next = self.entry_struct.unpack(curr_data)
+                # print('IU_UniqueHashIndex.all while limit %r doc_id=%r rev=%r start=%r size=%r status=%r next=%r' % (self.name, doc_id, rev, start, size, status, next))
             except IndexException:
                 break
             else:

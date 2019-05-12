@@ -134,6 +134,7 @@ class IU_Storage(object):
         size = len(s_data)
         self._f.write(s_data)
         self.flush()
+        # print('storage.save start=%r size=%r' % (start, size))
         return start, size
 
     def insert(self, data):
@@ -143,6 +144,7 @@ class IU_Storage(object):
         return self.save(data)
 
     def get(self, start, size, status='c'):
+        # print('storage.get start=%r size=%r' % (start, size))
         if status == 'd' or status == b'd':
             return None
         else:

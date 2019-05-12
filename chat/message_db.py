@@ -46,6 +46,7 @@ _DebugLevel = 6
 
 import os
 import json
+import shutil
 
 #------------------------------------------------------------------------------
 
@@ -78,14 +79,14 @@ if six.PY2:
         IndexNotFoundException, DatabaseIsNotOpened,
         PreconditionsException, DatabaseConflict,
     )
-    # from CodernityDB.database_super_thread_safe import SuperThreadSafeDatabase
+    from CodernityDB.patch import patch_flush_fsync
 else:
     from CodernityDB3.database import (
         Database, RecordNotFound, RecordDeleted,
         IndexNotFoundException, DatabaseIsNotOpened,
         PreconditionsException, DatabaseConflict,
     )
-    # from CodernityDB3.database_super_thread_safe import SuperThreadSafeDatabase
+    from CodernityDB3.patch import patch_flush_fsync
 
 #------------------------------------------------------------------------------
 
@@ -99,7 +100,6 @@ def init(reindex=True, recreate=True):
         lg.warn('local storage already initialized')
         return
     chat_history_dir = os.path.join(settings.ChatHistoryDir(), 'current')
-    # _LocalStorage = SuperThreadSafeDatabase(chat_history_dir)
     _LocalStorage = Database(chat_history_dir)
     _LocalStorage.custom_header = message_index.make_custom_header()
     if _Debug:
@@ -107,6 +107,7 @@ def init(reindex=True, recreate=True):
     if db().exists():
         try:
             db().open()
+            # patch_flush_fsync(db())
         except:
             lg.exc()
             lg.err('failed to open database')
@@ -118,13 +119,12 @@ def init(reindex=True, recreate=True):
         lg.info('create fresh local DB')
         db().create()
     if reindex:
-        if not refresh_indexes(db()):
+        if not refresh_indexes(db(), rewrite=False, reindex=True):
             lg.err('failed to refresh indexes')
             if not recreate:
                 raise Exception('failed to refresh indexes')
-            lg.info('local DB will be recreated')
+            lg.info('local DB will be recreated now')
             recreate_db(chat_history_dir)
-            refresh_indexes(db())
 
 
 def shutdown():
@@ -148,54 +148,6 @@ def db(instance='current'):
 
 #------------------------------------------------------------------------------
 
-def rewrite_indexes(db_instance, source_db_instance):
-    """
-    """
-    if _Debug:
-        lg.out(_DebugLevel, 'message_db.rewrite_indexes')
-    source_location = os.path.join(source_db_instance.path, '_indexes')
-    source_indexes = os.listdir(source_location)
-    existing_location = os.path.join(db_instance.path, '_indexes')
-    existing_indexes = os.listdir(existing_location)
-    for existing_index_file in existing_indexes:
-        if existing_index_file != '00id.py':
-            index_name = existing_index_file[2:existing_index_file.index('.')]
-            existing_index_path = os.path.join(existing_location, existing_index_file)
-            os.remove(existing_index_path)
-            if _Debug:
-                lg.out(_DebugLevel, '        removed index at %s' % existing_index_path)
-            buck_path = os.path.join(db_instance.path, index_name + '_buck')
-            if os.path.isfile(buck_path):
-                os.remove(buck_path)
-                if _Debug:
-                    lg.out(_DebugLevel, '            also bucket at %s' % buck_path)
-            stor_path = os.path.join(db_instance.path, index_name + '_stor')
-            if os.path.isfile(stor_path):
-                os.remove(stor_path)
-                if _Debug:
-                    lg.out(_DebugLevel, '            also storage at %s' % stor_path)
-    for source_index_file in source_indexes:
-        if source_index_file != '00id.py':
-            index_name = source_index_file[2:source_index_file.index('.')]
-            destination_index_path = os.path.join(existing_location, source_index_file)
-            source_index_path = os.path.join(source_location, source_index_file)
-            if not bpio.WriteTextFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
-                lg.warn('failed writing index to %s' % destination_index_path)
-                continue
-            destination_buck_path = os.path.join(db_instance.path, index_name + '_buck')
-            source_buck_path = os.path.join(source_db_instance.path, index_name + '_buck')
-            if not bpio.WriteBinaryFile(destination_buck_path, bpio.ReadBinaryFile(source_buck_path)):
-                lg.warn('failed writing index bucket to %s' % destination_buck_path)
-                continue
-            destination_stor_path = os.path.join(db_instance.path, index_name + '_stor')
-            source_stor_path = os.path.join(source_db_instance.path, index_name + '_stor')
-            if not bpio.WriteBinaryFile(destination_stor_path, bpio.ReadBinaryFile(source_stor_path)):
-                lg.warn('failed writing index storage to %s' % destination_stor_path)
-                continue
-            if _Debug:
-                lg.out(_DebugLevel, '        wrote index %s from %s' % (index_name, source_index_path))
-
-
 def refresh_indexes(db_instance, rewrite=True, reindex=True):
     """
     """
@@ -214,59 +166,55 @@ def refresh_indexes(db_instance, rewrite=True, reindex=True):
         else:
             if rewrite:
                 try:
-                    # db_instance.destroy_index(ind)
-                    # db_instance.add_index(ind_obj, create=True)
-                    # db_instance.reindex_index(ind)
-                    db_instance.edit_index(ind_obj, reindex=False)
+                    db_instance.edit_index(ind_obj, reindex=reindex)
                     if _Debug:
                         lg.out(_DebugLevel, '        updated index %s' % ind)
                 except:
                     lg.exc('failed rewriting index "%r"' % ind)
+                    ok = False
+                    break
     return ok
-
-
-def regenerate_indexes(temp_dir):
-    """
-    """
-    tmpdb = Database(temp_dir)
-    tmpdb.custom_header = message_index.make_custom_header()
-    tmpdb.create()
-    refresh_indexes(tmpdb)
-    tmpdb.close()
-    lg.info('local DB indexes regenerated in %r' % temp_dir)
-    return tmpdb
 
 
 def recreate_db(chat_history_dir):
     """
     """
     global _LocalStorage
+    _LocalStorage.close()
+    _LocalStorage = None
+    dbs = Database(chat_history_dir)
+    dbs.custom_header = message_index.make_custom_header()
     temp_dir = os.path.join(settings.ChatHistoryDir(), 'tmp')
     if os.path.isdir(temp_dir):
         bpio._dir_remove(temp_dir)
-    tmpdb = regenerate_indexes(temp_dir)
-    try:
-        db().close()
-    except:
-        pass
-    rewrite_indexes(db(), tmpdb)
-    bpio._dir_remove(temp_dir)
-    try:
-        db().open()
-        db().reindex()
-    except:
-        # really bad... we will lose whole data
-        _LocalStorage = Database(chat_history_dir)
-        _LocalStorage.custom_header = message_index.make_custom_header()
-        try:
-            _LocalStorage.destroy()
-        except:
-            pass
-        try:
-            _LocalStorage.create()
-        except Exception as exc:
-            lg.warn('failed to create local storage: %r' % exc)
-    lg.info('local DB re-created in %r' % chat_history_dir)
+    orig_dir = os.path.join(settings.ChatHistoryDir(), 'orig')
+    if os.path.isdir(orig_dir):
+        bpio._dir_remove(orig_dir)
+    dbt = Database(temp_dir)
+    dbt.custom_header = message_index.make_custom_header()
+    dbs.open()
+    # patch_flush_fsync(dbs)
+    dbt.create()
+    dbt.close()
+    refresh_indexes(dbt, reindex=False)
+    dbt.open()
+    # patch_flush_fsync(dbt)
+    for c in dbs.all('id'):
+        del c['_rev']
+        dbt.insert(c)
+    dbt.close()
+    dbs.close()
+    os.rename(dbs.path, orig_dir)
+    os.rename(dbt.path, dbs.path)
+    _LocalStorage = Database(chat_history_dir)
+    _LocalStorage.custom_header = message_index.make_custom_header()
+    db().open()
+    # patch_flush_fsync(db())
+    if refresh_indexes(db(), rewrite=False, reindex=False):
+        bpio._dir_remove(orig_dir)
+        lg.info('local DB re-created in %r' % chat_history_dir)
+    else:
+        lg.err('local DB is broken !!!')
 
 #------------------------------------------------------------------------------
 
@@ -493,7 +441,7 @@ def main():
         shutdown()
 
     if sys.argv[1] == 'tmpdb':
-        regenerate_indexes(sys.argv[2])
+        recreate_db(sys.argv[2])
 
     if sys.argv[1] == 'insert':
         init()

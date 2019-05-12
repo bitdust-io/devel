@@ -182,3 +182,4 @@ def cache_message(data, message_id, sender, recipient):
     message_db.insert(message_json)
     if _Debug:
         lg.out(_DebugLevel, 'message_keeper.cache_message "%s"' % str(message_json))
+    # print(list(message_db.get_all(index_name='sender_glob_id', )))
