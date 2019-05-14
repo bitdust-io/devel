@@ -259,14 +259,23 @@ class Initializer(automat.Automat):
     def doInitInterfaces(self, *args, **kwargs):
         lg.out(2, 'initializer.doInitInterfaces')
         if settings.enableFTPServer():
-            from interface import ftp_server
-            ftp_server.init()
+            try:
+                from interface import ftp_server
+                ftp_server.init()
+            except:
+                lg.exc()
         if settings.enableJsonRPCServer():
-            from interface import api_jsonrpc_server
-            api_jsonrpc_server.init()
+            try:
+                from interface import api_jsonrpc_server
+                api_jsonrpc_server.init()
+            except:
+                lg.exc()
         if settings.enableRESTHTTPServer():
-            from interface import api_rest_http_server
-            api_rest_http_server.init(port=settings.getRESTHTTPServerPort())
+            try:
+                from interface import api_rest_http_server
+                api_rest_http_server.init(port=settings.getRESTHTTPServerPort())
+            except:
+                lg.exc()
         reactor.callLater(0, self.automat, 'init-interfaces-done')  # @UndefinedVariable
 
     def doInitModules(self, *args, **kwargs):

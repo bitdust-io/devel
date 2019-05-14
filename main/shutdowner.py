@@ -88,41 +88,45 @@ def shutdown(x=None):
     Calls method ``shutdown()`` in other modules.
     """
     lg.out(2, "shutdowner.shutdown " + str(x))
-    from services import driver
-    from main import control
-    from main import events
-    from logs import weblog
-    from logs import webtraffic
-    from system import tmpfile
-    from system import run_upnpc
-    from raid import eccmap
-    from lib import net_misc
-    from updates import git_proc
-    from interface import api_jsonrpc_server
-    from interface import api_rest_http_server
-    from interface import ftp_server
-    from userid import my_id
-    from crypt import my_keys
     dl = []
-    my_keys.shutdown()
-    my_id.shutdown()
-    ftp_server.shutdown()
-    api_jsonrpc_server.shutdown()
-    api_rest_http_server.shutdown()
-    driver.shutdown()
-    eccmap.shutdown()
-    run_upnpc.shutdown()
-    net_misc.shutdown()
-    git_proc.shutdown()
-    events.clear_subscribers()
-    tmpfile.shutdown()
-    control.shutdown()
-    weblog.shutdown()
-    webtraffic.shutdown()
-    survived_automats = list(automat.objects().values())
-    for a in survived_automats:
-        if a.name != 'shutdowner':
-            a.event('shutdown')
+    try:
+        from services import driver
+        from main import control
+        from main import events
+        from logs import weblog
+        from logs import webtraffic
+        from system import tmpfile
+        from system import run_upnpc
+        from raid import eccmap
+        from lib import net_misc
+        from updates import git_proc
+        from interface import api_jsonrpc_server
+        from interface import api_rest_http_server
+        from interface import ftp_server
+        from userid import my_id
+        from crypt import my_keys
+        my_keys.shutdown()
+        my_id.shutdown()
+        ftp_server.shutdown()
+        api_jsonrpc_server.shutdown()
+        api_rest_http_server.shutdown()
+        driver.shutdown()
+        eccmap.shutdown()
+        run_upnpc.shutdown()
+        net_misc.shutdown()
+        git_proc.shutdown()
+        events.clear_subscribers()
+        tmpfile.shutdown()
+        control.shutdown()
+        weblog.shutdown()
+        webtraffic.shutdown()
+        survived_automats = list(automat.objects().values())
+        for a in survived_automats:
+            if a.name != 'shutdowner':
+                a.event('shutdown')
+    except:
+        lg.exc()
+    # TODO: rework all shutdown() methods to return deferred objects
     return DeferredList(dl)
 
 #------------------------------------------------------------------------------
