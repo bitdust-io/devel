@@ -539,7 +539,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     return ident
 
 
-def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=False, save_identity=True):
+def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=None, revision_up=False, save_identity=True):
     """
     If some transports was enabled or disabled we want to update identity
     contacts. Just empty all of the contacts and create it again in the same
@@ -559,12 +559,9 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=F
     lid.clearContacts()
     # add contacts data to the local identity
     lid.setContactsFromDict(new_contacts, new_order)
-#    for proto in new_order:
-#        contact = new_contacts.get(proto, None)
-#        if contact is None:
-#            lg.warn('proto %s was not found in contacts' % proto)
-#            continue
-#        lid.setProtoContact(proto, contact)
+    # if I need to rotate my sources do it now
+    if new_sources:
+        lid.setSources(new_sources)
     # update software version number
     vernum = strng.to_bin(bpio.ReadTextFile(settings.VersionNumberFile())).strip()
     repo, _ = misc.ReadRepoLocation()
@@ -575,7 +572,7 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], revision_up=F
     changed = False
     if new_xmlsrc != current_identity_xmlsrc or revision_up:
         try:
-            lid.setRevision(int(strng.to_text(lid.revision)) + 1)
+            lid.setRevision(lid.getRevisionValue() + 1)
         except:
             lg.exc()
             return False

@@ -776,6 +776,33 @@ class identity:
                 return host
         return self.getProtoHost('tcp')
 
+    def getDateStr(self):
+        """
+        Returns identity creation date as string.
+        """
+        return strng.to_text(self.date)
+
+    def getPostageValue(self):
+        """
+        Returns price for message delivery if not on correspondents list.
+        Not used at the moment.
+        """
+        return int(self.postage)
+
+    def getVersionStr(self):
+        """
+        Returns a version string - some info about BitDust software and platform.
+        Just informative thing, no real logic around it yet.
+        """
+        return strng.to_text(self.version)
+
+    def getRevisionValue(self):
+        """
+        Returns identity revision number.
+        Every time identity changes, identity must increment by one.
+        """
+        return int(self.revision)
+
     #------------------------------------------------------------------------------
 
     def setSources(self, sources_list):
@@ -783,7 +810,7 @@ class identity:
         """
         self.sources = []
         for sourc in sources_list:
-            self.contacts.append(strng.to_bin(sourc))
+            self.sources.append(strng.to_bin(sourc))
 
     def setContacts(self, contacts_list):
         """

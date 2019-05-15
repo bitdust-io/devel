@@ -88,6 +88,14 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 12
+
+#------------------------------------------------------------------------------
+
 import sys
 import random
 
@@ -552,9 +560,11 @@ class IdRegistrator(automat.Automat):
         lg.out(8, 'id_registrator.doRequestMyIdentity')
 
         def _cb(src):
+            # TODO: validate my identity and make sure other servers also stored
             self.automat('my-id-exist', src)
 
         def _eb(err):
+            # TODO: this is actually can be an issue if one server failed but others are fine...
             self.automat('my-id-not-exist', err)
 
         for idurl in self.new_identity.sources:

@@ -20,10 +20,6 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 #
-#
-#
-#
-#
 
 """
 .. module:: p2p_connector.
@@ -72,12 +68,6 @@ from six.moves import range
 
 _Debug = True
 _DebugLevel = 12
-
-#------------------------------------------------------------------------------
-
-import time
-
-from twisted.internet.defer import Deferred, DeferredList, succeed  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
