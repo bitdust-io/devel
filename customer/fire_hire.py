@@ -463,6 +463,12 @@ class FireHire(automat.Automat):
         Action method.
         """
         global _SuppliersToFire
+        from p2p import network_connector
+        if network_connector.A().state is not 'CONNECTED':
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss   network_connector is not CONNECTED at the moment, SKIP')
+            self.automat('made-decision', [])
+            return
         to_be_fired = list(set(_SuppliersToFire))
         _SuppliersToFire = []
         if to_be_fired:
@@ -572,6 +578,12 @@ class FireHire(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier')
+        from p2p import network_connector
+        if network_connector.A().state is not 'CONNECTED':
+            if _Debug:
+                lg.out(_DebugLevel, '        network_connector is not CONNECTED at the moment, SKIP')
+            self.automat('search-failed')
+            return
         position_for_new_supplier = None
         for pos in range(settings.getSuppliersNumberDesired()):
             if pos in self.hire_list:
@@ -765,7 +777,11 @@ class FireHire(automat.Automat):
             self.restart_task = reactor.callLater(  # @UndefinedVariable
                 self.restart_interval, self._scheduled_restart)
             lg.out(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
-            self.restart_interval *= 1.1
+            from p2p import network_connector
+            if network_connector.A().state is not 'CONNECTED':
+                self.restart_interval = 60 * 5
+            else:
+                self.restart_interval *= 1.1
         else:
             lg.out(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
                 time.time() - self.restart_task.getTime()))

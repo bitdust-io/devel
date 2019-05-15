@@ -131,6 +131,7 @@ def propagate(selected_contacts, AckHandler=None, wide=False):
         SendToIDs(selected_contacts, ack_handler=AckHandler, wide=wide)
         d.callback(list(selected_contacts))
         return x
+
     fetch(selected_contacts).addBoth(contacts_fetched)
     return d
 

@@ -626,19 +626,11 @@ class IdRegistrator(automat.Automat):
 
     def _send_new_identity(self):
         """
-        Send created identity to the identity server to register it.
-        TODO: need to close transport and gateway after that
+        Send created identity to the identity servers to register it.
         """
-        lg.out(4, 'id_registrator._send_new_identity ')
-        from transport import gateway
-        from transport import network_transport
-        from transport.tcp import tcp_interface
-        gateway.init()
-        interface = tcp_interface.GateInterface()
-        transport = network_transport.NetworkTransport('tcp', interface)
-        transport.automat('init', gateway.listener())
-        transport.automat('start')
-        gateway.start()
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator._send_new_identity')
+        from transport.tcp import tcp_node
         sendfilename = settings.LocalIdentityFilename() + '.new'
         dlist = []
         for idurl in self.new_identity.sources:
@@ -647,8 +639,11 @@ class IdRegistrator(automat.Automat):
             _, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             srvhost = net_misc.pack_address((host, tcpport, ))
-            dlist.append(gateway.send_file_single(idurl, 'tcp', srvhost, sendfilename, 'Identity'))
-        # assert len(self.free_idurls) == 0
+            if _Debug:
+                lg.out(_DebugLevel, '    sending to %r via TCP' % srvhost)
+            dlist.append(tcp_node.send(
+                sendfilename, srvhost, 'Identity', keep_alive=False,
+            ))
         return DeferredList(dlist, fireOnOneCallback=True)
 
 #------------------------------------------------------------------------------

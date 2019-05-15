@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
 import random
 
-from twisted.internet.defer import DeferredList  # @UnresolvedImport
+from twisted.internet.defer import Deferred, DeferredList  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -93,38 +93,28 @@ _IdRotator = None
 
 #------------------------------------------------------------------------------
 
-# def A(event=None, *args, **kwargs):
-#     """
-#     Access method to interact with `id_rotator()` machine.
-#     """
-#     global _IdRotator
-#     if event is None:
-#         return _IdRotator
-#     if _IdRotator is None:
-#         # TODO: set automat name and starting state here
-#         _IdRotator = IdRotator(
-#             name='id_rotator',
-#             state='AT_STARTUP',
-#             debug_level=_DebugLevel,
-#             log_events=_Debug,
-#             log_transitions=_Debug,
-#             publish_events=False,
-#         )
-#     if event is not None:
-#         _IdRotator.automat(event, *args, **kwargs)
-#     return _IdRotator
-# 
-# 
-# def Destroy():
-#     """
-#     Destroy `id_rotator()` automat and remove its instance from memory.
-#     """
-#     global _IdRotator
-#     if _IdRotator is None:
-#         return
-#     _IdRotator.destroy()
-#     del _IdRotator
-#     _IdRotator = None
+def check():
+    """
+    Returns True/False via deferred object to report situation with my identity sources.
+    """
+    result_defer = Deferred()
+    ir = IdRotator()
+    ir.automat('check', result_defer=result_defer)
+    return result_defer
+
+
+def run(preferred_servers={}):
+    """
+    Executes id_rotator() automat to check my identity sources and if republish my identity
+    on another ID server if current situation "is not healthy".
+    Input parameter "preferred_servers" can be used to control which servers to be used
+    when replacing a dead one.
+    Returns True/False via deferred object to report result.
+    """
+    result_defer = Deferred()
+    ir = IdRotator()
+    ir.automat('run', result_defer=result_defer, preferred_servers=preferred_servers)
+    return result_defer
 
 #------------------------------------------------------------------------------
 
@@ -232,13 +222,7 @@ class IdRotator(automat.Automat):
         """
         Condition method.
         """
-        # TODO: for now simply check that first identity server in my identity is alive
-        # we can implement more "aggressive" checks later...
-        # for example if any of my sources is not alive -> replace him also
-        # also we can check here if I have enough sources according to those configs:
-        #     services/identity-propagate/min-servers
-        #     services/identity-propagate/max-servers
-        return bool(args[0][0])
+        return self._is_healthy(args[0])
 
     def isChecking(self, *args, **kwargs):
         """
@@ -276,7 +260,7 @@ class IdRotator(automat.Automat):
         for idurl in my_id.getLocalIdentity().getSources():
             self.current_servers.append(nameurl.GetHost(idurl))
         if _Debug:
-            lg.args(_DebugLevel, self.known_servers, self.preferred_servers)
+            lg.args(_DebugLevel, known_servers=self.known_servers, preferred_servers=self.preferred_servers)
 
     def doPingMyIDServers(self, *args, **kwargs):
         """
@@ -287,7 +271,7 @@ class IdRotator(automat.Automat):
         for idurl in my_sources:
             d = net_misc.getPageTwisted(idurl, timeout=5)
             dl.append(d)
-        d = DeferredList(dl)
+        d = DeferredList(dl, consumeErrors=True)
         d.addCallback(self._do_check_ping_results)
         d.addErrback(lambda err: self.automat('ping-failed', err))
 
@@ -307,15 +291,15 @@ class IdRotator(automat.Automat):
             self.automat('no-id-servers-found')
             return
 
-        target_servers_hosts = list(target_servers.keys())
-        random.shuffle(target_servers_hosts)
+        target_hosts = list(target_servers.keys())
+        random.shuffle(target_hosts)
         if _Debug:
-            lg.args(_DebugLevel, target_servers_hosts)
+            lg.args(_DebugLevel, target_hosts=target_hosts)
 
         def _new_idurl_exist(idsrc, new_idurl, pos):
             if _Debug:
                 lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._new_idurl_exist %r already with same name' % new_idurl)
-            if pos + 1 >= len(target_servers_hosts):
+            if pos + 1 >= len(target_hosts):
                 self.automat('no-id-servers-found')
             else:
                 _ping_one_server(pos + 1)
@@ -338,13 +322,13 @@ class IdRotator(automat.Automat):
         def _server_failed(err, host, pos):
             if _Debug:
                 lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._server_failed %r with %r' % (host, err))
-            if pos + 1 >= len(target_servers_hosts):
+            if pos + 1 >= len(target_hosts):
                 self.automat('no-id-servers-found')
             else:
                 _ping_one_server(pos + 1)
 
         def _ping_one_server(pos):
-            host = target_servers_hosts[pos]
+            host = target_hosts[pos]
             webport, tcpport = target_servers[host]
             if webport == 80:
                 webport = ''
@@ -412,15 +396,15 @@ class IdRotator(automat.Automat):
         if not self.result_defer:
             return
         if event == 'ping-done':
-            self.result_defer.callback(args[0])
+            self.result_defer.callback(self._is_healthy(args[0]))
         elif event == 'my-id-exists':
-            self.result_defer.callback(args[0])
-            
+            self.result_defer.callback(True)
 
     def doReportFailed(self, event, *args, **kwargs):
         """
         Action method.
         """
+        lg.warn('id_rotator finished with failed result %r : %r' % (event, args[0]))
         if not self.result_defer:
             return
         self.result_defer.errback(args[0])
@@ -429,7 +413,22 @@ class IdRotator(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.check_only = None
+        self.result_defer = None
+        self.alive_idurls = None
+        self.current_servers = None
+        self.preferred_servers = None
+        self.known_servers = None
         self.destroy()
+
+    def _is_healthy(self, ping_results):
+        # TODO: for now simply check that first identity server in my identity is alive
+        # we can implement more "aggressive" checks later...
+        # for example if any of my sources is not alive -> replace him also
+        # also we can check here if I have enough sources according to those configs:
+        #     services/identity-propagate/min-servers
+        #     services/identity-propagate/max-servers
+        return bool(ping_results[0])
 
     def _do_check_ping_results(self, ping_results):
         self.alive_idurls = []
@@ -471,20 +470,11 @@ class IdRotator(automat.Automat):
 
     def _do_send_my_identity(self):
         """
-        Send created identity to the identity server to register it.
-        TODO: need to close transport and gateway after that
+        Send my updated identity to the identity servers to register it.
         """
         if _Debug:
             lg.out(_DebugLevel, 'id_rotator._do_send_my_identity')
-        from transport import gateway
-        from transport import network_transport
-        from transport.tcp import tcp_interface
-        gateway.init()
-        interface = tcp_interface.GateInterface()
-        transport = network_transport.NetworkTransport('tcp', interface)
-        transport.automat('init', gateway.listener())
-        transport.automat('start')
-        gateway.start()
+        from transport.tcp import tcp_node
         sendfilename = settings.LocalIdentityFilename() + '.new'
         dlist = []
         for idurl in my_id.getLocalIdentity().getSources():
@@ -498,8 +488,10 @@ class IdRotator(automat.Automat):
                 tcpport = settings.IdentityServerPort()
             srvhost = net_misc.pack_address((host, tcpport, ))
             if _Debug:
-                lg.out(_DebugLevel, '    sending to %r' % srvhost)
-            # dlist.append(gateway.send_file_single(idurl, 'tcp', srvhost, sendfilename, 'Identity'))
+                lg.out(_DebugLevel, '    sending to %r via TCP' % srvhost)
+            dlist.append(tcp_node.send(
+                sendfilename, srvhost, 'Identity', keep_alive=False,
+            ))
         return DeferredList(dlist, fireOnOneCallback=True)
 
 #------------------------------------------------------------------------------
