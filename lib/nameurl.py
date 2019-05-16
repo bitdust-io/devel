@@ -47,9 +47,9 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
-import six.moves.urllib.parse
-from six.moves import range
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # @UnresolvedImport
+import six.moves.urllib.parse  # @UnresolvedImport
+from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
