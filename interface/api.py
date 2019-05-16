@@ -374,7 +374,7 @@ def identity_backup(destination_filepath):
     from system import bpio
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
-    # TextToSave = strng.to_text(my_id.getLocalIDURL()) + u"\n" + key.MyPrivateKey()
+    # TextToSave = strng.to_text(my_id.getLocalID()) + u"\n" + key.MyPrivateKey()
     TextToSave = ''
     for id_source in my_id.getLocalIdentity().getSources():
         TextToSave += strng.to_text(id_source) + u'\n'
@@ -1722,9 +1722,9 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
         for key_id in shared_access_coordinator.list_active_shares():
             _glob_id = global_id.ParseGlobalID(key_id)
             to_be_listed = False
-            if include_mine and _glob_id['idurl'] == my_id.getLocalIDURL():
+            if include_mine and _glob_id['idurl'] == my_id.getLocalID():
                 to_be_listed = True
-            if include_granted and _glob_id['idurl'] != my_id.getLocalIDURL():
+            if include_granted and _glob_id['idurl'] != my_id.getLocalID():
                 to_be_listed = True
             if not to_be_listed:
                 continue
@@ -1739,9 +1739,9 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
             continue
         _glob_id = global_id.ParseGlobalID(key_id)
         to_be_listed = False
-        if include_mine and _glob_id['idurl'] == my_id.getLocalIDURL():
+        if include_mine and _glob_id['idurl'] == my_id.getLocalID():
             to_be_listed = True
-        if include_granted and _glob_id['idurl'] != my_id.getLocalIDURL():
+        if include_granted and _glob_id['idurl'] != my_id.getLocalID():
             to_be_listed = True
         if not to_be_listed:
             continue

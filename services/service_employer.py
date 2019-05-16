@@ -161,7 +161,7 @@ class EmployerService(LocalService):
             json_payload={
                 'space': 'family_member',
                 'type': 'supplier_position',
-                'customer_idurl': my_id.getLocalIDURL(),
+                'customer_idurl': my_id.getLocalID(),
                 'customer_ecc_map': eccmap.Current().name,
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,

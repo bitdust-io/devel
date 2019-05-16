@@ -563,7 +563,7 @@ class SupplierService(LocalService):
         routed_packet = signed.Packet(
             Command=commands.Data(),
             OwnerID=stored_packet.OwnerID,
-            CreatorID=my_id.getLocalIDURL(),
+            CreatorID=my_id.getLocalID(),
             PacketID=stored_packet.PacketID,
             Payload=stored_packet.Serialize(),
             RemoteID=recipient_idurl,

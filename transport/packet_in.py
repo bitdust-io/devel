@@ -164,6 +164,10 @@ def history():
 
 
 def process(newpacket, info):
+    """
+    Main entry point where all incoming signed packets are coming from remote peers.
+    The main aspect here is to "authenticate" remote node - need to know it identity.
+    """
     from p2p import p2p_service
     from userid import my_id
     if not driver.is_on('service_p2p_hookups'):
@@ -183,7 +187,7 @@ def process(newpacket, info):
             newpacket.Command, newpacket.PacketID, info.bytes_received,
             global_id.UrlToGlobalID(info.sender_idurl), info.transfer_id), log_name='packet', showtime=True)
     if newpacket.Command == commands.Identity():
-        if newpacket.RemoteID != my_id.getLocalIDURL():
+        if newpacket.RemoteID != my_id.getLocalID():
             if _Debug:
                 lg.out(_DebugLevel, '    incoming Identity is routed to another user')
             if not p2p_service.Identity(newpacket, send_ack=False):
@@ -211,6 +215,9 @@ def process(newpacket, info):
 
 
 def handle(newpacket, info):
+    """
+    Actually process incoming packet. Here we can be sure that owner/creator of the packet is identified.
+    """
     from transport import packet_out
     handled = False
     # check that signed by a contact of ours

@@ -235,7 +235,7 @@ class SupplierConnector(automat.Automat):
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
             num_suppliers = -1
-            if self.customer_idurl == my_id.getLocalIDURL():
+            if self.customer_idurl == my_id.getLocalID():
                 num_suppliers = settings.getSuppliersNumberDesired()
             else:
                 known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map')
@@ -522,7 +522,7 @@ class SupplierConnector(automat.Automat):
 #                 json_payload={
 #                     'space': 'family_member',
 #                     'type': 'supplier_position',
-#                     'customer_idurl': my_id.getLocalIDURL(),
+#                     'customer_idurl': my_id.getLocalID(),
 #                     'customer_ecc_map': self._last_known_ecc_map,
 #                     'supplier_idurl': self.supplier_idurl,
 #                     'supplier_position': self._last_known_family_position,

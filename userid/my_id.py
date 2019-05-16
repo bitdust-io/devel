@@ -161,15 +161,6 @@ def getLocalID():
     return _LocalIDURL
 
 
-def getLocalIDURL():
-    """
-    Returns my IDURL.
-    Just an alias for now...
-    # TODO: deprecate getLocalID() in favor of getLocalIDURL()
-    """
-    return getLocalID()
-
-
 def getIDName():
     """
     Return my account name, this is a filename part of IDURL without '.xml'.
@@ -237,6 +228,8 @@ def saveLocalIdentity():
     Do sign the identity than serialize to write to the file.
     """
     global _LocalIdentity
+    global _LocalIDURL
+    global _LocalName
     if not isLocalIdentityReady():
         lg.warn("ERROR local identity not exist!")
         return False
@@ -247,6 +240,8 @@ def saveLocalIdentity():
     if not _LocalIdentity.Valid():
         lg.err('local identity is not valid')
         return False
+    _LocalIDURL = None
+    _LocalName = None
     xmlid = _LocalIdentity.serialize(as_text=True)
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     bpio.WriteTextFile(filename, xmlid)
@@ -260,11 +255,15 @@ def forgetLocalIdentity():
     """
     """
     global _LocalIdentity
+    global _LocalIDURL
+    global _LocalName
     if not isLocalIdentityReady():
         lg.out(2, "my_id.forgetLocalIdentity ERROR localidentity not exist!")
         return False
     lg.out(6, "my_id.saveLocalIdentity")
     _LocalIdentity = None
+    _LocalIDURL = None
+    _LocalName = None
     events.send('local-identity-cleaned', dict())
     return True
 

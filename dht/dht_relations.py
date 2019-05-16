@@ -90,7 +90,7 @@ def read_customer_suppliers(customer_idurl):
             'publisher_idurl': _publisher_idurl,
             'timestamp': _timestamp,
         })
-        if customer_idurl == my_id.getLocalIDURL():
+        if customer_idurl == my_id.getLocalID():
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers   skip caching my own suppliers list received from DHT: %s' % ret)
         else:
@@ -120,7 +120,7 @@ def read_customer_suppliers(customer_idurl):
 
 
 def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher_idurl=None, ):
-    if customer_idurl == my_id.getLocalIDURL():
+    if customer_idurl == my_id.getLocalID():
         lg.warn('skip writing my own suppliers list which suppose to be written to DHT')
     else:
         contactsdb.set_suppliers(suppliers_list, customer_idurl=customer_idurl)

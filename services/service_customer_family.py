@@ -63,7 +63,7 @@ class SupplierRelationsService(LocalService):
         for customer_idurl in contactsdb.customers():
             if not customer_idurl:
                 continue
-            if customer_idurl == my_id.getLocalIDURL():
+            if customer_idurl == my_id.getLocalID():
                 lg.warn('skipping my own identity')
                 continue
             fm = family_member.by_customer_idurl(customer_idurl)
@@ -72,7 +72,7 @@ class SupplierRelationsService(LocalService):
             fm.automat('init')
             local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             fm.automat('family-join', {
-                'supplier_idurl': my_id.getLocalIDURL(),
+                'supplier_idurl': my_id.getLocalID(),
                 'ecc_map': local_customer_meta_info.get('ecc_map'),
                 'position': local_customer_meta_info.get('position', -1),
                 'family_snapshot': local_customer_meta_info.get('family_snapshot'),
@@ -105,7 +105,7 @@ class SupplierRelationsService(LocalService):
         else:
             lg.warn('family_member() instance already exists, but new customer just accepted %s' % customer_idurl)
         fm.automat('family-join', {
-            'supplier_idurl': my_id.getLocalIDURL(),
+            'supplier_idurl': my_id.getLocalID(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position', -1),
             'family_snapshot': evt.data.get('family_snapshot'),
@@ -116,7 +116,7 @@ class SupplierRelationsService(LocalService):
         from supplier import family_member
         from userid import my_id
         customer_idurl = evt.data['idurl']
-        if customer_idurl == my_id.getLocalIDURL():
+        if customer_idurl == my_id.getLocalID():
             lg.warn('skipping my own identity')
             return
         if evt.data.get('position') is None:
@@ -127,7 +127,7 @@ class SupplierRelationsService(LocalService):
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
             return
         fm.automat('family-join', {
-            'supplier_idurl': my_id.getLocalIDURL(),
+            'supplier_idurl': my_id.getLocalID(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position'),
             'family_snapshot': evt.data.get('family_snapshot'),
@@ -138,7 +138,7 @@ class SupplierRelationsService(LocalService):
         from supplier import family_member
         from userid import my_id
         customer_idurl = evt.data['idurl']
-        if customer_idurl == my_id.getLocalIDURL():
+        if customer_idurl == my_id.getLocalID():
             lg.warn('skipping my own identity')
             return
         fm = family_member.by_customer_idurl(customer_idurl)
@@ -146,7 +146,7 @@ class SupplierRelationsService(LocalService):
             lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
             return
         fm.automat('family-leave', {
-            'supplier_idurl': my_id.getLocalIDURL(),
+            'supplier_idurl': my_id.getLocalID(),
         })
 
     def _on_incoming_contacts_packet(self, newpacket, info):
@@ -175,7 +175,7 @@ class SupplierRelationsService(LocalService):
             except:
                 lg.exc()
                 return False
-            if customer_idurl == my_id.getLocalIDURL():
+            if customer_idurl == my_id.getLocalID():
                 lg.warn('received contacts for my own customer family')
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)
@@ -203,7 +203,7 @@ class SupplierRelationsService(LocalService):
             except:
                 lg.exc()
                 return False
-            if customer_idurl == my_id.getLocalIDURL():
+            if customer_idurl == my_id.getLocalID():
                 lg.warn('received contacts for my own customer family')
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)

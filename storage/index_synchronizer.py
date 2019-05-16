@@ -303,7 +303,7 @@ class IndexSynchronizer(automat.Automat):
             path=settings.BackupIndexFileName(),
         )
         # packetID = settings.BackupIndexFileName()
-        localID = my_id.getLocalIDURL()
+        localID = my_id.getLocalID()
         for supplierId in contactsdb.suppliers():
             if not supplierId:
                 continue
@@ -348,7 +348,7 @@ class IndexSynchronizer(automat.Automat):
         )
         self.sending_suppliers.clear()
         self.sent_suppliers_number = 0
-        localID = my_id.getLocalIDURL()
+        localID = my_id.getLocalID()
         b = encrypted.Block(
             CreatorID=localID,
             BackupID=packetID,

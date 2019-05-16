@@ -235,15 +235,15 @@ def search_by_response_packet(newpacket, proto=None, host=None):
             # outgoing packet was addressed to another node, so that means we need to expect response from another node also
             expected_recipient.append(p.remote_idurl)
         matched = False
-        if incoming_owner_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_remote_idurl:
+        if incoming_owner_idurl in expected_recipient and my_id.getLocalID() == incoming_remote_idurl:
             if _Debug:
                 lg.out(_DebugLevel, '    matched with incoming owner: %s' % expected_recipient)
             matched = True
-        if incoming_creator_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_remote_idurl:
+        if incoming_creator_idurl in expected_recipient and my_id.getLocalID() == incoming_remote_idurl:
             if _Debug:
                 lg.out(_DebugLevel, '    matched with incoming creator: %s' % expected_recipient)
             matched = True
-        if incoming_remote_idurl in expected_recipient and my_id.getLocalIDURL() == incoming_owner_idurl and commands.Data() == newpacket.Command:
+        if incoming_remote_idurl in expected_recipient and my_id.getLocalID() == incoming_owner_idurl and commands.Data() == newpacket.Command:
             if _Debug:
                 lg.out(_DebugLevel, '    matched my own incoming Data with incoming remote: %s' % expected_recipient)
             matched = True

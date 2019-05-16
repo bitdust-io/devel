@@ -209,7 +209,7 @@ class DataSender(automat.Automat):
         backup_matrix.ReadLocalFiles()
         progress = 0
         for customer_idurl in contactsdb.known_customers():
-            if customer_idurl != my_id.getLocalIDURL():
+            if customer_idurl != my_id.getLocalID():
                 # TODO: check that later
                 if _Debug:
                     lg.out(_DebugLevel + 6, '    skip sending to another customer: %r' % customer_idurl)
