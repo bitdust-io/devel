@@ -42,7 +42,7 @@ User can decide to put his identity file on his own host, or he can use some ano
 All identity files is signed with user's Key and client code should verify signatures.
 Even if someone tried to fake my identity - this will be refused by other nodes in the network.
 
-Example in http://id.bitdust.io/veselin.xml
+Example in http://seed.bitdust.io/veselin.xml
 
 Could have info just be XML on a web page.  So an Identity could be a URL.
 If we do this, then we get the scaling of DNS for free.
@@ -108,7 +108,7 @@ On the other hand, this might be a good way to get into the certificate-authorit
 
 Having XML on a web site means we can start before we
 really have identity server code.  Also means it is
-easy to grok and debug.
+easy to grow and debug.
 
 As long as identity server is just some CGI that we can run on
 any ISP anywhere (pair.com etc), and users always use 3 identity servers,
@@ -119,13 +119,19 @@ Identity's are signed and have a revision number, so an identity
 server can pass on an update that it gets to other servers listed
 for that identity (in case there is network partition funnyness)
 to help keep all of them updated.
+
+But we really want actually people to run own identity servers and not rely on us.
+ID server is a first target to external hacker to attack actually if he wants to brake/block the network.
+Also ownership is important - 1000 servers owned by one company can be easily attacked via "legal/court" order.
+But 1000 servers owned and maintained by 1000 people in 100 different countries is completely different scenario.
+So more distribution of ID servers we will have in BitDust - more secured and protected network will become.
 """
 
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
-from six.moves import range
+from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -156,6 +162,7 @@ from lib import nameurl
 from crypt import key
 
 from userid import global_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -176,7 +183,7 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 #------------------------------------------------------------------------------
 
 
-class identity:
+class identity(object):
     """
     We are passed an XML version of an identity and make an Identity. Also can
     construct an Identity by providing all fields. The fields is:
@@ -216,7 +223,9 @@ class identity:
                  xmlsrc=None,
                  filename=b''):
 
-        self.sources = sources
+        self.sources = []
+        if sources:
+            self.setSources(sources)
         self.contacts = contacts
         self.certificates = certificates
         self.scrubbers = scrubbers
@@ -329,7 +338,7 @@ class identity:
         """
         sep = b'-'
         hsh = b''
-        hsh += sep + sep.join(self.sources)
+        hsh += sep + sep.join(map(strng.to_bin, self.sources))
         hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
         hsh += sep + sep.join(self.scrubbers)
@@ -451,7 +460,7 @@ class identity:
         """
         return {
             'name': self.getIDName(),
-            'idurl': self.getIDURL(),
+            'idurl': self.getIDURL().to_text(),
             'global_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
             'sources': [strng.to_text(i) for i in self.getSources()],
             'contacts': [strng.to_text(i) for i in self.getContacts()],
@@ -543,7 +552,7 @@ class identity:
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
                             if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(strng.to_bin(xsource.wholeText.strip()))
+                                self.sources.append(id_url.ID_URL(xsource.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'contacts':
                     for xcontacts in xsection.childNodes:
@@ -764,6 +773,18 @@ class identity:
             return None
         return nameurl.UrlParse(c)[0]
 
+    def getPublicKey(self):
+        """
+        Returns public key as binary string.
+        """
+        return self.publickey
+
+    def getSignature(self):
+        """
+        Returns signature as binary string.
+        """
+        return self.signature
+
     def getIP(self, proto=None):
         """
         A smart way to get the IP address of the user.
@@ -809,8 +830,8 @@ class identity:
         """
         """
         self.sources = []
-        for sourc in sources_list:
-            self.sources.append(strng.to_bin(sourc))
+        for source in sources_list:
+            self.sources.append(id_url.ID_URL(source))
 
     def setContacts(self, contacts_list):
         """

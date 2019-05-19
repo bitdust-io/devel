@@ -104,9 +104,13 @@ def shutdown(x=None):
         from interface import api_rest_http_server
         from interface import ftp_server
         from userid import my_id
+        from userid import id_url
+        from contacts import identitydb
         from crypt import my_keys
         my_keys.shutdown()
         my_id.shutdown()
+        identitydb.shutdown()
+        id_url.shutdown()
         ftp_server.shutdown()
         api_jsonrpc_server.shutdown()
         api_rest_http_server.shutdown()

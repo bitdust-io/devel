@@ -49,6 +49,7 @@ from lib import nameurl
 from lib import strng
 
 from userid import identity
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -87,10 +88,14 @@ def init():
     Check to exist and create a folder to keep all cached identities.
     """
     lg.out(4, "identitydb.init")
-    iddir = settings.IdentityCacheDir()
-    if not os.path.exists(iddir):
-        lg.out(8, 'identitydb.init create folder %r' % iddir)
-        bpio._dir_make(iddir)
+    id_cache_dir = settings.IdentityCacheDir()
+    if not os.path.exists(id_cache_dir):
+        lg.out(8, 'identitydb.init create folder %r' % id_cache_dir)
+        bpio._dir_make(id_cache_dir)
+    # make sure to read and cache all known identities at startup
+    for id_filename in os.listdir(id_cache_dir):
+        idurl = nameurl.FilenameUrl(id_filename)
+        get(idurl)
 
 
 def shutdown():
@@ -203,6 +208,8 @@ def idset(idurl, id_obj):
             pass
     # TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
     fire_cache_updated_callbacks(single_item=(identid, idurl, id_obj))
+    # now make sure we properly handle changes in the sources of that identity
+    id_url.identity_cached(id_obj)
 
 
 def idget(idurl):
@@ -257,7 +264,7 @@ def get(idurl):
     """
     A smart way to get identity from cache.
 
-    If not cached in memory but found on disk - will cache from disk.
+    If not cached in memory but found locally - read it from disk.
     """
     idurl = strng.to_bin(idurl)
     if has_idurl(idurl):

@@ -34,7 +34,7 @@ module:: message_db
 
 from __future__ import absolute_import
 from __future__ import print_function
-from six.moves import map
+from six.moves import map  # @UnresolvedImport
 import six
 
 #------------------------------------------------------------------------------
@@ -46,7 +46,6 @@ _DebugLevel = 6
 
 import os
 import json
-import shutil
 
 #------------------------------------------------------------------------------
 

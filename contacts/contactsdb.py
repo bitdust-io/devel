@@ -32,7 +32,7 @@ A low level methods to store list of contacts locally.:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from six.moves import range
+from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -56,6 +56,7 @@ from system import local_fs
 
 from main import settings
 
+from userid import id_url
 from userid import my_id
 from userid import global_id
 
@@ -298,7 +299,7 @@ def set_customers(idlist):
 
 def update_customers(idslist):
     """
-    Hight-level method to set customers ID's list.
+    High-level method to set customers ID's list.
     Executes required callbacks.
     """
     global _CustomersChangedCallback

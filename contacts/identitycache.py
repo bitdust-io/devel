@@ -83,9 +83,8 @@ def init():
     if _Debug:
         lg.out(4, 'identitycache.init')
     if False:
-        # TODO: added settings here
+        # TODO: add settings here
         identitydb.clear()
-    identitydb.init()
 
 
 def shutdown():
@@ -441,10 +440,10 @@ def _test():
 
     def _resp(src):
         print(src)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
     immediatelyCaching(sys.argv[1]).addBoth(_resp)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
     shutdown()
 
 #------------------------------------------------------------------------------

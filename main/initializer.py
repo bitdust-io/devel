@@ -369,8 +369,12 @@ class Initializer(automat.Automat):
         from system import tmpfile
         from system import run_upnpc
         from raid import eccmap
+        from userid import id_url
         from userid import my_id
+        from contacts import identitydb
         from crypt import my_keys
+        id_url.init()
+        identitydb.init()
         my_id.init()
         if settings.enableWebStream():
             from logs import weblog

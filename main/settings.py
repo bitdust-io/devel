@@ -744,6 +744,14 @@ def TempDir():
     return os.path.join(BaseDir(), "temp")
 
 
+def IdentityHistoryDir():
+    """
+    See ``lib.id_url`` module, this is a place to store all known idurl's to match
+    "rotated" identies together.
+    """
+    return os.path.join(BaseDir(), "identityhistory")
+
+
 def IdentityCacheDir():
     """
     See ``lib.identitycache`` module, this is a place to store user's identity

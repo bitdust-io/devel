@@ -279,10 +279,10 @@ class ProxySender(automat.Automat):
             return None
         # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
         json_payload = {
-            'f': my_id.getLocalID(),    # from
-            't': outpacket.RemoteID,    # to
-            'w': wide,                  # wide
-            'p': raw_data,              # payload
+            'f': my_id.getLocalID().to_bin(),    # from
+            't': outpacket.RemoteID.to_bin(),    # to
+            'w': wide,                           # wide
+            'p': raw_data,                       # payload
         }
         raw_bytes = serialization.DictToBytes(json_payload)
         block = encrypted.Block(

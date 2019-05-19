@@ -247,7 +247,7 @@ def NormalizeGlobalID(inp, detect_version=False):
     else:
         g = ParseGlobalID(inp, detect_version=detect_version)
     if not g['idurl']:
-        g['idurl'] = my_id.getLocalID()
+        g['idurl'] = my_id.getLocalID().to_bin()
     if not g['customer']:
         g['customer'] = UrlToGlobalID(g['idurl'])
     if not g['user']:

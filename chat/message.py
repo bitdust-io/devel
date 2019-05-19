@@ -71,6 +71,7 @@ from crypt import my_keys
 
 from contacts import identitycache
 
+from userid import id_url
 from userid import my_id
 from userid import global_id
 
