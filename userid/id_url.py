@@ -50,7 +50,7 @@ import six
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -68,7 +68,6 @@ from lib import strng
 
 from main import settings
 
-from userid import identity
 from userid import global_id
 
 #------------------------------------------------------------------------------
@@ -90,6 +89,7 @@ def init():
     global _KnownIDURLs
     global _MergedIDURLs
     global _Ready
+    from userid import identity
     if _Debug:
         lg.out(_DebugLevel, "id_url.init")
     _IdentityHistoryDir = settings.IdentityHistoryDir()
@@ -152,6 +152,7 @@ def identity_cached(id_obj):
     global _KnownUsers
     global _KnownIDURLs
     global _MergedIDURLs
+    from userid import identity
     pub_key = id_obj.getPublicKey()
     user_name = id_obj.getIDName()
     if _Debug:
@@ -212,33 +213,51 @@ def identity_cached(id_obj):
 class ID_URL(object):
     
     def __init__(self, idurl):
+        if idurl in [None, 'None', '', b'None', b'', ]:
+            idurl = b''
         self.current = strng.to_bin(idurl.strip())
         self.current_as_string = strng.to_text(self.current)
-        self.current_id = global_id.idurl2glob(idurl)
+        self.current_id = global_id.idurl2glob(self.current)
         if _Debug:
-            lg.out(_DebugLevel, 'NEW ID_URL: %r' % idurl)
+            lg.out(_DebugLevel, 'NEW ID_URL: %r with id=%r' % (self.current, id(self)))
 
     def __del__(self):
-        if _Debug:
-            lg.out(_DebugLevel, 'DELETED ID_URL: %r' % self.current)
+        try:
+            if _Debug:
+                lg.out(_DebugLevel, 'DELETED ID_URL: %r with id=%r' % (self.current, id(self)))
+        except:
+            lg.exc()
 
     def __eq__(self, idurl):
-        if _Debug:
-            lg.args(_DebugLevel, idurl=idurl, current=self.current)
+        # first compare as strings
         if isinstance(idurl, ID_URL) and idurl.current == self.current:
+            if _Debug:
+                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
             return True
         if isinstance(idurl, six.binary_type) and idurl == self.current:
+            if _Debug:
+                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
             return True
         if isinstance(idurl, six.text_type) and strng.to_bin(idurl) == self.current:
+            if _Debug:
+                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
             return True
-        merged_list = self._merged_idurls()
-        if isinstance(idurl, six.binary_type) and idurl in merged_list:
-            return True
-        if isinstance(idurl, six.text_type) and strng.to_bin(idurl) in merged_list:
-            return True
-        if isinstance(idurl, ID_URL) and idurl.current in merged_list:
-            return True
-        return False
+        # now compare based on public key
+        if not isinstance(idurl, ID_URL):
+            idurl = ID_URL(idurl)
+        result = idurl.to_public_key() == self.to_public_key()
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, current=self.current, result=result)
+        return result 
+
+    def __hash__(self):
+        # this trick should make `idurl in some_dictionary` check work correctly
+        # if idurl1 and idurl2 are different sources of same identity they both must be matching
+        pub_key = self.to_public_key()
+        hsh = pub_key.__hash__()
+        if _Debug:
+            lg.args(_DebugLevel, current=self.current, hash=hsh)
+        return hsh
 
     def __repr__(self):
         if _Debug:
@@ -255,15 +274,10 @@ class ID_URL(object):
             lg.args(_DebugLevel, current=self.current)
         return self.current
 
-    def __hash__(self):
-        if _Debug:
-            lg.args(_DebugLevel, current=self.current)
-        return self.current.__hash__()
-
     def strip(self):
         if _Debug:
             lg.args(_DebugLevel, current=self.current_as_string)
-        return self.current_as_string
+        return self.current
 
     def to_id(self):
         if _Debug:
@@ -280,18 +294,13 @@ class ID_URL(object):
             lg.args(_DebugLevel, current=self.current)
         return self.current
 
-    def _merged_idurls(self):
+    def to_public_key(self):
         global _KnownIDURLs
-        global _MergedIDURLs
-        global _Ready
-        if not _Ready:
-            return []
+        if _Debug:
+            lg.args(_DebugLevel, current=self.current)
+        if self.current in [None, 'None', '', b'None', b'', ]:
+            return b''
         if self.current not in _KnownIDURLs:
             raise Exception('unknown idurl: %r' % self.current)
         pub_key = _KnownIDURLs[self.current]
-        if pub_key not in _MergedIDURLs:
-            raise Exception('unknown public key for idurl %r' % self.current)
-        merged_list = _MergedIDURLs[pub_key]
-        if _Debug:
-            lg.args(_DebugLevel, idurl=self.current, merged=merged_list)
-        return merged_list
+        return pub_key
