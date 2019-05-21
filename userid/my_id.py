@@ -57,6 +57,7 @@ from lib import strng
 from crypt import key
 
 from userid import identity
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -480,17 +481,16 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     if not name:
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
     lg.out(4, 'my_id.buildDefaultIdentity: %s %s' % (name, ip))
-    # create a new identity object
-    # it is stored in memory and another copy on disk drive
-    ident = identity.identity(xmlsrc=identity.default_identity_src)
     # this is my IDURL address
     # you can have many IDURL locations for same identity
     # just need to keep all them synchronized
     # this is identity propagate procedure, see p2p/propagate.py
     if len(idurls) == 0:
         idurls.append(b'http://127.0.0.1/%s.xml' % strng.to_bin(name.lower()))
-    for idurl in idurls:
-        ident.sources.append(strng.to_bin(idurl.strip()))
+    # create a new identity object
+    # it is stored in memory and another copy will be located on disk drive
+    ident = identity.identity(xmlsrc=identity.default_identity_src)
+    ident.setSources(idurls)
     # create a full list of needed transport methods
     # to be able to accept incoming traffic from other nodes
     new_contacts, new_order = buildProtoContacts(ident)

@@ -63,6 +63,7 @@ from contacts import identitycache
 from contacts import contactsdb
 
 from userid import my_id
+from userid import id_url
 
 from transport import callback
 
@@ -268,7 +269,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        self.target_idurl = strng.to_bin(args[0])
+        self.target_idurl = id_url.ID_URL(args[0])
 
     def doPopCandidate(self, *args, **kwargs):
         """

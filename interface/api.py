@@ -390,6 +390,7 @@ def identity_backup(destination_filepath):
 
 def identity_recover(private_key_source, known_idurl=None):
     from userid import my_id
+    from userid import id_url
     from userid import id_restorer
 
     if not private_key_source:
@@ -404,7 +405,7 @@ def identity_recover(private_key_source, known_idurl=None):
         for i in range(len(lines)):
             line = lines[i]
             if not line.startswith('-----BEGIN RSA PRIVATE KEY-----'):
-                idurl_list.append(strng.to_bin(line.strip()))
+                idurl_list.append(id_url.ID_URL(line))
                 continue
             pk_source = '\n'.join(lines[i:])
             break
@@ -1793,7 +1794,8 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     if not key_id.startswith('share_'):
         return ERROR('invalid share name')
     from userid import global_id
-    remote_idurl = strng.to_bin(trusted_remote_user)
+    from userid import id_url
+    remote_idurl = id_url.ID_URL(trusted_remote_user)
     if trusted_remote_user.count('@'):
         glob_id = global_id.ParseGlobalID(trusted_remote_user)
         remote_idurl = glob_id['idurl']

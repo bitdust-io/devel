@@ -160,9 +160,9 @@ class Packet(object):
         try:
             stufftosum += strng.to_bin(self.Command)
             stufftosum += sep
-            stufftosum += strng.to_bin(self.OwnerID)
+            stufftosum += self.OwnerID.to_bin()
             stufftosum += sep
-            stufftosum += strng.to_bin(self.CreatorID)
+            stufftosum += self.CreatorID.to_bin()
             stufftosum += sep
             stufftosum += strng.to_bin(self.PacketID)
             stufftosum += sep
@@ -170,7 +170,7 @@ class Packet(object):
             stufftosum += sep
             stufftosum += strng.to_bin(self.Payload)
             stufftosum += sep
-            stufftosum += strng.to_bin(self.RemoteID)
+            stufftosum += self.RemoteID.to_bin()
             if self.KeyID:
                 stufftosum += sep
                 stufftosum += strng.to_bin(self.KeyID)

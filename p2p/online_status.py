@@ -98,6 +98,7 @@ from p2p import propagate
 from transport import callback
 
 from userid import my_id
+from userid import id_url
 from userid import global_id
 
 #------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ def check_create(idurl):
     """
     if idurl in [None, 'None', '', b'None', b'', ]:
         return False
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if idurl not in list(_OnlineStatusDict.keys()):
         A(idurl, 'init')
         lg.info('online_status() for %r was not found, made a new instance with state OFFLINE' % idurl)
@@ -175,7 +176,7 @@ def isKnown(idurl):
         return False
     if idurl in [None, 'None', '', b'None', b'', ]:
         return False
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     return idurl in list(_OnlineStatusDict.keys())
 
 
@@ -188,7 +189,7 @@ def isOnline(idurl):
         return False
     if idurl in [None, 'None', '', b'None', b'', ]:
         return False
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if not isKnown(idurl):
         return False
     return A(idurl).state in ['CONNECTED', 'PING?', ]
@@ -203,7 +204,7 @@ def isOffline(idurl):
         return True
     if idurl in [None, 'None', '', b'None', b'', ]:
         return True
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if not isKnown(idurl):
         return True
     return A(idurl).state == 'OFFLINE'
@@ -218,7 +219,7 @@ def isCheckingNow(idurl):
         return False
     if idurl in [None, 'None', '', b'None', b'', ]:
         return False
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if not isKnown(idurl):
         return False
     return A(idurl).state == 'PING'
@@ -231,7 +232,7 @@ def getInstance(idurl, autocreate=True):
         return None
     if idurl in [None, 'None', '', b'None', b'', ]:
         return None
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if not isKnown(idurl) and not autocreate:
         return None
     check_create(idurl)
@@ -252,7 +253,7 @@ def getCurrentState(idurl):
         return None
     if idurl in [None, 'None', '', b'None', b'', ]:
         return None
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if not isKnown(idurl):
         return None
     return A(idurl).state
@@ -267,7 +268,7 @@ def getStatusLabel(idurl):
         return '?'
     if idurl in [None, 'None', '', b'None', b'', ]:
         return '?'
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if not isKnown(idurl):
         return '?'
     return stateToLabel(A(idurl).state)
@@ -448,7 +449,7 @@ def A(idurl, event=None, *args, **kwargs):
     """
     global _ShutdownFlag
     global _OnlineStatusDict
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if idurl not in _OnlineStatusDict:
         if _ShutdownFlag:
             return None

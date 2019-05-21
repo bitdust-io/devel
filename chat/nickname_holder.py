@@ -60,6 +60,7 @@ from lib import strng
 from main import settings
 
 from userid import my_id
+from userid import id_url
 
 from dht import dht_service
 from dht import dht_records
@@ -304,7 +305,7 @@ class NicknameHolder(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            v = strng.to_bin(value['idurl'])
+            v = id_url.ID_URL(value['idurl'])
         except:
             lg.out(8, '%r' % value)
             lg.exc()

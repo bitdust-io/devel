@@ -143,6 +143,7 @@ from customer import supplier_connector
 from raid import eccmap
 
 from userid import my_id
+from userid import id_url
 
 #-------------------------------------------------------------------------
 
@@ -614,7 +615,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        new_idurl = strng.to_bin(args[0])
+        new_idurl = id_url.ID_URL(args[0])
         family_position = kwargs.get('family_position')
         current_suppliers = list(contactsdb.suppliers())
         old_idurl = None

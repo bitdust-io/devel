@@ -155,6 +155,7 @@ class SupplierRelationsService(LocalService):
         from lib import strng
         from supplier import family_member
         from userid import my_id
+        from userid import id_url
         try:
             json_payload = serialization.BytesToDict(newpacket.Payload, keys_to_text=True)
             contacts_type = strng.to_text(json_payload['type'])
@@ -168,9 +169,9 @@ class SupplierRelationsService(LocalService):
 
         if contacts_type == 'suppliers_list':
             try:
-                customer_idurl = strng.to_bin(json_payload['customer_idurl'])
+                customer_idurl = id_url.ID_URL(json_payload['customer_idurl'])
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
-                suppliers_list = list(map(strng.to_bin, json_payload['suppliers_list']))
+                suppliers_list = list(map(id_url.ID_URL, json_payload['suppliers_list']))
                 transaction_revision = json_payload.get('transaction_revision')
             except:
                 lg.exc()
@@ -195,9 +196,9 @@ class SupplierRelationsService(LocalService):
 
         elif contacts_type == 'supplier_position':
             try:
-                customer_idurl = strng.to_bin(json_payload['customer_idurl'])
+                customer_idurl = id_url.ID_URL(json_payload['customer_idurl'])
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
-                supplier_idurl = strng.to_bin(json_payload['supplier_idurl'])
+                supplier_idurl = id_url.ID_URL(json_payload['supplier_idurl'])
                 supplier_position = json_payload['supplier_position']
                 family_snapshot = json_payload.get('family_snapshot')
             except:

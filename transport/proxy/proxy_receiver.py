@@ -105,6 +105,7 @@ from transport.proxy import proxy_interface
 from userid import my_id
 from userid import identity
 from userid import global_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -341,7 +342,7 @@ class ProxyReceiver(automat.Automat):
         """
         s = config.conf().getString('services/proxy-transport/current-router').strip()
         try:
-            self.router_idurl = strng.to_bin(s.split(' ')[0])
+            self.router_idurl = id_url.ID_URL(s.split(' ')[0])
         except:
             lg.exc()
         if _Debug:
@@ -368,7 +369,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self.router_idurl = strng.to_bin(args[0])
+        self.router_idurl = id_url.ID_URL(args[0])
         self.router_identity = None
         self.router_proto_host = None
         self.request_service_packet_id = []

@@ -153,13 +153,13 @@ def has_idurl(idurl):
     Return True if that IDURL already cached.
     """
     global _IdentityCache
-    return strng.to_bin(idurl) in _IdentityCache
+    return id_url.ID_URL(idurl) in _IdentityCache
 
 
 def has_file(idurl):
     """
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
@@ -180,7 +180,7 @@ def idset(idurl, id_obj):
     global _IdentityCacheIDs
     global _IdentityCacheCounter
     global _IdentityCacheModifiedTime
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if not has_idurl(idurl):
         lg.out(6, 'identitydb.idset new identity: %r' % idurl)
     _IdentityCache[idurl] = id_obj
@@ -217,7 +217,7 @@ def idget(idurl):
     Get identity from cache.
     """
     global _IdentityCache
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     return _IdentityCache.get(idurl, None)
 
 
@@ -233,7 +233,7 @@ def idremove(idurl):
     global _Contact2IDURL
     global _IDURL2Contacts
     global _IPPort2IDURL
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     idobj = _IdentityCache.pop(idurl, None)
     identid = _IdentityCacheIDs.pop(idurl, None)
     _IdentityCacheModifiedTime.pop(idurl, None)
@@ -256,7 +256,7 @@ def idcontacts(idurl):
     A fast way to get identity contacts.
     """
     global _IDURL2Contacts
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     return list(_IDURL2Contacts.get(idurl, set()))
 
 
@@ -266,7 +266,7 @@ def get(idurl):
 
     If not cached in memory but found locally - read it from disk.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if has_idurl(idurl):
         return idget(idurl)
     else:
@@ -294,7 +294,7 @@ def get(idurl):
 
 
 def get_filename(idurl):
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
@@ -326,7 +326,7 @@ def update(idurl, xml_src):
     PREPRO need to check that date or version is after old one so not
     vulnerable to replay attacks.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     try:
         newid = identity.identity(xmlsrc=xml_src)
     except:
@@ -372,7 +372,7 @@ def remove(idurl):
     """
     Top method to remove identity from cache - also remove local file.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
     if os.path.isfile(filename):
         lg.out(6, "identitydb.remove file %r" % filename)
@@ -399,7 +399,7 @@ def get_local_ip(idurl):
     This is to get a local IP of some user from the index.
     """
     global _LocalIPs
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     return _LocalIPs.get(idurl, None)
 
 
@@ -408,7 +408,7 @@ def has_local_ip(idurl):
     To check for some known local IP of given user.
     """
     global _LocalIPs
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     return idurl in _LocalIPs
 
 
@@ -427,7 +427,7 @@ def get_last_modified_time(idurl):
     """
     """
     global _IdentityCacheModifiedTime
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     return _IdentityCacheModifiedTime.get(idurl, None)
 
 #------------------------------------------------------------------------------
@@ -437,7 +437,7 @@ def print_id(idurl):
     """
     For debug purposes.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.ID_URL(idurl)
     if has_idurl(idurl):
         idForKey = get(idurl)
         lg.out(6, str(idForKey.sources))
