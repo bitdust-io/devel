@@ -213,9 +213,14 @@ def identity_cached(id_obj):
 class ID_URL(object):
     
     def __init__(self, idurl):
-        if idurl in [None, 'None', '', b'None', b'', ]:
-            idurl = b''
-        self.current = strng.to_bin(idurl.strip())
+        self.current = b''
+        if isinstance(idurl, ID_URL):
+            self.current = idurl.current
+        else:
+            if idurl in [None, 'None', '', b'None', b'', ]:
+                self.current = b''
+            else:
+                self.current = strng.to_bin(idurl.strip())
         self.current_as_string = strng.to_text(self.current)
         self.current_id = global_id.idurl2glob(self.current)
         if _Debug:
@@ -298,7 +303,7 @@ class ID_URL(object):
         global _KnownIDURLs
         if _Debug:
             lg.args(_DebugLevel, current=self.current)
-        if self.current in [None, 'None', '', b'None', b'', ]:
+        if not self.current:
             return b''
         if self.current not in _KnownIDURLs:
             raise Exception('unknown idurl: %r' % self.current)
