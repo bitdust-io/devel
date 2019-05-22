@@ -305,7 +305,7 @@ class NicknameHolder(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            v = id_url.ID_URL(value['idurl'])
+            v = id_url.field(value['idurl'])
         except:
             lg.out(8, '%r' % value)
             lg.exc()

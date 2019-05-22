@@ -126,8 +126,8 @@ class Block(object):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getLocalID()
-        if not isinstance(self.CreatorID, id_url.ID_URL):
-            self.CreatorID = id_url.ID_URL(self.CreatorID)
+        if not isinstance(self.CreatorID, id_url.ID_URL_FIELD):
+            self.CreatorID = id_url.field(self.CreatorID)
         self.BackupID = strng.to_text(BackupID)
         self.BlockNumber = BlockNumber
         self.LastBlock = bool(LastBlock)
@@ -280,7 +280,7 @@ def Unserialize(data, decrypt_key=None):
         lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:100])
     try:
         newobject = Block(
-            CreatorID=id_url.ID_URL(dct['c']),
+            CreatorID=id_url.field(dct['c']),
             BackupID=strng.to_text(dct['b']),
             BlockNumber=dct['n'],
             LastBlock=dct['e'],

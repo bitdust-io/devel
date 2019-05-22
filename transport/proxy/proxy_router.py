@@ -271,7 +271,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, _, item, _, _, _ = args[0]
-        self.routes[id_url.ID_URL(idurl)]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
+        self.routes[id_url.field(idurl)]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
         self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
@@ -715,7 +715,7 @@ class ProxyRouter(automat.Automat):
         except:
             dct = {}
         for k, v in dct.items():
-            self.routes[id_url.ID_URL(k)] = v
+            self.routes[id_url.field(k)] = v
             ident = identity.identity(xmlsrc=v['identity'])
             if not self._is_my_contacts_present_in_identity(ident):
                 if _Debug:

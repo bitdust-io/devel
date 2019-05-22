@@ -100,17 +100,14 @@ def set_nickname(key, idurl):
     if _Debug:
         lg.args(_DebugLevel, key, idurl)
     nickname, _, pos = key.partition(':')
-    return dht_service.set_valid_data(
-        key=key,
-        json_data={
-            'type': 'nickname',
-            'timestamp': utime.get_sec1970(),
-            'idurl': idurl,
-            'nickname': nickname,
-            'position': pos,
-        },
-        rules=get_rules('nickname'),
-    )
+    json_data={
+        'type': 'nickname',
+        'timestamp': utime.get_sec1970(),
+        'idurl': idurl.to_bin(),
+        'nickname': nickname,
+        'position': pos,
+    }
+    return dht_service.set_valid_data(key=key, json_data=json_data, rules=get_rules('nickname'), )
 
 #------------------------------------------------------------------------------
 

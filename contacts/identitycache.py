@@ -372,6 +372,7 @@ def immediatelyCaching(idurl, timeout=10):
 
     def _getPageFail(x, idurl):
         global _CachingTasks
+        lg.err('identity %r cache failed with error: %r' % (idurl, x))
         result = _CachingTasks.pop(idurl)
         if result:
             result.errback(x)

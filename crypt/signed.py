@@ -105,9 +105,9 @@ class Packet(object):
         # Legal Commands are in commands.py
         self.Command = strng.to_text(Command)
         # who owns this data and pays bills - http://cate.com/id1.xml
-        self.OwnerID = id_url.ID_URL(OwnerID)
+        self.OwnerID = id_url.field(OwnerID)
         # signer - http://cate.com/id1.xml - might be an authorized scrubber
-        self.CreatorID = id_url.ID_URL(CreatorID)
+        self.CreatorID = id_url.field(CreatorID)
         # string of the above 4 "Number"s with "-" separator to uniquely identify a packet
         # on the local machine.  Can be used for filenames, and to prevent duplicates.
         self.PacketID = strng.to_text(PacketID)
@@ -118,7 +118,7 @@ class Packet(object):
         self.Payload = strng.to_bin(Payload)
         # want full IDURL for other party so troublemaker could not
         # use his packets to mess up other nodes by sending it to them
-        self.RemoteID = id_url.ID_URL(RemoteID)
+        self.RemoteID = id_url.field(RemoteID)
         # which private key to use to generate signature
         self.KeyID = strng.to_text(KeyID or my_id.getGlobalID(key_alias='master'))
         if Signature:

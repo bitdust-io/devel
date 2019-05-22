@@ -130,6 +130,7 @@ from crypt import key
 
 from userid import my_id
 from userid import identity
+from userid import id_url
 from userid import known_servers
 
 #------------------------------------------------------------------------------
@@ -609,6 +610,10 @@ class IdRegistrator(automat.Automat):
         if self.free_idurls[0].count(b'127.0.0.1'):
             externalIP = b'127.0.0.1'
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
+
+        my_id.forgetLocalIdentity()
+        my_id.eraseLocalIdentity(do_backup=True)
+        key.ForgetMyKey(erase_file=True, do_backup=True)
         key.InitMyKey()
         if not key.isMyKeyReady():
             key.GenerateNewKey()
@@ -621,6 +626,7 @@ class IdRegistrator(automat.Automat):
         my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
+        id_url.identity_cached(ident)
         self.new_identity = ident
         lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
 

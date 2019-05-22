@@ -405,7 +405,7 @@ def identity_recover(private_key_source, known_idurl=None):
         for i in range(len(lines)):
             line = lines[i]
             if not line.startswith('-----BEGIN RSA PRIVATE KEY-----'):
-                idurl_list.append(id_url.ID_URL(line))
+                idurl_list.append(id_url.field(line))
                 continue
             pk_source = '\n'.join(lines[i:])
             break
@@ -1795,7 +1795,7 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
         return ERROR('invalid share name')
     from userid import global_id
     from userid import id_url
-    remote_idurl = id_url.ID_URL(trusted_remote_user)
+    remote_idurl = id_url.field(trusted_remote_user)
     if trusted_remote_user.count('@'):
         glob_id = global_id.ParseGlobalID(trusted_remote_user)
         remote_idurl = glob_id['idurl']

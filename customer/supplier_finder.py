@@ -269,7 +269,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        self.target_idurl = id_url.ID_URL(args[0])
+        self.target_idurl = id_url.field(args[0])
 
     def doPopCandidate(self, *args, **kwargs):
         """

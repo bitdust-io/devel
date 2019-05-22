@@ -615,7 +615,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        new_idurl = id_url.ID_URL(args[0])
+        new_idurl = id_url.field(args[0])
         family_position = kwargs.get('family_position')
         current_suppliers = list(contactsdb.suppliers())
         old_idurl = None

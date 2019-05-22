@@ -301,17 +301,14 @@ class IdRestorer(automat.Automat):
             reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))  # @UndefinedVariable
             return
 
-        key.ForgetMyKey()
+        my_id.forgetLocalIdentity()
+        my_id.eraseLocalIdentity(do_backup=True)
+        key.ForgetMyKey(erase_file=True, do_backup=True)
         bpio.WriteTextFile(settings.KeyFileName(), _WorkingKey)
         try:
             key.InitMyKey()
         except:
-            key.ForgetMyKey()
-            # lg.exc()
-            try:
-                os.remove(settings.KeyFileName())
-            except:
-                pass
+            key.ForgetMyKey(erase_file=True, do_backup=False)
             reactor.callLater(0.1, self.automat, 'restore-failed', ('private key is not valid', 'red'))  # @UndefinedVariable
             return
 

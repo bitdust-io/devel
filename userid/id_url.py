@@ -210,11 +210,28 @@ def identity_cached(id_obj):
 
 #------------------------------------------------------------------------------
 
-class ID_URL(object):
+def field(idurl):
+    """
+    Translates string into `ID_URL_FIELD` object.
+    Also we try to read from local identity cache folder if do not know given "idurl".
+    """
+    if isinstance(idurl, ID_URL_FIELD):
+        return idurl
+    global _KnownIDURLs
+    if idurl not in _KnownIDURLs:
+        from contacts import identitydb
+        cached_ident = identitydb.get(idurl)
+        if cached_ident:
+            identity_cached(cached_ident)
+    return ID_URL_FIELD(idurl)
+
+#------------------------------------------------------------------------------
+
+class ID_URL_FIELD(object):
     
     def __init__(self, idurl):
         self.current = b''
-        if isinstance(idurl, ID_URL):
+        if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
         else:
             if idurl in [None, 'None', '', b'None', b'', ]:
@@ -224,18 +241,18 @@ class ID_URL(object):
         self.current_as_string = strng.to_text(self.current)
         self.current_id = global_id.idurl2glob(self.current)
         if _Debug:
-            lg.out(_DebugLevel, 'NEW ID_URL: %r with id=%r' % (self.current, id(self)))
+            lg.out(_DebugLevel, 'NEW ID_URL_FIELD: %r with id=%r' % (self.current, id(self)))
 
     def __del__(self):
         try:
             if _Debug:
-                lg.out(_DebugLevel, 'DELETED ID_URL: %r with id=%r' % (self.current, id(self)))
+                lg.out(_DebugLevel, 'DELETED ID_URL_FIELD: %r with id=%r' % (self.current, id(self)))
         except:
             lg.exc()
 
     def __eq__(self, idurl):
         # first compare as strings
-        if isinstance(idurl, ID_URL) and idurl.current == self.current:
+        if isinstance(idurl, ID_URL_FIELD) and idurl.current == self.current:
             if _Debug:
                 lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
             return True
@@ -248,8 +265,8 @@ class ID_URL(object):
                 lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
             return True
         # now compare based on public key
-        if not isinstance(idurl, ID_URL):
-            idurl = ID_URL(idurl)
+        if not isinstance(idurl, ID_URL_FIELD):
+            idurl = ID_URL_FIELD(idurl)
         result = idurl.to_public_key() == self.to_public_key()
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, current=self.current, result=result)

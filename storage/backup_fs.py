@@ -93,6 +93,7 @@ from lib import diskspace
 
 from userid import my_id
 from userid import global_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -127,6 +128,7 @@ def fs(customer_idurl=None):
     global _FileSystemIndexByName
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByName:
         _FileSystemIndexByName[customer_idurl] = {}
     return _FileSystemIndexByName[customer_idurl]
@@ -139,6 +141,7 @@ def fsID(customer_idurl=None):
     global _FileSystemIndexByID
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _FileSystemIndexByID:
         _FileSystemIndexByID[customer_idurl] = {}
     return _FileSystemIndexByID[customer_idurl]

@@ -48,6 +48,7 @@ _DebugLevel = 4
 import os
 import sys
 import gc
+import tempfile
 
 #------------------------------------------------------------------------------
 
@@ -61,6 +62,7 @@ from logs import lg
 from lib import strng
 
 from system import bpio
+from system import local_fs
 
 from main import settings
 
@@ -158,7 +160,7 @@ def ValidateKey():
     return curkey.verify(signature256, data256)
 
 
-def ForgetMyKey():
+def ForgetMyKey(keyfilename=None, erase_file=False, do_backup=False):
     """
     Remove Private Key from memory.
     """
@@ -166,6 +168,20 @@ def ForgetMyKey():
     if _MyKeyObject:
         _MyKeyObject.forget()
     _MyKeyObject = None
+    if erase_file:
+        if keyfilename is None:
+            keyfilename = settings.KeyFileName()
+        if do_backup:
+            if os.path.isfile(keyfilename):
+                current_pk_src = local_fs.ReadBinaryFile(keyfilename)
+                if current_pk_src:
+                    fd, fname = tempfile.mkstemp(prefix='mykeyfile_', dir=settings.MetaDataDir())
+                    os.write(fd, current_pk_src)
+                    os.close(fd)
+                    lg.info('created backup copy of my private key in the file : %r' % fname)
+        os.remove(settings.KeyFileName())
+        lg.info('local private key erased, deleted file : %r' % settings.KeyFileName())
+        
 
 
 def isMyKeyReady():

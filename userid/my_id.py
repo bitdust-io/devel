@@ -34,6 +34,7 @@ from __future__ import absolute_import
 import os
 import sys
 import time
+import tempfile
 
 #------------------------------------------------------------------------------
 
@@ -46,6 +47,7 @@ if __name__ == '__main__':
 from logs import lg
 
 from system import bpio
+from system import local_fs
 
 from main import settings
 from main import events
@@ -124,6 +126,7 @@ def setLocalIdentity(ident):
     _LocalIdentity = ident
     _LocalIDURL = _LocalIdentity.getIDURL()
     _LocalName = _LocalIdentity.getIDName()
+    id_url.identity_cached(_LocalIdentity)
     li_json = _LocalIdentity.serialize_json()
     new_json['revision'] = li_json['revision']
     new_json['contacts'] = li_json['contacts']
@@ -269,7 +272,15 @@ def forgetLocalIdentity():
     return True
 
 
-def eraseLocalIdentity():
+def eraseLocalIdentity(do_backup=True):
+    if do_backup:
+        if os.path.isfile(settings.LocalIdentityFilename()):
+            current_identity_xmlsrc = local_fs.ReadBinaryFile(settings.LocalIdentityFilename())
+            if current_identity_xmlsrc:
+                fd, fname = tempfile.mkstemp(prefix='localidentity_', dir=settings.MetaDataDir())
+                os.write(fd, current_identity_xmlsrc)
+                os.close(fd)
+                lg.info('created backup copy of my local identity in the file : %r' % fname)
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     if not os.path.exists(filename):
         lg.out(6, "my_id.eraseLocalIdentity SKIP file %s not exist" % filename)

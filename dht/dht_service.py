@@ -592,8 +592,8 @@ def validate_before_store(key, value, originalPublisherID, age, expireSeconds, *
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different ecc_map, store operation FAILED')
                     raise ValueError('new json data have same revision but different ecc_map, current revision is %d ' % prev_revision)
-                prev_suppliers = [id_url.ID_URL(idurl) for idurl in json_prev_value.get('suppliers', [])]
-                new_suppliers = [id_url.ID_URL(idurl) for idurl in json_new_value.get('suppliers', [])]
+                prev_suppliers = [id_url.field(idurl) for idurl in json_prev_value.get('suppliers', [])]
+                new_suppliers = [id_url.field(idurl) for idurl in json_new_value.get('suppliers', [])]
                 if prev_suppliers != new_suppliers:
                     if _Debug:
                         lg.out(_DebugLevel, '        new json data have same revision but different suppliers list, store operation FAILED')

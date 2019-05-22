@@ -552,7 +552,7 @@ class identity(object):
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
                             if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(id_url.ID_URL(xsource.wholeText.strip()))
+                                self.sources.append(id_url.ID_URL_FIELD(xsource.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'contacts':
                     for xcontacts in xsection.childNodes:
@@ -831,7 +831,7 @@ class identity(object):
         """
         self.sources = []
         for source in sources_list:
-            self.sources.append(id_url.ID_URL(source))
+            self.sources.append(id_url.field(source))
 
     def setContacts(self, contacts_list):
         """

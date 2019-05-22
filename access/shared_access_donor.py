@@ -232,7 +232,7 @@ class SharedAccessDonor(automat.Automat):
         """
         Action method.
         """
-        self.remote_idurl = id_url.ID_URL(kwargs['trusted_idurl'])
+        self.remote_idurl = id_url.field(kwargs['trusted_idurl'])
         self.key_id = strng.to_text(kwargs['key_id'])
         self.result_defer = kwargs.get('result_defer', None)
 

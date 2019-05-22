@@ -169,9 +169,9 @@ class SupplierRelationsService(LocalService):
 
         if contacts_type == 'suppliers_list':
             try:
-                customer_idurl = id_url.ID_URL(json_payload['customer_idurl'])
+                customer_idurl = id_url.field(json_payload['customer_idurl'])
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
-                suppliers_list = list(map(id_url.ID_URL, json_payload['suppliers_list']))
+                suppliers_list = list(map(lambda i: id_url.field(i), json_payload['suppliers_list']))
                 transaction_revision = json_payload.get('transaction_revision')
             except:
                 lg.exc()
@@ -196,9 +196,9 @@ class SupplierRelationsService(LocalService):
 
         elif contacts_type == 'supplier_position':
             try:
-                customer_idurl = id_url.ID_URL(json_payload['customer_idurl'])
+                customer_idurl = id_url.field(json_payload['customer_idurl'])
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
-                supplier_idurl = id_url.ID_URL(json_payload['supplier_idurl'])
+                supplier_idurl = id_url.field(json_payload['supplier_idurl'])
                 supplier_position = json_payload['supplier_position']
                 family_snapshot = json_payload.get('family_snapshot')
             except:
