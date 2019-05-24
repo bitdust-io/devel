@@ -488,7 +488,7 @@ class P2PConnector(automat.Automat):
                 lg.out(_DebugLevel, 'p2p_connector._do_propagate')
             if driver.is_on('service_entangled_dht'):
                 from dht import dht_service
-                dht_service.set_node_data('idurl', my_id.getLocalID())
+                dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
             d = propagate.start(wide=True)
             d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
             d.addErrback(lg.errback)

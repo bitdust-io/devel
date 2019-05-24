@@ -724,6 +724,7 @@ def print_exceptions_one_node(node):
 
 
 async def print_exceptions_one_node_async(node, event_loop):
+    print(f'\nsearching errors at {node} in the folder: /root/.bitdust/logs/exception_*.log')
     exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)
     exceptions_out = exceptions_out[0].strip()
     if exceptions_out:

@@ -36,7 +36,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -456,7 +456,6 @@ class DiscoveryTask(object):
         except:
             lg.exc()
             return idurl
-        
 
     def _on_node_processed(self, node, idurl):
         if _Debug:

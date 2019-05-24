@@ -63,7 +63,7 @@ class EntangledDHTService(LocalService):
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)
         if my_id.getLocalID():
-            dht_service.set_node_data('idurl', my_id.getLocalID())
+            dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
         return d
 
     def stop(self):

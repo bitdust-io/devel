@@ -58,13 +58,14 @@ from userid import id_url
 #------------------------------------------------------------------------------
 
 def read_customer_suppliers(customer_idurl):
+    customer_idurl = id_url.field(customer_idurl)
     result = Deferred()
 
     def _do_verify(dht_value):
         ret = {
             'suppliers': [],
             'ecc_map': None,
-            'customer_idurl': customer_idurl,
+            'customer_idurl': customer_idurl.to_text(),
             'revision': 0,
             'publisher_idurl': None,
             'timestamp': None,
@@ -74,9 +75,9 @@ def read_customer_suppliers(customer_idurl):
             return ret
         try:
             _ecc_map = strng.to_text(dht_value['ecc_map'])
-            _customer_idurl = id_url.field(dht_value['customer_idurl'])
-            _publisher_idurl = dht_value.get('publisher_idurl')
-            _suppliers_list = list(map(strng.to_bin, dht_value['suppliers']))
+            _customer_idurl = id_url.field(dht_value['customer_idurl']).to_text()
+            _publisher_idurl = id_url.field(dht_value.get('publisher_idurl')).to_text()
+            _suppliers_list = list(map(lambda i: id_url.field(i).to_text(), dht_value['suppliers']))
             _revision = int(dht_value.get('revision'))
             _timestamp = int(dht_value.get('timestamp'))
         except:

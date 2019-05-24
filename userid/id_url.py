@@ -221,6 +221,8 @@ def field(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl
+    if idurl in [None, 'None', '', b'None', b'', ]:
+        return ID_URL_FIELD(idurl)
     global _KnownIDURLs
     if idurl not in _KnownIDURLs:
         from contacts import identitydb
@@ -349,6 +351,7 @@ class ID_URL_FIELD(object):
         if not self.current:
             return b''
         if self.current not in _KnownIDURLs:
+            lg.exc('unknown idurl: %r' % self.current)
             raise Exception('unknown idurl: %r' % self.current)
         pub_key = _KnownIDURLs[self.current]
         return pub_key
