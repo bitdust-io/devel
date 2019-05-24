@@ -417,23 +417,6 @@ def identity_recover(private_key_source, known_idurl=None):
     if not idurl_list:
         return ERROR('you must provide at least one IDURL address of your identity')
 
-#     idurl = ''
-#     pk_source = ''
-#     try:
-#         lines = private_key_source.split('\n')
-#         idurl = lines[0]
-#         pk_source = '\n'.join(lines[1:])
-#         if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-#             idurl = ''
-#             pk_source = private_key_source
-#     except:
-#         idurl = ''
-#         pk_source = private_key_source
-#     if not idurl and known_idurl:
-#         idurl = known_idurl
-#     if not idurl:
-#         return ERROR('you must specify the global IDURL address where your identity file was last located')
-
     ret = Deferred()
     my_id_restorer = id_restorer.A()
 
@@ -461,6 +444,24 @@ def identity_recover(private_key_source, known_idurl=None):
         ret.callback(ERROR(str(exc)))
 
     return ret
+
+
+def identity_rotate():
+    """
+    """
+    from p2p import id_rotator
+    ret = Deferred()
+    d = id_rotator.run(force=True)
+    def _cb(r):
+        ret.callback(RESULT([r, ]))
+        return None
+    def _eb(e):
+        ret.callback(ERROR(e))
+        return None
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
+
 
 def identity_list():
     """

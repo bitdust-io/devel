@@ -511,7 +511,7 @@ class P2PConnector(automat.Automat):
                 lg.info('identity sources are healthy, send my identity now')
                 _do_update(True)
                 return None
-            lg.warn('identity sources are not healthy, will execute identity rotate flow now')
+            lg.err('identity sources are not healthy, will execute identity rotate flow now')
             d = id_rotator.run()
             d.addCallback(_do_update)
             d.addErrback(lambda _: _do_update(False))

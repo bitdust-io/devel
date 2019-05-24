@@ -98,6 +98,16 @@ logs_all_stdout:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose exec identity-server cat /root/.bitdust/logs/stdout.log
+	@echo "### [identity-server-a] #########################################################################"
+	docker-compose exec identity-server-a cat /root/.bitdust/logs/stdout.log
+	@echo "### [identity-server-b] #########################################################################"
+	docker-compose exec identity-server-b cat /root/.bitdust/logs/stdout.log
+	@echo "### [identity-server-c] #########################################################################"
+	docker-compose exec identity-server-c cat /root/.bitdust/logs/stdout.log
+	@echo "### [identity-server-d] #########################################################################"
+	docker-compose exec identity-server-d cat /root/.bitdust/logs/stdout.log
+	@echo "### [identity-server-e] #########################################################################"
+	docker-compose exec identity-server-e cat /root/.bitdust/logs/stdout.log
 	@echo "### [dht_seed0] ##################################################################################"
 	docker-compose exec dht_seed_0 cat /root/.bitdust/logs/stdout.log
 	@echo "### [dht_seed1] ##################################################################################"

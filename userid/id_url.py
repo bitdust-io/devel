@@ -175,7 +175,9 @@ def identity_cached(id_obj):
             raise Exception('identity history for user %r is broken, public key not matching')
         if latest_id_obj.getIDName() != id_obj.getIDName():
             raise Exception('identity history for user %r is broken, user name not matching')
-        if latest_id_obj.getSources() == id_obj.getSources():
+        latest_sources = list(map(lambda i: i.to_bin(), latest_id_obj.getSources()))
+        new_sources = list(map(lambda i: i.to_bin(), id_obj.getSources()))
+        if latest_sources == new_sources:
             local_fs.WriteBinaryFile(latest_identity_file_path, id_obj.serialize())
             if _Debug:
                 lg.out(_DebugLevel, '    latest identity sources for user %r did not changed, updated file %r' % (

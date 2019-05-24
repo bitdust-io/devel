@@ -549,7 +549,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     return ident
 
 
-def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=None, revision_up=False, save_identity=True):
+def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=None, revision_up=False, new_revision=None, save_identity=True):
     """
     If some transports was enabled or disabled we want to update identity
     contacts. Just empty all of the contacts and create it again in the same
@@ -559,7 +559,8 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     """
     # remember the current identity - full XML source code
     current_identity_xmlsrc = getLocalIdentity().serialize()
-    lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long' % len(current_identity_xmlsrc))
+    lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r' % (
+        len(current_identity_xmlsrc), new_revision,))
     # getting a copy of local identity to be modified or another object to be used
     lid = identity_object or identity.identity(xmlsrc=current_identity_xmlsrc)
     # create a full list of needed transport methods
@@ -581,8 +582,10 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     new_xmlsrc = lid.serialize()
     changed = False
     if new_xmlsrc != current_identity_xmlsrc or revision_up:
+        if not new_revision:
+            new_revision = lid.getRevisionValue() + 1
         try:
-            lid.setRevision(lid.getRevisionValue() + 1)
+            lid.setRevision(new_revision)
         except:
             lg.exc()
             return False
@@ -590,9 +593,6 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
         lid.sign()
         lg.out(4, '    incremented revision: %s' % lid.revision)
         changed = True
-        # remember the new identity
-        if save_identity:
-            setLocalIdentity(lid)
     else:
         # no modifications in my identity - cool !!!
         lg.out(4, '    same revision: %r' % lid.revision)
@@ -600,9 +600,11 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     lg.out(4, '    contacts: %r' % lid.contacts)
     lg.out(4, '    sources: %r' % lid.sources)
     if changed:
-        lg.out(4, '    SAVING new identity #%s' % lid.revision)
-        # finally saving modified local identity
         if save_identity:
+            # finally saving modified local identity
+            lg.out(4, '    SAVING new identity #%s' % lid.revision)
+            # remember the new identity
+            setLocalIdentity(lid)
             saveLocalIdentity()
             # NOW TEST IT!
             # forgetLocalIdentity()
