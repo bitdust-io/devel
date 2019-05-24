@@ -706,6 +706,7 @@ class ProxyRouter(automat.Automat):
         return False
 
     def _load_routes(self):
+        # TODO: move services/proxy-server/current-routes out from settings into a separate file
         src = config.conf().getData('services/proxy-server/current-routes')
         if src is None:
             lg.warn('setting [services/proxy-server/current-routes] not exist')
@@ -728,30 +729,33 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, 'proxy_router._load_routes %d routes total' % len(self.routes))
 
     def _clear_routes(self):
+        # TODO: move services/proxy-server/current-routes out from settings into a separate file
         config.conf().setData('services/proxy-server/current-routes', '{}')
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._clear_routes')
 
     def _write_route(self, user_idurl):
+        # TODO: move services/proxy-server/current-routes out from settings into a separate file
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
             dct = serialization.BytesToDict(strng.to_bin(src), keys_to_text=True, values_to_text=True)
         except:
             dct = {}
-        dct[user_idurl] = self.routes[user_idurl]
+        dct[user_idurl.to_bin()] = self.routes[user_idurl]
         newsrc = strng.to_text(serialization.DictToBytes(dct, keys_to_text=True, values_to_text=True))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc))
 
     def _remove_route(self, user_idurl):
+        # TODO: move services/proxy-server/current-routes out from settings into a separate file
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
             dct = serialization.BytesToDict(strng.to_bin(src), keys_to_text=True, values_to_text=True)
         except:
             dct = {}
-        if user_idurl in dct:
-            dct.pop(user_idurl)
+        if user_idurl.to_bin() in dct:
+            dct.pop(user_idurl.to_bin())
         newsrc = strng.to_text(serialization.DictToBytes(dct, keys_to_text=True, values_to_text=True))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:

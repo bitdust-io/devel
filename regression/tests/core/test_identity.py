@@ -76,3 +76,10 @@ def test_identity_backup_restore():
         time.sleep(5)
     else:
         assert False, 'customer_restore was not able to join the network after identity recover'
+
+
+def test_identity_rotate():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+
+    return True

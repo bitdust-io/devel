@@ -370,14 +370,16 @@ async def connect_network_async(node, loop):
         response_json = await response.json()
         assert response_json['status'] == 'ERROR'
 
+        counter = 0
         for i in range(60):
+            counter += 1
             response = await client.get(tunnel_url(node, '/network/connected/v1?wait_timeout=1'))
             response_json = await response.json()
             if response_json['status'] == 'OK':
                 print(f"network/connected/v1 {node}: got status OK\n")
                 break
 
-            print(f"connect_network_async {node}: sleep 1 sec\n")
+            print(f"connect_network_async attempt {counter} at {node}: sleep 1 sec\n")
             await asyncio.sleep(1)
         else:
             print(f"connect_network_async {node}: FAILED\n")
