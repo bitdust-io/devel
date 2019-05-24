@@ -609,10 +609,12 @@ class identity(object):
 
     #------------------------------------------------------------------------------
 
-    def getSources(self):
+    def getSources(self, as_id_url_fields=True):
         """
         Return identity sources.
         """
+        if not as_id_url_fields:
+            return list(map(lambda s: s.to_bin(), self.sources))
         return self.sources
 
     def getIDURL(self, index=0):

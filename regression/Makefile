@@ -161,6 +161,16 @@ logs_all_stderr:
     # TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose exec identity-server cat /root/.bitdust/logs/stderr.log
+	@echo "### [identity-server-a] #########################################################################"
+	docker-compose exec identity-server-a cat /root/.bitdust/logs/stderr.log
+	@echo "### [identity-server-b] #########################################################################"
+	docker-compose exec identity-server-b cat /root/.bitdust/logs/stderr.log
+	@echo "### [identity-server-c] #########################################################################"
+	docker-compose exec identity-server-c cat /root/.bitdust/logs/stderr.log
+	@echo "### [identity-server-d] #########################################################################"
+	docker-compose exec identity-server-d cat /root/.bitdust/logs/stderr.log
+	@echo "### [identity-server-e] #########################################################################"
+	docker-compose exec identity-server-e cat /root/.bitdust/logs/stderr.log
 	@echo "### [dht_seed0] ##################################################################################"
 	docker-compose exec dht_seed_0 cat /root/.bitdust/logs/stderr.log
 	@echo "### [dht_seed1] ##################################################################################"
@@ -214,6 +224,16 @@ logs_all_states:
 	# TODO: keep up to date with docker-compose links
 	@echo "### [identity-server] #########################################################################"
 	docker-compose exec identity-server cat /root/.bitdust/logs/automats.log
+	@echo "### [identity-server-a] #########################################################################"
+	docker-compose exec identity-server-a cat /root/.bitdust/logs/automats.log
+	@echo "### [identity-server-b] #########################################################################"
+	docker-compose exec identity-server-b cat /root/.bitdust/logs/automats.log
+	@echo "### [identity-server-c] #########################################################################"
+	docker-compose exec identity-server-c cat /root/.bitdust/logs/automats.log
+	@echo "### [identity-server-d] #########################################################################"
+	docker-compose exec identity-server-d cat /root/.bitdust/logs/automats.log
+	@echo "### [identity-server-e] #########################################################################"
+	docker-compose exec identity-server-e cat /root/.bitdust/logs/automats.log
 	@echo "### [dht_seed0] ##################################################################################"
 	docker-compose exec dht_seed_0 cat /root/.bitdust/logs/automats.log
 	@echo "### [dht_seed1] ##################################################################################"

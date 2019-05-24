@@ -510,7 +510,7 @@ class ProxyReceiver(automat.Automat):
         newidentity = identity.identity(xmlsrc=newxml)
         cachedidentity = identitycache.FromCache(self.router_idurl)
         if self.router_idurl != newidentity.getIDURL():
-            lg.warn('router_idurl != newidentity.getIDURL()')
+            lg.warn('router idurl is unrecognized from response %r != %r' % (self.router_idurl, newidentity.getIDURL(), ))
             return
         if newidentity.serialize() != cachedidentity.serialize():
             lg.warn('cached identity is not same, router identity changed')

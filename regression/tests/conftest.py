@@ -57,6 +57,11 @@ ALL_NODES = [
     'stun_1',
     'stun_2',
     'is',
+    'is_a',
+    'is_b',
+    'is_c',
+    'is_d',
+    'is_e',
     'dht_seed_0',
     'dht_seed_1',
     'dht_seed_2',
@@ -78,6 +83,11 @@ ALL_ROLES = {
     ],
     'identity-servers': [
         'is',
+        'is_a',
+        'is_b',
+        'is_c',
+        'is_d',
+        'is_e',
     ],
     'stun-servers': [
         'stun_1',

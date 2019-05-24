@@ -83,6 +83,7 @@ from lib import strng
 
 from main import config
 from main import settings
+from main import events
 
 from userid import identity
 from userid import my_id
@@ -253,10 +254,12 @@ class IdRotator(automat.Automat):
         if event == 'check':
             self.check_only = True
         self.alive_idurls = []
+        self.old_sources = my_id.getLocalIdentity().getSources()
         self.known_servers = known_servers.by_host()
         self.preferred_servers = kwargs.get('preferred_servers', {})
         self.force = kwargs.get('force', False)
         self.new_revision = kwargs.get('new_revision')
+        self.rotated = False
         if not self.preferred_servers:
             try:
                 for srv in str(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
@@ -287,7 +290,7 @@ class IdRotator(automat.Automat):
         # make sure to not choose a server I already have in my ID sources
         for current_server in self.current_servers:
             if current_server in target_servers:
-                target_servers.remove(current_server)
+                target_servers.pop(current_server)
 
         if not target_servers:
             self.automat('no-id-servers-found')
@@ -379,7 +382,7 @@ class IdRotator(automat.Automat):
         )
         current_sources = list(map(lambda i: i.to_bin(), my_id.getLocalIdentity().getSources()))
         if _Debug:
-            lg.args(_DebugLevel, current_sources=current_sources)
+            lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, )
         new_sources = []
         new_idurl = args[0]
         # first get rid of "dead" sources
@@ -393,8 +396,6 @@ class IdRotator(automat.Automat):
         # and add new "good" source to the end of the list
         if new_idurl and new_idurl not in new_sources: 
             new_sources.append(new_idurl)
-        # deduplicate
-        new_sources = list(set(new_sources))
         if len(new_sources) > max_servers:
             possible_sources = list(new_sources)
             new_sources = new_sources[max(0, len(new_sources) - max_servers):]
@@ -405,11 +406,12 @@ class IdRotator(automat.Automat):
             self.automat('need-more-sources')
             return
         if _Debug:
-            lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, new_sources=new_sources)
+            lg.args(_DebugLevel, new_sources=new_sources)
         my_id.rebuildLocalIdentity(
             new_sources=new_sources,
             new_revision=self.new_revision,
         )
+        self.rotated = True
         self.automat('my-id-updated')
 
     def doSendMyIdentity(self, *args, **kwargs):
@@ -456,6 +458,11 @@ class IdRotator(automat.Automat):
             self.result_defer.callback(self._is_healthy(args[0]))
         elif event == 'my-id-exist':
             self.result_defer.callback(True)
+            if self.rotated:
+                events.send('local-identity-rotated', data=dict(
+                    old_idurls=self.old_sources,
+                    new_idurls=my_id.getLocalIdentity().getSources(),
+                ))
 
     def doReportFailed(self, event, *args, **kwargs):
         """

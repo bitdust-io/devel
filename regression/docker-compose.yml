@@ -32,10 +32,37 @@ services:
     entrypoint: ""
     command: /bin/false
 
+
+
   identity-server:
     image: bitdust-baseimage
     ports:
         - "22201:22"
+
+  identity-server-a:
+    image: bitdust-baseimage
+    ports:
+        - "22202:22"
+
+  identity-server-b:
+    image: bitdust-baseimage
+    ports:
+        - "22203:22"
+
+  identity-server-c:
+    image: bitdust-baseimage
+    ports:
+        - "22204:22"
+
+  identity-server-d:
+    image: bitdust-baseimage
+    ports:
+        - "22205:22"
+
+  identity-server-e:
+    image: bitdust-baseimage
+    ports:
+        - "22206:22"
 
 
 

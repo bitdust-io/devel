@@ -52,19 +52,30 @@ class NetworkService(LocalService):
 
     def start(self):
         from twisted.internet import task
+        from main import events
         from p2p import network_connector
         network_connector.A('init')
         self.task = task.LoopingCall(self._do_check_network_interfaces)
         self.task.start(20, now=False)
+        events.add_subscriber(self._on_local_identity_rotated, event_id='local-identity-rotated')
         return True
 
     def stop(self):
+        from main import events
         from p2p import network_connector
+        events.remove_subscriber(self._on_local_identity_rotated)
         network_connector.Destroy()
         if self.task and self.task.running:
             self.task.stop()
             self.task = None
         return True
+
+    def _on_local_identity_rotated(self, evt):
+        from logs import lg
+        from p2p import network_connector
+        lg.info('my identity sources were rotated, reconnecting now')
+        network_connector.A('reconnect')
+        return None
 
     def _do_check_network_interfaces(self):
         from lib.net_misc import getNetworkInterfaces

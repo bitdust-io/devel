@@ -179,9 +179,10 @@ def ForgetMyKey(keyfilename=None, erase_file=False, do_backup=False):
                     os.write(fd, current_pk_src)
                     os.close(fd)
                     lg.info('created backup copy of my private key in the file : %r' % fname)
-        os.remove(settings.KeyFileName())
-        lg.info('local private key erased, deleted file : %r' % settings.KeyFileName())
-        
+        if os.path.isfile(keyfilename):
+            os.remove(keyfilename)
+            lg.info('local private key erased, deleted file : %r' % keyfilename)
+
 
 
 def isMyKeyReady():

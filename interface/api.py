@@ -449,10 +449,19 @@ def identity_recover(private_key_source, known_idurl=None):
 def identity_rotate():
     """
     """
+    from userid import my_id
+    if not my_id.isLocalIdentityReady():
+        return ERROR('local identity is not ready')
     from p2p import id_rotator
+    old_sources = my_id.getLocalIdentity().getSources(as_id_url_fields=False)
     ret = Deferred()
     d = id_rotator.run(force=True)
-    def _cb(r):
+    def _cb(result):
+        if not result:
+            ret.callback(ERROR(result))
+            return None
+        r = my_id.getLocalIdentity().serialize_json()
+        r['old_sources'] = old_sources
         ret.callback(RESULT([r, ]))
         return None
     def _eb(e):

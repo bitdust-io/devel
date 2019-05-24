@@ -164,7 +164,7 @@ def identity_cached(id_obj):
         first_identity_file_path = os.path.join(user_path, '0')
         local_fs.WriteBinaryFile(first_identity_file_path, id_obj.serialize())
         if _Debug:
-            lg.out(_DebugLevel, '    wrote first item to identity history: %r' % first_identity_file_path)
+            lg.out(_DebugLevel, '        wrote first item to identity history: %r' % first_identity_file_path)
     else:
         user_path = _KnownUsers[pub_key]
         user_identity_files = sorted(map(int, os.listdir(user_path)))
@@ -180,15 +180,16 @@ def identity_cached(id_obj):
         if latest_sources == new_sources:
             local_fs.WriteBinaryFile(latest_identity_file_path, id_obj.serialize())
             if _Debug:
-                lg.out(_DebugLevel, '    latest identity sources for user %r did not changed, updated file %r' % (
+                lg.out(_DebugLevel, '        latest identity sources for user %r did not changed, updated file %r' % (
                     user_name, latest_identity_file_path))
         else:
             next_identity_file = user_identity_files[-1] + 1
             next_identity_file_path = os.path.join(user_path, strng.to_text(next_identity_file))
             local_fs.WriteBinaryFile(next_identity_file_path, id_obj.serialize())
             is_identity_rotated = True
-            lg.info('identity sources for user %r changed, wrote new item in the history: %r' % (
-                user_name, next_identity_file_path))
+            if _Debug:
+                lg.out(_DebugLevel, '        identity sources for user %r changed, wrote new item in the history: %r' % (
+                    user_name, next_identity_file_path))
     for new_idurl in id_obj.getSources():
         new_idurl = strng.to_bin(new_idurl)
         if new_idurl not in _KnownIDURLs:
@@ -201,7 +202,8 @@ def identity_cached(id_obj):
             _MergedIDURLs[pub_key] = []
         if new_idurl not in _MergedIDURLs[pub_key]:
             _MergedIDURLs[pub_key].append(strng.to_bin(new_idurl))
-            lg.info('added new identity source %r for user %r' % (new_idurl, user_name))
+            if _Debug:
+                lg.out(_DebugLevel, '        added new identity source %r for user %r' % (new_idurl, user_name))
     if is_identity_rotated:
         from main import events
         events.send('identity-rotated', data=dict(
@@ -272,7 +274,29 @@ class ID_URL_FIELD(object):
         result = idurl.to_public_key() == self.to_public_key()
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, current=self.current, result=result)
-        return result 
+        return result
+
+    def __ne__(self, idurl):
+        # first compare as strings
+        if isinstance(idurl, ID_URL_FIELD) and idurl.current == self.current:
+            if _Debug:
+                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
+            return False
+        if isinstance(idurl, six.binary_type) and idurl == self.current:
+            if _Debug:
+                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
+            return False
+        if isinstance(idurl, six.text_type) and strng.to_bin(idurl) == self.current:
+            if _Debug:
+                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
+            return False
+        # now compare based on public key
+        if not isinstance(idurl, ID_URL_FIELD):
+            idurl = ID_URL_FIELD(idurl)
+        result = idurl.to_public_key() != self.to_public_key()
+        if _Debug:
+            lg.args(_DebugLevel, idurl=idurl, current=self.current, result=result)
+        return result
 
     def __hash__(self):
         # this trick should make `idurl in some_dictionary` check work correctly
