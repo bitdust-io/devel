@@ -55,7 +55,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     ssh_proc = await create
     stdout, stderr = await ssh_proc.communicate()
     if stderr:
-        print('STDERR: %r' % stderr.decode())
+        print(f'STDERR at {host}: %r' % stderr.decode())
     # assert not stderr
     print(f'\nssh_command on [{host}] : {cmd}')
     return stdout.decode(), stderr.decode()

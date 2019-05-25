@@ -230,7 +230,7 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        idurl = args[0]
+        idurl = id_url.field(args[0])
         identitycache.StopOverridingIdentity(idurl)
         self.routes.pop(idurl)
         self._remove_route(idurl)
@@ -271,7 +271,8 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, _, item, _, _, _ = args[0]
-        self.routes[id_url.field(idurl)]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
+        idurl = id_url.field(idurl)
+        self.routes[idurl]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
         self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
@@ -419,6 +420,7 @@ class ProxyRouter(automat.Automat):
     def _do_forward_inbox_packet(self, *args, **kwargs):
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
         receiver_idurl, newpacket, info = args[0]
+        receiver_idurl = id_url.field(receiver_idurl)
         route_info = self.routes.get(receiver_idurl, None)
         if not route_info:
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
@@ -520,8 +522,8 @@ class ProxyRouter(automat.Automat):
             # see proxy_sender.ProxySender : _on_first_outbox_packet() for sending part
             json_payload = serialization.BytesToDict(inpt.read(), keys_to_text=True)
             inpt.close()
-            sender_idurl = json_payload['f']                 # from
-            receiver_idurl = json_payload['t']               # to
+            sender_idurl = id_url.field(json_payload['f'])   # from
+            receiver_idurl = id_url.field(json_payload['t']) # to
             wide = json_payload['w']                         # wide
             routed_data = json_payload['p']                  # payload
         except:
