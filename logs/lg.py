@@ -283,10 +283,12 @@ def exception(level, maxTBlevel, exc_info):
         _, value, trbk = sys.exc_info()
     else:
         _, value, trbk = exc_info
-    try:
-        excArgs = value.__dict__["args"]
-    except KeyError:
-        excArgs = ''
+    excArgs = ''
+    if value: 
+        try:
+            excArgs = value.__dict__["args"]
+        except KeyError:
+            excArgs = ''
     if trbk:
         excTb = traceback.format_tb(trbk, maxTBlevel)
     else:
