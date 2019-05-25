@@ -42,6 +42,10 @@ EVENTS:
 """
 
 from __future__ import absolute_import
+from six.moves import range
+
+#------------------------------------------------------------------------------
+
 import os
 
 #------------------------------------------------------------------------------
@@ -59,10 +63,11 @@ from contacts import contactsdb
 
 from lib import packetid
 
+from userid import id_url
+
 from p2p import p2p_service
 
 from storage import accounting
-from six.moves import range
 
 #------------------------------------------------------------------------------
 
@@ -154,9 +159,9 @@ class CustomersRejector(automat.Automat):
         unknown_customers, unused_quotas = accounting.validate_customers_quotas(space_dict)
         failed_customers.update(unknown_customers)
         for idurl in unknown_customers:
-            space_dict.pop(idurl, None)
+            space_dict.pop(id_url.to_bin(idurl), None)
         for idurl in unused_quotas:
-            space_dict.pop(idurl, None)
+            space_dict.pop(id_url.to_bin(idurl), None)
         consumed_bytes = accounting.count_consumed_space(space_dict)
         space_dict[b'free'] = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:
@@ -174,12 +179,12 @@ class CustomersRejector(automat.Automat):
             return
         used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
         customers_sorted = sorted(current_customers,
-                                  key=lambda idurl: used_space_ratio_dict[idurl],)
+                                  key=lambda idurl: used_space_ratio_dict[idurl.to_bin()],)
         while len(customers_sorted) > 0 and consumed_bytes > donated_bytes:
             idurl = customers_sorted.pop()
-            allocated_bytes = int(space_dict[idurl])
+            allocated_bytes = int(space_dict[idurl.to_bin()])
             consumed_bytes -= allocated_bytes
-            space_dict.pop(idurl)
+            space_dict.pop(idurl.to_bin())
             failed_customers.add(idurl)
             current_customers.remove(idurl)
             lg.out(8, '        customer %s will be REMOVED' % idurl)
@@ -248,7 +253,7 @@ class CustomersRejector(automat.Automat):
                 lg.warn('%s allocated_bytes==0' % customer_idurl)
                 continue
             try:
-                files_size = int(used_dict.get(customer_idurl, 0))
+                files_size = int(used_dict.get(customer_idurl.to_bin(), 0))
                 ratio = float(files_size) / float(allocated_bytes)
             except:
                 if customer_idurl in current_customers:
@@ -267,9 +272,9 @@ class CustomersRejector(automat.Automat):
                 spent_bytes -= allocated_bytes
                 lg.warn('%s space overflow, where is bptester?' % customer_idurl)
                 continue
-            used_space_ratio_dict[customer_idurl] = ratio
+            used_space_ratio_dict[customer_idurl.to_bin()] = ratio
         customers_sorted = sorted(current_customers,
-                                  key=lambda i: used_space_ratio_dict[i],)
+                                  key=lambda i: used_space_ratio_dict[i.to_bin()],)
         while len(customers_sorted) > 0:
             customer_idurl = customers_sorted.pop()
             allocated_bytes = int(space_dict[customer_idurl])

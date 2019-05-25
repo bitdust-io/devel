@@ -145,7 +145,7 @@ def SpaceTime():
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
-        curspace = space.get(idurl, None)
+        curspace = space.get(idurl.to_bin(), None)
         if curspace is None:
             remove_list[onecustdir] = 'not found in space file'
             continue
@@ -183,7 +183,7 @@ def SpaceTime():
                     printlog('SpaceTime ERROR removing ' + path)
                 # time.sleep(0.01)
 
-        used_space[idurl] = str(currentV)
+        used_space[idurl.to_bin()] = str(currentV)
         timedict.clear()
         sizedict.clear()
 
@@ -236,7 +236,7 @@ def UpdateCustomers():
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
-        curspace = space.get(idurl, None)
+        curspace = space.get(idurl.to_bin(), None)
         if curspace is None:
             remove_list[onecustdir] = 'is not a customer'
             continue

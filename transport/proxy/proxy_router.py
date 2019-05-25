@@ -68,6 +68,10 @@ import time
 
 #------------------------------------------------------------------------------
 
+from twisted.internet.defer import DeferredList
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -534,9 +538,25 @@ class ProxyRouter(automat.Automat):
             except:
                 pass
             return
+        del session_key
+        del padded_data
+        del inpt
+        del block
+        if identitycache.HasKey(sender_idurl) and identitycache.HasKey(receiver_idurl):
+            return self._do_send_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide)
+        lg.warn('will send routed data after caching, sender_idurl=%r receiver_idurl=%r' % (sender_idurl, receiver_idurl, ))
+        dl = []
+        if not identitycache.HasKey(sender_idurl):
+            dl.append(identitycache.immediatelyCaching(sender_idurl))
+        if not identitycache.HasKey(receiver_idurl):
+            dl.append(identitycache.immediatelyCaching(receiver_idurl))
+        d = DeferredList(dl, consumeErrors=True)
+        d.addCallback(lambda _: self._do_send_routed_data(newpacket, info, sender_idurl, receiver_idurl, routed_data, wide))
+        d.addErrback(lg.errback)
+
+    def _do_send_routed_data(self, newpacket, info, sender_idurl, receiver_idurl, routed_data, wide):
         route = self.routes.get(sender_idurl, None)
         if not route:
-            inpt.close()
             lg.warn('route with %s not found' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return
@@ -556,12 +576,8 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
                 len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
-        del block
         del routed_data
-        del padded_data
         del route
-        del inpt
-        del session_key
         del routed_packet
 
     def _on_outbox_packet(self):

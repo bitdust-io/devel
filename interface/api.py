@@ -2225,7 +2225,7 @@ def customer_reject(idurl_or_global_id):
     contactsdb.save_customers()
     # remove records for this customers from quotas info
     space_dict = accounting.read_customers_quotas()
-    consumed_by_cutomer = space_dict.pop(customer_idurl, None)
+    consumed_by_cutomer = space_dict.pop(customer_idurl.to_bin(), None)
     consumed_space = accounting.count_consumed_space(space_dict)
     space_dict[b'free'] = settings.getDonatedBytes() - int(consumed_space)
     accounting.write_customers_quotas(space_dict)

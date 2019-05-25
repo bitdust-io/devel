@@ -231,6 +231,14 @@ def field(idurl):
             identity_cached(cached_ident)
     return ID_URL_FIELD(idurl)
 
+
+def to_bin(idurl):
+    if isinstance(idurl, ID_URL_FIELD):
+        return idurl.to_bin()
+    if idurl in [None, 'None', '', b'None', b'', ]:
+        return b''
+    return strng.to_bin(idurl)
+
 #------------------------------------------------------------------------------
 
 class ID_URL_FIELD(object):

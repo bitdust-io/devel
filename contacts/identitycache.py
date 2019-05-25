@@ -61,6 +61,7 @@ from lib import net_misc
 from lib import strng
 
 from userid import identity
+from userid import id_url
 
 from contacts import identitydb
 
@@ -249,6 +250,7 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     xml_src = strng.to_text(xml_src.strip())
     if idurl in _OverriddenIdentities:
         if _OverriddenIdentities[idurl] == xml_src:
@@ -279,6 +281,7 @@ def StopOverridingIdentity(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     result = _OverriddenIdentities.pop(idurl, None)
     if _Debug:
         lg.out(4, 'identitycache.StopOverridingIdentity   removed overridden source for %s' % idurl)
@@ -292,6 +295,7 @@ def IsOverridden(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     return idurl in _OverriddenIdentities
 
 
@@ -299,6 +303,7 @@ def ReadOverriddenIdentityXMLSource(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     return _OverriddenIdentities.get(idurl, None)
 
 #------------------------------------------------------------------------------
@@ -347,11 +352,15 @@ def immediatelyCaching(idurl, timeout=10):
     A smart method to cache some identity and get results in callbacks.
     """
     global _CachingTasks
+
+    idurl = id_url.to_bin(idurl)
+    
     if idurl in _CachingTasks:
         return _CachingTasks[idurl]
 
     def _getPageSuccess(src, idurl):
         global _CachingTasks
+        idurl = id_url.to_bin(idurl)
         result = _CachingTasks.pop(idurl, None)
         if not result:
             lg.warn('caching task for %s was not found' % idurl)
@@ -372,6 +381,7 @@ def immediatelyCaching(idurl, timeout=10):
 
     def _getPageFail(x, idurl):
         global _CachingTasks
+        idurl = id_url.to_bin(idurl)
         lg.err('identity %r cache failed with error: %r' % (idurl, x))
         result = _CachingTasks.pop(idurl)
         if result:

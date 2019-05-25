@@ -71,7 +71,7 @@ class SupplierService(LocalService):
             known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             events.send('existing-customer-accepted', data=dict(
                 idurl=customer_idurl,
-                allocated_bytes=space_dict.get(customer_idurl),
+                allocated_bytes=space_dict.get(customer_idurl.to_bin()),
                 ecc_map=known_customer_meta_info.get('ecc_map'),
                 position=known_customer_meta_info.get('position'),
             ))
@@ -165,21 +165,21 @@ class SupplierService(LocalService):
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
-        if (customer_idurl not in current_customers and customer_idurl in list(space_dict.keys())):
+        if (customer_idurl not in current_customers and customer_idurl.to_bin() in list(space_dict.keys())):
             lg.warn("broken space file")
             return p2p_service.SendFail(newpacket, 'broken space file')
-        if (customer_idurl in current_customers and customer_idurl not in list(space_dict.keys())):
+        if (customer_idurl in current_customers and customer_idurl.to_bin() not in list(space_dict.keys())):
             lg.warn("broken customers file")
             return p2p_service.SendFail(newpacket, 'broken customers file')
         if customer_idurl in current_customers:
-            free_bytes += int(space_dict.get(customer_idurl, 0))
+            free_bytes += int(space_dict.get(customer_idurl.to_bin(), 0))
             space_dict[b'free'] = free_bytes
             current_customers.remove(customer_idurl)
-            space_dict.pop(customer_idurl)
+            space_dict.pop(customer_idurl.to_bin())
             new_customer = False
         else:
             new_customer = True
-        lg.out(8, '    new_customer=%s current_allocated_bytes=%s' % (new_customer, space_dict.get(customer_idurl), ))
+        lg.out(8, '    new_customer=%s current_allocated_bytes=%s' % (new_customer, space_dict.get(customer_idurl.to_bin()), ))
         from supplier import local_tester
         if free_bytes <= bytes_for_customer:
             contactsdb.update_customers(current_customers)
@@ -198,7 +198,7 @@ class SupplierService(LocalService):
             return p2p_service.SendAck(newpacket, 'deny')
         space_dict[b'free'] = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
-        space_dict[customer_idurl] = bytes_for_customer
+        space_dict[customer_idurl.to_bin()] = bytes_for_customer
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
         contactsdb.add_customer_meta_info(customer_idurl, {
@@ -256,12 +256,12 @@ class SupplierService(LocalService):
         if accounting.check_create_customers_quotas():
             lg.out(6, 'service_supplier.cancel created a new space file')
         space_dict = accounting.read_customers_quotas()
-        if customer_idurl not in list(space_dict.keys()):
+        if customer_idurl.to_bin() not in list(space_dict.keys()):
             lg.warn("got packet from %s, but not found him in space dictionary" % customer_idurl)
             return p2p_service.SendFail(newpacket, 'not a customer')
         try:
             free_bytes = int(space_dict[b'free'])
-            space_dict[b'free'] = free_bytes + int(space_dict[customer_idurl])
+            space_dict[b'free'] = free_bytes + int(space_dict[customer_idurl.to_bin()])
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
@@ -270,7 +270,7 @@ class SupplierService(LocalService):
         contactsdb.update_customers(new_customers)
         contactsdb.remove_customer_meta_info(customer_idurl)
         contactsdb.save_customers()
-        space_dict.pop(customer_idurl)
+        space_dict.pop(customer_idurl.to_bin())
         accounting.write_customers_quotas(space_dict)
         if customer_public_key_id:
             my_keys.erase_key(customer_public_key_id)
@@ -624,15 +624,15 @@ class SupplierService(LocalService):
         donated_bytes = settings.getDonatedBytes()
         accounting.check_create_customers_quotas(donated_bytes)
         space_dict = accounting.read_customers_quotas()
-        if newpacket.OwnerID not in list(space_dict.keys()):
+        if newpacket.OwnerID.to_bin() not in list(space_dict.keys()):
             lg.err("no info about donated space for %s" % newpacket.OwnerID)
             p2p_service.SendFail(newpacket, 'no info about donated space')
             return False
         used_space_dict = accounting.read_customers_usage()
-        if newpacket.OwnerID in list(used_space_dict.keys()):
+        if newpacket.OwnerID.to_bin() in list(used_space_dict.keys()):
             try:
-                bytes_used_by_customer = int(used_space_dict[newpacket.OwnerID])
-                bytes_donated_to_customer = int(space_dict[newpacket.OwnerID])
+                bytes_used_by_customer = int(used_space_dict[newpacket.OwnerID.to_bin()])
+                bytes_donated_to_customer = int(space_dict[newpacket.OwnerID.to_bin()])
                 if bytes_donated_to_customer - bytes_used_by_customer < len(data):
                     lg.warn("no free space for %s" % newpacket.OwnerID)
                     p2p_service.SendFail(newpacket, 'no free space')

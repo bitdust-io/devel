@@ -60,6 +60,8 @@ from main import settings
 
 from contacts import contactsdb
 
+from userid import id_url
+
 from storage import backup_fs
 
 #------------------------------------------------------------------------------
@@ -125,7 +127,7 @@ def validate_customers_quotas(space_dict=None):
             unknown_customers.add(idurl)
             continue
     for idurl in contactsdb.customers():
-        if idurl not in list(space_dict.keys()):
+        if idurl.to_bin() not in list(space_dict.keys()):
             unknown_customers.add(idurl)
     for idurl in space_dict.keys():
         if idurl != b'free':
@@ -152,9 +154,9 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
     current_customers = contactsdb.customers()
     used_space_ratio_dict = {}
     for idurl in current_customers:
-        allocated_bytes = int(space_dict[idurl])
+        allocated_bytes = int(space_dict[idurl.to_bin()])
         try:
-            files_size = int(used_dict.get(idurl, 0))
+            files_size = int(used_dict.get(idurl.to_bin(), 0))
         except:
             lg.exc()
             files_size = 0
@@ -163,7 +165,7 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
         except:
             lg.exc()
             continue
-        used_space_ratio_dict[idurl] = ratio
+        used_space_ratio_dict[idurl.to_bin()] = ratio
     return used_space_ratio_dict
 
 #------------------------------------------------------------------------------
@@ -215,17 +217,17 @@ def report_donated_storage():
     for idurl in contactsdb.customers():
         consumed_by_customer = 0
         used_by_customer = 0
-        if idurl not in list(space_dict.keys()):
+        if idurl.to_bin() not in list(space_dict.keys()):
             r['errors'].append('space consumed by customer %s is unknown' % idurl)
         else:
             try:
-                consumed_by_customer = int(space_dict.pop(idurl))
+                consumed_by_customer = int(space_dict.pop(idurl.to_bin()))
                 r['consumed'] += consumed_by_customer
             except:
                 r['errors'].append('incorrect value of consumed space for customer %s' % idurl)
-        if idurl in list(used_space_dict.keys()):
+        if idurl.to_bin() in list(used_space_dict.keys()):
             try:
-                used_by_customer = int(used_space_dict.pop(idurl))
+                used_by_customer = int(used_space_dict.pop(idurl.to_bin()))
                 used += used_by_customer
             except:
                 r['errors'].append('incorrect value of used space for customer %s' % idurl)
@@ -255,11 +257,12 @@ def report_donated_storage():
         r['errors'].append('current info needs update, known size is %d bytes but real is %d bytes' % (
             r['used'], r['real']))
     for idurl in used_space_dict.keys():
+        idurl = id_url.field(idurl)
         real = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
         r['old_customers'].append({
             'idurl': idurl,
-            'used': used_space_dict[idurl],
-            'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
+            'used': used_space_dict[idurl.to_bin()],
+            'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl.to_bin()]),
             'real': real,
             'real_str': diskspace.MakeStringFromBytes(real),
         })
