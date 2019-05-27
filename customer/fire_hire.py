@@ -427,7 +427,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        my_current_family = list(contactsdb.suppliers())
+        my_current_family = id_url.to_bin_list(contactsdb.suppliers())
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue
@@ -446,7 +446,7 @@ class FireHire(automat.Automat):
                 'connect',
                 family_position=pos,
                 ecc_map=eccmap.Current().name,
-                family_snapshot=my_current_family,
+                family_snapshot=id_url.to_bin_list(my_current_family),
             )
             online_status.add_online_status_listener_callback(
                 idurl=supplier_idurl,
@@ -608,7 +608,7 @@ class FireHire(automat.Automat):
             'start',
             family_position=position_for_new_supplier,
             ecc_map=eccmap.Current().name,
-            family_snapshot=contactsdb.suppliers(),
+            family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
         )
 
     def doSubstituteSupplier(self, *args, **kwargs):
@@ -658,7 +658,7 @@ class FireHire(automat.Automat):
                 old_idurl=None,
                 position=family_position,
                 ecc_map=eccmap.Current().name,
-                family_snapshot=contactsdb.suppliers(),
+                family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
             ))
         else:
             if old_idurl:
@@ -668,7 +668,7 @@ class FireHire(automat.Automat):
                     old_idurl=old_idurl,
                     position=family_position,
                     ecc_map=eccmap.Current().name,
-                    family_snapshot=contactsdb.suppliers(),
+                    family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
             else:
                 lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
@@ -677,7 +677,7 @@ class FireHire(automat.Automat):
                     old_idurl=None,
                     position=family_position,
                     ecc_map=eccmap.Current().name,
-                    family_snapshot=contactsdb.suppliers(),
+                    family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
         self.restart_interval = 1.0
 

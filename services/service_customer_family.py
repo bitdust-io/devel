@@ -53,6 +53,7 @@ class SupplierRelationsService(LocalService):
         from logs import lg
         from main import events
         from contacts import contactsdb
+        from userid import id_url
         from supplier import family_member
         from transport import callback
         # TODO: check all imports.! my_id must be loaded latest as possible!
@@ -72,10 +73,10 @@ class SupplierRelationsService(LocalService):
             fm.automat('init')
             local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             fm.automat('family-join', {
-                'supplier_idurl': my_id.getLocalID(),
+                'supplier_idurl': my_id.getLocalID().to_bin(),
                 'ecc_map': local_customer_meta_info.get('ecc_map'),
                 'position': local_customer_meta_info.get('position', -1),
-                'family_snapshot': local_customer_meta_info.get('family_snapshot'),
+                'family_snapshot': id_url.to_bin_list(local_customer_meta_info.get('family_snapshot')),
             })
 
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
@@ -96,6 +97,7 @@ class SupplierRelationsService(LocalService):
     def _on_new_customer_accepted(self, evt):
         from logs import lg
         from userid import my_id
+        from userid import id_url
         from supplier import family_member
         customer_idurl = evt.data['idurl']
         fm = family_member.by_customer_idurl(customer_idurl)
@@ -105,15 +107,16 @@ class SupplierRelationsService(LocalService):
         else:
             lg.warn('family_member() instance already exists, but new customer just accepted %s' % customer_idurl)
         fm.automat('family-join', {
-            'supplier_idurl': my_id.getLocalID(),
+            'supplier_idurl': my_id.getLocalID().to_bin(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position', -1),
-            'family_snapshot': evt.data.get('family_snapshot'),
+            'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
         })
 
     def _on_existing_customer_accepted(self, evt):
         from logs import lg
         from supplier import family_member
+        from userid import id_url
         from userid import my_id
         customer_idurl = evt.data['idurl']
         if customer_idurl == my_id.getLocalID():
@@ -127,10 +130,10 @@ class SupplierRelationsService(LocalService):
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
             return
         fm.automat('family-join', {
-            'supplier_idurl': my_id.getLocalID(),
+            'supplier_idurl': my_id.getLocalID().to_bin(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position'),
-            'family_snapshot': evt.data.get('family_snapshot'),
+            'family_snapshot': id_url.to_bin_list(evt.data.get('family_snapshot')),
         })
 
     def _on_existing_customer_terminated(self, evt):
@@ -146,7 +149,7 @@ class SupplierRelationsService(LocalService):
             lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
             return
         fm.automat('family-leave', {
-            'supplier_idurl': my_id.getLocalID(),
+            'supplier_idurl': my_id.getLocalID().to_bin(),
         })
 
     def _on_incoming_contacts_packet(self, newpacket, info):
@@ -200,7 +203,7 @@ class SupplierRelationsService(LocalService):
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
                 supplier_idurl = id_url.field(json_payload['supplier_idurl'])
                 supplier_position = json_payload['supplier_position']
-                family_snapshot = json_payload.get('family_snapshot')
+                family_snapshot = id_url.to_bin_list(json_payload.get('family_snapshot'))
             except:
                 lg.exc()
                 return False

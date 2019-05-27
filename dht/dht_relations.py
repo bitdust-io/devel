@@ -65,7 +65,7 @@ def read_customer_suppliers(customer_idurl):
         ret = {
             'suppliers': [],
             'ecc_map': None,
-            'customer_idurl': customer_idurl.to_bin(),
+            'customer_idurl': customer_idurl,
             'revision': 0,
             'publisher_idurl': None,
             'timestamp': None,
@@ -75,9 +75,9 @@ def read_customer_suppliers(customer_idurl):
             return ret
         try:
             _ecc_map = strng.to_text(dht_value['ecc_map'])
-            _customer_idurl = id_url.field(dht_value['customer_idurl']).to_bin()
-            _publisher_idurl = id_url.field(dht_value.get('publisher_idurl')).to_bin()
-            _suppliers_list = list(map(lambda i: id_url.field(i).to_bin(), dht_value['suppliers']))
+            _customer_idurl = id_url.field(dht_value['customer_idurl'])
+            _publisher_idurl = id_url.field(dht_value.get('publisher_idurl'))
+            _suppliers_list = id_url.fields_list(dht_value['suppliers'])
             _revision = int(dht_value.get('revision'))
             _timestamp = int(dht_value.get('timestamp'))
         except:
@@ -122,6 +122,8 @@ def read_customer_suppliers(customer_idurl):
 
 
 def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revision=None, publisher_idurl=None, ):
+    customer_idurl = id_url.field(customer_idurl)
+    publisher_idurl = id_url.field(publisher_idurl)
     if customer_idurl == my_id.getLocalID():
         lg.warn('skip writing my own suppliers list which suppose to be written to DHT')
     else:
@@ -129,7 +131,7 @@ def write_customer_suppliers(customer_idurl, suppliers_list, ecc_map=None, revis
         contactsdb.save_suppliers(customer_idurl=customer_idurl)
     return dht_records.set_suppliers(
         customer_idurl=customer_idurl,
-        suppliers_list=suppliers_list,
+        suppliers_list=id_url.fields_list(suppliers_list),
         ecc_map=ecc_map,
         revision=revision,
         publisher_idurl=publisher_idurl,

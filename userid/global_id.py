@@ -308,9 +308,9 @@ def GlobalUserToIDURL(inp):
             port = -1
         if port >= 0:
             idhost = "%s:%d" % (idhost[:_pos], port)
+    # return strng.to_bin()
     from userid import id_url
     return id_url.field('http://{}/{}.xml'.format(idhost, user))
-    # return strng.to_bin()
 
 #------------------------------------------------------------------------------
 

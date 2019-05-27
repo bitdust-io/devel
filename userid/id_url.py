@@ -219,11 +219,12 @@ def field(idurl):
     Translates string into `ID_URL_FIELD` object.
     Also we try to read from local identity cache folder if do not know given "idurl".
     """
+    global _KnownIDURLs
     if isinstance(idurl, ID_URL_FIELD):
         return idurl
     if idurl in [None, 'None', '', b'None', b'', ]:
         return ID_URL_FIELD(idurl)
-    global _KnownIDURLs
+    idurl = strng.to_bin(idurl.strip())
     if idurl not in _KnownIDURLs:
         from contacts import identitydb
         cached_ident = identitydb.get(idurl)
@@ -232,12 +233,80 @@ def field(idurl):
     return ID_URL_FIELD(idurl)
 
 
+def fields_list(idurl_list):
+    """
+    Same as `field()` but for lists.
+    """
+    return list(map(field, idurl_list)) 
+
+
+def fields_dict(idurl_dict):
+    """
+    Translates dictionary keys into `ID_URL_FIELD` objects.
+    """
+    return {field(k): v for k, v in idurl_dict.items()}
+
+
 def to_bin(idurl):
+    """
+    Translates `ID_URL_FIELD` to binary string.
+    """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl.to_bin()
     if idurl in [None, 'None', '', b'None', b'', ]:
         return b''
     return strng.to_bin(idurl)
+
+
+def to_list(iterable_object, as_field=True, as_bin=False):
+    """
+    Creates list of desired objects from given `iterable_object`.
+    """
+    if as_field:
+        return list(map(field, iterable_object))
+    if as_bin:
+        return list(map(strng.to_bin, iterable_object))
+    return list(iterable_object)
+
+
+def to_bin_list(iterable_object):
+    """
+    Just an alias for to_list().
+    """
+    return to_list(iterable_object, as_field=False, as_bin=True)
+
+
+def to_bin_dict(idurl_dict):
+    """
+    Translates dictionary keys into binary strings if they were `ID_URL_FIELD` objects.
+    """
+    return {(k.to_bin() if isinstance(k, ID_URL_FIELD) else strng.to_bin(k)): v for k, v in idurl_dict.items()}
+
+
+def idurl_in(idurl, iterable_object, as_field=True, as_bin=False):
+    """
+    Equivalent of `idurl in iterable_object`.
+    Because it can be that you need to compare not `ID_URL_FIELD` objects in memory but normal strings.
+    So then you will prefer to avoid translating into field object.
+    """
+    if as_field:
+        return field(idurl) in iterable_object
+    if as_bin:
+        return strng.to_bin(idurl) in iterable_object
+    return idurl in iterable_object
+
+
+def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False):
+    """
+    Equivalent of `{<some dict>}.get(idurl, default)`.
+    Because it can be that you need to keep not `ID_URL_FIELD` objects in your dictionary but a normal strings.
+    So then you will prefer to avoid translating into field object.
+    """
+    if as_field:
+        return dict_object.get(field(idurl), default)
+    if as_bin:
+        return dict_object.get(strng.to_bin(idurl), default)
+    return dict_object.get(idurl, default)
 
 #------------------------------------------------------------------------------
 

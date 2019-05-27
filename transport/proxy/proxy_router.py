@@ -526,8 +526,8 @@ class ProxyRouter(automat.Automat):
             # see proxy_sender.ProxySender : _on_first_outbox_packet() for sending part
             json_payload = serialization.BytesToDict(inpt.read(), keys_to_text=True)
             inpt.close()
-            sender_idurl = id_url.field(json_payload['f'])   # from
-            receiver_idurl = id_url.field(json_payload['t']) # to
+            sender_idurl = strng.to_bin(json_payload['f'])   # from
+            receiver_idurl = strng.to_bin(json_payload['t']) # to
             wide = json_payload['w']                         # wide
             routed_data = json_payload['p']                  # payload
         except:

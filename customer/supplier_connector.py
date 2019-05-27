@@ -75,6 +75,7 @@ from lib import diskspace
 
 from contacts import contactsdb
 
+from userid import id_url
 from userid import global_id
 
 from crypt import my_keys
@@ -389,7 +390,7 @@ class SupplierConnector(automat.Automat):
             service_info['position'] = self._last_known_family_position
         self._last_known_family_snapshot = kwargs.get('family_snapshot')
         if self._last_known_family_snapshot is not None:
-            service_info['family_snapshot'] = list(map(lambda i: i.to_bin(), self._last_known_family_snapshot))
+            service_info['family_snapshot'] = id_url.to_bin_list(self._last_known_family_snapshot)
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',

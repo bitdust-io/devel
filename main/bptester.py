@@ -125,7 +125,7 @@ def SpaceTime():
     old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = accounting.read_customers_quotas()
+    space, free_space = accounting.read_customers_quotas()
     if space is None:
         printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
         return
@@ -145,7 +145,7 @@ def SpaceTime():
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
-        curspace = space.get(idurl.to_bin(), None)
+        curspace = space.get(idurl, None)
         if curspace is None:
             remove_list[onecustdir] = 'not found in space file'
             continue
@@ -183,7 +183,7 @@ def SpaceTime():
                     printlog('SpaceTime ERROR removing ' + path)
                 # time.sleep(0.01)
 
-        used_space[idurl.to_bin()] = str(currentV)
+        used_space[idurl] = str(currentV)
         timedict.clear()
         sizedict.clear()
 
@@ -217,7 +217,7 @@ def UpdateCustomers():
     """
     Test packets after list of customers was changed.
     """
-    space = accounting.read_customers_quotas()
+    space, free_space = accounting.read_customers_quotas()
     if space is None:
         printlog('UpdateCustomers ERROR space file can not be read')
         return
@@ -236,7 +236,7 @@ def UpdateCustomers():
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
-        curspace = space.get(idurl.to_bin(), None)
+        curspace = space.get(idurl, None)
         if curspace is None:
             remove_list[onecustdir] = 'is not a customer'
             continue

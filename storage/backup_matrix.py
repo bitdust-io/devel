@@ -295,7 +295,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
     backups2remove = set()
     paths2remove = set()
     missed_backups = set(remote_files().keys())
-    oldfiles = ClearSupplierRemoteInfo(supplierNum, global_id.UrlToGlobalID(customer_idurl))
+    oldfiles = ClearSupplierRemoteInfo(supplierNum, customer_idurl=customer_idurl)
     newfiles = 0
     remote_files_changed = False
     current_key_alias = 'master'

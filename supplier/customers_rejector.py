@@ -154,18 +154,18 @@ class CustomersRejector(automat.Automat):
         failed_customers = set()
         current_customers = contactsdb.customers()
         donated_bytes = settings.getDonatedBytes()
-        space_dict = accounting.read_customers_quotas()
+        space_dict, free_space = accounting.read_customers_quotas()
         used_dict = accounting.read_customers_usage()
-        unknown_customers, unused_quotas = accounting.validate_customers_quotas(space_dict)
+        unknown_customers, unused_quotas = accounting.validate_customers_quotas(space_dict, free_space)
         failed_customers.update(unknown_customers)
         for idurl in unknown_customers:
-            space_dict.pop(id_url.to_bin(idurl), None)
+            space_dict.pop(idurl, None)
         for idurl in unused_quotas:
-            space_dict.pop(id_url.to_bin(idurl), None)
+            space_dict.pop(idurl, None)
         consumed_bytes = accounting.count_consumed_space(space_dict)
-        space_dict[b'free'] = donated_bytes - consumed_bytes
+        free_space = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:
-            accounting.write_customers_quotas(space_dict)
+            accounting.write_customers_quotas(space_dict, free_space)
             lg.out(8, '        space is OK !!!!!!!!')
             self.automat('space-enough')
             return
@@ -175,136 +175,40 @@ class CustomersRejector(automat.Automat):
                 current_customers.remove(idurl)
                 lg.out(8, '            %r' % idurl)
             self.automat('space-overflow', (
-                space_dict, consumed_bytes, current_customers, failed_customers))
+                space_dict, free_space, consumed_bytes, current_customers, failed_customers))
             return
         used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
         customers_sorted = sorted(current_customers,
-                                  key=lambda idurl: used_space_ratio_dict[idurl.to_bin()],)
+                                  key=lambda idurl: used_space_ratio_dict[idurl],)
         while len(customers_sorted) > 0 and consumed_bytes > donated_bytes:
             idurl = customers_sorted.pop()
-            allocated_bytes = int(space_dict[idurl.to_bin()])
+            allocated_bytes = int(space_dict[idurl])
             consumed_bytes -= allocated_bytes
-            space_dict.pop(idurl.to_bin())
+            space_dict.pop(idurl)
             failed_customers.add(idurl)
             current_customers.remove(idurl)
             lg.out(8, '        customer %s will be REMOVED' % idurl)
-        space_dict[b'free'] = donated_bytes - consumed_bytes
+        free_space = donated_bytes - consumed_bytes
         lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
         self.automat('space-overflow', (
-            space_dict, consumed_bytes, current_customers, failed_customers))
-
-    def doTestMyCapacity2(self, *args, **kwargs):
-        """
-        Here are some values.
-
-        - donated_bytes : you set this in the config
-        - spent_bytes : how many space is taken from you by other users right now
-        - free_bytes = donated_bytes - spent_bytes : not yet allocated space
-        - used_bytes : size of all files, which you store on your disk for your customers
-        """
-        current_customers = contactsdb.customers()
-        removed_customers = []
-        spent_bytes = 0
-        donated_bytes = settings.getDonatedBytes()
-        space_dict = accounting.read_customers_quotas()
-        if not space_dict:
-            space_dict = {b'free': donated_bytes}
-        used_dict = accounting.read_customers_usage()
-        lg.out(8, 'customers_rejector.doTestMyCapacity donated=%d' % donated_bytes)
-        try:
-            int(space_dict[b'free'])
-            for idurl, customer_bytes in space_dict.items():
-                if idurl != b'free':
-                    spent_bytes += int(customer_bytes)
-        except:
-            lg.exc()
-            space_dict = {b'free': donated_bytes}
-            spent_bytes = 0
-            removed_customers = list(current_customers)
-            current_customers = []
-            self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
-            return
-        lg.out(8, '        spent=%d' % spent_bytes)
-        if spent_bytes < donated_bytes:
-            space_dict[b'free'] = donated_bytes - spent_bytes
-            accounting.write_customers_quotas(space_dict)
-            lg.out(8, '        space is OK !!!!!!!!')
-            self.automat('space-enough')
-            return
-        used_space_ratio_dict = {}
-        for customer_pos in range(contactsdb.num_customers()):
-            customer_idurl = contactsdb.customer(customer_pos)
-            try:
-                allocated_bytes = int(space_dict[customer_idurl])
-            except:
-                if customer_idurl in current_customers:
-                    current_customers.remove(customer_idurl)
-                    removed_customers.append(customer_idurl)
-                else:
-                    lg.warn('%s not customers' % customer_idurl)
-                lg.warn('%s allocated space unknown' % customer_idurl)
-                continue
-            if allocated_bytes <= 0:
-                if customer_idurl in current_customers:
-                    current_customers.remove(customer_idurl)
-                    removed_customers.append(customer_idurl)
-                else:
-                    lg.warn('%s not customers' % customer_idurl)
-                lg.warn('%s allocated_bytes==0' % customer_idurl)
-                continue
-            try:
-                files_size = int(used_dict.get(customer_idurl.to_bin(), 0))
-                ratio = float(files_size) / float(allocated_bytes)
-            except:
-                if customer_idurl in current_customers:
-                    current_customers.remove(customer_idurl)
-                    removed_customers.append(customer_idurl)
-                else:
-                    lg.warn('%s not customers' % customer_idurl)
-                lg.warn('%s used_dict have wrong value' % customer_idurl)
-                continue
-            if ratio > 1.0:
-                if customer_idurl in current_customers:
-                    current_customers.remove(customer_idurl)
-                    removed_customers.append(customer_idurl)
-                else:
-                    lg.warn('%s not customers' % customer_idurl)
-                spent_bytes -= allocated_bytes
-                lg.warn('%s space overflow, where is bptester?' % customer_idurl)
-                continue
-            used_space_ratio_dict[customer_idurl.to_bin()] = ratio
-        customers_sorted = sorted(current_customers,
-                                  key=lambda i: used_space_ratio_dict[i.to_bin()],)
-        while len(customers_sorted) > 0:
-            customer_idurl = customers_sorted.pop()
-            allocated_bytes = int(space_dict[customer_idurl])
-            spent_bytes -= allocated_bytes
-            space_dict.pop(customer_idurl)
-            current_customers.remove(customer_idurl)
-            removed_customers.append(customer_idurl)
-            lg.out(8, '        customer %s REMOVED' % customer_idurl)
-            if spent_bytes < donated_bytes:
-                break
-        space_dict[b'free'] = donated_bytes - spent_bytes
-        lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
-        self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
+            space_dict, free_space, consumed_bytes, current_customers, failed_customers))
 
     def doRemoveCustomers(self, *args, **kwargs):
         """
         Action method.
         """
-        space_dict, spent_bytes, current_customers, removed_customers = args[0]
+        space_dict, free_space, spent_bytes, current_customers, removed_customers = args[0]
         contactsdb.update_customers(current_customers)
         for customer_idurl in removed_customers:
             contactsdb.remove_customer_meta_info(customer_idurl)
         contactsdb.save_customers()
-        accounting.write_customers_quotas(space_dict)
+        accounting.write_customers_quotas(space_dict, free_space)
 
     def doSendRejectService(self, *args, **kwargs):
         """
         Action method.
         """
-        space_dict, spent_bytes, current_customers, removed_customers = args[0]
+        space_dict, free_space, spent_bytes, current_customers, removed_customers = args[0]
         for customer_idurl in removed_customers:
             p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
             events.send('existing-customer-terminated', dict(idurl=customer_idurl))

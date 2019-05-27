@@ -168,7 +168,7 @@ def set_suppliers(idlist, customer_idurl=None):
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
-    _SuppliersList[customer_idurl] = [id_url.field(idurl) for idurl in idlist]
+    _SuppliersList[customer_idurl] = id_url.fields_list(idlist)
 
 
 def update_suppliers(idlist, customer_idurl=None):
@@ -616,8 +616,9 @@ def save_customers(path=None, save_meta_info=False):
     lst = list(map(strng.to_text, lst))
     bpio._write_list(path, lst)
     if save_meta_info:
+        json_info = id_url.to_bin_dict(_CustomersMetaInfo)
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-            _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
+            json_info, indent=2, sort_keys=True, keys_to_text=True, ))
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.save_customers : %r' % lst)
 
@@ -638,6 +639,7 @@ def load_customers(path=None):
         local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}',
         keys_to_bin=True,
     )
+    _CustomersMetaInfo = id_url.fields_dict(_CustomersMetaInfo)
     lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
 
 #------------------------------------------------------------------------------
@@ -758,6 +760,8 @@ def add_customer_meta_info(customer_idurl, info):
     """
     global _CustomersMetaInfo
     customer_idurl = id_url.field(customer_idurl)
+    if 'family_snapshot' in info:
+        info['family_snapshot'] = id_url.to_bin_list(info['family_snapshot'])
     if customer_idurl not in _CustomersMetaInfo:
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   store new meta info for customer %r: %r' % (
@@ -768,8 +772,15 @@ def add_customer_meta_info(customer_idurl, info):
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
                 customer_idurl, info, ))
         _CustomersMetaInfo[customer_idurl].update(info)
-    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-        _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
+    json_info = id_url.to_bin_dict(_CustomersMetaInfo)
+    try:
+        raw_data = jsn.dumps(
+            json_info, indent=2, sort_keys=True, keys_to_text=True,
+        )
+    except:
+        lg.exc()
+        return None
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), raw_data)
     return _CustomersMetaInfo
 
 
@@ -784,8 +795,10 @@ def remove_customer_meta_info(customer_idurl):
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.remove_customer_meta_info   erase existing meta info for customer %r' % customer_idurl)
     _CustomersMetaInfo.pop(customer_idurl)
+    json_info = id_url.to_bin_dict(_CustomersMetaInfo)
     local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-        _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
+        json_info, indent=2, sort_keys=True, keys_to_text=True,
+    ))
     return True
 
 
