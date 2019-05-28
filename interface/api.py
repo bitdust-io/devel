@@ -107,7 +107,8 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
         try:
             sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
         except:
-            sample = strng.to_text(0, errors='ignore')[:150]
+            lg.exc()
+            sample = strng.to_text(o, errors='ignore')[:150]
         lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample))
     return o
 
@@ -665,9 +666,9 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
         return ERROR('"master" key can not be shared')
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return ERROR('icorrect key_id format')
-    idurl = trusted_global_id_or_idurl
+    idurl = strng.to_bin(trusted_global_id_or_idurl)
     if global_id.IsValidGlobalUser(idurl):
-        idurl = global_id.GlobalUserToIDURL(idurl)
+        idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
     from access import key_ring
     ret = Deferred()
     d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, timeout=timeout)
@@ -701,9 +702,9 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return ERROR('icorrect key_id format')
     if global_id.IsValidGlobalUser(untrusted_global_id_or_idurl):
-        idurl = global_id.GlobalUserToIDURL(untrusted_global_id_or_idurl)
+        idurl = global_id.GlobalUserToIDURL(untrusted_global_id_or_idurl, as_field=False)
     else:
-        idurl = untrusted_global_id_or_idurl
+        idurl = strng.to_bin(untrusted_global_id_or_idurl)
     from access import key_ring
     ret = Deferred()
     if is_private:
@@ -1928,7 +1929,7 @@ def friend_add(idurl_or_global_id, alias=''):
     from userid import global_id
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
-        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id)
+        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
     if not contactsdb.is_correspondent(idurl):
@@ -1945,7 +1946,7 @@ def friend_remove(idurl_or_global_id):
     from userid import global_id
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
-        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id)
+        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
     if contactsdb.is_correspondent(idurl):
@@ -1988,12 +1989,12 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
     from userid import my_id
     from userid import global_id
     from storage import backup_matrix
-    customer_idurl = customer_idurl_or_global_id
+    customer_idurl = strng.to_bin(customer_idurl_or_global_id)
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getLocalID().to_bin()
     else:
         if global_id.IsValidGlobalUser(customer_idurl):
-            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
         if not supplier_idurl:
@@ -2129,12 +2130,12 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     from dht import dht_relations
     from userid import my_id
     from userid import global_id
-    customer_idurl = customer_idurl_or_global_id
+    customer_idurl = strng.to_bin(customer_idurl_or_global_id)
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getLocalID().to_bin()
     else:
         if global_id.IsValidGlobalUser(customer_idurl):
-            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
     ret = Deferred()
     d = dht_relations.read_customer_suppliers(customer_idurl)
     d.addCallback(lambda result: ret.callback(RESULT(result)))

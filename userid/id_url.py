@@ -347,6 +347,8 @@ class ID_URL_FIELD(object):
             if _Debug:
                 lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
             return True
+        if not idurl:
+            return not bool(self.current)
         # now compare based on public key
         if not isinstance(idurl, ID_URL_FIELD):
             idurl = ID_URL_FIELD(idurl)
@@ -369,6 +371,8 @@ class ID_URL_FIELD(object):
             if _Debug:
                 lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
             return False
+        if not idurl:
+            return bool(self.current)
         # now compare based on public key
         if not isinstance(idurl, ID_URL_FIELD):
             idurl = ID_URL_FIELD(idurl)
@@ -400,6 +404,11 @@ class ID_URL_FIELD(object):
         if _Debug:
             lg.args(_DebugLevel, current=self.current)
         return self.current
+
+    def __bool__(self):
+        if _Debug:
+            lg.args(_DebugLevel, current=self.current)
+        return bool(self.current)
 
     def strip(self):
         if _Debug:

@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = True
@@ -225,12 +225,18 @@ def handle(newpacket, info):
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
             info.proto, info.host, newpacket))
         return None
-    for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
-        p.automat('inbox-packet', (newpacket, info))
-        handled = True
-        if _Debug:
-            lg.out(_DebugLevel, '    processed by %s as response packet' % p)
-    handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
+    try:
+        for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
+            p.automat('inbox-packet', (newpacket, info))
+            handled = True
+            if _Debug:
+                lg.out(_DebugLevel, '    processed by %s as response packet' % p)
+    except:
+        lg.exc()
+    try:
+        handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
+    except:
+        lg.exc()
     if not handled and newpacket.Command not in [commands.Ack(), commands.Fail(), commands.Identity(), ]:
         lg.warn('incoming %s from [%s://%s] was NOT HANDLED' % (newpacket, info.proto, info.host))
     if _Debug:

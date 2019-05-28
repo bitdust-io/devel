@@ -62,7 +62,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -200,7 +200,7 @@ class ProxyReceiver(automat.Automat):
         'timer-5sec': (5.0, ['SERVICE?']),
         'timer-10sec': (10.0, ['LISTEN']),
         'timer-20sec': (20.0, ['FIND_NODE?']),
-        'timer-4sec': (4.0, ['ACK?']),
+        'timer-4sec': (10.0, ['ACK?']),
     }
 
     def init(self):
@@ -414,6 +414,7 @@ class ProxyReceiver(automat.Automat):
             self.router_proto_host = (info.proto, info.host)
         except:
             try:
+                # TODO: move that setting to separate file
                 s = config.conf().getString('services/proxy-transport/current-router').strip()
                 _, router_proto, router_host = s.split(' ')
                 self.router_proto_host = (router_proto, strng.to_bin(router_host), )

@@ -290,9 +290,10 @@ def UrlToGlobalID(url, include_key=False):
     return '%s@%s' % (username, host)
 
 
-def GlobalUserToIDURL(inp):
+def GlobalUserToIDURL(inp, as_field=True):
     """
     """
+    inp = strng.to_text(inp)
     user, _, idhost = inp.strip().rpartition('@')
     if not user:
         return None
@@ -308,7 +309,8 @@ def GlobalUserToIDURL(inp):
             port = -1
         if port >= 0:
             idhost = "%s:%d" % (idhost[:_pos], port)
-    # return strng.to_bin()
+    if not as_field:
+        return strng.to_bin('http://{}/{}.xml'.format(idhost, user))
     from userid import id_url
     return id_url.field('http://{}/{}.xml'.format(idhost, user))
 
@@ -319,6 +321,7 @@ def IsValidGlobalUser(inp):
     """
     if not inp:
         return False
+    inp = strng.to_text(inp)
     if inp.count('@') != 1:
         return False
     user, _, idhost = inp.strip().rpartition('@')
@@ -335,6 +338,7 @@ def IsFullGlobalID(inp):
     """
     if not inp:
         return False
+    inp = strng.to_text(inp)
     user, _, remote_path = inp.strip().rpartition(':')
     if not IsValidGlobalUser(user):
         return False

@@ -126,7 +126,7 @@ class EmployerService(LocalService):
             if not idurl:
                 continue
             if not contactsdb.is_supplier(idurl):
-                lg.warn('dht relation with %s is not valid anymore' % idurl)
+                lg.warn('dht relation with %r is not valid anymore' % idurl)
                 suppliers_to_be_dismissed.add(idurl)
         for supplier_idurl in suppliers_to_be_dismissed:
             service_info = {}
