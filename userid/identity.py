@@ -1038,6 +1038,8 @@ def main():
         print(my_id.getLocalIdentity().serialize())
         print('Valid is: ', my_id.getLocalIdentity().Valid())
     else:
+        if not key.InitMyKey():
+            key.GenerateNewKey()
         my_id.setLocalIdentity(my_id.buildDefaultIdentity(sys.argv[1]))
         my_id.saveLocalIdentity()
         print(my_id.getLocalIdentity().serialize())
@@ -1067,5 +1069,5 @@ def update():
 
 if __name__ == '__main__':
     lg.set_debug_level(18)
-    # main()
-    update()
+    main()
+    # update()

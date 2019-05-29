@@ -2137,7 +2137,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
         if global_id.IsValidGlobalUser(customer_idurl):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
     ret = Deferred()
-    d = dht_relations.read_customer_suppliers(customer_idurl)
+    d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False)
     d.addCallback(lambda result: ret.callback(RESULT(result)))
     d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret

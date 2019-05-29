@@ -57,15 +57,18 @@ from userid import id_url
 
 #------------------------------------------------------------------------------
 
-def read_customer_suppliers(customer_idurl):
+def read_customer_suppliers(customer_idurl, as_fields=True):
     customer_idurl = id_url.field(customer_idurl)
     result = Deferred()
 
     def _do_verify(dht_value):
+        _customer_idurl = customer_idurl
+        if not as_fields:
+            _customer_idurl = customer_idurl.to_bin()
         ret = {
             'suppliers': [],
             'ecc_map': None,
-            'customer_idurl': customer_idurl,
+            'customer_idurl': _customer_idurl,
             'revision': 0,
             'publisher_idurl': None,
             'timestamp': None,
@@ -75,9 +78,14 @@ def read_customer_suppliers(customer_idurl):
             return ret
         try:
             _ecc_map = strng.to_text(dht_value['ecc_map'])
-            _customer_idurl = id_url.field(dht_value['customer_idurl'])
-            _publisher_idurl = id_url.field(dht_value.get('publisher_idurl'))
-            _suppliers_list = id_url.fields_list(dht_value['suppliers'])
+            if as_fields:
+                _customer_idurl = id_url.field(dht_value['customer_idurl'])
+                _publisher_idurl = id_url.field(dht_value.get('publisher_idurl'))
+                _suppliers_list = id_url.fields_list(dht_value['suppliers'])
+            else:
+                _customer_idurl = id_url.to_bin(dht_value['customer_idurl'])
+                _publisher_idurl = id_url.to_bin(dht_value.get('publisher_idurl'))
+                _suppliers_list = id_url.to_bin_list(dht_value['suppliers'])
             _revision = int(dht_value.get('revision'))
             _timestamp = int(dht_value.get('timestamp'))
         except:

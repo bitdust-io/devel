@@ -363,9 +363,9 @@ def OutboxStatus(pkt_out, status, error=''):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if pkt_out.outpacket.RemoteID == my_id.getLocalID():
+    if pkt_out.outpacket.RemoteID.to_bin() == my_id.getLocalID().to_bin():
         return False
-    if pkt_out.outpacket.CreatorID != my_id.getLocalID():
+    if pkt_out.outpacket.CreatorID.to_bin() != my_id.getLocalID().to_bin():
         return False
     if status == 'finished':
         if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():

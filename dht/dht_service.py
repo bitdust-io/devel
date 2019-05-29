@@ -463,7 +463,7 @@ def validate_rules(value, key, rules, result_defer=None, raise_for_result=False,
 
     if not isinstance(value, dict):
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.validate_data_received    key=[%s] not found : %s' % (key, type(value)))
+            lg.out(_DebugLevel, 'dht_service.validate_rules    key=[%s] not found : %s' % (key, type(value)))
         if not result_defer:
             return value if populate_meta_fields else None
         if raise_for_result:
@@ -483,37 +483,43 @@ def validate_rules(value, key, rules, result_defer=None, raise_for_result=False,
             result_defer.errback(Exception('invalid validation rules can not be applied'))
         return None
 
-    if populate_meta_fields:
-        # Otherwise those records will not pass validation
-        if value.get('type') != expected_record_type:
-            value['type'] = expected_record_type
-        if value.get('key') != key:
-            value['key'] = key
-
     passed = True
     errors = []
-    for field, field_rules in rules.items():
-        for rule in field_rules:
-            if 'op' not in rule:
-                lg.warn('incorrect validation rule found: %r' % rule)
-                continue
-            if rule['op'] == 'equal' and rule.get('arg') != strng.to_text(value.get(field)):
-                passed = False
-                errors.append((field, rule, ))
+    try:
+        if populate_meta_fields:
+            # Otherwise those records will not pass validation
+            if value.get('type') != expected_record_type:
+                value['type'] = expected_record_type
+            if value.get('key') != key:
+                value['key'] = key
+    
+        for field, field_rules in rules.items():
+            for rule in field_rules:
+                if 'op' not in rule:
+                    lg.warn('incorrect validation rule found: %r' % rule)
+                    continue
+                if rule['op'] == 'equal' and rule.get('arg') != strng.to_text(value.get(field)):
+                    passed = False
+                    errors.append((field, rule, ))
+                    break
+                if rule['op'] == 'exist' and field not in value:
+                    passed = False
+                    errors.append((field, rule, ))
+                    break
+            if not passed:
                 break
-            if rule['op'] == 'exist' and field not in value:
-                passed = False
-                errors.append((field, rule, ))
-                break
-        if not passed:
-            break
+    except Exception as exc:
+        lg.exc()
+        passed = False
+        errors = [('unknown', exc, )]
+
     if not passed:
         lg.err('DHT record validation failed, errors: %s' % errors)
         if result_defer:
             result_defer.errback(Exception('DHT record validation failed'))
         return None
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_data_received   key=[%s] : value is OK' % key)
+        lg.out(_DebugLevel, 'dht_service.validate_rules   key=[%s] : value is OK' % key)
     if result_defer:
         result_defer.callback(value)
     return value
@@ -677,8 +683,8 @@ def validate_after_receive(value, key, rules, result_defer, raise_for_result, po
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_data_after_receive for key [%s]' % key)
     response = validate_rules(value, key, rules, result_defer=result_defer,
-                            raise_for_result=raise_for_result,
-                            populate_meta_fields=populate_meta_fields)
+                              raise_for_result=raise_for_result,
+                              populate_meta_fields=populate_meta_fields)
     if not isinstance(response, dict):
         if populate_meta_fields:
             ret = {

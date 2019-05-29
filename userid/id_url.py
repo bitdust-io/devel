@@ -49,7 +49,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -92,10 +92,13 @@ def init():
     from userid import identity
     if _Debug:
         lg.out(_DebugLevel, "id_url.init")
-    _IdentityHistoryDir = settings.IdentityHistoryDir()
+    if not _IdentityHistoryDir:
+        _IdentityHistoryDir = settings.IdentityHistoryDir()
     if not os.path.exists(_IdentityHistoryDir):
         bpio._dir_make(_IdentityHistoryDir)
         lg.info('created new folder %r' % _IdentityHistoryDir)
+    else:
+        lg.info('using existing folder %r' % _IdentityHistoryDir)
     for one_user_dir in os.listdir(_IdentityHistoryDir):
         one_user_dir_path = os.path.join(_IdentityHistoryDir, one_user_dir)
         one_user_identity_files = sorted(map(int, os.listdir(one_user_dir_path)))
@@ -117,9 +120,11 @@ def init():
             if one_pub_key not in _KnownUsers:
                 _KnownUsers[one_pub_key] = one_user_dir_path
             for known_idurl in known_id_obj.getSources():
-                known_idurl = strng.to_bin(known_idurl)
+                known_idurl = to_bin(known_idurl)
                 if known_idurl not in _KnownIDURLs:
                     _KnownIDURLs[known_idurl] = known_id_obj.getPublicKey()
+                    if _Debug:
+                        lg.out(_DebugLevel, '    known IDURL added: %r' % known_idurl)
                 else:
                     if _KnownIDURLs[known_idurl] != known_id_obj.getPublicKey():
                         _KnownIDURLs[known_idurl] = known_id_obj.getPublicKey()
@@ -127,7 +132,7 @@ def init():
                 if one_pub_key not in _MergedIDURLs:
                     _MergedIDURLs[one_pub_key] = []
                 if known_idurl not in _MergedIDURLs[one_pub_key]:
-                    _MergedIDURLs[one_pub_key].append(strng.to_bin(known_idurl))
+                    _MergedIDURLs[one_pub_key].append(to_bin(known_idurl))
     _Ready = True
 
 
@@ -191,9 +196,11 @@ def identity_cached(id_obj):
                 lg.out(_DebugLevel, '        identity sources for user %r changed, wrote new item in the history: %r' % (
                     user_name, next_identity_file_path))
     for new_idurl in id_obj.getSources():
-        new_idurl = strng.to_bin(new_idurl)
+        new_idurl = to_bin(new_idurl)
         if new_idurl not in _KnownIDURLs:
             _KnownIDURLs[new_idurl] = id_obj.getPublicKey()
+            if _Debug:
+                lg.out(_DebugLevel, '    known IDURL added: %r' % new_idurl)
         else:
             if _KnownIDURLs[new_idurl] != id_obj.getPublicKey():
                 lg.warn('another user had same identity source: %r' % new_idurl)
@@ -201,7 +208,7 @@ def identity_cached(id_obj):
         if pub_key not in _MergedIDURLs:
             _MergedIDURLs[pub_key] = []
         if new_idurl not in _MergedIDURLs[pub_key]:
-            _MergedIDURLs[pub_key].append(strng.to_bin(new_idurl))
+            _MergedIDURLs[pub_key].append(to_bin(new_idurl))
             if _Debug:
                 lg.out(_DebugLevel, '        added new identity source %r for user %r' % (new_idurl, user_name))
     if is_identity_rotated:
@@ -226,6 +233,7 @@ def field(idurl):
         return ID_URL_FIELD(idurl)
     idurl = strng.to_bin(idurl.strip())
     if idurl not in _KnownIDURLs:
+        lg.warn('will try to find %r in local identity cache' % idurl)
         from contacts import identitydb
         cached_ident = identitydb.get(idurl)
         if cached_ident:
@@ -262,10 +270,12 @@ def to_list(iterable_object, as_field=True, as_bin=False):
     """
     Creates list of desired objects from given `iterable_object`.
     """
+    if not iterable_object:
+        return iterable_object
     if as_field:
         return list(map(field, iterable_object))
     if as_bin:
-        return list(map(strng.to_bin, iterable_object))
+        return list(map(to_bin, iterable_object))
     return list(iterable_object)
 
 
@@ -273,6 +283,8 @@ def to_bin_list(iterable_object):
     """
     Just an alias for to_list().
     """
+    if not iterable_object:
+        return iterable_object
     return to_list(iterable_object, as_field=False, as_bin=True)
 
 
@@ -280,7 +292,7 @@ def to_bin_dict(idurl_dict):
     """
     Translates dictionary keys into binary strings if they were `ID_URL_FIELD` objects.
     """
-    return {(k.to_bin() if isinstance(k, ID_URL_FIELD) else strng.to_bin(k)): v for k, v in idurl_dict.items()}
+    return {to_bin(k): v for k, v in idurl_dict.items()}
 
 
 def idurl_in(idurl, iterable_object, as_field=True, as_bin=False):
@@ -289,10 +301,12 @@ def idurl_in(idurl, iterable_object, as_field=True, as_bin=False):
     Because it can be that you need to compare not `ID_URL_FIELD` objects in memory but normal strings.
     So then you will prefer to avoid translating into field object.
     """
+    if not iterable_object:
+        return False
     if as_field:
         return field(idurl) in iterable_object
     if as_bin:
-        return strng.to_bin(idurl) in iterable_object
+        return to_bin(idurl) in iterable_object
     return idurl in iterable_object
 
 
@@ -305,7 +319,7 @@ def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False)
     if as_field:
         return dict_object.get(field(idurl), default)
     if as_bin:
-        return dict_object.get(strng.to_bin(idurl), default)
+        return dict_object.get(to_bin(idurl), default)
     return dict_object.get(idurl, default)
 
 #------------------------------------------------------------------------------
@@ -349,10 +363,17 @@ class ID_URL_FIELD(object):
             return True
         if not idurl:
             return not bool(self.current)
-        # now compare based on public key
+        # now we must compare both objects, so translate to `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
             idurl = ID_URL_FIELD(idurl)
-        result = idurl.to_public_key() == self.to_public_key()
+        # check if we know both sources
+        my_pub_key = self.to_public_key(raise_error=False) 
+        other_pub_key = idurl.to_public_key(raise_error=False)
+        if my_pub_key is None or other_pub_key is None:
+            # if we do not know some of the sources : compare as strings
+            return self.current == idurl.current
+        # now compare based on public key
+        result = (other_pub_key == my_pub_key)
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, current=self.current, result=result)
         return result
@@ -373,9 +394,16 @@ class ID_URL_FIELD(object):
             return False
         if not idurl:
             return bool(self.current)
-        # now compare based on public key
+        # now we must compare both objects, so translate to `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
             idurl = ID_URL_FIELD(idurl)
+        # check if we know both sources
+        my_pub_key = self.to_public_key(raise_error=False) 
+        other_pub_key = idurl.to_public_key(raise_error=False)
+        if my_pub_key is None or other_pub_key is None:
+            # if we do not know some of the sources : compare as strings
+            return self.current != idurl.current
+        # now compare based on public key
         result = idurl.to_public_key() != self.to_public_key()
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, current=self.current, result=result)
@@ -410,6 +438,11 @@ class ID_URL_FIELD(object):
             lg.args(_DebugLevel, current=self.current)
         return bool(self.current)
 
+    def __len__(self):
+        if _Debug:
+            lg.args(_DebugLevel, current=self.current)
+        return len(self.current)
+
     def strip(self):
         if _Debug:
             lg.args(_DebugLevel, current=self.current_as_string)
@@ -430,14 +463,17 @@ class ID_URL_FIELD(object):
             lg.args(_DebugLevel, current=self.current)
         return self.current
 
-    def to_public_key(self):
+    def to_public_key(self, raise_error=True):
         global _KnownIDURLs
         if _Debug:
             lg.args(_DebugLevel, current=self.current)
         if not self.current:
             return b''
         if self.current not in _KnownIDURLs:
-            lg.exc('unknown idurl: %r' % self.current)
-            raise Exception('unknown idurl: %r' % self.current)
+            if not raise_error:
+                return None
+            exc = Exception('unknown idurl: %r' % self.current)
+            lg.exc(exc_value=exc)
+            raise exc
         pub_key = _KnownIDURLs[self.current]
         return pub_key

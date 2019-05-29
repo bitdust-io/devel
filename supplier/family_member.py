@@ -435,7 +435,7 @@ class FamilyMember(automat.Automat):
         """
         Action method.
         """
-        d = dht_relations.read_customer_suppliers(self.customer_idurl)
+        d = dht_relations.read_customer_suppliers(self.customer_idurl, as_fields=False)
         d.addCallback(self._on_dht_read_success)
         d.addErrback(self._on_dht_read_failed)
 
