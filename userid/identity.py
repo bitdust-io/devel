@@ -135,6 +135,11 @@ from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
+_Debug = False
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 
@@ -1040,7 +1045,10 @@ def main():
     else:
         if not key.InitMyKey():
             key.GenerateNewKey()
-        my_id.setLocalIdentity(my_id.buildDefaultIdentity(sys.argv[1]))
+        idurls = []
+        if len(sys.argv) > 2:
+            idurls = sys.argv[2:]
+        my_id.setLocalIdentity(my_id.buildDefaultIdentity(name=sys.argv[1], idurls=idurls))
         my_id.saveLocalIdentity()
         print(my_id.getLocalIdentity().serialize())
         print('Valid is: ', my_id.getLocalIdentity().Valid())

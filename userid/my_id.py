@@ -31,6 +31,14 @@ module:: my_id
 """
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 4
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -77,12 +85,14 @@ def init():
 
     Can put here some minor things if needed.
     """
-    lg.out(4, 'my_id.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'my_id.init')
     loadLocalIdentity()
 
 
 def shutdown():
-    lg.out(4, 'my_id.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'my_id.shutdown')
     forgetLocalIdentity()
 
 #-------------------------------------------------------------------------------
@@ -205,23 +215,28 @@ def loadLocalIdentity():
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     if os.path.exists(filename):
         xmlid = bpio.ReadTextFile(filename)
-        lg.out(6, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), filename))
+        if _Debug:
+            lg.out(_DebugLevel, 'my_id.loadLocalIdentity %d bytes read from %s' % (len(xmlid), filename))
     if not xmlid:
-        lg.out(2, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % filename)
+        if _Debug:
+            lg.out(_DebugLevel, "my_id.loadLocalIdentity SKIPPED, local identity in %s is EMPTY !!!" % filename)
         return False
     lid = identity.identity(xmlsrc=xmlid)
     if not lid.isCorrect():
-        lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Correct")
+        if _Debug:
+            lg.out(_DebugLevel, "my_id.loadLocalIdentity ERROR loaded identity is not Correct")
         return False
     if not lid.Valid():
-        lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Valid")
+        if _Debug:
+            lg.out(_DebugLevel, "my_id.loadLocalIdentity ERROR loaded identity is not Valid")
         return False
     setLocalIdentity(lid)
 #     _LocalIdentity = lid
 #     _LocalIDURL = lid.getIDURL()
 #     _LocalName = lid.getIDName()
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
-    lg.out(6, "my_id.loadLocalIdentity my name is [%s]" % lid.getIDName())
+    if _Debug:
+        lg.out(_DebugLevel, "my_id.loadLocalIdentity my name is [%s]" % lid.getIDName())
     return True
 
 
@@ -251,7 +266,8 @@ def saveLocalIdentity():
     bpio.WriteTextFile(filename, xmlid)
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
     events.send('local-identity-written', dict(idurl=_LocalIdentity.getIDURL(), filename=filename))
-    lg.out(6, "my_id.saveLocalIdentity %d bytes wrote to %s" % (len(xmlid), filename))
+    if _Debug:
+        lg.out(_DebugLevel, "my_id.saveLocalIdentity %d bytes wrote to %s" % (len(xmlid), filename))
     return True
 
 
@@ -262,9 +278,11 @@ def forgetLocalIdentity():
     global _LocalIDURL
     global _LocalName
     if not isLocalIdentityReady():
-        lg.out(2, "my_id.forgetLocalIdentity ERROR localidentity not exist!")
+        if _Debug:
+            lg.out(_DebugLevel, "my_id.forgetLocalIdentity ERROR localidentity not exist!")
         return False
-    lg.out(6, "my_id.saveLocalIdentity")
+    if _Debug:
+        lg.out(_DebugLevel, "my_id.saveLocalIdentity")
     _LocalIdentity = None
     _LocalIDURL = None
     _LocalName = None
@@ -283,10 +301,12 @@ def eraseLocalIdentity(do_backup=True):
                 lg.info('created backup copy of my local identity in the file : %r' % fname)
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     if not os.path.exists(filename):
-        lg.out(6, "my_id.eraseLocalIdentity SKIP file %s not exist" % filename)
+        if _Debug:
+            lg.out(_DebugLevel, "my_id.eraseLocalIdentity SKIP file %s not exist" % filename)
         return True
     if not os.path.isfile(filename):
-        lg.out(6, "my_id.eraseLocalIdentity ERROR path %s is not a file" % filename)
+        if _Debug:
+            lg.out(_DebugLevel, "my_id.eraseLocalIdentity ERROR path %s is not a file" % filename)
         return False
     try:
         os.remove(filename)
@@ -294,7 +314,8 @@ def eraseLocalIdentity(do_backup=True):
         lg.exc()
         return False
     events.send('local-identity-erased', dict())
-    lg.out(6, "my_id.eraseLocalIdentity file %s was deleted" % filename)
+    if _Debug:
+        lg.out(_DebugLevel, "my_id.eraseLocalIdentity file %s was deleted" % filename)
     return True
 
 #------------------------------------------------------------------------------
@@ -332,7 +353,8 @@ def validateTransports(orderL):
         else:
             lg.warn('invalid entry in transport list: %s , ignored' % str(transport))
     if len(transports) == 0:
-        lg.out(1, 'my_id.validateTransports ERROR no valid transports, using default transports ' + str(_ValidTransports))
+        if _Debug:
+            lg.out(_DebugLevel, 'my_id.validateTransports ERROR no valid transports, using default transports ' + str(_ValidTransports))
         transports = _ValidTransports
 #    if len(transports) != len(orderL):
 #        lg.out(1, 'my_id.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
@@ -349,7 +371,8 @@ def setTransportOrder(orderL):
     orderl = orderL
     orderL = validateTransports(orderL)
     orderTxt = ' '.join(orderl)
-    lg.out(8, 'my_id.setTransportOrder: ' + str(orderTxt))
+    if _Debug:
+        lg.out(_DebugLevel, 'my_id.setTransportOrder: ' + str(orderTxt))
     bpio.WriteTextFile(settings.DefaultTransportOrderFilename(), orderTxt)
 
 
@@ -358,7 +381,8 @@ def getTransportOrder():
     Read and validate tranports from [BitDust data dir]\metadata\torder file.
     """
     global _ValidTransports
-    lg.out(8, 'my_id.getTransportOrder')
+    if _Debug:
+        lg.out(_DebugLevel, 'my_id.getTransportOrder')
     order = bpio.ReadTextFile(settings.DefaultTransportOrderFilename()).strip()
     if order == '':
         orderL = _ValidTransports
@@ -389,9 +413,10 @@ def buildProtoContacts(id_obj, skip_transports=[]):
     # prepare contacts
     current_contats = id_obj.getContactsByProto()
     current_order = id_obj.getProtoOrder()
-    lg.out(4, 'my_id.buildProtoContacts')
-    lg.out(4, '    current contacts: %s' % str(current_contats))
-    lg.out(4, '    current order: %s' % str(current_order))
+    if _Debug:
+        lg.out(_DebugLevel, 'my_id.buildProtoContacts')
+        lg.out(_DebugLevel, '    current contacts: %s' % str(current_contats))
+        lg.out(_DebugLevel, '    current order: %s' % str(current_order))
     new_contacts = {}
     new_order_correct = []
     # prepare list of active transports
@@ -408,9 +433,11 @@ def buildProtoContacts(id_obj, skip_transports=[]):
             continue
         active_transports.append(proto)
     # sort active transports by priority
-    lg.out(4, '    active transports: %s' % str(active_transports))
+    if _Debug:
+        lg.out(_DebugLevel, '    active transports: %s' % str(active_transports))
     active_transports.sort(key=settings.getTransportPriority)
-    lg.out(4, '    sorted transports: %s' % str(active_transports))
+    if _Debug:
+        lg.out(_DebugLevel, '    sorted transports: %s' % str(active_transports))
     if not driver.is_on('service_gateway'):
         new_contacts = current_contats
         new_order_correct = current_order
@@ -471,8 +498,9 @@ def buildProtoContacts(id_obj, skip_transports=[]):
 #                            new_order.append(cproto)
 #            new_contacts.update(cdict)
 
-    lg.out(4, '    new contacts: %s' % str(new_contacts))
-    lg.out(4, '    new order: %s' % str(new_order_correct))
+    if _Debug:
+        lg.out(_DebugLevel, '    new contacts: %s' % str(new_contacts))
+        lg.out(_DebugLevel, '    new order: %s' % str(new_order_correct))
 
 #    new_list = []
 #    for nproto in new_order_correct:
@@ -491,7 +519,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
         ip = misc.readExternalIP()
     if not name:
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
-    lg.out(4, 'my_id.buildDefaultIdentity: %s %s' % (name, ip))
+    lg.args(4, name=name, ip=ip, idurls=idurls)
     # this is my IDURL address
     # you can have many IDURL locations for same identity
     # just need to keep all them synchronized
@@ -559,8 +587,9 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     """
     # remember the current identity - full XML source code
     current_identity_xmlsrc = getLocalIdentity().serialize()
-    lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r' % (
-        len(current_identity_xmlsrc), new_revision,))
+    if _Debug:
+        lg.out(_DebugLevel, 'my_id.rebuildLocalIdentity current identity is %d bytes long new_revision=%r' % (
+            len(current_identity_xmlsrc), new_revision,))
     # getting a copy of local identity to be modified or another object to be used
     lid = identity_object or identity.identity(xmlsrc=current_identity_xmlsrc)
     # create a full list of needed transport methods
@@ -591,26 +620,32 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
             return False
         # generate signature again because revision were changed !!!
         lid.sign()
-        lg.out(4, '    incremented revision: %s' % lid.revision)
+        if _Debug:
+            lg.out(_DebugLevel, '    incremented revision: %s' % lid.revision)
         changed = True
     else:
         # no modifications in my identity - cool !!!
-        lg.out(4, '    same revision: %r' % lid.revision)
-    lg.out(4, '    version: %r' % lid.version)
-    lg.out(4, '    contacts: %r' % lid.contacts)
-    lg.out(4, '    sources: %r' % lid.sources)
+        if _Debug:
+            lg.out(_DebugLevel, '    same revision: %r' % lid.revision)
+    if _Debug:
+        lg.out(_DebugLevel, '    version: %r' % lid.version)
+        lg.out(_DebugLevel, '    contacts: %r' % lid.contacts)
+        lg.out(_DebugLevel, '    sources: %r' % lid.sources)
     if changed:
         if save_identity:
             # finally saving modified local identity
-            lg.out(4, '    SAVING new identity #%s' % lid.revision)
+            if _Debug:
+                lg.out(_DebugLevel, '    SAVING new identity #%s' % lid.revision)
             # remember the new identity
             setLocalIdentity(lid)
             saveLocalIdentity()
             # NOW TEST IT!
             # forgetLocalIdentity()
             # loadLocalIdentity()
-            lg.out(4, '    LOCAL IDENTITY CORRECT: %r' % getLocalIdentity().isCorrect())
-            lg.out(4, '    LOCAL IDENTITY VALID: %r' % getLocalIdentity().Valid())
+            if _Debug:
+                lg.out(_DebugLevel, '    LOCAL IDENTITY CORRECT: %r' % getLocalIdentity().isCorrect())
+                lg.out(_DebugLevel, '    LOCAL IDENTITY VALID: %r' % getLocalIdentity().Valid())
     lg.info('my identity HAS %sBEEN changed' % (('' if changed else 'NOT ')))
-    lg.out(4, '\n' + strng.to_text(lid.serialize()) + '\n')
+    if _Debug:
+        lg.out(_DebugLevel, '\n' + strng.to_text(lid.serialize()) + '\n')
     return changed

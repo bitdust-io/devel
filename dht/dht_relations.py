@@ -40,7 +40,7 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import Deferred  # @UnresolvedImport
+from twisted.internet.defer import Deferred, DeferredList  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -55,20 +55,44 @@ from contacts import contactsdb
 from userid import my_id
 from userid import id_url
 
+from contacts import identitycache
+
 #------------------------------------------------------------------------------
 
 def read_customer_suppliers(customer_idurl, as_fields=True):
-    customer_idurl = id_url.field(customer_idurl)
+    if as_fields:
+        customer_idurl = id_url.field(customer_idurl)
+    else:
+        customer_idurl = id_url.to_bin(customer_idurl)
     result = Deferred()
 
+    def _do_identity_cache(ret):
+        all_stories = []
+        for _supplier_idurl in ret['suppliers']:
+            if _supplier_idurl:
+                _supplier_idurl = id_url.to_bin(_supplier_idurl)
+                if not identitycache.HasFile(_supplier_idurl):
+                    one_supplier_story = identitycache.immediatelyCaching(_supplier_idurl)
+                    one_supplier_story.addErrback(lg.errback)
+                    all_stories.append(one_supplier_story)
+        _customer_idurl = id_url.to_bin(ret['customer_idurl'])
+        if _customer_idurl and identitycache.HasFile(_customer_idurl):
+            one_customer_story = identitycache.immediatelyCaching(_customer_idurl)
+            one_customer_story.addErrback(lg.errback)
+            all_stories.append(one_customer_story)
+        if _Debug:
+            lg.args(_DebugLevel, all_stories=len(all_stories), ret=ret)
+        id_cache_story = DeferredList(all_stories, consumeErrors=True)
+        id_cache_story.addCallback(_do_save_customer_suppliers, ret)
+        id_cache_story.addErrback(lg.errback)
+        id_cache_story.addErrback(result.errback)
+        return id_cache_story
+
     def _do_verify(dht_value):
-        _customer_idurl = customer_idurl
-        if not as_fields:
-            _customer_idurl = customer_idurl.to_bin()
         ret = {
             'suppliers': [],
             'ecc_map': None,
-            'customer_idurl': _customer_idurl,
+            'customer_idurl': customer_idurl,
             'revision': 0,
             'publisher_idurl': None,
             'timestamp': None,
@@ -103,12 +127,16 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
         if customer_idurl == my_id.getLocalID():
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers   skip caching my own suppliers list received from DHT: %s' % ret)
-        else:
-            contactsdb.set_suppliers(_suppliers_list, customer_idurl=customer_idurl)
-            contactsdb.save_suppliers(customer_idurl=customer_idurl)
-            if _Debug:
-                lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  OK  for %r  returned %d suppliers' % (
-                    customer_idurl, len(ret['suppliers']), ))
+            result.callback(ret)
+            return ret
+        return _do_identity_cache(ret)
+
+    def _do_save_customer_suppliers(id_cached_result, ret):
+        contactsdb.set_suppliers(ret['suppliers'], customer_idurl=ret['customer_idurl'])
+        contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  OK  for %r  returned %d suppliers' % (
+                ret['customer_idurl'], len(ret['suppliers']), ))
         result.callback(ret)
         return ret
 
@@ -123,7 +151,7 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
         result.errback(err)
         return None
 
-    d = dht_records.get_suppliers(customer_idurl, return_details=True)
+    d = dht_records.get_suppliers(id_url.to_bin(customer_idurl), return_details=True)
     d.addCallback(_do_verify)
     d.addErrback(_on_error)
     return result

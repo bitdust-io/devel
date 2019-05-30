@@ -78,10 +78,10 @@ def OK(result='', message=None, status='OK', extra_fields=None):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
-    api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda') or api_method.startswith('_'):
-        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda') or api_method.startswith('_'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
         if api_method not in [
             'process_health',
             'network_connected',
@@ -100,10 +100,10 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     if errors is not None:
         o['errors'] = errors
     o = on_api_result_prepared(o)
-    api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda'):
-        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
         try:
             sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
         except:
@@ -131,10 +131,10 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
-    api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda'):
-        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
         lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
 

@@ -49,7 +49,7 @@ import six
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ def fields_list(idurl_list):
     """
     Same as `field()` but for lists.
     """
-    return list(map(field, idurl_list)) 
+    return list(map(field, idurl_list))
 
 
 def fields_dict(idurl_dict):
@@ -295,7 +295,7 @@ def to_bin_dict(idurl_dict):
     return {to_bin(k): v for k, v in idurl_dict.items()}
 
 
-def idurl_in(idurl, iterable_object, as_field=True, as_bin=False):
+def is_in(idurl, iterable_object, as_field=True, as_bin=False):
     """
     Equivalent of `idurl in iterable_object`.
     Because it can be that you need to compare not `ID_URL_FIELD` objects in memory but normal strings.
@@ -304,10 +304,17 @@ def idurl_in(idurl, iterable_object, as_field=True, as_bin=False):
     if not iterable_object:
         return False
     if as_field:
-        return field(idurl) in iterable_object
+        return field(idurl) in fields_list(iterable_object)
     if as_bin:
-        return to_bin(idurl) in iterable_object
-    return idurl in iterable_object
+        return to_bin(idurl) in to_bin_list(iterable_object)
+    return idurl in to_list(iterable_object, as_field=False, as_bin=False)
+
+
+def is_not_in(idurl, iterable_object, as_field=True, as_bin=False):
+    """
+    Vise versa of `is_in()` method.
+    """
+    return (not is_in(idurl=idurl, iterable_object=iterable_object, as_field=as_field, as_bin=as_bin))
 
 
 def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False):
@@ -404,7 +411,7 @@ class ID_URL_FIELD(object):
             # if we do not know some of the sources : compare as strings
             return self.current != idurl.current
         # now compare based on public key
-        result = idurl.to_public_key() != self.to_public_key()
+        result = (other_pub_key != my_pub_key)
         if _Debug:
             lg.args(_DebugLevel, idurl=idurl, current=self.current, result=result)
         return result
@@ -412,8 +419,11 @@ class ID_URL_FIELD(object):
     def __hash__(self):
         # this trick should make `idurl in some_dictionary` check work correctly
         # if idurl1 and idurl2 are different sources of same identity they both must be matching
-        pub_key = self.to_public_key()
-        hsh = pub_key.__hash__()
+        # ... unfortunately that doesn't work
+        # pub_key = self.to_public_key()
+        # hsh = pub_key.__hash__()
+        # same check you can do in a different way: `id_url.is_in(idurl, some_dictionary)`
+        hsh = self.current.__hash__()
         if _Debug:
             lg.args(_DebugLevel, current=self.current, hash=hsh)
         return hsh

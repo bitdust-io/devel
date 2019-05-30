@@ -494,6 +494,8 @@ def validate_rules(value, key, rules, result_defer=None, raise_for_result=False,
                 value['key'] = key
     
         for field, field_rules in rules.items():
+            if _Debug:
+                lg.out(_DebugLevel, '    %r : %r' % (field, field_rules, ))
             for rule in field_rules:
                 if 'op' not in rule:
                     lg.warn('incorrect validation rule found: %r' % rule)
@@ -512,11 +514,10 @@ def validate_rules(value, key, rules, result_defer=None, raise_for_result=False,
         lg.exc()
         passed = False
         errors = [('unknown', exc, )]
-
     if not passed:
-        lg.err('DHT record validation failed, errors: %s' % errors)
+        lg.exc(exc_value=Exception('DHT record validation failed, errors: %s' % errors))
         if result_defer:
-            result_defer.errback(Exception('DHT record validation failed'))
+            result_defer.errback(Exception('DHT record validation failed: %r' % errors))
         return None
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.validate_rules   key=[%s] : value is OK' % key)
@@ -667,7 +668,7 @@ def validate_before_send(value, key, rules, populate_meta_fields):
     Will be executed on sender side before every (key,value) set request towards DHT
     """
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_data_before_send for key [%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.validate_before_send for key [%s]' % key)
     if populate_meta_fields:
         if value.get('key') != key:
             value['key'] = key
@@ -681,7 +682,7 @@ def validate_after_receive(value, key, rules, result_defer, raise_for_result, po
     Will be executed on sender side for each (key,value) get response from DHT
     """
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.validate_data_after_receive for key [%s]' % key)
+        lg.out(_DebugLevel, 'dht_service.validate_after_receive for key [%s]' % key)
     response = validate_rules(value, key, rules, result_defer=result_defer,
                               raise_for_result=raise_for_result,
                               populate_meta_fields=populate_meta_fields)
