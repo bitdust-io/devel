@@ -34,6 +34,13 @@ from . import testsupport as ts
 # DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
 DHT_SEED_NODES = 'dht_seed_0:14441'
 
+OTHER_KNOWN_ID_SERVERS = [
+    'is_a:8084:6661',
+    'is_b:8084:6661',
+    'is_c:8084:6661',
+    'is_d:8084:6661',
+    'is_e:8084:6661',
+]
 
 # TODO: keep this list up to date with docker-compose links
 ALL_NODES = [
@@ -42,6 +49,8 @@ ALL_NODES = [
     'customer_3',
     'customer_4',
     'customer_5',
+    'customer_6',
+    'customer_7',
     'customer_backup',
     'customer_restore',
     'supplier_1',
@@ -77,9 +86,6 @@ ALL_ROLES = {
         {'name': 'dht_seed_2', 'other_seeds': 'dht_seed_0:14441', },
         {'name': 'dht_seed_3', 'other_seeds': 'dht_seed_0:14441', },
         {'name': 'dht_seed_4', 'other_seeds': 'dht_seed_0:14441', },
-#         {'name': 'dht_seed_2', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441', },
-#         {'name': 'dht_seed_3', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441', },
-#         {'name': 'dht_seed_4', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441', },
     ],
     'identity-servers': [
         'is',
@@ -113,6 +119,10 @@ ALL_ROLES = {
         {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
         {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
+        {'name': 'customer_6', 'join_network': True, 'num_suppliers': 2,
+            'min_servers': 3, 'max_servers': 3, 'known_servers': OTHER_KNOWN_ID_SERVERS, },
+        {'name': 'customer_7', 'join_network': True, 'num_suppliers': 2, 
+            'min_servers': 3, 'max_servers': 3, 'known_servers': OTHER_KNOWN_ID_SERVERS, },
         {'name': 'customer_backup', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_restore', 'join_network': False, 'num_suppliers': 2, },
     ],

@@ -472,6 +472,48 @@ services:
     volumes:
       - customer_restore:/customer_restore
 
+  customer_6:
+    image: bitdust-baseimage
+    ports:
+      - "22258:22"
+    links:
+      - "dht_seed_0"
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
+      - "stun_1"
+      - "stun_2"
+      - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
+      - "identity-server-c:is_c"
+      - "identity-server-d:is_d"
+      - "identity-server-e:is_e"
+    volumes:
+      - customer_6:/customer_6
+
+  customer_7:
+    image: bitdust-baseimage
+    ports:
+      - "22259:22"
+    links:
+      - "dht_seed_0"
+      - "dht_seed_1"
+      - "dht_seed_2"
+      - "dht_seed_3"
+      - "dht_seed_4"
+      - "stun_1"
+      - "stun_2"
+      - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
+      - "identity-server-c:is_c"
+      - "identity-server-d:is_d"
+      - "identity-server-e:is_e"
+    volumes:
+      - customer_7:/customer_7
+
   tester:
     build:
       context: ./../
@@ -503,6 +545,8 @@ services:
       - "customer_3"
       - "customer_4"
       - "customer_5"
+      - "customer_6"
+      - "customer_7"
       - "customer_backup"
       - "customer_restore"
     image: bitdust/tester
@@ -529,5 +573,7 @@ volumes:
   customer_3:
   customer_4:
   customer_5:
+  customer_6:
+  customer_7:
   customer_backup:
   customer_restore:

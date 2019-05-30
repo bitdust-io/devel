@@ -621,7 +621,8 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2, bloc
     print(f'\nSTARTED CUSTOMER [{node}]\n')
 
 
-async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None):
+async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
+                               min_servers=1, max_servers=1, known_servers=[]):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
@@ -629,8 +630,10 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     await run_ssh_command_and_wait_async(node, 'bitdust set services/supplier/enabled false', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-server/enabled false', loop)
     # configure ID servers
-    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
-    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers %d' % min_servers, loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers %d' % max_servers, loop)
+    if known_servers:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/known-servers %s' % (','.join(known_servers)), loop)
     # configure DHT udp port
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
     # set desired Proxy router
@@ -676,6 +679,9 @@ async def start_one_customer_async(customer, loop):
         join_network=customer['join_network'],
         num_suppliers=customer['num_suppliers'],
         block_size=customer.get('block_size'),
+        min_servers=customer.get('min_servers', 1),
+        max_servers=customer.get('max_servers', 1),
+        known_servers=customer.get('known_servers', []),
         loop=loop,
     )
 
