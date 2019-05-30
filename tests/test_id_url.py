@@ -136,7 +136,7 @@ class Test(TestCase):
         try:
             id_url.field(b'http://127.0.0.1:8084/alice.xml').to_public_key()
         except Exception as exc:
-            self.assertEqual(exc.message, "unknown idurl: 'http://127.0.0.1:8084/alice.xml'")
+            self.assertTrue(repr(exc).count("unknown idurl"))
         else:
             raise Exception('must raise an exception when identity is not cached')
         alice_identity = self._cache_identity('alice')
@@ -152,7 +152,7 @@ class Test(TestCase):
         try:
             id_url.field(b'http://127.0.0.1:8084/ethan.xml').to_public_key()
         except Exception as exc:
-            self.assertEqual(exc.message, "unknown idurl: 'http://127.0.0.1:8084/ethan.xml'")
+            self.assertTrue(repr(exc).count("unknown idurl"))
         else:
             raise Exception('must raise an exception when identity is not cached')
         self._cache_identity('alice')
@@ -188,7 +188,19 @@ class Test(TestCase):
             raise Exception('empty idurl must be False')
         if id_url.field(b''):
             raise Exception('empty idurl must be False')
-   
+        l = [b'', None, '', id_url.field(''), id_url.field(None), id_url.field(b''), ]
+        self.assertIn(b'', l)
+        self.assertIn('', l)
+        self.assertIn(None, l)
+        self.assertIn(None, [id_url.field(None), ])
+        self.assertIn(None, [id_url.field(b''), ])
+        self.assertIn(b'', [id_url.field(None), ])
+        self.assertIn(b'', [id_url.field(b''), ])
+        self.assertTrue(id_url.is_in(None, [id_url.field(None), ]))
+        self.assertTrue(id_url.is_in(None, [id_url.field(b''), ]))
+        self.assertTrue(id_url.is_in(b'', [id_url.field(None), ]))
+        self.assertTrue(id_url.is_in(b'', [id_url.field(b''), ]))
+
     def test_idurl_is_not_empty(self):
         self.assertTrue(id_url.field(b'http://127.0.0.1:8084/ethan.xml'))
         self.assertTrue(id_url.field('http://127.0.0.1:8084/ethan.xml'))
