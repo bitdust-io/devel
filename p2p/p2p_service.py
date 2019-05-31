@@ -749,7 +749,7 @@ def Key(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
 
 
-def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}, timeout=10, ):
+def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}, timeout=20, ):
     if packet_id is None:
         packet_id = packetid.UniqueID()
     if _Debug:

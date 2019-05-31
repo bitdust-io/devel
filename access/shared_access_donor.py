@@ -96,7 +96,7 @@ class SharedAccessDonor(automat.Automat):
     timers = {
         'timer-2sec': (2.0, ['PUB_KEY']),
         'timer-10sec': (10.0, ['PRIV_KEY', 'LIST_FILES']),
-        'timer-15sec': (15.0, ['PUB_KEY']),
+        'timer-15sec': (25.0, ['PUB_KEY']),
         'timer-5sec': (5.0, ['PING', 'AUDIT', 'CACHE']),
     }
 
