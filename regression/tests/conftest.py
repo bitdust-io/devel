@@ -34,6 +34,13 @@ from . import testsupport as ts
 # DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
 DHT_SEED_NODES = 'dht_seed_0:14441'
 
+OTHER_KNOWN_ID_SERVERS = [
+    'is:8084:6661',
+    'is_a:8084:6661',
+    'is_b:8084:6661',
+#     'identity-server-a:8084:6661',
+#     'identity-server-b:8084:6661',
+]
 
 # TODO: keep this list up to date with docker-compose links
 ALL_NODES = [
@@ -50,13 +57,13 @@ ALL_NODES = [
     'supplier_4',
     'supplier_5',
     'supplier_6',
-    'supplier_7',
-    'supplier_8',
     'proxy_server_1',
     'proxy_server_2',
     'stun_1',
     'stun_2',
     'is',
+    'identity-server-a',
+    'identity-server-b',
     'dht_seed_0',
     'dht_seed_1',
     'dht_seed_2',
@@ -72,12 +79,11 @@ ALL_ROLES = {
         {'name': 'dht_seed_2', 'other_seeds': 'dht_seed_0:14441', },
         {'name': 'dht_seed_3', 'other_seeds': 'dht_seed_0:14441', },
         {'name': 'dht_seed_4', 'other_seeds': 'dht_seed_0:14441', },
-#         {'name': 'dht_seed_2', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441', },
-#         {'name': 'dht_seed_3', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441', },
-#         {'name': 'dht_seed_4', 'other_seeds': 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441', },
     ],
     'identity-servers': [
         'is',
+        'identity-server-a',
+        'identity-server-b',
     ],
     'stun-servers': [
         'stun_1',
@@ -94,15 +100,17 @@ ALL_ROLES = {
         'supplier_4',
         'supplier_5',
         'supplier_6',
-        'supplier_7',
-        'supplier_8',
     ],
     'customers': [
         {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, 'block_size': '10 KB', },
         {'name': 'customer_2', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
-        {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
-        {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
+        {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2,
+            # 'min_servers': 2, 'max_servers': 2, 'known_servers': OTHER_KNOWN_ID_SERVERS,
+        },
+        {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4,
+            # 'min_servers': 2, 'max_servers': 2, 'known_servers': OTHER_KNOWN_ID_SERVERS,
+        },
         {'name': 'customer_backup', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_restore', 'join_network': False, 'num_suppliers': 2, },
     ],

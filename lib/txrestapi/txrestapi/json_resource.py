@@ -16,6 +16,8 @@ from twisted.python import log as twlog
 def _to_text(v):
     if isinstance(v, six.binary_type):
         v = v.decode()
+    if not isinstance(v, six.text_type):
+        v = six.text_type(v)
     return v
 
 
@@ -34,8 +36,8 @@ class _JsonResource(Resource):
     _result = ''
     isLeaf = True
 
-    def __init__(self, result, executed):
-        Resource.__init__(self)
+    def __init__(self, result, executed, *args, **kwargs):
+        Resource.__init__(self, *args, **kwargs)
         self._result = result
         self._executed = executed
 
@@ -64,29 +66,37 @@ class _DelayedJsonResource(_JsonResource):
     we can wait for the result and then return it in API response.
     """
 
+    def __init__(self, result, executed, result_defer, *args, **kwargs):
+        _JsonResource.__init__(self, result, executed, *args, **kwargs)
+        self._result_defer = result_defer
+
     def _cb(self, result, request):
+        twlog.msg('txrestapi callback with json result: %r' % result)
         self._setHeaders(request)
         result['execution'] = '%3.6f' % (time.time() - self._executed)
         raw = _to_json(result)
-        if request.channel:
-            request.write(raw)
-            request.finish()
-        else:
+        if not request.channel:
             twlog.err('REST API connection channel already closed')
+            return None
+        request.write(raw)
+        request.finish()
+        return result
 
     def _eb(self, err, request):
+        twlog.err('txrestapi error : %r' % err)
         self._setHeaders(request)
         execution = '%3.6f' % (time.time() - self._executed)
         raw = _to_json(dict(status='ERROR', execution=execution, errors=[str(err), ]))
-        if request.channel:
-            request.write(raw)
-            request.finish()
-        else:
+        if not request.channel:
             twlog.err('REST API connection channel already closed')
+            return None
+        request.write(raw)
+        request.finish()
+        return None
 
     def render(self, request):
-        self._result.addCallback(self._cb, request)
-        self._result.addErrback(self._eb, request)
+        self._result_defer.addCallback(self._cb, request)
+        self._result_defer.addErrback(self._eb, request)
         return NOT_DONE_YET
 
 
@@ -98,15 +108,26 @@ def maybeResource(f):
             result = f(*args, **kwargs)
 
         except Exception as exc:
-            return _JsonResource(dict(status='ERROR', errors=[str(exc), ]), _executed)
+            return _JsonResource(
+                result=dict(status='ERROR', errors=[str(exc), ]),
+                executed=_executed,
+            )
 
         if isinstance(result, Deferred):
-            return _DelayedJsonResource(result, _executed)
+            return _DelayedJsonResource(
+                result=None,
+                executed=_executed,
+                result_defer=result,
+            )
 
         if not isinstance(result, Resource):
-            result = _JsonResource(result, _executed)
+            result = _JsonResource(
+                result=result,
+                executed=_executed,
+            )
 
         return result
+
     return inner
 
 

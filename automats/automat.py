@@ -368,7 +368,7 @@ class Automat(object):
         index = self.index
         if _StateChangedCallback is not None:
             _StateChangedCallback(index, automatid, name, '')
-        debug_level = max(_DebugLevel, self.debug_level)
+        debug_level = max(_DebugLevel or 0, self.debug_level or 0)
         erase_index(automatid)
         if _Debug and self.log_transitions:
             self.log(debug_level,

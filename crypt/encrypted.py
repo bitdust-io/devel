@@ -79,6 +79,7 @@ from lib import serialization
 from contacts import contactsdb
 
 from userid import my_id
+from userid import id_url
 
 from crypt import key
 from crypt import my_keys
@@ -125,7 +126,8 @@ class Block(object):
         self.CreatorID = CreatorID
         if not self.CreatorID:
             self.CreatorID = my_id.getLocalID()
-        self.CreatorID = strng.to_bin(self.CreatorID)
+        if not isinstance(self.CreatorID, id_url.ID_URL_FIELD):
+            self.CreatorID = id_url.field(self.CreatorID)
         self.BackupID = strng.to_text(BackupID)
         self.BlockNumber = BlockNumber
         self.LastBlock = bool(LastBlock)
@@ -186,7 +188,7 @@ class Block(object):
         """
         sep = b'::::'
         StringToHash = b''
-        StringToHash += strng.to_bin(self.CreatorID)
+        StringToHash += self.CreatorID.to_bin()
         StringToHash += sep + strng.to_bin(self.BackupID)
         StringToHash += sep + strng.to_bin(str(self.BlockNumber))
         StringToHash += sep + strng.to_bin(self.SessionKeyType)
@@ -252,7 +254,7 @@ class Block(object):
         object.
         """
         dct = {
-            'c': self.CreatorID,
+            'c': self.CreatorID.to_text(),
             'b': self.BackupID,
             'n': self.BlockNumber,
             'e': self.LastBlock,
@@ -278,7 +280,7 @@ def Unserialize(data, decrypt_key=None):
         lg.out(_DebugLevel, 'encrypted.Unserialize %s' % repr(dct)[:100])
     try:
         newobject = Block(
-            CreatorID=dct['c'],
+            CreatorID=id_url.field(dct['c']),
             BackupID=strng.to_text(dct['b']),
             BlockNumber=dct['n'],
             LastBlock=dct['e'],

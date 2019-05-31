@@ -54,8 +54,10 @@ class KeysStorageService(LocalService):
     def start(self):
         from twisted.internet.defer import Deferred
         from storage import index_synchronizer
+        from logs import lg
         from main import events
         self.starting_deferred = Deferred()
+        self.starting_deferred.addErrback(lg.errback)
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
         events.add_subscriber(self._on_key_erased, 'key-erased')

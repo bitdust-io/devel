@@ -78,6 +78,7 @@ from crypt import key
 from crypt import my_keys
 
 from userid import my_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -104,9 +105,9 @@ class Packet(object):
         # Legal Commands are in commands.py
         self.Command = strng.to_text(Command)
         # who owns this data and pays bills - http://cate.com/id1.xml
-        self.OwnerID = strng.to_bin(OwnerID)
+        self.OwnerID = id_url.field(OwnerID)
         # signer - http://cate.com/id1.xml - might be an authorized scrubber
-        self.CreatorID = strng.to_bin(CreatorID)
+        self.CreatorID = id_url.field(CreatorID)
         # string of the above 4 "Number"s with "-" separator to uniquely identify a packet
         # on the local machine.  Can be used for filenames, and to prevent duplicates.
         self.PacketID = strng.to_text(PacketID)
@@ -117,7 +118,7 @@ class Packet(object):
         self.Payload = strng.to_bin(Payload)
         # want full IDURL for other party so troublemaker could not
         # use his packets to mess up other nodes by sending it to them
-        self.RemoteID = strng.to_bin(RemoteID)
+        self.RemoteID = id_url.field(RemoteID)
         # which private key to use to generate signature
         self.KeyID = strng.to_text(KeyID or my_id.getGlobalID(key_alias='master'))
         if Signature:
@@ -159,9 +160,9 @@ class Packet(object):
         try:
             stufftosum += strng.to_bin(self.Command)
             stufftosum += sep
-            stufftosum += strng.to_bin(self.OwnerID)
+            stufftosum += self.OwnerID.to_bin()
             stufftosum += sep
-            stufftosum += strng.to_bin(self.CreatorID)
+            stufftosum += self.CreatorID.to_bin()
             stufftosum += sep
             stufftosum += strng.to_bin(self.PacketID)
             stufftosum += sep
@@ -169,7 +170,7 @@ class Packet(object):
             stufftosum += sep
             stufftosum += strng.to_bin(self.Payload)
             stufftosum += sep
-            stufftosum += strng.to_bin(self.RemoteID)
+            stufftosum += self.RemoteID.to_bin()
             if self.KeyID:
                 stufftosum += sep
                 stufftosum += strng.to_bin(self.KeyID)
@@ -270,12 +271,12 @@ class Packet(object):
         """
         dct = {
             'm': self.Command,
-            'o': self.OwnerID,
-            'c': self.CreatorID,
+            'o': self.OwnerID.to_bin(),
+            'c': self.CreatorID.to_bin(),
             'i': self.PacketID,
             'd': self.Date,
             'p': self.Payload,
-            'r': self.RemoteID,
+            'r': self.RemoteID.to_bin(),
             'k': self.KeyID,
             's': self.Signature,
         }        

@@ -47,9 +47,10 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
-import six.moves.urllib.parse
-from six.moves import range
+import six
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # @UnresolvedImport
+import six.moves.urllib.parse  # @UnresolvedImport
+from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -74,6 +75,8 @@ def UrlParse(url):
         nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
         ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
+    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
+        return '', '', '', ''
     url = strng.to_bin(url)
     o = six.moves.urllib.parse.urlparse(url)
     proto = strng.to_bin(o.scheme.strip())
@@ -130,7 +133,7 @@ def UrlFilename(url):
     'http###id.bitdust.io#veselin.xml'
     """
     # TODO: switch all that to global ID format
-    if not url:
+    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
         return None
     result = strng.to_text(url)
     result = result.replace("://", "###")
@@ -194,7 +197,7 @@ def GetName(url):
 
     nameurl.GetName('http://id.bitdust.io/kinggeorge.xml') 'kinggeorge'
     """
-    if url in [None, 'None', '', b'None', b'', ]:
+    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
         return ''
     url = strng.to_text(url)
     if not url.endswith('.xml'):
@@ -206,7 +209,7 @@ def GetFileName(url):
     """
     Almost the same, but keeps the file extension.
     """
-    if url in [None, 'None', '', b'None', b'', ]:
+    if not url or (isinstance(url, six.string_types) and url in ['None', b'None', '', b'', ]):
         return ''
     url = strng.to_text(url)
     return url[url.rfind("/") + 1:]

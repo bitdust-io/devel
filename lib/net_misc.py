@@ -33,9 +33,9 @@ Some network routines
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
-import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
-import six.moves.urllib.parse
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error  # @UnresolvedImport
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse  # @UnresolvedImport
+import six.moves.urllib.parse  # @UnresolvedImport
 import six
 from io import open
 
@@ -71,6 +71,10 @@ from twisted.web.client import Agent, readBody
 from twisted.web.http_headers import Headers
 
 from zope.interface import implementer
+
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 #------------------------------------------------------------------------------
 
@@ -178,8 +182,7 @@ def parse_url(url, defaultPort=None):
     """
     Split the given URL into the scheme, host, port, and path.
     """
-    if isinstance(url, six.binary_type):
-        url = url.decode('utf-8')
+    url = strng.to_text(url)
     url = url.strip()
     parsed = six.moves.urllib.parse.urlparse(url)
     scheme = parsed[0]
@@ -228,34 +231,35 @@ def detect_proxy_settings():
         'username': '',
         'password': '',
         'ssl': 'False'}
-    httpproxy = urllib2.getproxies().get('http', None)
-    httpsproxy = urllib2.getproxies().get('https', None)
-
-    if httpproxy is not None:
-        try:
-            scheme, host, port, path = parse_url(httpproxy)
-            host, username, password = parse_credentials(host)
-        except:
-            return d
-        d['ssl'] = 'False'
-        d['host'] = host
-        d['port'] = port
-        d['username'] = username
-        d['password'] = password
-
-    if httpsproxy is not None:
-        try:
-            scheme, host, port, path = parse_url(httpsproxy)
-            host, username, password = parse_credentials(host)
-        except:
-            return d
-        d['ssl'] = 'True'
-        d['host'] = host
-        d['port'] = port
-        d['username'] = username
-        d['password'] = password
-
     return d
+
+    # TODO: to be fixed later
+    # import urllib2
+    # httpproxy = urllib2.getproxies().get('http', None)
+    # httpsproxy = urllib2.getproxies().get('https', None)
+    # if httpproxy is not None:
+    #     try:
+    #         scheme, host, port, path = parse_url(httpproxy)
+    #         host, username, password = parse_credentials(host)
+    #     except:
+    #         return d
+    #     d['ssl'] = 'False'
+    #     d['host'] = host
+    #     d['port'] = port
+    #     d['username'] = username
+    #     d['password'] = password
+    # if httpsproxy is not None:
+    #     try:
+    #         scheme, host, port, path = parse_url(httpsproxy)
+    #         host, username, password = parse_credentials(host)
+    #     except:
+    #         return d
+    #     d['ssl'] = 'True'
+    #     d['host'] = host
+    #     d['port'] = port
+    #     d['username'] = username
+    #     d['password'] = password
+    # return d
 
 
 def set_proxy_settings(settings_dict):
@@ -390,9 +394,9 @@ def downloadWithProgressTwisted(url, file, progress_func):
     factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
     if scheme == 'https':
         contextFactory = ssl.ClientContextFactory()
-        reactor.connectSSL(host, port, factory, contextFactory)
+        reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
     else:
-        reactor.connectTCP(host, port, factory)
+        reactor.connectTCP(host, port, factory)  # @UndefinedVariable
     return factory.deferred
 
 #-------------------------------------------------------------------------------
@@ -401,6 +405,7 @@ def downloadWithProgressTwisted(url, file, progress_func):
 def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName, certificateFileName):
     """
     Can download from HTTPS sites.
+    Not used at the moment.
     """
     global _UserAgentString
     from twisted.internet import ssl
@@ -409,7 +414,7 @@ def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName,
     if scheme != 'https':
         return None
     contextFactory = ssl.DefaultOpenSSLContextFactory(privateKeyFileName, certificateFileName)
-    reactor.connectSSL(host, port, factory, contextFactory)
+    reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
     return factory.deferred
 
 
@@ -419,10 +424,11 @@ def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName,
 def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     """
     Another method to download from HTTPS.
+    Not used at the moment.
     """
     global _UserAgentString
     from twisted.internet import ssl
-    from OpenSSL import SSL
+    from OpenSSL import SSL  # @UnresolvedImport
 
     class MyClientContextFactory(ssl.ClientContextFactory):
     
@@ -455,7 +461,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     
     factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
     contextFactory = MyClientContextFactory(certificates_filenames)
-    reactor.connectSSL(host, port, factory, contextFactory)
+    reactor.connectSSL(host, port, factory, contextFactory)  # @UndefinedVariable
     return factory.deferred
 
 #------------------------------------------------------------------------------
@@ -495,8 +501,7 @@ def getPageTwisted(url, timeout=10, method=b'GET'):
 #         return x
     global _UserAgentString
 
-    if not isinstance(url, six.binary_type):
-        url = url.encode('utf-8')
+    url = strng.to_bin(url)
 
 #     if proxy_is_on():
 #         factory = ProxyClientFactory(url, agent=_UserAgentString, timeout=timeout)
@@ -538,7 +543,7 @@ def downloadHTTP(url, fileOrName):
         host = get_proxy_host()
         port = get_proxy_port()
         factory.path = url
-    reactor.connectTCP(host, port, factory)
+    reactor.connectTCP(host, port, factory)  # @UndefinedVariable
     return factory.deferred
 
 #-------------------------------------------------------------------------------
@@ -685,7 +690,7 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
 
     def _fail(err, hosts, index, result):
         # print 'fail', hosts, index
-        reactor.callLater(0, _call, hosts, index + 1, result)
+        reactor.callLater(0, _call, hosts, index + 1, result)  # @UndefinedVariable
 
     def _call(hosts, index, result):
         # print 'call' , hosts, index, result
@@ -697,7 +702,7 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
         d.addCallback(_response, result)
         d.addErrback(_fail, hosts, index, result)
     result = Deferred()
-    reactor.callLater(0, _call, remote_hosts, 0, result)
+    reactor.callLater(0, _call, remote_hosts, 0, result)  # @UndefinedVariable
     return result
 
 #------------------------------------------------------------------------------
@@ -718,58 +723,6 @@ def TestInternetConnection(remote_hosts=None, timeout=10):
     return DeferredList(dl, fireOnOneCallback=True, fireOnOneErrback=False, consumeErrors=True)
 
 #------------------------------------------------------------------------------
-
-
-def SendEmail(TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES):
-    """
-    Can send a email to SMTP server.
-    """
-#    try:
-    import smtplib
-    from email import Encoders
-    from email.MIMEText import MIMEText
-    from email.MIMEBase import MIMEBase
-    from email.MIMEMultipart import MIMEMultipart
-    from email.Utils import formatdate
-
-    msg = MIMEMultipart()
-    msg["From"] = FROM
-    msg["To"] = TO
-    msg["Subject"] = SUBJECT
-    msg["Date"] = formatdate(localtime=True)
-    msg.attach(MIMEText(BODY))
-
-    # attach a file
-    for filePath in FILES:
-        if not os.path.isfile(filePath):
-            continue
-        part = MIMEBase('application', "octet-stream")
-        part.set_payload(open(filePath, "rb").read())
-        Encoders.encode_base64(part)
-        part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(filePath))
-        msg.attach(part)
-
-    s = smtplib.SMTP(HOST, PORT)
-
-    # s.set_debuglevel(True) # It's nice to see what's going on
-
-    s.ehlo()  # identify ourselves, prompting server for supported features
-
-    if s.has_extn('STARTTLS'):
-        s.starttls()
-        s.ehlo()  # re-identify ourse
-
-    s.login(LOGIN, PASSWORD)  # optional
-
-    failed = s.sendmail(FROM, TO, msg.as_string())
-
-    s.close()
-
-#    except:
-#        lg.exc()
-
-
-#-------------------------------------------------------------------------------
 
 def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     """
@@ -1026,7 +979,7 @@ def getNetworkInterfaces():
         try:
             import ctypes
             buffer = ctypes.create_string_buffer(300)
-            ctypes.windll.kernel32.GetSystemDirectoryA(buffer, 300)
+            ctypes.windll.kernel32.GetSystemDirectoryA(buffer, 300)  # @UndefinedVariable
             dirs.insert(0, buffer.value.decode('mbcs'))
         except:
             pass
@@ -1036,7 +989,7 @@ def getNetworkInterfaces():
             except IOError:
                 return []
             rawtxt = six.text_type(pipe.read())
-            ips_unicode = re.findall(u'^.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*$', rawtxt, re.U | re.M)
+            ips_unicode = re.findall(u'^.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*$', rawtxt, re.U | re.M)  # @UndefinedVariable
             ips = []
             for ip in ips_unicode:
                 ips.append(str(ip))

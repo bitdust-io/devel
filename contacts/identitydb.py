@@ -49,6 +49,7 @@ from lib import nameurl
 from lib import strng
 
 from userid import identity
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -87,10 +88,14 @@ def init():
     Check to exist and create a folder to keep all cached identities.
     """
     lg.out(4, "identitydb.init")
-    iddir = settings.IdentityCacheDir()
-    if not os.path.exists(iddir):
-        lg.out(8, 'identitydb.init create folder %r' % iddir)
-        bpio._dir_make(iddir)
+    id_cache_dir = settings.IdentityCacheDir()
+    if not os.path.exists(id_cache_dir):
+        lg.out(8, 'identitydb.init create folder %r' % id_cache_dir)
+        bpio._dir_make(id_cache_dir)
+    # make sure to read and cache all known identities at startup
+    for id_filename in os.listdir(id_cache_dir):
+        idurl = nameurl.FilenameUrl(id_filename)
+        get(idurl)
 
 
 def shutdown():
@@ -148,13 +153,13 @@ def has_idurl(idurl):
     Return True if that IDURL already cached.
     """
     global _IdentityCache
-    return strng.to_bin(idurl) in _IdentityCache
+    return id_url.to_bin(idurl) in _IdentityCache
 
 
 def has_file(idurl):
     """
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
@@ -175,7 +180,7 @@ def idset(idurl, id_obj):
     global _IdentityCacheIDs
     global _IdentityCacheCounter
     global _IdentityCacheModifiedTime
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     if not has_idurl(idurl):
         lg.out(6, 'identitydb.idset new identity: %r' % idurl)
     _IdentityCache[idurl] = id_obj
@@ -203,6 +208,8 @@ def idset(idurl, id_obj):
             pass
     # TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
     fire_cache_updated_callbacks(single_item=(identid, idurl, id_obj))
+    # now make sure we properly handle changes in the sources of that identity
+    id_url.identity_cached(id_obj)
 
 
 def idget(idurl):
@@ -210,7 +217,7 @@ def idget(idurl):
     Get identity from cache.
     """
     global _IdentityCache
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     return _IdentityCache.get(idurl, None)
 
 
@@ -226,7 +233,7 @@ def idremove(idurl):
     global _Contact2IDURL
     global _IDURL2Contacts
     global _IPPort2IDURL
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     idobj = _IdentityCache.pop(idurl, None)
     identid = _IdentityCacheIDs.pop(idurl, None)
     _IdentityCacheModifiedTime.pop(idurl, None)
@@ -249,7 +256,7 @@ def idcontacts(idurl):
     A fast way to get identity contacts.
     """
     global _IDURL2Contacts
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     return list(_IDURL2Contacts.get(idurl, set()))
 
 
@@ -257,37 +264,35 @@ def get(idurl):
     """
     A smart way to get identity from cache.
 
-    If not cached in memory but found on disk - will cache from disk.
+    If not cached in memory but found locally - read it from disk.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     if has_idurl(idurl):
         return idget(idurl)
-    else:
-        try:
-            partfilename = nameurl.UrlFilename(idurl)
-        except:
-            lg.out(1, "identitydb.get ERROR %r is incorrect" % idurl)
-            return None
-        filename = os.path.join(settings.IdentityCacheDir(), partfilename)
-        if not os.path.exists(filename):
-            lg.out(6, "identitydb.get file %r not exist" % os.path.basename(filename))
-            return None
-        idxml = bpio.ReadTextFile(filename)
-        if idxml:
-            idobj = identity.identity(xmlsrc=idxml)
-            idurl_orig = idobj.getIDURL()
-            if idurl == idurl_orig:
-                idset(idurl, idobj)
-                return idobj
-            else:
-                lg.out(1, "identitydb.get ERROR idurl=%r idurl_orig=%r" % (idurl, idurl_orig))
-                return None
+    try:
+        partfilename = nameurl.UrlFilename(idurl)
+    except:
+        lg.out(1, "identitydb.get ERROR %r is incorrect" % idurl)
+        return None
+    filename = os.path.join(settings.IdentityCacheDir(), partfilename)
+    if not os.path.exists(filename):
+        lg.out(6, "identitydb.get file %r not exist" % os.path.basename(filename))
+        return None
+    idxml = bpio.ReadTextFile(filename)
+    if not idxml:
         lg.out(6, "identitydb.get %s not found" % nameurl.GetName(idurl))
         return None
+    idobj = identity.identity(xmlsrc=idxml)
+    idurl_orig = idobj.getIDURL()
+    if idurl == idurl_orig:
+        idset(idurl, idobj)
+        return idobj
+    lg.out(1, "identitydb.get ERROR idurl=%r idurl_orig=%r" % (idurl, idurl_orig))
+    return None
 
 
 def get_filename(idurl):
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
@@ -319,7 +324,7 @@ def update(idurl, xml_src):
     PREPRO need to check that date or version is after old one so not
     vulnerable to replay attacks.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     try:
         newid = identity.identity(xmlsrc=xml_src)
     except:
@@ -365,7 +370,7 @@ def remove(idurl):
     """
     Top method to remove identity from cache - also remove local file.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
     if os.path.isfile(filename):
         lg.out(6, "identitydb.remove file %r" % filename)
@@ -392,7 +397,7 @@ def get_local_ip(idurl):
     This is to get a local IP of some user from the index.
     """
     global _LocalIPs
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     return _LocalIPs.get(idurl, None)
 
 
@@ -401,7 +406,7 @@ def has_local_ip(idurl):
     To check for some known local IP of given user.
     """
     global _LocalIPs
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     return idurl in _LocalIPs
 
 
@@ -420,7 +425,7 @@ def get_last_modified_time(idurl):
     """
     """
     global _IdentityCacheModifiedTime
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     return _IdentityCacheModifiedTime.get(idurl, None)
 
 #------------------------------------------------------------------------------
@@ -430,7 +435,7 @@ def print_id(idurl):
     """
     For debug purposes.
     """
-    idurl = strng.to_bin(idurl)
+    idurl = id_url.to_bin(idurl)
     if has_idurl(idurl):
         idForKey = get(idurl)
         lg.out(6, str(idForKey.sources))

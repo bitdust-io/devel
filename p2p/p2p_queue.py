@@ -91,6 +91,7 @@ from p2p import p2p_service
 
 from userid import global_id
 from userid import my_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -656,7 +657,7 @@ def do_notify(callback_method, consumer_id, queue_id, message_id):
 
     if strng.is_string(callback_method):
         p2p_service.SendEvent(
-            remote_idurl=strng.to_bin(callback_method),
+            remote_idurl=id_url.field(callback_method),
             event_id=event_id,
             payload=existing_message.payload,
             producer_id=existing_message.producer_id,

@@ -32,7 +32,7 @@ A low level methods to store list of contacts locally.:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-from six.moves import range
+from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -56,6 +56,7 @@ from system import local_fs
 
 from main import settings
 
+from userid import id_url
 from userid import my_id
 from userid import global_id
 
@@ -126,7 +127,7 @@ def suppliers(customer_idurl=None):
     global _SuppliersList
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
     return _SuppliersList[customer_idurl]
@@ -138,7 +139,7 @@ def supplier(index, customer_idurl=None):
     """
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     num = int(index)
     if num >= 0 and num < len(suppliers(customer_idurl=customer_idurl)):
         return suppliers(customer_idurl=customer_idurl)[num]
@@ -164,10 +165,10 @@ def set_suppliers(idlist, customer_idurl=None):
     global _SuppliersList
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
-    _SuppliersList[customer_idurl] = [strng.to_bin(idurl.strip()) for idurl in idlist]
+    _SuppliersList[customer_idurl] = id_url.fields_list(idlist)
 
 
 def update_suppliers(idlist, customer_idurl=None):
@@ -195,10 +196,10 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     global _SuppliersList
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
-    idurl = strng.to_bin(idurl.strip())
+    idurl = id_url.field(idurl)
     if position is None or position == -1:
         lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (idurl, customer_idurl, ))
         _SuppliersList[customer_idurl].append(idurl)
@@ -222,12 +223,12 @@ def erase_supplier(idurl=None, position=None, customer_idurl=None):
     global _SuppliersList
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         return False
     current_suppliers = _SuppliersList[customer_idurl]
     if idurl:
-        idurl = strng.to_bin(idurl.strip())
+        idurl = id_url.field(idurl)
         if idurl not in current_suppliers:
             return False
         current_suppliers[current_suppliers.index(idurl)] = b''
@@ -248,7 +249,7 @@ def clear_suppliers(customer_idurl=None):
     global _SuppliersList
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     _SuppliersList.pop(customer_idurl)
 
 
@@ -293,12 +294,12 @@ def set_customers(idlist):
     Set customers list.
     """
     global _CustomersList
-    _CustomersList = [strng.to_bin(idurl.strip()) for idurl in idlist]
+    _CustomersList = [id_url.field(idurl) for idurl in idlist]
 
 
 def update_customers(idslist):
     """
-    Hight-level method to set customers ID's list.
+    High-level method to set customers ID's list.
     Executes required callbacks.
     """
     global _CustomersChangedCallback
@@ -317,7 +318,7 @@ def add_customer(idurl):
     Add customer and return its position in the list.
     """
     global _CustomersList
-    _CustomersList.append(strng.to_bin(idurl.strip()))
+    _CustomersList.append(id_url.field(idurl))
     return len(_CustomersList) - 1
 
 
@@ -396,7 +397,7 @@ def set_correspondents(idlist):
     Set correspondents from list of tuples without notification.
     """
     global _CorrespondentsList
-    _CorrespondentsList = [(strng.to_bin(idurl_name[0].strip()), idurl_name[1]) for idurl_name in idlist]
+    _CorrespondentsList = [(id_url.field(idurl_name[0]), idurl_name[1]) for idurl_name in idlist]
 
 
 def clear_correspondents():
@@ -415,7 +416,7 @@ def add_correspondent(idurl, nickname=''):
     global _CorrespondentsList
     global _CorrespondentsChangedCallback
     curlist = list(_CorrespondentsList)
-    idurl = strng.to_bin(idurl.strip())
+    idurl = id_url.field(idurl)
     _CorrespondentsList.append((idurl, nickname, ))
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
@@ -430,7 +431,7 @@ def remove_correspondent(idurl):
     global _CorrespondentsList
     global _CorrespondentsChangedCallback
     curlist = list(_CorrespondentsList)
-    idurl = strng.to_bin(idurl.strip())
+    idurl = id_url.field(idurl)
     for tupl in _CorrespondentsList:
         if idurl == tupl[0]:
             _CorrespondentsList.remove(tupl)
@@ -457,21 +458,21 @@ def is_customer(idurl):
     """
     Return True if given ID is found in customers list.
     """
-    return strng.to_bin(idurl.strip()) in customers()
+    return id_url.field(idurl) in customers()
 
 
 def is_supplier(idurl, customer_idurl=None):
     """
     Return True if given ID is found in suppliers list.
     """
-    return idurl and strng.to_bin(idurl.strip()) in suppliers(customer_idurl=customer_idurl)
+    return idurl and id_url.field(idurl) in suppliers(customer_idurl=customer_idurl)
 
 
 def is_correspondent(idurl):
     """
     Return True if given ID is found in correspondents list.
     """
-    return strng.to_bin(idurl.strip()) in correspondents_ids()
+    return id_url.field(idurl) in correspondents_ids()
 
 #------------------------------------------------------------------------------
 
@@ -506,7 +507,7 @@ def supplier_position(idurl, customer_idurl=None):
     """
     if not idurl:
         return -1
-    idurl = strng.to_bin(idurl.strip())
+    idurl = id_url.field(idurl)
     try:
         index = suppliers(customer_idurl=customer_idurl).index(idurl)
     except:
@@ -520,7 +521,7 @@ def customer_position(idurl):
     """
     if not idurl:
         return -1
-    idurl = strng.to_bin(idurl.strip())
+    idurl = id_url.field(idurl)
     try:
         index = customers().index(idurl)
     except:
@@ -538,7 +539,7 @@ def contact_position(idurl):
     """
     if not idurl:
         return -1
-    idurl = strng.to_bin(idurl.strip())
+    idurl = id_url.field(idurl)
     try:
         index = contacts_list().index(idurl)
     except:
@@ -553,7 +554,7 @@ def save_suppliers(path=None, customer_idurl=None):
     """
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path is None:
         path = os.path.join(
@@ -584,19 +585,19 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
             if lst is None:
                 lg.warn('did not found suppliers ids at %s' % path)
                 continue
-            lst = list(map(strng.to_bin, lst))
+            lst = list(map(lambda i: id_url.field(i), lst))
             set_suppliers(lst, customer_idurl=global_id.GlobalUserToIDURL(customer_id))
             lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
         return True
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     if path is None:
         path = os.path.join(settings.SuppliersDir(), global_id.UrlToGlobalID(customer_idurl), 'supplierids')
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
-    lst = list(map(strng.to_bin, lst))
+    lst = list(map(lambda i: id_url.field(i), lst))
     set_suppliers(lst)
     lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
     return True
@@ -615,8 +616,9 @@ def save_customers(path=None, save_meta_info=False):
     lst = list(map(strng.to_text, lst))
     bpio._write_list(path, lst)
     if save_meta_info:
+        json_info = id_url.to_bin_dict(_CustomersMetaInfo)
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-            _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
+            json_info, indent=2, sort_keys=True, keys_to_text=True, ))
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.save_customers : %r' % lst)
 
@@ -631,12 +633,13 @@ def load_customers(path=None):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
-    lst = list(map(strng.to_bin, lst))
+    lst = list(map(lambda i: id_url.field(i), lst))
     set_customers(lst)
     _CustomersMetaInfo = jsn.loads(
         local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}',
         keys_to_bin=True,
     )
+    _CustomersMetaInfo = id_url.fields_dict(_CustomersMetaInfo)
     lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
 
 #------------------------------------------------------------------------------
@@ -666,7 +669,7 @@ def load_correspondents(path=None):
         if len(lst[i]) < 2:
             lst[i] = (lst[i][0], '')
         if not lst[i][1].strip():
-            lst[i] = (strng.to_bin(lst[i][0]), nameurl.GetName(lst[i][0]))
+            lst[i] = (id_url.field(lst[i][0]), nameurl.GetName(lst[i][0]))
     set_correspondents(lst)
     lg.out(4, 'contactsdb.load_correspondents %d items' % len(lst))
 
@@ -680,7 +683,7 @@ def get_contact_identity(idurl):
     """
     if idurl is None:
         return None
-    idurl = strng.to_bin(idurl.strip())
+    idurl = id_url.field(idurl)
     if idurl == my_id.getLocalID():
         return my_id.getLocalIdentity()
     if is_supplier(idurl):
@@ -704,7 +707,7 @@ def get_customer_identity(idurl):
     If ``idurl`` is in customers list, return its identity object.
     """
     if is_customer(idurl):
-        idurl = strng.to_bin(idurl.strip())
+        idurl = id_url.field(idurl)
         return identitycache.FromCache(idurl)
     return None
 
@@ -714,7 +717,7 @@ def get_supplier_identity(idurl):
     Return peer's identity if he is in suppliers list.
     """
     if is_supplier(idurl):
-        idurl = strng.to_bin(idurl.strip())
+        idurl = id_url.field(idurl)
         return identitycache.FromCache(idurl)
     return None
 
@@ -724,7 +727,7 @@ def get_correspondent_identity(idurl):
     Return peer's identity if he is in the correspondents list.
     """
     if is_correspondent(idurl):
-        idurl = strng.to_bin(idurl.strip())
+        idurl = id_url.field(idurl)
         return identitycache.FromCache(idurl)
     return None
 
@@ -733,7 +736,7 @@ def get_correspondent_nickname(correspondent_idurl):
     """
     """
     for idurl, nickname in correspondents():
-        if strng.to_bin(idurl.strip()) == correspondent_idurl:
+        if id_url.field(idurl) == id_url.field(correspondent_idurl):
             return nickname
     return None
 
@@ -756,7 +759,9 @@ def add_customer_meta_info(customer_idurl, info):
     """
     """
     global _CustomersMetaInfo
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
+    if 'family_snapshot' in info:
+        info['family_snapshot'] = id_url.to_bin_list(info['family_snapshot'])
     if customer_idurl not in _CustomersMetaInfo:
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   store new meta info for customer %r: %r' % (
@@ -767,8 +772,15 @@ def add_customer_meta_info(customer_idurl, info):
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
                 customer_idurl, info, ))
         _CustomersMetaInfo[customer_idurl].update(info)
-    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-        _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
+    json_info = id_url.to_bin_dict(_CustomersMetaInfo)
+    try:
+        raw_data = jsn.dumps(
+            json_info, indent=2, sort_keys=True, keys_to_text=True,
+        )
+    except:
+        lg.exc()
+        return None
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), raw_data)
     return _CustomersMetaInfo
 
 
@@ -776,15 +788,17 @@ def remove_customer_meta_info(customer_idurl):
     """
     """
     global _CustomersMetaInfo
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _CustomersMetaInfo:
         lg.warn('meta info for customer %r not exist' % customer_idurl)
         return False
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.remove_customer_meta_info   erase existing meta info for customer %r' % customer_idurl)
     _CustomersMetaInfo.pop(customer_idurl)
+    json_info = id_url.to_bin_dict(_CustomersMetaInfo)
     local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-        _CustomersMetaInfo, indent=2, sort_keys=True, keys_to_text=True, ))
+        json_info, indent=2, sort_keys=True, keys_to_text=True,
+    ))
     return True
 
 
@@ -792,7 +806,7 @@ def get_customer_meta_info(customer_idurl):
     """
     """
     global _CustomersMetaInfo
-    customer_idurl = strng.to_bin(customer_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
     return _CustomersMetaInfo.get(customer_idurl, {})
 
 #------------------------------------------------------------------------------
@@ -803,8 +817,8 @@ def add_supplier_meta_info(supplier_idurl, info, customer_idurl=None):
     global _SuppliersMetaInfo
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
-    supplier_idurl = strng.to_bin(supplier_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     if customer_idurl not in _SuppliersMetaInfo:
         _SuppliersMetaInfo[customer_idurl] = {}
     if supplier_idurl not in _SuppliersMetaInfo[customer_idurl]:
@@ -821,8 +835,8 @@ def remove_supplier_meta_info(supplier_idurl, customer_idurl=None):
     global _SuppliersMetaInfo
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
-    supplier_idurl = strng.to_bin(supplier_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     if customer_idurl not in _SuppliersMetaInfo:
         return False
     if supplier_idurl not in _SuppliersMetaInfo[customer_idurl]:
@@ -839,8 +853,8 @@ def get_supplier_meta_info(supplier_idurl, customer_idurl=None):
     global _SuppliersMetaInfo
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    customer_idurl = strng.to_bin(customer_idurl.strip())
-    supplier_idurl = strng.to_bin(supplier_idurl.strip())
+    customer_idurl = id_url.field(customer_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     return _SuppliersMetaInfo.get(customer_idurl, {}).get(supplier_idurl, {})
 
 #------------------------------------------------------------------------------

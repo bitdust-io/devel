@@ -33,6 +33,7 @@ module:: message_transmitter
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from io import StringIO
 
 #------------------------------------------------------------------------------
 
@@ -45,7 +46,6 @@ import os
 import sys
 import datetime
 import time
-import StringIO
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -89,4 +89,4 @@ def shutdown():
 
 if __name__ == "__main__":
     init()
-    reactor.run()
+    reactor.run()  # @UndefinedVariable

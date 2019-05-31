@@ -49,7 +49,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -247,8 +247,8 @@ class ProxySender(automat.Automat):
     def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
         Will be called first for every outgoing packet.
-        Must to return None if that packet should be send normal way.
-        Otherwise will create another "routerd" packet instead and return it.
+        Must return `None` if that packet should be send normal way.
+        Otherwise will create another "routed" packet instead and return it.
         """
         if not driver.is_on('service_proxy_transport'):
             if _Debug:
@@ -268,7 +268,7 @@ class ProxySender(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP because remote router not ready')
             return self._add_pending_packet(outpacket, wide, callbacks)
-        if outpacket.RemoteID == router_idurl:
+        if outpacket.RemoteID.to_bin() == router_idurl.to_bin():
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP, packet addressed to router and must be sent in a usual way')
             return None
@@ -279,11 +279,13 @@ class ProxySender(automat.Automat):
             return None
         # see proxy_router.ProxyRouter : doForwardOutboxPacket() for receiving part
         json_payload = {
-            'f': my_id.getLocalID(),    # from
-            't': outpacket.RemoteID,    # to
-            'w': wide,                  # wide
-            'p': raw_data,              # payload
+            'f': my_id.getLocalID().to_bin(),    # from
+            't': outpacket.RemoteID.to_bin(),    # to
+            'w': wide,                           # wide
+            'p': raw_data,                       # payload
         }
+        if not json_payload['t']:
+            raise ValueError('receiver idurl was not set')
         raw_bytes = serialization.DictToBytes(json_payload)
         block = encrypted.Block(
             CreatorID=my_id.getLocalID(),

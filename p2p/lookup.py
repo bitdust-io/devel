@@ -36,7 +36,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -60,6 +60,8 @@ from logs import lg
 from dht import dht_service
 
 from contacts import identitycache
+
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -122,7 +124,7 @@ def consume_discovered_idurls(count=1):
         return []
     results = []
     while len(results) < count and discovered_idurls():
-        results.append(discovered_idurls().pop(0))
+        results.append(id_url.to_bin(discovered_idurls().pop(0)))
     if _Debug:
         lg.out(_DebugLevel, 'lookup.consume_discovered_idurls : %s' % results)
     return results
@@ -133,38 +135,10 @@ def extract_discovered_idurls(count=1):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.extract_discovered_idurls returns empty list')
         return []
-    results = discovered_idurls()[:count]
+    results = id_url.to_bin_list(discovered_idurls()[:count])
     if _Debug:
         lg.out(_DebugLevel, 'lookup.extract_discovered_idurls : %s' % results)
     return results
-
-
-# def schedule_next_lookup(current_lookup_task, delay=60):
-#     global _NextLookupTask
-#     if _NextLookupTask:
-#         if _Debug:
-#             lg.out(_DebugLevel, 'lookup.schedule_next_lookup SKIP, next lookup will start soon')
-#         return
-#     if _Debug:
-#         lg.out(_DebugLevel, 'lookup.schedule_next_lookup after %d seconds' % delay)
-#     _NextLookupTask = reactor.callLater(
-#         delay,
-#         start,
-#         count=current_lookup_task.count,
-#         consume=current_lookup_task.consume,
-#         lookup_method=current_lookup_task.lookup_method,
-#         observe_method=current_lookup_task.observe_method,
-#         process_method=current_lookup_task.process_method
-#     )
-
-
-# def reset_next_lookup():
-#     """
-#     """
-#     global _NextLookupTask
-#     if _NextLookupTask and not _NextLookupTask.called and not _NextLookupTask.cancelled:
-#         _NextLookupTask.cancel()
-#         _NextLookupTask = None
 
 #------------------------------------------------------------------------------
 
@@ -262,7 +236,7 @@ def on_idurl_response(response, result):
         result.errback(Exception('idurl observe failed'))
         return response
     try:
-        idurl = strng.to_text(responded_idurl)
+        idurl = id_url.to_bin(responded_idurl)
     except:
         lg.exc()
         result.errback(Exception('idurl observe failed'))
@@ -277,21 +251,20 @@ def observe_dht_node(node):
     result = Deferred()
     d = node.request('idurl')
     d.addCallback(on_idurl_response, result)
-    # d.addCallback(lambda response: result.callback(strng.to_text(response.get('idurl'))))
     d.addErrback(result.errback)
     return result
 
 
 def on_identity_cached(src, idurl, result):
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.on_identity_cached %s with %d bytes' % (idurl, len(src)))
-    result.callback(idurl)
+        lg.out(_DebugLevel, 'lookup.on_identity_cached %r with %d bytes' % (idurl, len(src)))
+    result.callback(id_url.field(idurl))
     return src
 
 
 def process_idurl(idurl, node):
     if _Debug:
-        lg.out(_DebugLevel, 'lookup.process_idurl %s from %r' % (idurl, node, ))
+        lg.out(_DebugLevel, 'lookup.process_idurl %r from %r' % (idurl, node, ))
     result = Deferred()
     if not idurl:
         result.errback(Exception(idurl))
@@ -430,7 +403,10 @@ class DiscoveryTask(object):
         try:
             self.failed += 1
             if _Debug:
-                lg.warn('%r : %s' % (node, strng.to_text(err, errors='ignore')))
+                err = strng.to_text(err, errors='ignore')
+                if err.count('idurl observe failed'):
+                    err = 'idurl observe failed'
+                lg.args(_DebugLevel, node=node, err=err)
         except:
             lg.exc()
         return None
@@ -439,6 +415,7 @@ class DiscoveryTask(object):
         if self.stopped:
             lg.warn('node observed, but discovery process already stopped')
             return None
+        idurl = id_url.to_bin(idurl)
         try:
             if _Debug:
                 lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (idurl, node))
@@ -450,13 +427,12 @@ class DiscoveryTask(object):
             if _Debug:
                 lg.out(_DebugLevel + 4, 'lookup._on_node_observed %r : %r' % (node, idurl))
             d = self.process_method(idurl, node)
-            d.addErrback(self._on_node_proces_failed, node)
             d.addCallback(self._on_identity_cached, node)
+            d.addErrback(self._on_node_proces_failed, node)
             return d
         except:
             lg.exc()
             return idurl
-        
 
     def _on_node_processed(self, node, idurl):
         if _Debug:
@@ -493,6 +469,7 @@ class DiscoveryTask(object):
             return None
         if idurl is None:
             return None
+        idurl = id_url.to_bin(idurl)
         discovered_idurls().append(idurl)
         known_idurls()[idurl] = time.time()
         self._on_node_succeed(node, idurl)

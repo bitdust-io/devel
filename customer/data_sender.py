@@ -209,7 +209,7 @@ class DataSender(automat.Automat):
         backup_matrix.ReadLocalFiles()
         progress = 0
         for customer_idurl in contactsdb.known_customers():
-            if customer_idurl != my_id.getLocalIDURL():
+            if customer_idurl != my_id.getLocalID():
                 # TODO: check that later
                 if _Debug:
                     lg.out(_DebugLevel + 6, '    skip sending to another customer: %r' % customer_idurl)
@@ -232,23 +232,22 @@ class DataSender(automat.Automat):
                     lg.out(_DebugLevel, '        packets for customer %r : %s' % (customer_idurl, packetsBySupplier))
                 for supplierNum in packetsBySupplier.keys():
                     # supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
-                    try:
+                    if supplierNum >= 0 and supplierNum < len(known_suppliers):
                         supplier_idurl = known_suppliers[supplierNum]
-                    except:
-                        lg.exc()
-                        continue
+                    else:
+                        supplier_idurl = None
                     if not supplier_idurl:
-                        lg.warn('unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (
+                        lg.warn('skip sending, unknown supplier_idurl supplierNum=%s for %s, customer_idurl=%r' % (
                             supplierNum, backupID, customer_idurl))
                         continue
                     for packetID in packetsBySupplier[supplierNum]:
                         backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(packetID)
                         if backupID_ != backupID:
-                            lg.warn('unexpected backupID supplierNum=%s for %s, customer_idurl=%r' % (
+                            lg.warn('skip sending, unexpected backupID supplierNum=%s for %s, customer_idurl=%r' % (
                                 packetID, backupID, customer_idurl))
                             continue
                         if supplierNum_ != supplierNum:
-                            lg.warn('unexpected supplierNum %s for %s, customer_idurl=%r' % (
+                            lg.warn('skip sending, unexpected supplierNum %s for %s, customer_idurl=%r' % (
                                 packetID, backupID, customer_idurl))
                             continue
                         if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
@@ -257,7 +256,7 @@ class DataSender(automat.Automat):
                             continue
                         if not io_throttle.OkToSend(supplier_idurl):
                             if _Debug:
-                                lg.out(_DebugLevel + 6, '        skip, not ok to send %s\n' % supplier_idurl)
+                                lg.out(_DebugLevel + 6, '        skip sending, not ok to send %s\n' % supplier_idurl)
                             continue
                         customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                         # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])

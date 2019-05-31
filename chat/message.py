@@ -71,6 +71,7 @@ from crypt import my_keys
 
 from contacts import identitycache
 
+from userid import id_url
 from userid import my_id
 from userid import global_id
 
@@ -97,13 +98,15 @@ _PingTrustIntervalSeconds = 60 * 2
 
 
 def init():
-    lg.out(4, "message.init")
+    if _Debug:
+        lg.out(_DebugLevel, "message.init")
     AddIncomingMessageCallback(push_incoming_message)
     AddOutgoingMessageCallback(push_outgoing_message)
 
 
 def shutdown():
-    lg.out(4, "message.shutdown")
+    if _Debug:
+        lg.out(_DebugLevel, "message.shutdown")
     RemoveOutgoingMessageCallback(push_outgoing_message)
     RemoveIncomingMessageCallback(push_incoming_message)
 
@@ -336,12 +339,15 @@ def on_incoming_message(request, info, status, error_message):
 
 def on_ping_success(response_tuple, idurl):
     global _LastUserPingTime
+    idurl = id_url.to_bin(idurl)
     _LastUserPingTime[idurl] = time.time()
-    lg.info('node %s replied with Ack : %s' % (idurl, response_tuple, ))
+    lg.info('node %r replied with Ack : %s' % (idurl, response_tuple, ))
+    return response_tuple
 
 
 def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None):
     global _LastUserPingTime
+    idurl = id_url.to_bin(idurl)
     lg.info('message %s delivered to %s : %s with %s' % (packet_id, recipient_global_id, response, info, ))
     _LastUserPingTime[idurl] = time.time()
     if result_defer and not result_defer.called:
@@ -350,6 +356,7 @@ def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, respo
 
 def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None, error=None):
     global _LastUserPingTime
+    idurl = id_url.to_bin(idurl)
     lg.err('message %s failed sending to %s in %s / %s because %r' % (
         packet_id, recipient_global_id, response, info, error, ))
     if idurl in _LastUserPingTime:
@@ -361,7 +368,7 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
 
 def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_defer=None):
     global _OutgoingMessageCallbacks
-    remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id)
+    remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:
         raise Exception('invalid recipient')
     remote_identity = identitycache.FromCache(remote_idurl)
@@ -372,7 +379,8 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
         pack_types=True,
         encoding='utf-8',
     )
-    lg.out(4, "message.do_send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))
+    if _Debug:
+        lg.out(_DebugLevel, "message.do_send_message to %s with %d bytes message" % (recipient_global_id, len(message_body)))
     try:
         private_message_object = PrivateMessage(recipient_global_id=recipient_global_id)
         private_message_object.encrypt(message_body)
@@ -380,7 +388,8 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
         lg.exc()
         raise Exception('message encryption failed')
     Payload = private_message_object.serialize()
-    lg.out(4, "        payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
+    if _Debug:
+        lg.out(_DebugLevel, "        payload is %d bytes, remote idurl is %s" % (len(Payload), remote_idurl))
     outpacket = signed.Packet(
         commands.Message(),
         my_id.getLocalID(),
@@ -417,9 +426,11 @@ def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
     global _PingTrustIntervalSeconds
     if not packet_id:
         packet_id = packetid.UniqueID()
-    lg.out(4, "message.send_message to %s with PackteID=%s" % (recipient_global_id, packet_id))
-    remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id)
+    if _Debug:
+        lg.out(_DebugLevel, "message.send_message to %s with PackteID=%s" % (recipient_global_id, packet_id))
+    remote_idurl = global_id.GlobalUserToIDURL(recipient_global_id, as_field=False)
     if not remote_idurl:
+        lg.warn('invalid recipient')
         return fail(Exception('invalid recipient'))
     ret = Deferred()
     if remote_idurl not in _LastUserPingTime:
@@ -428,12 +439,13 @@ def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
         is_expired = time.time() - _LastUserPingTime[remote_idurl] > _PingTrustIntervalSeconds
     remote_identity = identitycache.FromCache(remote_idurl)
     is_online = online_status.isOnline(remote_idurl)
-    lg.out(4, "    is_expired=%r  remote_identity=%r  is_online=%r" % (
-        is_expired, bool(remote_identity), is_online, ))
+    if _Debug:
+        lg.out(_DebugLevel, "    is_expired=%r  remote_identity=%r  is_online=%r" % (
+            is_expired, bool(remote_identity), is_online, ))
     if is_expired or remote_identity is None or not is_online:
         d = propagate.PingContact(remote_idurl, timeout=timeout or 5)
         d.addCallback(lambda response_tuple: on_ping_success(response_tuple, remote_idurl))
-        d.addCallback(lambda response_tuple: do_send_message(
+        d.addCallback(lambda _: do_send_message(
             json_data, recipient_global_id, packet_id, timeout, result_defer=ret))
         d.addErrback(lambda err: on_message_failed(
             remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret, error=err))

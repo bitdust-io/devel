@@ -44,7 +44,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -63,6 +63,7 @@ from contacts import identitycache
 from contacts import contactsdb
 
 from userid import my_id
+from userid import id_url
 
 from transport import callback
 
@@ -268,7 +269,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        self.target_idurl = strng.to_bin(args[0])
+        self.target_idurl = id_url.field(args[0])
 
     def doPopCandidate(self, *args, **kwargs):
         """

@@ -75,6 +75,7 @@ from lib import net_misc
 
 from main import settings
 
+from userid import id_url
 from userid import identity
 from userid import known_servers
 
@@ -264,15 +265,15 @@ class IdServer(automat.Automat):
         if not newidentity.Valid():
             lg.warn("has non-Valid identity")
             return
-        matchid = ""
-        for idurl in newidentity.sources:
+        matchid = b''
+        for idurl in newidentity.getSources():
             protocol, host, port, filename = nameurl.UrlParse(idurl)
             if strng.to_text(host) == strng.to_text(self.hostname):
                 lg.out(4, "id_server._save_identity found match for us")
-                matchid = idurl
+                matchid = idurl.to_bin()
                 break
-        if matchid == "":
-            lg.warn("identity is not for this nameserver")
+        if not matchid:
+            lg.warn("identity is not for this nameserver sources: %r" % newidentity.getSources())
             return
         protocol, host, port, filename = nameurl.UrlParse(matchid)
         name, justxml = filename.split(".")

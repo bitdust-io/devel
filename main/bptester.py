@@ -125,7 +125,7 @@ def SpaceTime():
     old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = accounting.read_customers_quotas()
+    space, free_space = accounting.read_customers_quotas()
     if space is None:
         printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
         return
@@ -217,7 +217,7 @@ def UpdateCustomers():
     """
     Test packets after list of customers was changed.
     """
-    space = accounting.read_customers_quotas()
+    space, free_space = accounting.read_customers_quotas()
     if space is None:
         printlog('UpdateCustomers ERROR space file can not be read')
         return

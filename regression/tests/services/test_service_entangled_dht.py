@@ -42,8 +42,6 @@ VALIDATORS_NODES = [
     'supplier_4',
     'supplier_5',
     'supplier_6',
-    'supplier_7',
-    'supplier_8',
     'proxy_server_1',
     'proxy_server_2',
     'stun_1',

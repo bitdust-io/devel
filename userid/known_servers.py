@@ -34,7 +34,7 @@ _KnownServers = None
 
 def default_nodes():
     """
-    A set of identity servers currently maintained, see file networks.json in the root folder.
+    A set of identity servers currently maintained, see file `networks.json` in the root folder.
     """
     from system import bpio
     from system import local_fs
@@ -62,7 +62,7 @@ def default_nodes():
 
 def by_host():
     """
-    Here is a well known identity servers to support the network.
+    Here is a "well known" identity servers to support the network.
     Keys are domain names or global IP address (not recommended) of the ID server.
     Values are ``Web port`` (reading) and ``TCP port`` (writing) numbers.
 
@@ -79,7 +79,9 @@ def by_host():
             "myfirstserver.net:80:6661, secondmachine.net:8080:6662, thirdnode.gov.eu:80:16661",
         )
 
-    This way you can create your own BitDust network, under your full control.
+    Also check file `networks.json` in the repository root.
+
+    Both ways you can create your own BitDust network, under your full control.
     """
     global _KnownServers
     from main import config

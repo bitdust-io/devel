@@ -42,7 +42,7 @@ User can decide to put his identity file on his own host, or he can use some ano
 All identity files is signed with user's Key and client code should verify signatures.
 Even if someone tried to fake my identity - this will be refused by other nodes in the network.
 
-Example in http://id.bitdust.io/veselin.xml
+Example in http://seed.bitdust.io/veselin.xml
 
 Could have info just be XML on a web page.  So an Identity could be a URL.
 If we do this, then we get the scaling of DNS for free.
@@ -108,7 +108,7 @@ On the other hand, this might be a good way to get into the certificate-authorit
 
 Having XML on a web site means we can start before we
 really have identity server code.  Also means it is
-easy to grok and debug.
+easy to grow and debug.
 
 As long as identity server is just some CGI that we can run on
 any ISP anywhere (pair.com etc), and users always use 3 identity servers,
@@ -119,13 +119,24 @@ Identity's are signed and have a revision number, so an identity
 server can pass on an update that it gets to other servers listed
 for that identity (in case there is network partition funnyness)
 to help keep all of them updated.
+
+But we really want actually people to run own identity servers and not rely on us.
+ID server is a first target to external hacker to attack actually if he wants to brake/block the network.
+Also ownership is important - 1000 servers owned by one company can be easily attacked via "legal/court" order.
+But 1000 servers owned and maintained by 1000 people in 100 different countries is completely different scenario.
+So more distribution of ID servers we will have in BitDust - more secured and protected network will become.
 """
 
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
 from __future__ import print_function
-from six.moves import range
+from six.moves import range  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -156,6 +167,7 @@ from lib import nameurl
 from crypt import key
 
 from userid import global_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -176,7 +188,7 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 #------------------------------------------------------------------------------
 
 
-class identity:
+class identity(object):
     """
     We are passed an XML version of an identity and make an Identity. Also can
     construct an Identity by providing all fields. The fields is:
@@ -216,7 +228,9 @@ class identity:
                  xmlsrc=None,
                  filename=b''):
 
-        self.sources = sources
+        self.sources = []
+        if sources:
+            self.setSources(sources)
         self.contacts = contacts
         self.certificates = certificates
         self.scrubbers = scrubbers
@@ -329,7 +343,7 @@ class identity:
         """
         sep = b'-'
         hsh = b''
-        hsh += sep + sep.join(self.sources)
+        hsh += sep + sep.join(map(strng.to_bin, self.sources))
         hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
         hsh += sep + sep.join(self.scrubbers)
@@ -451,7 +465,7 @@ class identity:
         """
         return {
             'name': self.getIDName(),
-            'idurl': self.getIDURL(),
+            'idurl': self.getIDURL().to_text(),
             'global_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
             'sources': [strng.to_text(i) for i in self.getSources()],
             'contacts': [strng.to_text(i) for i in self.getContacts()],
@@ -543,7 +557,7 @@ class identity:
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
                             if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(strng.to_bin(xsource.wholeText.strip()))
+                                self.sources.append(id_url.ID_URL_FIELD(xsource.wholeText.strip()))
                                 break
                 elif xsection.tagName == 'contacts':
                     for xcontacts in xsection.childNodes:
@@ -600,10 +614,12 @@ class identity:
 
     #------------------------------------------------------------------------------
 
-    def getSources(self):
+    def getSources(self, as_id_url_fields=True):
         """
         Return identity sources.
         """
+        if not as_id_url_fields:
+            return list(map(lambda s: s.to_bin(), self.sources))
         return self.sources
 
     def getIDURL(self, index=0):
@@ -764,6 +780,18 @@ class identity:
             return None
         return nameurl.UrlParse(c)[0]
 
+    def getPublicKey(self):
+        """
+        Returns public key as binary string.
+        """
+        return self.publickey
+
+    def getSignature(self):
+        """
+        Returns signature as binary string.
+        """
+        return self.signature
+
     def getIP(self, proto=None):
         """
         A smart way to get the IP address of the user.
@@ -776,14 +804,41 @@ class identity:
                 return host
         return self.getProtoHost('tcp')
 
+    def getDateStr(self):
+        """
+        Returns identity creation date as string.
+        """
+        return strng.to_text(self.date)
+
+    def getPostageValue(self):
+        """
+        Returns price for message delivery if not on correspondents list.
+        Not used at the moment.
+        """
+        return int(self.postage)
+
+    def getVersionStr(self):
+        """
+        Returns a version string - some info about BitDust software and platform.
+        Just informative thing, no real logic around it yet.
+        """
+        return strng.to_text(self.version)
+
+    def getRevisionValue(self):
+        """
+        Returns identity revision number.
+        Every time identity changes, identity must increment by one.
+        """
+        return int(self.revision)
+
     #------------------------------------------------------------------------------
 
     def setSources(self, sources_list):
         """
         """
         self.sources = []
-        for sourc in sources_list:
-            self.contacts.append(strng.to_bin(sourc))
+        for source in sources_list:
+            self.sources.append(id_url.field(source))
 
     def setContacts(self, contacts_list):
         """
@@ -988,7 +1043,12 @@ def main():
         print(my_id.getLocalIdentity().serialize())
         print('Valid is: ', my_id.getLocalIdentity().Valid())
     else:
-        my_id.setLocalIdentity(my_id.buildDefaultIdentity(sys.argv[1]))
+        if not key.InitMyKey():
+            key.GenerateNewKey()
+        idurls = []
+        if len(sys.argv) > 2:
+            idurls = sys.argv[2:]
+        my_id.setLocalIdentity(my_id.buildDefaultIdentity(name=sys.argv[1], idurls=idurls))
         my_id.saveLocalIdentity()
         print(my_id.getLocalIdentity().serialize())
         print('Valid is: ', my_id.getLocalIdentity().Valid())
@@ -1017,5 +1077,5 @@ def update():
 
 if __name__ == '__main__':
     lg.set_debug_level(18)
-    # main()
-    update()
+    main()
+    # update()

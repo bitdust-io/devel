@@ -135,7 +135,7 @@ class Test(TestCase):
         key.InitMyKey()
         data1 = os.urandom(1024)
         b1 = encrypted.Block(
-            CreatorID=my_id.getLocalIDURL(),
+            CreatorID=my_id.getLocalID(),
             BackupID='BackupABC',
             BlockNumber=123,
             SessionKey=key.NewSessionKey(),

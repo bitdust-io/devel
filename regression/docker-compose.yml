@@ -32,10 +32,22 @@ services:
     entrypoint: ""
     command: /bin/false
 
+
+
   identity-server:
     image: bitdust-baseimage
     ports:
         - "22201:22"
+
+  identity-server-a:
+    image: bitdust-baseimage
+    ports:
+        - "22202:22"
+
+  identity-server-b:
+    image: bitdust-baseimage
+    ports:
+        - "22203:22"
 
 
 
@@ -117,6 +129,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
   proxy_server_2:
     image: bitdust-baseimage
@@ -131,6 +145,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
 
 
@@ -147,6 +163,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
   supplier_2:
     image: bitdust-baseimage
@@ -161,6 +179,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
   supplier_3:
     image: bitdust-baseimage
@@ -175,6 +195,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
   supplier_4:
     image: bitdust-baseimage
@@ -189,6 +211,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
   supplier_5:
     image: bitdust-baseimage
@@ -203,6 +227,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
   supplier_6:
     image: bitdust-baseimage
@@ -217,35 +243,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
-
-  supplier_7:
-    image: bitdust-baseimage
-    ports:
-      - "22247:22"
-    links:
-      - "dht_seed_0"
-      - "dht_seed_1"
-      - "dht_seed_2"
-      - "dht_seed_3"
-      - "dht_seed_4"
-      - "stun_1"
-      - "stun_2"
-      - "identity-server:is"
-
-  supplier_8:
-    image: bitdust-baseimage
-    ports:
-      - "22248:22"
-    links:
-      - "dht_seed_0"
-      - "dht_seed_1"
-      - "dht_seed_2"
-      - "dht_seed_3"
-      - "dht_seed_4"
-      - "stun_1"
-      - "stun_2"
-      - "identity-server:is"
-
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
 
 
   customer_1:
@@ -261,6 +260,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
     volumes:
       - customer_1:/customer_1
 
@@ -277,6 +278,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
     volumes:
       - customer_2:/customer_2
 
@@ -293,6 +296,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
     volumes:
       - customer_3:/customer_3
 
@@ -309,6 +314,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
     volumes:
       - customer_4:/customer_4
 
@@ -325,6 +332,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
     volumes:
       - customer_5:/customer_5
 
@@ -341,6 +350,8 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
     volumes:
       - customer_backup:/customer_backup
 
@@ -357,8 +368,11 @@ services:
       - "stun_1"
       - "stun_2"
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
     volumes:
       - customer_restore:/customer_restore
+
 
   tester:
     build:
@@ -366,6 +380,8 @@ services:
       dockerfile: regression/Dockerfiles/tester/Dockerfile
     links:
       - "identity-server:is"
+      - "identity-server-a:is_a"
+      - "identity-server-b:is_b"
       - "stun_1"
       - "stun_2"
       - "dht_seed_0"
@@ -379,8 +395,6 @@ services:
       - "supplier_4"
       - "supplier_5"
       - "supplier_6"
-      - "supplier_7"
-      - "supplier_8"
       - "customer_1"
       - "customer_2"
       - "customer_3"

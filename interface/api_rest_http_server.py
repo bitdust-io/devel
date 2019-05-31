@@ -326,6 +326,18 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         # TODO: to be implemented
         return api.ERROR('not implemented yet')
 
+    @PUT('^/i/rot$')
+    @PUT('^/identity/rotate/v1$')
+    @PUT('^/identity/my/rotate/v1$')
+    def identity_rotate_v1(self, request):
+        return api.identity_rotate()
+
+    @PUT('^/i/h$')
+    @PUT('^/identity/heal/v1$')
+    @PUT('^/identity/my/heal/v1$')
+    def identity_heal_v1(self, request):
+        return api.ERROR('not implemented yet')
+
     #------------------------------------------------------------------------------
 
     @GET('^/k/l$')

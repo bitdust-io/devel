@@ -143,6 +143,7 @@ from customer import supplier_connector
 from raid import eccmap
 
 from userid import my_id
+from userid import id_url
 
 #-------------------------------------------------------------------------
 
@@ -426,7 +427,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        my_current_family = list(contactsdb.suppliers())
+        my_current_family = id_url.to_bin_list(contactsdb.suppliers())
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue
@@ -445,7 +446,7 @@ class FireHire(automat.Automat):
                 'connect',
                 family_position=pos,
                 ecc_map=eccmap.Current().name,
-                family_snapshot=my_current_family,
+                family_snapshot=id_url.to_bin_list(my_current_family),
             )
             online_status.add_online_status_listener_callback(
                 idurl=supplier_idurl,
@@ -463,6 +464,12 @@ class FireHire(automat.Automat):
         Action method.
         """
         global _SuppliersToFire
+        from p2p import network_connector
+        if network_connector.A().state is not 'CONNECTED':
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss   network_connector is not CONNECTED at the moment, SKIP')
+            self.automat('made-decision', [])
+            return
         to_be_fired = list(set(_SuppliersToFire))
         _SuppliersToFire = []
         if to_be_fired:
@@ -572,6 +579,12 @@ class FireHire(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier')
+        from p2p import network_connector
+        if network_connector.A().state is not 'CONNECTED':
+            if _Debug:
+                lg.out(_DebugLevel, '        network_connector is not CONNECTED at the moment, SKIP')
+            self.automat('search-failed')
+            return
         position_for_new_supplier = None
         for pos in range(settings.getSuppliersNumberDesired()):
             if pos in self.hire_list:
@@ -595,14 +608,14 @@ class FireHire(automat.Automat):
             'start',
             family_position=position_for_new_supplier,
             ecc_map=eccmap.Current().name,
-            family_snapshot=contactsdb.suppliers(),
+            family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
         )
 
     def doSubstituteSupplier(self, *args, **kwargs):
         """
         Action method.
         """
-        new_idurl = strng.to_bin(args[0])
+        new_idurl = id_url.field(args[0])
         family_position = kwargs.get('family_position')
         current_suppliers = list(contactsdb.suppliers())
         old_idurl = None
@@ -645,7 +658,7 @@ class FireHire(automat.Automat):
                 old_idurl=None,
                 position=family_position,
                 ecc_map=eccmap.Current().name,
-                family_snapshot=contactsdb.suppliers(),
+                family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
             ))
         else:
             if old_idurl:
@@ -655,7 +668,7 @@ class FireHire(automat.Automat):
                     old_idurl=old_idurl,
                     position=family_position,
                     ecc_map=eccmap.Current().name,
-                    family_snapshot=contactsdb.suppliers(),
+                    family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
             else:
                 lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
@@ -664,7 +677,7 @@ class FireHire(automat.Automat):
                     old_idurl=None,
                     position=family_position,
                     ecc_map=eccmap.Current().name,
-                    family_snapshot=contactsdb.suppliers(),
+                    family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
         self.restart_interval = 1.0
 
@@ -765,7 +778,11 @@ class FireHire(automat.Automat):
             self.restart_task = reactor.callLater(  # @UndefinedVariable
                 self.restart_interval, self._scheduled_restart)
             lg.out(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
-            self.restart_interval *= 1.1
+            from p2p import network_connector
+            if network_connector.A().state is not 'CONNECTED':
+                self.restart_interval = 60 * 5
+            else:
+                self.restart_interval *= 1.1
         else:
             lg.out(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
                 time.time() - self.restart_task.getTime()))

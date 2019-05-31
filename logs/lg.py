@@ -191,10 +191,10 @@ def args(level, *args, **kwargs):
     funcargs = []
     for k, v in enumerate(args):
         funcargs.append('%s' % v)
-    for k, v in kwargs:
-        funcargs.append('%s=%s' % (k, v))
+    for k in kwargs:
+        funcargs.append('%s=%s' % (k, kwargs.get(k)))
     funcname = '%s.%s' % (modul, caller)
-    o = '%s(%s)' % (funcname, ','.join(funcargs), )
+    o = '%s(%s)' % (funcname, ', '.join(funcargs), )
     if message:
         o += ' : ' + message
     out(level, o)
@@ -283,10 +283,12 @@ def exception(level, maxTBlevel, exc_info):
         _, value, trbk = sys.exc_info()
     else:
         _, value, trbk = exc_info
-    try:
-        excArgs = value.__dict__["args"]
-    except KeyError:
-        excArgs = ''
+    excArgs = ''
+    if value: 
+        try:
+            excArgs = value.__dict__["args"]
+        except KeyError:
+            excArgs = ''
     if trbk:
         excTb = traceback.format_tb(trbk, maxTBlevel)
     else:

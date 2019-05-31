@@ -127,10 +127,11 @@ def propagate(selected_contacts, AckHandler=None, wide=False):
     d = Deferred()
 
     def contacts_fetched(x):
-        lg.out(6, "propagate.propagate.contacts_fetched")
+        lg.out(6, "propagate.propagate.contacts_fetched: %r" % x)
         SendToIDs(selected_contacts, ack_handler=AckHandler, wide=wide)
         d.callback(list(selected_contacts))
-        return x
+        return None
+
     fetch(selected_contacts).addBoth(contacts_fetched)
     return d
 

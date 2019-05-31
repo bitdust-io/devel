@@ -40,6 +40,7 @@ from __future__ import print_function
 #------------------------------------------------------------------------------
 
 _Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -61,6 +62,7 @@ from lib import net_misc
 from lib import strng
 
 from userid import identity
+from userid import id_url
 
 from contacts import identitydb
 
@@ -81,16 +83,15 @@ def init():
     Call to initialize identitydb and cache several important IDs.
     """
     if _Debug:
-        lg.out(4, 'identitycache.init')
+        lg.out(_DebugLevel, 'identitycache.init')
     if False:
-        # TODO: added settings here
+        # TODO: add settings here
         identitydb.clear()
-    identitydb.init()
 
 
 def shutdown():
     if _Debug:
-        lg.out(4, 'identitycache.shutdown')
+        lg.out(_DebugLevel, 'identitycache.shutdown')
 
 #------------------------------------------------------------------------------
 
@@ -161,7 +162,7 @@ def FromCache(idurl):
         overridden_xmlsrc = ReadOverriddenIdentityXMLSource(idurl)
         if overridden_xmlsrc:
             if _Debug:
-                lg.out(14, '        returning overridden identity (%d bytes) for %s' % (len(overridden_xmlsrc), idurl))
+                lg.out(_DebugLevel, '        returning overridden identity (%d bytes) for %s' % (len(overridden_xmlsrc), idurl))
             return identity.identity(xmlsrc=overridden_xmlsrc)
     return identitydb.get(idurl)
 
@@ -240,7 +241,7 @@ def RemapContactAddress(address):
         newaddress = (GetLocalIP(idurl), address[1])
         if _Debug:
             from lib import nameurl
-            lg.out(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
+            lg.out(_DebugLevel, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
                 nameurl.GetName(idurl), str(address), str(newaddress)))
         return newaddress
     return address
@@ -250,29 +251,30 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     xml_src = strng.to_text(xml_src.strip())
     if idurl in _OverriddenIdentities:
         if _OverriddenIdentities[idurl] == xml_src:
             if _Debug:
-                lg.out(4, 'identitycache.OverrideIdentity SKIPPED "%s", no changes' % idurl)
+                lg.out(_DebugLevel, 'identitycache.OverrideIdentity SKIPPED "%s", no changes' % idurl)
             return False
         if _Debug:
-            lg.out(4, 'identitycache.OverrideIdentity replacing overriden identity %r with new one' % idurl)
-            lg.out(4, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
-            lg.out(4, '\nOVERRIDDEN NEW:\n' + xml_src)
+            lg.out(_DebugLevel, 'identitycache.OverrideIdentity replacing overriden identity %r with new one' % idurl)
+            lg.out(_DebugLevel, '\nOVERRIDDEN OLD:\n' + _OverriddenIdentities[idurl])
+            lg.out(_DebugLevel, '\nOVERRIDDEN NEW:\n' + xml_src)
     else:
         orig = identitydb.get(idurl).serialize(as_text=True) if identitydb.has_idurl(idurl) else ''
         if orig and orig == xml_src:
             if _Debug:
-                lg.out(4, 'identitycache.OverrideIdentity SKIPPED %r , overridden copy is the same as original' % idurl)
+                lg.out(_DebugLevel, 'identitycache.OverrideIdentity SKIPPED %r , overridden copy is the same as original' % idurl)
             return False
         if _Debug:
-            lg.out(4, 'identitycache.OverrideIdentity replacing original identity for %r' % idurl)
-            lg.out(4, '\nORIGINAL:\n' + orig)
-            lg.out(4, '\nNEW:\n' + xml_src)
+            lg.out(_DebugLevel, 'identitycache.OverrideIdentity replacing original identity for %r' % idurl)
+            lg.out(_DebugLevel, '\nORIGINAL:\n' + orig)
+            lg.out(_DebugLevel, '\nNEW:\n' + xml_src)
     _OverriddenIdentities[idurl] = xml_src
     if _Debug:
-        lg.out(4, '    total number of overrides: %d' % len(_OverriddenIdentities))
+        lg.out(_DebugLevel, '    total number of overrides: %d' % len(_OverriddenIdentities))
     return True
 
 
@@ -280,12 +282,13 @@ def StopOverridingIdentity(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     result = _OverriddenIdentities.pop(idurl, None)
     if _Debug:
-        lg.out(4, 'identitycache.StopOverridingIdentity   removed overridden source for %s' % idurl)
+        lg.out(_DebugLevel, 'identitycache.StopOverridingIdentity   removed overridden source for %s' % idurl)
         if result:
-            lg.out(4, '    previous overridden identity was %d bytes' % len(result))
-        lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
+            lg.out(_DebugLevel, '    previous overridden identity was %d bytes' % len(result))
+        lg.out(_DebugLevel, '            total number of overrides is %d' % len(_OverriddenIdentities))
     return result
 
 
@@ -293,6 +296,7 @@ def IsOverridden(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     return idurl in _OverriddenIdentities
 
 
@@ -300,6 +304,7 @@ def ReadOverriddenIdentityXMLSource(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.to_bin(idurl)
     return _OverriddenIdentities.get(idurl, None)
 
 #------------------------------------------------------------------------------
@@ -319,7 +324,7 @@ def getPageFail(x, idurl):
     This is called when identity request is failed.
     """
     if _Debug:
-        lg.out(6, "identitycache.getPageFail NETERROR in request to " + idurl)
+        lg.out(_DebugLevel, "identitycache.getPageFail NETERROR in request to " + idurl)
     p2p_stats.count_identity_cache(idurl, 0)
     return x
 
@@ -348,11 +353,19 @@ def immediatelyCaching(idurl, timeout=10):
     A smart method to cache some identity and get results in callbacks.
     """
     global _CachingTasks
+    if _Debug:
+        lg.out(_DebugLevel, 'identitycache.immediatelyCaching %r' % idurl)
+
+    idurl = id_url.to_bin(idurl)
+    if not idurl:
+        raise Exception('can not cache, idurl is empty')
+
     if idurl in _CachingTasks:
         return _CachingTasks[idurl]
 
     def _getPageSuccess(src, idurl):
         global _CachingTasks
+        idurl = id_url.to_bin(idurl)
         result = _CachingTasks.pop(idurl, None)
         if not result:
             lg.warn('caching task for %s was not found' % idurl)
@@ -361,7 +374,7 @@ def immediatelyCaching(idurl, timeout=10):
             if result:
                 result.callback(src)
             if _Debug:
-                lg.out(14, '[cached] %s' % idurl)
+                lg.out(_DebugLevel, '[cached] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, len(src))
         else:
             if result:
@@ -373,6 +386,8 @@ def immediatelyCaching(idurl, timeout=10):
 
     def _getPageFail(x, idurl):
         global _CachingTasks
+        idurl = id_url.to_bin(idurl)
+        lg.err('identity %r cache failed with error: %r' % (idurl, x))
         result = _CachingTasks.pop(idurl)
         if result:
             result.errback(x)
@@ -383,12 +398,11 @@ def immediatelyCaching(idurl, timeout=10):
             lg.warn('[cache failed] %s : %s' % (idurl, x.getErrorMessage(), ))
         return None
 
+    idurl = id_url.to_bin(idurl)
     _CachingTasks[idurl] = Deferred()
     d = net_misc.getPageTwisted(idurl, timeout)
     d.addCallback(_getPageSuccess, idurl)
     d.addErrback(_getPageFail, idurl)
-    if _Debug:
-        lg.out(14, 'identitycache.immediatelyCaching %s' % idurl)
     return _CachingTasks[idurl]
 
 #------------------------------------------------------------------------------
@@ -441,10 +455,10 @@ def _test():
 
     def _resp(src):
         print(src)
-        reactor.stop()
+        reactor.stop()  # @UndefinedVariable
 
     immediatelyCaching(sys.argv[1]).addBoth(_resp)
-    reactor.run()
+    reactor.run()  # @UndefinedVariable
     shutdown()
 
 #------------------------------------------------------------------------------

@@ -143,7 +143,7 @@ class BaseConfig(object):
         if data is None:
             return default
         if isinstance(data, list):
-            lg.warn('argument to getData is a directory: %s' % entryPath)
+            # lg.warn('argument to getData is a directory: %s' % entryPath)
             return default
         return data
 

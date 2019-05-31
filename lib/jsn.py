@@ -186,6 +186,8 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
     def _to_text(v):
         if isinstance(v, six.binary_type):
             v = v.decode(encoding, errors=enc_errors)
+        if not isinstance(v, six.text_type):
+            v = six.text_type(v)
         return v
 
     if keys_to_text:
@@ -222,10 +224,12 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
             import tempfile
             fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_dumps_', text=True)
             try:
-                raw_text = repr(obj)
+                os.write(fd, repr(obj))
             except:
-                raw_text = repr(type(obj))
-            os.write(fd, raw_text)
+                try:
+                    os.write(fd, six.binary_type(repr(type(obj))))
+                except:
+                    os.write(fd, b'failed to serialize object')
             os.close(fd)
         raise exc
 

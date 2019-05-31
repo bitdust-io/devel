@@ -82,6 +82,9 @@ _prepare:
 _clean_all:
 	docker-compose down -v -t 1
 
+clean_orphans:
+	docker-compose down -v -t 1 --remove-orphans
+
 _run_all:
 	docker-compose up -d
 
@@ -92,163 +95,24 @@ clean_unused_images:
 logs_fetch:
 	@rm -rf .logs
 	@mkdir .logs
-	@for node in "identity-server" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do docker-compose exec $$node sh -c "cat /root/.bitdust/logs/automats.log" > .logs/$$node.automats.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/stdout.log" > .logs/$$node.stdout.log; echo $$node; done
+	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do docker-compose exec $$node sh -c "cat /root/.bitdust/logs/automats.log" > .logs/$$node.automats.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/event.log" > .logs/$$node.event.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/packet.log" > .logs/$$node.packet.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/stdout.log" > .logs/$$node.stdout.log; echo $$node; done
 
 logs_all_stdout:
     # TODO: keep up to date with docker-compose links
-	@echo "### [identity-server] #########################################################################"
-	docker-compose exec identity-server cat /root/.bitdust/logs/stdout.log
-	@echo "### [dht_seed0] ##################################################################################"
-	docker-compose exec dht_seed_0 cat /root/.bitdust/logs/stdout.log
-	@echo "### [dht_seed1] ##################################################################################"
-	docker-compose exec dht_seed_1 cat /root/.bitdust/logs/stdout.log
-	@echo "### [dht_seed2] ##################################################################################"
-	docker-compose exec dht_seed_2 cat /root/.bitdust/logs/stdout.log
-	@echo "### [dht_seed3] ##################################################################################"
-	docker-compose exec dht_seed_3 cat /root/.bitdust/logs/stdout.log
-	@echo "### [dht_seed4] ##################################################################################"
-	docker-compose exec dht_seed_4 cat /root/.bitdust/logs/stdout.log
-	@echo "### [stun_1] ##################################################################################"
-	docker-compose exec stun_1 cat /root/.bitdust/logs/stdout.log
-	@echo "### [stun_2] ##################################################################################"
-	docker-compose exec stun_2 cat /root/.bitdust/logs/stdout.log
-	@echo "### [proxy_server_1] ##############################################################################"
-	docker-compose exec proxy_server_1 cat /root/.bitdust/logs/stdout.log
-	@echo "### [proxy_server_2] ##############################################################################"
-	docker-compose exec proxy_server_2 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_1] ##############################################################################"
-	docker-compose exec supplier_1 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_2] ##############################################################################"
-	docker-compose exec supplier_2 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_3] ##############################################################################"
-	docker-compose exec supplier_3 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_4] ##############################################################################"
-	docker-compose exec supplier_4 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_5] ##############################################################################"
-	docker-compose exec supplier_5 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_6] ##############################################################################"
-	docker-compose exec supplier_6 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_7] ##############################################################################"
-	docker-compose exec supplier_7 cat /root/.bitdust/logs/stdout.log
-	@echo "### [supplier_8] ##############################################################################"
-	docker-compose exec supplier_8 cat /root/.bitdust/logs/stdout.log
-	@echo "### [customer_1] ##############################################################################"
-	docker-compose exec customer_1 cat /root/.bitdust/logs/stdout.log
-	@echo "### [customer_2] ##############################################################################"
-	docker-compose exec customer_2 cat /root/.bitdust/logs/stdout.log
-	@echo "### [customer_3] ##############################################################################"
-	docker-compose exec customer_3 cat /root/.bitdust/logs/stdout.log
-	@echo "### [customer_4] ##############################################################################"
-	docker-compose exec customer_4 cat /root/.bitdust/logs/stdout.log
-	@echo "### [customer_5] ##############################################################################"
-	docker-compose exec customer_5 cat /root/.bitdust/logs/stdout.log
-	@echo "### [customer_backup] ##############################################################################"
-	docker-compose exec customer_backup cat /root/.bitdust/logs/stdout.log
-	@echo "### [customer_restore] ##############################################################################"
-	docker-compose exec customer_restore cat /root/.bitdust/logs/stdout.log
+	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/stdout.log; done
 
 logs_all_stderr:
     # TODO: keep up to date with docker-compose links
-	@echo "### [identity-server] #########################################################################"
-	docker-compose exec identity-server cat /root/.bitdust/logs/stderr.log
-	@echo "### [dht_seed0] ##################################################################################"
-	docker-compose exec dht_seed_0 cat /root/.bitdust/logs/stderr.log
-	@echo "### [dht_seed1] ##################################################################################"
-	docker-compose exec dht_seed_1 cat /root/.bitdust/logs/stderr.log
-	@echo "### [dht_seed2] ##################################################################################"
-	docker-compose exec dht_seed_2 cat /root/.bitdust/logs/stderr.log
-	@echo "### [dht_seed3] ##################################################################################"
-	docker-compose exec dht_seed_3 cat /root/.bitdust/logs/stderr.log
-	@echo "### [dht_seed4] ##################################################################################"
-	docker-compose exec dht_seed_4 cat /root/.bitdust/logs/stderr.log
-	@echo "### [stun_1] ##################################################################################"
-	docker-compose exec stun_1 cat /root/.bitdust/logs/stderr.log
-	@echo "### [stun_2] ##################################################################################"
-	docker-compose exec stun_2 cat /root/.bitdust/logs/stderr.log
-	@echo "### [proxy_server_1] ##############################################################################"
-	docker-compose exec proxy_server_1 cat /root/.bitdust/logs/stderr.log
-	@echo "### [proxy_server_2] ##############################################################################"
-	docker-compose exec proxy_server_2 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_1] ##############################################################################"
-	docker-compose exec supplier_1 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_2] ##############################################################################"
-	docker-compose exec supplier_2 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_3] ##############################################################################"
-	docker-compose exec supplier_3 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_4] ##############################################################################"
-	docker-compose exec supplier_4 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_5] ##############################################################################"
-	docker-compose exec supplier_5 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_6] ##############################################################################"
-	docker-compose exec supplier_6 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_7] ##############################################################################"
-	docker-compose exec supplier_7 cat /root/.bitdust/logs/stderr.log
-	@echo "### [supplier_8] ##############################################################################"
-	docker-compose exec supplier_8 cat /root/.bitdust/logs/stderr.log
-	@echo "### [customer_1] ##############################################################################"
-	docker-compose exec customer_1 cat /root/.bitdust/logs/stderr.log
-	@echo "### [customer_2] ##############################################################################"
-	docker-compose exec customer_2 cat /root/.bitdust/logs/stderr.log
-	@echo "### [customer_3] ##############################################################################"
-	docker-compose exec customer_3 cat /root/.bitdust/logs/stderr.log
-	@echo "### [customer_4] ##############################################################################"
-	docker-compose exec customer_4 cat /root/.bitdust/logs/stderr.log
-	@echo "### [customer_5] ##############################################################################"
-	docker-compose exec customer_5 cat /root/.bitdust/logs/stderr.log
-	@echo "### [customer_backup] ##############################################################################"
-	docker-compose exec customer_backup cat /root/.bitdust/logs/stderr.log
-	@echo "### [customer_restore] ##############################################################################"
-	docker-compose exec customer_restore cat /root/.bitdust/logs/stderr.log
+	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/stderr.log; done
 
 logs_all_states:
 	# TODO: keep up to date with docker-compose links
-	@echo "### [identity-server] #########################################################################"
-	docker-compose exec identity-server cat /root/.bitdust/logs/automats.log
-	@echo "### [dht_seed0] ##################################################################################"
-	docker-compose exec dht_seed_0 cat /root/.bitdust/logs/automats.log
-	@echo "### [dht_seed1] ##################################################################################"
-	docker-compose exec dht_seed_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [dht_seed2] ##################################################################################"
-	docker-compose exec dht_seed_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [dht_seed3] ##################################################################################"
-	docker-compose exec dht_seed_3 cat /root/.bitdust/logs/automats.log
-	@echo "### [dht_seed4] ##################################################################################"
-	docker-compose exec dht_seed_4 cat /root/.bitdust/logs/automats.log
-	@echo "### [stun_1] ##################################################################################"
-	docker-compose exec stun_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [stun_2] ##################################################################################"
-	docker-compose exec stun_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [proxy_server_1] ##############################################################################"
-	docker-compose exec proxy_server_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [proxy_server_2] ##############################################################################"
-	docker-compose exec proxy_server_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_1] ##############################################################################"
-	docker-compose exec supplier_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_2] ##############################################################################"
-	docker-compose exec supplier_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_3] ##############################################################################"
-	docker-compose exec supplier_3 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_4] ##############################################################################"
-	docker-compose exec supplier_4 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_5] ##############################################################################"
-	docker-compose exec supplier_5 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_6] ##############################################################################"
-	docker-compose exec supplier_6 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_7] ##############################################################################"
-	docker-compose exec supplier_7 cat /root/.bitdust/logs/automats.log
-	@echo "### [supplier_8] ##############################################################################"
-	docker-compose exec supplier_8 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_1] ##############################################################################"
-	docker-compose exec customer_1 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_2] ##############################################################################"
-	docker-compose exec customer_2 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_3] ##############################################################################"
-	docker-compose exec customer_3 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_4] ##############################################################################"
-	docker-compose exec customer_4 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_5] ##############################################################################"
-	docker-compose exec customer_5 cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_backup] ##############################################################################"
-	docker-compose exec customer_backup cat /root/.bitdust/logs/automats.log
-	@echo "### [customer_restore] ##############################################################################"
-	docker-compose exec customer_restore cat /root/.bitdust/logs/automats.log
+	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/automats.log; done
+
+logs_all_events:
+	# TODO: keep up to date with docker-compose links
+	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/event.log; done
+
+logs_all_exceptions:
+	# TODO: keep up to date with docker-compose links
+	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/exception_*.log; done

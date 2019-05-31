@@ -126,7 +126,7 @@ class EmployerService(LocalService):
             if not idurl:
                 continue
             if not contactsdb.is_supplier(idurl):
-                lg.warn('dht relation with %s is not valid anymore' % idurl)
+                lg.warn('dht relation with %r is not valid anymore' % idurl)
                 suppliers_to_be_dismissed.add(idurl)
         for supplier_idurl in suppliers_to_be_dismissed:
             service_info = {}
@@ -161,7 +161,7 @@ class EmployerService(LocalService):
             json_payload={
                 'space': 'family_member',
                 'type': 'supplier_position',
-                'customer_idurl': my_id.getLocalIDURL(),
+                'customer_idurl': my_id.getLocalID(),
                 'customer_ecc_map': eccmap.Current().name,
                 'supplier_idurl': supplier_idurl,
                 'supplier_position': supplier_position,

@@ -55,7 +55,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     ssh_proc = await create
     stdout, stderr = await ssh_proc.communicate()
     if stderr:
-        print('STDERR: %r' % stderr.decode())
+        print(f'STDERR at {host}: %r' % stderr.decode())
     # assert not stderr
     print(f'\nssh_command on [{host}] : {cmd}')
     return stdout.decode(), stderr.decode()
@@ -370,14 +370,16 @@ async def connect_network_async(node, loop):
         response_json = await response.json()
         assert response_json['status'] == 'ERROR'
 
+        counter = 0
         for i in range(60):
+            counter += 1
             response = await client.get(tunnel_url(node, '/network/connected/v1?wait_timeout=1'))
             response_json = await response.json()
             if response_json['status'] == 'OK':
                 print(f"network/connected/v1 {node}: got status OK\n")
                 break
 
-            print(f"connect_network_async {node}: sleep 1 sec\n")
+            print(f"connect_network_async attempt {counter} at {node}: sleep 1 sec\n")
             await asyncio.sleep(1)
         else:
             print(f"connect_network_async {node}: FAILED\n")
@@ -619,7 +621,8 @@ def start_customer(node, identity_name, join_network=True, num_suppliers=2, bloc
     print(f'\nSTARTED CUSTOMER [{node}]\n')
 
 
-async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None):
+async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
+                               min_servers=None, max_servers=None, known_servers=[]):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
@@ -627,8 +630,12 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     await run_ssh_command_and_wait_async(node, 'bitdust set services/supplier/enabled false', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-server/enabled false', loop)
     # configure ID servers
-    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
-    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
+    if min_servers is not None:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers %d' % min_servers, loop)
+    if max_servers is not None:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers %d' % max_servers, loop)
+    if known_servers:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/known-servers %s' % (','.join(known_servers)), loop)
     # configure DHT udp port
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
     # set desired Proxy router
@@ -674,6 +681,9 @@ async def start_one_customer_async(customer, loop):
         join_network=customer['join_network'],
         num_suppliers=customer['num_suppliers'],
         block_size=customer.get('block_size'),
+        min_servers=customer.get('min_servers'),
+        max_servers=customer.get('max_servers'),
+        known_servers=customer.get('known_servers', []),
         loop=loop,
     )
 
@@ -722,6 +732,7 @@ def print_exceptions_one_node(node):
 
 
 async def print_exceptions_one_node_async(node, event_loop):
+    print(f'\nsearching errors at {node} in the folder: /root/.bitdust/logs/exception_*.log')
     exceptions_out = await run_ssh_command_and_wait_async(node, 'cat /root/.bitdust/logs/exception_*.log', event_loop)
     exceptions_out = exceptions_out[0].strip()
     if exceptions_out:

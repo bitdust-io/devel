@@ -88,6 +88,14 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 12
+
+#------------------------------------------------------------------------------
+
 import sys
 import random
 
@@ -122,6 +130,7 @@ from crypt import key
 
 from userid import my_id
 from userid import identity
+from userid import id_url
 from userid import known_servers
 
 #------------------------------------------------------------------------------
@@ -425,8 +434,8 @@ class IdRegistrator(automat.Automat):
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
-            lg.out(4, '               connecting to %s:%s   known tcp port is %d' % (
-                server_url, webport, tcpport, ))
+            lg.out(4, '               connecting to %s   known tcp port is %d' % (
+                server_url, tcpport, ))
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_cb, host)
             d.addErrback(_eb, host)
@@ -552,9 +561,11 @@ class IdRegistrator(automat.Automat):
         lg.out(8, 'id_registrator.doRequestMyIdentity')
 
         def _cb(src):
+            # TODO: validate my identity and make sure other servers also stored
             self.automat('my-id-exist', src)
 
         def _eb(err):
+            # TODO: this is actually can be an issue if one server failed but others are fine...
             self.automat('my-id-not-exist', err)
 
         for idurl in self.new_identity.sources:
@@ -599,6 +610,10 @@ class IdRegistrator(automat.Automat):
         if self.free_idurls[0].count(b'127.0.0.1'):
             externalIP = b'127.0.0.1'
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
+
+        my_id.forgetLocalIdentity()
+        my_id.eraseLocalIdentity(do_backup=True)
+        key.ForgetMyKey(erase_file=True, do_backup=True)
         key.InitMyKey()
         if not key.isMyKeyReady():
             key.GenerateNewKey()
@@ -611,24 +626,17 @@ class IdRegistrator(automat.Automat):
         my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
+        id_url.identity_cached(ident)
         self.new_identity = ident
         lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
 
     def _send_new_identity(self):
         """
-        Send created identity to the identity server to register it.
-        TODO: need to close transport and gateway after that
+        Send created identity to the identity servers to register it.
         """
-        lg.out(4, 'id_registrator._send_new_identity ')
-        from transport import gateway
-        from transport import network_transport
-        from transport.tcp import tcp_interface
-        gateway.init()
-        interface = tcp_interface.GateInterface()
-        transport = network_transport.NetworkTransport('tcp', interface)
-        transport.automat('init', gateway.listener())
-        transport.automat('start')
-        gateway.start()
+        if _Debug:
+            lg.out(_DebugLevel, 'id_registrator._send_new_identity')
+        from transport.tcp import tcp_node
         sendfilename = settings.LocalIdentityFilename() + '.new'
         dlist = []
         for idurl in self.new_identity.sources:
@@ -637,8 +645,11 @@ class IdRegistrator(automat.Automat):
             _, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             srvhost = net_misc.pack_address((host, tcpport, ))
-            dlist.append(gateway.send_file_single(idurl, 'tcp', srvhost, sendfilename, 'Identity'))
-        # assert len(self.free_idurls) == 0
+            if _Debug:
+                lg.out(_DebugLevel, '    sending to %r via TCP' % srvhost)
+            dlist.append(tcp_node.send(
+                sendfilename, srvhost, 'Identity', keep_alive=False,
+            ))
         return DeferredList(dlist, fireOnOneCallback=True)
 
 #------------------------------------------------------------------------------

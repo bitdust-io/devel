@@ -82,7 +82,7 @@ class CustomerService(LocalService):
     def health_check(self):
         from customer import supplier_connector
         from userid import my_id
-        for sc in supplier_connector.connectors(my_id.getLocalIDURL()).values():
+        for sc in supplier_connector.connectors(my_id.getLocalID()).values():
             # at least one supplier must be online to consider my customer service to be healthy
             if sc.state in ['CONNECTED', ]:
                 return True

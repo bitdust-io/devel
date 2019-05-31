@@ -24,6 +24,7 @@ import os
 import pytest
 import time
 import requests
+import pprint
 
 from ..testsupport import tunnel_url
 
@@ -39,8 +40,8 @@ def validate_customer_family(customer_node, observer_node, expected_ecc_map, exp
                 return False
             response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
             assert response.status_code == 200
+            print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_node, obs, pprint.pformat(response.json())))
             assert response.json()['status'] == 'OK', response.json()
-            # print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_node, obs, pprint.pformat(response.json())))
             if not response.json()['result']:
                 count += 1
                 time.sleep(sleep_sec)

@@ -78,10 +78,10 @@ def OK(result='', message=None, status='OK', extra_fields=None):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
-    api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda') or api_method.startswith('_'):
-        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda') or api_method.startswith('_'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
         if api_method not in [
             'process_health',
             'network_connected',
@@ -100,14 +100,15 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
     if errors is not None:
         o['errors'] = errors
     o = on_api_result_prepared(o)
-    api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda'):
-        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
         try:
             sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
         except:
-            sample = strng.to_text(0, errors='ignore')[:150]
+            lg.exc()
+            sample = strng.to_text(o, errors='ignore')[:150]
         lg.out(_DebugLevel, 'api.%s return RESULT(%s)' % (api_method, sample))
     return o
 
@@ -130,10 +131,10 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
     if extra_fields is not None:
         o.update(extra_fields)
     o = on_api_result_prepared(o)
-    api_method = sys._getframe().f_back.f_code.co_name
-    if api_method.count('lambda'):
-        api_method = sys._getframe(1).f_back.f_code.co_name
     if _Debug:
+        api_method = sys._getframe().f_back.f_code.co_name
+        if api_method.count('lambda'):
+            api_method = sys._getframe(1).f_back.f_code.co_name
         lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
 
@@ -374,7 +375,7 @@ def identity_backup(destination_filepath):
     from system import bpio
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
-    # TextToSave = strng.to_text(my_id.getLocalIDURL()) + u"\n" + key.MyPrivateKey()
+    # TextToSave = strng.to_text(my_id.getLocalID()) + u"\n" + key.MyPrivateKey()
     TextToSave = ''
     for id_source in my_id.getLocalIdentity().getSources():
         TextToSave += strng.to_text(id_source) + u'\n'
@@ -390,6 +391,7 @@ def identity_backup(destination_filepath):
 
 def identity_recover(private_key_source, known_idurl=None):
     from userid import my_id
+    from userid import id_url
     from userid import id_restorer
 
     if not private_key_source:
@@ -404,7 +406,7 @@ def identity_recover(private_key_source, known_idurl=None):
         for i in range(len(lines)):
             line = lines[i]
             if not line.startswith('-----BEGIN RSA PRIVATE KEY-----'):
-                idurl_list.append(strng.to_bin(line.strip()))
+                idurl_list.append(id_url.field(line))
                 continue
             pk_source = '\n'.join(lines[i:])
             break
@@ -415,23 +417,6 @@ def identity_recover(private_key_source, known_idurl=None):
         idurl_list.append(known_idurl)
     if not idurl_list:
         return ERROR('you must provide at least one IDURL address of your identity')
-
-#     idurl = ''
-#     pk_source = ''
-#     try:
-#         lines = private_key_source.split('\n')
-#         idurl = lines[0]
-#         pk_source = '\n'.join(lines[1:])
-#         if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-#             idurl = ''
-#             pk_source = private_key_source
-#     except:
-#         idurl = ''
-#         pk_source = private_key_source
-#     if not idurl and known_idurl:
-#         idurl = known_idurl
-#     if not idurl:
-#         return ERROR('you must specify the global IDURL address where your identity file was last located')
 
     ret = Deferred()
     my_id_restorer = id_restorer.A()
@@ -460,6 +445,33 @@ def identity_recover(private_key_source, known_idurl=None):
         ret.callback(ERROR(str(exc)))
 
     return ret
+
+
+def identity_rotate():
+    """
+    """
+    from userid import my_id
+    if not my_id.isLocalIdentityReady():
+        return ERROR('local identity is not ready')
+    from p2p import id_rotator
+    old_sources = my_id.getLocalIdentity().getSources(as_id_url_fields=False)
+    ret = Deferred()
+    d = id_rotator.run(force=True)
+    def _cb(result):
+        if not result:
+            ret.callback(ERROR(result))
+            return None
+        r = my_id.getLocalIdentity().serialize_json()
+        r['old_sources'] = old_sources
+        ret.callback(RESULT([r, ]))
+        return None
+    def _eb(e):
+        ret.callback(ERROR(e))
+        return None
+    d.addCallback(_cb)
+    d.addErrback(_eb)
+    return ret
+
 
 def identity_list():
     """
@@ -654,9 +666,9 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
         return ERROR('"master" key can not be shared')
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return ERROR('icorrect key_id format')
-    idurl = trusted_global_id_or_idurl
+    idurl = strng.to_bin(trusted_global_id_or_idurl)
     if global_id.IsValidGlobalUser(idurl):
-        idurl = global_id.GlobalUserToIDURL(idurl)
+        idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
     from access import key_ring
     ret = Deferred()
     d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, timeout=timeout)
@@ -690,9 +702,9 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
     if not glob_id['key_alias'] or not glob_id['idurl']:
         return ERROR('icorrect key_id format')
     if global_id.IsValidGlobalUser(untrusted_global_id_or_idurl):
-        idurl = global_id.GlobalUserToIDURL(untrusted_global_id_or_idurl)
+        idurl = global_id.GlobalUserToIDURL(untrusted_global_id_or_idurl, as_field=False)
     else:
-        idurl = untrusted_global_id_or_idurl
+        idurl = strng.to_bin(untrusted_global_id_or_idurl)
     from access import key_ring
     ret = Deferred()
     if is_private:
@@ -1722,9 +1734,9 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
         for key_id in shared_access_coordinator.list_active_shares():
             _glob_id = global_id.ParseGlobalID(key_id)
             to_be_listed = False
-            if include_mine and _glob_id['idurl'] == my_id.getLocalIDURL():
+            if include_mine and _glob_id['idurl'] == my_id.getLocalID():
                 to_be_listed = True
-            if include_granted and _glob_id['idurl'] != my_id.getLocalIDURL():
+            if include_granted and _glob_id['idurl'] != my_id.getLocalID():
                 to_be_listed = True
             if not to_be_listed:
                 continue
@@ -1739,9 +1751,9 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
             continue
         _glob_id = global_id.ParseGlobalID(key_id)
         to_be_listed = False
-        if include_mine and _glob_id['idurl'] == my_id.getLocalIDURL():
+        if include_mine and _glob_id['idurl'] == my_id.getLocalID():
             to_be_listed = True
-        if include_granted and _glob_id['idurl'] != my_id.getLocalIDURL():
+        if include_granted and _glob_id['idurl'] != my_id.getLocalID():
             to_be_listed = True
         if not to_be_listed:
             continue
@@ -1793,7 +1805,8 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     if not key_id.startswith('share_'):
         return ERROR('invalid share name')
     from userid import global_id
-    remote_idurl = strng.to_bin(trusted_remote_user)
+    from userid import id_url
+    remote_idurl = id_url.field(trusted_remote_user)
     if trusted_remote_user.count('@'):
         glob_id = global_id.ParseGlobalID(trusted_remote_user)
         remote_idurl = glob_id['idurl']
@@ -1916,7 +1929,7 @@ def friend_add(idurl_or_global_id, alias=''):
     from userid import global_id
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
-        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id)
+        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
     if not contactsdb.is_correspondent(idurl):
@@ -1933,7 +1946,7 @@ def friend_remove(idurl_or_global_id):
     from userid import global_id
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
-        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id)
+        idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
     if contactsdb.is_correspondent(idurl):
@@ -1976,12 +1989,12 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
     from userid import my_id
     from userid import global_id
     from storage import backup_matrix
-    customer_idurl = customer_idurl_or_global_id
+    customer_idurl = strng.to_bin(customer_idurl_or_global_id)
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getLocalID().to_bin()
     else:
         if global_id.IsValidGlobalUser(customer_idurl):
-            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
         if not supplier_idurl:
@@ -2117,14 +2130,14 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     from dht import dht_relations
     from userid import my_id
     from userid import global_id
-    customer_idurl = customer_idurl_or_global_id
+    customer_idurl = strng.to_bin(customer_idurl_or_global_id)
     if not customer_idurl:
-        customer_idurl = my_id.getLocalID()
+        customer_idurl = my_id.getLocalID().to_bin()
     else:
         if global_id.IsValidGlobalUser(customer_idurl):
-            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+            customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
     ret = Deferred()
-    d = dht_relations.read_customer_suppliers(customer_idurl)
+    d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False)
     d.addCallback(lambda result: ret.callback(RESULT(result)))
     d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
@@ -2212,11 +2225,11 @@ def customer_reject(idurl_or_global_id):
     contactsdb.remove_customer_meta_info(customer_idurl)
     contactsdb.save_customers()
     # remove records for this customers from quotas info
-    space_dict = accounting.read_customers_quotas()
+    space_dict, free_space = accounting.read_customers_quotas()
     consumed_by_cutomer = space_dict.pop(customer_idurl, None)
     consumed_space = accounting.count_consumed_space(space_dict)
-    space_dict[b'free'] = settings.getDonatedBytes() - int(consumed_space)
-    accounting.write_customers_quotas(space_dict)
+    new_free_space = settings.getDonatedBytes() - int(consumed_space)
+    accounting.write_customers_quotas(space_dict, new_free_space)
     events.send('existing-customer-terminated', dict(idurl=customer_idurl))
     # restart local tester
     local_tester.TestUpdateCustomers()

@@ -75,6 +75,8 @@ from lib import diskspace
 
 from contacts import contactsdb
 
+from userid import my_id
+from userid import id_url
 from userid import global_id
 
 from crypt import my_keys
@@ -84,8 +86,6 @@ from p2p import p2p_service
 from p2p import online_status
 
 from raid import eccmap
-
-from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -99,6 +99,7 @@ def connectors(customer_idurl=None):
     global _SuppliersConnectors
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
+    customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersConnectors:
         _SuppliersConnectors[customer_idurl] = {}
     return _SuppliersConnectors[customer_idurl]
@@ -110,6 +111,8 @@ def create(supplier_idurl, customer_idurl=None, needed_bytes=None,
     """
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
+    customer_idurl = id_url.field(customer_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     assert supplier_idurl not in connectors(customer_idurl)
     connectors(customer_idurl)[supplier_idurl] = SupplierConnector(
         supplier_idurl=supplier_idurl,
@@ -127,6 +130,8 @@ def is_supplier(supplier_idurl, customer_idurl=None):
     global _SuppliersConnectors
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
+    customer_idurl = id_url.field(customer_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     if customer_idurl not in _SuppliersConnectors:
         return False
     if supplier_idurl not in _SuppliersConnectors[customer_idurl]:
@@ -139,6 +144,8 @@ def by_idurl(supplier_idurl, customer_idurl=None):
     """
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
+    customer_idurl = id_url.field(customer_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     return connectors(customer_idurl).get(supplier_idurl, None)
 
 #------------------------------------------------------------------------------
@@ -235,7 +242,7 @@ class SupplierConnector(automat.Automat):
         if self.needed_bytes is None:
             total_bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
             num_suppliers = -1
-            if self.customer_idurl == my_id.getLocalIDURL():
+            if self.customer_idurl == my_id.getLocalID():
                 num_suppliers = settings.getSuppliersNumberDesired()
             else:
                 known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map')
@@ -389,7 +396,7 @@ class SupplierConnector(automat.Automat):
             service_info['position'] = self._last_known_family_position
         self._last_known_family_snapshot = kwargs.get('family_snapshot')
         if self._last_known_family_snapshot is not None:
-            service_info['family_snapshot'] = self._last_known_family_snapshot
+            service_info['family_snapshot'] = id_url.to_bin_list(self._last_known_family_snapshot)
         request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_supplier',
@@ -522,7 +529,7 @@ class SupplierConnector(automat.Automat):
 #                 json_payload={
 #                     'space': 'family_member',
 #                     'type': 'supplier_position',
-#                     'customer_idurl': my_id.getLocalIDURL(),
+#                     'customer_idurl': my_id.getLocalID(),
 #                     'customer_ecc_map': self._last_known_ecc_map,
 #                     'supplier_idurl': self.supplier_idurl,
 #                     'supplier_position': self._last_known_family_position,
