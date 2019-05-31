@@ -49,21 +49,6 @@ services:
     ports:
         - "22203:22"
 
-  identity-server-c:
-    image: bitdust-baseimage
-    ports:
-        - "22204:22"
-
-  identity-server-d:
-    image: bitdust-baseimage
-    ports:
-        - "22205:22"
-
-  identity-server-e:
-    image: bitdust-baseimage
-    ports:
-        - "22206:22"
-
 
 
   stun_1:
@@ -146,9 +131,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
 
   proxy_server_2:
     image: bitdust-baseimage
@@ -165,9 +147,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
 
 
 
@@ -186,9 +165,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
 
   supplier_2:
     image: bitdust-baseimage
@@ -205,9 +181,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
 
   supplier_3:
     image: bitdust-baseimage
@@ -224,9 +197,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
 
   supplier_4:
     image: bitdust-baseimage
@@ -243,9 +213,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
 
   supplier_5:
     image: bitdust-baseimage
@@ -262,9 +229,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
 
   supplier_6:
     image: bitdust-baseimage
@@ -281,48 +245,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
-
-  supplier_7:
-    image: bitdust-baseimage
-    ports:
-      - "22247:22"
-    links:
-      - "dht_seed_0"
-      - "dht_seed_1"
-      - "dht_seed_2"
-      - "dht_seed_3"
-      - "dht_seed_4"
-      - "stun_1"
-      - "stun_2"
-      - "identity-server:is"
-      - "identity-server-a:is_a"
-      - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
-
-  supplier_8:
-    image: bitdust-baseimage
-    ports:
-      - "22248:22"
-    links:
-      - "dht_seed_0"
-      - "dht_seed_1"
-      - "dht_seed_2"
-      - "dht_seed_3"
-      - "dht_seed_4"
-      - "stun_1"
-      - "stun_2"
-      - "identity-server:is"
-      - "identity-server-a:is_a"
-      - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
-
 
 
   customer_1:
@@ -340,9 +262,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
     volumes:
       - customer_1:/customer_1
 
@@ -361,9 +280,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
     volumes:
       - customer_2:/customer_2
 
@@ -382,9 +298,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
     volumes:
       - customer_3:/customer_3
 
@@ -403,9 +316,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
     volumes:
       - customer_4:/customer_4
 
@@ -424,9 +334,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
     volumes:
       - customer_5:/customer_5
 
@@ -445,9 +352,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
     volumes:
       - customer_backup:/customer_backup
 
@@ -466,53 +370,9 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
     volumes:
       - customer_restore:/customer_restore
 
-  customer_6:
-    image: bitdust-baseimage
-    ports:
-      - "22258:22"
-    links:
-      - "dht_seed_0"
-      - "dht_seed_1"
-      - "dht_seed_2"
-      - "dht_seed_3"
-      - "dht_seed_4"
-      - "stun_1"
-      - "stun_2"
-      - "identity-server:is"
-      - "identity-server-a:is_a"
-      - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
-    volumes:
-      - customer_6:/customer_6
-
-  customer_7:
-    image: bitdust-baseimage
-    ports:
-      - "22259:22"
-    links:
-      - "dht_seed_0"
-      - "dht_seed_1"
-      - "dht_seed_2"
-      - "dht_seed_3"
-      - "dht_seed_4"
-      - "stun_1"
-      - "stun_2"
-      - "identity-server:is"
-      - "identity-server-a:is_a"
-      - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
-    volumes:
-      - customer_7:/customer_7
 
   tester:
     build:
@@ -522,9 +382,6 @@ services:
       - "identity-server:is"
       - "identity-server-a:is_a"
       - "identity-server-b:is_b"
-      - "identity-server-c:is_c"
-      - "identity-server-d:is_d"
-      - "identity-server-e:is_e"
       - "stun_1"
       - "stun_2"
       - "dht_seed_0"
@@ -538,15 +395,11 @@ services:
       - "supplier_4"
       - "supplier_5"
       - "supplier_6"
-      - "supplier_7"
-      - "supplier_8"
       - "customer_1"
       - "customer_2"
       - "customer_3"
       - "customer_4"
       - "customer_5"
-      - "customer_6"
-      - "customer_7"
       - "customer_backup"
       - "customer_restore"
     image: bitdust/tester
@@ -573,7 +426,5 @@ volumes:
   customer_3:
   customer_4:
   customer_5:
-  customer_6:
-  customer_7:
   customer_backup:
   customer_restore:

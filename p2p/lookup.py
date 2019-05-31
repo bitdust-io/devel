@@ -403,7 +403,10 @@ class DiscoveryTask(object):
         try:
             self.failed += 1
             if _Debug:
-                lg.warn('%r : %s' % (node, strng.to_text(err, errors='ignore')))
+                err = strng.to_text(err, errors='ignore')
+                if err.count('idurl observe failed'):
+                    err = 'idurl observe failed'
+                lg.args(_DebugLevel, node=node, err=err)
         except:
             lg.exc()
         return None

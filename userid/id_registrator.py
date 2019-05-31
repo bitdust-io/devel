@@ -434,8 +434,8 @@ class IdRegistrator(automat.Automat):
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
-            lg.out(4, '               connecting to %s:%s   known tcp port is %d' % (
-                server_url, webport, tcpport, ))
+            lg.out(4, '               connecting to %s   known tcp port is %d' % (
+                server_url, tcpport, ))
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_cb, host)
             d.addErrback(_eb, host)

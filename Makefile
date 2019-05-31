@@ -149,6 +149,9 @@ regression_errors_all:
 regression_states_all:
 	make -C regression/ logs_all_states
 
+regression_events_all:
+	make -C regression/ logs_all_events
+
 regression_logs_fetch:
 	make -C regression/ logs_fetch
 
