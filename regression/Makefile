@@ -38,6 +38,11 @@ clean_build:
 
 test: clean_build clean $(BUILD) $(RUN_ALL) test_all
 
+# works together, run `test_rebuild_tester` every time you change the tester and didn't change other units from docker-compose
+# and then run `test_again` to skip rebuilding part
+test_rebuild_tester: docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION) tester
+test_again: clean $(BUILD) $(RUN_ALL) test_all
+
 run: clean_build clean $(BUILD) $(RUN_ALL)
 
 prepare: clean_build clean $(BUILD) $(RUN_ALL) prepare_all
