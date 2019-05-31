@@ -129,6 +129,9 @@ regression_try_one/%:
 regression_clean:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean
 
+regression_clean_orphans:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean_orphans
+
 regression_clean_unused:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean_unused_images
 
@@ -151,6 +154,9 @@ regression_states_all:
 
 regression_events_all:
 	make -C regression/ logs_all_events
+
+regression_exceptions_all:
+	@make -C regression/ logs_all_exceptions
 
 regression_logs_fetch:
 	make -C regression/ logs_fetch

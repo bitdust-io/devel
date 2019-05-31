@@ -24,6 +24,10 @@ BUILD=.build
 RUN_ALL=.run_all
 # PYTHON_VERSION=2.7.15
 
+# TODO: keep that list up to date with docker-compose links
+ALL_NODES=identity-server identity-server-a identity-server-b stun_1 stun_2 dht_seed_0 dht_seed_1 dht_seed_2 dht_seed_3 dht_seed_4 supplier_1 proxy_server_1 proxy_server_2 supplier_2 supplier_3 supplier_4 supplier_5 supplier_6 customer_1 customer_2 customer_3 customer_4 customer_5 customer_backup customer_restore
+
+
 .PHONY: test
 
 clean: clean_all
@@ -95,24 +99,19 @@ clean_unused_images:
 logs_fetch:
 	@rm -rf .logs
 	@mkdir .logs
-	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do docker-compose exec $$node sh -c "cat /root/.bitdust/logs/automats.log" > .logs/$$node.automats.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/event.log" > .logs/$$node.event.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/packet.log" > .logs/$$node.packet.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/stdout.log" > .logs/$$node.stdout.log; echo $$node; done
+	@for node in ${ALL_NODES}; do docker-compose exec $$node sh -c "cat /root/.bitdust/logs/automats.log" > .logs/$$node.automats.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/event.log" > .logs/$$node.event.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/packet.log" > .logs/$$node.packet.log; docker-compose exec $$node sh -c "cat /root/.bitdust/logs/stdout.log" > .logs/$$node.stdout.log; echo $$node; done
 
 logs_all_stdout:
-    # TODO: keep up to date with docker-compose links
-	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/stdout.log; done
+	@for node in ${ALL_NODES}; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/stdout.log; done
 
 logs_all_stderr:
-    # TODO: keep up to date with docker-compose links
-	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/stderr.log; done
+	@for node in ${ALL_NODES}; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/stderr.log; done
 
 logs_all_states:
-	# TODO: keep up to date with docker-compose links
-	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/automats.log; done
+	@for node in ${ALL_NODES}; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/automats.log; done
 
 logs_all_events:
-	# TODO: keep up to date with docker-compose links
-	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/event.log; done
+	@for node in ${ALL_NODES}; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/event.log; done
 
 logs_all_exceptions:
-	# TODO: keep up to date with docker-compose links
-	@for node in "identity-server" "identity-server-a" "identity-server-b" "stun_1" "stun_2" "dht_seed_0" "dht_seed_1" "dht_seed_2" "dht_seed_3" "dht_seed_4" "supplier_1" "proxy_server_1" "proxy_server_2" "supplier_2" "supplier_3" "supplier_4" "supplier_5" "supplier_6" "supplier_7" "supplier_8" "customer_1" "customer_2" "customer_3" "customer_4" "customer_5" "customer_backup" "customer_restore"; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/exception_*.log; done
+	@for node in ${ALL_NODES}; do echo "[$$node] ==================================="; docker-compose exec $$node cat /root/.bitdust/logs/exception_*.log; done
