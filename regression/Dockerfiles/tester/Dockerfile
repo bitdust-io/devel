@@ -30,8 +30,8 @@ RUN pip install -r /requirements-test.txt
 
 WORKDIR /app
 
-ADD ./regression/tests/ /app/tests
-
 ADD ./regression/ssh/ /app/ssh
+
+COPY ./regression/tests/ /app/tests
 
 CMD /app/ssh/sshcli.sh
