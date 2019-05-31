@@ -1372,7 +1372,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('ping', tpl, args[1])
 
-    #---set---
+    #---config---
     elif cmd in ['set', 'get', 'conf', 'config', 'option', 'setting', ]:
         if len(args) == 1 or args[1].lower() in ['help', '?']:
             from main import help
