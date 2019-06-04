@@ -69,6 +69,7 @@ from crypt import hashes
 
 from userid import my_id
 from userid import global_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -179,7 +180,7 @@ def split_key_id(key_id):
     parts = global_id.ParseGlobalID(key_id)
     if not parts['key_alias'] or not parts['idurl']:
         return None, None
-    return parts['key_alias'], parts['idurl']
+    return parts['key_alias'], id_url.field(parts['idurl'])
 
 def is_valid_key_id(global_key_id):
     """

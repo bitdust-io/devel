@@ -229,7 +229,7 @@ def config_get(key):
         {'status': 'OK',   'result': [{'type': 'positive integer', 'value': '8', 'key': 'logs/debug-level'}]}
     """
     try:
-        key = str(key).strip('/')
+        key = strng.to_text(key).strip('/')
     except:
         return ERROR('wrong key')
     if _Debug:
@@ -260,8 +260,8 @@ def config_set(key, value):
 
         {'status': 'OK', 'result': [{'type': 'positive integer', 'old_value': '8', 'value': '10', 'key': 'logs/debug-level'}]}
     """
-    key = str(key)
     from main import config
+    key = strng.to_text(key)
     v = {}
     if config.conf().exist(key):
         v['old_value'] = config.conf().getValueOfType(key)

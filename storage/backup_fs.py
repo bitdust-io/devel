@@ -89,7 +89,6 @@ from main import settings
 
 from lib import misc
 from lib import packetid
-from lib import diskspace
 
 from userid import my_id
 from userid import global_id

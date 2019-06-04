@@ -7,7 +7,22 @@ from userid import id_url
 from userid import identity
 
 
-class Test(TestCase):
+alice_bin = b'http://127.0.0.1:8084/alice.xml'
+alice_text = 'http://127.0.0.1:8084/alice.xml'
+bob = 'http://127.0.0.1/bob.xml'
+carl = 'http://127.0.0.1/carl.xml'
+dave = b'http://127.0.0.1:8084/dave.xml'
+ethan_bin = b'http://127.0.0.1:8084/ethan.xml'
+ethan_text = 'http://127.0.0.1:8084/ethan.xml'
+ethan_not_exist = 'http://not-exist.com/ethan.xml'
+frank_1 = 'http://source_one.com/frank.xml'
+frank_2 = 'http://source_two.net/frank.xml'
+george_1 = 'http://source_one.com/george.xml'
+george_2 = 'http://source_two.net/george.xml'
+george_3 = 'http://source_3.org/george.xml'
+
+
+class TestIDURL(TestCase):
 
     def setUp(self):
         lg.set_debug_level(30)
@@ -132,39 +147,48 @@ class Test(TestCase):
         id_url.identity_cached(some_identity)
         return some_identity
 
+    def test_exceptions(self):
+        with self.assertRaises(KeyError):
+            id_url.field(alice_bin).to_public_key()
+        with self.assertRaises(KeyError):
+            (id_url.field(alice_bin) in {id_url.field(alice_bin): 'abc', })
+        with self.assertRaises(KeyError):
+            (alice_bin in {id_url.field(alice_bin): 'abc', })
+        with self.assertRaises(KeyError):
+            (id_url.field(alice_bin) == id_url.field(alice_bin))
+        with self.assertRaises(KeyError):
+            (id_url.field(alice_bin) == id_url.field(bob))
+        with self.assertRaises(TypeError):
+            (alice_bin in [id_url.field(alice_bin), ])
+        with self.assertRaises(TypeError):
+            (id_url.field(alice_text) == alice_bin)
+        with self.assertRaises(TypeError):
+            (id_url.field(alice_bin) == alice_text)
+        with self.assertRaises(TypeError):
+            (id_url.field(alice_bin) in [alice_bin, ])
+        with self.assertRaises(TypeError):
+            (id_url.field(alice_bin) not in [alice_bin, ])
+
     def test_identity_cached(self):
-        try:
-            id_url.field(b'http://127.0.0.1:8084/alice.xml').to_public_key()
-        except Exception as exc:
-            self.assertTrue(repr(exc).count("unknown idurl"))
-        else:
-            raise Exception('must raise an exception when identity is not cached')
         alice_identity = self._cache_identity('alice')
-        alice_idurl = alice_identity.getIDURL().to_bin()
-        self.assertEqual(alice_idurl, b'http://127.0.0.1:8084/alice.xml')
-        self.assertEqual(id_url.field(b'http://127.0.0.1:8084/alice.xml').to_public_key(), alice_identity.getPublicKey())
-        self.assertEqual(id_url.field('http://127.0.0.1:8084/alice.xml'), b'http://127.0.0.1:8084/alice.xml')
-        self.assertEqual(id_url.field('http://127.0.0.1:8084/alice.xml'), id_url.field(b'http://127.0.0.1:8084/alice.xml'))
+        self.assertEqual(alice_identity.getIDURL().to_bin(), alice_bin)
+        self.assertEqual(alice_identity.getIDURL().to_text(), alice_text)
+        self.assertEqual(id_url.field(alice_bin).to_public_key(), alice_identity.getPublicKey())
+        self.assertEqual(id_url.field(alice_text), id_url.field(alice_bin))
         self._cache_identity('bob')
-        self.assertTrue(id_url.field('http://127.0.0.1:8084/alice.xml') != id_url.field('http://127.0.0.1/bob.xml'))
+        self.assertTrue(id_url.field(alice_text) != id_url.field(bob))
  
     def test_identity_not_cached(self):
-        try:
-            id_url.field(b'http://127.0.0.1:8084/ethan.xml').to_public_key()
-        except Exception as exc:
-            self.assertTrue(repr(exc).count("unknown idurl"))
-        else:
-            raise Exception('must raise an exception when identity is not cached')
         self._cache_identity('alice')
-        self.assertNotEqual(id_url.field(b'http://127.0.0.1:8084/ethan.xml'), b'http://127.0.0.1:8084/alice.xml')
-        l = [id_url.field('http://source_two.net/frank.xml'), ]
-        self.assertNotIn(id_url.field('http://source_one.com/frank.xml'), l)
-        self.assertNotIn('http://source_one.com/frank.xml', l)
+        with self.assertRaises(KeyError):
+            (id_url.field(ethan_text) != id_url.field(alice_bin))
+        l = [id_url.field(frank_2), ]
+        with self.assertRaises(KeyError):
+            (id_url.field(frank_1) not in l)
         self._cache_identity('frank')
-        self.assertIn(id_url.field('http://source_one.com/frank.xml'), l)
-        self.assertIn('http://source_one.com/frank.xml', l)
+        self.assertIn(id_url.field(frank_1), l)
    
-    def test_idurl_is_empty(self):
+    def test_empty(self):
         self.assertFalse(id_url.field(b''))
         self.assertFalse(id_url.field(''))
         self.assertFalse(id_url.field(None))
@@ -175,140 +199,147 @@ class Test(TestCase):
         self.assertTrue(bool(id_url.field(None)) is False)
         self.assertTrue(bool(id_url.field('None')) is False)
         self.assertTrue(bool(id_url.field(b'None')) is False)
-        self.assertTrue(id_url.field(b'') == '')
-        self.assertTrue(id_url.field(b'') == b'')
         self.assertTrue(id_url.field(b'') is not None)
-        self.assertTrue(id_url.field('') == '')
-        self.assertTrue(id_url.field('') == b'')
         self.assertTrue(id_url.field('') is not None)
-        self.assertTrue(id_url.field(None) == '')
-        self.assertTrue(id_url.field(None) == b'')
+        self.assertFalse(id_url.field(None) is None)
         self.assertTrue(id_url.field(None) is not None)
-        if id_url.field(None):
-            raise Exception('empty idurl must be False')
-        if id_url.field(b''):
-            raise Exception('empty idurl must be False')
+        with self.assertRaises(TypeError):
+            (id_url.field(b'') == '')
+        with self.assertRaises(TypeError):
+            (id_url.field(b'') == b'')
+        with self.assertRaises(TypeError):
+            (id_url.field('') == '')
+        with self.assertRaises(TypeError):
+            (id_url.field('') == b'')
+        with self.assertRaises(TypeError):
+            (id_url.field(None) == '')
+        with self.assertRaises(TypeError):
+            (id_url.field(None) == b'')
         l = [b'', None, '', id_url.field(''), id_url.field(None), id_url.field(b''), ]
         self.assertIn(b'', l)
         self.assertIn('', l)
         self.assertIn(None, l)
-        self.assertIn(None, [id_url.field(None), ])
-        self.assertIn(None, [id_url.field(b''), ])
-        self.assertIn(b'', [id_url.field(None), ])
-        self.assertIn(b'', [id_url.field(b''), ])
+        with self.assertRaises(TypeError):
+            (None in [id_url.field(None), ])
+        with self.assertRaises(TypeError):
+            (None in [id_url.field(b''), ])
+        with self.assertRaises(TypeError):
+            (b'' in [id_url.field(None), ])
+        with self.assertRaises(TypeError):
+            (b'' in [id_url.field(b''), ])
         self.assertTrue(id_url.is_in(None, [id_url.field(None), ]))
         self.assertTrue(id_url.is_in(None, [id_url.field(b''), ]))
         self.assertTrue(id_url.is_in(b'', [id_url.field(None), ]))
         self.assertTrue(id_url.is_in(b'', [id_url.field(b''), ]))
+        d = {id_url.field(''): 0, id_url.field(None): 1, id_url.field(b''): 2}
+        with self.assertRaises(TypeError):
+            (b'' in d)
+        with self.assertRaises(TypeError):
+            ('' in d)
+        with self.assertRaises(TypeError):
+            (b'' not in d)
+        with self.assertRaises(TypeError):
+            ('' not in d)
+        self.assertNotIn(None, d)
+        self.assertIn(id_url.field(''), d)
+        self.assertIn(id_url.field(b''), d)
+        self.assertIn(id_url.field(None), d)
 
-    def test_idurl_is_not_empty(self):
-        self.assertTrue(id_url.field(b'http://127.0.0.1:8084/ethan.xml'))
-        self.assertTrue(id_url.field('http://127.0.0.1:8084/ethan.xml'))
-        self.assertTrue(bool(id_url.field('http://127.0.0.1:8084/ethan.xml')) is True)
-        self.assertTrue(id_url.field('http://127.0.0.1:8084/ethan.xml') == 'http://127.0.0.1:8084/ethan.xml')
-        self.assertTrue(id_url.field('http://127.0.0.1:8084/ethan.xml').to_bin() != b'http://127.0.0.1:8084/dave.xml')
-        if not id_url.field('http://127.0.0.1:8084/ethan.xml'):
-            raise Exception('not empty idurl must be True')
-        if not id_url.field(b'http://127.0.0.1:8084/dave.xml'):
-            raise Exception('not empty idurl must be True')
-        self.assertTrue(id_url.field('http://127.0.0.1:8084/ethan.xml') == b'http://127.0.0.1:8084/ethan.xml')
-        self.assertTrue(id_url.field('http://127.0.0.1:8084/ethan.xml') is not None)
-        self._cache_identity('frank')
-        self.assertTrue(id_url.field('http://source_one.com/frank.xml') == b'http://source_two.net/frank.xml')
-        self.assertTrue(id_url.field('http://source_one.com/frank.xml') == id_url.field(b'http://source_two.net/frank.xml'))
-        self.assertTrue(b'http://source_one.com/frank.xml' != b'http://source_two.net/frank.xml')
+    def test_not_empty(self):
+        self.assertTrue(id_url.field(ethan_bin))
+        self.assertTrue(id_url.field(ethan_text))
+        self.assertTrue(bool(id_url.field(ethan_text)) is True)
+        self.assertTrue(id_url.field(ethan_text).to_bin() != dave)
 
-    def test_idurl_in_list(self):
+    def test_in_list(self):
         self._cache_identity('alice')
         self._cache_identity('bob')
         self._cache_identity('carl')
         l = [
-            id_url.field('http://127.0.0.1:8084/alice.xml'),
-            id_url.field('http://127.0.0.1/bob.xml'),
-            id_url.field('http://source_one.com/frank.xml'),
-            id_url.field('http://source_two.net/frank.xml'),
+            id_url.field(alice_text),
+            id_url.field(bob),
+            id_url.field(frank_1),
+            id_url.field(frank_2),
         ]
-        self.assertTrue('http://127.0.0.1/carl.xml' not in l)
-        self.assertTrue('http://127.0.0.1:8084/alice.xml' in l)
-        self.assertTrue('http://127.0.0.1/bob.xml' in l)
-        self.assertTrue(id_url.field('http://127.0.0.1/carl.xml') not in l)
-        self.assertTrue(id_url.field('http://127.0.0.1:8084/alice.xml') in l)
-        self.assertTrue(b'http://127.0.0.1/frank.xml' not in l)
-        self.assertTrue(id_url.field('http://127.0.0.1/ethan.xml') not in l)
-        self.assertTrue(id_url.field('http://127.0.0.1/bob.xml') in l)
-        self.assertTrue('http://source_one.com/frank.xml' in l)
-        self.assertTrue('http://source_two.net/frank.xml' in l)
-        self.assertTrue(id_url.field('http://source_one.com/frank.xml') in l)
-        self.assertTrue(id_url.field('http://source_two.net/frank.xml') in l)
+        with self.assertRaises(KeyError):
+            (id_url.field(carl) not in l)
+        self.assertTrue(id_url.field(alice_text) in l)
+        with self.assertRaises(KeyError):
+            (id_url.field(b'http://fake.com/frank.xml') not in l)
+        with self.assertRaises(KeyError):
+            (id_url.field(ethan_not_exist) not in l)
+        self.assertTrue(id_url.field(bob) in l)
+        with self.assertRaises(KeyError):
+            (id_url.field(frank_1) in l)
+        with self.assertRaises(KeyError):
+            (id_url.field(frank_2) in l)
+        self.assertTrue(len(l), 4)
+        with self.assertRaises(KeyError):
+            (l[0] != l[3])
+        with self.assertRaises(KeyError):
+            (l[2] == l[3])
+        self._cache_identity('frank')
+        self.assertTrue(l[2] == l[3])
+        self.assertTrue(l[0] != l[3])
+        self.assertIn(id_url.field(frank_1), l)
 
     def test_idurl_in_dict(self):
         self._cache_identity('alice')
         self._cache_identity('bob')
         self._cache_identity('carl')
         d = {}
-        d[id_url.field('http://127.0.0.1:8084/alice.xml')] = 'alice'
-        d[id_url.field('http://127.0.0.1/bob.xml')] = 'bob'
-        self.assertIn(id_url.field('http://127.0.0.1:8084/alice.xml'), d)
-        self.assertNotIn(id_url.field('http://127.0.0.1/carl.xml'), d)
-        self.assertIn(b'http://127.0.0.1:8084/alice.xml', d)
-        self.assertNotIn(b'http://127.0.0.1/carl.xml', d)
-        self.assertTrue(id_url.is_in('http://127.0.0.1:8084/alice.xml', d))
-        self.assertTrue(id_url.is_not_in('http://127.0.0.1/carl.xml', d))
-    
+        d[id_url.field(alice_text)] = 'alice'
+        d[id_url.field(bob)] = 'bob'
+        self.assertIn(id_url.field(alice_text), d)
+        self.assertNotIn(id_url.field(carl), d)
+        self.assertTrue(id_url.is_in(alice_text, d))
+        self.assertTrue(id_url.is_not_in(carl, d))
+
     def test_idurl_two_sources(self):
-        self.assertNotEqual(id_url.field('http://source_one.com/frank.xml'), id_url.field('http://source_two.net/frank.xml'))
-        d1 = {'http://source_two.net/frank.xml': 'frank', }
-        d2 = {id_url.field('http://source_two.net/frank.xml'): 'frank', }
-        self.assertNotIn(id_url.field('http://source_one.com/frank.xml'), d1)
-        self.assertNotIn('http://source_one.com/frank.xml', d1)
-        self.assertNotIn('http://source_one.com/frank.xml', d1)
-        self.assertIn('http://source_two.net/frank.xml', d1)
-        self.assertNotIn(id_url.field('http://source_one.com/frank.xml'), d2)
-        self.assertNotIn('http://source_one.com/frank.xml', d2)
-        self.assertNotIn('http://source_one.com/frank.xml', d2)
-        self.assertIn('http://source_two.net/frank.xml', d2)
-        self.assertFalse(id_url.is_in('http://source_one.com/frank.xml', d2))
-        self.assertTrue(id_url.is_in('http://source_two.net/frank.xml', d2))
+        with self.assertRaises(KeyError):
+            {id_url.field(frank_1): 'frank1', }
+        with self.assertRaises(KeyError):
+            (id_url.field(frank_1) in {})
+        with self.assertRaises(KeyError):
+            (id_url.field(frank_2) in {})
         self._cache_identity('frank')
-        self.assertEqual(id_url.field('http://source_one.com/frank.xml'), id_url.field('http://source_two.net/frank.xml'))
-        self.assertNotIn(id_url.field('http://source_one.com/frank.xml'), d1)
-        self.assertIn(id_url.field('http://source_two.net/frank.xml'), d1)
-        self.assertNotIn('http://source_one.com/frank.xml', d1)
-        self.assertIn('http://source_two.net/frank.xml', d1)
-        self.assertNotIn(id_url.field('http://source_one.com/frank.xml'), d2)
-        self.assertIn(id_url.field('http://source_two.net/frank.xml'), d2)
-        self.assertNotIn('http://source_one.com/frank.xml', d2)
-        self.assertIn('http://source_two.net/frank.xml', d2)
-        self.assertTrue(id_url.is_in('http://source_one.com/frank.xml', d2))
-        self.assertTrue(id_url.is_in('http://source_two.net/frank.xml', d2))
-    
+        d1 = {id_url.field(frank_1): 'frank1', }
+        d2 = {id_url.field(frank_2): 'frank2', }
+        self.assertEqual(id_url.field(frank_1), id_url.field(frank_2))
+        self.assertIn(id_url.field(frank_1), d1)
+        self.assertIn(id_url.field(frank_2), d2)
+        self.assertIn(id_url.field(frank_1), d2)
+        self.assertIn(id_url.field(frank_2), d1)
+        self.assertTrue(id_url.is_in(frank_1, d2))
+        self.assertTrue(id_url.is_in(frank_2, d2))
+        self.assertEqual(list(d1.keys())[0], list(d2.keys())[0])
+        self.assertEqual(list(d1.values())[0], 'frank1')
+        self.assertEqual(d1.keys(), d2.keys())
+        self.assertNotEqual(d1[id_url.field(frank_1)], d2[id_url.field(frank_2)])
+        self.assertEqual(d1[id_url.field(frank_1)], d1[id_url.field(frank_2)])
+
     def test_idurl_three_sources(self):
-        d3 = {
-            id_url.field('http://source_one.com/george.xml'),
-            'http://source_two.net/george.xml',
-        }
-        self.assertNotIn('http://source_one.com/frank.xml', d3)
-        self.assertNotIn(id_url.field('http://source_two.net/frank.xml'), d3)
-        self.assertIn('http://source_two.net/george.xml', d3)
-        self.assertIn(id_url.field('http://source_two.net/george.xml'), d3)
-        self.assertFalse(id_url.is_in('http://source_one.com/frank.xml', d3))
-        self.assertTrue(id_url.is_in('http://source_one.com/george.xml', d3))
-        self.assertTrue(id_url.is_in('http://source_two.net/george.xml', d3))
-        self.assertFalse(id_url.is_in('http://source_3.org/george.xml', d3))
-        self.assertNotIn('http://source_3.org/george.xml', d3)
-        self.assertNotIn(id_url.field('http://source_3.org/george.xml'), d3)
         self._cache_identity('george')
-        self.assertIn('http://source_two.net/george.xml', d3)
-        self.assertIn(id_url.field('http://source_two.net/george.xml'), d3)
-        self.assertFalse(id_url.is_in('http://source_one.com/frank.xml', d3))
-        self.assertTrue(id_url.is_in('http://source_one.com/george.xml', d3))
-        self.assertTrue(id_url.is_in('http://source_two.net/george.xml', d3))
-        self.assertTrue(id_url.is_in('http://source_3.org/george.xml', d3))
-        self.assertNotIn('http://source_3.org/george.xml', d3)
-        self.assertNotIn(id_url.field('http://source_3.org/george.xml'), d3)
+        d3 = {
+            id_url.field(george_1),
+            id_url.field(george_2),
+        }
+        self.assertEqual(len(d3), 1)
+        self.assertEqual(id_url.field(george_2), id_url.field(george_1))
+        self.assertEqual(id_url.field(george_3), id_url.field(george_1))
+        self.assertIn(id_url.field(george_1), d3)
+        self.assertIn(id_url.field(george_2), d3)
+        self.assertIn(id_url.field(george_3), d3)
+        self._cache_identity('frank')
+        self.assertNotIn(id_url.field(frank_1), d3)
+        self.assertNotIn(id_url.field(frank_2), d3)
+        self.assertFalse(id_url.is_in(frank_1, d3))
+        self.assertTrue(id_url.is_in(george_1, d3))
+        self.assertTrue(id_url.is_in(george_2, d3))
+        self.assertTrue(id_url.is_in(george_3, d3))
 
     def test_fake_name(self):
         self._cache_identity('frank')
         self._cache_identity('fake_frank')
-        self.assertEqual(id_url.field('http://source_one_fake.com/frank.xml'), id_url.field('http://source_two.net/frank.xml'))
-        self.assertNotEqual(id_url.field('http://source_one_fake.com/frank.xml'), id_url.field('http://source_one.com/frank.xml'))
+        self.assertEqual(id_url.field('http://source_one_fake.com/frank.xml'), id_url.field(frank_2))
+        self.assertNotEqual(id_url.field('http://source_one_fake.com/frank.xml'), id_url.field(frank_1))

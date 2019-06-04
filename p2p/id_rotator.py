@@ -257,17 +257,19 @@ class IdRotator(automat.Automat):
         self.old_sources = my_id.getLocalIdentity().getSources()
         self.known_servers = known_servers.by_host()
         self.preferred_servers = kwargs.get('preferred_servers', {})
+        if _Debug:
+            lg.args(_DebugLevel, preferred_servers=self.preferred_servers)
         self.force = kwargs.get('force', False)
         self.new_revision = kwargs.get('new_revision')
         self.rotated = False
         if not self.preferred_servers:
             try:
-                for srv in str(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
+                for srv in strng.to_text(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
                     if srv.strip():
                         host, web_port, tcp_port = srv.strip().split(':')
                         self.preferred_servers[host] = (int(web_port), int(tcp_port), )
             except:
-                pass
+                lg.exc()
         self.preferred_servers = {strng.to_bin(k): v for k,v in self.preferred_servers.items()}
         self.current_servers = []
         for idurl in my_id.getLocalIdentity().getSources():
