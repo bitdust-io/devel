@@ -61,7 +61,7 @@ async def run_ssh_command_and_wait_async(host, cmd, loop):
     return stdout.decode(), stderr.decode()
 
 
-def run_ssh_command_and_wait(host, cmd):
+def run_ssh_command_and_wait(host: object, cmd: str) -> object:
     if host in [None, '', b'', 'localhost', ]:
         cmd_args = cmd
     else:
