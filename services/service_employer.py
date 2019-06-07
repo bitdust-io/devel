@@ -115,14 +115,16 @@ class EmployerService(LocalService):
         from p2p import p2p_service
         from contacts import contactsdb
         from userid import my_id
+        from userid import id_url
         from crypt import my_keys
         from logs import lg
         if not (dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0):
             lg.warn('no dht records found for my customer family')
             return
         suppliers_to_be_dismissed = set()
+        dht_suppliers = id_url.to_bin_list(dht_result['suppliers'])
         # clean up old suppliers
-        for idurl in dht_result['suppliers']:
+        for idurl in dht_suppliers:
             if not idurl:
                 continue
             if not contactsdb.is_supplier(idurl):

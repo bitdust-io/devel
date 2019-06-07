@@ -146,11 +146,11 @@ def search(proto, host, filename, remote_idurl=None):
                 if not remote_idurl:
                     return p, i
                 # TODO: to be checked later - need to make sure we identify users correctly
-                # if p.remote_idurl and remote_idurl.to_bin() != p.remote_idurl.to_bin():
-                if p.remote_idurl and id_url.field(remote_idurl) != id_url.field(p.remote_idurl):
-                    if _Debug:
-                        lg.out(_DebugLevel, 'packet_out.search found a packet addressed for another idurl: %s != %s' % (
-                            p.remote_idurl, remote_idurl))
+                if p.remote_idurl and id_url.is_cached(p.remote_idurl) and id_url.is_cached(remote_idurl):
+                    if id_url.field(remote_idurl) != id_url.field(p.remote_idurl):
+                        if _Debug:
+                            lg.out(_DebugLevel, 'packet_out.search found a packet addressed to another user: %s != %s' % (
+                                p.remote_idurl, remote_idurl))
                 return p, i
     if _Debug:
         for p in queue():

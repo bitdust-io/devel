@@ -905,7 +905,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
                 if io_throttle.HasPacketInSendQueue(supplierIDURL, packetID):
                     # if we do sending the packet at the moment - skip
                     continue
-                if supplierNum >= localArray[dataORparity]:
+                if supplierNum >= len(localArray[dataORparity]):
                     lg.warn('wrong supplier %r position %d for customer %r' %(
                         supplierIDURL, supplierNum, customer_idurl))
                     continue
@@ -1093,12 +1093,20 @@ def GetBackupStats(backupID):
     for blockNum in remote_files()[backupID].keys():
         for supplierNum in range(len(fileNumbers)):
             if supplierNum < contactsdb.num_suppliers(customer_idurl=customer_idurl):
-                if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
-                    fileNumbers[supplierNum] += 1
-                    totalNumberOfFiles += 1
-                if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
-                    fileNumbers[supplierNum] += 1
-                    totalNumberOfFiles += 1
+                if supplierNum < len(remote_files()[backupID][blockNum]['D']):
+                    if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
+                        fileNumbers[supplierNum] += 1
+                        totalNumberOfFiles += 1
+                else:
+                    lg.warn('wrong supplier position %d for customer %r in backup Data matrix, backupID=%r' % (
+                        supplierNum, customer_idurl, backupID))
+                if supplierNum < len(remote_files()[backupID][blockNum]['P']):
+                    if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
+                        fileNumbers[supplierNum] += 1
+                        totalNumberOfFiles += 1
+                else:
+                    lg.warn('wrong supplier position %d for customer %r in backup Parity matrix, backupID=%r' % (
+                        supplierNum, customer_idurl, backupID))
     statsArray = []
     for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         if maxBlockNum > -1:

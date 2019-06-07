@@ -229,6 +229,12 @@ def handle(newpacket, info):
     handled = False
     # check that signed by a contact of ours
     if not newpacket.Valid():
+        if _Debug:
+            lg.args(_DebugLevel,
+                    PacketID=newpacket.PacketID,
+                    OwnerID=newpacket.OwnerID,
+                    CreatorID=newpacket.CreatorID,
+                    RemoteID=newpacket.RemoteID, )
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
             info.proto, info.host, newpacket))
         return None
