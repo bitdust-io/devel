@@ -170,7 +170,11 @@ class TestIDURL(TestCase):
             (id_url.field(alice_bin) not in [alice_bin, ])
 
     def test_identity_cached(self):
+        self.assertFalse(id_url.is_cached(alice_bin))
+        self.assertFalse(id_url.is_cached(alice_text))
         alice_identity = self._cache_identity('alice')
+        self.assertTrue(id_url.is_cached(alice_bin))
+        self.assertTrue(id_url.is_cached(alice_text))
         self.assertEqual(alice_identity.getIDURL().to_bin(), alice_bin)
         self.assertEqual(alice_identity.getIDURL().to_text(), alice_text)
         self.assertEqual(id_url.field(alice_bin).to_public_key(), alice_identity.getPublicKey())
@@ -189,6 +193,15 @@ class TestIDURL(TestCase):
         self.assertIn(id_url.field(frank_1), l)
    
     def test_empty(self):
+        self.assertTrue(id_url.is_empty(id_url.field(b'')))
+        self.assertTrue(id_url.is_empty(id_url.field('')))
+        self.assertTrue(id_url.is_empty(id_url.field(None)))
+        self.assertTrue(id_url.is_empty(id_url.field(b'None')))
+        self.assertTrue(id_url.is_empty(None))
+        self.assertTrue(id_url.is_empty(b''))
+        self.assertTrue(id_url.is_empty(''))
+        self.assertTrue(id_url.is_empty(b'None'))
+        self.assertTrue(id_url.is_empty('None'))
         self.assertFalse(id_url.field(b''))
         self.assertFalse(id_url.field(''))
         self.assertFalse(id_url.field(None))
@@ -203,49 +216,38 @@ class TestIDURL(TestCase):
         self.assertTrue(id_url.field('') is not None)
         self.assertFalse(id_url.field(None) is None)
         self.assertTrue(id_url.field(None) is not None)
-        with self.assertRaises(TypeError):
-            (id_url.field(b'') == '')
-        with self.assertRaises(TypeError):
-            (id_url.field(b'') == b'')
-        with self.assertRaises(TypeError):
-            (id_url.field('') == '')
-        with self.assertRaises(TypeError):
-            (id_url.field('') == b'')
-        with self.assertRaises(TypeError):
-            (id_url.field(None) == '')
-        with self.assertRaises(TypeError):
-            (id_url.field(None) == b'')
+        self.assertTrue(id_url.field(b'') == b'')
+        self.assertTrue(id_url.field('') == '')
+        self.assertTrue(id_url.field('') == b'')
+        self.assertTrue(id_url.field(None) == '')
+        self.assertTrue(id_url.field(None) == b'')
         l = [b'', None, '', id_url.field(''), id_url.field(None), id_url.field(b''), ]
         self.assertIn(b'', l)
         self.assertIn('', l)
         self.assertIn(None, l)
-        with self.assertRaises(TypeError):
-            (None in [id_url.field(None), ])
-        with self.assertRaises(TypeError):
-            (None in [id_url.field(b''), ])
-        with self.assertRaises(TypeError):
-            (b'' in [id_url.field(None), ])
-        with self.assertRaises(TypeError):
-            (b'' in [id_url.field(b''), ])
+        self.assertEqual(l.count(None), 4)
+        self.assertTrue(None in [id_url.field(None), ])
+        self.assertTrue(None in [id_url.field(b''), ])
+        self.assertTrue(b'' in [id_url.field(None), ])
+        self.assertTrue(b'' in [id_url.field(b''), ])
         self.assertTrue(id_url.is_in(None, [id_url.field(None), ]))
         self.assertTrue(id_url.is_in(None, [id_url.field(b''), ]))
         self.assertTrue(id_url.is_in(b'', [id_url.field(None), ]))
         self.assertTrue(id_url.is_in(b'', [id_url.field(b''), ]))
         d = {id_url.field(''): 0, id_url.field(None): 1, id_url.field(b''): 2}
-        with self.assertRaises(TypeError):
-            (b'' in d)
-        with self.assertRaises(TypeError):
-            ('' in d)
-        with self.assertRaises(TypeError):
-            (b'' not in d)
-        with self.assertRaises(TypeError):
-            ('' not in d)
+        self.assertTrue(len(d), 1)
+        self.assertTrue(b'' in d)
+        self.assertTrue('' in d)
+        self.assertFalse(b'' not in d)
+        self.assertFalse('' not in d)
         self.assertNotIn(None, d)
         self.assertIn(id_url.field(''), d)
         self.assertIn(id_url.field(b''), d)
         self.assertIn(id_url.field(None), d)
 
     def test_not_empty(self):
+        self.assertFalse(id_url.is_empty(id_url.field(ethan_bin)))
+        self.assertFalse(id_url.is_empty(id_url.field(ethan_text)))
         self.assertTrue(id_url.field(ethan_bin))
         self.assertTrue(id_url.field(ethan_text))
         self.assertTrue(bool(id_url.field(ethan_text)) is True)
@@ -283,7 +285,7 @@ class TestIDURL(TestCase):
         self.assertTrue(l[0] != l[3])
         self.assertIn(id_url.field(frank_1), l)
 
-    def test_idurl_in_dict(self):
+    def test_in_dict(self):
         self._cache_identity('alice')
         self._cache_identity('bob')
         self._cache_identity('carl')
@@ -294,8 +296,13 @@ class TestIDURL(TestCase):
         self.assertNotIn(id_url.field(carl), d)
         self.assertTrue(id_url.is_in(alice_text, d))
         self.assertTrue(id_url.is_not_in(carl, d))
+        d2 = {id_url.field(bob): 'bob', 'some_key': 'some_value', }
+        self.assertIn('some_key', d2)
+        keys = list(d2.keys())
+        with self.assertRaises(TypeError):
+            (keys[0] != keys[1])
 
-    def test_idurl_two_sources(self):
+    def test_two_sources(self):
         with self.assertRaises(KeyError):
             {id_url.field(frank_1): 'frank1', }
         with self.assertRaises(KeyError):
@@ -318,7 +325,7 @@ class TestIDURL(TestCase):
         self.assertNotEqual(d1[id_url.field(frank_1)], d2[id_url.field(frank_2)])
         self.assertEqual(d1[id_url.field(frank_1)], d1[id_url.field(frank_2)])
 
-    def test_idurl_three_sources(self):
+    def test_three_sources(self):
         self._cache_identity('george')
         d3 = {
             id_url.field(george_1),

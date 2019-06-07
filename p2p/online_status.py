@@ -155,7 +155,7 @@ def check_create(idurl):
     """
     Creates new instance of online_status() state machine and send "init" event to it.
     """
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return False
     idurl = id_url.field(idurl)
     if idurl not in list(_OnlineStatusDict.keys()):
@@ -174,7 +174,7 @@ def isKnown(idurl):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return False
     idurl = id_url.field(idurl)
     return idurl in list(_OnlineStatusDict.keys())
@@ -187,7 +187,7 @@ def isOnline(idurl):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return False
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
@@ -202,7 +202,7 @@ def isOffline(idurl):
     global _ShutdownFlag
     if _ShutdownFlag:
         return True
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return True
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
@@ -217,7 +217,7 @@ def isCheckingNow(idurl):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return False
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
@@ -230,7 +230,7 @@ def getInstance(idurl, autocreate=True):
     """
     if _ShutdownFlag:
         return None
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return None
     idurl = id_url.field(idurl)
     if not isKnown(idurl) and not autocreate:
@@ -251,7 +251,7 @@ def getCurrentState(idurl):
     global _ShutdownFlag
     if _ShutdownFlag:
         return None
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return None
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
@@ -266,7 +266,7 @@ def getStatusLabel(idurl):
     global _ShutdownFlag
     if _ShutdownFlag:
         return '?'
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if id_url.is_empty(idurl):
         return '?'
     idurl = id_url.field(idurl)
     if not isKnown(idurl):

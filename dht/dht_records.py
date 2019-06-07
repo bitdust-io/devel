@@ -85,6 +85,8 @@ _Rules = {
     },
 }
 
+#------------------------------------------------------------------------------
+
 def get_rules(record_type):
     global _Rules
     return _Rules.get(record_type, {})

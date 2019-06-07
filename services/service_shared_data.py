@@ -132,7 +132,7 @@ class SharedDataService(LocalService):
             return False
         trusted_customer_idurl = list_files_global_id['idurl']
         incoming_key_id = list_files_global_id['key_id']
-        if trusted_customer_idurl == my_id.getGlobalID():
+        if trusted_customer_idurl == my_id.getLocalID():
             lg.warn('skip %s packet which seems to came from my own supplier' % newpacket)
             # only process list Files() from other users who granted me access
             return False

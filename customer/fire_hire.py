@@ -411,7 +411,8 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        return contactsdb.num_suppliers() > 0 and (contactsdb.suppliers().count(b'') + contactsdb.suppliers().count('')) < contactsdb.num_suppliers()
+        sup_list = contactsdb.suppliers()
+        return contactsdb.num_suppliers() > 0 and sup_list.count(None) < contactsdb.num_suppliers()
 
     def doSaveConfig(self, *args, **kwargs):
         """
@@ -427,7 +428,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        my_current_family = id_url.to_bin_list(contactsdb.suppliers())
+        my_current_family = contactsdb.suppliers()
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue
@@ -744,6 +745,9 @@ class FireHire(automat.Automat):
         Action method.
         """
         supplier_idurl, _ = args[0]
+        supplier_idurl = id_url.field(supplier_idurl)
+        if _Debug:
+            lg.args(_DebugLevel, supplier_idurl=supplier_idurl, dismiss_list=self.dismiss_list)
         sc = supplier_connector.by_idurl(supplier_idurl)
         if supplier_idurl in self.dismiss_list:
             self.dismiss_list.remove(supplier_idurl)
@@ -804,6 +808,7 @@ class FireHire(automat.Automat):
         self.automat('restart')
 
     def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
+        idurl = id_url.field(idurl)
         lg.out(14, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')

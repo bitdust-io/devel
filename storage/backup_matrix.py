@@ -905,6 +905,10 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
                 if io_throttle.HasPacketInSendQueue(supplierIDURL, packetID):
                     # if we do sending the packet at the moment - skip
                     continue
+                if supplierNum >= localArray[dataORparity]:
+                    lg.warn('wrong supplier %r position %d for customer %r' %(
+                        supplierIDURL, supplierNum, customer_idurl))
+                    continue
                 if localArray[dataORparity][supplierNum] == 1:
                     packets.append(packetID)
                     # lg.out(10, '    mark to remove %s, blockNum:%d remote:%s local:%s' % (packetID, blockNum, str(remoteArray), str(localArray)))

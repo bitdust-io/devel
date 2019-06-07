@@ -377,11 +377,17 @@ class Initializer(automat.Automat):
         identitydb.init()
         my_id.init()
         if settings.enableWebStream():
-            from logs import weblog
-            weblog.init(settings.getWebStreamPort())
+            try:
+                from logs import weblog
+                weblog.init(settings.getWebStreamPort())
+            except:
+                lg.exc()
         if settings.enableWebTraffic():
-            from logs import webtraffic
-            webtraffic.init(port=settings.getWebTrafficPort())
+            try:
+                from logs import webtraffic
+                webtraffic.init(port=settings.getWebTrafficPort())
+            except:
+                lg.exc()
         misc.init()
         commands.init()
         tmpfile.init(settings.getTempDir())

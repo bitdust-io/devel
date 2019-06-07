@@ -272,7 +272,10 @@ def get(idurl):
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
-        lg.out(1, "identitydb.get ERROR %r is incorrect" % idurl)
+        lg.out(6, "identitydb.get ERROR %r is incorrect" % idurl)
+        return None
+    if not partfilename:
+        lg.out(6, "identitydb.get ERROR %r is empty" % idurl)
         return None
     filename = os.path.join(settings.IdentityCacheDir(), partfilename)
     if not os.path.exists(filename):
@@ -284,7 +287,7 @@ def get(idurl):
         return None
     idobj = identity.identity(xmlsrc=idxml)
     idurl_orig = idobj.getIDURL()
-    if idurl == idurl_orig:
+    if idurl == idurl_orig.to_bin():
         idset(idurl, idobj)
         return idobj
     lg.out(1, "identitydb.get ERROR idurl=%r idurl_orig=%r" % (idurl, idurl_orig))

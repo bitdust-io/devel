@@ -585,9 +585,13 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
             if lst is None:
                 lg.warn('did not found suppliers ids at %s' % path)
                 continue
+            one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+            if not id_url.is_cached(one_customer_idurl):
+                if not identitycache.HasKey(one_customer_idurl):
+                    continue
             lst = list(map(lambda i: id_url.field(i), lst))
-            set_suppliers(lst, customer_idurl=global_id.GlobalUserToIDURL(customer_id))
-            lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
+            set_suppliers(lst, customer_idurl=one_customer_idurl)
+            lg.out(4, 'contactsdb.load_suppliers %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
         return True
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()

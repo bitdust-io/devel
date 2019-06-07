@@ -71,12 +71,12 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
         for _supplier_idurl in ret['suppliers']:
             if _supplier_idurl:
                 _supplier_idurl = id_url.to_bin(_supplier_idurl)
-                if not identitycache.HasFile(_supplier_idurl):
+                if not id_url.is_cached(_supplier_idurl) or not identitycache.HasFile(_supplier_idurl):
                     one_supplier_story = identitycache.immediatelyCaching(_supplier_idurl)
                     one_supplier_story.addErrback(lg.errback)
                     all_stories.append(one_supplier_story)
         _customer_idurl = id_url.to_bin(ret['customer_idurl'])
-        if _customer_idurl and identitycache.HasFile(_customer_idurl):
+        if _customer_idurl and ( not id_url.is_cached(_customer_idurl) or not identitycache.HasFile(_customer_idurl) ):
             one_customer_story = identitycache.immediatelyCaching(_customer_idurl)
             one_customer_story.addErrback(lg.errback)
             all_stories.append(one_customer_story)
@@ -124,7 +124,10 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
             'publisher_idurl': _publisher_idurl,
             'timestamp': _timestamp,
         })
-        if customer_idurl == my_id.getLocalID():
+        my_idurl = my_id.getLocalID()
+        if not as_fields:
+            my_idurl = id_url.to_bin(my_idurl)
+        if customer_idurl == my_idurl:
             if _Debug:
                 lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers   skip caching my own suppliers list received from DHT: %s' % ret)
             result.callback(ret)

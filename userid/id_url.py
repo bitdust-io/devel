@@ -45,11 +45,10 @@ correctly reply to him and send stored data back when he requests.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -179,9 +178,9 @@ def identity_cached(id_obj):
         xmlsrc = local_fs.ReadBinaryFile(latest_identity_file_path)
         latest_id_obj = identity.identity(xmlsrc=xmlsrc)
         if latest_id_obj.getPublicKey() != id_obj.getPublicKey():
-            raise Exception('identity history for user %r is broken, public key not matching')
+            raise Exception('identity history for user %r is broken, public key not matching' % user_name)
         if latest_id_obj.getIDName() != id_obj.getIDName():
-            raise Exception('identity history for user %r is broken, user name not matching')
+            lg.warn('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName(), ))
         latest_sources = list(map(lambda i: i.to_bin(), latest_id_obj.getSources()))
         new_sources = list(map(lambda i: i.to_bin(), id_obj.getSources()))
         if latest_sources == new_sources:
@@ -215,13 +214,14 @@ def identity_cached(id_obj):
                 lg.out(_DebugLevel, '        added new identity source %r for user %r' % (new_idurl, user_name))
     if is_identity_rotated:
         from main import events
-        events.send('remote-identity-rotated', data=dict(
+        events.send('identity-rotated', data=dict(
             old_idurls=latest_id_obj.getSources(),
             new_idurls=id_obj.getSources(),
         ))
     return True
 
 #------------------------------------------------------------------------------
+
 
 def field(idurl):
     """
@@ -231,7 +231,7 @@ def field(idurl):
     global _KnownIDURLs
     if isinstance(idurl, ID_URL_FIELD):
         return idurl
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if idurl in [None, 'None', '', b'None', b'', False, ]:
         return ID_URL_FIELD(idurl)
     idurl = strng.to_bin(idurl.strip())
     if idurl not in _KnownIDURLs:
@@ -263,7 +263,7 @@ def to_bin(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl.to_bin()
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if idurl in [None, 'None', '', b'None', b'', False, ]:
         return b''
     return strng.to_bin(idurl)
 
@@ -331,6 +331,32 @@ def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False)
         return dict_object.get(to_bin(idurl), default)
     return dict_object.get(idurl, default)
 
+
+def is_cached(idurl):
+    """
+    Return True if given identity was already cached.
+    """
+    global _KnownIDURLs
+    if isinstance(idurl, ID_URL_FIELD):
+        idurl = idurl.to_bin()
+    else:
+        idurl = strng.to_bin(idurl)
+    cached = idurl in _KnownIDURLs
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, cached=cached)
+    return cached
+
+
+def is_empty(idurl):
+    """
+    Return True if given input is None, empty string or empty ID_URL_FIELD object.
+    """
+    if isinstance(idurl, ID_URL_FIELD):
+        return not bool(idurl)
+    if idurl in [None, 'None', '', b'None', b'', False, ]:
+        return True
+    return bool(idurl)
+
 #------------------------------------------------------------------------------
 
 class ID_URL_FIELD(object):
@@ -340,33 +366,38 @@ class ID_URL_FIELD(object):
         if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
         else:
-            if idurl in [None, 'None', '', b'None', b'', ]:
+            if idurl in [None, 'None', '', b'None', b'', False, ]:
                 self.current = b''
             else:
                 self.current = strng.to_bin(idurl.strip())
         self.current_as_string = strng.to_text(self.current)
         self.current_id = global_id.idurl2glob(self.current)
         if _Debug:
-            lg.out(_DebugLevel, 'NEW ID_URL_FIELD: %r with id=%r' % (self.current, id(self)))
+            lg.out(_DebugLevel, 'NEW ID_URL_FIELD(%r) with id=%r' % (self.current, id(self)))
 
     def __del__(self):
         try:
             if _Debug:
-                lg.out(_DebugLevel, 'DELETED ID_URL_FIELD: %r with id=%r' % (self.current, id(self)))
+                lg.out(_DebugLevel, 'DELETED ID_URL_FIELD(%r) with id=%r' % (self.current, id(self)))
         except:
             lg.exc()
 
     def __eq__(self, idurl):
         # always check type : must be `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
+            # to be able to compare with empty value lets make an exception
+            if idurl in [None, 'None', '', b'None', b'', False, ]:
+                return not bool(self.current)
+            # in other cases must raise an exception
             caller_method = sys._getframe().f_back.f_code.co_name
-            if caller_method.count('lambda') or caller_method.startswith('_'):
+            if caller_method.count('lambda'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = TypeError('tried to compare ID_URL_FIELD object with another type: %r' % type(idurl))
+            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
+                self.current_as_string, idurl, type(idurl)))
             lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
             raise exc
 
-        # could be empty field
+        # could be empty field also
         if not idurl:
             return not bool(self.current)
 
@@ -394,14 +425,19 @@ class ID_URL_FIELD(object):
     def __ne__(self, idurl):
         # always check type : must be `ID_URL_FIELD`
         if not isinstance(idurl, ID_URL_FIELD):
+            # to be able to compare with empty value lets make an exception
+            if idurl in [None, 'None', '', b'None', b'', False, ]:
+                return bool(self.current)
+            # in other cases must raise an exception
             caller_method = sys._getframe().f_back.f_code.co_name
-            if caller_method.count('lambda') or caller_method.startswith('_'):
+            if caller_method.count('lambda'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
-            exc = TypeError('tried to compare ID_URL_FIELD object with another type: %r' % type(idurl))
+            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
+                self.current_as_string, idurl, type(idurl)))
             lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
             raise exc
 
-        # could be empty field
+        # could be empty field also
         if not idurl:
             return bool(self.current)
 

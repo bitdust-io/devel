@@ -110,7 +110,6 @@ def shutdown(x=None):
         my_keys.shutdown()
         my_id.shutdown()
         identitydb.shutdown()
-        id_url.shutdown()
         ftp_server.shutdown()
         api_jsonrpc_server.shutdown()
         api_rest_http_server.shutdown()
@@ -120,11 +119,19 @@ def shutdown(x=None):
         net_misc.shutdown()
         git_proc.shutdown()
         events.clear_subscribers()
+        # id_url.shutdown()
         tmpfile.shutdown()
         control.shutdown()
-        weblog.shutdown()
-        webtraffic.shutdown()
+        try:
+            weblog.shutdown()
+        except:
+            lg.exc()
+        try:
+            webtraffic.shutdown()
+        except:
+            lg.exc()
         survived_automats = list(automat.objects().values())
+        lg.warn('found %d survived automats, sending "shutdown" event to them all' % len(survived_automats))
         for a in survived_automats:
             if a.name != 'shutdowner':
                 a.event('shutdown')

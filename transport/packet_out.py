@@ -53,13 +53,12 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
 from six.moves import map
 from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _PacketLogFileEnabled = True
