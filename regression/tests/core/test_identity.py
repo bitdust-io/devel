@@ -63,6 +63,8 @@ def test_identity_customer_backup_and_restore():
         count += 1
         time.sleep(5)
 
+    time.sleep(10)
+
     response = requests.post(url=tunnel_url('customer_backup', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()

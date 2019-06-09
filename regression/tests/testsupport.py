@@ -710,6 +710,7 @@ def report_one_node(node):
     # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
     print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
           f'Failures: {num_failures}    Exceptions: {num_exceptions}')
+    return num_exceptions
 
 
 async def report_one_node_async(node, event_loop):
@@ -723,12 +724,16 @@ async def report_one_node_async(node, event_loop):
     # assert num_exceptions == 0, 'found some critical errors in the log file on node %s' % node
     print(f'[{node}]  Warnings: {num_warnings}     Errors: {num_errors}    Tracebacks: {num_tracebacks}     '
           f'Failures: {num_failures}    Exceptions: {num_exceptions}')
+    return num_exceptions
 
 
 def print_exceptions_one_node(node):
     exceptions_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/exception_*.log')[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
+    else:
+        print(f'\n[{node}]: no exceptions found\n')
+    return exceptions_out
 
 
 async def print_exceptions_one_node_async(node, event_loop):
@@ -737,6 +742,9 @@ async def print_exceptions_one_node_async(node, event_loop):
     exceptions_out = exceptions_out[0].strip()
     if exceptions_out:
         print(f'\n[{node}]:\n\n{exceptions_out}\n\n')
+    else:
+        print(f'\n[{node}]: no exceptions found\n')
+    return exceptions_out
 
 
 async def clean_one_node_async(node, event_loop):

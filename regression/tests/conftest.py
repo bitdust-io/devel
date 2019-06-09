@@ -197,11 +197,14 @@ def report_all_nodes(event_loop):
     print('\n\nTest report:')
 
     print('\n\nALL EXCEPTIONS:')
+    failed = False 
     for node in ALL_NODES:
-        ts.print_exceptions_one_node(node)
+        failed = failed or ts.print_exceptions_one_node(node)
 
     for node in ALL_NODES:
         ts.report_one_node(node)
+
+    assert not failed, 'found some critical errors'
 
 #------------------------------------------------------------------------------
 
