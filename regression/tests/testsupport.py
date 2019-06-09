@@ -29,6 +29,7 @@ import json
 
 
 #------------------------------------------------------------------------------
+
 import aiohttp  # @UnresolvedImport
 import requests
 
@@ -384,6 +385,45 @@ async def connect_network_async(node, loop):
         else:
             print(f"connect_network_async {node}: FAILED\n")
             assert False
+
+
+def wait_service_state(node, service_name, expected_state, attempts=5, delay=1):
+    current_state = None
+    count = 0
+    while current_state is None or current_state != expected_state:
+        response = requests.get(url=tunnel_url(node, f'service/info/{service_name}/v1'))
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        current_state = response.json()['result'][0]['state']
+        print(f'\n\nservice/info/{service_name}/v1 [{node}] : %s' % response.json())
+        if current_state == expected_state:
+            break
+        count += 1
+        if count >= attempts:
+            assert False, f"service {service_name} is not {expected_state} after {attempts} attempts"
+            return
+        time.sleep(delay)
+    print(f'service/info/{service_name}/v1 [{node}] : OK\n')
+
+
+def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event', timeout=10, attempts=5):
+    found = None
+    count = 0
+    while not found:
+        response = requests.get(url=tunnel_url(node, f'event/listen/{consumer_id}/v1'), timeout=timeout)
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print(f'\n\nevent/listen/{consumer_id}/v1 : %s\n' % response.json())
+        for e in response.json()['result']:
+            if e['id'] == expected_event_id:
+                found = e
+                break
+        if found:
+            break
+        count += 1
+        if count >= attempts:
+            assert False, f'event "{expected_event_id}" was not raised on node [{node}]'
+    return found
 
 
 def stop_daemon(node, skip_checks=False):

@@ -653,7 +653,7 @@ class FireHire(automat.Automat):
         from main import control
         control.on_suppliers_changed(current_suppliers)
         if family_position < 0:
-            lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % new_idurl)
+            lg.info('ADDED NEW SUPPLIER : %s' % new_idurl)
             events.send('supplier-modified', dict(
                 new_idurl=new_idurl,
                 old_idurl=None,
@@ -663,7 +663,7 @@ class FireHire(automat.Automat):
             ))
         else:
             if old_idurl:
-                lg.out(2, '!!!!!!!!!!! SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (family_position, old_idurl, new_idurl))
+                lg.info('SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (family_position, old_idurl, new_idurl))
                 events.send('supplier-modified', dict(
                     new_idurl=new_idurl,
                     old_idurl=old_idurl,
@@ -672,7 +672,7 @@ class FireHire(automat.Automat):
                     family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
             else:
-                lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
+                lg.info('REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
                 events.send('supplier-modified', dict(
                     new_idurl=new_idurl,
                     old_idurl=None,
@@ -715,7 +715,7 @@ class FireHire(automat.Automat):
             events.send('supplier-modified', dict(
                 new_idurl=None, old_idurl=supplier_idurl, position=position,
             ))
-        lg.out(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
+        lg.info('REMOVED SOME SUPPLIERS : %d' % len(self.dismiss_list))
 
     def doDisconnectSuppliers(self, *args, **kwargs):
         """

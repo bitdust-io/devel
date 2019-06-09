@@ -117,9 +117,12 @@ class KeysStorageService(LocalService):
         from access import key_ring
         from storage import index_synchronizer
         if key_ring.is_my_keys_in_sync() and index_synchronizer.is_synchronized():
+            lg.info('backup index and all keys synchronized')
             if driver.is_enabled('service_my_data'):
                 lg.warn('sending "start" signal to service_my_data')
                 driver.start_single('service_my_data')
+        else:
+            lg.warn('my keys in sync, but backup index still in progress')
 
     def _on_my_backup_index_out_of_sync(self, evt):
         from logs import lg
@@ -150,10 +153,12 @@ class KeysStorageService(LocalService):
             self.starting_deferred = None
         events.send('my-keys-synchronized', data=dict())
         if key_ring.is_my_keys_in_sync() and index_synchronizer.is_synchronized():
+            lg.info('all keys and backup index synchronized')
             if driver.is_enabled('service_my_data'):
                 lg.warn('sending "start" signal to service_my_data')
                 driver.start_single('service_my_data')
-        lg.info('all keys synchronized')
+        else:
+            lg.warn('my keys in sync, but backup index still in progress')
         return None
 
     def _on_keys_synchronize_failed(self, err):

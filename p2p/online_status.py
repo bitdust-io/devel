@@ -509,6 +509,10 @@ class OnlineStatus(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (self.name, oldstate, newstate))
+        if newstate == 'CONNECTED' and newstate != oldstate:
+            lg.info('remote node connected : %s' % self.idurl)
+        if newstate == 'OFFLINE' and newstate != oldstate:
+            lg.info('remote node disconnected : %s' % self.idurl)
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """

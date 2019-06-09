@@ -159,6 +159,15 @@ def listener():
     return _LocalListener
 
 
+def is_ready():
+    """
+    Return True if gateway is ready to run IN / OUT packets.
+    """
+    if not listener():
+        return False
+    return True
+
+
 def is_installed(proto):
     """
     Return True if given transport is installed.
@@ -509,33 +518,41 @@ def make_transfer_ID():
 
 #------------------------------------------------------------------------------
 
-def send_work_item(proto, host, filename, description):
-    """
-    Send a file to remote peer by given transport.
-
-    Args:     proto (str): identifier of the transport     host (str):
-    remote peer's host comes from identity contact     filename (str):
-    local source file to be send     description (str): a label for this
-    transfer
-    """
-    return send_file(proto, host, filename, description)
-
-
 def connect_to(proto, host):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     return transport(proto).call('connect_to', host)
 
 
 def disconnect_from(proto, host):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     return transport(proto).call('disconnect_from', host)
 
 
 def send_file(remote_idurl, proto, host, filename, description='', pkt_out=None):
     """
+    Send a file to remote peer via given transport.
+
+    Args:
+        + proto (str): identifier of the transport
+        + host (str): remote peer's host comes from identity contact
+        + filename (str): local source file to be send
+        + description (str): a label for this transfer
+        + remote_idurl (idurl): remote user idurl (optional)
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     result_defer = transport(proto).call('send_file', remote_idurl, filename, host, description)
     callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out)
     return result_defer
@@ -544,6 +561,10 @@ def send_file(remote_idurl, proto, host, filename, description='', pkt_out=None)
 def send_file_single(remote_idurl, proto, host, filename, description='', pkt_out=None):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     result_defer = transport(proto).call('send_file_single', remote_idurl, filename, host, description)
     callback.run_begin_file_sending_callbacks(result_defer, remote_idurl, proto, host, filename, description, pkt_out)
     return result_defer
@@ -552,12 +573,18 @@ def send_file_single(remote_idurl, proto, host, filename, description='', pkt_ou
 def send_keep_alive(proto, host):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     return transport(proto).call('send_keep_alive', host)
 
 
 def list_active_transports():
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
     result = []
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto):
@@ -569,23 +596,39 @@ def list_active_transports():
 def list_active_sessions(proto):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     return transport(proto).call('list_sessions')
 
 
 def list_active_streams(proto):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     return transport(proto).call('list_streams')
 
 
 def find_active_session(proto, host):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     return transport(proto).call('find_session', host)
 
 def find_active_stream(proto, stream_id=None, transfer_id=None):
     """
     """
+    if not is_ready():
+        return fail(Exception('gateway is not ready'))
+    if not is_installed(proto):
+        return fail(Exception('transport %r not installed' % proto))
     return transport(proto).call('find_stream', stream_id=stream_id, transfer_id=transfer_id)
 
 #------------------------------------------------------------------------------

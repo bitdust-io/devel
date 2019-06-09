@@ -131,7 +131,6 @@ def clean_all_nodes(event_loop, skip_checks=False):
     event_loop.run_until_complete(asyncio.gather(*[
         ts.clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customers']
     ]))
-
     print('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
 
 

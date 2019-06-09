@@ -26,7 +26,7 @@ import pytest
 import time
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait
+from ..testsupport import tunnel_url, run_ssh_command_and_wait, wait_service_state
 
 
 def test_upload_download_file_with_master_customer_1():
@@ -59,6 +59,8 @@ def test_upload_download_file_with_master_customer_1():
             break
         count += 1
         time.sleep(5)
+
+    wait_service_state('customer_1', 'service_my_data', 'ON', attempts=30, delay=2)
 
     response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200

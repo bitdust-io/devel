@@ -319,7 +319,8 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     try:
         block = encrypted.Unserialize(
             newpacket.Payload,
-            decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=my_id.getLocalID(), ),
+            # decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=my_id.getLocalID(), ),
+            decrypt_key=list_files_global_id['key_id'],
         )
         input_data = block.Data()
     except:

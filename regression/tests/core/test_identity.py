@@ -26,7 +26,7 @@ import time
 import shutil
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait
+from ..testsupport import tunnel_url, run_ssh_command_and_wait, wait_service_state
 
 
 def test_identity_customer_backup_and_restore():
@@ -63,7 +63,7 @@ def test_identity_customer_backup_and_restore():
         count += 1
         time.sleep(5)
 
-    time.sleep(10)
+    wait_service_state('customer_backup', 'service_my_data', 'ON', attempts=30, delay=2)
 
     response = requests.post(url=tunnel_url('customer_backup', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
@@ -159,6 +159,8 @@ def test_identity_customer_backup_and_restore():
         time.sleep(5)
     else:
         assert False, 'customer_restore was not able to join the network after identity recover'
+
+    wait_service_state('customer_restore', 'service_my_data', 'ON', attempts=30, delay=2)
 
     # step4: try to recover stored file again
     key_id = 'master$customer_backup@is_8084'

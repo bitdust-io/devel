@@ -506,6 +506,8 @@ def on_audit_key_received(newpacket, info, status, error_message):
 def do_backup_key(key_id, keys_folder=None):
     """
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'key_ring.do_backup_key     key_id=%r' % key_id)
     if key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master':
         lg.err('master key must never leave local host')
         return False
@@ -543,6 +545,8 @@ def do_backup_key(key_id, keys_folder=None):
 def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
     """
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'key_ring.do_restore_key     key_id=%r    is_private=%r' % (key_id, is_private, ))
     if my_keys.is_key_registered(key_id):
         lg.err('local key already exist: "%s"' % key_id)
         if wait_result:
@@ -655,6 +659,8 @@ def do_synchronize_keys(keys_folder=None, wait_result=False):
             is_private = True
             key_id = i['path'].replace('.private', '').replace('.keys/', '')
         if my_keys.is_key_registered(key_id):
+            if _Debug:
+                lg.out(_DebugLevel, '        skip restoring already known key_id=%r' % key_id)
             continue
         res = do_restore_key(key_id, is_private, keys_folder=keys_folder, wait_result=wait_result)
         restored_count += 1
