@@ -322,7 +322,7 @@ def start(services_list=[]):
     if _StartingDeferred:
         lg.warn('driver.start already called')
         return _StartingDeferred
-    if _StopingDeferred:
+    if _StopingDeferred and not _StopingDeferred.called:
         d = Deferred()
         d.errback(Exception('currently another service is stopping'))
         return d
@@ -346,6 +346,7 @@ def start(services_list=[]):
         return succeed(1)
     _StartingDeferred = DeferredList(dl)
     _StartingDeferred.addCallback(on_started_all_services)
+    _StartingDeferred.addErrback(lg.errback)
     return _StartingDeferred
 
 
@@ -357,7 +358,7 @@ def stop(services_list=[]):
     if _StopingDeferred:
         lg.warn('driver.stop already called')
         return _StopingDeferred
-    if _StartingDeferred:
+    if _StartingDeferred and not _StartingDeferred.called:
         d = Deferred()
         d.errback(Exception('currently another service is starting'))
         return d
@@ -375,6 +376,7 @@ def stop(services_list=[]):
         svc.automat('stop', d)
     _StopingDeferred = DeferredList(dl)
     _StopingDeferred.addCallback(on_stopped_all_services)
+    _StopingDeferred.addErrback(lg.errback)
     return _StopingDeferred
 
 
@@ -432,15 +434,16 @@ def restart(service_name, wait_timeout=None):
         return None
 
     dl = []
-    if _StopingDeferred:
+    if _StopingDeferred and not _StopingDeferred.called:
         dl.append(_StopingDeferred)
-    if _StartingDeferred:
+    if _StartingDeferred and not _StartingDeferred.called:
         dl.append(_StartingDeferred)
     if wait_timeout:
         all_states = [_svc.state for _svc in services().values()]
         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
             wait_timeout_defer = Deferred()
             wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
+            wait_timeout_defer.addErrback(lg.errback)
             dl.append(wait_timeout_defer)
     if not dl:
         dl.append(succeed(True))
@@ -541,133 +544,7 @@ def health_check(services_list=[]):
             dl.append(service_health)
     health_result = DeferredList(dl, consumeErrors=True)
     return health_result
-
-
-#     def _on_started(start_result):
-#         lg.out(4, 'api.start_later._on_started : %s with %s' % (services_list, start_result))
-#         result.callback(start_result)
-#         return start_result
-# 
-#     def _on_failed(err):
-#         print 'start_later._on_failed'
-#         lg.err(err)
-#         result.errback(str(err))
-#         return None
-# 
-#     def _do_start(x=None):
-#         lg.out(4, 'driver.start_later._do_start : %s' % services_list)
-#         start_defer = start(services_list=services_list)
-#         start_defer.addCallback(_on_started)
-#         start_defer.addErrback(_on_failed)
-#         return start_defer
-# 
-#     lg.out(4, 'driver.start_later %s' % services_list)
-# 
-#     if _StopingDeferred:
-#         _StopingDeferred.addCallback(_do_start)
-#         _StopingDeferred.addErrback(_on_failed)
-#         lg.warn('driver.stop already called, added pending callback')
-#         return result
-#     
-#     if _StartingDeferred:
-#         _StartingDeferred.addCallback(_do_start)
-#         _StartingDeferred.addErrback(_on_failed)
-#         lg.warn('driver.start already called, added pending callback')
-#         return result
-# 
-#     _do_start()
-#     return result
-
-#     def _on_timeout(err):
-#         lg.out(4, 'driver.start_later._on_timeout : %s' % services_list)
-#         all_states = [_svc.state for _svc in services().values()]
-#         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
-#             result.errback(failure.Failure(Exception('timeout')))
-#             return err
-#         _do_start()
-#         return None
-
-#     dl = []
-#     if _StopingDeferred:
-#         dl.append(_StartingDeferred)
-#     if _StartingDeferred:
-#         dl.append(_StartingDeferred)
-#     if wait_timeout:
-#         all_states = [_svc.state for _svc in services().values()]
-#         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
-#             wait_timeout_defer = Deferred()
-#             wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-#             dl.append(wait_timeout_defer)
-#     if not dl:
-#         dl.append(succeed(True))
-# 
-#     lg.out(4, 'driver.start_later %s' % services_list)
-#     dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
-#     dependencies.addCallback(_do_start)
-#     dependencies.addErrback(_on_timeout)
-#     return result
-
-
-# def stop_later(services_list):
-#     global _StopingDeferred
-#     global _StartingDeferred
-#     result = Deferred()
-# 
-#     def _on_stopped(stop_result):
-#         lg.out(4, 'driver.stop_later._on_stopped : %s with %s' % (services_list, stop_result))
-#         result.callback(stop_result)
-#         return stop_result
-# 
-#     def _on_failed(err):
-#         print 'stop_later._on_failed'
-#         lg.err(err)
-#         result.errback(str(err))
-#         return None
-# 
-#     def _do_stop(x=None):
-#         lg.out(4, 'driver.stop_later._do_stop : %s' % services_list)
-#         stop_defer = stop(services_list=services_list)
-#         stop_defer.addCallback(_on_stopped)
-#         stop_defer.addErrback(_on_failed)
-#         return None
-# 
-#     lg.out(4, 'driver.stop_later %s' % services_list)
-# 
-#     if _StopingDeferred:
-#         _StopingDeferred.addCallback(_do_stop)
-#         _StopingDeferred.addErrback(_on_failed)
-#         lg.warn('driver.stop already called, added pending callback')
-#         return result
-#     
-#     if _StartingDeferred:
-#         _StartingDeferred.addCallback(_do_stop)
-#         _StartingDeferred.addErrback(_on_failed)
-#         lg.warn('driver.start already called, added pending callback')
-#         return result
-# 
-#     _do_stop()
-#     return result
-
-#     dl = []
-#     if _StopingDeferred:
-#         dl.append(_StartingDeferred)
-#     if _StartingDeferred:
-#         dl.append(_StartingDeferred)
-#     if wait_timeout:
-#         all_states = [_svc.state for _svc in services().values()]
-#         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
-#             wait_timeout_defer = Deferred()
-#             wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-#             dl.append(wait_timeout_defer)
-#     if not dl:
-#         dl.append(succeed(True))
-# 
-#     lg.out(4, 'driver.stop_later %s' % services_list)
-#     dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
-#     dependencies.addCallback(_do_stop)
-#     dependencies.addErrback(_on_timeout)
-#     return result
-    
+ 
 
 #------------------------------------------------------------------------------
 
@@ -698,8 +575,6 @@ def on_service_callback(result, service_name):
                 if depend_name == service_name:
                     relative_services.append(other_service)
         if len(relative_services) > 0:
-            # global _StartingDeferred
-            # if _StartingDeferred:
             for relative_service in relative_services:
                 if not relative_service.enabled():
                     continue

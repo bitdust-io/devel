@@ -146,6 +146,7 @@ def defaults():
         'services/keys-storage/enabled': TYPE_BOOLEAN,
         'services/list-files/enabled': TYPE_BOOLEAN,
         'services/miner/enabled': TYPE_BOOLEAN,
+        'services/my-data/enabled': TYPE_BOOLEAN,
         'services/my-ip-port/enabled': TYPE_BOOLEAN,
         'services/network/enabled': TYPE_BOOLEAN,
         'services/network/proxy/enabled': TYPE_BOOLEAN,

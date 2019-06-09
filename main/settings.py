@@ -2464,6 +2464,8 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/miner/enabled', 'false')
 
+    config.conf().setDefaultValue('services/my-data/enabled', 'true')
+
     config.conf().setDefaultValue('services/my-ip-port/enabled', 'true')
 
     config.conf().setDefaultValue('services/network/enabled', 'true')

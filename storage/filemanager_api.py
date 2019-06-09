@@ -73,11 +73,11 @@ from userid import global_id
 
 def process(json_request):
     lg.out(12, 'filemanager_api.process %s' % json_request)
-    if not driver.is_on('service_backups'):
+    if not driver.is_on('service_my_data'):
         return {'result': {
             "success": False,
-            "error": "network [service_backups] is not started: %s" % (
-                driver.services().get('service_backups', '!!! not found !!!'))}}
+            "error": "network [service_my_data] is not started: %s" % (
+                driver.services().get('service_my_data', '!!! not found !!!'))}}
     mode = ''
     result = {}
     try:
