@@ -25,8 +25,8 @@ import pytest
 import time
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait, wait_service_state
-from ..utils import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1
+from ..testsupport import tunnel_url, run_ssh_command_and_wait
+from ..keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, service_info_v1
 
 
 def test_replace_supplier():
@@ -78,8 +78,8 @@ def test_shared_file_same_name_as_existing():
     supplier_list_v1('customer_1')
     supplier_list_v1('customer_2')
 
-    wait_service_state('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
-    wait_service_state('customer_2', 'service_shared_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_2', 'service_shared_data', 'ON', attempts=30, delay=2)
 
     # create shares (logic unit to upload/download/share files)
     share_id_customer_1 = share_create_v1('customer_1')
@@ -169,8 +169,8 @@ def test_file_shared_from_customer_1_to_customer_4():
     download_volume = '/customer_4'
     downloaded_file = '%s/%s' % (download_volume, virtual_file)
 
-    wait_service_state('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
-    wait_service_state('customer_4', 'service_shared_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_4', 'service_shared_data', 'ON', attempts=30, delay=2)
 
     response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200

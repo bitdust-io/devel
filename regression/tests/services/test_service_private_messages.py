@@ -21,37 +21,20 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import os
-import pytest
 import base64
 from threading import Timer
-import requests
 
-from ..testsupport import tunnel_url
-
-
-def send_message(random_message):
-    response = requests.post(
-        url=tunnel_url('customer_1', 'message/send/v1'),
-        json={
-            'id': 'master$customer_2@is_8084',
-            'data': {
-                'random_message': random_message,
-            },
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
+from ..keywords import message_send_v1, message_receive_v1
 
 
 def test_send_message_customer_1_to_customer_2():
-    random_message = base64.b32encode(os.urandom(20)).decode()
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+    random_string = base64.b32encode(os.urandom(20)).decode()
+    random_message = {
+        'random_message': random_string,
+    }
     # send message in different thread to get one in blocked `receive` call
-    t = Timer(2.0, send_message, [random_message, ])
+    t = Timer(2.0, message_send_v1, ['customer_1', 'master$customer_2@is_8084', random_message, ])
     t.start()
-
-    response = requests.get(
-        url=tunnel_url('customer_2', 'message/receive/test_consumer/v1'),
-    )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
-    assert response.json()['result'][0]['data']['random_message'] == random_message, response.json()
+    message_receive_v1('customer_2', expected_data=random_message)

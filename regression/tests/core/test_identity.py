@@ -26,7 +26,8 @@ import time
 import shutil
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait, wait_service_state
+from ..testsupport import tunnel_url, run_ssh_command_and_wait
+from ..keywords import service_info_v1
 
 
 def test_identity_customer_backup_and_restore():
@@ -63,7 +64,7 @@ def test_identity_customer_backup_and_restore():
         count += 1
         time.sleep(5)
 
-    wait_service_state('customer_backup', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_backup', 'service_my_data', 'ON', attempts=30, delay=2)
 
     response = requests.post(url=tunnel_url('customer_backup', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
@@ -105,9 +106,11 @@ def test_identity_customer_backup_and_restore():
         assert False, 'download was not successful: %r' % response.json()
 
     source_local_file_src = run_ssh_command_and_wait('customer_backup', 'cat %s' % source_local_path)[0].strip()
-    print('customer_backup:%s' % source_local_path, source_local_file_src)
+    print('customer_backup: file %s is %d bytes long' % (source_local_path, len(source_local_file_src)))
+    
     downloaded_file_src = run_ssh_command_and_wait('customer_backup', 'cat %s' % downloaded_file)[0].strip()
-    print('customer_backup:%s' % downloaded_file, downloaded_file_src)
+    print('customer_backup: file %s is %d bytes long' % (downloaded_file, len(downloaded_file_src)))
+
     assert source_local_file_src == downloaded_file_src, (source_local_file_src, downloaded_file_src, )
 
     # step2: backup customer_backup private key and stop that container
@@ -160,7 +163,7 @@ def test_identity_customer_backup_and_restore():
     else:
         assert False, 'customer_restore was not able to join the network after identity recover'
 
-    wait_service_state('customer_restore', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_restore', 'service_my_data', 'ON', attempts=30, delay=2)
 
     # step4: try to recover stored file again
     key_id = 'master$customer_backup@is_8084'

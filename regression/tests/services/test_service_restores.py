@@ -26,7 +26,8 @@ import pytest
 import time
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait, wait_service_state
+from ..testsupport import tunnel_url, run_ssh_command_and_wait
+from ..keywords import service_info_v1
 
 
 def test_upload_download_file_with_master_customer_1():
@@ -60,7 +61,7 @@ def test_upload_download_file_with_master_customer_1():
         count += 1
         time.sleep(5)
 
-    wait_service_state('customer_1', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_1', 'service_my_data', 'ON', attempts=30, delay=2)
 
     response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
@@ -102,7 +103,9 @@ def test_upload_download_file_with_master_customer_1():
         assert False, 'download was not successful: %r' % response.json()
 
     local_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % local_path)[0].strip()
-    print('customer_1:%s' % local_path, local_file_src)
+    print('customer_1: file %s is %d bytes long' % (local_path, len(local_file_src)))
+    
     downloaded_file_src = run_ssh_command_and_wait('customer_1', 'cat %s' % downloaded_file)[0].strip()
-    print('customer_1:%s' % downloaded_file, downloaded_file_src)
+    print('customer_1: file %s is %d bytes long' % (downloaded_file, len(downloaded_file_src)))
+
     assert local_file_src == downloaded_file_src, (local_file_src, downloaded_file_src, )
