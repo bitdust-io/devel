@@ -22,12 +22,14 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
                 num_connected += 1
         print('\nfound %d connected suppliers at the moment\n' % num_connected)
         if expected_min_suppliers is not None and num_connected < expected_min_suppliers:
+            count += 1
+            time.sleep(delay)
             continue
         if expected_max_suppliers is not None and num_connected > expected_max_suppliers:
+            count += 1
+            time.sleep(delay)
             continue
         break
-        count += 1
-        time.sleep(delay)
     return response.json()
 
 
@@ -107,7 +109,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
             assert response.status_code == 200
             assert response.json()['status'] == 'OK', response.json()
             print('\n\nfile/upload/v1 [%s] : %r\n' % (customer, response.json(), ))
-            if len(response.json()['result']) == 0:
+            if len(response.json()['result']['pending']) == 0 and len(response.json()['result']['running']) == 0:
                 break
             time.sleep(delay)
         else:
