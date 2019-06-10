@@ -26,14 +26,15 @@ import time
 import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
-from ..keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, service_info_v1
+from ..keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
+    service_info_v1, file_create_v1
 
 
 def test_replace_supplier():
     #: TODO: investigate why files were not transfered
     return True
 
-    supplier_list_v1('customer_1')
+    supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
     share_id_customer_1 = share_create_v1('customer_1')
 
     filename = 'file_to_be_distributed.txt'
@@ -46,11 +47,7 @@ def test_replace_supplier():
 
     run_ssh_command_and_wait('customer_1', f'echo customer_1 > {filepath_customer_1}')
 
-    response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'),
-                             json={'remote_path': remote_path_customer_1}, )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
-    print('\n\nfile/create/v1 remote_path=%s : %s\n' % (remote_path_customer_1, response.json(),))
+    file_create_v1('customer_1', remote_path_customer_1)
 
     file_upload_start_v1('customer_1', remote_path_customer_1, filepath_customer_1)
 
@@ -66,17 +63,15 @@ def test_replace_supplier():
 
     response = requests.post(tunnel_url('customer_1', '/supplier/replace/v1'), json={'position': '0'})
 
-    time.sleep(15)
-
-    # import pdb; pdb.set_trace()
+    # time.sleep(15)
 
 
 def test_shared_file_same_name_as_existing():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    supplier_list_v1('customer_1')
-    supplier_list_v1('customer_2')
+    supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
+    supplier_list_v1('customer_2', expected_min_suppliers=2, expected_max_suppliers=2)
 
     service_info_v1('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
     service_info_v1('customer_2', 'service_shared_data', 'ON', attempts=30, delay=2)
@@ -101,16 +96,10 @@ def test_shared_file_same_name_as_existing():
     remote_path_customer_2 = f'{share_id_customer_2}:{virtual_filename}'
 
     # create virtual file for customer_1
-    response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path_customer_1}, )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
-    print('\n\nfile/create/v1 remote_path=%s : %s\n' % (remote_path_customer_1, response.json(),))
+    file_create_v1('customer_1', remote_path_customer_1)
 
     # create virtual file for customer_2
-    response = requests.post(url=tunnel_url('customer_2', 'file/create/v1'), json={'remote_path': remote_path_customer_2}, )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
-    print('\n\nfile/create/v1 remote_path=%s : %s\n' % (remote_path_customer_2, response.json(),))
+    file_create_v1('customer_2', remote_path_customer_2)
 
     # upload file for customer_1
     file_upload_start_v1('customer_1', remote_path_customer_1, filepath_customer_1)
@@ -155,7 +144,7 @@ def test_file_shared_from_customer_1_to_customer_4():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    supplier_list_v1('customer_1')
+    supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
 
     key_id = share_create_v1('customer_1')
 
@@ -172,10 +161,7 @@ def test_file_shared_from_customer_1_to_customer_4():
     service_info_v1('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
     service_info_v1('customer_4', 'service_shared_data', 'ON', attempts=30, delay=2)
 
-    response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
-    print('\n\nfile/create/v1 remote_path=%s : %s\n' % (remote_path, response.json(), ))
+    file_create_v1('customer_1', remote_path)
 
     file_upload_start_v1('customer_1', remote_path, local_path)
 

@@ -27,7 +27,7 @@ import time
 import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
-from ..keywords import service_info_v1
+from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1
 
 
 def test_upload_download_file_with_master_customer_1():
@@ -63,23 +63,10 @@ def test_upload_download_file_with_master_customer_1():
 
     service_info_v1('customer_1', 'service_my_data', 'ON', attempts=30, delay=2)
 
-    response = requests.post(url=tunnel_url('customer_1', 'file/create/v1'), json={'remote_path': remote_path}, )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
+    file_create_v1('customer_1', remote_path)
 
-    response = requests.post(
-        url=tunnel_url('customer_1', 'file/upload/start/v1'),
-        json={
-            'remote_path': remote_path,
-            'local_path': local_path,
-            'wait_result': '1',
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
+    file_upload_start_v1('customer_1', remote_path, local_path, wait_result=True, )
     
-    time.sleep(3)
-
     for i in range(20):
         response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),

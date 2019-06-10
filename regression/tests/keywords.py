@@ -5,27 +5,30 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_connected_number=2, attempts=20, delay=5):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=20, delay=5):
     count = 0
     while True:
         if count > attempts:
-            assert False, f'{customer} failed to hire enough suppliers after many attempts'
-
+            assert False, f'{customer} failed to hire correct number of suppliers after many attempts'
         response = requests.get(url=tunnel_url(customer, 'supplier/list/v1'))
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
         print('\n\nsupplier/list/v1 : %s\n' % response.json())
-        if expected_connected_number is None:
-            return response.json()
+        if expected_min_suppliers is None and expected_max_suppliers is None:
+            break
         num_connected = 0
         for s in response.json()['result']:
             if s['supplier_state'] == 'CONNECTED' and s['contact_state'] == 'CONNECTED':
                 num_connected += 1
-        if num_connected == expected_connected_number:
-            break
-
+        print('\nfound %d connected suppliers at the moment\n' % num_connected)
+        if expected_min_suppliers is not None and num_connected < expected_min_suppliers:
+            continue
+        if expected_max_suppliers is not None and num_connected > expected_max_suppliers:
+            continue
+        break
         count += 1
         time.sleep(delay)
+    return response.json()
 
 
 def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=20, delay=3, accepted_mistakes=1):
@@ -72,7 +75,18 @@ def share_create_v1(customer: str, key_size=1024):
     return response.json()['result'][0]['key_id']
 
 
-def file_upload_start_v1(customer: str, remote_path: str, local_path: str, open_share=True, wait_result=True):
+def file_create_v1(node, remote_path):
+    response = requests.post(url=tunnel_url(node, 'file/create/v1'), json={'remote_path': remote_path}, )
+    assert response.status_code == 200
+    assert response.json()['status'] == 'OK', response.json()
+    print('\n\nfile/create/v1 [%s] remote_path=%s : %s\n' % (node, remote_path, response.json(), ))
+    return response.json()
+
+
+def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
+                         open_share=True, wait_result=True,
+                         attempts=50, delay=5,
+                         wait_job_finish=True):
     response = requests.post(
         url=tunnel_url(customer, 'file/upload/start/v1'),
         json={
@@ -84,7 +98,21 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str, open_
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
-    print('\n\nfile/upload/start/v1 remote_path=%s local_path=%s : %r\n' % (remote_path, local_path, response.json(),))
+    print('\n\nfile/upload/start/v1 [%r] remote_path=%s local_path=%s : %r\n' % (customer, remote_path, local_path, response.json(),))
+    if wait_job_finish:
+        for i in range(attempts):
+            response = requests.get(
+                url=tunnel_url(customer, 'file/upload/v1'),
+            )
+            assert response.status_code == 200
+            assert response.json()['status'] == 'OK', response.json()
+            print('\n\nfile/upload/v1 [%s] : %r\n' % (customer, response.json(), ))
+            if len(response.json()['result']) == 0:
+                break
+            time.sleep(delay)
+        else:
+            assert False, 'some uploading tasks are still running on [%s]' % customer
+    return response.json()
 
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
@@ -103,19 +131,15 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
         )
         assert response.status_code == 200
         print('\n\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (customer, remote_path, destination, response.json(), ))
-
         if response.json()['status'] == 'OK':
             print('\n\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %r\n' % (customer, remote_path, destination, response.json(), ))
             break
-
         if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
             time.sleep(delay)
         else:
             assert False, response.json()
-
     else:
         assert False, 'failed to start downloading uploaded file on [%r]: %r' % (customer, response.json(), )
-
     if wait_tasks_finish:
         for i in range(attempts):
             response = requests.get(
@@ -124,14 +148,12 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             assert response.status_code == 200
             assert response.json()['status'] == 'OK', response.json()
             print('\n\nfile/download/v1 [%s] : %r\n' % (customer, response.json(), ))
-    
             if len(response.json()['result']) == 0:
                 break
-    
             time.sleep(delay)
-    
         else:
             assert False, 'some downloading tasks are still running on [%s]' % customer
+    return response.json()
 
 
 def config_set_v1(node, key, value):
@@ -271,3 +293,4 @@ def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event
         if count >= attempts:
             assert False, f'event "{expected_event_id}" was not raised on node [{node}]'
     return found
+

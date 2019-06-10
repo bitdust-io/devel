@@ -27,7 +27,8 @@ import shutil
 import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
-from ..keywords import service_info_v1
+from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
+    supplier_list_v1, config_set_v1
 
 
 def test_identity_customer_backup_and_restore():
@@ -44,66 +45,16 @@ def test_identity_customer_backup_and_restore():
     download_volume = '/customer_backup'
     downloaded_file = '%s/%s' % (download_volume, virtual_file)
 
-    count = 0
-    while True:
-        if count > 10:
-            assert False, 'customer_backup failed to hire enough suppliers after many attempts'
-            return
-        response = requests.get(url=tunnel_url('customer_backup', 'supplier/list/v1'))
-        assert response.status_code == 200
-        assert response.json()['status'] == 'OK', response.json()
-        print('\n\nsupplier/list/v1 : %s\n' % response.json())
-        if len(response.json()['result']) == 2:
-            connected = False
-            for s in response.json()['result']:
-                if s['supplier_state'] == 'CONNECTED' and s['contact_state'] == 'CONNECTED':
-                    connected = True
-            if connected:
-                assert True
-                break
-        count += 1
-        time.sleep(5)
+    supplier_list_v1('customer_backup', expected_min_suppliers=2, expected_max_suppliers=2)
 
     service_info_v1('customer_backup', 'service_my_data', 'ON', attempts=30, delay=2)
 
-    response = requests.post(url=tunnel_url('customer_backup', 'file/create/v1'), json={'remote_path': remote_path}, )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
 
-    response = requests.post(
-        url=tunnel_url('customer_backup', 'file/upload/start/v1'),
-        json={
-            'remote_path': remote_path,
-            'local_path': source_local_path,
-            'wait_result': '1',
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
+    file_create_v1('customer_backup', remote_path)
 
-    time.sleep(3)
-
-    for i in range(20):
-        response = requests.post(
-            url=tunnel_url('customer_backup', 'file/download/start/v1'),
-            json={
-                'remote_path': remote_path,
-                'destination_folder': download_volume,
-                'wait_result': '1',
-            },
-        )
-        assert response.status_code == 200
-
-        if response.json()['status'] == 'OK':
-            break
-
-        if response.json()['errors'][0].startswith('download not possible, uploading'):
-            time.sleep(1)
-        else:
-            assert False, response.json()
-
-    else:
-        assert False, 'download was not successful: %r' % response.json()
+    file_upload_start_v1('customer_backup', remote_path, source_local_path)
+    
+    file_download_start_v1('customer_backup', remote_path, download_volume, open_share=False)
 
     source_local_file_src = run_ssh_command_and_wait('customer_backup', 'cat %s' % source_local_path)[0].strip()
     print('customer_backup: file %s is %d bytes long' % (source_local_path, len(source_local_file_src)))
