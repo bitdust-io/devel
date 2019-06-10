@@ -50,7 +50,7 @@ class _JsonResource(Resource):
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Origin'), b('*'))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Methods'), b('GET, POST, PUT, DELETE'))
         request.responseHeaders.addRawHeader(b('Access-Control-Allow-Headers'), b('x-prototype-version,x-requested-with'))
-        request.responseHeaders.addRawHeader(b('Access-Control-Max-Age'), 2520)
+        request.responseHeaders.addRawHeader(b('Access-Control-Max-Age'), b('2520'))
         return request
 
     def render(self, request):
