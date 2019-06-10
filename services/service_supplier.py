@@ -341,13 +341,13 @@ class SupplierService(LocalService):
         """
         from crypt import my_keys
         from logs import lg
-        if not customer_public_key_id:
-            lg.dbg('customer public key was not provided in the request')
+        if not customer_public_key_id or not customer_public_key:
+            lg.warn('customer public key was not provided in the request')
             return
         if my_keys.is_key_registered(customer_public_key_id):
             known_customer_public_key = my_keys.get_public_key_raw(customer_public_key_id)
             if known_customer_public_key == customer_public_key:
-                lg.dbg('customer public key %r already known' % customer_public_key_id)
+                lg.warn('customer public key %r already known' % customer_public_key_id)
                 return
             lg.warn('rewriting customer public key %r' % customer_public_key_id)
             my_keys.erase_key(customer_public_key_id)
