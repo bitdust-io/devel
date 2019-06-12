@@ -366,7 +366,7 @@ class P2PConnector(automat.Automat):
                                     contacts_is_ok = False
                         if contacts_is_ok:
                             if _Debug:
-                                lg.out(_DebugLevel - 6, 'p2p_connector._check_to_use_best_proto returning True : proxy_transport is fine :-)')
+                                lg.out(_DebugLevel - 6, 'p2p_connector._check_to_use_best_proto returning True : proxy_transport is OK')
                             return True
         first = order[0]
         # if first contact in local identity is not working yet

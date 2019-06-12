@@ -332,7 +332,7 @@ class FireHire(automat.Automat):
         # lg.out(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
         # contactsdb.num_suppliers(), len(self.dismiss_list),
         # settings.getSuppliersNumberDesired()))
-        if b'' in contactsdb.suppliers() or '' in contactsdb.suppliers():
+        if id_url.is_some_empty(contactsdb.suppliers()):
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty supplier!!!')
             return True
@@ -384,7 +384,7 @@ class FireHire(automat.Automat):
             return True
         desired_number = settings.getSuppliersNumberDesired()
         needed_suppliers = current_suppliers[:desired_number]
-        empty_suppliers = needed_suppliers.count('')
+        empty_suppliers = needed_suppliers.count(id_url.field(b''))
         # if '' in needed_suppliers:
         # lg.warn('found empty suppliers!!!')
         # return True
@@ -411,7 +411,8 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        return contactsdb.num_suppliers() > 0 and (contactsdb.suppliers().count(b'') + contactsdb.suppliers().count('')) < contactsdb.num_suppliers()
+        sup_list = contactsdb.suppliers()
+        return contactsdb.num_suppliers() > 0 and sup_list.count(id_url.field(b'')) < contactsdb.num_suppliers()
 
     def doSaveConfig(self, *args, **kwargs):
         """
@@ -427,7 +428,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        my_current_family = id_url.to_bin_list(contactsdb.suppliers())
+        my_current_family = contactsdb.suppliers()
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue
@@ -485,12 +486,15 @@ class FireHire(automat.Automat):
         redundant_suppliers = set()
         # if you have some empty suppliers need to get rid of them,
         # but no need to dismiss anyone at the moment.
-        if '' in contactsdb.suppliers() or None in contactsdb.suppliers() or b'' in contactsdb.suppliers():
+        my_suppliers = contactsdb.suppliers()
+        if _Debug:
+            lg.args(_DebugLevel, my_suppliers=my_suppliers)
+        if id_url.is_some_empty(my_suppliers):
             lg.warn('SKIP, found empty supplier')
             self.automat('made-decision', [])
             return
         number_desired = settings.getSuppliersNumberDesired()
-        for supplier_idurl in contactsdb.suppliers():
+        for supplier_idurl in my_suppliers:
             sc = supplier_connector.by_idurl(supplier_idurl)
             if not sc:
                 lg.warn('SKIP, supplier connector for supplier %s not exist' % supplier_idurl)
@@ -578,7 +582,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier')
+            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier current_suppliers=%r' % contactsdb.suppliers())
         from p2p import network_connector
         if network_connector.A().state is not 'CONNECTED':
             if _Debug:
@@ -626,7 +630,7 @@ class FireHire(automat.Automat):
             lg.warn('did not found position for new supplier to be hired on')
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)
-        if not family_position:
+        if family_position is None:
             lg.warn('unknown family_position from supplier results, will pick first empty spot')
             position = -1
             old_idurl = None
@@ -652,7 +656,7 @@ class FireHire(automat.Automat):
         from main import control
         control.on_suppliers_changed(current_suppliers)
         if family_position < 0:
-            lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % new_idurl)
+            lg.info('ADDED NEW SUPPLIER : %s' % new_idurl)
             events.send('supplier-modified', dict(
                 new_idurl=new_idurl,
                 old_idurl=None,
@@ -662,7 +666,7 @@ class FireHire(automat.Automat):
             ))
         else:
             if old_idurl:
-                lg.out(2, '!!!!!!!!!!! SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (family_position, old_idurl, new_idurl))
+                lg.info('SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (family_position, old_idurl, new_idurl))
                 events.send('supplier-modified', dict(
                     new_idurl=new_idurl,
                     old_idurl=old_idurl,
@@ -671,7 +675,7 @@ class FireHire(automat.Automat):
                     family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
             else:
-                lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
+                lg.info('REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
                 events.send('supplier-modified', dict(
                     new_idurl=new_idurl,
                     old_idurl=None,
@@ -714,7 +718,7 @@ class FireHire(automat.Automat):
             events.send('supplier-modified', dict(
                 new_idurl=None, old_idurl=supplier_idurl, position=position,
             ))
-        lg.out(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
+        lg.info('REMOVED SOME SUPPLIERS : %d' % len(self.dismiss_list))
 
     def doDisconnectSuppliers(self, *args, **kwargs):
         """
@@ -744,6 +748,9 @@ class FireHire(automat.Automat):
         Action method.
         """
         supplier_idurl, _ = args[0]
+        supplier_idurl = id_url.field(supplier_idurl)
+        if _Debug:
+            lg.args(_DebugLevel, supplier_idurl=supplier_idurl, dismiss_list=self.dismiss_list)
         sc = supplier_connector.by_idurl(supplier_idurl)
         if supplier_idurl in self.dismiss_list:
             self.dismiss_list.remove(supplier_idurl)
@@ -804,6 +811,7 @@ class FireHire(automat.Automat):
         self.automat('restart')
 
     def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
+        idurl = id_url.field(idurl)
         lg.out(14, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')

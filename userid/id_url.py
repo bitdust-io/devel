@@ -45,7 +45,6 @@ correctly reply to him and send stored data back when he requests.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import six
 
 #------------------------------------------------------------------------------
 
@@ -55,6 +54,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import os
+import sys
 import tempfile
 
 #------------------------------------------------------------------------------
@@ -169,7 +169,8 @@ def identity_cached(id_obj):
         first_identity_file_path = os.path.join(user_path, '0')
         local_fs.WriteBinaryFile(first_identity_file_path, id_obj.serialize())
         if _Debug:
-            lg.out(_DebugLevel, '        wrote first item to identity history: %r' % first_identity_file_path)
+            lg.out(_DebugLevel, '        wrote first item for user %r in identity history: %r' % (
+                user_name, first_identity_file_path))
     else:
         user_path = _KnownUsers[pub_key]
         user_identity_files = sorted(map(int, os.listdir(user_path)))
@@ -177,9 +178,9 @@ def identity_cached(id_obj):
         xmlsrc = local_fs.ReadBinaryFile(latest_identity_file_path)
         latest_id_obj = identity.identity(xmlsrc=xmlsrc)
         if latest_id_obj.getPublicKey() != id_obj.getPublicKey():
-            raise Exception('identity history for user %r is broken, public key not matching')
+            raise Exception('identity history for user %r is broken, public key not matching' % user_name)
         if latest_id_obj.getIDName() != id_obj.getIDName():
-            raise Exception('identity history for user %r is broken, user name not matching')
+            lg.warn('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName(), ))
         latest_sources = list(map(lambda i: i.to_bin(), latest_id_obj.getSources()))
         new_sources = list(map(lambda i: i.to_bin(), id_obj.getSources()))
         if latest_sources == new_sources:
@@ -221,6 +222,7 @@ def identity_cached(id_obj):
 
 #------------------------------------------------------------------------------
 
+
 def field(idurl):
     """
     Translates string into `ID_URL_FIELD` object.
@@ -229,7 +231,7 @@ def field(idurl):
     global _KnownIDURLs
     if isinstance(idurl, ID_URL_FIELD):
         return idurl
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if idurl in [None, 'None', '', b'None', b'', False, ]:
         return ID_URL_FIELD(idurl)
     idurl = strng.to_bin(idurl.strip())
     if idurl not in _KnownIDURLs:
@@ -261,7 +263,7 @@ def to_bin(idurl):
     """
     if isinstance(idurl, ID_URL_FIELD):
         return idurl.to_bin()
-    if idurl in [None, 'None', '', b'None', b'', ]:
+    if idurl in [None, 'None', '', b'None', b'', False, ]:
         return b''
     return strng.to_bin(idurl)
 
@@ -329,6 +331,50 @@ def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False)
         return dict_object.get(to_bin(idurl), default)
     return dict_object.get(idurl, default)
 
+
+def is_cached(idurl):
+    """
+    Return True if given identity was already cached.
+    """
+    global _KnownIDURLs
+    if isinstance(idurl, ID_URL_FIELD):
+        idurl = idurl.to_bin()
+    else:
+        idurl = strng.to_bin(idurl)
+    cached = idurl in _KnownIDURLs
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, cached=cached)
+    return cached
+
+
+def is_empty(idurl):
+    """
+    Return True if given input is None, empty string or empty ID_URL_FIELD object.
+    """
+    if isinstance(idurl, ID_URL_FIELD):
+        return not bool(idurl)
+    if idurl in [None, 'None', '', b'None', b'', False, ]:
+        return True
+    return bool(idurl)
+
+
+def is_some_empty(iterable_object):
+    """
+    Returns True if given iterable_object contains some empty idurl field.
+    """
+    return is_in(ID_URL_FIELD(b''), iterable_object=iterable_object, as_field=True, as_bin=False)
+
+
+def empty_count(iterable_object):
+    """
+    Returns number of empty idurl fields or empty strings found in given `iterable_object`.
+    """
+    count = 0
+    for idurl in iterable_object:
+        if is_empty(idurl):
+            count += 1
+    return count
+
 #------------------------------------------------------------------------------
 
 class ID_URL_FIELD(object):
@@ -338,47 +384,56 @@ class ID_URL_FIELD(object):
         if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
         else:
-            if idurl in [None, 'None', '', b'None', b'', ]:
+            if idurl in [None, 'None', '', b'None', b'', False, ]:
                 self.current = b''
             else:
                 self.current = strng.to_bin(idurl.strip())
         self.current_as_string = strng.to_text(self.current)
         self.current_id = global_id.idurl2glob(self.current)
         if _Debug:
-            lg.out(_DebugLevel, 'NEW ID_URL_FIELD: %r with id=%r' % (self.current, id(self)))
+            lg.out(_DebugLevel, 'NEW ID_URL_FIELD(%r) with id=%r' % (self.current, id(self)))
 
     def __del__(self):
         try:
             if _Debug:
-                lg.out(_DebugLevel, 'DELETED ID_URL_FIELD: %r with id=%r' % (self.current, id(self)))
+                lg.out(_DebugLevel, 'DELETED ID_URL_FIELD(%r) with id=%r' % (self.current, id(self)))
         except:
             lg.exc()
 
     def __eq__(self, idurl):
-        # first compare as strings
-        if isinstance(idurl, ID_URL_FIELD) and idurl.current == self.current:
-            if _Debug:
-                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
-            return True
-        if isinstance(idurl, six.binary_type) and idurl == self.current:
-            if _Debug:
-                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
-            return True
-        if isinstance(idurl, six.text_type) and strng.to_bin(idurl) == self.current:
-            if _Debug:
-                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
-            return True
+        # always check type : must be `ID_URL_FIELD`
+        if not isinstance(idurl, ID_URL_FIELD):
+            # to be able to compare with empty value lets make an exception
+            if idurl in [None, 'None', '', b'None', b'', False, ]:
+                return not bool(self.current)
+            # in other cases must raise an exception
+            caller_method = sys._getframe().f_back.f_code.co_name
+            if caller_method.count('lambda'):
+                caller_method = sys._getframe(1).f_back.f_code.co_name
+            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
+                self.current_as_string, idurl, type(idurl)))
+            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            raise exc
+
+        # could be empty field also
         if not idurl:
             return not bool(self.current)
-        # now we must compare both objects, so translate to `ID_URL_FIELD`
-        if not isinstance(idurl, ID_URL_FIELD):
-            idurl = ID_URL_FIELD(idurl)
+
         # check if we know both sources
         my_pub_key = self.to_public_key(raise_error=False) 
         other_pub_key = idurl.to_public_key(raise_error=False)
         if my_pub_key is None or other_pub_key is None:
-            # if we do not know some of the sources : compare as strings
-            return self.current == idurl.current
+            # if we do not know some of the sources - so can't be sure
+            caller_method = sys._getframe().f_back.f_code.co_name
+            if caller_method.count('lambda') or caller_method.startswith('_'):
+                caller_method = sys._getframe(1).f_back.f_code.co_name
+            if my_pub_key is None:
+                exc = KeyError('unknown idurl: %r' % self.current)
+            else:
+                exc = KeyError('unknown idurl: %r' % idurl.current)
+            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            raise exc
+
         # now compare based on public key
         result = (other_pub_key == my_pub_key)
         if _Debug:
@@ -386,30 +441,39 @@ class ID_URL_FIELD(object):
         return result
 
     def __ne__(self, idurl):
-        # first compare as strings
-        if isinstance(idurl, ID_URL_FIELD) and idurl.current == self.current:
-            if _Debug:
-                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
-            return False
-        if isinstance(idurl, six.binary_type) and idurl == self.current:
-            if _Debug:
-                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
-            return False
-        if isinstance(idurl, six.text_type) and strng.to_bin(idurl) == self.current:
-            if _Debug:
-                lg.args(_DebugLevel, idurl=idurl, current=self.current, result=True)
-            return False
+        # always check type : must be `ID_URL_FIELD`
+        if not isinstance(idurl, ID_URL_FIELD):
+            # to be able to compare with empty value lets make an exception
+            if idurl in [None, 'None', '', b'None', b'', False, ]:
+                return bool(self.current)
+            # in other cases must raise an exception
+            caller_method = sys._getframe().f_back.f_code.co_name
+            if caller_method.count('lambda'):
+                caller_method = sys._getframe(1).f_back.f_code.co_name
+            exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
+                self.current_as_string, idurl, type(idurl)))
+            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            raise exc
+
+        # could be empty field also
         if not idurl:
             return bool(self.current)
-        # now we must compare both objects, so translate to `ID_URL_FIELD`
-        if not isinstance(idurl, ID_URL_FIELD):
-            idurl = ID_URL_FIELD(idurl)
+
         # check if we know both sources
-        my_pub_key = self.to_public_key(raise_error=False) 
-        other_pub_key = idurl.to_public_key(raise_error=False)
+        my_pub_key = self.to_public_key(raise_error=True) 
+        other_pub_key = idurl.to_public_key(raise_error=True)
         if my_pub_key is None or other_pub_key is None:
-            # if we do not know some of the sources : compare as strings
-            return self.current != idurl.current
+            # if we do not know some of the sources - so can't be sure
+            caller_method = sys._getframe().f_back.f_code.co_name
+            if caller_method.count('lambda') or caller_method.startswith('_'):
+                caller_method = sys._getframe(1).f_back.f_code.co_name
+            if my_pub_key is None:
+                exc = KeyError('unknown idurl: %r' % self.current)
+            else:
+                exc = KeyError('unknown idurl: %r' % idurl.current)
+            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            raise exc
+
         # now compare based on public key
         result = (other_pub_key != my_pub_key)
         if _Debug:
@@ -417,13 +481,12 @@ class ID_URL_FIELD(object):
         return result
 
     def __hash__(self):
-        # this trick should make `idurl in some_dictionary` check work correctly
+        # this trick should make `idurl in some_dictionary` work correctly
         # if idurl1 and idurl2 are different sources of same identity they both must be matching
-        # ... unfortunately that doesn't work
-        # pub_key = self.to_public_key()
-        # hsh = pub_key.__hash__()
+        # so it must never happen like that: (idurl1 in some_dictionary) and (idurl2 in some_dictionary)
         # same check you can do in a different way: `id_url.is_in(idurl, some_dictionary)`
-        hsh = self.current.__hash__()
+        pub_key = self.to_public_key()
+        hsh = pub_key.__hash__()
         if _Debug:
             lg.args(_DebugLevel, current=self.current, hash=hsh)
         return hsh
@@ -482,8 +545,11 @@ class ID_URL_FIELD(object):
         if self.current not in _KnownIDURLs:
             if not raise_error:
                 return None
-            exc = Exception('unknown idurl: %r' % self.current)
-            lg.exc(exc_value=exc)
+            caller_method = sys._getframe().f_back.f_code.co_name
+            if caller_method.count('lambda') or caller_method.startswith('_'):
+                caller_method = sys._getframe(1).f_back.f_code.co_name
+            exc = KeyError('unknown idurl: %r' % self.current)
+            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
             raise exc
         pub_key = _KnownIDURLs[self.current]
         return pub_key

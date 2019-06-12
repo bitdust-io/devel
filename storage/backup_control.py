@@ -86,7 +86,7 @@ from crypt import key
 from crypt import my_keys
 
 from userid import global_id
-from userid import my_id
+from userid import id_url
 
 from services import driver
 
@@ -319,7 +319,8 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
     try:
         block = encrypted.Unserialize(
             newpacket.Payload,
-            decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=my_id.getLocalID(), ),
+            # decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=my_id.getLocalID(), ),
+            decrypt_key=list_files_global_id['key_id'],
         )
         input_data = block.Data()
     except:
@@ -774,7 +775,7 @@ def RunTask():
         return False
     if len(jobs()) >= MAXIMUM_JOBS_STARTED:
         return False
-    if b'' in contactsdb.suppliers() or '' in contactsdb.suppliers():
+    if id_url.is_some_empty(contactsdb.suppliers()):
         if _Debug:
             lg.out(_DebugLevel, 'backup_control.RunTask found empty supplier, retry after 5 sec')
         reactor.callLater(5, RunTask)  # @UndefinedVariable

@@ -143,7 +143,7 @@ def supplier(index, customer_idurl=None):
     num = int(index)
     if num >= 0 and num < len(suppliers(customer_idurl=customer_idurl)):
         return suppliers(customer_idurl=customer_idurl)[num]
-    return b''
+    return id_url.field(b'')
 
 
 def all_suppliers():
@@ -206,7 +206,7 @@ def add_supplier(idurl, position=None, customer_idurl=None):
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
-        current_suppliers += [b'', ] * (1 + position - len(current_suppliers))
+        current_suppliers += [id_url.field(b''), ] * (1 + position - len(current_suppliers))
     if current_suppliers[position] and current_suppliers[position] != idurl:
         lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
             current_suppliers[position], idurl, position, customer_idurl, ))
@@ -231,11 +231,11 @@ def erase_supplier(idurl=None, position=None, customer_idurl=None):
         idurl = id_url.field(idurl)
         if idurl not in current_suppliers:
             return False
-        current_suppliers[current_suppliers.index(idurl)] = b''
+        current_suppliers[current_suppliers.index(idurl)] = id_url.field(b'')
     elif position is not None:
         if position >= len(current_suppliers):
             return False
-        current_suppliers[position] = b''
+        current_suppliers[position] = id_url.field(b'')
     else:
         return False
     update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
@@ -286,7 +286,7 @@ def customer(index):
     num = int(index)
     if num >= 0 and num < len(customers()):
         return customers()[num]
-    return b''
+    return id_url.field(b'')
 
 
 def set_customers(idlist):
@@ -585,9 +585,13 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
             if lst is None:
                 lg.warn('did not found suppliers ids at %s' % path)
                 continue
+            one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+            if not id_url.is_cached(one_customer_idurl):
+                if not identitycache.HasKey(one_customer_idurl):
+                    continue
             lst = list(map(lambda i: id_url.field(i), lst))
-            set_suppliers(lst, customer_idurl=global_id.GlobalUserToIDURL(customer_id))
-            lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
+            set_suppliers(lst, customer_idurl=one_customer_idurl)
+            lg.out(4, 'contactsdb.load_suppliers %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
         return True
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()

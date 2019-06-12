@@ -105,12 +105,8 @@ ALL_ROLES = {
         {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, 'block_size': '10 KB', },
         {'name': 'customer_2', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
-        {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2,
-            # 'min_servers': 2, 'max_servers': 2, 'known_servers': OTHER_KNOWN_ID_SERVERS,
-        },
-        {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4,
-            # 'min_servers': 2, 'max_servers': 2, 'known_servers': OTHER_KNOWN_ID_SERVERS,
-        },
+        {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
+        {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
         {'name': 'customer_backup', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_restore', 'join_network': False, 'num_suppliers': 2, },
     ],
@@ -135,7 +131,6 @@ def clean_all_nodes(event_loop, skip_checks=False):
     event_loop.run_until_complete(asyncio.gather(*[
         ts.clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customers']
     ]))
-
     print('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
 
 
@@ -201,11 +196,14 @@ def report_all_nodes(event_loop):
     print('\n\nTest report:')
 
     print('\n\nALL EXCEPTIONS:')
+    failed = False 
     for node in ALL_NODES:
-        ts.print_exceptions_one_node(node)
+        failed = failed or ts.print_exceptions_one_node(node)
 
     for node in ALL_NODES:
         ts.report_one_node(node)
+
+    assert not failed, 'found some critical errors'
 
 #------------------------------------------------------------------------------
 

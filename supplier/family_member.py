@@ -905,7 +905,7 @@ class FamilyMember(automat.Automat):
             return p2p_service.SendAck(incoming_packet)    
         try:
             another_ecc_map = inp['customer_ecc_map']
-            another_suppliers_list = inp['suppliers_list']
+            another_suppliers_list = id_url.to_bin_list(inp['suppliers_list'])
             another_revision = int(inp['transaction_revision'])
         except:
             lg.exc()

@@ -75,6 +75,7 @@ from lib import serialization
 from lib import strng
 
 from crypt import signed
+from crypt import my_keys
 
 from main import settings
 
@@ -432,6 +433,9 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, wide=False,
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
     if not key_id:
         key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias='customer')
+    if not my_keys.is_key_registered(key_id) or not my_keys.is_key_private(key_id):
+        lg.warn('key %r not exist, my "master" key to be used with ListFiles() packet' % key_id)
+        key_id = my_id.getGlobalID(key_alias='master')
     PacketID = "%s:%s" % (key_id, packetid.UniqueID(), )
     Payload = settings.ListFilesFormat()
     result = signed.Packet(
@@ -749,7 +753,7 @@ def Key(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID, info.sender_idurl))
 
 
-def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}, timeout=10, ):
+def SendKey(remote_idurl, encrypted_key_data, packet_id=None, wide=False, callbacks={}, timeout=20, ):
     if packet_id is None:
         packet_id = packetid.UniqueID()
     if _Debug:

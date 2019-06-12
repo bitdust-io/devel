@@ -91,6 +91,7 @@ from storage import backup_fs
 
 from userid import my_id
 from userid import global_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -905,6 +906,10 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
                 if io_throttle.HasPacketInSendQueue(supplierIDURL, packetID):
                     # if we do sending the packet at the moment - skip
                     continue
+                if supplierNum >= len(localArray[dataORparity]):
+                    lg.warn('wrong supplier %r position %d for customer %r' %(
+                        supplierIDURL, supplierNum, customer_idurl))
+                    continue
                 if localArray[dataORparity][supplierNum] == 1:
                     packets.append(packetID)
                     # lg.out(10, '    mark to remove %s, blockNum:%d remote:%s local:%s' % (packetID, blockNum, str(remoteArray), str(localArray)))
@@ -922,7 +927,7 @@ def ScanBlocksToSend(backupID):
     Opposite method - search for pieces which is not yet delivered to remote suppliers.
     """
     customer_idurl = packetid.CustomerIDURL(backupID)
-    if '' in contactsdb.suppliers(customer_idurl=customer_idurl) or b'' in contactsdb.suppliers(customer_idurl=customer_idurl):
+    if id_url.is_some_empty(contactsdb.suppliers(customer_idurl=customer_idurl)):
         lg.warn('found empty suppliers, SKIP')
         return {}
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
@@ -1089,12 +1094,20 @@ def GetBackupStats(backupID):
     for blockNum in remote_files()[backupID].keys():
         for supplierNum in range(len(fileNumbers)):
             if supplierNum < contactsdb.num_suppliers(customer_idurl=customer_idurl):
-                if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
-                    fileNumbers[supplierNum] += 1
-                    totalNumberOfFiles += 1
-                if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
-                    fileNumbers[supplierNum] += 1
-                    totalNumberOfFiles += 1
+                if supplierNum < len(remote_files()[backupID][blockNum]['D']):
+                    if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
+                        fileNumbers[supplierNum] += 1
+                        totalNumberOfFiles += 1
+                else:
+                    lg.warn('wrong supplier position %d for customer %r in backup Data matrix, backupID=%r' % (
+                        supplierNum, customer_idurl, backupID))
+                if supplierNum < len(remote_files()[backupID][blockNum]['P']):
+                    if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
+                        fileNumbers[supplierNum] += 1
+                        totalNumberOfFiles += 1
+                else:
+                    lg.warn('wrong supplier position %d for customer %r in backup Parity matrix, backupID=%r' % (
+                        supplierNum, customer_idurl, backupID))
     statsArray = []
     for supplierNum in range(contactsdb.num_suppliers(customer_idurl=customer_idurl)):
         if maxBlockNum > -1:

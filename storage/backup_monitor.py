@@ -111,6 +111,7 @@ from storage import backup_control
 
 from userid import global_id
 from userid import my_id
+from userid import id_url
 
 from p2p import online_status
 
@@ -402,7 +403,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        if '' in contactsdb.suppliers() or b'' in contactsdb.suppliers():
+        if id_url.is_some_empty(contactsdb.suppliers()):
             if _Debug:
                 lg.out(_DebugLevel, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
             self.automat('restart')

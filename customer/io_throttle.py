@@ -82,6 +82,7 @@ from main import settings
 
 from userid import my_id
 from userid import global_id
+from userid import id_url
 
 from p2p import commands
 from p2p import p2p_service
@@ -928,6 +929,7 @@ class IOThrottle:
         self.paintFunc = None
 
     def GetSupplierQueue(self, supplierIDURL):
+        supplierIDURL = id_url.field(supplierIDURL)
         return self.supplierQueues.get(supplierIDURL)
 
     def ListSupplierQueues(self):
@@ -937,7 +939,7 @@ class IOThrottle:
         self.paintFunc = func
 
     def DeleteSuppliers(self, suppliers_IDURLs):
-        for supplierIDURL in suppliers_IDURLs:
+        for supplierIDURL in id_url.to_list(suppliers_IDURLs):
             if supplierIDURL:
                 if supplierIDURL in self.supplierQueues:
                     self.supplierQueues[supplierIDURL].RemoveSupplierWork()
@@ -945,16 +947,18 @@ class IOThrottle:
 
     def DeleteBackupSendings(self, backupName):
         # lg.out(10, 'io_throttle.DeleteBackupSendings for %s' % backupName)
-        for supplierIdentity in self.supplierQueues.keys():
-            self.supplierQueues[supplierIdentity].DeleteBackupSendings(backupName)
+        for supplierQueue in self.supplierQueues.values():
+            supplierQueue.DeleteBackupSendings(backupName)
 
     def DeleteBackupRequests(self, backupName):
         # lg.out(10, 'io_throttle.DeleteBackupRequests for %s' % backupName)
-        for supplierIdentity in self.supplierQueues.keys():
-            self.supplierQueues[supplierIdentity].DeleteBackupRequests(backupName)
+        for supplierQueue in self.supplierQueues.values():
+            supplierQueue.DeleteBackupRequests(backupName)
 
     def QueueSendFile(self, fileName, packetID, remoteID, ownerID, callOnAck=None, callOnFail=None):
         #out(10, "io_throttle.QueueSendFile %s to %s" % (packetID, nameurl.GetName(remoteID)))
+        remoteID = id_url.field(remoteID)
+        ownerID = id_url.field(ownerID)
         if not os.path.exists(fileName):
             lg.err("%s not exist" % fileName)
             if callOnFail is not None:
@@ -971,6 +975,9 @@ class IOThrottle:
     def QueueRequestFile(self, callOnReceived, creatorID, packetID, ownerID, remoteID):
         # make sure that we don't actually already have the file
         # if packetID != settings.BackupInfoFileName():
+        remoteID = id_url.field(remoteID)
+        ownerID = id_url.field(ownerID)
+        creatorID = id_url.field(creatorID)
         if packetID not in [
                 settings.BackupInfoFileName(),
                 settings.BackupInfoFileNameOld(),
@@ -994,8 +1001,8 @@ class IOThrottle:
         """
         Called from outside to notify about single file sending result.
         """
-        for supplierIdentity in self.supplierQueues.keys():
-            self.supplierQueues[supplierIdentity].OutboxStatus(pkt_out, status, error)
+        for supplierQueue in self.supplierQueues.values():
+            supplierQueue.OutboxStatus(pkt_out, status, error)
         return False
 
     def IsSendingQueueEmpty(self):
@@ -1027,6 +1034,7 @@ class IOThrottle:
         Return True if that packet is found in the sending queue to given
         remote peer.
         """
+        supplierIDURL = id_url.field(supplierIDURL)
         if supplierIDURL not in self.supplierQueues:
             return False
         return packetID in self.supplierQueues[supplierIDURL].fileSendDict
@@ -1036,6 +1044,7 @@ class IOThrottle:
         Return True if that packet is found in the request queue from given
         remote peer.
         """
+        supplierIDURL = id_url.field(supplierIDURL)
         if supplierIDURL not in self.supplierQueues:
             return False
         return packetID in self.supplierQueues[supplierIDURL].fileRequestDict
@@ -1045,6 +1054,7 @@ class IOThrottle:
         Same to ``HasPacketInSendQueue()``, but looks for packets for the whole
         backup, not just a single packet .
         """
+        supplierIDURL = id_url.field(supplierIDURL)
         if supplierIDURL not in self.supplierQueues:
             return False
         for packetID in self.supplierQueues[supplierIDURL].fileSendDict.keys():
@@ -1057,6 +1067,7 @@ class IOThrottle:
         Same to ``HasPacketInRequestQueue()``, but looks for packets for the
         whole backup, not just a single packet .
         """
+        supplierIDURL = id_url.field(supplierIDURL)
         if supplierIDURL not in self.supplierQueues:
             return False
         for packetID in self.supplierQueues[supplierIDURL].fileRequestDict.keys():
@@ -1092,6 +1103,7 @@ class IOThrottle:
         This method return True if you can put more outgoing files to
         that man in the ``throttle()``.
         """
+        supplierIDURL = id_url.field(supplierIDURL)
         if supplierIDURL not in self.supplierQueues:
             # no queue opened to this man, so the queue is ready
             return True
@@ -1101,6 +1113,7 @@ class IOThrottle:
         """
         Return number of requested packets from given user.
         """
+        supplierIDURL = id_url.field(supplierIDURL)
         if supplierIDURL not in self.supplierQueues:
             # no queue opened to this man, so length is zero
             return 0
@@ -1110,6 +1123,7 @@ class IOThrottle:
         """
         Return number of packets sent to this guy.
         """
+        supplierIDURL = id_url.field(supplierIDURL)
         if supplierIDURL not in self.supplierQueues:
             # no queue opened to this man, so length is zero
             return 0

@@ -257,22 +257,25 @@ class IdRotator(automat.Automat):
         self.old_sources = my_id.getLocalIdentity().getSources()
         self.known_servers = known_servers.by_host()
         self.preferred_servers = kwargs.get('preferred_servers', {})
+        if _Debug:
+            lg.args(_DebugLevel, preferred_servers=self.preferred_servers)
         self.force = kwargs.get('force', False)
         self.new_revision = kwargs.get('new_revision')
         self.rotated = False
         if not self.preferred_servers:
             try:
-                for srv in str(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
+                for srv in strng.to_text(config.conf().getData('services/identity-propagate/preferred-servers')).split(','):
                     if srv.strip():
                         host, web_port, tcp_port = srv.strip().split(':')
-                        self.preferred_servers[host] = (web_port, tcp_port, )
+                        self.preferred_servers[host] = (int(web_port), int(tcp_port), )
             except:
-                pass
+                lg.exc()
+        self.preferred_servers = {strng.to_bin(k): v for k,v in self.preferred_servers.items()}
         self.current_servers = []
         for idurl in my_id.getLocalIdentity().getSources():
             self.current_servers.append(strng.to_bin(nameurl.GetHost(idurl)))
         if _Debug:
-            lg.args(_DebugLevel, known_servers=self.known_servers, preferred_servers=self.preferred_servers)
+            lg.args(_DebugLevel, known_servers=self.known_servers, preferred_servers=self.preferred_servers, current_servers=self.current_servers)
 
     def doPingMyIDServers(self, *args, **kwargs):
         """
@@ -296,10 +299,11 @@ class IdRotator(automat.Automat):
             self.automat('no-id-servers-found')
             return
 
+        target_servers = {strng.to_bin(k): v for k,v in target_servers.items()}
         target_hosts = list(target_servers.keys())
         random.shuffle(target_hosts)
         if _Debug:
-            lg.args(_DebugLevel, target_hosts=target_hosts, current_servers=self.current_servers)
+            lg.args(_DebugLevel, target_hosts=target_hosts, current_servers=self.current_servers, target_servers=target_servers)
 
         def _new_idurl_exist(idsrc, new_idurl, pos):
             if _Debug:
@@ -358,10 +362,11 @@ class IdRotator(automat.Automat):
             webport, tcpport = target_servers[host]
             if webport == 80:
                 webport = ''
+            tcpport = int(tcpport)
             server_url = nameurl.UrlMake('http', strng.to_text(host), webport, '')
             if _Debug:
-                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._ping_one_server at %s:%s known tcp port is %d' % (
-                    server_url, webport, tcpport, ))
+                lg.out(_DebugLevel, 'id_rotator.doSelectNewIDServer._ping_one_server at %s known tcp port is %d' % (
+                    server_url, tcpport, ))
             d = net_misc.getPageTwisted(server_url, timeout=10)
             d.addCallback(_server_replied, host, pos)
             d.addErrback(_server_failed, host, pos)
@@ -381,10 +386,10 @@ class IdRotator(automat.Automat):
             config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources(),
         )
         current_sources = list(map(lambda i: i.to_bin(), my_id.getLocalIdentity().getSources()))
-        if _Debug:
-            lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, )
         new_sources = []
         new_idurl = args[0]
+        if _Debug:
+            lg.args(_DebugLevel, current_sources=current_sources, alive_idurls=self.alive_idurls, new_idurl=new_idurl, )
         # first get rid of "dead" sources
         for current_idurl in current_sources:
             if current_idurl not in self.alive_idurls:
@@ -396,6 +401,8 @@ class IdRotator(automat.Automat):
         # and add new "good" source to the end of the list
         if new_idurl and new_idurl not in new_sources: 
             new_sources.append(new_idurl)
+        if _Debug:
+            lg.args(_DebugLevel, new_sources=new_sources, min_servers=min_servers, max_servers=max_servers)
         if len(new_sources) > max_servers:
             possible_sources = list(new_sources)
             new_sources = new_sources[max(0, len(new_sources) - max_servers):]
@@ -559,9 +566,9 @@ class IdRotator(automat.Automat):
             _, host, _, _ = nameurl.UrlParse(idurl)
             tcpport = None
             if host in self.preferred_servers:
-                tcpport = self.preferred_servers[host][1]
+                tcpport = int(self.preferred_servers[host][1])
             if not tcpport and host in self.known_servers:
-                tcpport = self.known_servers[host][1]
+                tcpport = int(self.known_servers[host][1])
             if not tcpport:
                 tcpport = settings.IdentityServerPort()
             srvhost = net_misc.pack_address((host, tcpport, ))

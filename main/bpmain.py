@@ -165,11 +165,6 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
 #        patchReactorCallLater(reactor)
 #        monitorDelayedCalls(reactor)
 
-#    #---plugins---
-#    from plugins import plug
-#    plug.init()
-#    reactor.addSystemEventTrigger('before', 'shutdown', plug.shutdown)
-
     lg.out(2, "    python executable is: %s" % sys.executable)
     lg.out(2, "    python version is:\n%s" % sys.version)
     lg.out(2, "    python sys.path is:\n                %s" % ('\n                '.join(sys.path)))

@@ -155,8 +155,8 @@ class Packet(object):
         (without Signature).
         Just to be able to generate a hash of the whole packet .
         """
-        sep = b"-"
-        stufftosum = b""
+        sep = b'-'
+        stufftosum = b''
         try:
             stufftosum += strng.to_bin(self.Command)
             stufftosum += sep

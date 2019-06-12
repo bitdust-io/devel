@@ -34,11 +34,12 @@ HTML server.
 """
 
 from __future__ import absolute_import
-import sys
+from six.moves import range
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+
+import sys
 import base64
 from time import strftime
-from six.moves import range
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport

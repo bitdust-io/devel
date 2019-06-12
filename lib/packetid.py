@@ -356,16 +356,19 @@ def KeyAlias(inp, normalize_key_alias=True):
     return str(keyAlias)
 
 
-def CustomerIDURL(backupID):
+def CustomerIDURL(backupID, as_field=True):
     """
     A wrapper for ``Split()`` method to get customer idurl from backup ID.
     """
     user, _, _ = backupID.strip().rpartition(':')
     if not user:
         from userid import my_id
-        return my_id.getLocalID()
+        if as_field:
+            return my_id.getLocalID()
+        from userid import id_url
+        return id_url.to_bin(my_id.getLocalID())
     from userid import global_id
-    return global_id.GlobalUserToIDURL(user)
+    return global_id.GlobalUserToIDURL(user, as_field=as_field)
 
 
 def RemotePath(backupID):

@@ -229,7 +229,7 @@ def config_get(key):
         {'status': 'OK',   'result': [{'type': 'positive integer', 'value': '8', 'key': 'logs/debug-level'}]}
     """
     try:
-        key = str(key).strip('/')
+        key = strng.to_text(key).strip('/')
     except:
         return ERROR('wrong key')
     if _Debug:
@@ -260,8 +260,8 @@ def config_set(key, value):
 
         {'status': 'OK', 'result': [{'type': 'positive integer', 'old_value': '8', 'value': '10', 'key': 'logs/debug-level'}]}
     """
-    key = str(key)
     from main import config
+    key = strng.to_text(key)
     v = {}
     if config.conf().exist(key):
         v['old_value'] = config.conf().getValueOfType(key)
@@ -753,8 +753,8 @@ def filemanager(json_request):
 
     WARNING: Those methods here will be deprecated and removed, use regular API methods instead.
     """
-    if not driver.is_on('service_restores'):
-        return ERROR('service_restores() is not started')
+    if not driver.is_on('service_my_data'):
+        return ERROR('service_my_data() is not started')
     from storage import filemanager_api
     return filemanager_api.process(json_request)
 
@@ -824,8 +824,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
                       ],
           u'status': u'OK'}
     """
-    if not driver.is_on('service_backups'):
-        return ERROR('service_backups() is not started')
+    if not driver.is_on('service_backup_db'):
+        return ERROR('service_backup_db() is not started')
     if _Debug:
         lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s' % (
             remote_path, key_id, recursive, all_customers, include_uploads, include_downloads, ))
@@ -970,8 +970,8 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
 def file_info(remote_path, include_uploads=True, include_downloads=True):
     """
     """
-    if not driver.is_on('service_restores'):
-        return ERROR('service_restores() is not started')
+    if not driver.is_on('service_backup_db'):
+        return ERROR('service_backup_db() is not started')
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info remote_path=%s include_uploads=%s include_downloads=%s' % (
             remote_path, include_uploads, include_downloads))
@@ -1082,8 +1082,8 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
 def file_create(remote_path, as_folder=False):
     """
     """
-    if not driver.is_on('service_backups'):
-        return ERROR('service_backups() is not started')
+    if not driver.is_on('service_backup_db'):
+        return ERROR('service_backup_db() is not started')
     if _Debug:
         lg.out(_DebugLevel, 'api.file_create remote_path=%s as_folder=%s' % (
             remote_path, as_folder, ))
@@ -1164,8 +1164,8 @@ def file_create(remote_path, as_folder=False):
 def file_delete(remote_path):
     """
     """
-    if not driver.is_on('service_backups'):
-        return ERROR('service_backups() is not started')
+    if not driver.is_on('service_backup_db'):
+        return ERROR('service_backup_db() is not started')
     if _Debug:
         lg.out(_DebugLevel, 'api.file_delete remote_path=%s' % remote_path)
     from storage import backup_fs
@@ -1302,6 +1302,11 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
     parts = global_id.NormalizeGlobalID(remote_path)
     if not parts['idurl'] or not parts['path']:
         return ERROR('invalid "remote_path" format')
+    if parts['key_alias'] == 'master':
+        is_hidden_item = parts['path'].startswith('.')
+        if not is_hidden_item:
+            if not driver.is_on('service_my_data'):
+                return ERROR('service_my_data() is not started')
     path = bpio.remotePath(parts['path'])
     pathID = backup_fs.ToID(path, iter=backup_fs.fs(parts['idurl']))
     if not pathID:
@@ -1428,8 +1433,8 @@ def files_downloads():
             'version': 'F20160427011209PM'
         }]}
     """
-    if not driver.is_on('service_restores'):
-        return ERROR('service_restores() is not started')
+    if not driver.is_on('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import restore_monitor
     if _Debug:
         lg.out(_DebugLevel, 'api.files_downloads')
@@ -1483,6 +1488,14 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
     from userid import global_id
     from crypt import my_keys
     glob_path = global_id.NormalizeGlobalID(global_id.ParseGlobalID(remote_path))
+    if glob_path['key_alias'] == 'master':
+        is_hidden_item = glob_path['path'].startswith('.')
+        if not is_hidden_item:
+            if not driver.is_on('service_my_data'):
+                return ERROR('service_my_data() is not started')
+    else:
+        if not driver.is_on('service_shared_data'):
+            return ERROR('service_shared_data() is not started')
     if packetid.Valid(glob_path['path']):
         _, pathID, version = packetid.SplitBackupID(remote_path)
         if not pathID and version:

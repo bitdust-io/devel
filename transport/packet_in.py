@@ -50,7 +50,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _PacketLogFileEnabled = True
@@ -78,6 +78,7 @@ from system import bpio
 from system import tmpfile
 
 from userid import global_id
+from userid import id_url
 
 from contacts import contactsdb
 from contacts import identitycache
@@ -186,6 +187,12 @@ def process(newpacket, info):
         lg.out(0, '        \033[0;49;92m IN %s(%s) with %d bytes from %s TID:%s\033[0m' % (
             newpacket.Command, newpacket.PacketID, info.bytes_received,
             global_id.UrlToGlobalID(info.sender_idurl), info.transfer_id), log_name='packet', showtime=True)
+    # we must know recipient identity
+    if not id_url.is_cached(newpacket.RemoteID):
+        d = identitycache.immediatelyCaching(newpacket.RemoteID)
+        d.addCallback(lambda _: process(newpacket, info))
+        d.addErrback(lambda err: lg.err('RemoteID is unknown, failed caching remote %s identity: %s' % (newpacket.RemoteID, str(err))))
+        return d
     if newpacket.Command == commands.Identity():
         if newpacket.RemoteID != my_id.getLocalID():
             if _Debug:
@@ -222,6 +229,12 @@ def handle(newpacket, info):
     handled = False
     # check that signed by a contact of ours
     if not newpacket.Valid():
+        if _Debug:
+            lg.args(_DebugLevel,
+                    PacketID=newpacket.PacketID,
+                    OwnerID=newpacket.OwnerID,
+                    CreatorID=newpacket.CreatorID,
+                    RemoteID=newpacket.RemoteID, )
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
             info.proto, info.host, newpacket))
         return None

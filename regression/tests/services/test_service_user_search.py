@@ -21,8 +21,6 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
-import os
-import pytest
 import requests
 
 from ..testsupport import tunnel_url
