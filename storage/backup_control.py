@@ -86,7 +86,7 @@ from crypt import key
 from crypt import my_keys
 
 from userid import global_id
-from userid import my_id
+from userid import id_url
 
 from services import driver
 
@@ -775,7 +775,7 @@ def RunTask():
         return False
     if len(jobs()) >= MAXIMUM_JOBS_STARTED:
         return False
-    if b'' in contactsdb.suppliers() or '' in contactsdb.suppliers():
+    if id_url.is_some_empty(contactsdb.suppliers()):
         if _Debug:
             lg.out(_DebugLevel, 'backup_control.RunTask found empty supplier, retry after 5 sec')
         reactor.callLater(5, RunTask)  # @UndefinedVariable

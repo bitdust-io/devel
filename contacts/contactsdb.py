@@ -143,7 +143,7 @@ def supplier(index, customer_idurl=None):
     num = int(index)
     if num >= 0 and num < len(suppliers(customer_idurl=customer_idurl)):
         return suppliers(customer_idurl=customer_idurl)[num]
-    return b''
+    return id_url.field(b'')
 
 
 def all_suppliers():
@@ -206,7 +206,7 @@ def add_supplier(idurl, position=None, customer_idurl=None):
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
-        current_suppliers += [b'', ] * (1 + position - len(current_suppliers))
+        current_suppliers += [id_url.field(b''), ] * (1 + position - len(current_suppliers))
     if current_suppliers[position] and current_suppliers[position] != idurl:
         lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
             current_suppliers[position], idurl, position, customer_idurl, ))
@@ -231,11 +231,11 @@ def erase_supplier(idurl=None, position=None, customer_idurl=None):
         idurl = id_url.field(idurl)
         if idurl not in current_suppliers:
             return False
-        current_suppliers[current_suppliers.index(idurl)] = b''
+        current_suppliers[current_suppliers.index(idurl)] = id_url.field(b'')
     elif position is not None:
         if position >= len(current_suppliers):
             return False
-        current_suppliers[position] = b''
+        current_suppliers[position] = id_url.field(b'')
     else:
         return False
     update_suppliers(idlist=current_suppliers, customer_idurl=customer_idurl)
@@ -286,7 +286,7 @@ def customer(index):
     num = int(index)
     if num >= 0 and num < len(customers()):
         return customers()[num]
-    return b''
+    return id_url.field(b'')
 
 
 def set_customers(idlist):

@@ -80,6 +80,7 @@ from lib import packetid
 from contacts import contactsdb
 
 from userid import my_id
+from userid import id_url
 
 from main import settings
 
@@ -215,7 +216,7 @@ class DataSender(automat.Automat):
                     lg.out(_DebugLevel + 6, '    skip sending to another customer: %r' % customer_idurl)
                 continue
             known_suppliers = contactsdb.suppliers(customer_idurl)
-            if b'' in known_suppliers or '' in known_suppliers:
+            if id_url.is_some_empty(known_suppliers):
                 if _Debug:
                     lg.out(_DebugLevel, '        found empty supplier for customer %r, SKIP' % customer_idurl)
                 continue

@@ -332,7 +332,7 @@ class FireHire(automat.Automat):
         # lg.out(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
         # contactsdb.num_suppliers(), len(self.dismiss_list),
         # settings.getSuppliersNumberDesired()))
-        if b'' in contactsdb.suppliers() or '' in contactsdb.suppliers():
+        if id_url.is_some_empty(contactsdb.suppliers()):
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty supplier!!!')
             return True
@@ -384,7 +384,7 @@ class FireHire(automat.Automat):
             return True
         desired_number = settings.getSuppliersNumberDesired()
         needed_suppliers = current_suppliers[:desired_number]
-        empty_suppliers = needed_suppliers.count('')
+        empty_suppliers = needed_suppliers.count(id_url.field(b''))
         # if '' in needed_suppliers:
         # lg.warn('found empty suppliers!!!')
         # return True
@@ -412,7 +412,7 @@ class FireHire(automat.Automat):
         Condition method.
         """
         sup_list = contactsdb.suppliers()
-        return contactsdb.num_suppliers() > 0 and sup_list.count(None) < contactsdb.num_suppliers()
+        return contactsdb.num_suppliers() > 0 and sup_list.count(id_url.field(b'')) < contactsdb.num_suppliers()
 
     def doSaveConfig(self, *args, **kwargs):
         """
@@ -486,12 +486,15 @@ class FireHire(automat.Automat):
         redundant_suppliers = set()
         # if you have some empty suppliers need to get rid of them,
         # but no need to dismiss anyone at the moment.
-        if '' in contactsdb.suppliers() or None in contactsdb.suppliers() or b'' in contactsdb.suppliers():
+        my_suppliers = contactsdb.suppliers()
+        if _Debug:
+            lg.args(_DebugLevel, my_suppliers=my_suppliers)
+        if id_url.is_some_empty(my_suppliers):
             lg.warn('SKIP, found empty supplier')
             self.automat('made-decision', [])
             return
         number_desired = settings.getSuppliersNumberDesired()
-        for supplier_idurl in contactsdb.suppliers():
+        for supplier_idurl in my_suppliers:
             sc = supplier_connector.by_idurl(supplier_idurl)
             if not sc:
                 lg.warn('SKIP, supplier connector for supplier %s not exist' % supplier_idurl)
@@ -579,7 +582,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier')
+            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier current_suppliers=%r' % contactsdb.suppliers())
         from p2p import network_connector
         if network_connector.A().state is not 'CONNECTED':
             if _Debug:
@@ -627,7 +630,7 @@ class FireHire(automat.Automat):
             lg.warn('did not found position for new supplier to be hired on')
         if new_idurl in current_suppliers:
             raise Exception('%s is already supplier' % new_idurl)
-        if not family_position:
+        if family_position is None:
             lg.warn('unknown family_position from supplier results, will pick first empty spot')
             position = -1
             old_idurl = None
