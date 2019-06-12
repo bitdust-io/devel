@@ -5,7 +5,7 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=20, delay=5):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3):
     count = 0
     num_connected = 0
     while True:
