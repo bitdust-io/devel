@@ -78,7 +78,8 @@ class EmployerService(LocalService):
     def health_check(self):
         from contacts import contactsdb
         from raid import eccmap
-        missed_suppliers = contactsdb.suppliers().count('')
+        from userid import id_url
+        missed_suppliers = id_url.empty_count(contactsdb.suppliers())
         # critical amount of suppliers must be already in the family to have that service running
         return missed_suppliers <= eccmap.Current().CorrectableErrors
 

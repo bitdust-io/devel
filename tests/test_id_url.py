@@ -225,7 +225,9 @@ class TestIDURL(TestCase):
         self.assertIn(b'', l)
         self.assertIn('', l)
         self.assertIn(None, l)
+        self.assertTrue(id_url.is_some_empty(l))
         self.assertEqual(l.count(None), 4)
+        self.assertEqual(id_url.empty_count(l), 4)
         self.assertTrue(None in [id_url.field(None), ])
         self.assertTrue(None in [id_url.field(b''), ])
         self.assertTrue(b'' in [id_url.field(None), ])
@@ -284,6 +286,9 @@ class TestIDURL(TestCase):
         self.assertTrue(l[2] == l[3])
         self.assertTrue(l[0] != l[3])
         self.assertIn(id_url.field(frank_1), l)
+        self.assertFalse(id_url.is_some_empty(l))
+        self.assertEqual(l.count(None), 0)
+        self.assertEqual(id_url.empty_count(l), 0)
 
     def test_in_dict(self):
         self._cache_identity('alice')

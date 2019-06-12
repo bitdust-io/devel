@@ -184,7 +184,7 @@ class SocketTransport(Transport):
     def receive(self, preprocess=None):
         e_size = struct.calcsize("!Q")
         r_size = 0
-        data = b""
+        data = b''
         while r_size < e_size:
             msg = self.socket.recv(e_size - r_size)
             if not msg:
@@ -194,7 +194,7 @@ class SocketTransport(Transport):
         e_size = struct.unpack("!Q", data)[0]
 
         r_size = 0
-        data = b""
+        data = b''
         while r_size < e_size:
             msg = self.socket.recv(e_size - r_size)
             if not msg:
