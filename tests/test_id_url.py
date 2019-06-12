@@ -227,7 +227,7 @@ class TestIDURL(TestCase):
         self.assertIn(None, l)
         self.assertTrue(id_url.is_some_empty(l))
         self.assertEqual(l.count(None), 4)
-        self.assertEqual(id_url.empty_count(l), 4)
+        self.assertEqual(id_url.empty_count(l), 6)
         self.assertTrue(None in [id_url.field(None), ])
         self.assertTrue(None in [id_url.field(b''), ])
         self.assertTrue(b'' in [id_url.field(None), ])

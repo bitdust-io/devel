@@ -7,9 +7,11 @@ from .testsupport import tunnel_url
 
 def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=20, delay=5):
     count = 0
+    num_connected = 0
     while True:
         if count > attempts:
-            assert False, f'{customer} failed to hire correct number of suppliers after many attempts'
+            assert False, f'{customer} failed to hire correct number of suppliers after many attempts. currently %d, expected min %d and max %d' % (
+                num_connected, expected_min_suppliers, expected_max_suppliers, )
         response = requests.get(url=tunnel_url(customer, 'supplier/list/v1'))
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
@@ -33,14 +35,16 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return response.json()
 
 
-def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=20, delay=3, accepted_mistakes=1):
+def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=1):
 
     def _validate(obs):
         response = None
+        num_suppliers = 0
         count = 0
         while True:
             if count >= retries:
-                print('\nfailed after %d retries' % count)
+                print('\nDHT info still wrong after %d retries, currently see %d suppliers, but expected %d' % (
+                    count, num_suppliers, expected_suppliers_number))
                 return False
             response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
             assert response.status_code == 200
@@ -51,7 +55,8 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
                 time.sleep(delay)
                 continue
             ss = response.json()['result']['suppliers']
-            if len(ss) != expected_suppliers_number or (ss.count('') > accepted_mistakes and expected_suppliers_number > 2):
+            num_suppliers = len(ss)
+            if num_suppliers != expected_suppliers_number or (ss.count('') > accepted_mistakes and expected_suppliers_number > 2):
                 # print('\n%r' % response.json())
                 count += 1
                 time.sleep(delay)
@@ -258,7 +263,7 @@ def user_ping_v1(node, remote_node_id, timeout=30):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=5, delay=1):
+def service_info_v1(node, service_name, expected_state, attempts=30, delay=2):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
