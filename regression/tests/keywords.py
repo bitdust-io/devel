@@ -5,7 +5,7 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=20, delay=3):
     count = 0
     num_connected = 0
     while True:
@@ -35,7 +35,7 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return response.json()
 
 
-def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=1):
+def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=20, delay=3, accepted_mistakes=1):
 
     def _validate(obs):
         response = None
@@ -92,7 +92,7 @@ def file_create_v1(node, remote_path):
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
                          open_share=True, wait_result=True,
-                         attempts=50, delay=5,
+                         attempts=20, delay=3,
                          wait_job_finish=True):
     response = requests.post(
         url=tunnel_url(customer, 'file/upload/start/v1'),
@@ -124,7 +124,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
                            open_share=True, wait_result=True,
-                           attempts=50, delay=5,
+                           attempts=20, delay=3,
                            wait_tasks_finish=True):
     for i in range(attempts):
         response = requests.post(
@@ -263,7 +263,7 @@ def user_ping_v1(node, remote_node_id, timeout=30):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=30, delay=2):
+def service_info_v1(node, service_name, expected_state, attempts=20, delay=3):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
@@ -282,7 +282,7 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=2):
     print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
-def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event', timeout=10, attempts=5):
+def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event', attempts=5, timeout=10,):
     found = None
     count = 0
     while not found:
@@ -300,4 +300,3 @@ def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event
         if count >= attempts:
             assert False, f'event "{expected_event_id}" was not raised on node [{node}]'
     return found
-

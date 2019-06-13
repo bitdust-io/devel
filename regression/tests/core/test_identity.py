@@ -82,6 +82,9 @@ def test_identity_customer_backup_and_restore():
     # same when you backup your key and restore it from USB stick on another PC
     shutil.move(backup_file_directory_c2, backup_file_directory_c3)
 
+    # just to make sure all uploads to finish
+    time.sleep(5)
+
     try:
         response = requests.get(url=tunnel_url('customer_backup', 'process/stop/v1'))
         assert response.json()['status'] == 'OK', response.json()
