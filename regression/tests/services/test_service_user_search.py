@@ -26,14 +26,14 @@ import requests
 from ..testsupport import tunnel_url
 
 
-def test_search_user():
+def test_customer_1_search_customer_2():
     response = requests.get(tunnel_url('customer_1', f'user/search/customer_2/v1'), timeout=30)
     assert response.json()['status'] == 'OK', response.json()
     assert response.json()['result'][0]['nickname'] == 'customer_2'
     assert response.json()['result'][0]['result'] == 'exist'
 
 
-def test_search_user_doesnt_exists():
+def test_customer_1_search_user_doesnt_exists():
     response = requests.get(tunnel_url('customer_1', f'user/search/random_name_for_user/v1'), timeout=30)
     assert response.json()['status'] == 'OK', response.json()
     assert response.json()['result'][0]['nickname'] == 'random_name_for_user'

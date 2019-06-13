@@ -30,43 +30,7 @@ from ..keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, 
     service_info_v1, file_create_v1
 
 
-def test_replace_supplier():
-    #: TODO: investigate why files were not transfered
-    return True
-
-    supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
-    share_id_customer_1 = share_create_v1('customer_1')
-
-    filename = 'file_to_be_distributed.txt'
-    virtual_filename = filename
-
-    volume_customer_1 = '/customer_1'
-    filepath_customer_1 = f'{volume_customer_1}/{filename}'
-
-    remote_path_customer_1 = f'{share_id_customer_1}:{virtual_filename}'
-
-    run_ssh_command_and_wait('customer_1', f'echo customer_1 > {filepath_customer_1}')
-
-    file_create_v1('customer_1', remote_path_customer_1)
-
-    file_upload_start_v1('customer_1', remote_path_customer_1, filepath_customer_1)
-
-    time.sleep(15)
-
-    file_download_start_v1('customer_1', remote_path=remote_path_customer_1, destination=volume_customer_1)
-
-    response = requests.get(tunnel_url('customer_1', '/supplier/list/v1'))
-    assert response.status_code == 200
-    supplier_list = response.json()['result']
-    suppliers = set(x['idurl'] for x in supplier_list)
-    assert len(suppliers) == 2
-
-    response = requests.post(tunnel_url('customer_1', '/supplier/replace/v1'), json={'position': '0'})
-
-    # time.sleep(15)
-
-
-def test_shared_file_same_name_as_existing():
+def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
@@ -140,7 +104,7 @@ def test_shared_file_same_name_as_existing():
     assert file_1 != file_2
 
 
-def test_file_shared_from_customer_1_to_customer_4():
+def test_customer_1_share_file_to_customer_4():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 

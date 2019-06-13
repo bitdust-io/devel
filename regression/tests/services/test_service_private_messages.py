@@ -27,9 +27,10 @@ from threading import Timer
 from ..keywords import message_send_v1, message_receive_v1
 
 
-def test_send_message_customer_1_to_customer_2():
+def test_customer_1_send_message_to_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     random_string = base64.b32encode(os.urandom(20)).decode()
     random_message = {
         'random_message': random_string,

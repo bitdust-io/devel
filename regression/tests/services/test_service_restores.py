@@ -30,7 +30,7 @@ from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1
 
 
-def test_upload_download_file_with_master_customer_1():
+def test_customer_1_upload_download_file_with_master_key():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 

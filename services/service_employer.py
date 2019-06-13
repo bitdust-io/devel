@@ -50,10 +50,10 @@ class EmployerService(LocalService):
         ]
 
     def start(self):
-        from customer import fire_hire
         from main.config import conf
         from main import events
         from raid import eccmap
+        from customer import fire_hire
         eccmap.Update()
         fire_hire.A('init')
         conf().addCallback('services/customer/suppliers-number',
@@ -66,9 +66,9 @@ class EmployerService(LocalService):
         return True
 
     def stop(self):
-        from customer import fire_hire
         from main.config import conf
         from main import events
+        from customer import fire_hire
         events.remove_subscriber(self._on_supplier_modified)
         conf().removeCallback('services/customer/suppliers-number')
         conf().removeCallback('services/customer/needed-space')
