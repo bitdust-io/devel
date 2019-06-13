@@ -45,15 +45,37 @@ class ListFilesService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_customer',
+            'service_employer',
         ]
 
     def start(self):
+        from main import events
+        from userid import id_url
+        from contacts import contactsdb
         from customer import list_files_orator
         list_files_orator.A('init')
+        events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
+        events.add_subscriber(self._on_my_suppliers_failed_to_hire, 'my-suppliers-failed-to-hire')
+        if id_url.is_some_empty(contactsdb.suppliers()):
+            False
         return True
 
     def stop(self):
+        from main import events
         from customer import list_files_orator
+        events.remove_subscriber(self._on_my_suppliers_failed_to_hire, 'my-suppliers-failed-to-hire')
+        events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
         list_files_orator.Destroy()
         return True
+
+    def _on_my_suppliers_all_hired(self, evt):
+        from logs import lg
+        from services import driver
+        lg.info('all my suppliers are hired, starting service_list_files()')
+        driver.start_single('service_list_files')
+
+    def _on_my_suppliers_failed_to_hire(self, evt):
+        from logs import lg
+        from services import driver
+        lg.info('my suppliers failed to hire, stopping service_list_files()')
+        driver.stop_single('service_list_files')

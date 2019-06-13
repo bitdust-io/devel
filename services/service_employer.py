@@ -50,25 +50,39 @@ class EmployerService(LocalService):
         ]
 
     def start(self):
+        from twisted.internet.defer import Deferred
+        from logs import lg
         from main.config import conf
         from main import events
+        from contacts import contactsdb
+        from userid import id_url
         from raid import eccmap
         from customer import fire_hire
+        self.starting_deferred = Deferred()
+        self.starting_deferred.addErrback(lg.errback)
         eccmap.Update()
         fire_hire.A('init')
+        fire_hire.A().addStateChangedCallback(
+            self._on_fire_hire_ready, None, 'READY')
         conf().addCallback('services/customer/suppliers-number',
                            self._on_suppliers_number_modified)
         conf().addCallback('services/customer/needed-space',
                            self._on_needed_space_modified)
         events.add_subscriber(self._on_supplier_modified,
                               'supplier-modified')
-        self._do_cleanup_dht_suppliers()
-        return True
+        if not id_url.is_some_empty(contactsdb.suppliers()):
+            self.starting_deferred.callback(True)
+            self.starting_deferred = None
+            lg.info('all my suppliers are already hired')
+            return True
+        fire_hire.A('restart')
+        return self.starting_deferred
 
     def stop(self):
         from main.config import conf
         from main import events
         from customer import fire_hire
+        fire_hire.A().removeStateChangedCallback(self._on_fire_hire_ready)
         events.remove_subscriber(self._on_supplier_modified)
         conf().removeCallback('services/customer/suppliers-number')
         conf().removeCallback('services/customer/needed-space')
@@ -76,8 +90,8 @@ class EmployerService(LocalService):
         return True
 
     def health_check(self):
-        from contacts import contactsdb
         from raid import eccmap
+        from contacts import contactsdb
         from userid import id_url
         missed_suppliers = id_url.empty_count(contactsdb.suppliers())
         # critical amount of suppliers must be already in the family to have that service running
@@ -94,6 +108,23 @@ class EmployerService(LocalService):
             d.addErrback(self._on_my_dht_relations_failed)
         else:
             lg.warn('service service_entangled_dht is OFF')
+
+    def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
+        from userid import id_url
+        from main import events
+        from contacts import contactsdb
+        if id_url.is_some_empty(contactsdb.suppliers()):
+            events.send('my-suppliers-failed-to-hire', data=dict())
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
+                self.starting_deferred = None
+        else:
+            self._do_cleanup_dht_suppliers()
+            events.send('my-suppliers-all-hired', data=dict())
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.starting_deferred.callback(True)
+                self.starting_deferred = None
+        return None
 
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
         from customer import fire_hire
