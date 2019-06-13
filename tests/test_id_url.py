@@ -307,6 +307,25 @@ class TestIDURL(TestCase):
         with self.assertRaises(TypeError):
             (keys[0] != keys[1])
 
+    def test_dict_of_lists(self):
+        self._cache_identity('alice')
+        self._cache_identity('bob')
+        self._cache_identity('carl')
+        self._cache_identity('frank')
+        d = {}
+        d[id_url.field(alice_text)] = []
+        d[id_url.field(bob)] = []
+        d[id_url.field(alice_text)].append(id_url.field(carl))
+        d[id_url.field(alice_text)].append(id_url.field(frank_1))
+        d[id_url.field(bob)].append(id_url.field(''))
+        d[id_url.field(bob)].append(id_url.field(frank_2))
+        d[id_url.field(bob)].append(id_url.field(None))
+        d[id_url.field(bob)].append(id_url.field(b''))
+        self.assertIn(id_url.field(frank_1), d[id_url.field(alice_text)])
+        self.assertIn(id_url.field(frank_1), d[id_url.field(bob)])
+        self.assertFalse(id_url.is_some_empty(d[id_url.field(alice_text)]))
+        self.assertTrue(id_url.is_some_empty(d[id_url.field(bob)]))
+
     def test_two_sources(self):
         with self.assertRaises(KeyError):
             {id_url.field(frank_1): 'frank1', }

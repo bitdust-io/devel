@@ -5,7 +5,7 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=20, delay=3):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3):
     count = 0
     num_connected = 0
     while True:
@@ -35,7 +35,7 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return response.json()
 
 
-def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=20, delay=3, accepted_mistakes=1):
+def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=1):
 
     def _validate(obs):
         response = None
@@ -263,7 +263,7 @@ def user_ping_v1(node, remote_node_id, timeout=30):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=20, delay=3):
+def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:

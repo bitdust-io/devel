@@ -108,15 +108,18 @@ class EmployerService(LocalService):
             lg.warn('service service_entangled_dht is OFF')
 
     def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
+        from logs import lg
         from main import events
         from customer import fire_hire
         if fire_hire.IsAllHired():
+            lg.info('at the moment all my suppliers are hired and known')
             self._do_cleanup_dht_suppliers()
             events.send('my-suppliers-all-hired', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.callback(True)
                 self.starting_deferred = None
         else:
+            lg.warn('some of my supplies are not hired yet')
             events.send('my-suppliers-failed-to-hire', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
