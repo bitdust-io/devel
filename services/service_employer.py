@@ -54,8 +54,6 @@ class EmployerService(LocalService):
         from logs import lg
         from main.config import conf
         from main import events
-        from contacts import contactsdb
-        from userid import id_url
         from raid import eccmap
         from customer import fire_hire
         self.starting_deferred = Deferred()
@@ -70,7 +68,7 @@ class EmployerService(LocalService):
                            self._on_needed_space_modified)
         events.add_subscriber(self._on_supplier_modified,
                               'supplier-modified')
-        if not id_url.is_some_empty(contactsdb.suppliers()):
+        if fire_hire.IsAllHired():
             self.starting_deferred.callback(True)
             self.starting_deferred = None
             lg.info('all my suppliers are already hired')
@@ -110,19 +108,18 @@ class EmployerService(LocalService):
             lg.warn('service service_entangled_dht is OFF')
 
     def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
-        from userid import id_url
         from main import events
-        from contacts import contactsdb
-        if id_url.is_some_empty(contactsdb.suppliers()):
-            events.send('my-suppliers-failed-to-hire', data=dict())
-            if self.starting_deferred and not self.starting_deferred.called:
-                self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
-                self.starting_deferred = None
-        else:
+        from customer import fire_hire
+        if fire_hire.IsAllHired():
             self._do_cleanup_dht_suppliers()
             events.send('my-suppliers-all-hired', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.callback(True)
+                self.starting_deferred = None
+        else:
+            events.send('my-suppliers-failed-to-hire', data=dict())
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
                 self.starting_deferred = None
         return None
 

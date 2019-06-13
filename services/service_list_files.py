@@ -49,15 +49,16 @@ class ListFilesService(LocalService):
         ]
 
     def start(self):
+        from logs import lg
         from main import events
-        from userid import id_url
-        from contacts import contactsdb
+        from customer import fire_hire
         from customer import list_files_orator
         list_files_orator.A('init')
         events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
         events.add_subscriber(self._on_my_suppliers_failed_to_hire, 'my-suppliers-failed-to-hire')
-        if id_url.is_some_empty(contactsdb.suppliers()):
-            False
+        if not fire_hire.IsAllHired():
+            lg.warn('service_list_files() can not start right now, not all suppliers hired yet')
+            return False
         return True
 
     def stop(self):

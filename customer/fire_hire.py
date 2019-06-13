@@ -126,7 +126,6 @@ from automats import automat
 
 from lib import misc
 from lib import diskspace
-from lib import strng
 
 from main import settings
 from main import events
@@ -174,6 +173,21 @@ def AddSupplierToFire(idurl):
     """
     global _SuppliersToFire
     _SuppliersToFire.append(idurl)
+
+
+def IsAllHired():
+    """
+    """
+    if settings.getSuppliersNumberDesired() < 0:
+        # I must know how many suppliers I want
+        return False
+    if contactsdb.num_suppliers() != settings.getSuppliersNumberDesired():
+        # I must have exactly that amount of suppliers already
+        return False
+    if id_url.is_some_empty(contactsdb.suppliers()):
+        # I must know all of my suppliers
+        return False
+    return True 
 
 #------------------------------------------------------------------------------
 
