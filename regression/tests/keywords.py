@@ -92,8 +92,11 @@ def file_create_v1(node, remote_path):
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
                          open_share=True, wait_result=True,
-                         attempts=20, delay=3,
-                         wait_job_finish=True):
+                         attempts=30, delay=3,
+                         wait_job_finish=True,
+                         wait_packets_finish=True,
+                         wait_transfers_finish=True,
+                         ):
     response = requests.post(
         url=tunnel_url(customer, 'file/upload/start/v1'),
         json={
@@ -119,12 +122,16 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
             time.sleep(delay)
         else:
             assert False, 'some uploading tasks are still running on [%s]' % customer
+    if wait_packets_finish:
+        packet_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
+    if wait_transfers_finish:
+        transfer_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
     return response.json()
 
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
                            open_share=True, wait_result=True,
-                           attempts=20, delay=3,
+                           attempts=30, delay=3,
                            wait_tasks_finish=True):
     for i in range(attempts):
         response = requests.post(
@@ -282,7 +289,7 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
     print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
-def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event', attempts=5, timeout=10,):
+def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_event', attempts=3, timeout=10,):
     found = None
     count = 0
     while not found:
@@ -300,3 +307,35 @@ def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event
         if count >= attempts:
             assert False, f'event "{expected_event_id}" was not raised on node [{node}]'
     return found
+
+
+def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
+    for i in range(attempts):
+        response = requests.get(
+            url=tunnel_url(node, 'transfer/list/v1'),
+        )
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\n\ntransfer/list/v1 [%s] : %r\n' % (node, response.json(), ))
+        if len(response.json()['result']) == 0 or not wait_all_finish:
+            break
+        time.sleep(delay)
+    else:
+        assert False, 'some transfers are still running on [%s]' % node
+    return response.json()
+
+
+def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
+    for i in range(attempts):
+        response = requests.get(
+            url=tunnel_url(node, 'packet/list/v1'),
+        )
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\n\packet/list/v1 [%s] : %r\n' % (node, response.json(), ))
+        if len(response.json()['result']) == 0 or not wait_all_finish:
+            break
+        time.sleep(delay)
+    else:
+        assert False, 'some packets are still have in/out progress on [%s]' % node
+    return response.json()

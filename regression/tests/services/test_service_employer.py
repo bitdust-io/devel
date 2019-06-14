@@ -27,7 +27,7 @@ import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
-    service_info_v1, file_create_v1
+    service_info_v1, file_create_v1, transfer_list_v1, packet_list_v1
 
 
 def test_customer_1_replace_supplier_at_position_0():
@@ -52,8 +52,6 @@ def test_customer_1_replace_supplier_at_position_0():
     file_create_v1('customer_1', remote_path_customer_1)
 
     file_upload_start_v1('customer_1', remote_path_customer_1, filepath_customer_1)
-
-    time.sleep(15)
 
     file_download_start_v1('customer_1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 

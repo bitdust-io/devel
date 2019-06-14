@@ -664,8 +664,10 @@ class SupplierService(LocalService):
         return True
 
     def _on_list_files(self, newpacket):
+        from logs import lg
         from main import settings
         if newpacket.Payload != settings.ListFilesFormat():
+            lg.err('unknown ListFilesFormat() received')
             return False
         # TODO: perform validations before sending back list of files
         from supplier import list_files

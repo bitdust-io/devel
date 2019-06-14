@@ -128,10 +128,11 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
 
     def _do_save_customer_suppliers(id_cached_result, ret):
         if my_id.getLocalID() != id_url.field(ret['customer_idurl']):
-            if _Debug:
-                lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers   skip processing my own suppliers received from DHT: %s' % ret)
             contactsdb.set_suppliers(ret['suppliers'], customer_idurl=ret['customer_idurl'])
             contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers SKIP processing my own suppliers')
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  OK  for %r  returned %d suppliers' % (
                 ret['customer_idurl'], len(ret['suppliers']), ))

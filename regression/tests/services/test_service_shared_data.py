@@ -27,7 +27,7 @@ import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, file_download_start_v1, \
-    service_info_v1, file_create_v1
+    service_info_v1, file_create_v1, transfer_list_v1, packet_list_v1
 
 
 def test_customer_1_share_file_to_customer_2_same_name_as_existing():
@@ -70,6 +70,10 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
 
     # upload file for customer_2
     file_upload_start_v1('customer_2', remote_path_customer_2, filepath_customer_2)
+
+    packet_list_v1('customer_2', wait_all_finish=True)
+
+    transfer_list_v1('customer_2', wait_all_finish=True)
 
     # wait for quite a while to allow files to be uploaded
     time.sleep(5)

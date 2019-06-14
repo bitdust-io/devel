@@ -27,7 +27,7 @@ import time
 import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
-from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1
+from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, transfer_list_v1, packet_list_v1
 
 
 def test_customer_1_upload_download_file_with_master_key():
@@ -66,7 +66,7 @@ def test_customer_1_upload_download_file_with_master_key():
     file_create_v1('customer_1', remote_path)
 
     file_upload_start_v1('customer_1', remote_path, local_path, wait_result=True, )
-    
+
     for i in range(20):
         response = requests.post(
             url=tunnel_url('customer_1', 'file/download/start/v1'),

@@ -28,7 +28,7 @@ import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
-    supplier_list_v1, config_set_v1
+    supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
@@ -48,7 +48,6 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     supplier_list_v1('customer_backup', expected_min_suppliers=2, expected_max_suppliers=2)
 
     service_info_v1('customer_backup', 'service_my_data', 'ON', attempts=30, delay=2)
-
 
     file_create_v1('customer_backup', remote_path)
 
@@ -82,8 +81,10 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     # same when you backup your key and restore it from USB stick on another PC
     shutil.move(backup_file_directory_c2, backup_file_directory_c3)
 
-    # just to make sure all uploads to finish
-    time.sleep(5)
+    # to make sure all uploads to finish
+    transfer_list_v1('customer_backup', wait_all_finish=True)
+    packet_list_v1('customer_backup', wait_all_finish=True)
+    # time.sleep(5)
 
     try:
         response = requests.get(url=tunnel_url('customer_backup', 'process/stop/v1'))

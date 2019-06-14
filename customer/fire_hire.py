@@ -452,6 +452,8 @@ class FireHire(automat.Automat):
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
                 continue
+            if self.configs[0] and pos >= self.configs[0]:
+                continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
                 sc = supplier_connector.create(
@@ -473,12 +475,6 @@ class FireHire(automat.Automat):
                 idurl=supplier_idurl,
                 callback_method=self._on_supplier_online_status_state_changed,
             )
-#             supplier_contact_status = contact_status.getInstance(supplier_idurl)
-#             if supplier_contact_status:
-#                 supplier_contact_status.addStateChangedCallback(
-#                     self._on_supplier_contact_status_state_changed,
-#                     newstate='OFFLINE',
-#                 )
 
     def doDecideToDismiss(self, *args, **kwargs):
         """
