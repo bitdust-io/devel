@@ -52,6 +52,8 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     file_create_v1('customer_backup', remote_path)
 
     file_upload_start_v1('customer_backup', remote_path, source_local_path)
+
+    service_info_v1('customer_backup', 'service_restores', 'ON')
     
     file_download_start_v1('customer_backup', remote_path, download_volume, open_share=False)
 

@@ -37,8 +37,8 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
     supplier_list_v1('customer_2', expected_min_suppliers=2, expected_max_suppliers=2)
 
-    service_info_v1('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
-    service_info_v1('customer_2', 'service_shared_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_1', 'service_shared_data', 'ON')
+    service_info_v1('customer_2', 'service_shared_data', 'ON')
 
     # create shares (logic unit to upload/download/share files)
     share_id_customer_1 = share_create_v1('customer_1')
@@ -78,7 +78,12 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     # wait for quite a while to allow files to be uploaded
     time.sleep(5)
 
+    service_info_v1('customer_1', 'service_restores', 'ON')
+
     file_download_start_v1('customer_1', remote_path=remote_path_customer_1, destination=volume_customer_1)
+
+    service_info_v1('customer_2', 'service_restores', 'ON')
+
     file_download_start_v1('customer_2', remote_path=remote_path_customer_2, destination=volume_customer_2)
 
     response = requests.put(
@@ -99,7 +104,10 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     run_ssh_command_and_wait('customer_2', f'mkdir {volume_customer_2}/sharesamename')
     run_ssh_command_and_wait('customer_2', f'mkdir {volume_customer_2}/sharesamename2')
 
+    service_info_v1('customer_2', 'service_restores', 'ON')
+
     file_download_start_v1('customer_2', remote_path=remote_path_customer_1, destination=f'{volume_customer_2}/sharesamename')
+
     file_download_start_v1('customer_2', remote_path=remote_path_customer_2, destination=f'{volume_customer_2}/sharesamename2')
 
     file_1 = run_ssh_command_and_wait('customer_2', f'cat {volume_customer_2}/sharesamename/cat.txt')[0].strip()
@@ -119,21 +127,22 @@ def test_customer_1_share_file_to_customer_4():
     origin_volume = '/customer_1'
     origin_filename = 'second_file_customer_1.txt'
     local_path = '%s/%s' % (origin_volume, origin_filename)
-
     virtual_file = 'second_virtual_file.txt'
     remote_path = '%s:%s' % (key_id, virtual_file)
-
     download_volume = '/customer_4'
     downloaded_file = '%s/%s' % (download_volume, virtual_file)
 
-    service_info_v1('customer_1', 'service_shared_data', 'ON', attempts=30, delay=2)
-    service_info_v1('customer_4', 'service_shared_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_1', 'service_shared_data', 'ON')
+
+    service_info_v1('customer_4', 'service_shared_data', 'ON')
 
     file_create_v1('customer_1', remote_path)
 
     file_upload_start_v1('customer_1', remote_path, local_path)
 
     time.sleep(5)
+
+    service_info_v1('customer_1', 'service_restores', 'ON')
 
     file_download_start_v1('customer_1', remote_path=remote_path, destination='/customer_1')
 
@@ -150,6 +159,8 @@ def test_customer_1_share_file_to_customer_4():
     print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
 
     time.sleep(1)
+
+    service_info_v1('customer_4', 'service_restores', 'ON')
 
     file_download_start_v1('customer_4', remote_path=remote_path, destination=download_volume)
 

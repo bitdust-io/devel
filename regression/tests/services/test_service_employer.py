@@ -53,6 +53,8 @@ def test_customer_1_replace_supplier_at_position_0():
 
     file_upload_start_v1('customer_1', remote_path_customer_1, filepath_customer_1)
 
+    service_info_v1('customer_1', 'service_restores', 'ON')
+
     file_download_start_v1('customer_1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 
     response = requests.get(tunnel_url('customer_1', '/supplier/list/v1'))
