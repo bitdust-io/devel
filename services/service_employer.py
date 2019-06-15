@@ -120,10 +120,26 @@ class EmployerService(LocalService):
                 self.starting_deferred = None
         else:
             lg.info('some of my supplies are not hired yet')
-            events.send('my-suppliers-failed-to-hire', data=dict())
+            events.send('my-suppliers-yet-not-hired', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
                 self.starting_deferred = None
+
+    def _do_notify_supplier_position(self, supplier_idurl, supplier_position):
+        from p2p import p2p_service
+        from raid import eccmap
+        from userid import my_id
+        p2p_service.SendContacts(
+            remote_idurl=supplier_idurl,
+            json_payload={
+                'space': 'family_member',
+                'type': 'supplier_position',
+                'customer_idurl': my_id.getLocalID(),
+                'customer_ecc_map': eccmap.Current().name,
+                'supplier_idurl': supplier_idurl,
+                'supplier_position': supplier_position,
+            },
+        )
 
     def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
         self._do_check_all_hired()
@@ -194,19 +210,3 @@ class EmployerService(LocalService):
     def _on_my_dht_relations_failed(self, err):
         from logs import lg
         lg.err(err)
-
-    def _do_notify_supplier_position(self, supplier_idurl, supplier_position):
-        from p2p import p2p_service
-        from raid import eccmap
-        from userid import my_id
-        p2p_service.SendContacts(
-            remote_idurl=supplier_idurl,
-            json_payload={
-                'space': 'family_member',
-                'type': 'supplier_position',
-                'customer_idurl': my_id.getLocalID(),
-                'customer_ecc_map': eccmap.Current().name,
-                'supplier_idurl': supplier_idurl,
-                'supplier_position': supplier_position,
-            },
-        )

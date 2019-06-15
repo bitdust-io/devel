@@ -59,7 +59,7 @@ class DataMotionService(LocalService):
         data_sender.A('init')
         data_receiver.A('init')
         events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
-        events.add_subscriber(self._on_my_suppliers_failed_to_hire, 'my-suppliers-failed-to-hire')
+        events.add_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
         if not fire_hire.IsAllHired():
             lg.warn('service_data_motion() can not start right now, not all suppliers hired yet')
             return False
@@ -70,7 +70,7 @@ class DataMotionService(LocalService):
         from customer import io_throttle
         from customer import data_sender
         from customer import data_receiver
-        events.remove_subscriber(self._on_my_suppliers_failed_to_hire, 'my-suppliers-failed-to-hire')
+        events.remove_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
         events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
         data_receiver.A('shutdown')
         data_sender.SetShutdownFlag()
@@ -84,13 +84,13 @@ class DataMotionService(LocalService):
     def _on_my_suppliers_all_hired(self, evt):
         from logs import lg
         from services import driver
-        if not driver.is_on('service_data_motion'):
+        if driver.is_enabled('service_data_motion'):
             lg.info('all my suppliers are hired, starting service_data_motion()')
             driver.start_single('service_data_motion')
 
-    def _on_my_suppliers_failed_to_hire(self, evt):
+    def _on_my_suppliers_yet_not_hired(self, evt):
         from logs import lg
         from services import driver
-        if driver.is_on('service_data_motion'):
+        if driver.is_enabled('service_data_motion'):
             lg.info('my suppliers failed to hire, stopping service_data_motion()')
             driver.stop_single('service_data_motion')

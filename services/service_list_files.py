@@ -55,7 +55,7 @@ class ListFilesService(LocalService):
         from customer import list_files_orator
         list_files_orator.A('init')
         events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
-        events.add_subscriber(self._on_my_suppliers_failed_to_hire, 'my-suppliers-failed-to-hire')
+        events.add_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
         if not fire_hire.IsAllHired():
             lg.warn('service_list_files() can not start right now, not all suppliers hired yet')
             return False
@@ -64,7 +64,7 @@ class ListFilesService(LocalService):
     def stop(self):
         from main import events
         from customer import list_files_orator
-        events.remove_subscriber(self._on_my_suppliers_failed_to_hire, 'my-suppliers-failed-to-hire')
+        events.remove_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
         events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
         list_files_orator.Destroy()
         return True
@@ -72,13 +72,13 @@ class ListFilesService(LocalService):
     def _on_my_suppliers_all_hired(self, evt):
         from logs import lg
         from services import driver
-        if not driver.is_on('service_list_files'):
+        if driver.is_enabled('service_list_files'):
             lg.info('all my suppliers are hired, starting service_list_files()')
             driver.start_single('service_list_files')
 
-    def _on_my_suppliers_failed_to_hire(self, evt):
+    def _on_my_suppliers_yet_not_hired(self, evt):
         from logs import lg
         from services import driver
-        if driver.is_on('service_list_files'):
+        if driver.is_enabled('service_list_files'):
             lg.info('my suppliers failed to hire, stopping service_list_files()')
             driver.stop_single('service_list_files')
