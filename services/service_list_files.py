@@ -48,24 +48,28 @@ class ListFilesService(LocalService):
             'service_employer',
         ]
 
+    def init(self, **kwargs):
+        from main import events
+        events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
+        events.add_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
+
+    def shutdown(self):
+        from main import events
+        events.remove_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
+        events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
+
     def start(self):
         from logs import lg
-        from main import events
         from customer import fire_hire
         from customer import list_files_orator
         list_files_orator.A('init')
-        events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
-        events.add_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
         if not fire_hire.IsAllHired():
             lg.warn('service_list_files() can not start right now, not all suppliers hired yet')
             return False
         return True
 
     def stop(self):
-        from main import events
         from customer import list_files_orator
-        events.remove_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
-        events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
         list_files_orator.Destroy()
         return True
 
