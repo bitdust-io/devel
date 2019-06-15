@@ -119,7 +119,7 @@ class EmployerService(LocalService):
                 self.starting_deferred.callback(True)
                 self.starting_deferred = None
         else:
-            lg.warn('some of my supplies are not hired yet')
+            lg.info('some of my supplies are not hired yet')
             events.send('my-suppliers-failed-to-hire', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
@@ -127,11 +127,23 @@ class EmployerService(LocalService):
         return None
 
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
+        from logs import lg
         from customer import fire_hire
         from raid import eccmap
         eccmap.Update()
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
+        if fire_hire.IsAllHired():
+            lg.info('after changing desired suppliers number still all my suppliers are hired and known')
+            self._do_cleanup_dht_suppliers()
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.starting_deferred.callback(True)
+                self.starting_deferred = None
+        else:
+            lg.info('after changing desired suppliers number some of my supplies are not hired yet')
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
+                self.starting_deferred = None
 
     def _on_needed_space_modified(self, path, value, oldvalue, result):
         from customer import fire_hire
