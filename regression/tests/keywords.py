@@ -1,3 +1,26 @@
+#!/usr/bin/env python
+# keywords.py
+#
+# Copyright (C) 2008-2019 Stanislav Evseev, Veselin Penev  https://bitdust.io
+#
+# This file (keywords.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+
+
 import time
 import requests
 import pprint
@@ -309,22 +332,6 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
-    for i in range(attempts):
-        response = requests.get(
-            url=tunnel_url(node, 'transfer/list/v1'),
-        )
-        assert response.status_code == 200
-        assert response.json()['status'] == 'OK', response.json()
-        print('\n\ntransfer/list/v1 [%s] : %r\n' % (node, response.json(), ))
-        if len(response.json()['result']) == 0 or not wait_all_finish:
-            break
-        time.sleep(delay)
-    else:
-        assert False, 'some transfers are still running on [%s]' % node
-    return response.json()
-
-
 def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
     for i in range(attempts):
         response = requests.get(
@@ -338,4 +345,31 @@ def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
         time.sleep(delay)
     else:
         assert False, 'some packets are still have in/out progress on [%s]' % node
+    return response.json()
+
+
+def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
+    for i in range(attempts):
+        response = requests.get(
+            url=tunnel_url(node, 'transfer/list/v1'),
+        )
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\n\ntransfer/list/v1 [%s] : %r\n' % (node, response.json(), ))
+        if not wait_all_finish:
+            break
+        some_incoming = False
+        some_outgoing = False
+        for r in response.json()['result']:
+            if r.get('incoming', []):
+                some_incoming = True
+                break
+            if r.get('outgoing', []):
+                some_outgoing = True
+                break
+        if not some_incoming and not some_outgoing:
+            break
+        time.sleep(delay)
+    else:
+        assert False, 'some transfers are still running on [%s]' % node
     return response.json()

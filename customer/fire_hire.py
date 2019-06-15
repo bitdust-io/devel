@@ -481,27 +481,45 @@ class FireHire(automat.Automat):
         Action method.
         """
         global _SuppliersToFire
+        from p2p import p2p_connector
         from p2p import network_connector
         from customer import supplier_connector
         from p2p import online_status
-        if network_connector.A().state is not 'CONNECTED':
+        # take any actions only if I am connected to the network
+        if p2p_connector.A().state is not 'CONNECTED' or network_connector.A().state is not 'CONNECTED':
             if _Debug:
-                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss   network_connector is not CONNECTED at the moment, SKIP')
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    p2p/network is not connected at the moment, SKIP')
             self.automat('made-decision', [])
             return
+        # if certain suppliers needs to be removed by manual/external request just do that
         to_be_fired = list(set(_SuppliersToFire))
         _SuppliersToFire = []
         if to_be_fired:
             lg.warn('going to fire %d suppliers from external request' % len(to_be_fired))
             self.automat('made-decision', to_be_fired)
             return
+        # make sure to not go too far when i just want to decrease number of my suppliers
+        number_desired = settings.getSuppliersNumberDesired()
+        redundant_suppliers = set()
+        if contactsdb.num_suppliers() > number_desired:
+            for supplier_index in range(number_desired, contactsdb.num_suppliers()):
+                idurl = contactsdb.supplier(supplier_index)
+                if idurl:
+                    lg.info('found REDUNDANT supplier %s at position %d' % (
+                        idurl, supplier_index, ))
+                    redundant_suppliers.add(idurl)
+        if redundant_suppliers:
+            result = list(redundant_suppliers)
+            lg.info('will replace redundant suppliers: %s' % result)
+            self.automat('made-decision', result)
+            return
+        # now I need to look more careful at my suppliers
         potentialy_fired = set()
         connected_suppliers = set()
         disconnected_suppliers = set()
         requested_suppliers = set()
         online_suppliers = set()
         offline_suppliers = set()
-        redundant_suppliers = set()
         # if you have some empty suppliers need to get rid of them,
         # but no need to dismiss anyone at the moment.
         my_suppliers = contactsdb.suppliers()
@@ -511,7 +529,6 @@ class FireHire(automat.Automat):
             lg.warn('SKIP, found empty supplier')
             self.automat('made-decision', [])
             return
-        number_desired = settings.getSuppliersNumberDesired()
         for supplier_idurl in my_suppliers:
             sc = supplier_connector.by_idurl(supplier_idurl)
             if not sc:
@@ -533,16 +550,6 @@ class FireHire(automat.Automat):
                 online_suppliers.add(supplier_idurl)
             elif online_status.isCheckingNow(supplier_idurl):
                 requested_suppliers.add(supplier_idurl)
-        if contactsdb.num_suppliers() > number_desired:
-            for supplier_index in range(number_desired, contactsdb.num_suppliers()):
-                idurl = contactsdb.supplier(supplier_index)
-                if idurl:
-                    lg.warn('found "REDUNDANT" supplier %s at position %d' % (
-                        idurl, supplier_index, ))
-                    potentialy_fired.add(idurl)
-                    redundant_suppliers.add(idurl)
-                else:
-                    lg.warn('supplier at position %d not exist' % supplier_index)
         if not connected_suppliers or not online_suppliers:
             lg.warn('SKIP, no ONLINE suppliers found at the moment')
             self.automat('made-decision', [])
@@ -551,14 +558,9 @@ class FireHire(automat.Automat):
             lg.warn('SKIP, still waiting response from some of suppliers')
             self.automat('made-decision', [])
             return
-        if redundant_suppliers:
-            result = list(redundant_suppliers)
-            lg.info('will replace redundant suppliers: %s' % result)
-            self.automat('made-decision', result)
-            return
         if not disconnected_suppliers:
             lg.warn('SKIP, no OFFLINE suppliers found at the moment')
-            # TODO: add more conditions to fire "slow" suppliers
+            # TODO: add more conditions to fire "slow" suppliers - they are still connected but useless
             self.automat('made-decision', [])
             return
         if len(offline_suppliers) + len(online_suppliers) != number_desired:
@@ -575,7 +577,7 @@ class FireHire(automat.Automat):
         critical_offline_suppliers_count = eccmap.GetFireHireErrors(number_desired)
         if len(offline_suppliers) >= critical_offline_suppliers_count and len(offline_suppliers) > 0:
             # TODO: check that issue
-            # too aggressive replacing suppliers who still have the data
+            # too aggressive replacing suppliers who still have the data is very dangerous !!!
             one_dead_supplier = offline_suppliers.pop()
             lg.warn('found "CRITICALLY_OFFLINE" supplier %s, max offline limit is %d' % (
                 one_dead_supplier, critical_offline_suppliers_count, ))
