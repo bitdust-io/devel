@@ -50,6 +50,16 @@ class KeysStorageService(LocalService):
             'service_keys_storage',
         ]
 
+    def init(self, **kwargs):
+        from main import events
+        events.add_subscriber(self._on_my_storage_ready, 'my-storage-ready')
+        events.add_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
+
+    def shutdown(self):
+        from main import events
+        events.remove_subscriber(self._on_my_storage_not_ready_yet, 'my-storage-not-ready-yet')
+        events.remove_subscriber(self._on_my_storage_ready, 'my-storage-ready')
+
     def start(self):
         from access import key_ring
         from storage import index_synchronizer
@@ -62,3 +72,17 @@ class KeysStorageService(LocalService):
 
     def health_check(self):
         return True
+
+    def _on_my_storage_ready(self, evt):
+        from logs import lg
+        from services import driver
+        if driver.is_enabled('service_my_data'):
+            lg.info('my storage is ready, starting service_my_data()')
+            driver.start_single('service_my_data')
+
+    def _on_my_storage_not_ready_yet(self, evt):
+        from logs import lg
+        from services import driver
+        if driver.is_enabled('service_my_data'):
+            lg.info('my storage is not ready yet, stopping service_my_data()')
+            driver.stop_single('service_my_data')
