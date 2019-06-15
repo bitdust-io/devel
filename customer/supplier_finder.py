@@ -317,7 +317,7 @@ class SupplierFinder(automat.Automat):
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._nodes_lookup_finished : %r' % idurls)
+            lg.out(_DebugLevel, 'supplier_finder._nodes_lookup_finished : %r' % idurls)
         if not idurls:
             self.automat('users-not-found')
             return

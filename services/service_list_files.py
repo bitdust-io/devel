@@ -72,11 +72,13 @@ class ListFilesService(LocalService):
     def _on_my_suppliers_all_hired(self, evt):
         from logs import lg
         from services import driver
-        lg.info('all my suppliers are hired, starting service_list_files()')
-        driver.start_single('service_list_files')
+        if not driver.is_on('service_list_files'):
+            lg.info('all my suppliers are hired, starting service_list_files()')
+            driver.start_single('service_list_files')
 
     def _on_my_suppliers_failed_to_hire(self, evt):
         from logs import lg
         from services import driver
-        lg.info('my suppliers failed to hire, stopping service_list_files()')
-        driver.stop_single('service_list_files')
+        if driver.is_on('service_list_files'):
+            lg.info('my suppliers failed to hire, stopping service_list_files()')
+            driver.stop_single('service_list_files')

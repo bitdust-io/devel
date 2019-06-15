@@ -84,11 +84,13 @@ class DataMotionService(LocalService):
     def _on_my_suppliers_all_hired(self, evt):
         from logs import lg
         from services import driver
-        lg.info('all my suppliers are hired, starting service_data_motion()')
-        driver.start_single('service_data_motion')
+        if not driver.is_on('service_data_motion'):
+            lg.info('all my suppliers are hired, starting service_data_motion()')
+            driver.start_single('service_data_motion')
 
     def _on_my_suppliers_failed_to_hire(self, evt):
         from logs import lg
         from services import driver
-        lg.info('my suppliers failed to hire, stopping service_data_motion()')
-        driver.stop_single('service_data_motion')
+        if driver.is_on('service_data_motion'):
+            lg.info('my suppliers failed to hire, stopping service_data_motion()')
+            driver.stop_single('service_data_motion')

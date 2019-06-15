@@ -107,7 +107,7 @@ class EmployerService(LocalService):
         else:
             lg.warn('service service_entangled_dht is OFF')
 
-    def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
+    def _do_check_all_hired(self):
         from logs import lg
         from main import events
         from customer import fire_hire
@@ -124,29 +124,26 @@ class EmployerService(LocalService):
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
                 self.starting_deferred = None
+
+    def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
+        self._do_check_all_hired()
         return None
 
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
         from logs import lg
         from customer import fire_hire
         from raid import eccmap
+        lg.info('my desired suppliers number changed')
+        self._do_check_all_hired()
         eccmap.Update()
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
-        if fire_hire.IsAllHired():
-            lg.info('after changing desired suppliers number still all my suppliers are hired and known')
-            self._do_cleanup_dht_suppliers()
-            if self.starting_deferred and not self.starting_deferred.called:
-                self.starting_deferred.callback(True)
-                self.starting_deferred = None
-        else:
-            lg.info('after changing desired suppliers number some of my supplies are not hired yet')
-            if self.starting_deferred and not self.starting_deferred.called:
-                self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
-                self.starting_deferred = None
 
     def _on_needed_space_modified(self, path, value, oldvalue, result):
+        from logs import lg
         from customer import fire_hire
+        lg.info('my needed space value modified')
+        self._do_check_all_hired()
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 
