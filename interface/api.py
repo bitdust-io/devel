@@ -2063,8 +2063,8 @@ def supplier_replace(index_or_idurl_or_global_id):
 
         {'status': 'OK', 'result': 'supplier http://p2p-id.ru/alice.xml will be replaced by new peer'}
     """
-    if not driver.is_on('service_customer'):
-        return ERROR('service_customer() is not started')
+    if not driver.is_on('service_employer'):
+        return ERROR('service_employer() is not started')
     from contacts import contactsdb
     from userid import my_id
     from userid import global_id
@@ -2091,8 +2091,8 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
 
         {'status': 'OK', 'result': 'supplier http://p2p-id.ru/alice.xml will be replaced by http://p2p-id.ru/bob.xml'}
     """
-    if not driver.is_on('service_customer'):
-        return ERROR('service_customer() is not started')
+    if not driver.is_on('service_employer'):
+        return ERROR('service_employer() is not started')
     from contacts import contactsdb
     from userid import my_id
     from userid import global_id

@@ -36,8 +36,8 @@ from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 12
+_Debug = False
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -130,7 +130,11 @@ def suppliers(customer_idurl=None):
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
-    return _SuppliersList[customer_idurl]
+        lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
+    result = _SuppliersList[customer_idurl]
+    if _Debug:
+        lg.args(_DebugLevel, result=result, glob_obj_id=id(_SuppliersList))
+    return result
 
 
 def supplier(index, customer_idurl=None):
@@ -168,7 +172,10 @@ def set_suppliers(idlist, customer_idurl=None):
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
+        lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
     _SuppliersList[customer_idurl] = id_url.fields_list(idlist)
+    if _Debug:
+        lg.args(_DebugLevel, suppliers=_SuppliersList[customer_idurl], customer_idurl=customer_idurl)
 
 
 def update_suppliers(idlist, customer_idurl=None):
@@ -199,14 +206,19 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     customer_idurl = id_url.field(customer_idurl)
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
+        lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
     idurl = id_url.field(idurl)
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, position=position, customer_idurl=customer_idurl)
     if position is None or position == -1:
         lg.warn('position unknown, added supplier "%s" to the end of the list for customer %s' % (idurl, customer_idurl, ))
         _SuppliersList[customer_idurl].append(idurl)
         return len(_SuppliersList[customer_idurl]) - 1
     current_suppliers = _SuppliersList[customer_idurl]
     if position >= len(current_suppliers):
-        current_suppliers += [id_url.field(b''), ] * (1 + position - len(current_suppliers))
+        empty_supplies = [id_url.field(b''), ] * (1 + position - len(current_suppliers))
+        current_suppliers.extend(empty_supplies)
+        lg.warn('added %d empty suppliers for customer %r' % (len(empty_supplies), customer_idurl))
     if current_suppliers[position] and current_suppliers[position] != idurl:
         lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
             current_suppliers[position], idurl, position, customer_idurl, ))
@@ -227,6 +239,8 @@ def erase_supplier(idurl=None, position=None, customer_idurl=None):
     if customer_idurl not in _SuppliersList:
         return False
     current_suppliers = _SuppliersList[customer_idurl]
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, position=position, customer_idurl=customer_idurl)
     if idurl:
         idurl = id_url.field(idurl)
         if idurl not in current_suppliers:
@@ -251,6 +265,7 @@ def clear_suppliers(customer_idurl=None):
         customer_idurl = my_id.getLocalID()
     customer_idurl = id_url.field(customer_idurl)
     _SuppliersList.pop(customer_idurl)
+    lg.info('erased suppliers list from memory for customer %r' % customer_idurl)
 
 
 def clear_all_suppliers():

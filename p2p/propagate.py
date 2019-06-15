@@ -510,6 +510,7 @@ def PingContact(idurl, timeout=30, retries=2):
     Can be called when you need to "ping" another user.
     This will send your Identity to that node, and it must respond.
     """
+    idurl = id_url.field(idurl)
     if _Debug:
         lg.out(_DebugLevel, "propagate.PingContact [%s]" % nameurl.GetName(idurl))
     ping_result = Deferred()

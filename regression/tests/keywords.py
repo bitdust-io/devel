@@ -1,3 +1,26 @@
+#!/usr/bin/env python
+# keywords.py
+#
+# Copyright (C) 2008-2019 Stanislav Evseev, Veselin Penev  https://bitdust.io
+#
+# This file (keywords.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+
+
 import time
 import requests
 import pprint
@@ -15,7 +38,7 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
         response = requests.get(url=tunnel_url(customer, 'supplier/list/v1'))
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print('\n\nsupplier/list/v1 : %s\n' % response.json())
+        print('\nsupplier/list/v1 : %s\n' % response.json())
         if expected_min_suppliers is None and expected_max_suppliers is None:
             break
         num_connected = 0
@@ -78,7 +101,7 @@ def share_create_v1(customer: str, key_size=1024):
     response = requests.post(url=tunnel_url(customer, 'share/create/v1'), json={'key_size': key_size, }, )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
-    print('\n\nshare/create/v1 : %s\n' % response.json())
+    print('\nshare/create/v1 : %s\n' % response.json())
     return response.json()['result'][0]['key_id']
 
 
@@ -86,14 +109,17 @@ def file_create_v1(node, remote_path):
     response = requests.post(url=tunnel_url(node, 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
-    print('\n\nfile/create/v1 [%s] remote_path=%s : %s\n' % (node, remote_path, response.json(), ))
+    print('\nfile/create/v1 [%s] remote_path=%s : %s\n' % (node, remote_path, response.json(), ))
     return response.json()
 
 
 def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
                          open_share=True, wait_result=True,
-                         attempts=50, delay=5,
-                         wait_job_finish=True):
+                         attempts=30, delay=3,
+                         wait_job_finish=True,
+                         wait_packets_finish=True,
+                         wait_transfers_finish=True,
+                         ):
     response = requests.post(
         url=tunnel_url(customer, 'file/upload/start/v1'),
         json={
@@ -105,7 +131,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
-    print('\n\nfile/upload/start/v1 [%r] remote_path=%s local_path=%s : %r\n' % (customer, remote_path, local_path, response.json(),))
+    print('\nfile/upload/start/v1 [%r] remote_path=%s local_path=%s : %r\n' % (customer, remote_path, local_path, response.json(),))
     if wait_job_finish:
         for i in range(attempts):
             response = requests.get(
@@ -113,18 +139,22 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
             )
             assert response.status_code == 200
             assert response.json()['status'] == 'OK', response.json()
-            print('\n\nfile/upload/v1 [%s] : %r\n' % (customer, response.json(), ))
+            print('\nfile/upload/v1 [%s] : %r\n' % (customer, response.json(), ))
             if len(response.json()['result']['pending']) == 0 and len(response.json()['result']['running']) == 0:
                 break
             time.sleep(delay)
         else:
             assert False, 'some uploading tasks are still running on [%s]' % customer
+    if wait_packets_finish:
+        packet_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
+    if wait_transfers_finish:
+        transfer_list_v1(customer, wait_all_finish=True, attempts=attempts, delay=delay)
     return response.json()
 
 
 def file_download_start_v1(customer: str, remote_path: str, destination: str,
                            open_share=True, wait_result=True,
-                           attempts=50, delay=5,
+                           attempts=30, delay=3,
                            wait_tasks_finish=True):
     for i in range(attempts):
         response = requests.post(
@@ -137,9 +167,9 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             },
         )
         assert response.status_code == 200
-        print('\n\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (customer, remote_path, destination, response.json(), ))
+        print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (customer, remote_path, destination, response.json(), ))
         if response.json()['status'] == 'OK':
-            print('\n\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %r\n' % (customer, remote_path, destination, response.json(), ))
+            print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %r\n' % (customer, remote_path, destination, response.json(), ))
             break
         if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
             time.sleep(delay)
@@ -154,7 +184,7 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             )
             assert response.status_code == 200
             assert response.json()['status'] == 'OK', response.json()
-            print('\n\nfile/download/v1 [%s] : %r\n' % (customer, response.json(), ))
+            print('\nfile/download/v1 [%s] : %r\n' % (customer, response.json(), ))
             if len(response.json()['result']) == 0:
                 break
             time.sleep(delay)
@@ -172,7 +202,7 @@ def config_set_v1(node, key, value):
         },
     )
     assert response.status_code == 200
-    print('\n\nconfig/set/v1 [%s] key=%r value=%r : %s\n' % (node, key, value, response.json()))
+    print('\nconfig/set/v1 [%s] key=%r value=%r : %s\n' % (node, key, value, response.json()))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -263,7 +293,7 @@ def user_ping_v1(node, remote_node_id, timeout=30):
     return response.json()
 
 
-def service_info_v1(node, service_name, expected_state, attempts=30, delay=2):
+def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
     current_state = None
     count = 0
     while current_state is None or current_state != expected_state:
@@ -271,7 +301,7 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=2):
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
         current_state = response.json()['result'][0]['state']
-        print(f'\n\nservice/info/{service_name}/v1 [{node}] : %s' % response.json())
+        print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % response.json())
         if current_state == expected_state:
             break
         count += 1
@@ -282,14 +312,14 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=2):
     print(f'service/info/{service_name}/v1 [{node}] : OK\n')
 
 
-def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event', timeout=10, attempts=5):
+def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_event', attempts=3, timeout=10,):
     found = None
     count = 0
     while not found:
         response = requests.get(url=tunnel_url(node, f'event/listen/{consumer_id}/v1'), timeout=timeout)
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print(f'\n\nevent/listen/{consumer_id}/v1 : %s\n' % response.json())
+        print(f'\nevent/listen/{consumer_id}/v1 : %s\n' % response.json())
         for e in response.json()['result']:
             if e['id'] == expected_event_id:
                 found = e
@@ -301,3 +331,45 @@ def wait_event(node, expected_event_id, consumer_id='regression_tests_wait_event
             assert False, f'event "{expected_event_id}" was not raised on node [{node}]'
     return found
 
+
+def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
+    for i in range(attempts):
+        response = requests.get(
+            url=tunnel_url(node, 'packet/list/v1'),
+        )
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\npacket/list/v1 [%s] : %r\n' % (node, response.json(), ))
+        if len(response.json()['result']) == 0 or not wait_all_finish:
+            break
+        time.sleep(delay)
+    else:
+        assert False, 'some packets are still have in/out progress on [%s]' % node
+    return response.json()
+
+
+def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
+    for i in range(attempts):
+        response = requests.get(
+            url=tunnel_url(node, 'transfer/list/v1'),
+        )
+        assert response.status_code == 200
+        assert response.json()['status'] == 'OK', response.json()
+        print('\ntransfer/list/v1 [%s] : %r\n' % (node, response.json(), ))
+        if not wait_all_finish:
+            break
+        some_incoming = False
+        some_outgoing = False
+        for r in response.json()['result']:
+            if r.get('incoming', []):
+                some_incoming = True
+                break
+            if r.get('outgoing', []):
+                some_outgoing = True
+                break
+        if not some_incoming and not some_outgoing:
+            break
+        time.sleep(delay)
+    else:
+        assert False, 'some transfers are still running on [%s]' % node
+    return response.json()

@@ -45,16 +45,31 @@ class DataMotionService(LocalService):
 
     def dependent_on(self):
         return [
-            'service_customer',
+            'service_employer',
         ]
 
+    def init(self, **kwargs):
+        from main import events
+        events.add_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
+        events.add_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
+
+    def shutdown(self):
+        from main import events
+        events.remove_subscriber(self._on_my_suppliers_yet_not_hired, 'my-suppliers-yet-not-hired')
+        events.remove_subscriber(self._on_my_suppliers_all_hired, 'my-suppliers-all-hired')
+    
     def start(self):
+        from logs import lg
+        from customer import fire_hire
         from customer import io_throttle
         from customer import data_sender
         from customer import data_receiver
         io_throttle.init()
         data_sender.A('init')
         data_receiver.A('init')
+        if not fire_hire.IsAllHired():
+            lg.warn('service_data_motion() can not start right now, not all suppliers hired yet')
+            return False
         return True
 
     def stop(self):
@@ -69,3 +84,17 @@ class DataMotionService(LocalService):
 
     def health_check(self):
         return True
+
+    def _on_my_suppliers_all_hired(self, evt):
+        from logs import lg
+        from services import driver
+        if driver.is_enabled('service_data_motion'):
+            lg.info('all my suppliers are hired, starting service_data_motion()')
+            driver.start_single('service_data_motion')
+
+    def _on_my_suppliers_yet_not_hired(self, evt):
+        from logs import lg
+        from services import driver
+        if driver.is_enabled('service_data_motion'):
+            lg.info('my suppliers failed to hire, stopping service_data_motion()')
+            driver.stop_single('service_data_motion')

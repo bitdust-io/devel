@@ -124,19 +124,15 @@ def read_customer_suppliers(customer_idurl, as_fields=True):
             'publisher_idurl': _publisher_idurl,
             'timestamp': _timestamp,
         })
-#         my_idurl = my_id.getLocalID()
-#         if not as_fields:
-#             my_idurl = id_url.to_bin(my_idurl)
-#         if customer_idurl == my_idurl:
-#             if _Debug:
-#                 lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers   skip caching my own suppliers list received from DHT: %s' % ret)
-#             result.callback(ret)
-#             return ret
         return _do_identity_cache(ret)
 
     def _do_save_customer_suppliers(id_cached_result, ret):
-        contactsdb.set_suppliers(ret['suppliers'], customer_idurl=ret['customer_idurl'])
-        contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
+        if my_id.getLocalID() != id_url.field(ret['customer_idurl']):
+            contactsdb.set_suppliers(ret['suppliers'], customer_idurl=ret['customer_idurl'])
+            contactsdb.save_suppliers(customer_idurl=ret['customer_idurl'])
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, 'dht_relations._do_save_customer_suppliers SKIP processing my own suppliers')
         if _Debug:
             lg.out(_DebugLevel, 'dht_relations.read_customer_suppliers  OK  for %r  returned %d suppliers' % (
                 ret['customer_idurl'], len(ret['suppliers']), ))

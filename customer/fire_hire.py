@@ -126,7 +126,6 @@ from automats import automat
 
 from lib import misc
 from lib import diskspace
-from lib import strng
 
 from main import settings
 from main import events
@@ -134,11 +133,6 @@ from main import events
 from contacts import contactsdb
 
 from services import driver
-
-from p2p import online_status
-
-from customer import supplier_finder
-from customer import supplier_connector
 
 from raid import eccmap
 
@@ -174,6 +168,27 @@ def AddSupplierToFire(idurl):
     """
     global _SuppliersToFire
     _SuppliersToFire.append(idurl)
+
+
+def IsAllHired():
+    """
+    """
+    if settings.getSuppliersNumberDesired() < 0:
+        # I must know how many suppliers I want
+        lg.warn('my desired number of suppliers not set')
+        return False
+    if contactsdb.num_suppliers() != settings.getSuppliersNumberDesired():
+        # I must have exactly that amount of suppliers already
+        if _Debug:
+            lg.args(_DebugLevel, desiried_suppliers=settings.getSuppliersNumberDesired(),
+                current_suppliers=contactsdb.num_suppliers(), )
+        return False
+    if id_url.is_some_empty(contactsdb.suppliers()):
+        # I must know all of my suppliers
+        if _Debug:
+            lg.args(_DebugLevel, my_suppliers=contactsdb.suppliers())
+        return False
+    return True 
 
 #------------------------------------------------------------------------------
 
@@ -329,9 +344,10 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        # lg.out(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
-        # contactsdb.num_suppliers(), len(self.dismiss_list),
-        # settings.getSuppliersNumberDesired()))
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
+        #         contactsdb.num_suppliers(), len(self.dismiss_list),
+        #         settings.getSuppliersNumberDesired()))
         if id_url.is_some_empty(contactsdb.suppliers()):
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.isMoreNeeded found empty supplier!!!')
@@ -353,8 +369,9 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        lg.out(14, 'fire_hire.isAllReady %d %d' % (
-            len(self.connect_list), contactsdb.num_suppliers()))
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire.isAllReady %d %d' % (
+                len(self.connect_list), contactsdb.num_suppliers()))
         return len(self.connect_list) == 0  # contactsdb.num_suppliers()
 
     def isAllDismissed(self, *args, **kwargs):
@@ -392,7 +409,8 @@ class FireHire(automat.Automat):
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))
         result = len(s) - empty_suppliers < settings.getSuppliersNumberDesired()
-        # lg.out(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
         #     contactsdb.num_suppliers(), len(needed_suppliers), len(self.dismiss_list),
         #     len(s), settings.getSuppliersNumberDesired(), result))
         return result
@@ -427,10 +445,14 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
+        from customer import supplier_connector
+        from p2p import online_status
         self.connect_list = []
         my_current_family = contactsdb.suppliers()
         for pos, supplier_idurl in enumerate(my_current_family):
             if not supplier_idurl:
+                continue
+            if self.configs[0] and pos >= self.configs[0]:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
@@ -453,37 +475,51 @@ class FireHire(automat.Automat):
                 idurl=supplier_idurl,
                 callback_method=self._on_supplier_online_status_state_changed,
             )
-#             supplier_contact_status = contact_status.getInstance(supplier_idurl)
-#             if supplier_contact_status:
-#                 supplier_contact_status.addStateChangedCallback(
-#                     self._on_supplier_contact_status_state_changed,
-#                     newstate='OFFLINE',
-#                 )
 
     def doDecideToDismiss(self, *args, **kwargs):
         """
         Action method.
         """
         global _SuppliersToFire
+        from p2p import p2p_connector
         from p2p import network_connector
-        if network_connector.A().state is not 'CONNECTED':
+        from customer import supplier_connector
+        from p2p import online_status
+        # take any actions only if I am connected to the network
+        if p2p_connector.A().state is not 'CONNECTED' or network_connector.A().state is not 'CONNECTED':
             if _Debug:
-                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss   network_connector is not CONNECTED at the moment, SKIP')
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    p2p/network is not connected at the moment, SKIP')
             self.automat('made-decision', [])
             return
+        # if certain suppliers needs to be removed by manual/external request just do that
         to_be_fired = list(set(_SuppliersToFire))
         _SuppliersToFire = []
         if to_be_fired:
             lg.warn('going to fire %d suppliers from external request' % len(to_be_fired))
             self.automat('made-decision', to_be_fired)
             return
+        # make sure to not go too far when i just want to decrease number of my suppliers
+        number_desired = settings.getSuppliersNumberDesired()
+        redundant_suppliers = set()
+        if contactsdb.num_suppliers() > number_desired:
+            for supplier_index in range(number_desired, contactsdb.num_suppliers()):
+                idurl = contactsdb.supplier(supplier_index)
+                if idurl:
+                    lg.info('found REDUNDANT supplier %s at position %d' % (
+                        idurl, supplier_index, ))
+                    redundant_suppliers.add(idurl)
+        if redundant_suppliers:
+            result = list(redundant_suppliers)
+            lg.info('will replace redundant suppliers: %s' % result)
+            self.automat('made-decision', result)
+            return
+        # now I need to look more careful at my suppliers
         potentialy_fired = set()
         connected_suppliers = set()
         disconnected_suppliers = set()
         requested_suppliers = set()
         online_suppliers = set()
         offline_suppliers = set()
-        redundant_suppliers = set()
         # if you have some empty suppliers need to get rid of them,
         # but no need to dismiss anyone at the moment.
         my_suppliers = contactsdb.suppliers()
@@ -493,7 +529,6 @@ class FireHire(automat.Automat):
             lg.warn('SKIP, found empty supplier')
             self.automat('made-decision', [])
             return
-        number_desired = settings.getSuppliersNumberDesired()
         for supplier_idurl in my_suppliers:
             sc = supplier_connector.by_idurl(supplier_idurl)
             if not sc:
@@ -515,16 +550,6 @@ class FireHire(automat.Automat):
                 online_suppliers.add(supplier_idurl)
             elif online_status.isCheckingNow(supplier_idurl):
                 requested_suppliers.add(supplier_idurl)
-        if contactsdb.num_suppliers() > number_desired:
-            for supplier_index in range(number_desired, contactsdb.num_suppliers()):
-                idurl = contactsdb.supplier(supplier_index)
-                if idurl:
-                    lg.warn('found "REDUNDANT" supplier %s at position %d' % (
-                        idurl, supplier_index, ))
-                    potentialy_fired.add(idurl)
-                    redundant_suppliers.add(idurl)
-                else:
-                    lg.warn('supplier at position %d not exist' % supplier_index)
         if not connected_suppliers or not online_suppliers:
             lg.warn('SKIP, no ONLINE suppliers found at the moment')
             self.automat('made-decision', [])
@@ -533,14 +558,9 @@ class FireHire(automat.Automat):
             lg.warn('SKIP, still waiting response from some of suppliers')
             self.automat('made-decision', [])
             return
-        if redundant_suppliers:
-            result = list(redundant_suppliers)
-            lg.info('will replace redundant suppliers: %s' % result)
-            self.automat('made-decision', result)
-            return
         if not disconnected_suppliers:
             lg.warn('SKIP, no OFFLINE suppliers found at the moment')
-            # TODO: add more conditions to fire "slow" suppliers
+            # TODO: add more conditions to fire "slow" suppliers - they are still connected but useless
             self.automat('made-decision', [])
             return
         if len(offline_suppliers) + len(online_suppliers) != number_desired:
@@ -557,13 +577,14 @@ class FireHire(automat.Automat):
         critical_offline_suppliers_count = eccmap.GetFireHireErrors(number_desired)
         if len(offline_suppliers) >= critical_offline_suppliers_count and len(offline_suppliers) > 0:
             # TODO: check that issue
-            # too aggressive replacing suppliers who still have the data
+            # too aggressive replacing suppliers who still have the data is very dangerous !!!
             one_dead_supplier = offline_suppliers.pop()
             lg.warn('found "CRITICALLY_OFFLINE" supplier %s, max offline limit is %d' % (
                 one_dead_supplier, critical_offline_suppliers_count, ))
             potentialy_fired.add(one_dead_supplier)
         if not potentialy_fired:
-            lg.out(6, 'fire_hire.doDecideToDismiss   found no "bad" suppliers, all is good !!!!!')
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss   found no "bad" suppliers, all is good !!!!!')
             self.automat('made-decision', [])
             return
         # only replace suppliers one by one at the moment
@@ -582,7 +603,8 @@ class FireHire(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier current_suppliers=%r' % contactsdb.suppliers())
+            lg.out(_DebugLevel, 'fire_hire.doFindNewSupplier desired_suppliers=%d current_suppliers=%r' % (
+                settings.getSuppliersNumberDesired(), contactsdb.suppliers()))
         from p2p import network_connector
         if network_connector.A().state is not 'CONNECTED':
             if _Debug:
@@ -608,6 +630,7 @@ class FireHire(automat.Automat):
             self.automat('search-failed')
             return
         self.hire_list.append(position_for_new_supplier)
+        from customer import supplier_finder
         supplier_finder.A(
             'start',
             family_position=position_for_new_supplier,
@@ -622,6 +645,7 @@ class FireHire(automat.Automat):
         new_idurl = id_url.field(args[0])
         family_position = kwargs.get('family_position')
         current_suppliers = list(contactsdb.suppliers())
+        desired_suppliers = settings.getSuppliersNumberDesired()
         old_idurl = None
         if family_position in self.hire_list:
             self.hire_list.remove(family_position)
@@ -644,7 +668,8 @@ class FireHire(automat.Automat):
                     old_idurl = current_suppliers[i]
                     break
             family_position = position
-        lg.out(10, 'fire_hire.doSubstituteSupplier family_position=%d' % family_position)
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire.doSubstituteSupplier family_position=%d' % family_position)
         contactsdb.add_supplier(idurl=new_idurl, position=family_position)
         contactsdb.save_suppliers()
         misc.writeSupplierData(
@@ -656,7 +681,8 @@ class FireHire(automat.Automat):
         from main import control
         control.on_suppliers_changed(current_suppliers)
         if family_position < 0:
-            lg.info('ADDED NEW SUPPLIER : %s' % new_idurl)
+            lg.info('added new supplier, family position unknown: %s desired_suppliers=%d current_suppliers=%d' % (
+                new_idurl, desired_suppliers, len(contactsdb.suppliers())))
             events.send('supplier-modified', dict(
                 new_idurl=new_idurl,
                 old_idurl=None,
@@ -666,7 +692,8 @@ class FireHire(automat.Automat):
             ))
         else:
             if old_idurl:
-                lg.info('SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (family_position, old_idurl, new_idurl))
+                lg.info('hired new supplier and substitute existing supplier on position %d : %s->%s desired_suppliers=%d current_suppliers=%d' % (
+                    family_position, old_idurl, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
                 events.send('supplier-modified', dict(
                     new_idurl=new_idurl,
                     old_idurl=old_idurl,
@@ -675,7 +702,8 @@ class FireHire(automat.Automat):
                     family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
             else:
-                lg.info('REPLACE EMPTY SUPPLIER %d : %s' % (family_position, new_idurl))
+                lg.info('hired new supplier on empty position %d : %s desired_suppliers=%d current_suppliers=%d' % (
+                    family_position, new_idurl, desired_suppliers, len(contactsdb.suppliers())))
                 events.send('supplier-modified', dict(
                     new_idurl=new_idurl,
                     old_idurl=None,
@@ -684,6 +712,8 @@ class FireHire(automat.Automat):
                     family_snapshot=id_url.to_bin_list(contactsdb.suppliers()),
                 ))
         self.restart_interval = 1.0
+        if _Debug:
+            lg.out(_DebugLevel, '    my current suppliers: %r' % contactsdb.suppliers())
 
     def doRemoveSuppliers(self, *args, **kwargs):
         """
@@ -718,13 +748,19 @@ class FireHire(automat.Automat):
             events.send('supplier-modified', dict(
                 new_idurl=None, old_idurl=supplier_idurl, position=position,
             ))
-        lg.info('REMOVED SOME SUPPLIERS : %d' % len(self.dismiss_list))
+        lg.info('removed some suppliers : %d  desired_suppliers=%d current_suppliers=%d' % (
+            len(self.dismiss_list), desired_suppliers, len(contactsdb.suppliers())))
+        if _Debug:
+            lg.out(_DebugLevel, '    my current suppliers: %r' % contactsdb.suppliers())
 
     def doDisconnectSuppliers(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.out(10, 'fire_hire.doDisconnectSuppliers %r' % self.dismiss_list)
+        from customer import supplier_connector
+        from p2p import online_status
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire.doDisconnectSuppliers %r' % self.dismiss_list)
         self.dismiss_results = []
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -747,6 +783,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
+        from customer import supplier_connector
         supplier_idurl, _ = args[0]
         supplier_idurl = id_url.field(supplier_idurl)
         if _Debug:
@@ -763,6 +800,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
+        from customer import supplier_connector
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
             if supplier_idurl in self.dismiss_list:
@@ -784,15 +822,17 @@ class FireHire(automat.Automat):
         if not self.restart_task:
             self.restart_task = reactor.callLater(  # @UndefinedVariable
                 self.restart_interval, self._scheduled_restart)
-            lg.out(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
             from p2p import network_connector
             if network_connector.A().state is not 'CONNECTED':
                 self.restart_interval = 60 * 5
             else:
                 self.restart_interval *= 1.1
         else:
-            lg.out(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
-                time.time() - self.restart_task.getTime()))
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
+                    time.time() - self.restart_task.getTime()))
 
     def doNotifySuppliersChanged(self, *args, **kwargs):
         self.hire_list = []
@@ -811,9 +851,11 @@ class FireHire(automat.Automat):
         self.automat('restart')
 
     def _on_supplier_connector_state_changed(self, idurl, newstate, **kwargs):
+        from customer import supplier_connector
         idurl = id_url.field(idurl)
-        lg.out(14, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
-            idurl, newstate, self.state))
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
+                idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
             if idurl in self.connect_list:
@@ -830,8 +872,9 @@ class FireHire(automat.Automat):
         self.automat('supplier-state-changed', (idurl, newstate, ))
 
     def _on_supplier_online_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
-        lg.out(6, 'fire_hire._on_supplier_online_status_state_changed  %s -> %s, own state is %s' % (
-            oldstate, newstate, self.state))
+        if _Debug:
+            lg.out(_DebugLevel, 'fire_hire._on_supplier_online_status_state_changed  %s -> %s, own state is %s' % (
+                oldstate, newstate, self.state))
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
             self.automat('restart')
 

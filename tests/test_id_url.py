@@ -289,6 +289,19 @@ class TestIDURL(TestCase):
         self.assertFalse(id_url.is_some_empty(l))
         self.assertEqual(l.count(None), 0)
         self.assertEqual(id_url.empty_count(l), 0)
+        l += [id_url.field(b''), ] * 3
+        self.assertEqual(l.count(None), 3)
+        self.assertEqual(l.count(b''), 3)
+        self.assertEqual(l.count(''), 3)
+        self.assertEqual(l.count(id_url.field(None)), 3)
+        self.assertEqual(l.count(id_url.field(b'')), 3)
+        self.assertEqual(l.count(id_url.field('')), 3)
+        self.assertEqual(id_url.fields_list([b'', ]), [b'', ])
+        self.assertEqual(id_url.fields_list([b'', ]), [None, ])
+        self.assertEqual(id_url.fields_list([id_url.field(''), ]), [None, ])
+        self.assertEqual(id_url.fields_list([None, ]), [id_url.field(''), ])
+        self.assertNotEqual(id_url.fields_list([None, None]), [id_url.field(''), ])
+        self.assertEqual(len(id_url.fields_list([None, ])), 1)
 
     def test_in_dict(self):
         self._cache_identity('alice')
@@ -306,6 +319,26 @@ class TestIDURL(TestCase):
         keys = list(d2.keys())
         with self.assertRaises(TypeError):
             (keys[0] != keys[1])
+
+    def test_dict_of_lists(self):
+        self._cache_identity('alice')
+        self._cache_identity('bob')
+        self._cache_identity('carl')
+        self._cache_identity('frank')
+        d = {}
+        d[id_url.field(alice_text)] = []
+        d[id_url.field(bob)] = []
+        d[id_url.field(alice_text)].append(id_url.field(carl))
+        d[id_url.field(alice_text)].append(id_url.field(frank_1))
+        d[id_url.field(bob)].append(id_url.field(''))
+        d[id_url.field(bob)].append(id_url.field(frank_2))
+        d[id_url.field(bob)].append(id_url.field(None))
+        d[id_url.field(bob)].append(id_url.field(b''))
+        self.assertIn(id_url.field(frank_1), d[id_url.field(alice_text)])
+        self.assertIn(id_url.field(frank_1), d[id_url.field(bob)])
+        self.assertFalse(id_url.is_some_empty(d[id_url.field(alice_text)]))
+        self.assertTrue(id_url.is_some_empty(d[id_url.field(bob)]))
+        self.assertEqual(len(id_url.fields_list(d[id_url.field(bob)])), 4)
 
     def test_two_sources(self):
         with self.assertRaises(KeyError):

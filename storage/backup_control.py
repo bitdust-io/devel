@@ -775,9 +775,10 @@ def RunTask():
         return False
     if len(jobs()) >= MAXIMUM_JOBS_STARTED:
         return False
-    if id_url.is_some_empty(contactsdb.suppliers()):
+    from customer import fire_hire
+    if not fire_hire.IsAllHired():
         if _Debug:
-            lg.out(_DebugLevel, 'backup_control.RunTask found empty supplier, retry after 5 sec')
+            lg.out(_DebugLevel, 'backup_control.RunTask some suppliers not hired yet, retry after 5 sec')
         reactor.callLater(5, RunTask)  # @UndefinedVariable
         return False
     T = tasks().pop(0)

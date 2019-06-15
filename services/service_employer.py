@@ -50,25 +50,37 @@ class EmployerService(LocalService):
         ]
 
     def start(self):
-        from customer import fire_hire
+        from twisted.internet.defer import Deferred
+        from logs import lg
         from main.config import conf
         from main import events
         from raid import eccmap
+        from customer import fire_hire
+        self.starting_deferred = Deferred()
+        self.starting_deferred.addErrback(lg.errback)
         eccmap.Update()
         fire_hire.A('init')
+        fire_hire.A().addStateChangedCallback(
+            self._on_fire_hire_ready, None, 'READY')
         conf().addCallback('services/customer/suppliers-number',
                            self._on_suppliers_number_modified)
         conf().addCallback('services/customer/needed-space',
                            self._on_needed_space_modified)
         events.add_subscriber(self._on_supplier_modified,
                               'supplier-modified')
-        self._do_cleanup_dht_suppliers()
-        return True
+        if fire_hire.IsAllHired():
+            self.starting_deferred.callback(True)
+            self.starting_deferred = None
+            lg.info('all my suppliers are already hired')
+            return True
+        fire_hire.A('restart')
+        return self.starting_deferred
 
     def stop(self):
-        from customer import fire_hire
         from main.config import conf
         from main import events
+        from customer import fire_hire
+        fire_hire.A().removeStateChangedCallback(self._on_fire_hire_ready)
         events.remove_subscriber(self._on_supplier_modified)
         conf().removeCallback('services/customer/suppliers-number')
         conf().removeCallback('services/customer/needed-space')
@@ -76,8 +88,8 @@ class EmployerService(LocalService):
         return True
 
     def health_check(self):
-        from contacts import contactsdb
         from raid import eccmap
+        from contacts import contactsdb
         from userid import id_url
         missed_suppliers = id_url.empty_count(contactsdb.suppliers())
         # critical amount of suppliers must be already in the family to have that service running
@@ -95,15 +107,59 @@ class EmployerService(LocalService):
         else:
             lg.warn('service service_entangled_dht is OFF')
 
+    def _do_check_all_hired(self):
+        from logs import lg
+        from main import events
+        from customer import fire_hire
+        if fire_hire.IsAllHired():
+            lg.info('at the moment all my suppliers are hired and known')
+            self._do_cleanup_dht_suppliers()
+            events.send('my-suppliers-all-hired', data=dict())
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.starting_deferred.callback(True)
+                self.starting_deferred = None
+        else:
+            lg.info('some of my supplies are not hired yet')
+            events.send('my-suppliers-yet-not-hired', data=dict())
+            if self.starting_deferred and not self.starting_deferred.called:
+                self.starting_deferred.errback(Exception('not possible to hire enough suppliers'))
+                self.starting_deferred = None
+
+    def _do_notify_supplier_position(self, supplier_idurl, supplier_position):
+        from p2p import p2p_service
+        from raid import eccmap
+        from userid import my_id
+        p2p_service.SendContacts(
+            remote_idurl=supplier_idurl,
+            json_payload={
+                'space': 'family_member',
+                'type': 'supplier_position',
+                'customer_idurl': my_id.getLocalID(),
+                'customer_ecc_map': eccmap.Current().name,
+                'supplier_idurl': supplier_idurl,
+                'supplier_position': supplier_position,
+            },
+        )
+
+    def _on_fire_hire_ready(self, oldstate, newstate, evt, *args, **kwargs):
+        self._do_check_all_hired()
+        return None
+
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
+        from logs import lg
         from customer import fire_hire
         from raid import eccmap
+        lg.info('my desired suppliers number changed')
+        self._do_check_all_hired()
         eccmap.Update()
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 
     def _on_needed_space_modified(self, path, value, oldvalue, result):
+        from logs import lg
         from customer import fire_hire
+        lg.info('my needed space value modified')
+        self._do_check_all_hired()
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 
@@ -154,19 +210,3 @@ class EmployerService(LocalService):
     def _on_my_dht_relations_failed(self, err):
         from logs import lg
         lg.err(err)
-
-    def _do_notify_supplier_position(self, supplier_idurl, supplier_position):
-        from p2p import p2p_service
-        from raid import eccmap
-        from userid import my_id
-        p2p_service.SendContacts(
-            remote_idurl=supplier_idurl,
-            json_payload={
-                'space': 'family_member',
-                'type': 'supplier_position',
-                'customer_idurl': my_id.getLocalID(),
-                'customer_ecc_map': eccmap.Current().name,
-                'supplier_idurl': supplier_idurl,
-                'supplier_position': supplier_position,
-            },
-        )
