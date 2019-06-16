@@ -117,6 +117,13 @@ def IsAckExpected(com):
     expected = P2PCommandAcks.get(com, [])
     return Ack() in expected
 
+
+def IsReplyExpected(com):
+    """
+    """
+    expected = P2PCommandAcks.get(com, [])
+    return len(expected) > 0
+
 #------------------------------------------------------------------------------
 
 
