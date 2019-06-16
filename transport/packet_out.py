@@ -755,7 +755,7 @@ class PacketOut(automat.Automat):
         Action method.
         """
         if args and args[0]:
-            callback.run_queue_item_status_callbacks(self, 'finished')
+            callback.run_queue_item_status_callbacks(self, 'finished', '')
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
         if _PacketLogFileEnabled:
