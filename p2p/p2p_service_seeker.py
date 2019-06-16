@@ -282,7 +282,7 @@ class P2PServiceSeeker(automat.Automat):
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if newpacket.Command == commands.Ack() and \
                 newpacket.OwnerID == self.target_idurl and \
-                newpacket.PacketID == 'identity' and \
+                newpacket.PacketID.startswith('identity:') and \
                 self.state == 'ACK?':
             self.automat('ack-received', self.target_idurl)
             return True

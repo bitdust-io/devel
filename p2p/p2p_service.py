@@ -327,13 +327,15 @@ def Identity(newpacket, send_ack=True):
 def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
     """
     """
+    packet_id = 'identity:%s' % packetid.UniqueID()
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendIdentity to %s wide=%s" % (nameurl.GetName(remote_idurl), wide, ))
+        lg.out(_DebugLevel, "p2p_service.SendIdentity to %s wide=%s packet_id=%r" % (
+            nameurl.GetName(remote_idurl), wide, packet_id, ))
     result = signed.Packet(
         Command=commands.Identity(),
         OwnerID=my_id.getLocalID(),
         CreatorID=my_id.getLocalID(),
-        PacketID='identity',
+        PacketID=packet_id,
         Payload=my_id.getLocalIdentity().serialize(),
         RemoteID=remote_idurl,
     )
@@ -362,12 +364,12 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
         lg.out(_DebugLevel, 'p2p_service.SendRequestService "%s" to %s with %r' % (
             service_name, remote_idurl, service_info))
     result = signed.Packet(
-        commands.RequestService(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        packetid.UniqueID(),
-        service_info_raw,
-        remote_idurl, )
+        Command=commands.RequestService(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packetid.UniqueID(),
+        Payload=service_info_raw,
+        RemoteID=remote_idurl, )
     gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 
@@ -389,12 +391,12 @@ def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, c
         lg.out(_DebugLevel, 'p2p_service.SendCancelService "%s" to %s with %d bytes payload' % (
             service_name, remote_idurl, len(service_info_raw)))
     result = signed.Packet(
-        commands.CancelService(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        packetid.UniqueID(),
-        service_info_raw,
-        remote_idurl, )
+        Command=commands.CancelService(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packetid.UniqueID(),
+        Payload=service_info_raw,
+        RemoteID=remote_idurl, )
     gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
 
@@ -502,12 +504,12 @@ def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
     """
     # TODO:
     newpacket = signed.Packet(
-        commands.Data(),
-        ownerID,
-        creatorID,
-        packetID,
-        raw_data,
-        remoteID,
+        Command=commands.Data(),
+        OwnerID=ownerID,
+        CreatorID=creatorID,
+        PacketID=packetID,
+        Payload=raw_data,
+        RemoteID=remoteID,
     )
     result = gateway.outbox(newpacket, callbacks=callbacks)
     if _Debug:
@@ -534,12 +536,12 @@ def SendRetreive(ownerID, creatorID, packetID, remoteID, payload='', callbacks={
     """
     """
     newpacket = signed.Packet(
-        commands.Retrieve(),
-        ownerID,
-        creatorID,
-        packetID,
-        payload,
-        remoteID,
+        Command=commands.Retrieve(),
+        OwnerID=ownerID,
+        CreatorID=creatorID,
+        PacketID=packetID,
+        Payload=payload,
+        RemoteID=remoteID,
     )
     result = gateway.outbox(newpacket, callbacks=callbacks)
     if _Debug:
@@ -566,7 +568,14 @@ def SendDeleteFile(SupplierID, pathID):
     MyID = my_id.getLocalID()
     PacketID = pathID
     RemoteID = SupplierID
-    result = signed.Packet(commands.DeleteFile(), MyID, MyID, PacketID, "", RemoteID)
+    result = signed.Packet(
+        Command=commands.DeleteFile(),
+        OwnerID=MyID,
+        CreatorID=MyID,
+        PacketID=PacketID,
+        Payload="",
+        RemoteID=RemoteID,
+    )
     gateway.outbox(result)
     return result
 
@@ -578,7 +587,14 @@ def SendDeleteListPaths(SupplierID, ListPathIDs):
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListPathIDs)
-    result = signed.Packet(commands.DeleteFile(), MyID, MyID, PacketID, Payload, RemoteID)
+    result = signed.Packet(
+        Command=commands.DeleteFile(),
+        OwnerID=MyID,
+        CreatorID=MyID,
+        PacketID=PacketID,
+        Payload=Payload,
+        RemoteID=RemoteID,
+    )
     gateway.outbox(result)
     return result
 
@@ -601,7 +617,14 @@ def SendDeleteBackup(SupplierID, BackupID):
     MyID = my_id.getLocalID()
     PacketID = packetid.RemotePath(BackupID)
     RemoteID = SupplierID
-    result = signed.Packet(commands.DeleteBackup(), MyID, MyID, PacketID, "", RemoteID)
+    result = signed.Packet(
+        Command=commands.DeleteBackup(),
+        OwnerID=MyID,
+        CreatorID=MyID,
+        PacketID=PacketID,
+        Payload="",
+        RemoteID=RemoteID,
+    )
     gateway.outbox(result)
     return result
 
@@ -613,7 +636,14 @@ def SendDeleteListBackups(SupplierID, ListBackupIDs):
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListBackupIDs)
-    result = signed.Packet(commands.DeleteBackup(), MyID, MyID, PacketID, Payload, RemoteID)
+    result = signed.Packet(
+        Command=commands.DeleteBackup(),
+        OwnerID=MyID,
+        CreatorID=MyID,
+        PacketID=PacketID,
+        Payload=Payload,
+        RemoteID=RemoteID,
+    )
     gateway.outbox(result)
     return result
 
@@ -711,12 +741,12 @@ def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
     if packet_id is None:
         packet_id = packetid.UniqueID()
     outpacket = signed.Packet(
-        commands.Coin(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        packet_id,
-        serialization.DictToBytes(coins, keys_to_text=True),
-        remote_idurl,
+        Command=commands.Coin(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packet_id,
+        Payload=serialization.DictToBytes(coins, keys_to_text=True),
+        RemoteID=remote_idurl,
     )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
@@ -732,12 +762,12 @@ def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendRetrieveCoin to %s" % remote_idurl)
     outpacket = signed.Packet(
-        commands.RetrieveCoin(),
-        my_id.getLocalID(),
-        my_id.getLocalID(),
-        packetid.UniqueID(),
-        serialization.DictToBytes(query),
-        remote_idurl,
+        Command=commands.RetrieveCoin(),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=packetid.UniqueID(),
+        Payload=serialization.DictToBytes(query),
+        RemoteID=remote_idurl,
     )
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket

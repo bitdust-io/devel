@@ -605,7 +605,7 @@ class ProxyReceiver(automat.Automat):
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
-        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower() == 'identity':
+        if routed_packet.Command == commands.Relay() and routed_packet.PacketID.lower().startswith('identity:'):
             if _Debug:
                 lg.out(_DebugLevel, '    found routed identity in relay packet %s' % routed_packet)
             try:
