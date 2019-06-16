@@ -555,6 +555,8 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
+        if commands.IsAckExpected(self.outpacket.Command):
+            return True
         return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
 
     def isMoreItems(self, *args, **kwargs):
