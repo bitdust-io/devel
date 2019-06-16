@@ -468,13 +468,15 @@ def start_single(service_name):
         raise Exception('bad response')
 
     def _on_stopped(response):
-        if response != 'stopped':
-            raise Exception('unpredicted response')
+        if response != 'stopped' and response != 'depends_off':
+            raise Exception('unpredicted response: %r' % response)
         svc.automat('start', _starting)
         return True
         
     _starting.addCallback(_on_started)
+    _starting.addErrback(lg.errback)
     _stopping.addCallback(_on_stopped)
+    _stopping.addErrback(lg.errback)
     svc = services().get(service_name, None)
     if not svc:
         return succeed(False)
@@ -496,8 +498,8 @@ def stop_single(service_name):
     _stopping = Deferred()
 
     def _on_stopped(response):
-        if response != 'stopped':
-            raise Exception('unpredicted response')
+        if response != 'stopped' and response != 'depends_off':
+            raise Exception('unpredicted response: %r' % response)
         return result.callback(True)
 
     def _on_started(response):
@@ -509,7 +511,9 @@ def stop_single(service_name):
         raise Exception('bad response')
 
     _starting.addCallback(_on_started)
+    _starting.addErrback(lg.errback)
     _stopping.addCallback(_on_stopped)
+    _stopping.addErrback(lg.errback)
     svc = services().get(service_name, None)
     if not svc:
         return succeed(False)

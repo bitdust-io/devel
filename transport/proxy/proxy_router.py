@@ -472,6 +472,7 @@ class ProxyRouter(automat.Automat):
                     newpacket.Command, newpacket.PacketID,
                     nameurl.GetName(receiver_idurl))),
             },
+            skip_ack=True,
         )
         if _Debug:
             lg.out(_DebugLevel, '<<<Relay-IN-OUT %s %s:%s' % (
@@ -574,6 +575,7 @@ class ProxyRouter(automat.Automat):
             wide=wide,
             callbacks={},
             target=receiver_idurl,
+            skip_ack=True,
         )
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
