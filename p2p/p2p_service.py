@@ -310,15 +310,15 @@ def Identity(newpacket, send_ack=True):
     #         d.addErrback(lambda err: lg.warn('caching filed: %s' % err))
     if not send_ack:
         if _Debug:
-            lg.out(_DebugLevel, "p2p_service.Identity idurl=%s   skip sending Ack()" % idurl)
+            lg.out(_DebugLevel, "p2p_service.Identity idurl=%s  remoteID=%r  skip sending Ack()" % (idurl, newpacket.RemoteID))
         return True
     if newpacket.OwnerID == idurl:
         if _Debug:
-            lg.out(_DebugLevel, "p2p_service.Identity idurl=%s   sending wide Ack()" % idurl)
+            lg.out(_DebugLevel, "p2p_service.Identity idurl=%s  remoteID=%r  sending wide Ack()" % (idurl, newpacket.RemoteID))
     else:
         if _Debug:
-            lg.out(_DebugLevel, "p2p_service.Identity idurl=%s   but packet ownerID=%s   sending wide Ack()" % (
-                idurl, newpacket.OwnerID, ))
+            lg.out(_DebugLevel, "p2p_service.Identity idurl=%s  remoteID=%r  but packet ownerID=%s   sending wide Ack()" % (
+                idurl, newpacket.RemoteID, newpacket.OwnerID, ))
     # wide=True : a small trick to respond to all his contacts
     reactor.callLater(0, SendAck, newpacket, wide=True)  # @UndefinedVariable
     return True
