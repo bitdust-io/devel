@@ -362,7 +362,7 @@ class PacketOut(automat.Automat):
         """
         packet_label = '?'
         if self.outpacket:
-            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:10], )
+            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:20], )
         return '%s[%s](%s)' % (self.id, packet_label, self.state)
 
     def init(self):
