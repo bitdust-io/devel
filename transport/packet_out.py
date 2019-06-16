@@ -122,14 +122,14 @@ def queue():
     return _OutboxQueue
 
 
-def create(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
+def create(outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True, skip_ack=False):
     """
     """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create [%s/%s/%s]:%s(%s) target=%r route=%r callbacks=%s' % (
             nameurl.GetName(outpacket.OwnerID), nameurl.GetName(outpacket.CreatorID), nameurl.GetName(outpacket.RemoteID),
             outpacket.Command, outpacket.PacketID, target, route, list(callbacks.keys())))
-    p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
+    p = PacketOut(outpacket, wide, callbacks, target, route, response_timeout, keep_alive, skip_ack=skip_ack)
     queue().append(p)
     p.automat('run')
     return p
@@ -332,7 +332,7 @@ class PacketOut(automat.Automat):
         'MSG_5': 'pushing outgoing packet was cancelled',
     }
 
-    def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True):
+    def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True, skip_ack=False):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = {}
@@ -349,6 +349,7 @@ class PacketOut(automat.Automat):
         self.remote_name = nameurl.GetName(self.remote_idurl)
         self.label = 'out_%d_%s' % (get_packets_counter(), self.remote_name)
         self.keep_alive = keep_alive
+        self.skip_ack = skip_ack
         automat.Automat.__init__(
             self, self.label, 'AT_STARTUP',
             debug_level=_DebugLevel, log_events=_Debug, publish_events=False, )
@@ -555,6 +556,8 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
+        if self.skip_ack:
+            return False
         if commands.IsAckExpected(self.outpacket.Command):
             return True
         return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
@@ -754,7 +757,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        if args and args[0]:
+        if (args and args[0]) or self.skip_ack:
             callback.run_queue_item_status_callbacks(self, 'finished', '')
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
