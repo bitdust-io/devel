@@ -38,7 +38,7 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
         response = requests.get(url=tunnel_url(customer, 'supplier/list/v1'))
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print('\nsupplier/list/v1 : %r\n' % pprint.pformat(response.json()))
+        print('\nsupplier/list/v1 : %s\n' % pprint.pformat(response.json()))
         if expected_min_suppliers is None and expected_max_suppliers is None:
             break
         num_connected = 0
@@ -101,7 +101,7 @@ def share_create_v1(customer: str, key_size=1024):
     response = requests.post(url=tunnel_url(customer, 'share/create/v1'), json={'key_size': key_size, }, )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
-    print('\nshare/create/v1 : %r\n' % pprint.pformat(response.json()))
+    print('\nshare/create/v1 : %s\n' % pprint.pformat(response.json()))
     return response.json()['result'][0]['key_id']
 
 
@@ -109,7 +109,7 @@ def file_create_v1(node, remote_path):
     response = requests.post(url=tunnel_url(node, 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
-    print('\nfile/create/v1 [%s] remote_path=%s : %r\n' % (node, remote_path, pprint.pformat(response.json()), ))
+    print('\nfile/create/v1 [%s] remote_path=%s : %s\n' % (node, remote_path, pprint.pformat(response.json()), ))
     return response.json()
 
 
@@ -131,7 +131,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
-    print('\nfile/upload/start/v1 [%r] remote_path=%s local_path=%s : %r\n' % (customer, remote_path, local_path, pprint.pformat(response.json()),))
+    print('\nfile/upload/start/v1 [%r] remote_path=%s local_path=%s : %s\n' % (customer, remote_path, local_path, pprint.pformat(response.json()),))
     if wait_job_finish:
         for i in range(attempts):
             response = requests.get(
@@ -139,7 +139,7 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
             )
             assert response.status_code == 200
             assert response.json()['status'] == 'OK', response.json()
-            print('\nfile/upload/v1 [%s] : %r\n' % (customer, pprint.pformat(response.json()), ))
+            print('\nfile/upload/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
             if len(response.json()['result']['pending']) == 0 and len(response.json()['result']['running']) == 0:
                 break
             time.sleep(delay)
@@ -167,10 +167,10 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             },
         )
         assert response.status_code == 200
-        print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %r\n' % (
+        print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
             customer, remote_path, destination, pprint.pformat(response.json()), ))
         if response.json()['status'] == 'OK':
-            print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %r\n' % (
+            print('\nfile/download/start/v1 [%s] remote_path=%s destination_folder=%s : %s\n' % (
                 customer, remote_path, destination, pprint.pformat(response.json()), ))
             break
         if response.json()['errors'][0].count('failed') and response.json()['errors'][0].count('downloading'):
@@ -186,7 +186,7 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
             )
             assert response.status_code == 200
             assert response.json()['status'] == 'OK', response.json()
-            print('\nfile/download/v1 [%s] : %r\n' % (customer, pprint.pformat(response.json()), ))
+            print('\nfile/download/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
             if len(response.json()['result']) == 0:
                 break
             time.sleep(delay)
@@ -204,7 +204,7 @@ def config_set_v1(node, key, value):
         },
     )
     assert response.status_code == 200
-    print('\nconfig/set/v1 [%s] key=%r value=%r : %r\n' % (
+    print('\nconfig/set/v1 [%s] key=%r value=%r : %s\n' % (
         node, key, value, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
@@ -304,7 +304,7 @@ def service_info_v1(node, service_name, expected_state, attempts=30, delay=3):
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
         current_state = response.json()['result'][0]['state']
-        print(f'\nservice/info/{service_name}/v1 [{node}] : %r' % pprint.pformat(response.json()))
+        print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response.json()))
         if current_state == expected_state:
             break
         count += 1
@@ -322,7 +322,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
         response = requests.get(url=tunnel_url(node, f'event/listen/{consumer_id}/v1'), timeout=timeout)
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print(f'\nevent/listen/{consumer_id}/v1 : %r\n' % pprint.pformat(response.json()))
+        print(f'\nevent/listen/{consumer_id}/v1 : %s\n' % pprint.pformat(response.json()))
         for e in response.json()['result']:
             if e['id'] == expected_event_id:
                 found = e
@@ -342,7 +342,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
         )
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print('\npacket/list/v1 [%s] : %r\n' % (node, pprint.pformat(response.json()), ))
+        print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         if len(response.json()['result']) == 0 or not wait_all_finish:
             break
         time.sleep(delay)
@@ -358,7 +358,7 @@ def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
         )
         assert response.status_code == 200
         assert response.json()['status'] == 'OK', response.json()
-        print('\ntransfer/list/v1 [%s] : %r\n' % (node, pprint.pformat(response.json()), ))
+        print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
         if not wait_all_finish:
             break
         some_incoming = False

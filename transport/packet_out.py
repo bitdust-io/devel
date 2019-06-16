@@ -222,14 +222,14 @@ def search_by_response_packet(newpacket, proto=None, host=None):
         lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s]' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
             newpacket.Command, newpacket.PacketID, proto, host, ))
-        lg.out(_DebugLevel, '    [%s]' % (','.join([str(p.outpacket) for p in queue()])))
+        lg.out(_DebugLevel, '    [%s]' % (', '.join([str(p.outpacket) for p in queue()])))
     for p in queue():
         # TODO: investigate 
         if p.outpacket.PacketID.lower() != newpacket.PacketID.lower():
             # PacketID of incoming packet not matching with that outgoing packet
             continue
         if p.outpacket.PacketID != newpacket.PacketID:
-            lg.warn('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
+            lg.err('packet ID in queue "almost" matching with incoming: %s ~ %s' % (
                 p.outpacket.PacketID, newpacket.PacketID, ))
         if not commands.IsCommandAck(p.outpacket.Command, newpacket.Command):
             # this command must not be in the reply
@@ -362,7 +362,7 @@ class PacketOut(automat.Automat):
         """
         packet_label = '?'
         if self.outpacket:
-            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:20], )
+            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:25], )
         return '%s[%s](%s)' % (self.id, packet_label, self.state)
 
     def init(self):
