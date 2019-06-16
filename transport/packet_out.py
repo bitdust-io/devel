@@ -262,7 +262,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     if len(result) == 0:
         if _Debug:
             lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
-        if newpacket.Command == commands.Ack() and newpacket.PacketID not in [commands.Identity(), commands.Identity().lower()]:
+        if newpacket.Command == commands.Ack() and not newpacket.PacketID.lower().startswith('identity:'):
             lg.warn('received %s was not a "good reply" from %s://%s' % (newpacket, proto, host, ))
     return result
 
