@@ -58,7 +58,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = True
@@ -754,7 +754,10 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
+        if args and args[0]:
+            callback.run_queue_item_status_callbacks(self, 'finished')
+        else:
+            callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes to %s TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
