@@ -350,9 +350,14 @@ class PacketOut(automat.Automat):
         self.label = 'out_%d_%s' % (get_packets_counter(), self.remote_name)
         self.keep_alive = keep_alive
         self.skip_ack = skip_ack
-        automat.Automat.__init__(
-            self, self.label, 'AT_STARTUP',
-            debug_level=_DebugLevel, log_events=_Debug, publish_events=False, )
+        automat.Automat.__init__(self,
+            name=self.label,
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+            publish_events=False,
+        )
         increment_packets_counter()
         for command, cb in callbacks.items():
             self.set_callback(command, cb)
@@ -558,7 +563,7 @@ class PacketOut(automat.Automat):
         """
         if self.skip_ack:
             return False
-        if commands.IsAckExpected(self.outpacket.Command):
+        if commands.IsReplyExpected(self.outpacket.Command):
             return True
         return commands.Ack() in list(self.callbacks.keys()) or commands.Fail() in list(self.callbacks.keys())
 
@@ -573,7 +578,11 @@ class PacketOut(automat.Automat):
         Condition method.
         """
         newpacket, _ = args[0]
-        return newpacket.Command in list(self.callbacks.keys())
+        if newpacket.Command in list(self.callbacks.keys()):
+            return True
+        if not commands.IsCommandAck(self.outpacket.Command, newpacket.Command):
+            return False
+        return True
 
     def isDataExpected(self, *args, **kwargs):
         """
