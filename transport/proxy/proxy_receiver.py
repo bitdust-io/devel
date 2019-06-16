@@ -642,12 +642,12 @@ class ProxyReceiver(automat.Automat):
             lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s' % self.router_idurl)
             lg.out(_DebugLevel, '        contacts=%s, sources=%s' % (identity_obj.contacts, identity_obj.sources))
         newpacket = signed.Packet(
-            commands.Identity(),
-            my_id.getLocalID(),
-            my_id.getLocalID(),
-            commands.Identity(),
-            identity_obj.serialize(),
-            self.router_idurl,
+            Command=commands.Identity(),
+            OwnerID=my_id.getLocalID(),
+            CreatorID=my_id.getLocalID(),
+            PacketID=('identity:%s' % packetid.UniqueID()),  # commands.Identity(),
+            Payload=identity_obj.serialize(),
+            RemoteID=self.router_idurl,
         )
         packet_out.create(
             newpacket,

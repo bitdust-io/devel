@@ -72,6 +72,7 @@ from system import bpio
 from lib import nameurl
 from lib import net_misc
 from lib import strng
+from lib import packetid
 
 from contacts import contactsdb
 from contacts import identitycache
@@ -413,12 +414,13 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
     if thePayload is None:
         thePayload = strng.to_bin(my_id.getLocalIdentity().serialize())
     p = signed.Packet(
-        commands.Identity(),
-        my_id.getLocalID(),  # MyID,
-        my_id.getLocalID(),  # MyID,
-        commands.Identity(),  #  'Identity',  # my_id.getLocalID(), #PacketID,
-        thePayload,
-        idurl,
+        Command=commands.Identity(),
+        OwnerID=my_id.getLocalID(),  # MyID,
+        CreatorID=my_id.getLocalID(),  # MyID,
+        # commands.Identity(),  #  'Identity',  # my_id.getLocalID(), #PacketID,
+        PacketID=('identity:%s' % packetid.UniqueID()),
+        Payload=thePayload,
+        RemoteID=idurl,
     )
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
     result = gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
@@ -480,12 +482,13 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
 #            lg.out(8, '        skip sending to %s' % contact)
 #            continue
         p = signed.Packet(
-            commands.Identity(),
-            my_id.getLocalID(),  # MyID,
-            my_id.getLocalID(),  # MyID,
-            commands.Identity(),  #'Identity',  # my_id.getLocalID(), #PacketID,
-            Payload,
-            contact,
+            Command=commands.Identity(),
+            OwnerID=my_id.getLocalID(),  # MyID,
+            CreatorID=my_id.getLocalID(),  # MyID,
+            # commands.Identity(),  #'Identity',  # my_id.getLocalID(), #PacketID,
+            PacketID=('identity:%s' % packetid.UniqueID()),
+            Payload=Payload,
+            RemoteID=contact,
         )
         if _Debug:
             lg.out(_DebugLevel, "        sending [Identity] to %s" % nameurl.GetName(contact))

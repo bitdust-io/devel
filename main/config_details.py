@@ -127,7 +127,7 @@ def raw():
     How many megabytes you need to store your files?
 {services/customer/suppliers-number} number of suppliers
     Number of remote suppliers which keeps your backups.
-    You can ser one of the following values: 2, 4, 7, 13, 18, 26, 64.
+    You can select one of the following values: 2, 4, 7, 13, 18, 26, 64.
     Right now we have only few testing nodes in the network, so high values is not working yet.
     WARNING! You will lost all your existing backups after changing suppliers number.
 
