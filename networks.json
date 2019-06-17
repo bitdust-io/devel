@@ -4,7 +4,7 @@
         "repository": "https://github.com/bitdust-io/public.git",
         "dht-constants": {
         	"bucket_size": 4,
-        	"parallel_calls": 4,
+        	"parallel_calls": 3,
         	"rpc_timeout": 7,
         	"refresh_timeout": 600,
         	"max_age": 86400,
@@ -97,7 +97,7 @@
         "repository": "https://github.com/bitdust-io/devel.git",
         "dht-constants": {
         	"bucket_size": 4,
-        	"parallel_calls": 4,
+        	"parallel_calls": 3,
         	"rpc_timeout": 10,
         	"refresh_timeout": 600,
         	"max_age": 86400,
@@ -123,9 +123,9 @@
         "description": "BitDust Docker network for regression tests",
         "repository": null,
         "dht-constants": {
-        	"bucket_size": 2,
-        	"parallel_calls": 4,
-        	"rpc_timeout": 7,
+        	"bucket_size": 4,
+        	"parallel_calls": 2,
+        	"rpc_timeout": 10,
         	"refresh_timeout": 600,
         	"max_age": 86400,
         	"default_age": 43200
