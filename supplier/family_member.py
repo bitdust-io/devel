@@ -31,7 +31,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -486,6 +486,8 @@ class FamilyMember(automat.Automat):
         self.my_info = None
         self.dht_info = None
         self.transaction = None
+        if self.refresh_task.running:
+            self.refresh_task.stop()
         self.refresh_task = None
         delete_family(self.customer_idurl)
         self.destroy()
