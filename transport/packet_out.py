@@ -346,8 +346,11 @@ class PacketOut(automat.Automat):
             self.remote_idurl = id_url.field(self.route['remoteid'])
         if not self.remote_idurl:
             self.remote_idurl = self.outpacket.RemoteID
-        self.remote_name = nameurl.GetName(self.remote_idurl)
-        self.label = 'out_%d_%s' % (get_packets_counter(), self.remote_name)
+        self.remote_name = nameurl.GetName(self.outpacket.RemoteID)
+        if self.remote_idurl != self.outpacket.RemoteID:
+            self.label = 'out_%d_%s_via_%s' % (get_packets_counter(), self.remote_name, nameurl.GetName(self.remote_idurl))
+        else:
+            self.label = 'out_%d_%s' % (get_packets_counter(), self.remote_name)
         self.keep_alive = keep_alive
         self.skip_ack = skip_ack
         automat.Automat.__init__(self,

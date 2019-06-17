@@ -872,9 +872,10 @@ class FireHire(automat.Automat):
         self.automat('supplier-state-changed', (idurl, newstate, ))
 
     def _on_supplier_online_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
-        if _Debug:
-            lg.out(_DebugLevel, 'fire_hire._on_supplier_online_status_state_changed  %s -> %s, own state is %s' % (
-                oldstate, newstate, self.state))
+        if oldstate != newstate:
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire._on_supplier_online_status_state_changed  %s -> %s, own state is %s' % (
+                    oldstate, newstate, self.state))
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
             self.automat('restart')
 

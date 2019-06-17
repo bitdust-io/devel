@@ -102,7 +102,7 @@ def extract_done(retcode, backupID, tarfilename, callback_method):
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
 
-    # tmpfile.throw_out(tarfilename, 'file extracted')
+    tmpfile.throw_out(tarfilename, 'file extracted')
 
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, 'restore done')
@@ -148,7 +148,7 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
         result = 'extract failed'
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-    # tmpfile.throw_out(tarfilename, 'restore ' + result)
+    tmpfile.throw_out(tarfilename, 'restore ' + result)
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, result)
     if callback_method:
