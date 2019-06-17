@@ -91,7 +91,13 @@ def A(event=None, *args, **kwargs):
     global _SupplierFinder
     if _SupplierFinder is None:
         # set automat name and starting state here
-        _SupplierFinder = SupplierFinder('supplier_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _SupplierFinder = SupplierFinder(
+            name='supplier_finder',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _SupplierFinder.automat(event, *args, **kwargs)
     return _SupplierFinder
@@ -319,6 +325,7 @@ class SupplierFinder(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'supplier_finder._nodes_lookup_finished : %r' % idurls)
         if not idurls:
+            lg.warn('no available nodes found via DHT lookup')
             self.automat('users-not-found')
             return
         # if driver.is_on('service_proxy_transport'):
@@ -332,6 +339,7 @@ class SupplierFinder(automat.Automat):
             if len(myprotos.intersection(remoteprotos)) > 0:
                 self.automat('found-one-user', idurl)
                 return
+        lg.warn('found some available nodes via DHT lookup, but no matching protocols exists')
         self.automat('users-not-found')
 
     def _supplier_connector_state(self, supplier_idurl, newstate, **kwargs):

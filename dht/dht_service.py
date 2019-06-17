@@ -31,11 +31,10 @@ module:: dht_service
 
 from __future__ import absolute_import
 from __future__ import print_function
-import six
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
