@@ -5,7 +5,7 @@
         "dht-constants": {
         	"bucket_size": 4,
         	"parallel_calls": 4,
-        	"rpc_timeout": 10,
+        	"rpc_timeout": 7,
         	"refresh_timeout": 600,
         	"max_age": 86400,
         	"default_age": 43200
@@ -124,8 +124,8 @@
         "repository": null,
         "dht-constants": {
         	"bucket_size": 2,
-        	"parallel_calls": 2,
-        	"rpc_timeout": 3,
+        	"parallel_calls": 4,
+        	"rpc_timeout": 7,
         	"refresh_timeout": 600,
         	"max_age": 86400,
         	"default_age": 43200
