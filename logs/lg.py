@@ -167,7 +167,7 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
         _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
     if _LogLinesCounter % 10000 == 0:
-        out(2, '[%s]' % time.asctime())
+        out(10, '[%s]' % time.asctime())
     return None
 
 
@@ -212,7 +212,7 @@ def info(message):
         output_string = '\033[6;37;42m INFO %s \033[0m in %s.%s()' % (message, modul, caller, )
     else:
         output_string = ' INFO %s in %s.%s()' % (message, modul, caller, )
-    out(0, output_string)
+    out(0, output_string, showtime=True)
     return message
 
 
