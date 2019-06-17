@@ -2,6 +2,14 @@
     "main": {
         "description": "BitDust Main network",
         "repository": "https://github.com/bitdust-io/public.git",
+        "dht-constants": {
+        	"bucket_size": 4,
+        	"parallel_calls": 4,
+        	"rpc_timeout": 10,
+        	"refresh_timeout": 600,
+        	"max_age": 86400,
+        	"default_age": 43200
+        },
         "dht-seeds": [
             {
                 "host": "p2p-id.ru",
@@ -87,6 +95,14 @@
     "development": {
         "description": "BitDust Test network",
         "repository": "https://github.com/bitdust-io/devel.git",
+        "dht-constants": {
+        	"bucket_size": 4,
+        	"parallel_calls": 4,
+        	"rpc_timeout": 10,
+        	"refresh_timeout": 600,
+        	"max_age": 86400,
+        	"default_age": 43200
+        },
         "dht-seeds": [
             {
                 "host": "blog.bitdust.io",
@@ -106,6 +122,14 @@
     "docker": {
         "description": "BitDust Docker network for regression tests",
         "repository": null,
+        "dht-constants": {
+        	"bucket_size": 2,
+        	"parallel_calls": 2,
+        	"rpc_timeout": 3,
+        	"refresh_timeout": 600,
+        	"max_age": 86400,
+        	"default_age": 43200
+        },
         "dht-seeds": [
             {
                 "host": "dht_seed_0",

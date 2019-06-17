@@ -61,15 +61,15 @@ class DataMotionService(LocalService):
     def start(self):
         from logs import lg
         from customer import fire_hire
+        if not fire_hire.IsAllHired():
+            lg.warn('service_data_motion() can not start right now, not all suppliers hired yet')
+            return False
         from customer import io_throttle
         from customer import data_sender
         from customer import data_receiver
         io_throttle.init()
         data_sender.A('init')
         data_receiver.A('init')
-        if not fire_hire.IsAllHired():
-            lg.warn('service_data_motion() can not start right now, not all suppliers hired yet')
-            return False
         return True
 
     def stop(self):
