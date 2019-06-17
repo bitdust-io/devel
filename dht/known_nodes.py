@@ -39,16 +39,15 @@ import re
 
 #------------------------------------------------------------------------------
 
-def default_nodes():
+
+def network_info():
     """
-    List of DHT nodes currently maintained : (host, UDP port number)
+    Returns correct and full network info from networks.json file.
     """
     from system import bpio
     from system import local_fs
     from lib import serialization
-    from lib import strng
     from main import settings
-    # from logs import lg
     networks_json = serialization.BytesToDict(
         local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')),
         keys_to_text=True,
@@ -59,9 +58,18 @@ def default_nodes():
         my_network = 'main'
     if my_network not in networks_json:
         my_network = 'main'
-    network_info = networks_json[my_network]
+    nw_info = networks_json[my_network]
+    return nw_info
+
+
+def default_nodes():
+    """
+    List of DHT nodes currently maintained : (host, UDP port number)
+    """
+    from lib import strng
+    nw_info = network_info()
     dht_seeds = []
-    for dht_seed in network_info['dht-seeds']:
+    for dht_seed in nw_info['dht-seeds']:
         dht_seeds.append((strng.to_bin(dht_seed['host']), dht_seed['udp_port'], ))
     # lg.info('Active network is [%s]   dht_seeds=%s' % (my_network, dht_seeds, ))
     return dht_seeds

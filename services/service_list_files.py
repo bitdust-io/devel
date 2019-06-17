@@ -61,11 +61,11 @@ class ListFilesService(LocalService):
     def start(self):
         from logs import lg
         from customer import fire_hire
-        from customer import list_files_orator
-        list_files_orator.A('init')
         if not fire_hire.IsAllHired():
             lg.warn('service_list_files() can not start right now, not all suppliers hired yet')
             return False
+        from customer import list_files_orator
+        list_files_orator.A('init')
         return True
 
     def stop(self):
