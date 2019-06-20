@@ -85,12 +85,14 @@ def test_customer_family_decrease_for_customer_5():
         observer_node='customer_5',
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
+        # accepted_mistakes=0,
     )
     supplier_list_dht_v1(
         customer_node='customer_5',
         observer_node='customer_3',
         expected_ecc_map='ecc/4x4',
         expected_suppliers_number=4,
+        # accepted_mistakes=0,
     )
     config_set_v1('customer_5', 'services/customer/suppliers-number', '2')
     supplier_list_dht_v1(

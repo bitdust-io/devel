@@ -34,7 +34,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -65,6 +65,7 @@ from logs import lg
 from system import bpio
 
 from main import settings
+from main import config
 
 from lib import strng
 from lib import utime
@@ -125,9 +126,16 @@ def init(udp_port, db_file_path=None):
         os.remove(dbPath)
         dataStore = SQLiteVersionedJsonDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
-    _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
+    _MyNode = DHTNode(
+        udpPort=udp_port,
+        dataStore=dataStore,
+        networkProtocol=networkProtocol,
+        nodeID=config.conf().getString('services/entangled-dht/node-id', '').strip(),
+    )
+    config.conf().setString('services/entangled-dht/node-id', _MyNode.id)
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
+        lg.out(_DebugLevel, 'dht_service.init UDP port is %d, DB file path is %s, my DHT ID is %s' % (
+            udp_port, dbPath, _MyNode.id))
 
 
 def shutdown():
@@ -920,8 +928,8 @@ def dump_local_db(value_as_json=False):
 
 class DHTNode(EntangledNode):
 
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=None, )
+    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None, nodeID=None):
+        super(DHTNode, self).__init__(udpPort=udpPort, dataStore=dataStore, routingTable=routingTable, networkProtocol=networkProtocol, id=nodeID, )
         self._counter = count
         self.data = {}
         self.expire_task = LoopingCall(self.expire)

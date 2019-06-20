@@ -35,6 +35,31 @@ import requests
 
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
 
+DHT_NODE_ID_FIXED = {
+    'customer_1': 'fe17ab2a747f2ee22c7c12c23f8d0cd15fe17192',
+    'customer_2': '0be14989d69952f119c2e6f94f55e020683684a4',
+    'customer_3': '88a4bac84daef4970479642db209402ed159265e',
+    'customer_4': '19154e94a71272a3a2a42d5de279e43ccd6e99c5',
+    'customer_5': '2fbc3d5cf34cec61076487dfdc107874d3a5a0b0',
+    'customer_backup': 'c5e6cc9f4d33dc85d7e647de8f3d1c438e4d68e7',
+    'customer_restore': '091cbb6347cfefa2415002f025188023d1152716',
+    'supplier_1': '351a6b828070083fd8d44548582e5e2ddb27914f',
+    'supplier_2': '4629c27d522d3cfe97ea92dbf32f035934d059e1',
+    'supplier_3': '7fa93c8ea767025ad150cf730315fc87ec7ff8cd',
+    'supplier_4': '6ba864949abafd72694c1f13c176154b92714305',
+    'supplier_5': 'b4f1eb21b099e0293b2e47598acfb61e142fabd7',
+    'supplier_6': '67769d079fbe20d12eb7e0a5368a4e7eb286058f',
+    'proxy_server_1': 'be7fcaa1b790a1e8257626d6bf511bd9d5593921',
+    'proxy_server_2': 'ec9b62caab90248f4e83cd0ebcf859ef99039d1c',
+    'stun_1': '9bb9c59bde1ed349aabce88fe8e07ab9cf105f22',
+    'stun_2': 'd5f33226b760204914540a1091d23221d63ee4b3',
+    'dht_seed_0': '8d7083855601d429e7308dfef12bd3ff3a6a12fc',
+    'dht_seed_1': '6c5497b446f80ad48bde62dc5c46d26fac394ffe',
+    'dht_seed_2': '53bf998cbf3daabba40f477bbec2e060b8eb3d47',
+    'dht_seed_3': '4e0bd5387b1d99c28784908eb38ab453766ca994',
+    'dht_seed_4': 'f0fe69f05734f933d95b6d5727e575123d2e5517',
+}
+
 _SSHTunnels = {}
 _NodeTunnelPort = {} 
 _NextSSHTunnelPort = 10000
@@ -103,8 +128,6 @@ async def open_tunnel_async(node, local_port, loop):
     return ssh_proc
 
 
-# ===================================================== #
-
 def open_tunnel(node):
     global _SSHTunnels
     global _NodeTunnelPort
@@ -121,9 +144,6 @@ def open_tunnel(node):
 
 async def open_one_tunnel_async(node, local_port, loop):
     await open_tunnel_async(node, local_port, loop)
-
-
-# ===================================================== #
 
 
 def close_tunnel(node):
@@ -194,28 +214,6 @@ def tunnel_url(node, endpoint):
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 
-def start_stun_server(node):
-    print(f'\nNEW STUN SERVER at [{node}]\n')
-    # use short key to run tests faster
-    run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')
-    # disable unwanted services
-    run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/private-messages/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')
-    # configure DHT udp port
-    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
-    # enable Stun server
-    run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')
-    # start BitDust daemon
-    start_daemon(node)
-    health_check(node)
-    print(f'\nSTARTED STUN SERVER [{node}]\n')
-
-
 async def start_stun_server_async(node, event_loop):
     print(f'\nNEW STUN SERVER at [{node}]\n')
     # use short key to run tests faster
@@ -228,8 +226,9 @@ async def start_stun_server_async(node, event_loop):
     await run_ssh_command_and_wait_async(node, 'bitdust set services/private-messages/enabled false', event_loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/nodes-lookup/enabled false', event_loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/enabled false', event_loop)
-    # configure DHT udp port
+    # configure DHT udp port and node ID
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', event_loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node], event_loop)
     # enable Stun server
     await run_ssh_command_and_wait_async(node, 'bitdust set services/ip-port-responder/enabled true', event_loop)
     # start BitDust daemon
@@ -387,22 +386,6 @@ async def connect_network_async(node, loop):
             assert False
 
 
-def stop_daemon(node, skip_checks=False):
-    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
-    print('\n' + bitdust_stop[0].strip())
-    if not skip_checks:
-        assert (
-            (
-                bitdust_stop[0].strip().startswith('BitDust child processes found') and
-                bitdust_stop[0].strip().endswith('BitDust stopped')
-            ) or (
-                bitdust_stop[0].strip().startswith('found main BitDust process:') and
-                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
-            )
-        )
-    print(f'stop_daemon [{node}] OK\n')
-
-
 async def stop_daemon_async(node, loop, skip_checks=False):
     bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop)
     print('\n' + bitdust_stop[0].strip())
@@ -421,29 +404,6 @@ async def stop_daemon_async(node, loop, skip_checks=False):
     print(f'stop_daemon [{node}] OK\n')
 
 
-def start_proxy_server(node, identity_name):
-    print(f'\nNEW PROXY SERVER {identity_name} at [{node}]\n')
-    # use short key to run tests faster
-    run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')
-    # disable unwanted services
-    run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/enabled false')
-
-    # configure ID servers
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/max-servers 1')
-    # configure DHT udp port
-    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
-    # enable ProxyServer service
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled true')
-    # start BitDust daemon and create new identity for proxy server
-    start_daemon(node)
-    health_check(node)
-    create_identity(node, identity_name)
-    connect_network(node)
-    print(f'\nSTARTED PROXY SERVER [{node}]\n')
-
 
 async def start_proxy_server_async(node, identity_name, loop):
     print(f'\nNEW PROXY SERVER {identity_name} at [{node}]\n')
@@ -457,8 +417,9 @@ async def start_proxy_server_async(node, identity_name, loop):
     # configure ID servers
     await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
-    # configure DHT udp port
+    # configure DHT udp port and node ID
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node], loop)
     # enable ProxyServer service
     await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-server/enabled true', loop)
     # start BitDust daemon and create new identity for proxy server
@@ -468,29 +429,6 @@ async def start_proxy_server_async(node, identity_name, loop):
     await connect_network_async(node, loop)
     print(f'\nSTARTED PROXY SERVER [{node}]\n')
 
-
-def start_identity_server(node):
-    print(f'\nNEW IDENTITY SERVER at [{node}]\n')
-    # use short key to run tests faster
-    run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')
-    # disable unwanted services
-    run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-transport/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/private-messages/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/nodes-lookup/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/enabled false')
-    # configure DHT udp port
-    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
-    # configure and enable ID server
-    run_ssh_command_and_wait(node, f'bitdust set services/identity-server/host {node}')
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-server/enabled true')
-    # start BitDust daemon
-    start_daemon(node)
-    health_check(node)
-    print(f'\nSTARTED IDENTITY SERVER [{node}]\n')
 
 
 async def start_identity_server_async(node, loop):
@@ -505,9 +443,10 @@ async def start_identity_server_async(node, loop):
     await run_ssh_command_and_wait_async(node, 'bitdust set services/private-messages/enabled false', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/nodes-lookup/enabled false', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/enabled false', loop)
-    # configure DHT udp port
+    # configure DHT udp port and node ID
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/enabled false', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
+    # await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node], loop)
     # configure and enable ID server
     await run_ssh_command_and_wait_async(node, f'bitdust set services/identity-server/host {node}', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-server/enabled true', loop)
@@ -532,7 +471,7 @@ def start_dht_seed(node, wait_seconds=0, other_seeds=''):
     # configure DHT udp port and seed nodes
     run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
     run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/known-nodes "%s"' % other_seeds)
-
+    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node])
     # enable Stun server
     run_ssh_command_and_wait(node, 'bitdust set services/ip-port-responder/enabled true')
     # start BitDust daemon
@@ -542,29 +481,6 @@ def start_dht_seed(node, wait_seconds=0, other_seeds=''):
     health_check(node)
     print(f'\nSTARTED DHT SEED (with STUN SERVER) [{node}]\n')
 
-
-def start_supplier(node, identity_name):
-    print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
-    # use short key to run tests faster
-    run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')
-    # disable unwanted services
-    run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')
-    # configure ID servers
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/max-servers 1')
-    # configure DHT udp port
-    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
-    # set desired Proxy router
-    run_ssh_command_and_wait(node, f'bitdust set services/proxy-transport/preferred-routers "{PROXY_ROUTERS}"')
-    # enable supplier service
-    run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled true')
-    # start BitDust daemon and create new identity for supplier
-    start_daemon(node)
-    health_check(node)
-    create_identity(node, identity_name)
-    connect_network(node)
-    print(f'\nSTARTED SUPPLIER [{node}]\n')
 
 
 async def start_supplier_async(node, identity_name, loop):
@@ -577,8 +493,9 @@ async def start_supplier_async(node, identity_name, loop):
     # configure ID servers
     await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
-    # configure DHT udp port
+    # configure DHT udp port and node ID
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node], loop)
     # set desired Proxy router
     await run_ssh_command_and_wait_async(node, f'bitdust set services/proxy-transport/preferred-routers "{PROXY_ROUTERS}"', loop)
     # enable supplier service
@@ -589,37 +506,6 @@ async def start_supplier_async(node, identity_name, loop):
     await create_identity_async(node, identity_name, loop)
     await connect_network_async(node, loop)
     print(f'\nSTARTED SUPPLIER [{node}]\n')
-
-
-def start_customer(node, identity_name, join_network=True, num_suppliers=2, block_size=None):
-    print(f'\nNEW CUSTOMER {identity_name} at [{node}]\n')
-    # use short key to run tests faster
-    run_ssh_command_and_wait(node, 'bitdust set personal/private-key-size 1024')
-    # disable unwanted services
-    run_ssh_command_and_wait(node, 'bitdust set services/supplier/enabled false')
-    run_ssh_command_and_wait(node, 'bitdust set services/proxy-server/enabled false')
-    # configure ID servers
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/min-servers 1')
-    run_ssh_command_and_wait(node, 'bitdust set services/identity-propagate/max-servers 1')
-    # configure DHT udp port
-    run_ssh_command_and_wait(node, 'bitdust set services/entangled-dht/udp-port "14441"')
-    # set desired Proxy router
-    run_ssh_command_and_wait(node, f'bitdust set services/proxy-transport/preferred-routers "{PROXY_ROUTERS}"')
-    # enable customer service and prepare tests
-    run_ssh_command_and_wait(node, 'bitdust set services/customer/enabled true')
-    run_ssh_command_and_wait(node, f'bitdust set services/customer/suppliers-number {num_suppliers}')
-    if block_size:
-        run_ssh_command_and_wait(node, f'bitdust set services/backups/block-size {block_size}')
-    # create randomized file to test file upload/download
-    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(30000)).decode())" > /{node}/file_{node}.txt')
-    run_ssh_command_and_wait(node, f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt')
-    # start BitDust daemon and create new identity for supplier
-    start_daemon(node)
-    health_check(node)
-    if join_network:
-        create_identity(node, identity_name)
-        connect_network(node)
-    print(f'\nSTARTED CUSTOMER [{node}]\n')
 
 
 async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
@@ -637,8 +523,9 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers %d' % max_servers, loop)
     if known_servers:
         await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/known-servers %s' % (','.join(known_servers)), loop)
-    # configure DHT udp port
+    # configure DHT udp port and node ID
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
+    await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node], loop)
     # set desired Proxy router
     await run_ssh_command_and_wait_async(node, f'bitdust set services/proxy-transport/preferred-routers "{PROXY_ROUTERS}"', loop)
     # enable customer service and prepare tests
@@ -658,21 +545,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     print(f'\nSTARTED CUSTOMER [{node}]\n')
 
 
-def start_one_supplier(supplier):
-    start_supplier(node=supplier, identity_name=supplier)
-
-
 async def start_one_supplier_async(supplier, loop):
     await start_supplier_async(node=supplier, identity_name=supplier, loop=loop)
-
-
-def start_one_customer(customer):
-    start_customer(
-        node=customer['name'],
-        identity_name=customer['name'],
-        join_network=customer['join_network'],
-        num_suppliers=customer['num_suppliers'],
-    )
 
 
 async def start_one_customer_async(customer, loop):
@@ -689,16 +563,8 @@ async def start_one_customer_async(customer, loop):
     )
 
 
-def start_one_proxy_server(proxy_server):
-    start_proxy_server(node=proxy_server, identity_name=proxy_server)
-
-
 async def start_one_proxy_server_async(proxy_server, loop):
     await start_proxy_server_async(node=proxy_server, identity_name=proxy_server, loop=loop)
-
-
-def stop_one_node(node):
-    stop_daemon(node, skip_checks=True)
 
 
 def report_one_node(node):
@@ -761,18 +627,3 @@ async def clean_one_node_async(node, event_loop):
 
 async def clean_one_customer_async(node, event_loop):
     await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
-
-
-def clean_one_node(node):
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/metadata')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identitycache')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/identityserver')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/keys')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/customers')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/suppliers')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/backups')
-    run_ssh_command_and_wait(node, 'rm -rf /root/.bitdust/messages')
-
-
-def clean_one_customer(node):
-    run_ssh_command_and_wait(node, 'rm -rf /%s/*' % node)
