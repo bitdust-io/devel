@@ -418,7 +418,7 @@ class FamilyMember(automat.Automat):
             lg.info('found uncooperative supplier %s who raised the conflict but replied with invalid response' % another_supplier_idurl)
             # TODO: solve later
             self.transaction = None
-        else:
+        if self.transaction:
             if len(self.transaction['suppliers']) <= another_supplier_position:
                 lg.warn('another supplier position larger than family size, failed to solve family conflict with supplier %s' % another_supplier_idurl)
                 self.transaction = None
@@ -898,6 +898,7 @@ class FamilyMember(automat.Automat):
 
     def _on_incoming_suppliers_list(self, inp):
         # this packet came from another supplier who belongs to that family also
+        # he notified me about changes in the family
         incoming_packet = inp['packet']
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_incoming_suppliers_list with %s' % incoming_packet)
@@ -938,6 +939,7 @@ class FamilyMember(automat.Automat):
 
     def _on_incoming_supplier_position(self, inp):
         # this packet came from the customer, a godfather of the family ;)))
+        # he told me which position in the family I should take
         incoming_packet = inp['packet']
         try:
             ecc_map = inp['customer_ecc_map']

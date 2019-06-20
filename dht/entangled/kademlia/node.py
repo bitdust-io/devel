@@ -38,7 +38,7 @@ from . import encoding  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):

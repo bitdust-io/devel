@@ -221,6 +221,7 @@ def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', re
             assert response.json()['status'] == 'OK', response.json()
             assert len(response.json()['result']) > 0, response.json()
             assert response.json()['result'][0]['key'] == key, response.json()
+            print('\ndht/value/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
             if expected_data == 'not_exist':
                 assert response.json()['result'][0]['read'] == 'failed', response.json()
                 assert 'value' not in response.json()['result'][0], response.json()
@@ -258,6 +259,7 @@ def dht_value_set_v1(node, key, new_data, record_type='skip_validation', ):
     )
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
+    print('\ndht/value/set/v1 [%s] key=%s : %s\n' % (node, key, pprint.pformat(response.json()), ))
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['write'] == 'success', response.json()
     assert response.json()['result'][0]['key'] == key, response.json()
@@ -265,6 +267,15 @@ def dht_value_set_v1(node, key, new_data, record_type='skip_validation', ):
     assert response.json()['result'][0]['value']['key'] == key, response.json()
     assert response.json()['result'][0]['value']['type'] == record_type, response.json()
     assert len(response.json()['result'][0]['closest_nodes']) > 0, response.json()
+    return response.json()
+
+
+def dht_db_dump_v1(node):
+    try:
+        response = requests.get(tunnel_url(node, 'dht/db/dump/v1'))
+    except:
+        return None
+    print('\ndht/db/dump/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     return response.json()
 
 

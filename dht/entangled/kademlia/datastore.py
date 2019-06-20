@@ -39,7 +39,7 @@ PROTOCOL_VERSION = 1
 
 PICKLE_PROTOCOL = 2
 
-_Debug = False
+_Debug = True
 
 
 class DataStore(DictMixin):

@@ -28,6 +28,7 @@ import pprint
 
 
 from . import testsupport as ts
+from . import keywords
 
 #------------------------------------------------------------------------------
 
@@ -38,8 +39,6 @@ OTHER_KNOWN_ID_SERVERS = [
     'is:8084:6661',
     'is_a:8084:6661',
     'is_b:8084:6661',
-#     'identity-server-a:8084:6661',
-#     'identity-server-b:8084:6661',
 ]
 
 # TODO: keep this list up to date with docker-compose links
@@ -193,7 +192,10 @@ def kill_all_nodes():
 
 
 def report_all_nodes(event_loop):
-    print('\n\nTest report:')
+    print('\n\nDHT records:')
+    for node in ALL_NODES:
+        print('\n\nDHT records on [%s]:' % node)
+        keywords.dht_db_dump_v1(node)
 
     print('\n\nALL EXCEPTIONS:')
     failed = False 
