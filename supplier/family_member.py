@@ -53,6 +53,7 @@ from main import settings
 
 from lib import serialization
 from lib import strng
+from lib import nameurl
 
 from contacts import contactsdb
 
@@ -132,7 +133,10 @@ class FamilyMember(automat.Automat):
         self.customer_idurl = id_url.field(customer_idurl)
         self.supplier_idurl = my_id.getLocalID().to_bin()
         super(FamilyMember, self).__init__(
-            name="family_member_%s" % global_id.UrlToGlobalID(self.customer_idurl),
+            name="family_%s_member_%s" % (
+                nameurl.GetName(self.customer_idurl),
+                nameurl.GetName(self.supplier_idurl),
+            ),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
