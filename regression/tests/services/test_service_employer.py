@@ -30,11 +30,13 @@ from ..keywords import supplier_list_v1, share_create_v1, file_upload_start_v1, 
     service_info_v1, file_create_v1, transfer_list_v1, packet_list_v1
 
 
+def idurl_to_name(idurl: str) -> str:
+    return idurl.rsplit('/', 1)[1].replace('.xml', '')
+
+
 def test_customer_1_replace_supplier_at_position_0():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
-    
-    return True
 
     supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
     share_id_customer_1 = share_create_v1('customer_1')
@@ -64,5 +66,32 @@ def test_customer_1_replace_supplier_at_position_0():
     assert len(suppliers) == 2
 
     response = requests.post(tunnel_url('customer_1', '/supplier/replace/v1'), json={'position': '0'})
+    assert response.status_code == 200
 
-    # time.sleep(15)
+    # wait for a while to redistribute files
+    time.sleep(15)
+
+    response = requests.get(tunnel_url('customer_1', '/supplier/list/v1'))
+    assert response.status_code == 200
+    new_supplier_list = response.json()['result']
+    new_suppliers = set(x['idurl'] for x in new_supplier_list)
+    assert len(suppliers) == 2
+
+    assert new_suppliers != suppliers
+    prev_supplier_idurl = suppliers.difference(new_suppliers).pop()
+    prev_supplier = idurl_to_name(prev_supplier_idurl)
+
+    space_donated_response = requests.get(tunnel_url(prev_supplier, '/space/donated/v1'))
+    assert space_donated_response.status_code == 200
+
+    space_donated_json = space_donated_response.json()['result'][0]
+    old_customers = set(idurl_to_name(x['idurl']) for x in space_donated_json['old_customers'])
+    assert 'customer_1' in old_customers
+
+    run_ssh_command_and_wait('customer_1', f'mkdir {volume_customer_1}/tmp/')[0].strip()
+
+    file_download_start_v1('customer_1', remote_path=remote_path_customer_1, destination=f'{volume_customer_1}/tmp/')
+
+    file_content = run_ssh_command_and_wait('customer_1', f'cat {volume_customer_1}/tmp/file_to_be_distributed.txt')[0].strip()
+
+    assert file_content == 'customer_1'
