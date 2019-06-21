@@ -53,8 +53,6 @@ from logs import lg
 
 from automats import automat
 
-from lib import strng
-
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
@@ -211,7 +209,7 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         callback.append_inbox_callback(self._inbox_packet_received)
-        self.family_position = kwargs.get('family_position')
+        self.family_position = kwargs.get('family_position', None)
         self.ecc_map = kwargs.get('ecc_map')
         self.family_snapshot = kwargs.get('family_snapshot')
 
@@ -229,7 +227,7 @@ class SupplierFinder(automat.Automat):
         from customer import fire_hire
         from raid import eccmap
         position = self.family_position
-        if not position:
+        if position is None:
             lg.warn('position for new supplier is unknown, will "guess"')
             current_suppliers = list(contactsdb.suppliers())
             for i in range(len(current_suppliers)):
@@ -313,7 +311,6 @@ class SupplierFinder(automat.Automat):
                 sc.remove_callback('supplier_finder')
             self.target_idurl = None
         self.destroy()
-        lg.out(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
     #------------------------------------------------------------------------------
 
@@ -352,6 +349,6 @@ class SupplierFinder(automat.Automat):
             return
         if contactsdb.is_supplier(self.target_idurl):
             return
-        family_position = kwargs.get('family_position')
+        family_position = kwargs.get('family_position', None)
         ecc_map = kwargs.get('ecc_map')
         self.automat('supplier-connected', self.target_idurl, family_position=family_position, ecc_map=ecc_map, family_snapshot=self.family_snapshot)
