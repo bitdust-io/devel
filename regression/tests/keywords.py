@@ -58,7 +58,7 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return response.json()
 
 
-def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=1):
+def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=0):
 
     def _validate(obs):
         response = None

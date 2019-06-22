@@ -2234,15 +2234,15 @@ def customer_reject(idurl_or_global_id):
     # remove from customers list
     current_customers = contactsdb.customers()
     current_customers.remove(customer_idurl)
-    contactsdb.update_customers(current_customers)
     contactsdb.remove_customer_meta_info(customer_idurl)
-    contactsdb.save_customers()
     # remove records for this customers from quotas info
     space_dict, free_space = accounting.read_customers_quotas()
     consumed_by_cutomer = space_dict.pop(customer_idurl, None)
     consumed_space = accounting.count_consumed_space(space_dict)
     new_free_space = settings.getDonatedBytes() - int(consumed_space)
     accounting.write_customers_quotas(space_dict, new_free_space)
+    contactsdb.update_customers(current_customers)
+    contactsdb.save_customers()
     events.send('existing-customer-terminated', dict(idurl=customer_idurl))
     # restart local tester
     local_tester.TestUpdateCustomers()

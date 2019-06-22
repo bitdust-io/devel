@@ -73,6 +73,8 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         for supplierNum in range(supplierCount):
             if availableSuppliers[supplierNum] == 0:
                 continue
+            if supplierNum >= len(remoteData) or supplierNum >= len(remoteParity):
+                continue
             # if remote Data file not exist and supplier is online
             # we mark it as missing and will try to rebuild this file and send to him
             if remoteData[supplierNum] != 1:

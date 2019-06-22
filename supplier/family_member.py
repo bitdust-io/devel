@@ -53,6 +53,7 @@ from main import settings
 
 from lib import serialization
 from lib import strng
+from lib import nameurl
 
 from contacts import contactsdb
 
@@ -132,7 +133,10 @@ class FamilyMember(automat.Automat):
         self.customer_idurl = id_url.field(customer_idurl)
         self.supplier_idurl = my_id.getLocalID().to_bin()
         super(FamilyMember, self).__init__(
-            name="family_member_%s" % global_id.UrlToGlobalID(self.customer_idurl),
+            name="family_%s_member_%s" % (
+                nameurl.GetName(self.customer_idurl),
+                nameurl.GetName(self.supplier_idurl),
+            ),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -358,7 +362,7 @@ class FamilyMember(automat.Automat):
             return
         self.transaction = self._do_increment_revision(possible_transaction)
         if _Debug:
-            lg.out(_DebugLevel, 'family_member._do_build_transaction : %r' % self.transaction)
+            lg.args(_DebugLevel, transaction=self.transaction)
         if self.transaction:
             known_ecc_map = self.transaction.get('ecc_map')
             if known_ecc_map:
@@ -495,6 +499,8 @@ class FamilyMember(automat.Automat):
     #------------------------------------------------------------------------------
 
     def _do_validate_dht_info(self, inp):
+        if _Debug:
+            lg.args(_DebugLevel, inp=inp)
         if not inp or not isinstance(inp, dict):
             return None
         out = inp.copy()
@@ -561,32 +567,38 @@ class FamilyMember(automat.Automat):
         return out
 
     def _do_create_first_revision(self, request):
-        return {
+        merged_info = {
             'revision': 0,
             'publisher_idurl': my_id.getLocalID(),  # I will be a publisher of the first revision
             'suppliers': id_url.to_bin_list(request.get('family_snapshot') or []),
             'ecc_map': request.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
         }
+        if _Debug:
+            lg.args(_DebugLevel, merged_info=merged_info)
+        return merged_info
 
     def _do_create_possible_revision(self, latest_revision):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = local_customer_meta_info.get('position', -1) or -1
-        possible_suppliers = list(map(strng.to_bin, local_customer_meta_info.get('family_snapshot') or []))
-        if possible_position > 0 and my_id.getLocalID().to_bin() not in possible_suppliers:
+        possible_position = int(local_customer_meta_info.get('position', -1) or -1)
+        possible_suppliers = id_url.to_bin_list(local_customer_meta_info.get('family_snapshot') or [])
+        if possible_position >= 0 and my_id.getLocalID().to_bin() not in possible_suppliers:
             if len(possible_suppliers) > possible_position:
                 possible_suppliers[possible_position] = my_id.getLocalID().to_bin()
-        return {
+        my_info = {
             'revision': latest_revision,
             'publisher_idurl': my_id.getLocalID(),  # I will be a publisher of that revision
             'suppliers': possible_suppliers,
             'ecc_map': local_customer_meta_info.get('ecc_map'),
             'customer_idurl': self.customer_idurl,
         }
+        if _Debug:
+            lg.args(_DebugLevel, my_info=my_info)
+        return my_info
 
     def _do_create_revision_from_another_supplier(self, another_revision, another_suppliers, another_ecc_map):
         local_customer_meta_info = contactsdb.get_customer_meta_info(self.customer_idurl)
-        possible_position = local_customer_meta_info.get('position', -1) or -1
+        possible_position = int(local_customer_meta_info.get('position', -1) or -1)
         if possible_position >= 0:
             try:
                 another_suppliers[possible_position] = my_id.getLocalID().to_bin()
@@ -595,12 +607,12 @@ class FamilyMember(automat.Automat):
             contactsdb.add_customer_meta_info(self.customer_idurl, {
                 'ecc_map': another_ecc_map,
                 'position': possible_position,
-                'family_snapshot': list(map(strng.to_bin, another_suppliers)),
+                'family_snapshot': id_url.to_bin_list(another_suppliers),
             })
         return {
             'revision': int(another_revision),
             'publisher_idurl': my_id.getLocalID(),  # I will be a publisher of that revision
-            'suppliers': list(map(strng.to_bin, another_suppliers)),
+            'suppliers': id_url.to_bin_list(another_suppliers),
             'ecc_map': another_ecc_map,
             'customer_idurl': self.customer_idurl,
         }
@@ -629,6 +641,8 @@ class FamilyMember(automat.Automat):
         return dht_revision
 
     def _do_merge_revisions(self, dht_info, my_info, latest_revision):
+        if _Debug:
+            lg.args(_DebugLevel, dht_info=dht_info, my_info=my_info, latest_revision=latest_revision)
         if dht_info is None or not isinstance(dht_info, dict):
             merged_info = my_info
         else:
@@ -665,6 +679,8 @@ class FamilyMember(automat.Automat):
         if merged_info['revision'] != latest_revision:
             lg.info('will switch known revision %d to the latest: %d' % (merged_info['revision'], latest_revision, )) 
         merged_info['revision'] = latest_revision
+        if _Debug:
+            lg.out(_DebugLevel, '    merged_info=%r' % merged_info)
         return merged_info
 
     def _do_increment_revision(self, possible_transaction):
@@ -679,10 +695,12 @@ class FamilyMember(automat.Automat):
         return possible_transaction
 
     def _do_process_family_join_request(self, merged_info, current_request):
+        if _Debug:
+            lg.args(_DebugLevel, merged_info=merged_info, current_request=current_request)
         current_request_expected_suppliers_count = None
         if current_request['ecc_map']:
             current_request_expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
-        if current_request_expected_suppliers_count and current_request['position'] > current_request_expected_suppliers_count:
+        if current_request_expected_suppliers_count and current_request['position'] >= current_request_expected_suppliers_count:
             lg.warn('"family-join" request is not valid, supplier position %d greater than expected suppliers count %d for %s' % (
                 current_request['position'], current_request_expected_suppliers_count, current_request['ecc_map']))
             return None
@@ -722,11 +740,11 @@ class FamilyMember(automat.Automat):
                 merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
                 if _Debug:
                     lg.out(_DebugLevel, '    found my IDURL on %d position and will move it on %d position in the family of customer %s' % (
-                    existing_position, current_request['position'], self.customer_idurl))
+                        existing_position, current_request['position'], self.customer_idurl))
             if merged_info['suppliers'][current_request['position']] != current_request['supplier_idurl']:
-                if merged_info['suppliers'][current_request['position']] not in [b'', '', None]:
+                if merged_info['suppliers'][current_request['position']]:
                     # TODO: SECURITY need to implement a signature verification and
-                    # also build solution to validate that change was approved by customer 
+                    # also build solution to validate that change was approved by customer
                     lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (
                         merged_info['suppliers'][current_request['position']], current_request['position'], self.customer_idurl, ))
                 merged_info['suppliers'][current_request['position']] = current_request['supplier_idurl']
@@ -746,9 +764,21 @@ class FamilyMember(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '    added supplier %s to family of customer %s' % (
                         current_request['supplier_idurl'], self.customer_idurl))
+
+        if current_request.get('family_snapshot'):
+            for supplier_position in range(len(merged_info['suppliers'])):
+                if supplier_position < len(current_request['family_snapshot']):
+                    if not merged_info['suppliers'][supplier_position] and current_request['family_snapshot'][supplier_position]:
+                        merged_info['suppliers'][supplier_position] = current_request['family_snapshot'][supplier_position]
+                        if _Debug:
+                            lg.out(_DebugLevel, '    found empty supplier at position %d and populated from current request: %s' % (
+                                supplier_position, merged_info['suppliers'][supplier_position]))
+
         return merged_info
 
     def _do_process_family_leave_request(self, merged_info, current_request):
+        if _Debug:
+            lg.args(_DebugLevel, merged_info=merged_info, current_request=current_request)
         try:
             existing_position = merged_info['suppliers'].index(current_request['supplier_idurl'])
         except ValueError:
@@ -761,6 +791,8 @@ class FamilyMember(automat.Automat):
         return merged_info
 
     def _do_process_family_refresh_request(self, merged_info):
+        if _Debug:
+            lg.args(_DebugLevel, merged_info=merged_info, my_info=self.my_info)
         if not self.my_info:
             self.my_info = self._do_create_possible_revision(int(merged_info['revision']))
             lg.warn('"family-refresh" request will use "possible" customer meta info: %r' % self.my_info)
@@ -796,9 +828,9 @@ class FamilyMember(automat.Automat):
         except ValueError:
             existing_position = -1
         if existing_position < 0:
-            if merged_info['suppliers'][my_position] not in [b'', '', None]:
+            if merged_info['suppliers'][my_position]:
                 # TODO: SECURITY need to implement a signature verification and
-                # also build solution to validate that change was approved by customer 
+                # also build solution to validate that change was approved by customer
                 lg.warn('overwriting another supplier %s with my IDURL at position %d in family of customer %s' % (
                     merged_info['suppliers'][my_position], my_position, self.customer_idurl, ))
             merged_info['suppliers'][my_position] = my_id.getLocalID().to_bin()
@@ -897,8 +929,6 @@ class FamilyMember(automat.Automat):
         self.automat('dht-write-fail')
 
     def _on_incoming_suppliers_list(self, inp):
-        # this packet came from another supplier who belongs to that family also
-        # he notified me about changes in the family
         incoming_packet = inp['packet']
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_incoming_suppliers_list with %s' % incoming_packet)
@@ -914,23 +944,26 @@ class FamilyMember(automat.Automat):
             lg.exc()
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
         if _Debug:
-            lg.out(_DebugLevel, '    another_revision=%d   another_ecc_map=%s   another_suppliers_list=%r' % (
-                another_revision, another_ecc_map, another_suppliers_list))
+            lg.args(_DebugLevel, another_revision=another_revision, another_ecc_map=another_ecc_map, another_suppliers_list=another_suppliers_list)
         if another_revision >= int(self.my_info['revision']):
             self.my_info = self._do_create_revision_from_another_supplier(another_revision, another_suppliers_list, another_ecc_map)
             lg.info('another supplier have more fresh revision, update my info and raise "family-refresh" event')
             self.automat('family-refresh')
             return p2p_service.SendAck(incoming_packet)
         if my_id.getLocalID().to_bin() not in another_suppliers_list:
+            if _Debug:
+                lg.args(_DebugLevel, another_suppliers_list=another_suppliers_list, customer_idurl=self.customer_idurl)
             lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
         my_position_in_transaction = another_suppliers_list.index(my_id.getLocalID().to_bin())
         try:
             my_known_position = self.my_info['suppliers'].index(my_id.getLocalID().to_bin())
         except:
-            my_known_position = None
-        if not my_known_position:
-            lg.warn('another supplier is trying to remove my IDURL from the family of customer %s' % self.customer_idurl)
+            my_known_position = -1
+        if my_known_position < 0:
+            if _Debug:
+                lg.args(_DebugLevel, my_known_position=my_known_position, another_suppliers_list=another_suppliers_list, customer_idurl=self.customer_idurl)
+            lg.warn('another supplier is trying to remove me from the family of customer %s' % self.customer_idurl)
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
         if my_position_in_transaction != my_known_position:
             lg.warn('another supplier is trying to put my IDURL on another position in the family of customer %s' % self.customer_idurl)
@@ -944,7 +977,7 @@ class FamilyMember(automat.Automat):
         try:
             ecc_map = inp['customer_ecc_map']
             supplier_idurl = strng.to_bin(inp['supplier_idurl'])
-            supplier_position = inp['supplier_position']
+            supplier_position = int(inp['supplier_position'])
             family_snapshot = id_url.to_bin_list(inp.get('family_snapshot') or [])
         except:
             lg.exc()
@@ -958,7 +991,7 @@ class FamilyMember(automat.Automat):
         contactsdb.add_customer_meta_info(self.customer_idurl, {
             'ecc_map': ecc_map,
             'position': supplier_position,
-            'family_snapshot': list(map(strng.to_bin, family_snapshot)),
+            'family_snapshot': id_url.to_bin_list(family_snapshot),
         })
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_incoming_supplier_position stored new meta info for customer %s:\n' % self.customer_idurl)
@@ -973,8 +1006,12 @@ class FamilyMember(automat.Automat):
             lg.exc()
             return None
         if contacts_type == 'suppliers_list':
+            # this packet came from another supplier who belongs to the same customer family
+            # he notified me about changes in the family he is trying to do
             return self._on_incoming_suppliers_list(inp)
         elif contacts_type == 'supplier_position':
+            # this packet came from the customer, a godfather of the family ;)))
+            # he told me which position in the family I should take
             return self._on_incoming_supplier_position(inp)
         return p2p_service.SendFail(incoming_packet, 'invalid contacts type')
 
@@ -994,7 +1031,7 @@ class FamilyMember(automat.Automat):
         try:
             json_payload = serialization.BytesToDict(response.Payload, keys_to_text=True)
             ecc_map = strng.to_text(json_payload['ecc_map'])
-            suppliers_list = list(map(strng.to_bin, json_payload['suppliers']))
+            suppliers_list = id_url.to_bin_list(json_payload['suppliers'])
         except:
             lg.exc()
             if not self.suppliers_requests:

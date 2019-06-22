@@ -324,6 +324,8 @@ class LocalService(automat.Automat):
         """
         if args and args[0]:
             self.add_callback(args[0])
+            if _Debug:
+                lg.args(_DebugLevel, callback=args[0])
 
     def doStopDependentServices(self, *args, **kwargs):
         """

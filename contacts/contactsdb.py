@@ -218,7 +218,8 @@ def add_supplier(idurl, position=None, customer_idurl=None):
     if position >= len(current_suppliers):
         empty_supplies = [id_url.field(b''), ] * (1 + position - len(current_suppliers))
         current_suppliers.extend(empty_supplies)
-        lg.warn('added %d empty suppliers for customer %r' % (len(empty_supplies), customer_idurl))
+        if _Debug:
+            lg.out(_DebugLevel, 'contactsdb.add_supplier   %d empty suppliers added for customer %r' % (len(empty_supplies), customer_idurl))
     if current_suppliers[position] and current_suppliers[position] != idurl:
         lg.info('replacing known supplier "%s" by "%s" at position %d for customer %s' % (
             current_suppliers[position], idurl, position, customer_idurl, ))
@@ -319,22 +320,15 @@ def update_customers(idslist):
     """
     global _CustomersChangedCallback
     global _ContactsChangedCallbacks
-    oldcustomers = list(customers())
-    oldcontacts = list(contacts())
+    old_customers = list(customers())
+    old_contacts = list(contacts())
     set_customers(idslist)
     if _CustomersChangedCallback is not None:
-        _CustomersChangedCallback(oldcustomers, customers())
+        _CustomersChangedCallback(old_customers, customers())
     for cb in _ContactsChangedCallbacks:
-        cb(oldcontacts, contacts())
-
-
-def add_customer(idurl):
-    """
-    Add customer and return its position in the list.
-    """
-    global _CustomersList
-    _CustomersList.append(id_url.field(idurl))
-    return len(_CustomersList) - 1
+        cb(old_contacts, contacts())
+    if _Debug:
+        lg.args(_DebugLevel, new_customers=idslist, old_customers=old_customers)
 
 
 def clear_customers():
