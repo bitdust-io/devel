@@ -155,7 +155,8 @@ def init():
 
     Load index database from file .bitdust/metadata/index.
     """
-    lg.out(4, 'backup_control.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.init')
     Load()
 
 
@@ -163,7 +164,8 @@ def shutdown():
     """
     Called for the correct completion of all things.
     """
-    lg.out(4, 'backup_control.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.shutdown')
 
 #------------------------------------------------------------------------------
 
@@ -387,8 +389,9 @@ def IncomingSupplierBackupIndex(newpacket):
         index_synchronizer.A('index-file-received', (newpacket, supplier_revision))
     if revision() >= supplier_revision:
         inpt.close()
-        lg.out(4, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
-            newpacket.RemoteID, supplier_revision, revision(), ))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
+                newpacket.RemoteID, supplier_revision, revision(), ))
         return
     text_data = inpt.read()
     inpt.close()
@@ -398,8 +401,9 @@ def IncomingSupplierBackupIndex(newpacket):
         backup_fs.Calculate()
         WriteIndex()
         control.request_update()
-        lg.out(4, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
-            revision(), newpacket.RemoteID))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
+                revision(), newpacket.RemoteID))
     else:
         lg.warn('failed to read catalog index from supplier')
 
@@ -413,7 +417,8 @@ def DeleteAllBackups():
     # prepare a list of all known backup IDs
     all_ids = set(backup_fs.ListAllBackupIDs())
     all_ids.update(backup_matrix.GetBackupIDs(remote=True, local=True))
-    lg.out(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all_ids))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all_ids))
     # delete one by one
     for backupID in all_ids:
         DeleteBackup(backupID, saveDB=False, calculate=False)
@@ -585,8 +590,9 @@ class Task():
         ))
 
     def destroy(self, message=None):
-        lg.out(4, 'backup_control.Task-%d.destroy %s -> %s' % (
-            self.number, self.localPath, self.backupID))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.Task-%d.destroy %s -> %s' % (
+                self.number, self.localPath, self.backupID))
         if self.result_defer and not self.result_defer.called:
             self.result_defer.cancel()
             self.result_defer = None
@@ -632,27 +638,14 @@ class Task():
         """
         return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
 
-#     def _on_job_done(self, backupID, result):
-#         reactor.callLater(0, OnJobDone, backupID, result)
-#         if self.result_defer is not None:
-#             self.result_defer.callback((backupID, result))
-#             self.result_defer = None
-
-#     def _on_job_failed(self, backupID, err=None):
-#         if self.result_defer is not None:
-#             self.result_defer.errback((backupID, err))
-#             self.result_defer = None
-#         return err
-
     def run(self):
         """
         Runs a new ``Job`` from that ``Task``.
         """
         iter_and_path = backup_fs.WalkByID(self.remotePath, iterID=backup_fs.fsID(self.customerIDURL))
         if iter_and_path is None:
-            lg.out(4, 'backup_control.Task.run ERROR %s not found in the index' % self.remotePath)
-            # self.defer.callback('error', self.pathID)
-            # self._on_job_failed(self.pathID)
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_control.Task.run ERROR %s not found in the index' % self.remotePath)
             err = 'remote path "%s" not found in the catalog' % self.remotePath
             OnTaskFailed(self.pathID, err)
             return err
@@ -662,7 +655,6 @@ class Task():
                 itemInfo = itemInfo[backup_fs.INFO_KEY]
             except:
                 lg.exc()
-                # self._on_job_failed(self.pathID)
                 err = 'catalog item related to "%s" is broken' % self.remotePath
                 OnTaskFailed(self.pathID, err)
                 return err
@@ -670,15 +662,13 @@ class Task():
             self.localPath = sourcePath
             lg.out('backup_control.Task.run local path was populated from catalog: %s' % self.localPath)
         if self.localPath != sourcePath:
-            lg.warn('local path is differ from catalog: %s != %s' % (self.localPath, sourcePath))
+            if _Debug:
+                lg.out(_DebugLevel, '    local path different in the catalog: %s != %s' % (self.localPath, sourcePath))
         if not bpio.pathExist(self.localPath):
             lg.warn('path not exist: %s' % self.localPath)
-            # self._on_job_failed(self.pathID)
             err = 'local path "%s" not exist' % self.localPath
             OnTaskFailed(self.pathID, err)
             return err
-#         if os.path.isfile(self.localPath) and self.localPath != sourcePath:
-#             tmpfile.make(name, extension, prefix)
         dataID = misc.NewBackupID()
         if itemInfo.has_version(dataID):
             # ups - we already have same version
@@ -699,9 +689,8 @@ class Task():
             backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), self.backupID)
         except:
             lg.exc()
-            lg.out(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
-            # self.defer.callback('error', self.pathID)
-            # self._on_job_failed(self.backupID)
+            if _Debug:
+                lg.out(_DebugLevel, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             err = 'failed creating destination folder for "%s"' % self.backupID
             return OnTaskFailed(self.backupID, err)
         compress_mode = 'bz2'  # 'none' # 'gz'
@@ -732,8 +721,9 @@ class Task():
             Save()
         jobs()[self.backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)  # @UndefinedVariable
-        lg.out(4, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (
-            self.number, self.pathID, dataID, itemInfo.size, self.localPath))
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (
+                self.number, self.pathID, dataID, itemInfo.size, self.localPath))
         return None
 
 #------------------------------------------------------------------------------
@@ -865,8 +855,7 @@ def OnJobDone(backupID, result):
     """
     from . import backup_rebuilder
     from customer import io_throttle
-    lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    lg.out(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
+    lg.info('job done [%s] with result "%s", %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
     customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
     customer_idurl = global_id.GlobalUserToIDURL(customerGlobalID)
@@ -910,8 +899,7 @@ def OnJobDone(backupID, result):
 def OnJobFailed(backupID, err):
     """
     """
-    lg.out(4, '!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!')
-    lg.out(4, 'backup_control.OnJobFailed [%s] : %s' % (backupID, err))
+    lg.err('job failed [%s] : %s' % (backupID, err))
     jobs().pop(backupID)
 
 
@@ -919,7 +907,7 @@ def OnTaskFailed(pathID, result):
     """
     Called when backup process get failed somehow.
     """
-    lg.out(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
+    lg.err('task failed [%s] with result "%s", %d more tasks' % (pathID, result, len(tasks())))
     reactor.callLater(0, RunTask)  # @UndefinedVariable
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)  # @UndefinedVariable
 

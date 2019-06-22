@@ -459,24 +459,30 @@ def start_single(service_name):
     result = Deferred()
     _starting = Deferred()
     _stopping = Deferred()
-    
+
     def _on_started(response):
         if response in ['started', ]:
-            return result.callback(True)
-        if response in ['not_installed', 'failed', 'depends_off', ]:
-            return result.callback(False)
-        raise Exception('bad response')
+            result.callback(True)
+            return response
+        if response in ['not_installed', 'failed', 'depends_off', 'stopped', ]:
+            result.callback(False)
+            return response
+        raise Exception('bad response: %r' % response)
 
     def _on_stopped(response):
         if response != 'stopped' and response != 'depends_off':
             raise Exception('unpredicted response: %r' % response)
         svc.automat('start', _starting)
-        return True
-        
+        return response
+
+    def _on_failed(err, action):
+        lg.warn('failed to %s service %s in driver.start_single()' % (action, service_name))
+        return None
+
     _starting.addCallback(_on_started)
-    _starting.addErrback(lg.errback)
     _stopping.addCallback(_on_stopped)
-    _stopping.addErrback(lg.errback)
+    _starting.addErrback(_on_failed, 'start')
+    _stopping.addErrback(_on_failed, 'stop')
     svc = services().get(service_name, None)
     if not svc:
         return succeed(False)
@@ -500,20 +506,26 @@ def stop_single(service_name):
     def _on_stopped(response):
         if response != 'stopped' and response != 'depends_off':
             raise Exception('unpredicted response: %r' % response)
-        return result.callback(True)
+        result.callback(True)
+        return response
 
     def _on_started(response):
         if response in ['started', ]:
             svc.automat('stop', _stopping)
-            return True
+            return response
         if response in ['not_installed', 'failed', 'depends_off', ]:
-            return result.callback(True)
-        raise Exception('bad response')
+            result.callback(True)
+            return response
+        raise Exception('bad response: %r' % response)
+
+    def _on_failed(err, action):
+        lg.warn('failed to %s service %s in driver.stop_single()' % (action, service_name))
+        return None
 
     _starting.addCallback(_on_started)
-    _starting.addErrback(lg.errback)
     _stopping.addCallback(_on_stopped)
-    _stopping.addErrback(lg.errback)
+    _starting.addErrback(_on_failed, 'start')
+    _stopping.addErrback(_on_failed, 'stop')
     svc = services().get(service_name, None)
     if not svc:
         return succeed(False)
@@ -557,9 +569,7 @@ def on_service_callback(result, service_name):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel +
-               8, 'driver.on_service_callback %s : [%s]' %
-               (service_name, result))
+        lg.out(_DebugLevel, 'driver.on_service_callback %s : [%s]' % (service_name, result))
     svc = services().get(service_name, None)
     if not svc:
         raise ServiceNotFound(service_name)

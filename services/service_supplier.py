@@ -80,9 +80,6 @@ class SupplierService(LocalService):
     def stop(self):
         from transport import callback
         from main import events
-        # from contacts import contactsdb
-        # for customer_idurl in contactsdb.customers():
-        #     events.send('existing-customer-terminated', data=dict(idurl=customer_idurl))
         events.remove_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.remove_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.remove_subscriber(self._on_customer_terminated, 'existing-customer-denied')
@@ -160,8 +157,9 @@ class SupplierService(LocalService):
             lg.warn("wrong payload : %s" % newpacket.Payload)
             return p2p_service.SendFail(newpacket, 'wrong storage value')
         current_customers = contactsdb.customers()
+        lg.args(8, current_customers=current_customers)
         if accounting.check_create_customers_quotas():
-            lg.out(6, 'service_supplier.request created a new space file')
+            lg.info('created new customers quotas file')
         space_dict, free_space = accounting.read_customers_quotas()
         try:
             free_bytes = int(free_space)
@@ -181,13 +179,13 @@ class SupplierService(LocalService):
             new_customer = False
         else:
             new_customer = True
-        lg.out(8, '    new_customer=%s current_allocated_bytes=%s' % (new_customer, space_dict.get(customer_idurl), ))
+        lg.args(8, new_customer=new_customer, current_allocated_bytes=space_dict.get(customer_idurl))
         from supplier import local_tester
         if free_bytes <= bytes_for_customer:
-            contactsdb.update_customers(current_customers)
             contactsdb.remove_customer_meta_info(customer_idurl)
-            contactsdb.save_customers()
             accounting.write_customers_quotas(space_dict, free_bytes)
+            contactsdb.update_customers(current_customers)
+            contactsdb.save_customers()
             if customer_public_key_id:
                 my_keys.erase_key(customer_public_key_id)
             reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
@@ -201,14 +199,14 @@ class SupplierService(LocalService):
         free_bytes = free_bytes - bytes_for_customer
         current_customers.append(customer_idurl)
         space_dict[customer_idurl] = bytes_for_customer
-        contactsdb.update_customers(current_customers)
-        contactsdb.save_customers()
         contactsdb.add_customer_meta_info(customer_idurl, {
             'ecc_map': ecc_map,
             'position': family_position,
             'family_snapshot': family_snapshot,
         })
         accounting.write_customers_quotas(space_dict, free_bytes)
+        contactsdb.update_customers(current_customers)
+        contactsdb.save_customers()
         self._do_register_customer_key(customer_public_key_id, customer_public_key)
         reactor.callLater(0, local_tester.TestUpdateCustomers)  # @UndefinedVariable
         if new_customer:
@@ -269,11 +267,11 @@ class SupplierService(LocalService):
             return p2p_service.SendFail(newpacket, 'broken space file')
         new_customers = list(contactsdb.customers())
         new_customers.remove(customer_idurl)
-        contactsdb.update_customers(new_customers)
-        contactsdb.remove_customer_meta_info(customer_idurl)
-        contactsdb.save_customers()
         space_dict.pop(customer_idurl)
         accounting.write_customers_quotas(space_dict, free_space)
+        contactsdb.remove_customer_meta_info(customer_idurl)
+        contactsdb.update_customers(new_customers)
+        contactsdb.save_customers()
         if customer_public_key_id:
             my_keys.erase_key(customer_public_key_id)
         from supplier import local_tester

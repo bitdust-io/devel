@@ -198,11 +198,11 @@ class CustomersRejector(automat.Automat):
         Action method.
         """
         space_dict, free_space, spent_bytes, current_customers, removed_customers = args[0]
-        contactsdb.update_customers(current_customers)
         for customer_idurl in removed_customers:
             contactsdb.remove_customer_meta_info(customer_idurl)
-        contactsdb.save_customers()
         accounting.write_customers_quotas(space_dict, free_space)
+        contactsdb.update_customers(current_customers)
+        contactsdb.save_customers()
 
     def doSendRejectService(self, *args, **kwargs):
         """

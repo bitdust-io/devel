@@ -214,7 +214,7 @@ def work():
     if _CurrentLookupTask.result_defer:
         _CurrentLookupTask.result_defer.addCallback(on_lookup_task_success)
     else:
-        lg.warn('task %s was closed imediately' % _CurrentLookupTask)
+        lg.warn('task %s was closed immediately' % _CurrentLookupTask)
 
 #------------------------------------------------------------------------------
 
