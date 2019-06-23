@@ -31,9 +31,15 @@ Manages currently restoring backups.
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------ 
+
 import os
-import sys
-import time
 
 from twisted.internet import threads
 
@@ -63,11 +69,13 @@ OnRestoreBlockFunc = None
 
 
 def init():
-    lg.out(4, 'restore_monitor.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'restore_monitor.init')
 
 
 def shutdown():
-    lg.out(4, 'restore_monitor.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'restore_monitor.shutdown')
 
 #------------------------------------------------------------------------------
 
@@ -81,7 +89,8 @@ def packet_in_callback(backupID, newpacket):
     global _WorkingRestoreProgress
     global OnRestorePacketFunc
     SupplierNumber = newpacket.SupplierNumber()
-    lg.out(12, 'restore_monitor.packet_in_callback %s from suppier %s' % (backupID, SupplierNumber))
+    if _Debug:
+        lg.out(_DebugLevel, 'restore_monitor.packet_in_callback %s from suppier %s' % (backupID, SupplierNumber))
 
     # want to count the data we restoring
     if SupplierNumber not in list(_WorkingRestoreProgress[backupID].keys()):
@@ -96,7 +105,7 @@ def packet_in_callback(backupID, newpacket):
 
 
 def extract_done(retcode, backupID, tarfilename, callback_method):
-    lg.info('EXTRACT SUCCESS of %s  tarfile=%s, result=%s' % (backupID, tarfilename, str(retcode)))
+    lg.info('extract success of %s  tarfile=%s, result=%s' % (backupID, tarfilename, str(retcode)))
     global OnRestoreDoneFunc
 
     _WorkingBackupIDs.pop(backupID, None)
@@ -117,7 +126,7 @@ def extract_done(retcode, backupID, tarfilename, callback_method):
 
 
 def extract_failed(err, backupID, callback_method):
-    lg.err('EXTRACT FAILED of %s with: %s' % (backupID, str(err)))
+    lg.err('extract failed of %s with: %s' % (backupID, str(err)))
     if callback_method:
         try:
             callback_method(backupID, 'extract failed')
@@ -131,9 +140,9 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
     if result == 'done':
-        lg.info('RESTORE SUCCESS of %s with result=%s' % (backupID, result))
+        lg.info('restore success of %s with result=%s' % (backupID, result))
     else:
-        lg.err('RESTORE FAILED of %s with result=%s' % (backupID, result))
+        lg.err('restore failed of %s with result=%s' % (backupID, result))
     try:
         os.close(outfd)
     except:
@@ -186,7 +195,8 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
 #------------------------------------------------------------------------------
 
 def Start(backupID, outputLocation, callback=None, keyID=None):
-    lg.out(8, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
+    if _Debug:
+        lg.out(_DebugLevel, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if backupID in list(_WorkingBackupIDs.keys()):
@@ -216,7 +226,8 @@ def Abort(backupID):
         return False
     r = _WorkingBackupIDs[backupID]
     r.automat('abort', 'abort')
-    lg.out(8, 'restore_monitor.Abort %s' % backupID)
+    if _Debug:
+        lg.out(_DebugLevel, 'restore_monitor.Abort %s' % backupID)
     return True
 
 #------------------------------------------------------------------------------

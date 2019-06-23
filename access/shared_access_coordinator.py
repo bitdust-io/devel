@@ -382,8 +382,11 @@ class SharedAccessCoordinator(automat.Automat):
                     key_id=self.key_id,
                     queue_subscribe=False,
                 )
-            sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
-            sc.automat('connect')
+            if sc.state in ['CONNECTED', 'QUEUE?', ]:
+                self.automat('supplier-connected', supplier_idurl)
+            else:
+                sc.set_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
+                sc.automat('connect')
 
     def doRequestSupplierFiles(self, *args, **kwargs):
         """
