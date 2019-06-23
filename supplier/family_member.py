@@ -61,7 +61,6 @@ from dht import dht_relations
 
 from userid import my_id
 from userid import id_url
-from userid import global_id
 
 from raid import eccmap
 
@@ -968,6 +967,7 @@ class FamilyMember(automat.Automat):
         if my_position_in_transaction != my_known_position:
             lg.warn('another supplier is trying to put my IDURL on another position in the family of customer %s' % self.customer_idurl)
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
+        self.automat('family-refresh')
         return p2p_service.SendAck(incoming_packet)
 
     def _on_incoming_supplier_position(self, inp):
