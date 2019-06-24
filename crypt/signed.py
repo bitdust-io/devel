@@ -318,7 +318,7 @@ def Unserialize(data):
 
     try:
         Command = strng.to_text(dct['m'])
-        OwnerID=dct['o']
+        OwnerID = dct['o']
         CreatorID = dct['c']
         PacketID = strng.to_text(dct['i'])
         Date = strng.to_text(dct['d'])
