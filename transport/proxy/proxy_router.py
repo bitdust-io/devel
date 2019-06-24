@@ -516,9 +516,11 @@ class ProxyRouter(automat.Automat):
         I will decrypt with my private key and send to outside world further.
         """
         newpacket, info = outpacket_info_tuple
+        if _Debug:
+            lg.args(_DebugLevel, newpacket=newpacket, info=info)
         block = encrypted.Unserialize(newpacket.Payload)
         if block is None:
-            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
+            lg.err('failed reading data from %s' % newpacket.RemoteID)
             return
         try:
             session_key = key.DecryptLocalPrivateKey(block.EncryptedSessionKey)
@@ -532,7 +534,7 @@ class ProxyRouter(automat.Automat):
             wide = json_payload['w']                         # wide
             routed_data = json_payload['p']                  # payload
         except:
-            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
+            lg.err('failed reading data from %s' % newpacket.RemoteID)
             lg.exc()
             try:
                 inpt.close()
@@ -566,7 +568,8 @@ class ProxyRouter(automat.Automat):
             return
         routed_packet = signed.Unserialize(routed_data)
         if not routed_packet or not routed_packet.Valid():
-            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
+            lg.err('failed to unserialize packet from %s' % newpacket.RemoteID)
+            p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
             return
         # send the packet directly to target user_idurl
         # we pass not callbacks because all response packets from this call will be also re-routed

@@ -346,7 +346,7 @@ def event_listen_v1(node, expected_event_id, consumer_id='regression_tests_wait_
     return found
 
 
-def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
+def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
     for i in range(attempts):
         response = requests.get(
             url=tunnel_url(node, 'packet/list/v1'),
@@ -362,7 +362,7 @@ def packet_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
     return response.json()
 
 
-def transfer_list_v1(node, wait_all_finish=False, attempts=30, delay=3):
+def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
     for i in range(attempts):
         response = requests.get(
             url=tunnel_url(node, 'transfer/list/v1'),

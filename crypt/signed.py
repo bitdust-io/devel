@@ -49,7 +49,7 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -207,7 +207,7 @@ class Packet(object):
         if CreatorIdentity is None:
             OwnerIdentity = contactsdb.get_contact_identity(self.OwnerID)
             if OwnerIdentity is None:
-                lg.out(1, "signed.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
+                lg.err("could not get Identity for " + self.CreatorID + " so returning False")
                 return False
             CreatorIdentity = OwnerIdentity
         Result = key.Verify(CreatorIdentity, self.GenerateHash(), self.Signature)
@@ -230,7 +230,8 @@ class Packet(object):
         is equal to owner or a scrubber for owner 8) etc.
         """
         if not self.Ready():
-            lg.out(4, "signed.Valid packet is not ready yet " + str(self))
+            if _Debug:
+                lg.out(_DebugLevel, "signed.Valid packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
             lg.warn("signed.Valid bad Command " + str(self.Command))
@@ -280,9 +281,9 @@ class Packet(object):
             'k': self.KeyID,
             's': self.Signature,
         }        
-        if _Debug:
-            lg.out(_DebugLevel, 'signed.Serialize %r' % dct)
         src = serialization.DictToBytes(dct, encoding='latin1')
+        if _Debug:
+            lg.out(_DebugLevel, 'signed.Serialize %d bytes' % len(src))
         return src
 
     def __len__(self):
@@ -313,26 +314,48 @@ def Unserialize(data):
     dct = serialization.BytesToDict(data, keys_to_text=True, encoding='latin1')
 
     if _Debug:
-        lg.out(_DebugLevel, 'signed.Unserialize %r' % dct)
+        lg.out(_DebugLevel, 'signed.Unserialize %d bytes' % len(data))
+
+    try:
+        Command = strng.to_text(dct['m'])
+        OwnerID = dct['o']
+        CreatorID = dct['c']
+        PacketID = strng.to_text(dct['i'])
+        Date = strng.to_text(dct['d'])
+        Payload = dct['p']
+        RemoteID = dct['r']
+        KeyID = strng.to_text(dct['k'])
+        Signature = dct['s']
+    except:
+        lg.exc()
+        return None
 
     try:
         newobject = Packet(
-            Command=strng.to_text(dct['m']),
-            OwnerID=dct['o'],
-            CreatorID=dct['c'],
-            PacketID=strng.to_text(dct['i']),
-            Date=strng.to_text(dct['d']),
-            Payload=dct['p'],
-            RemoteID=dct['r'],
-            KeyID=strng.to_text(dct['k']),
-            Signature=dct['s'],
+            Command=Command,
+            OwnerID=OwnerID,
+            CreatorID=CreatorID,
+            PacketID=PacketID,
+            Date=Date,
+            Payload=Payload,
+            RemoteID=RemoteID,
+            KeyID=KeyID,
+            Signature=Signature,
         )
     except:
+        if _Debug:
+            lg.args(_DebugLevel,
+                Command=Command,
+                OwnerID=OwnerID,
+                CreatorID=CreatorID,
+                PacketID=PacketID,
+                Date=Date,
+                Payload=Payload,
+                RemoteID=RemoteID,
+                KeyID=KeyID,
+                Signature=Signature,
+            )
         lg.exc()
-        newobject = None
-    
-    if newobject is None:
-        lg.warn("result is None")
         return None
 
     return newobject
