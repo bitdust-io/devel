@@ -283,7 +283,7 @@ class Packet(object):
         }        
         src = serialization.DictToBytes(dct, encoding='latin1')
         if _Debug:
-            lg.out(_DebugLevel, 'signed.Serialize %d bytes %r(%r) %r/%r/%r KeyID=%r' % (
+            lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s' % (
                 len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
                 nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, ))
         return src

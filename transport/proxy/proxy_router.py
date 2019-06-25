@@ -426,6 +426,8 @@ class ProxyRouter(automat.Automat):
         receiver_idurl, newpacket, info = args[0]
         receiver_idurl = id_url.field(receiver_idurl)
         route_info = self.routes.get(receiver_idurl, None)
+        if _Debug:
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, receiver_idurl=receiver_idurl, route_info=route_info, )
         if not route_info:
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
             return
@@ -562,6 +564,8 @@ class ProxyRouter(automat.Automat):
         sender_idurl = id_url.field(sender_idurl)
         receiver_idurl = id_url.field(receiver_idurl)
         route = self.routes.get(sender_idurl, None)
+        if _Debug:
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route=route)
         if not route:
             lg.warn('route with %s not found' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
@@ -571,8 +575,8 @@ class ProxyRouter(automat.Automat):
             lg.err('failed to unserialize packet from %s' % newpacket.RemoteID)
             p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
             return
-        # send the packet directly to target user_idurl
-        # we pass not callbacks because all response packets from this call will be also re-routed
+        # send the packet directly to target user
+        # do not pass callbacks, because all response packets from this call will be also re-routed
         pout = packet_out.create(
             routed_packet,
             wide=wide,

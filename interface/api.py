@@ -454,7 +454,7 @@ def identity_rotate():
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
     from p2p import id_rotator
-    old_sources = my_id.getLocalIdentity().getSources(as_id_url_fields=False)
+    old_sources = my_id.getLocalIdentity().getSources(as_fields=False)
     ret = Deferred()
     d = id_rotator.run(force=True)
     def _cb(result):
