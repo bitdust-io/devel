@@ -283,7 +283,9 @@ class Packet(object):
         }        
         src = serialization.DictToBytes(dct, encoding='latin1')
         if _Debug:
-            lg.out(_DebugLevel, 'signed.Serialize %d bytes' % len(src))
+            lg.out(_DebugLevel, 'signed.Serialize %d bytes %r(%r) %r/%r/%r KeyID=%r' % (
+                len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
+                nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, ))
         return src
 
     def __len__(self):
@@ -357,6 +359,9 @@ def Unserialize(data):
             )
         lg.exc()
         return None
+
+    if _Debug:
+        lg.args(_DebugLevel, Command=Command, PacketID=PacketID, OwnerID=OwnerID, CreatorID=CreatorID, RemoteID=RemoteID)
 
     return newobject
 

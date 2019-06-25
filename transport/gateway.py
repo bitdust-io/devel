@@ -959,7 +959,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
             transfer_id, os.path.basename(filename), proto,
             nameurl.GetName(sender_idurl), host))
     incoming_packet = packet_in.create(transfer_id)
-    incoming_packet.automat('register-item', (proto, host, sender_idurl, filename, size))
+    incoming_packet.event('register-item', (proto, host, sender_idurl, filename, size))
     control.request_update([('stream', transfer_id)])
     return transfer_id
 
@@ -969,7 +969,9 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     Called from transport plug-in after finish receiving a single file.
     """
     pkt_in = packet_in.get(transfer_id)
-    assert pkt_in is not None
+    if not pkt_in:
+        lg.exc(exc_value=Exception('incoming packet with transfer_id=%r not exist' % transfer_id))
+        return False
     if status == 'finished':
         if _Debug:
             lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s with %d bytes' % (

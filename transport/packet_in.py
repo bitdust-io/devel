@@ -297,6 +297,7 @@ class PacketIn(automat.Automat):
             state='AT_STARTUP',
             debug_level=_DebugLevel,
             log_events=_Debug,
+            log_transitions=_Debug,
             publish_events=False,
         )
 
@@ -307,10 +308,10 @@ class PacketIn(automat.Automat):
         return '%s%s(%s)' % (self.id, self.label, self.state)
 
     def is_timed_out(self):
-        return False
 #         if self.time is None or self.timeout is None:
 #             return False
 #         return time.time() - self.time > self.timeout
+        return False
 
     def init(self):
         """
