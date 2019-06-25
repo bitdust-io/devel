@@ -159,6 +159,7 @@ class RSAKey(object):
         if not strng.is_bin(message):
             raise ValueError('message must be byte string')
         h = hashes.sha1(message, return_object=True)
+        result = False
         try:
             pkcs1_15.new(self.keyObject).verify(h, signature_bytes)
             result = True
@@ -175,7 +176,6 @@ class RSAKey(object):
                     if _Debug:
                         lg.exc(msg='signature=%r\nmessage=%r\nsignature_as_digits=%r\n' % (
                             signature, message, signature_as_digits))
-                    result = False
         return result
 
     def encrypt(self, private_message):
