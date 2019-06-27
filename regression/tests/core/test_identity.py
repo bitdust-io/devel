@@ -100,7 +100,6 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     # to make sure all uploads to finish
     transfer_list_v1('customer_backup', wait_all_finish=True)
     packet_list_v1('customer_backup', wait_all_finish=True)
-    # time.sleep(5)
 
     file_list_all_v1('customer_backup')
 
@@ -155,9 +154,6 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     virtual_file = 'virtual_file.txt'
     remote_path = '%s:%s' % (key_id, virtual_file)
     recovered_file = '%s/%s' % (recover_volume, virtual_file)
-
-    # TODO: currently broken functionality. to be fixed
-    # if False:
     for i in range(20):
         response = requests.post(
             url=tunnel_url('customer_restore', 'file/download/start/v1'),
@@ -175,19 +171,14 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
         if response.json()['errors'][0].startswith('download not possible, uploading'):
             time.sleep(1)
         else:
-            # TODO: currently broken functionality. to be fixed
-            # assert False, response.json()
-            pass
+            assert False, response.json()
 
     else:
-        # TODO: currently broken functionality. to be fixed
         assert False, 'download was not successful: %r' % response.json()
-        # pass
 
-    # TODO: currently broken functionality. to be fixed
-    # recovered_file_src = run_ssh_command_and_wait('customer_restore', 'cat %s' % recovered_file)[0].strip()
-    # print('customer_restore:%s' % recovered_file, recovered_file_src)
-    # assert source_local_file_src == recovered_file_src, (source_local_file_src, recovered_file_src, )
+    recovered_file_src = run_ssh_command_and_wait('customer_restore', 'cat %s' % recovered_file)[0].strip()
+    print('customer_restore:%s' % recovered_file, recovered_file_src)
+    assert source_local_file_src == recovered_file_src, (source_local_file_src, recovered_file_src, )
 
     # TODO:
     # test my keys also recovered
