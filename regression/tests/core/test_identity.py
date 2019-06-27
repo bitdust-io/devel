@@ -32,8 +32,8 @@ from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, fi
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
-    # if os.environ.get('RUN_TESTS', '1') == '0':
-    #     return pytest.skip()  # @UndefinedVariable
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
 
     # step1: first upload/download one file on customer_backup
     key_id = 'master$customer_backup@is_8084'
