@@ -39,6 +39,8 @@ EVENTS:
     * :red:`start`
     * :red:`stun-failed`
     * :red:`stun-success`
+    * :red:`suppliers-read-failed`
+    * :red:`suppliers-read-ok`
 
 .. raw:: html
 
@@ -81,13 +83,19 @@ from system import bpio
 
 from lib import net_misc
 
+from raid import eccmap
+
 from crypt import key
+
+from contacts import contactsdb
 
 from stun import stun_client
 
+from dht import dht_relations
+
 from userid import identity
 from userid import my_id
-
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -134,6 +142,7 @@ class IdRestorer(automat.Automat):
         'MSG_06': ['your identity restored successfully!', 'green'],
         'MSG_07': ['checking network connectivity', ],
         'MSG_08': ['network connection failed', 'red', ],
+        'MSG_09': ['reading list of my suppliers from DHT', ],
     }
 
     def init(self):
@@ -194,6 +203,12 @@ class IdRestorer(automat.Automat):
                 self.doClearWorkingKey(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'restore-success':
+                self.state = 'SUPPLIERS?'
+                self.doPrint(self.msg('MSG_09', *args, **kwargs))
+                self.doDHTReadMySuppliers(*args, **kwargs)
+        #---SUPPLIERS?---
+        elif self.state == 'SUPPLIERS?':
+            if event == 'suppliers-read-ok' or event == 'suppliers-read-failed':
                 self.state = 'RESTORED!'
                 self.doPrint(self.msg('MSG_06', *args, **kwargs))
                 self.doRestoreSave(*args, **kwargs)
@@ -339,6 +354,19 @@ class IdRestorer(automat.Automat):
 
         reactor.callLater(0.1, self.automat, 'restore-success')  # @UndefinedVariable
 
+    def doDHTReadMySuppliers(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        known_suppliers = len(contactsdb.suppliers())
+        if known_suppliers > 0:
+            lg.warn('skip reading my suppliers from DHT, currently known %d suppliers already' % known_suppliers)
+            self.automat('suppliers-read-ok')
+            return
+        d = dht_relations.read_customer_suppliers(my_id.getLocalID())
+        d.addCallback(self._on_my_dht_relations_discovered)
+        d.addErrback(self._on_my_dht_relations_failed)
+
     def doRestoreSave(self, *args, **kwargs):
         """
         TODO: use lib.config here request settings from DHT my suppliers need
@@ -364,3 +392,24 @@ class IdRestorer(automat.Automat):
         global _IdRestorer
         _IdRestorer = None
 
+    def _on_my_dht_relations_discovered(self, dht_result):
+        if not (dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0):
+            lg.warn('no dht records found for my customer family')
+            self.automat('suppliers-read-failed')
+            return
+        dht_suppliers = id_url.to_bin_list(dht_result['suppliers'])
+        dht_ecc_map = dht_result.get('ecc_map', settings.DefaultEccMapName())
+        try:
+            dht_desired_suppliers_number = eccmap.GetEccMapSuppliersNumber(dht_ecc_map)
+        except:
+            lg.exc()
+            dht_desired_suppliers_number = eccmap.GetEccMapSuppliersNumber(settings.DefaultEccMapName())
+        settings.config.conf().setInt('services/customer/suppliers-number', dht_desired_suppliers_number)
+        contactsdb.set_suppliers(dht_suppliers)
+        contactsdb.save_suppliers()
+        lg.info('found and restored list of %d suppliers from DHT' % dht_desired_suppliers_number)
+        self.automat('suppliers-read-ok')
+
+    def _on_my_dht_relations_failed(self, err):
+        lg.err(err)
+        self.automat('suppliers-read-failed')

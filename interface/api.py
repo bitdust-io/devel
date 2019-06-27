@@ -90,7 +90,7 @@ def OK(result='', message=None, status='OK', extra_fields=None):
     return o
 
 
-def RESULT(result=[], message=None, status='OK', errors=None, source=None):
+def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra_fields=None):
     o = {}
     if source is not None:
         o.update(source)
@@ -99,6 +99,8 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None):
         o['message'] = message
     if errors is not None:
         o['errors'] = errors
+    if extra_fields is not None:
+        o.update(extra_fields)
     o = on_api_result_prepared(o)
     if _Debug:
         api_method = sys._getframe().f_back.f_code.co_name
@@ -830,6 +832,7 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
         lg.out(_DebugLevel, 'api.files_list remote_path=%s key_id=%s recursive=%s all_customers=%s include_uploads=%s include_downloads=%s' % (
             remote_path, key_id, recursive, all_customers, include_uploads, include_downloads, ))
     from storage import backup_fs
+    from storage import backup_control
     from system import bpio
     from lib import misc
     from userid import global_id
@@ -907,7 +910,6 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
             'downloads': [],
         }
         if include_uploads:
-            from storage import backup_control
             backup_control.tasks()
             running = []
             for backupID in backup_control.FindRunningBackup(pathID=full_glob_id):
@@ -964,7 +966,9 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
         result.append(r)        
     if _Debug:
         lg.out(_DebugLevel, '    %d items returned' % len(result))
-    return RESULT(result)
+    return RESULT(result, extra_fields={
+        'revision': backup_control.revision(),
+    })
 
 
 def file_info(remote_path, include_uploads=True, include_downloads=True):
@@ -1076,7 +1080,9 @@ def file_info(remote_path, include_uploads=True, include_downloads=True):
         r['downloads'] = downloads
     if _Debug:
         lg.out(_DebugLevel, 'api.file_info : "%s"' % pathID)
-    return RESULT([r, ])
+    return RESULT([r, ], extra_fields={
+        'revision': backup_control.revision(),
+    })
 
 
 def file_create(remote_path, as_folder=False):

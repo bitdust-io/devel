@@ -28,12 +28,12 @@ import requests
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
-    supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1
+    supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
-    if os.environ.get('RUN_TESTS', '1') == '0':
-        return pytest.skip()  # @UndefinedVariable
+    # if os.environ.get('RUN_TESTS', '1') == '0':
+    #     return pytest.skip()  # @UndefinedVariable
 
     # step1: first upload/download one file on customer_backup
     key_id = 'master$customer_backup@is_8084'
@@ -48,6 +48,20 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     supplier_list_v1('customer_backup', expected_min_suppliers=2, expected_max_suppliers=2)
 
     service_info_v1('customer_backup', 'service_my_data', 'ON', attempts=30, delay=2)
+
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='customer_backup',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='customer_1',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
 
     file_create_v1('customer_backup', remote_path)
 
@@ -88,6 +102,8 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     packet_list_v1('customer_backup', wait_all_finish=True)
     # time.sleep(5)
 
+    file_list_all_v1('customer_backup')
+
     try:
         response = requests.get(url=tunnel_url('customer_backup', 'process/stop/v1'))
         assert response.json()['status'] == 'OK', response.json()
@@ -120,8 +136,18 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     else:
         assert False, 'customer_restore was not able to join the network after identity recover'
 
-    # TODO: currently broken functionality. to be fixed
-    service_info_v1('customer_restore', 'service_my_data', 'ON')
+    supplier_list_v1('customer_restore', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    service_info_v1('customer_restore', 'service_my_data', 'ON', attempts=30, delay=2)
+
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='customer_restore',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    file_list_all_v1('customer_restore')
 
     # step4: try to recover stored file again
     key_id = 'master$customer_backup@is_8084'

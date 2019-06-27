@@ -282,10 +282,10 @@ class Packet(object):
             's': self.Signature,
         }        
         src = serialization.DictToBytes(dct, encoding='latin1')
-        if _Debug:
-            lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s' % (
-                len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
-                nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, ))
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s' % (
+        #         len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
+        #         nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, ))
         return src
 
     def __len__(self):

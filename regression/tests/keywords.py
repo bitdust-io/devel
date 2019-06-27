@@ -79,8 +79,13 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
                 continue
             ss = response.json()['result']['suppliers']
             num_suppliers = len(ss)
-            if num_suppliers != expected_suppliers_number or (ss.count('') > accepted_mistakes and expected_suppliers_number > 2):
-                # print('\n%r' % response.json())
+            if num_suppliers != expected_suppliers_number:
+                print('\ncurrently see %d suppliers but expected number is %d\n' % (num_suppliers, expected_suppliers_number))
+                count += 1
+                time.sleep(delay)
+                continue
+            if ss.count('') > accepted_mistakes or len(list(filter(None, ss))) != expected_suppliers_number:
+                print('\ncurrently see %d empty suppliers\n' % ss.count(''))
                 count += 1
                 time.sleep(delay)
                 continue
@@ -103,6 +108,16 @@ def share_create_v1(customer: str, key_size=1024):
     assert response.json()['status'] == 'OK', response.json()
     print('\nshare/create/v1 : %s\n' % pprint.pformat(response.json()))
     return response.json()['result'][0]['key_id']
+
+
+def file_list_all_v1(node):
+    response = requests.get(
+        url=tunnel_url(node, 'file/list/all/v1'),
+    )
+    assert response.status_code == 200
+    assert response.json()['status'] == 'OK', response.json()
+    print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    return response.json()
 
 
 def file_create_v1(node, remote_path):

@@ -21,6 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 import os
+import pytest
 import base64
 from threading import Timer
 

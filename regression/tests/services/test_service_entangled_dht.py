@@ -55,6 +55,7 @@ VALIDATORS_NODES = [
 def test_dht_get_value_not_exist_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     dht_value_get_v1(
         node='customer_1',
         key='value_not_exist_customer_1',
@@ -65,6 +66,7 @@ def test_dht_get_value_not_exist_customer_1():
 def test_dht_set_value_customer_1_and_get_value_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     dht_value_set_v1(
         node='customer_1',
         key='test_key_1_customer_1',
@@ -80,6 +82,7 @@ def test_dht_set_value_customer_1_and_get_value_customer_1():
 def test_dht_set_value_customer_2_and_get_value_customer_3():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     dht_value_set_v1(
         node='customer_2',
         key='test_key_1_customer_2',
@@ -95,6 +98,7 @@ def test_dht_set_value_customer_2_and_get_value_customer_3():
 def test_dht_get_value_multiple_nodes():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     dht_value_set_v1(
         node='supplier_1',
         key='test_key_1_supplier_1',
@@ -111,6 +115,7 @@ def test_dht_get_value_multiple_nodes():
 def test_dht_write_value_multiple_nodes():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     for node in ['supplier_1', 'supplier_2', 'supplier_3', ]:
         dht_value_set_v1(
             node=node,

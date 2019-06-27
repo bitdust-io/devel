@@ -192,10 +192,10 @@ def kill_all_nodes():
 
 
 def report_all_nodes(event_loop):
-    print('\n\nDHT records:')
-    for node in ALL_NODES:
-        print('\n\nDHT records on [%s]:' % node)
-        keywords.dht_db_dump_v1(node)
+    # print('\n\nDHT records:')
+    # for node in ALL_NODES:
+    #     print('\n\nDHT records on [%s]:' % node)
+    #     keywords.dht_db_dump_v1(node)
 
     print('\n\nALL EXCEPTIONS:')
     failed = False 
