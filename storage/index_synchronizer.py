@@ -178,6 +178,7 @@ class IndexSynchronizer(automat.Automat):
         self.requested_suppliers_number = 0
         self.sending_suppliers = set()
         self.sent_suppliers_number = 0
+        self.PushAgain = False
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
