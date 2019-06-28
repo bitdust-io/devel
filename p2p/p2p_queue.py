@@ -691,7 +691,7 @@ def do_consume(interested_consumers=None):
     to_be_consumed = []
     for consumer_id in interested_consumers:
         if len(consumer(consumer_id).commands) == 0:
-            # skip, no avaliable notification methods found for given consumer
+            # skip, no available notification methods found for given consumer
             continue
         interested_queues = set()
         for queue_id in consumer(consumer_id).queues:
