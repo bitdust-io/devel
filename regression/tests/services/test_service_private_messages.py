@@ -25,12 +25,14 @@ import pytest
 import base64
 from threading import Timer
 
-from ..keywords import message_send_v1, message_receive_v1
+from ..keywords import message_send_v1, message_receive_v1, service_info_v1
 
 
 def test_customer_1_send_message_to_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
+    service_info_v1('customer_1', 'service_private_messages', 'ON')
 
     random_string = base64.b32encode(os.urandom(20)).decode()
     random_message = {

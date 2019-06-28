@@ -38,7 +38,7 @@ from . import encoding  # @UnresolvedImport
 from .contact import Contact  # @UnresolvedImport
 
 
-_Debug = False
+_Debug = True
 
 
 def rpcmethod(func):
@@ -459,7 +459,7 @@ class Node(object):
             return errmsg
 
         def checkResult(result):
-            if _Debug: print('    [DHT NODE]    iterativeFindValue.checkResult', result)
+            if _Debug: print('    [DHT NODE]    iterativeFindValue.checkResult key=%s' % key, result)
             if isinstance(result, dict):
                 if key in result:
                     latest_revision = 0
@@ -510,7 +510,7 @@ class Node(object):
                             'activeContacts': result['activeContacts'],
                         })
                     else:
-                        # Ok, value does not exist in DHT at all
+                        if _Debug: print('    [DHT NODE]    key %s does not exist in DHT' % key)
                         outerDf.callback(result)
             else:
                 # The value wasn't found, but a list of contacts was returned
@@ -524,9 +524,9 @@ class Node(object):
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        if _Debug: print('    [DHT NODE]    refresh %s : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
+                        if _Debug: print('    [DHT NODE]    refresh %s on closest node : %r with %d to %r' % (key, item['value'], expireSeconds, contact))
                         contact.store(key, item['value'], None, 0, expireSeconds).addErrback(storeFailed)
-                    outerDf.callback({
+                    ret = {
                         'key': item['value'],
                         'values': [(
                             item['value'],
@@ -535,9 +535,11 @@ class Node(object):
                             (b'127.0.0.1', self.port),
                         ),],
                         'activeContacts': result['activeContacts'],
-                    })
+                    }
+                    if _Debug: print('    [DHT NODE]    key %s found in my local data store : %r' % (key, ret))
+                    outerDf.callback(ret)
                 else:
-                    # Ok, value does not exist in DHT at all
+                    if _Debug: print('    [DHT NODE]    key %s does not exist in DHT' % key)
                     outerDf.callback(result)
 
         # Execute the search
