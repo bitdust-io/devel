@@ -185,10 +185,9 @@ class IndexSynchronizer(automat.Automat):
         changed.
         """
         if newstate == 'IN_SYNC!' and oldstate != newstate:
+            events.send('my-backup-index-synchronized', data={})
             if self.PushAgain:
                 self.automat('instant')
-            else:
-                events.send('my-backup-index-synchronized', data={})
         if newstate == 'NO_INFO' and oldstate in ['REQUEST?', 'SENDING', ]:
             events.send('my-backup-index-out-of-sync', data={})
 
