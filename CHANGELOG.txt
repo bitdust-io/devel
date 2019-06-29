@@ -2,6 +2,26 @@ Change Log
 ==========
 
 
+2019-06-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in index_synchronizer()
+* bug fix in supplier_finder()
+* reading my suppliers from DHT during identiy restore
+* tried to fix issue with signature verification
+* one more issue fixed in proxy_transport() (#351)
+* fixed few issues in family_memeber() state machine  (#349)
+* added "services/entangled-dht/node-id" setting
+* populate DHT constants in networks.json
+* fixed "unanswered" Identity() packets
+* added "skip_ack" parameter to packet_out()
+* changed PacketID format for Identity() & Ack() commands
+* good progress with identity rotate (#344)
+* added few more makefile regression commands (#342)
+* new core module userid/id_url.py added  (#341)
+* bug fix in initializer.py (#340)
+
+
+
 2019-05-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * workaround fix in CodernityDB  (#336)
