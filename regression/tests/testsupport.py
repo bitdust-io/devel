@@ -41,6 +41,7 @@ DHT_NODE_ID_FIXED = {
     'customer_3': '88a4bac84daef4970479642db209402ed159265e',
     'customer_4': '19154e94a71272a3a2a42d5de279e43ccd6e99c5',
     'customer_5': '2fbc3d5cf34cec61076487dfdc107874d3a5a0b0',
+    'customer_6': '',
     'customer_backup': 'c5e6cc9f4d33dc85d7e647de8f3d1c438e4d68e7',
     'customer_restore': '091cbb6347cfefa2415002f025188023d1152716',
     'supplier_1': '351a6b828070083fd8d44548582e5e2ddb27914f',
