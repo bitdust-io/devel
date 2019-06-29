@@ -58,6 +58,7 @@ class EmployerService(LocalService):
         from customer import fire_hire
         self.starting_deferred = Deferred()
         self.starting_deferred.addErrback(lg.errback)
+        self.all_suppliers_hired_event_sent = False 
         eccmap.Update()
         fire_hire.A('init')
         fire_hire.A().addStateChangedCallback(
@@ -112,13 +113,15 @@ class EmployerService(LocalService):
         from main import events
         from customer import fire_hire
         if fire_hire.IsAllHired():
-            lg.info('at the moment all my suppliers are hired and known')
             self._do_cleanup_dht_suppliers()
-            events.send('my-suppliers-all-hired', data=dict())
+            if not self.all_suppliers_hired_event_sent:
+                lg.info('at the moment all my suppliers are hired and known')
+                events.send('my-suppliers-all-hired', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.callback(True)
                 self.starting_deferred = None
         else:
+            self.all_suppliers_hired_event_sent = False
             lg.info('some of my supplies are not hired yet')
             events.send('my-suppliers-yet-not-hired', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:

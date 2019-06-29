@@ -325,19 +325,28 @@ class SupplierFinder(automat.Automat):
             lg.warn('no available nodes found via DHT lookup')
             self.automat('users-not-found')
             return
-        # if driver.is_on('service_proxy_transport'):
-        #     current_router_idurl = config.conf().getString('services/proxy-transport/current-router', '').strip()
-        #     if current_router_idurl and current_router_idurl in idurls:
-        #         idurls.remove(current_router_idurl)
+        found_idurl = None
         for idurl in idurls:
+            if id_url.is_in(idurl, contactsdb.suppliers()):
+                if _Debug:
+                    lg.out('    skip %r because already my supplier' % idurl)
+                continue
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
-            if len(myprotos.intersection(remoteprotos)) > 0:
-                self.automat('found-one-user', idurl)
-                return
-        lg.warn('found some available nodes via DHT lookup, but no matching protocols exists')
-        self.automat('users-not-found')
+            if not len(myprotos.intersection(remoteprotos)):
+                if _Debug:
+                    lg.out(_DebugLevel, '    skip %r because no matching protocols exists' % idurl)
+                continue
+            found_idurl = idurl
+            break
+        if not found_idurl:
+            lg.warn('found some nodes via DHT lookup, but none of them is available')
+            self.automat('users-not-found')
+            return
+        if _Debug:
+            lg.out(_DebugLevel, '    selected %r and will request supplier service' % found_idurl)
+        self.automat('found-one-user', found_idurl)
 
     def _supplier_connector_state(self, supplier_idurl, newstate, **kwargs):
         if supplier_idurl != self.target_idurl:

@@ -160,7 +160,8 @@ def check_create(idurl):
     idurl = id_url.field(idurl)
     if idurl not in list(_OnlineStatusDict.keys()):
         A(idurl, 'init')
-        lg.info('online_status() for %r was not found, made a new instance with state OFFLINE' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'online_status.check_create instance for %r was not found, made a new with state OFFLINE' % idurl)
     return True
 
 #------------------------------------------------------------------------------

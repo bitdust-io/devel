@@ -31,7 +31,7 @@ I think this is a most used module in the project.
 Various parts of the code use this module to get the user settings and global constants.
 
 TODO:
-need to move out userconfig stuff from that file
+need to move out user config stuff from that file
 """
 
 #------------------------------------------------------------------------------

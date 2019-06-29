@@ -88,6 +88,7 @@ from main import events
 from userid import identity
 from userid import my_id
 from userid import known_servers
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -385,7 +386,7 @@ class IdRotator(automat.Automat):
             settings.MaximumIdentitySources(),
             config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources(),
         )
-        current_sources = list(map(lambda i: i.to_bin(), my_id.getLocalIdentity().getSources()))
+        current_sources = id_url.to_bin_list(my_id.getLocalIdentity().getSources())
         new_sources = []
         new_idurl = args[0]
         if _Debug:

@@ -614,6 +614,15 @@ async def print_exceptions_one_node_async(node, event_loop):
     return exceptions_out
 
 
+def print_stdout_one_node(node):
+    std_out = run_ssh_command_and_wait(node, 'cat /root/.bitdust/logs/stdout.log')[0].strip()
+    if std_out:
+        print(f'\n[{node}]:\n\n{std_out}\n\n')
+    else:
+        print(f'\n[{node}]: file /root/.bitdust/logs/stdout.log not found\n')
+    return std_out
+
+
 async def clean_one_node_async(node, event_loop):
     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/metadata', event_loop)
     await run_ssh_command_and_wait_async(node, 'rm -rf /root/.bitdust/identitycache', event_loop)

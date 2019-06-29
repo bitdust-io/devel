@@ -30,64 +30,75 @@ from ..keywords import user_ping_v1
 def test_ping_proxy_server_1_towards_proxy_server_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('proxy_server_1', 'proxy_server_2@is_8084')
 
 
 def test_ping_proxy_server_2_towards_proxy_server_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('proxy_server_2', 'proxy_server_1@is_8084')
 
 
 def test_ping_supplier_1_towards_supplier_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('supplier_1', 'supplier_2@is_8084')
 
 
 def test_ping_supplier_2_towards_supplier_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('supplier_2', 'supplier_1@is_8084')
 
 
 def test_ping_customer_1_towards_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('customer_1', 'customer_2@is_8084')
 
 
 def test_ping_customer_2_towards_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('customer_2', 'customer_1@is_8084')
 
 
 def test_ping_customer_1_towards_supplier_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('customer_1', 'supplier_1@is_8084')
 
 
 def test_ping_customer_1_towards_supplier_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('customer_1', 'supplier_2@is_8084')
 
 
 def test_ping_supplier_2_towards_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('supplier_2', 'customer_2@is_8084')
 
 
 def test_ping_supplier_2_towards_customer_1():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('supplier_2', 'customer_1@is_8084')
 
 
 def test_ping_supplier_1_towards_customer_2():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
     user_ping_v1('supplier_1', 'customer_2@is_8084')

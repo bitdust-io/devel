@@ -140,7 +140,9 @@ def test_customer_1_share_file_to_customer_4():
 
     file_upload_start_v1('customer_1', remote_path, local_path)
 
-    time.sleep(5)
+    packet_list_v1('customer_1', wait_all_finish=True)
+
+    transfer_list_v1('customer_1', wait_all_finish=True)
 
     service_info_v1('customer_1', 'service_restores', 'ON')
 
@@ -157,8 +159,6 @@ def test_customer_1_share_file_to_customer_4():
     assert response.status_code == 200
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
-
-    time.sleep(1)
 
     service_info_v1('customer_4', 'service_restores', 'ON')
 

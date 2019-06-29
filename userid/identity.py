@@ -614,20 +614,22 @@ class identity(object):
 
     #------------------------------------------------------------------------------
 
-    def getSources(self, as_id_url_fields=True):
+    def getSources(self, as_fields=True):
         """
         Return identity sources.
         """
-        if not as_id_url_fields:
-            return list(map(lambda s: s.to_bin(), self.sources))
+        if not as_fields:
+            return id_url.to_bin_list(self.sources)
         return self.sources
 
-    def getIDURL(self, index=0):
+    def getIDURL(self, index=0, as_field=True):
         """
         Return a source IDURL - this is a user ID.
         Must have at least one IDURL in the ``sources``.
         """
         result = self.sources[index]
+        if not as_field:
+            return result.to_bin()
         return result
 
     def getIDName(self, index=0):

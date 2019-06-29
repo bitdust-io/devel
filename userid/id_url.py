@@ -215,9 +215,14 @@ def identity_cached(id_obj):
     if is_identity_rotated:
         from main import events
         events.send('identity-rotated', data=dict(
-            old_idurls=latest_id_obj.getSources(),
-            new_idurls=id_obj.getSources(),
+            old_idurls=latest_id_obj.getSources(as_fields=False),
+            new_idurls=id_obj.getSources(as_fields=False),
         ))
+        if latest_id_obj.getIDURL(as_field=False) != id_obj.getIDURL(as_field=False):
+            events.send('identity-url-changed', data=dict(
+                old_idurl=latest_id_obj.getIDURL(as_field=False),
+                new_idurl=id_obj.getIDURL(as_field=False),
+            ))
     return True
 
 #------------------------------------------------------------------------------

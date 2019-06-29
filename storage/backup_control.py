@@ -327,7 +327,7 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         input_data = block.Data()
     except:
         lg.exc()
-        lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR decrypting data from %s' % newpacket)
+        lg.err('failed decrypting data from %s' % newpacket)
         return False
     src = list_files.UnpackListFiles(input_data, settings.ListFilesFormat())
     backups2remove, paths2remove, missed_backups = backup_matrix.ReadRawListFiles(num, src)
@@ -890,7 +890,8 @@ def OnJobDone(backupID, result):
         # will be smarter to restart it once we finish all tasks
         # because user will probably leave BitDust working after starting a long running operations
         from storage import backup_monitor
-        lg.warn('restarting backup_monitor() machine because no tasks left')
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.OnJobDone restarting backup_monitor() machine because no tasks left')
         backup_monitor.A('restart')
     reactor.callLater(0, RunTask)  # @UndefinedVariable
     reactor.callLater(0, FireTaskFinishedCallbacks, remotePath, version, result)  # @UndefinedVariable
