@@ -192,6 +192,11 @@ def kill_all_nodes():
 
 
 def report_all_nodes(event_loop):
+    print('\n\nSTDOUT:')
+    for node in ALL_NODES:
+        print('\n\nSTDOUT on [%s]:' % node)
+        ts.print_stdout_one_node(node)
+
     # print('\n\nDHT records:')
     # for node in ALL_NODES:
     #     print('\n\nDHT records on [%s]:' % node)
