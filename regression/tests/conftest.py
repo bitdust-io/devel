@@ -36,9 +36,9 @@ from . import keywords
 DHT_SEED_NODES = 'dht_seed_0:14441'
 
 OTHER_KNOWN_ID_SERVERS = [
-    'is:8084:6661',
-    'is_a:8084:6661',
-    'is_b:8084:6661',
+    # 'is:8084:6661',
+    'identity-server-a:8084:6661',
+    'identity-server-b:8084:6661',
 ]
 
 # TODO: keep this list up to date with docker-compose links
@@ -48,6 +48,7 @@ ALL_NODES = [
     'customer_3',
     'customer_4',
     'customer_5',
+    'customer_6',
     'customer_backup',
     'customer_restore',
     'supplier_1',
@@ -106,6 +107,7 @@ ALL_ROLES = {
         {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
         {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
+        {'name': 'customer_6', 'join_network': True, 'num_suppliers': 2, 'known_servers': OTHER_KNOWN_ID_SERVERS, },
         {'name': 'customer_backup', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_restore', 'join_network': False, 'num_suppliers': 2, },
     ],

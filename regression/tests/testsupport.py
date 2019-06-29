@@ -509,7 +509,7 @@ async def start_supplier_async(node, identity_name, loop):
 
 
 async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
-                               min_servers=None, max_servers=None, known_servers=[]):
+                               min_servers=None, max_servers=None, known_servers=[], preferred_servers=[]):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
@@ -523,6 +523,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers %d' % max_servers, loop)
     if known_servers:
         await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/known-servers %s' % (','.join(known_servers)), loop)
+    if preferred_servers:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/preferred-servers %s' % (','.join(preferred_servers)), loop)
     # configure DHT udp port and node ID
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node], loop)
