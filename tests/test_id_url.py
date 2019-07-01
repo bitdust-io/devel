@@ -17,9 +17,13 @@ ethan_text = 'http://127.0.0.1:8084/ethan.xml'
 ethan_not_exist = 'http://not-exist.com/ethan.xml'
 frank_1 = 'http://source_one.com/frank.xml'
 frank_2 = 'http://source_two.net/frank.xml'
+fake_frank = 'http://source_one_fake.com/frank.xml'
 george_1 = 'http://source_one.com/george.xml'
 george_2 = 'http://source_two.net/george.xml'
 george_3 = 'http://source_3.org/george.xml'
+hans1 = 'http://first.com/hans.xml'
+hans2 = 'http://second.net/hans.xml'
+hans3 = 'http://third.org/hans.xml'
 
 
 class TestIDURL(TestCase):
@@ -129,16 +133,69 @@ class TestIDURL(TestCase):
                     <source>http://source_two.net/frank.xml</source>
                   </sources>
                   <contacts>
-                    <contact>tcp://:7592</contact>
+                    <contact>tcp://127.0.0.1:7169</contact>
                   </contacts>
                   <certificates/>
                   <scrubbers/>
                   <postage>1</postage>
-                  <date>May 30, 2019</date>
+                  <date>Jul 01, 2019</date>
                   <version></version>
                   <revision>0</revision>
-                  <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDIYCHrhzz0yPYfNMKFUSyb5LbtNoG0y9W2pHOhKPjXMsCe1nUYOHKmnRwLdhMzJ+4Mx1UCJmheHAiCvPDKZ7qRNL2X86eKNV9d0JHqW6xWiadteWHdzXHduVAWtOD1EIIxID3v5jprBN8oLDkTbgUrJutPOG+JuxyU5i9GXb5qhlmrM9ukNd4Hj7+prTjDeFIS7M/bJFNuYvLy0Yrc+pEOnGYquI6RvAkjm1uUJ00bsSd06PAUATRKtGVwpxG94puImi0WVgCt4GiGJg8t2Z6PRLbAx+XANmwxJ9tPe8CLeMgK8EXPKHjWcQCUd7OGBaPC0/EWAbGPBsEKdIpHB7gt</publickey>
-                  <signature>16206868300008877600921412689140495979258182370971004976712222540672784322121155034535639220839641856686821577631474073534465139605541150548084768672667662041915184693218077142645108760479530793127888353599116529328440642295830641013482573397612652531617099990716006710125672240835999044307868547187943368721435308613499143472254021347039278129288941091656906768963279335231783540752918768035631991135921972481491603323358767582015322346254944209602633939214388411931371274962715907716821369696321108242409215811936218696777724808619934504255915444572390536771111074467526768287790568899120873106066002575368957232480</signature>
+                  <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCS5wf0kaJa7zLwYWBEj+/JzfMhxFcMUy6Fz6DcuFCK05i1VgeFHuEEbpkU4yAYiNX1YGb4FBOfJ95UFM8HOB6b8QDqA6uHOkjT/aNiaL7fj+LG7UwqGef5cEWbckIpaeZQiyWaNuTtp2rywPrEakIs7KUFcdtiPhvtjymT8PyFRhSOoRO2U9+54K+FFJH9XQtSPB+KNdNOm18tFPJ4lviEODCKH0rE9BQ4Vn/auO0KBcwX8AGuhUFI0nsaQtHcty1L6u1UXHrEXGZeu2yBhEsHDHunxW+h0YOgCRdI8Usnobdx/dyJ7momABnu6mElt/ylHzM98nM/NfmM5BOrG9Tv</publickey>
+                  <signature>13107260235651409913492390604656826449101578484743079806566807521296855989324803242511319779707838174946127035306858215504290452087950300644093221553306839853186323155012108941951146067164825000001482898225482538135328083540275907917650591073062847715060678819674667948896781152495669494916549386439852946976965970389941158492538138518594892617227070532550696583600653695158346473408694303871305287828335597832662071836974941142069312163761621166361732834315345454522029016656941848429213536700288288831888079827237495251089188669161987255910430438434187684912979732275126065406389681858156899388574380125659081087827</signature>
+                </identity>""",
+            'hans0': """<?xml version="1.0" encoding="utf-8"?>
+                <identity>
+                  <sources>
+                    <source>http://first.com/hans.xml</source>
+                    <source>http://second.net/hans.xml</source>
+                  </sources>
+                  <contacts>
+                    <contact>tcp://127.0.0.1:7457</contact>
+                  </contacts>
+                  <certificates/>
+                  <scrubbers/>
+                  <postage>1</postage>
+                  <date>Jul 01, 2019</date>
+                  <version></version>
+                  <revision>0</revision>
+                  <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCiMX5AjFoK+B8bEts97OEKkJmONy8wDVSTe4Sx356p1fd48UQHq0g3xphfEWqZNVEvvXyVT3ToJZpsn6ZXALR6awp1EosV0Y3eCRn3HJ7VFifsObEBaJlbIpPWO3a44yQuNmB18dpAZsOYF0fuv9O9JZF/r2aS3DwJKKvrb1raPtuOkmLvMFOyFzQ4CzbpzOhxfLyk4VyyqWtxgRWa3cLJRC1s8pZP+Eeujz9lUXJOBJkz458myjcNogZ60HqMWPmNEQxKQKxKz5s1KhTzEa13AbK3mfBz6GYRSUE4PgzPNGt3ggKjm109MCECVLJ20i41l1x0LQogH4io0zN1KGFJ</publickey>
+                  <signature>13068553383637753085388545974152093609980484012770452572120600195304903547295645115743544723314736720580808645983593697230309177682054712275065288665744892926477896400614384619512508972942866186572904043048207845632626832350683561290105271937200406689170558357079802162498698787054408426873656285478048378799191423141745937328344899208835186975874729426520455853791306586430419171014111851754881354985456443997095404651969419163775186405638979606072817375092764901667492456855939205354792829575562245938026302306124652445463109637611383925691836897970969979043999831425972117577943735372131767450971245110225874441582</signature>
+                </identity>""",
+            'hans1': """<?xml version="1.0" encoding="utf-8"?>
+                <identity>
+                  <sources>
+                    <source>http://second.net/hans.xml</source>
+                    <source>http://third.org/hans.xml</source>
+                  </sources>
+                  <contacts>
+                    <contact>tcp://127.0.0.1:7457</contact>
+                  </contacts>
+                  <certificates/>
+                  <scrubbers/>
+                  <postage>1</postage>
+                  <date>Jul 01, 2019</date>
+                  <version></version>
+                  <revision>1</revision>
+                  <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCiMX5AjFoK+B8bEts97OEKkJmONy8wDVSTe4Sx356p1fd48UQHq0g3xphfEWqZNVEvvXyVT3ToJZpsn6ZXALR6awp1EosV0Y3eCRn3HJ7VFifsObEBaJlbIpPWO3a44yQuNmB18dpAZsOYF0fuv9O9JZF/r2aS3DwJKKvrb1raPtuOkmLvMFOyFzQ4CzbpzOhxfLyk4VyyqWtxgRWa3cLJRC1s8pZP+Eeujz9lUXJOBJkz458myjcNogZ60HqMWPmNEQxKQKxKz5s1KhTzEa13AbK3mfBz6GYRSUE4PgzPNGt3ggKjm109MCECVLJ20i41l1x0LQogH4io0zN1KGFJ</publickey>
+                  <signature>9964338615595898119523219160985389694716834455244251121310208348749311239026480163448985744966067564091031002898262983039746088711129723160991957466541609144298294968214985017280673670405176798626865604720543551314153138295619813468551357860935622955238006750497782286078815952649485259190562480676412057686853832517927221963473242813486514373660489478033158129265672776156687967394550999847921296632829991543789469343181140623972591265599094214576144469741220772769413300453153162888368211327094417654762184709016011327148922218562411856167502006839171679742071717903072564535777785105712764567873880374805969385183</signature>
+                </identity>""",
+            'hans2': """<?xml version="1.0" encoding="utf-8"?>
+                <identity>
+                  <sources>
+                    <source>http://third.org/hans.xml</source>
+                  </sources>
+                  <contacts>
+                    <contact>tcp://127.0.0.1:7457</contact>
+                  </contacts>
+                  <certificates/>
+                  <scrubbers/>
+                  <postage>1</postage>
+                  <date>Jul 01, 2019</date>
+                  <version></version>
+                  <revision>2</revision>
+                  <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCiMX5AjFoK+B8bEts97OEKkJmONy8wDVSTe4Sx356p1fd48UQHq0g3xphfEWqZNVEvvXyVT3ToJZpsn6ZXALR6awp1EosV0Y3eCRn3HJ7VFifsObEBaJlbIpPWO3a44yQuNmB18dpAZsOYF0fuv9O9JZF/r2aS3DwJKKvrb1raPtuOkmLvMFOyFzQ4CzbpzOhxfLyk4VyyqWtxgRWa3cLJRC1s8pZP+Eeujz9lUXJOBJkz458myjcNogZ60HqMWPmNEQxKQKxKz5s1KhTzEa13AbK3mfBz6GYRSUE4PgzPNGt3ggKjm109MCECVLJ20i41l1x0LQogH4io0zN1KGFJ</publickey>
+                  <signature>11958004301656338144383334445736600827209441963611815598420603918822211142526966075720891212808194909550288382243052852622156637099050410373511336910133303791008042473718309984723895304895629463705900053550743363551114431658248065643054664707971189331530190824121429353343469077985523096241437248019113197103461636847516945163199302563987603148811708018950051799390582546914509552932256650563055856190431745640579914653327517317125317899208768049182599520431852111466415308484761163553541804212696743391960660588998008501810208556514930557535867983962893715967502497080388797303899102334976976072133672653305360264021</signature>
                 </identity>""",
         }
         some_identity = identity.identity(xmlsrc=known.get(idname))
@@ -386,5 +443,39 @@ class TestIDURL(TestCase):
     def test_fake_name(self):
         self._cache_identity('frank')
         self._cache_identity('fake_frank')
-        self.assertEqual(id_url.field('http://source_one_fake.com/frank.xml'), id_url.field(frank_2))
-        self.assertNotEqual(id_url.field('http://source_one_fake.com/frank.xml'), id_url.field(frank_1))
+        self.assertNotEqual(id_url.field(fake_frank).original(), id_url.field(frank_1).original())
+        self.assertNotEqual(id_url.field(fake_frank).original(), id_url.field(frank_2).original())
+        self.assertEqual(id_url.field(fake_frank), id_url.field(frank_1))
+        self.assertNotEqual(id_url.field(fake_frank), id_url.field(frank_2))
+        self.assertEqual(id_url.field(fake_frank).to_public_key(), id_url.field(frank_1).to_public_key())
+        self.assertNotEqual(id_url.field(fake_frank).to_public_key(), id_url.field(frank_2).to_public_key())
+
+    def test_latest_vs_original(self):
+        self._cache_identity('hans0')
+        self._cache_identity('hans1')
+        self._cache_identity('hans2')
+        self.assertEqual(id_url.field(hans1), id_url.field(hans2))
+        self.assertNotEqual(id_url.field(hans1).original(), id_url.field(hans2).original())
+        self.assertEqual(id_url.field(hans1), id_url.field(hans3))
+        self.assertNotEqual(id_url.field(hans1).original(), id_url.field(hans3).original())
+        self.assertEqual(id_url.field(hans3), id_url.field(hans2))
+        self.assertNotEqual(id_url.field(hans3).original(), id_url.field(hans2).original())
+        self.assertEqual(id_url.field(hans1).to_text(), hans1)
+        self.assertEqual(id_url.field(hans2).to_text(), hans1)
+        self.assertEqual(id_url.field(hans3).to_text(), hans1)
+
+    def test_latest_revision_order_123(self):
+        self._cache_identity('hans0')
+        self._cache_identity('hans1')
+        self._cache_identity('hans2')
+        self.assertEqual(id_url.field(hans1).to_text(), hans1)
+        self.assertEqual(id_url.field(hans2).to_text(), hans1)
+        self.assertEqual(id_url.field(hans3).to_text(), hans1)
+
+    def test_latest_revision_order_321(self):
+        self._cache_identity('hans2')
+        self._cache_identity('hans1')
+        self._cache_identity('hans0')
+        self.assertEqual(id_url.field(hans1).to_text(), hans3)
+        self.assertEqual(id_url.field(hans2).to_text(), hans3)
+        self.assertEqual(id_url.field(hans3).to_text(), hans3)

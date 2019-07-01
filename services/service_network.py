@@ -72,9 +72,11 @@ class NetworkService(LocalService):
 
     def _on_local_identity_rotated(self, evt):
         from logs import lg
-        from p2p import network_connector
-        lg.info('my identity sources were rotated, reconnecting now')
-        network_connector.A('reconnect')
+        lg.info('my identity sources were rotated, need to restart ')
+        # from p2p import network_connector
+        # network_connector.A('reconnect')
+        from services import driver
+        driver.restart('service_gateway')
         return None
 
     def _do_check_network_interfaces(self):

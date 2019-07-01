@@ -56,6 +56,8 @@ from lib import misc
 
 from main import settings
 
+from userid import id_url
+
 #------------------------------------------------------------------------------
 
 BandInDict = {}
@@ -84,7 +86,7 @@ def init():
     read_bandwidthOUT()
     CountTimeIn = time.time()
     CountTimeOut = time.time()
-    reactor.addSystemEventTrigger('before', 'shutdown', save)
+    reactor.addSystemEventTrigger('before', 'shutdown', save)  # @UndefinedVariable
 
 
 def shutdown():
@@ -324,8 +326,10 @@ def INfile(newpacket, pkt_in, status, error_message):
     """
     if status != 'finished':
         return False
+    if not id_url.is_cached(newpacket.OwnerID):
+        return False
     packet_from = newpacket.OwnerID
-    if newpacket.OwnerID == my_id.getLocalID() and newpacket.Command == commands.Data():
+    if packet_from == my_id.getLocalID() and newpacket.Command == commands.Data():
         # someone giving our data back
         packet_from = newpacket.RemoteID
     if pkt_in.size:

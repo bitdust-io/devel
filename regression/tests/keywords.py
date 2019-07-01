@@ -317,7 +317,10 @@ def message_receive_v1(node, expected_data, consumer='test_consumer',):
 
 
 def user_ping_v1(node, remote_node_id, timeout=30):
-    response = requests.get(tunnel_url(node, f'user/ping/v1?id={remote_node_id}'), timeout=timeout)
+    try:
+        response = requests.get(tunnel_url(node, f'user/ping/v1?id={remote_node_id}'), timeout=timeout)
+    except requests.exceptions.Timeout:
+        raise Exception(f'timeout ping {remote_node_id}')
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 

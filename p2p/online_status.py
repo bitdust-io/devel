@@ -395,7 +395,13 @@ def Inbox(newpacket, info, status, message):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if newpacket.OwnerID == my_id.getLocalID():
+    if id_url.is_cached(newpacket.OwnerID):
+        if newpacket.OwnerID == my_id.getLocalID():
+            return False
+    else:
+        if newpacket.OwnerID.to_bin() == my_id.getLocalID().to_bin():
+            return False
+    if not id_url.is_cached(newpacket.OwnerID):
         return False
     if newpacket.RemoteID != my_id.getLocalID():
         return False

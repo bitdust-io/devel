@@ -511,7 +511,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
 def PingContact(idurl, timeout=30, retries=2):
     """
     Can be called when you need to "ping" another user.
-    This will send your Identity to that node, and it must respond.
+    This will send your Identity to that node, and it must respond with Ack packet.
     """
     idurl = id_url.field(idurl)
     if _Debug:

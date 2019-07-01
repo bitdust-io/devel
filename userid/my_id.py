@@ -509,7 +509,7 @@ def buildProtoContacts(id_obj, skip_transports=[]):
     return new_contacts, new_order_correct
 
 
-def buildDefaultIdentity(name='', ip='', idurls=[]):
+def buildDefaultIdentity(name='', ip='', idurls=[], revision=0):
     """
     Use some local settings and config files to create some new identity.
 
@@ -557,7 +557,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     # ident.certificates = []
     ident.setDate(time.strftime('%b %d, %Y'))
     ident.setPostage(1)
-    ident.setRevision(0)
+    ident.setRevision(revision)
     ident.setVersion('')  # TODO: put latest git commit hash here
     # update software version number
     # version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()

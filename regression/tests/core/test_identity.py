@@ -204,6 +204,12 @@ def test_identity_rotate_customer_6():
     old_sources = response.json()['result'][0]['sources']
     old_global_id = response.json()['result'][0]['global_id']
 
+    # test other nodes able to talk to customer_6 before identity get rotated
+    user_ping_v1('customer_1', old_global_id)
+    user_ping_v1('customer_2', old_global_id)
+    user_ping_v1('supplier_1', old_global_id)
+    user_ping_v1('supplier_2', old_global_id)
+
     # rotate identity sources
     response = requests.put(
         url=tunnel_url('customer_6', 'identity/rotate/v1'),
@@ -222,7 +228,7 @@ def test_identity_rotate_customer_6():
     assert response.json()['result'][0]['sources'] != old_sources
     assert new_global_id != old_global_id
 
-    # test other nodes able to talk to customer_6
+    # test other nodes able to talk to customer_6 again on new IDURL
     user_ping_v1('customer_1', new_global_id)
     user_ping_v1('customer_2', new_global_id)
     user_ping_v1('supplier_1', new_global_id)

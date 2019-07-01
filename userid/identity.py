@@ -306,6 +306,9 @@ class identity(object):
             return False
         names = set()
         for source in self.sources:
+            if not source:
+                lg.warn('found empty source')
+                return False
             proto, host, port, filename = nameurl.UrlParse(source)
             if filename.count('/'):
                 lg.warn("incorrect identity name: %s" % filename)
@@ -343,7 +346,7 @@ class identity(object):
         """
         sep = b'-'
         hsh = b''
-        hsh += sep + sep.join(map(strng.to_bin, self.sources))
+        hsh += sep + sep.join(map(lambda s: s.original(), self.sources))
         hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
         hsh += sep + sep.join(self.scrubbers)
@@ -492,7 +495,7 @@ class identity(object):
         root.appendChild(sources)
         for source in self.sources:
             n = doc.createElement('source')
-            n.appendChild(doc.createTextNode(strng.to_text(source)))
+            n.appendChild(doc.createTextNode(strng.to_text(source.original())))
             sources.appendChild(n)
 
         contacts = doc.createElement('contacts')
@@ -1047,10 +1050,16 @@ def main():
     else:
         if not key.InitMyKey():
             key.GenerateNewKey()
-        idurls = []
+        ipaddr = '127.0.0.1'
         if len(sys.argv) > 2:
-            idurls = sys.argv[2:]
-        my_id.setLocalIdentity(my_id.buildDefaultIdentity(name=sys.argv[1], idurls=idurls))
+            ipaddr = sys.argv[2]
+        rev = 0
+        if len(sys.argv) > 3:
+            rev = int(sys.argv[3])
+        idurls = []
+        if len(sys.argv) > 4:
+            idurls = sys.argv[4:]
+        my_id.setLocalIdentity(my_id.buildDefaultIdentity(name=sys.argv[1], ip=ipaddr, idurls=idurls, revision=rev))
         my_id.saveLocalIdentity()
         print(my_id.getLocalIdentity().serialize())
         print('Valid is: ', my_id.getLocalIdentity().Valid())

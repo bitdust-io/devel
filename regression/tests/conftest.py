@@ -36,7 +36,7 @@ from . import keywords
 DHT_SEED_NODES = 'dht_seed_0:14441'
 
 OTHER_KNOWN_ID_SERVERS = [
-    # 'is:8084:6661',
+    'is:8084:6661',
     'identity-server-a:8084:6661',
     'identity-server-b:8084:6661',
 ]
@@ -107,7 +107,8 @@ ALL_ROLES = {
         {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
         {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
-        {'name': 'customer_6', 'join_network': True, 'num_suppliers': 2, 'known_servers': OTHER_KNOWN_ID_SERVERS, },
+        {'name': 'customer_6', 'join_network': True, 'num_suppliers': 2,
+         'known_servers': OTHER_KNOWN_ID_SERVERS, 'max_servers': 2, 'min_servers': 2, },
         {'name': 'customer_backup', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_restore', 'join_network': False, 'num_suppliers': 2, },
     ],
@@ -195,9 +196,9 @@ def kill_all_nodes():
 
 def report_all_nodes(event_loop):
     print('\n\nSTDOUT:')
-    for node in ['customer_restore', ]:
-        print('\n\nSTDOUT on [%s]:' % node)
-        ts.print_stdout_one_node(node)
+    # for node in ['customer_restore', ]:
+    #     print('\n\nSTDOUT on [%s]:' % node)
+    #     ts.print_stdout_one_node(node)
 
     # print('\n\nDHT records:')
     # for node in ALL_NODES:
