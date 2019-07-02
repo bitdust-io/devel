@@ -470,7 +470,7 @@ class identity(object):
             'name': self.getIDName(),
             'idurl': self.getIDURL().to_text(),
             'global_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
-            'sources': [strng.to_text(i) for i in self.getSources()],
+            'sources': [strng.to_text(i) for i in self.getSources(as_originals=True)],
             'contacts': [strng.to_text(i) for i in self.getContacts()],
             'certificates': [strng.to_text(i) for i in self.certificates],
             'scrubbers': [strng.to_text(i) for i in self.scrubbers],
@@ -617,10 +617,12 @@ class identity(object):
 
     #------------------------------------------------------------------------------
 
-    def getSources(self, as_fields=True):
+    def getSources(self, as_fields=True, as_originals=False):
         """
         Return identity sources.
         """
+        if as_originals:
+            return id_url.to_original_list(self.sources)
         if not as_fields:
             return id_url.to_bin_list(self.sources)
         return self.sources

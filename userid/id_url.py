@@ -120,8 +120,7 @@ def init():
             one_revision = known_id_obj.getRevisionValue()
             if one_pub_key not in _KnownUsers:
                 _KnownUsers[one_pub_key] = one_user_dir_path
-            for known_idurl in known_id_obj.getSources():
-                known_idurl = to_bin(known_idurl)
+            for known_idurl in known_id_obj.getSources(as_originals=True):
                 if known_idurl not in _KnownIDURLs:
                     _KnownIDURLs[known_idurl] = known_id_obj.getPublicKey()
                     if _Debug:
@@ -190,8 +189,8 @@ def identity_cached(id_obj):
             raise Exception('identity history for user %r is broken, public key not matching' % user_name)
         if latest_id_obj.getIDName() != id_obj.getIDName():
             lg.warn('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName(), ))
-        latest_sources = list(map(lambda i: i.to_bin(), latest_id_obj.getSources()))
-        new_sources = list(map(lambda i: i.to_bin(), id_obj.getSources()))
+        latest_sources = latest_id_obj.getSources(as_originals=True)
+        new_sources = id_obj.getSources(as_originals=True)
         if latest_sources == new_sources:
             local_fs.WriteBinaryFile(latest_identity_file_path, id_obj.serialize())
             if _Debug:
@@ -206,8 +205,7 @@ def identity_cached(id_obj):
                 lg.out(_DebugLevel, '        identity sources for user %r changed, wrote new item in the history: %r' % (
                     user_name, next_identity_file_path))
     new_revision = id_obj.getRevisionValue()
-    for new_idurl in id_obj.getSources():
-        new_idurl = to_bin(new_idurl)
+    for new_idurl in id_obj.getSources(as_originals=True):
         if new_idurl not in _KnownIDURLs:
             _KnownIDURLs[new_idurl] = id_obj.getPublicKey()
             if _Debug:
@@ -229,8 +227,8 @@ def identity_cached(id_obj):
     if is_identity_rotated:
         from main import events
         events.send('identity-rotated', data=dict(
-            old_idurls=latest_id_obj.getSources(as_fields=False),
-            new_idurls=id_obj.getSources(as_fields=False),
+            old_idurls=latest_id_obj.getSources(as_originals=True),
+            new_idurls=id_obj.getSources(as_originals=True),
         ))
         if latest_id_obj.getIDURL(as_field=False) != id_obj.getIDURL(as_field=False):
             events.send('identity-url-changed', data=dict(
@@ -287,12 +285,25 @@ def to_bin(idurl):
     return strng.to_bin(idurl)
 
 
-def to_list(iterable_object, as_field=True, as_bin=False):
+def to_original(idurl):
+    """
+    Translates `ID_URL_FIELD` to binary string, but returns its original value.
+    """
+    if isinstance(idurl, ID_URL_FIELD):
+        return idurl.original()
+    if idurl in [None, 'None', '', b'None', b'', False, ]:
+        return b''
+    return strng.to_bin(idurl)
+
+
+def to_list(iterable_object, as_field=True, as_bin=False, as_original=False):
     """
     Creates list of desired objects from given `iterable_object`.
     """
     if not iterable_object:
         return iterable_object
+    if as_original:
+        return list(map(to_original, iterable_object))
     if as_field:
         return list(map(field, iterable_object))
     if as_bin:
@@ -307,6 +318,15 @@ def to_bin_list(iterable_object):
     if not iterable_object:
         return iterable_object
     return to_list(iterable_object, as_field=False, as_bin=True)
+
+
+def to_original_list(iterable_object):
+    """
+    Just an alias for to_list() to extract original values from idurl's.
+    """
+    if not iterable_object:
+        return iterable_object
+    return to_list(iterable_object, as_original=True)
 
 
 def to_bin_dict(idurl_dict):

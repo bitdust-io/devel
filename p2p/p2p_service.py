@@ -303,7 +303,7 @@ def Identity(newpacket, send_ack=True):
     # other sources still can give you required user info: public key, contacts, etc..
     # TODO: we can also consolidate few "idurl" sources for every public key - basically identify user by public key
     # something like:
-    # for source in identitycache.FromCache(idurl).getSources():
+    # for source in identitycache.FromCache(idurl).getSources(as_originals=True):
     #     if source not in identitycache.FromCache(idurl):
     #         d = identitycache.immediatelyCaching(source)
     #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))

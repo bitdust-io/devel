@@ -266,14 +266,14 @@ class IdServer(automat.Automat):
             lg.warn("has non-Valid identity")
             return
         matchid = b''
-        for idurl in newidentity.getSources():
-            protocol, host, port, filename = nameurl.UrlParse(idurl)
+        for idurl_bin in newidentity.getSources(as_originals=True):
+            protocol, host, port, filename = nameurl.UrlParse(idurl_bin)
             if strng.to_text(host) == strng.to_text(self.hostname):
                 lg.out(4, "id_server._save_identity found match for us")
-                matchid = idurl.to_bin()
+                matchid = idurl_bin
                 break
         if not matchid:
-            lg.warn("identity is not for this nameserver sources: %r" % newidentity.getSources())
+            lg.warn("identity is not for this nameserver sources: %r" % newidentity.getSources(as_originals=True))
             return
         protocol, host, port, filename = nameurl.UrlParse(matchid)
         name, justxml = filename.split(".")
