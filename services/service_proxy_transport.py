@@ -79,7 +79,6 @@ class ProxyTransportService(LocalService):
         conf().addCallback('services/proxy-transport/receiving-enabled',
                            self._on_receiving_enabled_disabled)
         return self.starting_deferred
-        # return True
 
     def stop(self):
         from twisted.internet.defer import succeed

@@ -39,6 +39,11 @@ import time
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from system import bpio
@@ -46,7 +51,6 @@ from system import bpio
 from main import settings
 
 from lib import nameurl
-from lib import strng
 
 from userid import identity
 from userid import id_url
@@ -136,7 +140,8 @@ def clear(exclude_list=None):
             if idurl in exclude_list:
                 continue
         os.remove(path)
-        lg.out(6, 'identitydb.clear remove ' + path)
+        if _Debug:
+            lg.out(_DebugLevel, 'identitydb.clear remove ' + path)
     fire_cache_updated_callbacks()
 
 
@@ -163,7 +168,7 @@ def has_file(idurl):
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
-        lg.out(1, "identitydb.has_file ERROR %r is not correct" % idurl)
+        lg.err("idurl %r is not correct" % idurl)
         return None
     filename = os.path.join(settings.IdentityCacheDir(), partfilename)
     return os.path.exists(filename)
@@ -182,7 +187,8 @@ def idset(idurl, id_obj):
     global _IdentityCacheModifiedTime
     idurl = id_url.to_bin(idurl)
     if not has_idurl(idurl):
-        lg.out(6, 'identitydb.idset new identity: %r' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'identitydb.idset new identity: %r' % idurl)
     _IdentityCache[idurl] = id_obj
     _IdentityCacheModifiedTime[idurl] = time.time()
     identid = _IdentityCacheIDs.get(idurl, None)
@@ -208,6 +214,8 @@ def idset(idurl, id_obj):
             pass
     # TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
     fire_cache_updated_callbacks(single_item=(identid, idurl, id_obj))
+    if _Debug:
+        lg.out(_DebugLevel, 'identitydb.idset %r' % idurl)
     # now make sure we properly handle changes in the sources of that identity
     id_url.identity_cached(id_obj)
 
@@ -272,25 +280,29 @@ def get(idurl):
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
-        lg.out(6, "identitydb.get ERROR %r is incorrect" % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, "identitydb.get ERROR %r is incorrect" % idurl)
         return None
     if not partfilename:
-        lg.out(6, "identitydb.get ERROR %r is empty" % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, "identitydb.get ERROR %r is empty" % idurl)
         return None
     filename = os.path.join(settings.IdentityCacheDir(), partfilename)
     if not os.path.exists(filename):
-        lg.out(6, "identitydb.get file %r not exist" % os.path.basename(filename))
+        if _Debug:
+            lg.out(_DebugLevel, "identitydb.get file %r not exist" % os.path.basename(filename))
         return None
     idxml = bpio.ReadTextFile(filename)
     if not idxml:
-        lg.out(6, "identitydb.get %s not found" % nameurl.GetName(idurl))
+        if _Debug:
+            lg.out(_DebugLevel, "identitydb.get %s not found" % nameurl.GetName(idurl))
         return None
     idobj = identity.identity(xmlsrc=idxml)
     idurl_orig = idobj.getIDURL()
     if idurl == idurl_orig.to_bin():
         idset(idurl, idobj)
         return idobj
-    lg.out(1, "identitydb.get ERROR idurl=%r idurl_orig=%r" % (idurl, idurl_orig))
+    lg.err("not found identity object idurl=%r idurl_orig=%r" % (idurl, idurl_orig))
     return None
 
 
@@ -299,7 +311,7 @@ def get_filename(idurl):
     try:
         partfilename = nameurl.UrlFilename(idurl)
     except:
-        lg.out(1, "identitydb.get_filename ERROR %r is incorrect" % idurl)
+        lg.err("idurl %r is not correct" % idurl)
         return None
     return os.path.join(settings.IdentityCacheDir(), partfilename)
 
@@ -335,12 +347,12 @@ def update(idurl, xml_src):
         return False
 
     if not newid.isCorrect():
-        lg.out(1, "identitydb.update ERROR incorrect identity : %r" % idurl)
+        lg.err("incorrect identity : %r" % idurl)
         return False
 
     try:
         if not newid.Valid():
-            lg.out(1, "identitydb.update ERROR identity not Valid : %r" % idurl)
+            lg.err("identity not valid : %r" % idurl)
             return False
     except:
         lg.exc()
@@ -353,11 +365,12 @@ def update(idurl, xml_src):
 
         if oldidentity.publickey != newid.publickey:
             # TODO: SECURITY   add some kind of black list to be able to block certain IP's if the DDoS me
-            lg.out(1, "identitydb.update ERROR new publickey does not match old, SECURITY VIOLATION : %r" % idurl)
+            lg.err("new public key does not match with old, SECURITY VIOLATION : %r" % idurl)
             return False
 
         if oldidentity.signature != newid.signature:
-            lg.out(6, 'identitydb.update have new data for %r' % nameurl.GetName(idurl))
+            if _Debug:
+                lg.out(_DebugLevel, 'identitydb.update have new data for %r' % nameurl.GetName(idurl))
         else:
             idset(idurl, newid)
             return True
@@ -376,7 +389,8 @@ def remove(idurl):
     idurl = id_url.to_bin(idurl)
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(idurl))
     if os.path.isfile(filename):
-        lg.out(6, "identitydb.remove file %r" % filename)
+        if _Debug:
+            lg.out(_DebugLevel, "identitydb.remove file %r" % filename)
         try:
             os.remove(filename)
         except:
@@ -441,10 +455,11 @@ def print_id(idurl):
     idurl = id_url.to_bin(idurl)
     if has_idurl(idurl):
         idForKey = get(idurl)
-        lg.out(6, str(idForKey.sources))
-        lg.out(6, str(idForKey.contacts))
-        lg.out(6, str(idForKey.publickey))
-        lg.out(6, str(idForKey.signature))
+        if _Debug:
+            lg.out(_DebugLevel, str(idForKey.sources))
+            lg.out(_DebugLevel, str(idForKey.contacts))
+            lg.out(_DebugLevel, str(idForKey.publickey))
+            lg.out(_DebugLevel, str(idForKey.signature))
 
 
 def print_keys():
@@ -453,7 +468,8 @@ def print_keys():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        lg.out(6, "%d: %r" % (_IdentityCacheIDs[key], key))
+        if _Debug:
+            lg.out(_DebugLevel, "%d: %r" % (_IdentityCacheIDs[key], key))
 
 
 def print_cache():
@@ -462,7 +478,8 @@ def print_cache():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        lg.out(6, "---------------------")
+        if _Debug:
+            lg.out(_DebugLevel, "---------------------")
         print_id(key)
 
 #------------------------------------------------------------------------------

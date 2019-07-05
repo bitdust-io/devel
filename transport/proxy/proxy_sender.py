@@ -73,6 +73,7 @@ from crypt import signed
 from services import driver
 
 from p2p import commands
+from p2p import network_connector
 
 from userid import my_id
 
@@ -185,7 +186,9 @@ class ProxySender(automat.Automat):
         """
         self.traffic_out = 0
         self.pending_packets = []
+        self.pending_ping_packets = []
         self.max_pending_packets = 100  # TODO: read from settings
+        # network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
 
     def doStartFilterOutgoingTraffic(self, *args, **kwargs):
         """
@@ -228,6 +231,11 @@ class ProxySender(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        # network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
+        self.traffic_out = 0
+        self.pending_packets = []
+        self.pending_ping_packets = []
+        self.max_pending_packets = 0
         self.unregister()
         global _ProxySender
         del _ProxySender
@@ -244,19 +252,58 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
         return pending_result
 
+    def _add_pending_ping_packet(self, outpacket, wide, callbacks, target, route, response_timeout, keep_alive):
+        if len(self.pending_ping_packets) > self.max_pending_packets:
+            if _Debug:
+                lg.warn('pending ping packets queue is full, skip')
+            return None
+        pending_result = Deferred()
+        self.pending_ping_packets.append((outpacket, wide, callbacks, target, route, response_timeout, keep_alive, pending_result))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_sender._add_pending_ping_packet %s' % outpacket)
+        return pending_result
+
     def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
         Will be called first for every outgoing packet.
         Must return `None` if that packet should be send normal way.
         Otherwise will create another "routed" packet instead and return it.
         """
+#         if not driver.is_enabled('service_proxy_transport'):
+#             if _Debug:
+#                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because service_proxy_transport is disabled' % outpacket)
+#             return None
         if not driver.is_on('service_proxy_transport'):
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP because service_proxy_transport is not started')
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because service_proxy_transport is not started yet' % outpacket)
             return None
-        if proxy_receiver.A() and proxy_receiver.A().state != 'LISTEN':
+        if not proxy_receiver.A():
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet DELLAYED because proxy_receiver state is not LISTEN yet')
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because proxy_receiver() not exist' % outpacket)
+            return None
+        if outpacket.Command == commands.Identity() and outpacket.CreatorID == my_id.getLocalID():
+            if proxy_receiver.GetPossibleRouterIDURL() and proxy_receiver.GetPossibleRouterIDURL() == outpacket.RemoteID:
+                if network_connector.A().state is 'DISCONNECTED':
+                    if _Debug:
+                        lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r because network_connector() is DISCONNECTED' % outpacket)
+                    return None
+                if network_connector.A().state is 'CONNECTED':
+                    lg.warn('sending %r to "possible" proxy router %r' % (outpacket, proxy_receiver.GetPossibleRouterIDURL()))
+                    pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
+                    return pkt_out
+                if _Debug:
+                    lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet SKIP sending %r, network_connector() have transition state' % outpacket)
+                return None
+
+                # return self._add_pending_ping_packet(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
+#         if not driver.is_started('service_proxy_transport'):
+#             if _Debug:
+#                 lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet DELLAYED %r because service_proxy_transport is not started yet' % outpacket)
+#             return self._add_pending_packet(outpacket, wide, callbacks)
+
+        if proxy_receiver.A().state != 'LISTEN':
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._on_first_outbox_packet DELLAYED %r because proxy_receiver state is not LISTEN yet' % outpacket)
             return self._add_pending_packet(outpacket, wide, callbacks)
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
@@ -334,6 +381,19 @@ class ProxySender(automat.Automat):
         del router_idurl
         del router_proto_host
         return routed_packet
+
+    def _on_network_connector_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
+        if newstate == 'CONNECTED' and oldstate != newstate:
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._on_network_connector_state_changed will send %d pending "ping" packets' % len(self.pending_ping_packets))
+            while len(self.pending_ping_packets):
+                outpacket, wide, callbacks, target, route, response_timeout, keep_alive, pending_result = self.pending_ping_packets.pop(0)
+                result_packet = self._on_first_outbox_packet(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
+                if not isinstance(result_packet, packet_out.PacketOut):
+                    lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
+                    self.pending_ping_packets = []
+                    break
+                pending_result.callback(result_packet)
 
 #------------------------------------------------------------------------------
 

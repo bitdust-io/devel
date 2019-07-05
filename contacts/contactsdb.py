@@ -586,6 +586,8 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     """
     if all_customers:
         list_local_customers = list(os.listdir(settings.SuppliersDir()))
+        if _Debug:
+                lg.out(_DebugLevel, 'contactsdb.load_suppliers %d known customers' % len(list_local_customers))
         for customer_id in list_local_customers:
             if not global_id.IsValidGlobalUser(customer_id):
                 lg.warn('invalid customer record %s found in %s' % (customer_id, settings.SuppliersDir()))
@@ -602,11 +604,12 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
             if not one_customer_idurl.is_latest():
                 latest_customer_path = os.path.join(settings.SuppliersDir(), one_customer_idurl.to_id())
                 if not os.path.exists(latest_customer_path):
-                    lg.info('detected idurl change for customer : %r -> %r', customer_id, one_customer_idurl.to_id())
+                    lg.info('detected idurl change for customer : %r -> %r' % (customer_id, one_customer_idurl.to_id()))
                     os.rename(os.path.join(settings.SuppliersDir(), customer_id), latest_customer_path)
             lst = list(map(lambda i: id_url.field(i), lst))
             set_suppliers(lst, customer_idurl=one_customer_idurl)
-            lg.out(4, 'contactsdb.load_suppliers %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
+            if _Debug:
+                lg.out(_DebugLevel, '    loaded %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
         return True
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()

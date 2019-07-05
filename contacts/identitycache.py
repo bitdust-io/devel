@@ -343,6 +343,8 @@ def scheduleForCaching(idurl, timeout=0):
     """
     Even if we have a copy in cache we are to try and read another one.
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'identitycache.scheduleForCaching %r' % idurl)
     return pageRequestTwisted(idurl, timeout)
 
 #------------------------------------------------------------------------------
@@ -369,7 +371,6 @@ def immediatelyCaching(idurl, timeout=10):
         result = _CachingTasks.pop(idurl, None)
         if not result:
             lg.warn('caching task for %s was not found' % idurl)
-            return src
         if UpdateAfterChecking(idurl, src):
             if result:
                 result.callback(src)

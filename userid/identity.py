@@ -468,8 +468,8 @@ class identity(object):
         """
         return {
             'name': self.getIDName(),
-            'idurl': self.getIDURL().to_text(),
-            'global_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
+            'idurl': strng.to_text(self.getIDURL().original()),
+            'global_id': global_id.MakeGlobalID(idurl=self.getIDURL().original()),
             'sources': [strng.to_text(i) for i in self.getSources(as_originals=True)],
             'contacts': [strng.to_text(i) for i in self.getContacts()],
             'certificates': [strng.to_text(i) for i in self.certificates],
@@ -627,12 +627,14 @@ class identity(object):
             return id_url.to_bin_list(self.sources)
         return self.sources
 
-    def getIDURL(self, index=0, as_field=True):
+    def getIDURL(self, index=0, as_field=True, as_original=False):
         """
         Return a source IDURL - this is a user ID.
         Must have at least one IDURL in the ``sources``.
         """
         result = self.sources[index]
+        if as_original:
+            return result.original()
         if not as_field:
             return result.to_bin()
         return result

@@ -221,7 +221,7 @@ class ProxyRouter(automat.Automat):
         """
         self._load_routes()
         network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
-        callback.insert_inbox_callback(0, self._on_inbox_packet_received)
+        callback.insert_inbox_callback(0, self._on_first_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
 
     def doProcessRequest(self, *args, **kwargs):
@@ -311,7 +311,7 @@ class ProxyRouter(automat.Automat):
         # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
-        callback.remove_inbox_callback(self._on_inbox_packet_received)
+        callback.remove_inbox_callback(self._on_first_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
         self.unregister()
         global _ProxyRouter
@@ -599,11 +599,11 @@ class ProxyRouter(automat.Automat):
         # because contacts in his identity are same that my own contacts
         return None
 
-    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+    def _on_first_inbox_packet_received(self, newpacket, info, status, error_message):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s://%s' % (newpacket, info.proto, info.host, ))
-            lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
-            lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
+            lg.out(_DebugLevel, 'proxy_router._on_first_inbox_packet_received %s from %s://%s' % (newpacket, info.proto, info.host, ))
+            lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID.original(), newpacket.OwnerID.original(), ))
+            lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID.original(), ))
             for k, v in self.routes.items():
                 lg.out(_DebugLevel, '        route with %s :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
         # first filter all traffic addressed to me

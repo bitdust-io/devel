@@ -236,7 +236,7 @@ def loadLocalIdentity():
 #     _LocalName = lid.getIDName()
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
     if _Debug:
-        lg.out(_DebugLevel, "my_id.loadLocalIdentity my name is [%s]" % lid.getIDName())
+        lg.out(_DebugLevel, "my_id.loadLocalIdentity my global id is %s" % getGlobalID())
     return True
 
 
@@ -630,7 +630,7 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     if _Debug:
         lg.out(_DebugLevel, '    version: %r' % lid.version)
         lg.out(_DebugLevel, '    contacts: %r' % lid.contacts)
-        lg.out(_DebugLevel, '    sources: %r' % lid.sources)
+        lg.out(_DebugLevel, '    sources: %r' % lid.getSources(as_originals=True))
     if changed:
         if save_identity:
             # finally saving modified local identity

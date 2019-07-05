@@ -29,7 +29,7 @@ import requests
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
     supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
-    user_ping_v1
+    user_ping_v1, identity_get_v1, identity_rotate_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
@@ -191,18 +191,16 @@ def test_identity_rotate_customer_6():
 #     if os.environ.get('RUN_TESTS', '1') == '0':
 #         return pytest.skip()  # @UndefinedVariable
 
+    service_info_v1('customer_6', 'service_customer', 'ON', attempts=30, delay=2)
+
     supplier_list_v1('customer_6', expected_min_suppliers=2, expected_max_suppliers=2)
 
     service_info_v1('customer_6', 'service_my_data', 'ON', attempts=30, delay=2)
 
     # remember current ID sources
-    response = requests.get(
-        url=tunnel_url('customer_6', 'identity/get/v1'),
-    )
-    print('\n\nidentity/get/v1 : %s\n' % response.json())
-    assert response.json()['status'] == 'OK', response.json()
-    old_sources = response.json()['result'][0]['sources']
-    old_global_id = response.json()['result'][0]['global_id']
+    r = identity_get_v1('customer_6')
+    old_sources = r['result'][0]['sources']
+    old_global_id = r['result'][0]['global_id']
 
     # test other nodes able to talk to customer_6 before identity get rotated
     user_ping_v1('customer_1', old_global_id)
@@ -211,22 +209,22 @@ def test_identity_rotate_customer_6():
     user_ping_v1('supplier_2', old_global_id)
 
     # rotate identity sources
-    response = requests.put(
-        url=tunnel_url('customer_6', 'identity/rotate/v1'),
-    )
-    print('\n\nidentity/rotate/v1 : %s\n' % response.json())
-    assert response.json()['status'] == 'OK', response.json()
+    identity_rotate_v1('customer_6')
+
     time.sleep(1)
 
     # and make sure ID sources were changed
-    response = requests.get(
-        url=tunnel_url('customer_6', 'identity/get/v1'),
-    )
-    print('\n\nidentity/get/v1 : %s\n' % response.json())
-    assert response.json()['status'] == 'OK', response.json()
-    new_global_id = response.json()['result'][0]['global_id']
-    assert response.json()['result'][0]['sources'] != old_sources
+    r = identity_get_v1('customer_6')
+    new_sources = r['result'][0]['sources'] 
+    new_global_id = r['result'][0]['global_id']
+    assert new_sources != old_sources
     assert new_global_id != old_global_id
+
+    service_info_v1('customer_6', 'service_customer', 'ON', attempts=30, delay=2)
+
+    supplier_list_v1('customer_6', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    service_info_v1('customer_6', 'service_my_data', 'ON', attempts=30, delay=2)
 
     # test other nodes able to talk to customer_6 again on new IDURL
     user_ping_v1('customer_1', new_global_id)

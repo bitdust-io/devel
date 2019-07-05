@@ -44,7 +44,6 @@ _Debug = True
 
 from twisted.web import xmlrpc
 from twisted.internet.defer import succeed, fail, Deferred
-from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 

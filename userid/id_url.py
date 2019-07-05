@@ -49,7 +49,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -120,7 +120,8 @@ def init():
             one_revision = known_id_obj.getRevisionValue()
             if one_pub_key not in _KnownUsers:
                 _KnownUsers[one_pub_key] = one_user_dir_path
-            for known_idurl in known_id_obj.getSources(as_originals=True):
+            known_sources = known_id_obj.getSources(as_originals=True)
+            for known_idurl in reversed(known_sources):
                 if known_idurl not in _KnownIDURLs:
                     _KnownIDURLs[known_idurl] = known_id_obj.getPublicKey()
                     if _Debug:
@@ -131,11 +132,14 @@ def init():
                         lg.warn('another user had same identity source: %r' % known_idurl)
                 if one_pub_key not in _MergedIDURLs:
                     _MergedIDURLs[one_pub_key] = {}
-                if one_revision in _MergedIDURLs[one_pub_key] and _MergedIDURLs[one_pub_key][one_revision] != known_idurl:
-                    lg.warn('rewriting existing identity revision %d %r -> %r' % (
-                        one_revision, _MergedIDURLs[one_pub_key][one_revision], known_idurl))
-                if one_revision not in _MergedIDURLs[one_pub_key]:
-                    _MergedIDURLs[one_pub_key][one_revision] = to_bin(known_idurl)
+                if one_revision in _MergedIDURLs[one_pub_key]:
+                    if _MergedIDURLs[one_pub_key][one_revision] != known_idurl:
+                        if _MergedIDURLs[one_pub_key][one_revision] not in known_sources:
+                            lg.warn('rewriting existing identity revision %d : %r -> %r' % (
+                                one_revision, _MergedIDURLs[one_pub_key][one_revision], known_idurl))
+                    _MergedIDURLs[one_pub_key][one_revision] = known_idurl
+                else:
+                    _MergedIDURLs[one_pub_key][one_revision] = known_idurl
                     if _Debug:
                         lg.out(_DebugLevel, '        revision %d merged with other %d known items' % (
                             one_revision, len(_MergedIDURLs[one_pub_key])))
@@ -171,6 +175,8 @@ def identity_cached(id_obj):
     if _Debug:
         lg.args(_DebugLevel, user_name=user_name)
     is_identity_rotated = False
+    latest_id_obj = None
+    latest_sources = []
     if pub_key not in _KnownUsers:
         user_path = tempfile.mkdtemp(prefix=user_name+'@', dir=_IdentityHistoryDir)
         _KnownUsers[pub_key] = user_path
@@ -205,7 +211,8 @@ def identity_cached(id_obj):
                 lg.out(_DebugLevel, '        identity sources for user %r changed, wrote new item in the history: %r' % (
                     user_name, next_identity_file_path))
     new_revision = id_obj.getRevisionValue()
-    for new_idurl in id_obj.getSources(as_originals=True):
+    new_sources = id_obj.getSources(as_originals=True)
+    for new_idurl in reversed(new_sources):
         if new_idurl not in _KnownIDURLs:
             _KnownIDURLs[new_idurl] = id_obj.getPublicKey()
             if _Debug:
@@ -216,25 +223,41 @@ def identity_cached(id_obj):
                 _KnownIDURLs[new_idurl] = id_obj.getPublicKey()
         if pub_key not in _MergedIDURLs:
             _MergedIDURLs[pub_key] = {}
-        if new_revision in _MergedIDURLs[pub_key] and _MergedIDURLs[pub_key][new_revision] != new_idurl:
-            lg.warn('rewriting existing identity revision %d %r -> %r' % (
-                new_revision, _MergedIDURLs[pub_key][new_revision], new_idurl))
-        if new_revision not in _MergedIDURLs[pub_key]:
-            _MergedIDURLs[pub_key][new_revision] = to_bin(new_idurl)
+        if new_revision in _MergedIDURLs[pub_key]:
+            if _MergedIDURLs[pub_key][new_revision] != new_idurl:
+                if _MergedIDURLs[pub_key][new_revision] not in new_sources:
+                    lg.warn('rewriting existing identity revision %d : %r -> %r' % (
+                        new_revision, _MergedIDURLs[pub_key][new_revision], new_idurl))
+            _MergedIDURLs[pub_key][new_revision] = new_idurl
+        else:
+            _MergedIDURLs[pub_key][new_revision] = new_idurl
             if _Debug:
                 lg.out(_DebugLevel, '        added new revision %d for user %r, total revisions %d' % (
                     new_revision, user_name, len(_MergedIDURLs[pub_key])))
-    if is_identity_rotated:
-        from main import events
-        events.send('identity-rotated', data=dict(
-            old_idurls=latest_id_obj.getSources(as_originals=True),
-            new_idurls=id_obj.getSources(as_originals=True),
-        ))
-        if latest_id_obj.getIDURL(as_field=False) != id_obj.getIDURL(as_field=False):
-            events.send('identity-url-changed', data=dict(
-                old_idurl=latest_id_obj.getIDURL(as_field=False),
-                new_idurl=id_obj.getIDURL(as_field=False),
+    if is_identity_rotated and latest_id_obj:
+        _, latest_rev = get_latest_revision(id_obj.getIDURL().original())
+        if new_revision > latest_rev:
+            lg.info('found rotated identity after caching %r -> %r' % (
+                latest_id_obj.getSources(as_originals=True)[0], new_sources[0]))
+            from main import events
+            events.send('identity-rotated', data=dict(
+                old_idurls=latest_id_obj.getSources(as_originals=True),
+                new_idurls=id_obj.getSources(as_originals=True),
+                old_revision=latest_id_obj.getRevisionValue(),
+                new_revision=new_revision,
             ))
+            if latest_id_obj.getIDURL(as_original=True) != id_obj.getIDURL(as_original=True):
+                events.send('identity-url-changed', data=dict(
+                    old_idurl=latest_id_obj.getIDURL(as_field=False),
+                    new_idurl=id_obj.getIDURL(as_field=False),
+                    old_revision=latest_id_obj.getRevisionValue(),
+                    new_revision=new_revision,
+                ))
+        else:
+            lg.err('found and cached outdated revision %d for %r' % (new_revision, new_sources[0]))
+    else:
+        if _Debug:
+            lg.out(_DebugLevel, 'id_url.identity_cached revision %d for %r' % (new_revision, new_sources[0]))
     return True
 
 #------------------------------------------------------------------------------
@@ -617,6 +640,11 @@ class ID_URL_FIELD(object):
         if _Debug:
             lg.args(_DebugLevel, latest=self.latest)
         return self.latest
+
+    def to_original(self):
+        if _Debug:
+            lg.args(_DebugLevel, current=self.current, latest=self.latest)
+        return self.current
 
     def to_public_key(self, raise_error=True):
         global _KnownIDURLs
