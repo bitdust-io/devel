@@ -36,7 +36,6 @@ BitDust supplier_connector() Automat
 
 EVENTS:
     * :red:`ack`
-    * :red:`close`
     * :red:`connect`
     * :red:`disconnect`
     * :red:`fail`
@@ -272,10 +271,7 @@ class SupplierConnector(automat.Automat):
                 self.doReportConnect(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
-            if event == 'close':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'disconnect':
+            if event == 'disconnect':
                 self.state = 'REFUSE'
                 self.doCancelServiceQueue(*args, **kwargs)
                 self.doCancelService(*args, **kwargs)
@@ -283,6 +279,9 @@ class SupplierConnector(automat.Automat):
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
                 self.doPingRequestService(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -342,12 +341,12 @@ class SupplierConnector(automat.Automat):
                 self.state = 'REFUSE'
                 self.doCancelServiceQueue(*args, **kwargs)
                 self.doCancelService(*args, **kwargs)
-            elif event == 'close':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
             elif not self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
                 self.state = 'CONNECTED'
                 self.doReportConnect(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
         return None
 
     def isServiceAccepted(self, *args, **kwargs):
