@@ -441,6 +441,7 @@ def buildProtoContacts(id_obj, skip_transports=[]):
     if not driver.is_on('service_gateway'):
         new_contacts = current_contats
         new_order_correct = current_order
+        lg.warn('service_gateway() is not started, use my current contacts as a source')
     else:
         from transport import gateway
         # build contacts data according transports priorities
@@ -461,51 +462,9 @@ def buildProtoContacts(id_obj, skip_transports=[]):
         for nproto in new_order:
             if nproto not in list(new_contacts.keys()):
                 new_order_correct.remove(nproto)
-
-#            cset = set(corder)
-#            cdiff = cset.intersection(current_set)
-#            if cset.isdisjoint()
-#
-#
-#            if len(clist) > 1:
-#                # clist.reverse()
-#                for contact in clist:
-#                    cproto, cdata = contact.split('://')
-#                    cdict[cproto] = contact
-#                    if cproto in new_order:
-#                        new_order.remove(cproto)
-#                    new_order.insert(0, cproto)
-#            else:
-##                 current_order = []
-#                for contact in clist:
-#                    cproto, cdata = contact.split('://')
-#                    cdict[cproto] = contact
-# current_order.append(cproto)
-#                    new_index = -1
-#                    if cproto in new_order:
-#                        new_index = new_order.index(cproto)
-#                    old_index = -1
-#                    if cproto in current_order:
-#                        old_index =  current_order.index(cproto)
-#                    if new_index < 0:
-#                        new_order.insert(0, cproto)
-#                    else:
-#                        if old_index < new_index:
-#                            new_order.remove(cproto)
-#                            new_order.insert(0, cproto)
-#                        else:
-#                            new_order.remove(cproto)
-#                            new_order.append(cproto)
-#            new_contacts.update(cdict)
-
     if _Debug:
         lg.out(_DebugLevel, '    new contacts: %s' % str(new_contacts))
         lg.out(_DebugLevel, '    new order: %s' % str(new_order_correct))
-
-#    new_list = []
-#    for nproto in new_order_correct:
-#        new_list.append(new_contacts[nproto])
-
     return new_contacts, new_order_correct
 
 

@@ -56,7 +56,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -286,7 +286,8 @@ class LocalService(automat.Automat):
         if len(depends_results) > 0:
             self.automat('service-depend-off', depends_results)
             return
-        lg.out(2, '[%s] STARTING' % self.service_name)
+        if _Debug:
+            lg.out(_DebugLevel, '[%s] STARTING' % self.service_name)
         try:
             result = self.start()
         except:
@@ -306,7 +307,8 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
-        lg.out(2, '[%s] STOPPING' % self.service_name)
+        if _Debug:
+            lg.out(_DebugLevel, '[%s] STOPPING' % self.service_name)
         try:
             result = self.stop()
         except:
@@ -334,7 +336,8 @@ class LocalService(automat.Automat):
         count = 0
         for svc in services().values():
             if self.service_name in svc.dependent_on():
-                lg.out(6, '%r sends "stop" to %r' % (self, svc))
+                if _Debug:
+                    lg.out(_DebugLevel, '%r sends "stop" to %r' % (self, svc))
                 svc.automat('stop')
                 count += 1
         if count == 0:

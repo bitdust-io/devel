@@ -91,7 +91,6 @@ from crypt import encrypted
 from p2p import commands
 from p2p import lookup
 from p2p import online_status
-from p2p import propagate
 
 from contacts import identitycache
 

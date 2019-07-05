@@ -248,8 +248,8 @@ def identity_cached(id_obj):
             ))
             if latest_id_obj.getIDURL(as_original=True) != id_obj.getIDURL(as_original=True):
                 events.send('identity-url-changed', data=dict(
-                    old_idurl=latest_id_obj.getIDURL(as_field=False),
-                    new_idurl=id_obj.getIDURL(as_field=False),
+                    old_idurl=latest_id_obj.getIDURL(as_original=True),
+                    new_idurl=id_obj.getIDURL(as_original=True),
                     old_revision=latest_id_obj.getRevisionValue(),
                     new_revision=new_revision,
                 ))

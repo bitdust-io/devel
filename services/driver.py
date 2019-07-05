@@ -39,7 +39,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 8
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -265,7 +265,6 @@ def shutdown():
     config.conf().removeCallback('services/')
     while len(services()):
         name, svc = services().popitem()
-        # print sys.getrefcount(svc)
         if _Debug:
             lg.out(_DebugLevel, '[%s] CLOSING' % name)
         svc.automat('shutdown')
@@ -388,7 +387,8 @@ def restart(service_name, wait_timeout=None):
     restart_result = Deferred()
 
     def _on_started(start_result, stop_result, dependencies_results):
-        lg.out(4, 'driver.restart._on_started : %s with %s, dependencies_results=%r' % (service_name, start_result, dependencies_results))
+        if _Debug:
+            lg.out(_DebugLevel, 'driver.restart._on_started : %s with %s, dependencies_results=%r' % (service_name, start_result, dependencies_results))
         try:
             stop_resp = {stop_result[0][1]: stop_result[0][0], }
         except:
@@ -406,26 +406,30 @@ def restart(service_name, wait_timeout=None):
         return None
 
     def _do_start(stop_result=None, dependencies_results=None):
-        lg.out(4, 'driver.restart._do_start : %s' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'driver.restart._do_start : %s' % service_name)
         start_defer = start(services_list=[service_name, ])
         start_defer.addCallback(_on_started, stop_result, dependencies_results)
         start_defer.addErrback(_on_failed)
         return start_defer
 
     def _on_stopped(stop_result, dependencies_results):
-        lg.out(4, 'driver.restart._on_stopped : %s with %s' % (service_name, stop_result))
+        if _Debug:
+            lg.out(_DebugLevel, 'driver.restart._on_stopped : %s with %s' % (service_name, stop_result))
         _do_start(stop_result, dependencies_results)
         return stop_result
 
     def _do_stop(dependencies_results=None):
-        lg.out(4, 'driver.restart._do_stop : %s' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'driver.restart._do_stop : %s' % service_name)
         stop_defer = stop(services_list=[service_name, ])
         stop_defer.addCallback(_on_stopped, dependencies_results)
         stop_defer.addErrback(_on_failed)
         return stop_defer
 
     def _on_timeout(err):
-        lg.out(4, 'driver.restart._on_timeout : %s' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel, 'driver.restart._on_timeout : %s' % service_name)
         all_states = [_svc.state for _svc in services().values()]
         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
             restart_result.errback(failure.Failure(Exception('timeout')))
@@ -448,7 +452,8 @@ def restart(service_name, wait_timeout=None):
     if not dl:
         dl.append(succeed(True))
 
-    lg.out(4, 'driver.restart %s' % service_name)
+    if _Debug:
+        lg.out(_DebugLevel, 'driver.restart %s' % service_name)
     dependencies = DeferredList(dl, fireOnOneErrback=True, consumeErrors=True)
     dependencies.addCallback(_do_stop)
     dependencies.addErrback(_on_timeout)
