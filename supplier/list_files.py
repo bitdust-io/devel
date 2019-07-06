@@ -65,7 +65,7 @@ from userid import global_id
 def send(customer_idurl, packet_id, format_type, key_id, remote_idurl):
     parts = global_id.ParseGlobalID(key_id)
     if parts['key_alias'] == 'master' and parts['idurl'] != my_id.getLocalID():
-        lg.warn('incoming ListFiles() request with customer "master" key: %r' % key_id)
+        # lg.warn('incoming ListFiles() request with customer "master" key: %r' % key_id)
         if not my_keys.is_key_registered(key_id) and identitycache.HasKey(parts['idurl']):
             lg.info('customer key %r to be registered locally for the first time' % key_id)
             known_ident = identitycache.FromCache(parts['idurl'])

@@ -188,8 +188,8 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
 
 
 def test_identity_rotate_customer_6():
-#     if os.environ.get('RUN_TESTS', '1') == '0':
-#         return pytest.skip()  # @UndefinedVariable
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
 
     service_info_v1('customer_6', 'service_customer', 'ON', attempts=30, delay=2)
 
