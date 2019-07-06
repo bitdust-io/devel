@@ -3,6 +3,8 @@ from unittest import TestCase
 
 from logs import lg
 
+from lib import strng
+
 from userid import id_url
 from userid import identity
 
@@ -445,10 +447,10 @@ class TestIDURL(TestCase):
         self._cache_identity('fake_frank')
         self.assertNotEqual(id_url.field(fake_frank).original(), id_url.field(frank_1).original())
         self.assertNotEqual(id_url.field(fake_frank).original(), id_url.field(frank_2).original())
-        self.assertEqual(id_url.field(fake_frank), id_url.field(frank_1))
-        self.assertNotEqual(id_url.field(fake_frank), id_url.field(frank_2))
-        self.assertEqual(id_url.field(fake_frank).to_public_key(), id_url.field(frank_1).to_public_key())
-        self.assertNotEqual(id_url.field(fake_frank).to_public_key(), id_url.field(frank_2).to_public_key())
+        self.assertNotEqual(id_url.field(fake_frank), id_url.field(frank_1))
+        self.assertEqual(id_url.field(fake_frank), id_url.field(frank_2))
+        self.assertNotEqual(id_url.field(fake_frank).to_public_key(), id_url.field(frank_1).to_public_key())
+        self.assertEqual(id_url.field(fake_frank).to_public_key(), id_url.field(frank_2).to_public_key())
 
     def test_latest_vs_original(self):
         self._cache_identity('hans0')
@@ -460,22 +462,40 @@ class TestIDURL(TestCase):
         self.assertNotEqual(id_url.field(hans1).original(), id_url.field(hans3).original())
         self.assertEqual(id_url.field(hans3), id_url.field(hans2))
         self.assertNotEqual(id_url.field(hans3).original(), id_url.field(hans2).original())
-        self.assertEqual(id_url.field(hans1).to_text(), hans1)
-        self.assertEqual(id_url.field(hans2).to_text(), hans1)
-        self.assertEqual(id_url.field(hans3).to_text(), hans1)
+        self.assertEqual(id_url.field(hans1).to_text(), hans3)
+        self.assertEqual(id_url.field(hans2).to_text(), hans3)
+        self.assertEqual(id_url.field(hans3).to_text(), hans3)
 
     def test_latest_revision_order_123(self):
         self._cache_identity('hans0')
         self._cache_identity('hans1')
         self._cache_identity('hans2')
-        self.assertEqual(id_url.field(hans1).to_text(), hans1)
-        self.assertEqual(id_url.field(hans2).to_text(), hans1)
-        self.assertEqual(id_url.field(hans3).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans1).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans2).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans3).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans1).to_text(), hans2)
+        self.assertNotEqual(id_url.field(hans2).to_text(), hans2)
+        self.assertNotEqual(id_url.field(hans3).to_text(), hans2)
+        self.assertEqual(id_url.field(hans1).to_text(), hans3)
+        self.assertEqual(id_url.field(hans2).to_text(), hans3)
+        self.assertEqual(id_url.field(hans3).to_text(), hans3)
+        self.assertEqual(id_url.field(hans1).original(), strng.to_bin(hans1))
+        self.assertEqual(id_url.field(hans2).original(), strng.to_bin(hans2))
+        self.assertEqual(id_url.field(hans3).original(), strng.to_bin(hans3))
 
     def test_latest_revision_order_321(self):
         self._cache_identity('hans2')
         self._cache_identity('hans1')
         self._cache_identity('hans0')
-        self.assertEqual(id_url.field(hans1).to_text(), hans3)
-        self.assertEqual(id_url.field(hans2).to_text(), hans3)
-        self.assertEqual(id_url.field(hans3).to_text(), hans3)
+        self.assertEqual(id_url.field(hans1).to_text(), hans1)
+        self.assertEqual(id_url.field(hans2).to_text(), hans1)
+        self.assertEqual(id_url.field(hans3).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans1).to_text(), hans2)
+        self.assertNotEqual(id_url.field(hans2).to_text(), hans2)
+        self.assertNotEqual(id_url.field(hans3).to_text(), hans2)
+        self.assertNotEqual(id_url.field(hans1).to_text(), hans3)
+        self.assertNotEqual(id_url.field(hans2).to_text(), hans3)
+        self.assertNotEqual(id_url.field(hans3).to_text(), hans3)
+        self.assertEqual(id_url.field(hans1).original(), strng.to_bin(hans1))
+        self.assertEqual(id_url.field(hans2).original(), strng.to_bin(hans2))
+        self.assertEqual(id_url.field(hans3).original(), strng.to_bin(hans3))
