@@ -585,7 +585,10 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     Load suppliers list from disk.
     """
     if all_customers:
-        for customer_id in os.listdir(settings.SuppliersDir()):
+        list_local_customers = list(os.listdir(settings.SuppliersDir()))
+        if _Debug:
+                lg.out(_DebugLevel, 'contactsdb.load_suppliers %d known customers' % len(list_local_customers))
+        for customer_id in list_local_customers:
             if not global_id.IsValidGlobalUser(customer_id):
                 lg.warn('invalid customer record %s found in %s' % (customer_id, settings.SuppliersDir()))
                 continue
@@ -596,11 +599,17 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
                 continue
             one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
             if not id_url.is_cached(one_customer_idurl):
-                if not identitycache.HasKey(one_customer_idurl):
-                    continue
+                lg.warn('customer identity %r not cached yet' % one_customer_idurl)
+                continue
+            if not one_customer_idurl.is_latest():
+                latest_customer_path = os.path.join(settings.SuppliersDir(), one_customer_idurl.to_id())
+                if not os.path.exists(latest_customer_path):
+                    lg.info('detected idurl change for customer : %r -> %r' % (customer_id, one_customer_idurl.to_id()))
+                    os.rename(os.path.join(settings.SuppliersDir(), customer_id), latest_customer_path)
             lst = list(map(lambda i: id_url.field(i), lst))
             set_suppliers(lst, customer_idurl=one_customer_idurl)
-            lg.out(4, 'contactsdb.load_suppliers %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
+            if _Debug:
+                lg.out(_DebugLevel, '    loaded %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
         return True
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
@@ -652,7 +661,7 @@ def load_customers(path=None):
         local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}',
         keys_to_bin=True,
     )
-    _CustomersMetaInfo = id_url.fields_dict(_CustomersMetaInfo)
+    _CustomersMetaInfo = id_url.to_bin_dict(_CustomersMetaInfo)
     lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
 
 #------------------------------------------------------------------------------
@@ -772,7 +781,7 @@ def add_customer_meta_info(customer_idurl, info):
     """
     """
     global _CustomersMetaInfo
-    customer_idurl = id_url.field(customer_idurl)
+    customer_idurl = id_url.to_bin(customer_idurl)
     if 'family_snapshot' in info:
         info['family_snapshot'] = id_url.to_bin_list(info['family_snapshot'])
     if customer_idurl not in _CustomersMetaInfo:
@@ -801,7 +810,7 @@ def remove_customer_meta_info(customer_idurl):
     """
     """
     global _CustomersMetaInfo
-    customer_idurl = id_url.field(customer_idurl)
+    customer_idurl = id_url.to_bin(customer_idurl)
     if customer_idurl not in _CustomersMetaInfo:
         lg.warn('meta info for customer %r not exist' % customer_idurl)
         return False
@@ -819,7 +828,7 @@ def get_customer_meta_info(customer_idurl):
     """
     """
     global _CustomersMetaInfo
-    customer_idurl = id_url.field(customer_idurl)
+    customer_idurl = id_url.to_bin(customer_idurl)
     return _CustomersMetaInfo.get(customer_idurl, {})
 
 #------------------------------------------------------------------------------

@@ -343,6 +343,8 @@ def scheduleForCaching(idurl, timeout=0):
     """
     Even if we have a copy in cache we are to try and read another one.
     """
+    if _Debug:
+        lg.out(_DebugLevel, 'identitycache.scheduleForCaching %r' % idurl)
     return pageRequestTwisted(idurl, timeout)
 
 #------------------------------------------------------------------------------
@@ -353,15 +355,17 @@ def immediatelyCaching(idurl, timeout=10):
     A smart method to cache some identity and get results in callbacks.
     """
     global _CachingTasks
-    if _Debug:
-        lg.out(_DebugLevel, 'identitycache.immediatelyCaching %r' % idurl)
-
     idurl = id_url.to_bin(idurl)
     if not idurl:
         raise Exception('can not cache, idurl is empty')
 
     if idurl in _CachingTasks:
+        if _Debug:
+            lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have a task for %r' % idurl)
         return _CachingTasks[idurl]
+
+    if _Debug:
+        lg.out(_DebugLevel, 'identitycache.immediatelyCaching started new task for %r' % idurl)
 
     def _getPageSuccess(src, idurl):
         global _CachingTasks
@@ -369,7 +373,6 @@ def immediatelyCaching(idurl, timeout=10):
         result = _CachingTasks.pop(idurl, None)
         if not result:
             lg.warn('caching task for %s was not found' % idurl)
-            return src
         if UpdateAfterChecking(idurl, src):
             if result:
                 result.callback(src)

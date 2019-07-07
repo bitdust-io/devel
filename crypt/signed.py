@@ -160,9 +160,9 @@ class Packet(object):
         try:
             stufftosum += strng.to_bin(self.Command)
             stufftosum += sep
-            stufftosum += self.OwnerID.to_bin()
+            stufftosum += self.OwnerID.original()
             stufftosum += sep
-            stufftosum += self.CreatorID.to_bin()
+            stufftosum += self.CreatorID.original()
             stufftosum += sep
             stufftosum += strng.to_bin(self.PacketID)
             stufftosum += sep
@@ -170,10 +170,9 @@ class Packet(object):
             stufftosum += sep
             stufftosum += strng.to_bin(self.Payload)
             stufftosum += sep
-            stufftosum += self.RemoteID.to_bin()
-            if self.KeyID:
-                stufftosum += sep
-                stufftosum += strng.to_bin(self.KeyID)
+            stufftosum += self.RemoteID.original()
+            stufftosum += sep
+            stufftosum += strng.to_bin(self.KeyID)
         except Exception as exc:
             lg.exc()
             raise exc
@@ -272,20 +271,20 @@ class Packet(object):
         """
         dct = {
             'm': self.Command,
-            'o': self.OwnerID.to_bin(),
-            'c': self.CreatorID.to_bin(),
+            'o': self.OwnerID.original(),
+            'c': self.CreatorID.original(),
             'i': self.PacketID,
             'd': self.Date,
             'p': self.Payload,
-            'r': self.RemoteID.to_bin(),
+            'r': self.RemoteID.original(),
             'k': self.KeyID,
             's': self.Signature,
         }        
         src = serialization.DictToBytes(dct, encoding='latin1')
         # if _Debug:
-        #     lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s' % (
+        #     lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s\n%r' % (
         #         len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
-        #         nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, ))
+        #         nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, dct['s']))
         return src
 
     def __len__(self):
@@ -315,8 +314,8 @@ def Unserialize(data):
 
     dct = serialization.BytesToDict(data, keys_to_text=True, encoding='latin1')
 
-    if _Debug:
-        lg.out(_DebugLevel, 'signed.Unserialize %d bytes' % len(data))
+    # if _Debug:
+    #     lg.out(_DebugLevel, 'signed.Unserialize %d bytes : %r' % (len(data), dct['s']))
 
     try:
         Command = strng.to_text(dct['m'])
@@ -360,8 +359,8 @@ def Unserialize(data):
         lg.exc()
         return None
 
-    if _Debug:
-        lg.args(_DebugLevel, Command=Command, PacketID=PacketID, OwnerID=OwnerID, CreatorID=CreatorID, RemoteID=RemoteID)
+    # if _Debug:
+    #     lg.args(_DebugLevel, Command=Command, PacketID=PacketID, OwnerID=OwnerID, CreatorID=CreatorID, RemoteID=RemoteID)
 
     return newobject
 

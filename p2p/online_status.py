@@ -84,9 +84,6 @@ from twisted.internet.task import LoopingCall
 
 from logs import lg
 
-from lib import nameurl
-from lib import strng
-
 from contacts import contactsdb
 
 from automats import automat
@@ -123,7 +120,9 @@ def init():
     Needs to be called before other methods here.
     """
     global _OfflineCheckTask
+    global _ShutdownFlag
     lg.out(4, 'online_status.init')
+    _ShutdownFlag = False
     callback.insert_inbox_callback(1, Inbox)  # try to not overwrite top callback in the list, but stay on top
     callback.add_queue_item_status_callback(OutboxStatus)
     _OfflineCheckTask = LoopingCall(RunOfflineChecks)
@@ -395,7 +394,13 @@ def Inbox(newpacket, info, status, message):
     global _ShutdownFlag
     if _ShutdownFlag:
         return False
-    if newpacket.OwnerID == my_id.getLocalID():
+    if id_url.is_cached(newpacket.OwnerID):
+        if newpacket.OwnerID == my_id.getLocalID():
+            return False
+    else:
+        if newpacket.OwnerID.to_bin() == my_id.getLocalID().to_bin():
+            return False
+    if not id_url.is_cached(newpacket.OwnerID):
         return False
     if newpacket.RemoteID != my_id.getLocalID():
         return False

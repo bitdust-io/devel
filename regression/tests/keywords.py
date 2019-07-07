@@ -37,8 +37,8 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
                 num_connected, expected_min_suppliers, expected_max_suppliers, )
         response = requests.get(url=tunnel_url(customer, 'supplier/list/v1'))
         assert response.status_code == 200
-        assert response.json()['status'] == 'OK', response.json()
         print('\nsupplier/list/v1 : %s\n' % pprint.pformat(response.json()))
+        assert response.json()['status'] == 'OK', response.json()
         if expected_min_suppliers is None and expected_max_suppliers is None:
             break
         num_connected = 0
@@ -105,8 +105,8 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
 def share_create_v1(customer: str, key_size=1024):
     response = requests.post(url=tunnel_url(customer, 'share/create/v1'), json={'key_size': key_size, }, )
     assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
     print('\nshare/create/v1 : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
     return response.json()['result'][0]['key_id']
 
 
@@ -115,16 +115,16 @@ def file_list_all_v1(node):
         url=tunnel_url(node, 'file/list/all/v1'),
     )
     assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
     print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
 
 def file_create_v1(node, remote_path):
     response = requests.post(url=tunnel_url(node, 'file/create/v1'), json={'remote_path': remote_path}, )
     assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
     print('\nfile/create/v1 [%s] remote_path=%s : %s\n' % (node, remote_path, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
 
@@ -145,16 +145,16 @@ def file_upload_start_v1(customer: str, remote_path: str, local_path: str,
         },
     )
     assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
     print('\nfile/upload/start/v1 [%r] remote_path=%s local_path=%s : %s\n' % (customer, remote_path, local_path, pprint.pformat(response.json()),))
+    assert response.json()['status'] == 'OK', response.json()
     if wait_job_finish:
         for i in range(attempts):
             response = requests.get(
                 url=tunnel_url(customer, 'file/upload/v1'),
             )
             assert response.status_code == 200
-            assert response.json()['status'] == 'OK', response.json()
             print('\nfile/upload/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
+            assert response.json()['status'] == 'OK', response.json()
             if len(response.json()['result']['pending']) == 0 and len(response.json()['result']['running']) == 0:
                 break
             time.sleep(delay)
@@ -200,8 +200,8 @@ def file_download_start_v1(customer: str, remote_path: str, destination: str,
                 url=tunnel_url(customer, 'file/download/v1'),
             )
             assert response.status_code == 200
-            assert response.json()['status'] == 'OK', response.json()
             print('\nfile/download/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json()), ))
+            assert response.json()['status'] == 'OK', response.json()
             if len(response.json()['result']) == 0:
                 break
             time.sleep(delay)
@@ -233,10 +233,10 @@ def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', re
         response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )))
         try:
             assert response.status_code == 200
+            print('\ndht/value/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
             assert response.json()['status'] == 'OK', response.json()
             assert len(response.json()['result']) > 0, response.json()
             assert response.json()['result'][0]['key'] == key, response.json()
-            print('\ndht/value/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
             if expected_data == 'not_exist':
                 assert response.json()['result'][0]['read'] == 'failed', response.json()
                 assert 'value' not in response.json()['result'][0], response.json()
@@ -273,8 +273,8 @@ def dht_value_set_v1(node, key, new_data, record_type='skip_validation', ):
         },
     )
     assert response.status_code == 200
-    assert response.json()['status'] == 'OK', response.json()
     print('\ndht/value/set/v1 [%s] key=%s : %s\n' % (node, key, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
     assert len(response.json()['result']) > 0, response.json()
     assert response.json()['result'][0]['write'] == 'success', response.json()
     assert response.json()['result'][0]['key'] == key, response.json()
@@ -303,6 +303,8 @@ def message_send_v1(node, recipient, data):
         },
     )
     assert response.status_code == 200
+    print(f'\nmessage/send/v1 [%s] : %s\n' % (
+        node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -312,12 +314,21 @@ def message_receive_v1(node, expected_data, consumer='test_consumer',):
         url=tunnel_url(node, f'message/receive/{consumer}/v1'),
     )
     assert response.status_code == 200
+    print(f'\nmessage/receive/{consumer}/v1 [%s] : %s\n' % (
+        node, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     assert response.json()['result'][0]['data'] == expected_data, response.json()
 
 
 def user_ping_v1(node, remote_node_id, timeout=30):
-    response = requests.get(tunnel_url(node, f'user/ping/v1?id={remote_node_id}'), timeout=timeout)
+    err = None
+    try:
+        response = requests.get(tunnel_url(node, f'user/ping/v1?id={remote_node_id}'), timeout=timeout)
+    except Exception as exc:
+        err = exc
+        response = None
+    if not response:
+        assert False, f'ping {remote_node_id} failed : {err}'
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -367,8 +378,8 @@ def packet_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
             url=tunnel_url(node, 'packet/list/v1'),
         )
         assert response.status_code == 200
-        assert response.json()['status'] == 'OK', response.json()
         print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        assert response.json()['status'] == 'OK', response.json()
         if len(response.json()['result']) == 0 or not wait_all_finish:
             break
         time.sleep(delay)
@@ -383,8 +394,8 @@ def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
             url=tunnel_url(node, 'transfer/list/v1'),
         )
         assert response.status_code == 200
-        assert response.json()['status'] == 'OK', response.json()
         print('\ntransfer/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        assert response.json()['status'] == 'OK', response.json()
         if not wait_all_finish:
             break
         some_incoming = False
@@ -401,4 +412,20 @@ def transfer_list_v1(node, wait_all_finish=False, attempts=60, delay=3):
         time.sleep(delay)
     else:
         assert False, 'some transfers are still running on [%s]' % node
+    return response.json()
+
+
+def identity_get_v1(node):
+    response = requests.get(url=tunnel_url(node, 'identity/get/v1'))
+    assert response.status_code == 200
+    print('\nidentity/get/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def identity_rotate_v1(node):
+    response = requests.put(url=tunnel_url('customer_6', 'identity/rotate/v1'))
+    assert response.status_code == 200
+    print('\nidentity/rotate/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
     return response.json()

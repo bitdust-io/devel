@@ -257,7 +257,7 @@ def cold_start():
         if settings.transportIsEnabled(proto):
             if transp.state != 'LISTENING':
                 if _Debug:
-                    lg.out(4, '    sending "start" to %s and stop' % transp)
+                    lg.out(4, '    sending "start" to %s only' % transp)
                 transp.automat('start')
                 result.append(proto)
                 break

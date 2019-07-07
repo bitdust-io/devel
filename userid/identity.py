@@ -306,6 +306,9 @@ class identity(object):
             return False
         names = set()
         for source in self.sources:
+            if not source:
+                lg.warn('found empty source')
+                return False
             proto, host, port, filename = nameurl.UrlParse(source)
             if filename.count('/'):
                 lg.warn("incorrect identity name: %s" % filename)
@@ -343,7 +346,7 @@ class identity(object):
         """
         sep = b'-'
         hsh = b''
-        hsh += sep + sep.join(map(strng.to_bin, self.sources))
+        hsh += sep + sep.join(map(lambda s: s.original(), self.sources))
         hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
         hsh += sep + sep.join(self.scrubbers)
@@ -465,9 +468,9 @@ class identity(object):
         """
         return {
             'name': self.getIDName(),
-            'idurl': self.getIDURL().to_text(),
-            'global_id': global_id.MakeGlobalID(idurl=self.getIDURL()),
-            'sources': [strng.to_text(i) for i in self.getSources()],
+            'idurl': strng.to_text(self.getIDURL().original()),
+            'global_id': global_id.MakeGlobalID(idurl=self.getIDURL().original()),
+            'sources': [strng.to_text(i) for i in self.getSources(as_originals=True)],
             'contacts': [strng.to_text(i) for i in self.getContacts()],
             'certificates': [strng.to_text(i) for i in self.certificates],
             'scrubbers': [strng.to_text(i) for i in self.scrubbers],
@@ -492,7 +495,7 @@ class identity(object):
         root.appendChild(sources)
         for source in self.sources:
             n = doc.createElement('source')
-            n.appendChild(doc.createTextNode(strng.to_text(source)))
+            n.appendChild(doc.createTextNode(strng.to_text(source.original())))
             sources.appendChild(n)
 
         contacts = doc.createElement('contacts')
@@ -614,20 +617,24 @@ class identity(object):
 
     #------------------------------------------------------------------------------
 
-    def getSources(self, as_fields=True):
+    def getSources(self, as_fields=True, as_originals=False):
         """
         Return identity sources.
         """
+        if as_originals:
+            return id_url.to_original_list(self.sources)
         if not as_fields:
             return id_url.to_bin_list(self.sources)
         return self.sources
 
-    def getIDURL(self, index=0, as_field=True):
+    def getIDURL(self, index=0, as_field=True, as_original=False):
         """
         Return a source IDURL - this is a user ID.
         Must have at least one IDURL in the ``sources``.
         """
         result = self.sources[index]
+        if as_original:
+            return result.original()
         if not as_field:
             return result.to_bin()
         return result
@@ -1047,10 +1054,16 @@ def main():
     else:
         if not key.InitMyKey():
             key.GenerateNewKey()
-        idurls = []
+        ipaddr = '127.0.0.1'
         if len(sys.argv) > 2:
-            idurls = sys.argv[2:]
-        my_id.setLocalIdentity(my_id.buildDefaultIdentity(name=sys.argv[1], idurls=idurls))
+            ipaddr = sys.argv[2]
+        rev = 0
+        if len(sys.argv) > 3:
+            rev = int(sys.argv[3])
+        idurls = []
+        if len(sys.argv) > 4:
+            idurls = sys.argv[4:]
+        my_id.setLocalIdentity(my_id.buildDefaultIdentity(name=sys.argv[1], ip=ipaddr, idurls=idurls, revision=rev))
         my_id.saveLocalIdentity()
         print(my_id.getLocalIdentity().serialize())
         print('Valid is: ', my_id.getLocalIdentity().Valid())

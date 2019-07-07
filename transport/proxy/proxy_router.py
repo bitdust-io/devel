@@ -92,6 +92,7 @@ from userid import id_url
 
 from contacts import identitycache
 from contacts import contactsdb
+from contacts import identitydb
 
 from transport import callback
 from transport import packet_out
@@ -221,7 +222,7 @@ class ProxyRouter(automat.Automat):
         """
         self._load_routes()
         network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
-        callback.insert_inbox_callback(0, self._on_inbox_packet_received)
+        callback.insert_inbox_callback(0, self._on_first_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
 
     def doProcessRequest(self, *args, **kwargs):
@@ -235,9 +236,9 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl = id_url.field(args[0])
-        identitycache.StopOverridingIdentity(idurl)
+        identitycache.StopOverridingIdentity(idurl.original())
         self._remove_route(idurl)
-        self.routes.pop(idurl)
+        self.routes.pop(idurl.original())
 
     def doUnregisterAllRouts(self, *args, **kwargs):
         """
@@ -275,7 +276,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, _, item, _, _, _ = args[0]
-        idurl = id_url.field(idurl)
+        idurl = id_url.field(idurl).original()
         self.routes[idurl]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
         self._write_route(idurl)
         if _Debug:
@@ -311,7 +312,7 @@ class ProxyRouter(automat.Automat):
         # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
-        callback.remove_inbox_callback(self._on_inbox_packet_received)
+        callback.remove_inbox_callback(self._on_first_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
         self.unregister()
         global _ProxyRouter
@@ -327,7 +328,6 @@ class ProxyRouter(automat.Automat):
             if len(self.routes) >= _MaxRoutesNumber:
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
-                    lg.out(_DebugLevel, '    %r' % self.routes)
                 p2p_service.SendAck(request, 'rejected', wide=True)
             else:
                 try:
@@ -352,11 +352,12 @@ class ProxyRouter(automat.Automat):
                         lg.out(_DebugLevel, 'proxy_server.doProcessRequest RequestService rejected: this user is my supplier')
                     p2p_service.SendAck(request, 'rejected', wide=True)
                     return
+                identitycache.UpdateAfterChecking(cached_id.getIDURL(), idsrc)
                 oldnew = ''
-                if user_idurl not in list(self.routes.keys()):
+                if user_idurl.original() not in list(self.routes.keys()):
                     # accept new route
                     oldnew = 'NEW'
-                    self.routes[user_idurl] = {}
+                    self.routes[user_idurl.original()] = {}
                 else:
                     # accept existing routed user
                     oldnew = 'OLD'
@@ -367,11 +368,11 @@ class ProxyRouter(automat.Automat):
                 else:
                     if _Debug:
                         lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % user_idurl)
-                self.routes[user_idurl]['time'] = time.time()
-                self.routes[user_idurl]['identity'] = cached_id.serialize(as_text=True)
-                self.routes[user_idurl]['publickey'] = strng.to_text(cached_id.publickey)
-                self.routes[user_idurl]['contacts'] = cached_id.getContactsAsTuples(as_text=True)
-                self.routes[user_idurl]['address'] = []
+                self.routes[user_idurl.original()]['time'] = time.time()
+                self.routes[user_idurl.original()]['identity'] = cached_id.serialize(as_text=True)
+                self.routes[user_idurl.original()]['publickey'] = strng.to_text(cached_id.publickey)
+                self.routes[user_idurl.original()]['contacts'] = cached_id.getContactsAsTuples(as_text=True)
+                self.routes[user_idurl.original()]['address'] = []
                 self._write_route(user_idurl)
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
                 if active_user_sessions:
@@ -396,27 +397,27 @@ class ProxyRouter(automat.Automat):
                 else:
                     if _Debug:
                         lg.out(_DebugLevel, 'proxy_server.doProcessRequest active connection with user %s at %s:%s not yet exist' % (
-                            user_idurl, info.proto, info.host, ))
+                            user_idurl.original(), info.proto, info.host, ))
                         lg.out(_DebugLevel, '    current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
                 self.acks.append(
                     p2p_service.SendAck(request, 'accepted', wide=True))
                 if _Debug:
-                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s  contacts=%s' % (
-                        oldnew.capitalize(), user_idurl, self.routes[user_idurl]['contacts'], ))
+                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %r  contacts=%s' % (
+                        oldnew.capitalize(), user_idurl, self.routes[user_idurl.original()]['contacts'], ))
         #--- commands.CancelService()
         elif request.Command == commands.CancelService():
-            if user_idurl in self.routes:
+            if user_idurl.original() in list(self.routes.keys()):
                 # cancel existing route
                 self._remove_route(user_idurl)
-                self.routes.pop(user_idurl)
-                identitycache.StopOverridingIdentity(user_idurl)
+                self.routes.pop(user_idurl.original())
+                identitycache.StopOverridingIdentity(user_idurl.original())
                 p2p_service.SendAck(request, 'accepted', wide=True)
                 if _Debug:
-                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % user_idurl)
+                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %r' % user_idurl.original())
             else:
                 p2p_service.SendAck(request, 'rejected', wide=True)
                 if _Debug:
-                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % user_idurl)
+                    lg.out(_DebugLevel, 'proxy_server.doProcessRequest CancelService rejected : %r is not found in routes' % user_idurl.original())
                     lg.out(_DebugLevel, '    %r' % self.routes)
         else:
             p2p_service.SendFail(request, 'rejected', wide=True)
@@ -425,7 +426,7 @@ class ProxyRouter(automat.Automat):
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
         receiver_idurl, newpacket, info = args[0]
         receiver_idurl = id_url.field(receiver_idurl)
-        route_info = self.routes.get(receiver_idurl, None)
+        route_info = self.routes.get(receiver_idurl.original(), None)
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket, info=info, receiver_idurl=receiver_idurl, route_info=route_info, )
         if not route_info:
@@ -563,9 +564,9 @@ class ProxyRouter(automat.Automat):
         # those must be already cached
         sender_idurl = id_url.field(sender_idurl)
         receiver_idurl = id_url.field(receiver_idurl)
-        route = self.routes.get(sender_idurl, None)
+        route = self.routes.get(sender_idurl.original(), None)
         if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route=route)
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'])
         if not route:
             lg.warn('route with %s not found' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
@@ -599,19 +600,19 @@ class ProxyRouter(automat.Automat):
         # because contacts in his identity are same that my own contacts
         return None
 
-    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+    def _on_first_inbox_packet_received(self, newpacket, info, status, error_message):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received %s from %s://%s' % (newpacket, info.proto, info.host, ))
-            lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID, newpacket.OwnerID, ))
-            lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID, ))
+            lg.out(_DebugLevel, 'proxy_router._on_first_inbox_packet_received %s from %s://%s' % (newpacket, info.proto, info.host, ))
+            lg.out(_DebugLevel, '    creator=%s owner=%s' % (newpacket.CreatorID.original(), newpacket.OwnerID.original(), ))
+            lg.out(_DebugLevel, '    sender=%s remote_id=%s' % (info.sender_idurl, newpacket.RemoteID.original(), ))
             for k, v in self.routes.items():
-                lg.out(_DebugLevel, '        route with %s :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
+                lg.out(_DebugLevel, '        route with %r :  address=%s  contacts=%s' % (k, v.get('address'), v.get('contacts'), ))
         # first filter all traffic addressed to me
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first
             if newpacket.Command == commands.Relay():
                 # look like this is a routed packet addressed to someone else
-                if newpacket.CreatorID in list(self.routes.keys()):
+                if newpacket.CreatorID.original() in list(self.routes.keys()):
                     # sent by proxy_sender() from node A : a man behind proxy_router()
                     # addressed to some third node B in outside world - need to route
                     # A is my consumer and B is a recipient which A wants to contact
@@ -627,7 +628,7 @@ class ProxyRouter(automat.Automat):
             # and this is not a Relay packet, Identity
             elif newpacket.Command == commands.Identity():
                 # this is a "propagate" packet from node A addressed to this proxy router
-                if newpacket.CreatorID in list(self.routes.keys()):
+                if newpacket.CreatorID.original() in list(self.routes.keys()):
                     # also we need to "reset" overriden identity
                     # return False so that other services also can process that Identity()
                     if _Debug:
@@ -655,9 +656,9 @@ class ProxyRouter(automat.Automat):
         # this packet was addressed to someone else
         # it can be different scenarios, if can not found valid scenario - must skip the packet
         receiver_idurl = None
-        known_remote_id = newpacket.RemoteID in list(self.routes.keys())
-        known_creator_id = newpacket.CreatorID in list(self.routes.keys())
-        known_owner_id = newpacket.OwnerID in list(self.routes.keys())
+        known_remote_id = newpacket.RemoteID.original() in list(self.routes.keys())
+        known_creator_id = newpacket.CreatorID.original() in list(self.routes.keys())
+        known_owner_id = newpacket.OwnerID.original() in list(self.routes.keys())
         if known_remote_id:
             # incoming packet from node B addressed to node A behind that proxy, capture it!
             receiver_idurl = newpacket.RemoteID
@@ -711,7 +712,7 @@ class ProxyRouter(automat.Automat):
             return False
         if Command != commands.Ack():
             return False
-        if RemoteID not in list(self.routes.keys()):
+        if RemoteID.original() not in list(self.routes.keys()):
             return False
         found = False
         for ack in list(self.acks):
@@ -745,7 +746,7 @@ class ProxyRouter(automat.Automat):
         except:
             dct = {}
         for k, v in dct.items():
-            self.routes[id_url.field(k)] = v
+            self.routes[id_url.field(k).original()] = v
             ident = identity.identity(xmlsrc=v['identity'])
             if not self._is_my_contacts_present_in_identity(ident):
                 if _Debug:
@@ -770,7 +771,8 @@ class ProxyRouter(automat.Automat):
             dct = serialization.BytesToDict(strng.to_bin(src), keys_to_text=True, values_to_text=True)
         except:
             dct = {}
-        dct[user_idurl.to_text()] = self.routes[user_idurl]
+        user_idurl_txt = strng.to_text(id_url.field(user_idurl).original())
+        dct[user_idurl_txt] = self.routes[id_url.field(user_idurl).original()]
         newsrc = strng.to_text(serialization.DictToBytes(dct, keys_to_text=True, values_to_text=True))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
@@ -783,8 +785,9 @@ class ProxyRouter(automat.Automat):
             dct = serialization.BytesToDict(strng.to_bin(src), keys_to_text=True, values_to_text=True)
         except:
             dct = {}
-        if user_idurl.to_text() in dct:
-            dct.pop(user_idurl.to_text())
+        user_idurl_txt = strng.to_text(id_url.field(user_idurl).original())
+        if user_idurl_txt in dct:
+            dct.pop(user_idurl_txt)
             newsrc = strng.to_text(serialization.DictToBytes(dct, keys_to_text=True, values_to_text=True))
             config.conf().setData('services/proxy-server/current-routes', newsrc)
             if _Debug:

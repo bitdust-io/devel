@@ -184,9 +184,10 @@ def process(newpacket, info):
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
         return None
     if _PacketLogFileEnabled:
-        lg.out(0, '        \033[0;49;92m IN %s(%s) with %d bytes from %s TID:%s\033[0m' % (
+        lg.out(0, '        \033[0;49;92m IN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
             newpacket.Command, newpacket.PacketID, info.bytes_received,
-            global_id.UrlToGlobalID(info.sender_idurl), info.transfer_id), log_name='packet', showtime=True)
+            global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
+            info.transfer_id), log_name='packet', showtime=True)
     # we must know recipient identity
     if not id_url.is_cached(newpacket.RemoteID):
         d = identitycache.immediatelyCaching(newpacket.RemoteID)

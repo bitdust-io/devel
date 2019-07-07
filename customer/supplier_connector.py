@@ -36,7 +36,6 @@ BitDust supplier_connector() Automat
 
 EVENTS:
     * :red:`ack`
-    * :red:`close`
     * :red:`connect`
     * :red:`disconnect`
     * :red:`fail`
@@ -84,6 +83,7 @@ from crypt import my_keys
 from p2p import commands
 from p2p import p2p_service
 from p2p import online_status
+from p2p import propagate
 
 from raid import eccmap
 
@@ -260,7 +260,7 @@ class SupplierConnector(automat.Automat):
             if event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(*args, **kwargs)
+                self.doPingRequestService(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
@@ -271,17 +271,17 @@ class SupplierConnector(automat.Automat):
                 self.doReportConnect(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
-            if event == 'close':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'disconnect':
+            if event == 'disconnect':
                 self.state = 'REFUSE'
                 self.doCancelServiceQueue(*args, **kwargs)
                 self.doCancelService(*args, **kwargs)
             elif event == 'fail' or event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(*args, **kwargs)
+                self.doPingRequestService(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -296,7 +296,7 @@ class SupplierConnector(automat.Automat):
             elif event == 'connect':
                 self.state = 'REQUEST'
                 self.GoDisconnect=False
-                self.doRequestService(*args, **kwargs)
+                self.doPingRequestService(*args, **kwargs)
             elif event == 'fail':
                 self.state = 'NO_SERVICE'
                 self.doReportNoService(*args, **kwargs)
@@ -341,12 +341,12 @@ class SupplierConnector(automat.Automat):
                 self.state = 'REFUSE'
                 self.doCancelServiceQueue(*args, **kwargs)
                 self.doCancelService(*args, **kwargs)
-            elif event == 'close':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
             elif not self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
                 self.state = 'CONNECTED'
                 self.doReportConnect(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
         return None
 
     def isServiceAccepted(self, *args, **kwargs):
@@ -372,41 +372,20 @@ class SupplierConnector(automat.Automat):
                 return True
         return False
 
-    def doRequestService(self, *args, **kwargs):
+    def doPingRequestService(self, *args, **kwargs):
         """
         Action method.
         """
-        service_info = {
-            'needed_bytes': self.needed_bytes,
-            'customer_id': global_id.UrlToGlobalID(self.customer_idurl),
-        }
-        my_customer_key_id = my_id.getGlobalID(key_alias='customer')
-        if my_keys.is_key_registered(my_customer_key_id):
-            service_info['customer_public_key'] = my_keys.get_key_info(
-                key_id=my_customer_key_id,
-                include_private=False,
-            )
-        if self.key_id:
-            service_info['key_id'] = self.key_id
-        self._last_known_ecc_map = kwargs.get('ecc_map')
-        if self._last_known_ecc_map is not None:
-            service_info['ecc_map'] = self._last_known_ecc_map
-        self._last_known_family_position = kwargs.get('family_position')
-        if self._last_known_family_position is not None:
-            service_info['position'] = self._last_known_family_position
-        self._last_known_family_snapshot = kwargs.get('family_snapshot')
-        if self._last_known_family_snapshot is not None:
-            service_info['family_snapshot'] = id_url.to_bin_list(self._last_known_family_snapshot)
-        request = p2p_service.SendRequestService(
-            remote_idurl=self.supplier_idurl,
-            service_name='service_supplier',
-            json_payload=service_info,
-            callbacks={
-                commands.Ack(): self._supplier_acked,
-                commands.Fail(): self._supplier_failed,
-            },
-        )
-        self.request_packet_id = request.PacketID
+        ecc_map = kwargs.get('ecc_map')
+        family_position = kwargs.get('family_position')
+        family_snapshot = kwargs.get('family_snapshot')
+        d = propagate.PingContact(self.supplier_idurl)
+        d.addCallback(lambda result: self._do_request_supplier_service(
+            ecc_map=ecc_map,
+            family_position=family_position,
+            family_snapshot=family_snapshot,
+        ))
+        d.addErrback(lambda err: self.automat('fail', None))
 
     def doCancelService(self, *args, **kwargs):
         """
@@ -592,3 +571,36 @@ class SupplierConnector(automat.Automat):
                 lg.out(10, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
                     self.supplier_idurl, oldstate, newstate))
             self.automat('connect')
+
+    def _do_request_supplier_service(self, ecc_map, family_position, family_snapshot):
+        service_info = {
+            'needed_bytes': self.needed_bytes,
+            'customer_id': global_id.UrlToGlobalID(self.customer_idurl),
+        }
+        my_customer_key_id = my_id.getGlobalID(key_alias='customer')
+        if my_keys.is_key_registered(my_customer_key_id):
+            service_info['customer_public_key'] = my_keys.get_key_info(
+                key_id=my_customer_key_id,
+                include_private=False,
+            )
+        if self.key_id:
+            service_info['key_id'] = self.key_id
+        self._last_known_ecc_map = ecc_map
+        if self._last_known_ecc_map is not None:
+            service_info['ecc_map'] = self._last_known_ecc_map
+        self._last_known_family_position = family_position
+        if self._last_known_family_position is not None:
+            service_info['position'] = self._last_known_family_position
+        self._last_known_family_snapshot = family_snapshot
+        if self._last_known_family_snapshot is not None:
+            service_info['family_snapshot'] = id_url.to_bin_list(self._last_known_family_snapshot)
+        request = p2p_service.SendRequestService(
+            remote_idurl=self.supplier_idurl,
+            service_name='service_supplier',
+            json_payload=service_info,
+            callbacks={
+                commands.Ack(): self._supplier_acked,
+                commands.Fail(): self._supplier_failed,
+            },
+        )
+        self.request_packet_id = request.PacketID

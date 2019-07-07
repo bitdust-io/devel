@@ -79,7 +79,6 @@ class ProxyTransportService(LocalService):
         conf().addCallback('services/proxy-transport/receiving-enabled',
                            self._on_receiving_enabled_disabled)
         return self.starting_deferred
-        # return True
 
     def stop(self):
         from twisted.internet.defer import succeed
@@ -110,14 +109,14 @@ class ProxyTransportService(LocalService):
             atransports.append('service_udp_transport')
         return atransports
 
-    def _reset_my_original_identity(self, skip_transports=[]):
-        # from userid import my_id
+    def _reset_my_original_identity(self):
+        from userid import my_id
         from main.config import conf
         from logs import lg
         lg.warn('RESET my-original-identity')
         conf().setData('services/proxy-transport/my-original-identity', '')
         conf().setString('services/proxy-transport/current-router', '')
-        # my_id.rebuildLocalIdentity(skip_transports=skip_transports)
+        my_id.rebuildLocalIdentity()
 
     def _check_reset_original_identity(self):
         from logs import lg

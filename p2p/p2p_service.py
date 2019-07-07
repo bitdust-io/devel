@@ -303,7 +303,7 @@ def Identity(newpacket, send_ack=True):
     # other sources still can give you required user info: public key, contacts, etc..
     # TODO: we can also consolidate few "idurl" sources for every public key - basically identify user by public key
     # something like:
-    # for source in identitycache.FromCache(idurl).getSources():
+    # for source in identitycache.FromCache(idurl).getSources(as_originals=True):
     #     if source not in identitycache.FromCache(idurl):
     #         d = identitycache.immediatelyCaching(source)
     #         d.addCallback(lambda xml_src: identitycache.UpdateAfterChecking(idurl, xml_src))
@@ -437,9 +437,9 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, wide=False,
         lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
     if not key_id:
         key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias='customer')
-    if not my_keys.is_key_registered(key_id) or not my_keys.is_key_private(key_id):
-        lg.warn('key %r not exist, my "master" key to be used with ListFiles() packet' % key_id)
-        key_id = my_id.getGlobalID(key_alias='master')
+    # if not my_keys.is_key_registered(key_id) or not my_keys.is_key_private(key_id):
+    #     lg.warn('key %r not exist, my "master" key to be used with ListFiles() packet' % key_id)
+    key_id = my_id.getGlobalID(key_alias='master')
     PacketID = "%s:%s" % (key_id, packetid.UniqueID(), )
     Payload = settings.ListFilesFormat()
     result = signed.Packet(

@@ -91,7 +91,6 @@ from crypt import encrypted
 from p2p import commands
 from p2p import lookup
 from p2p import online_status
-from p2p import propagate
 
 from contacts import identitycache
 
@@ -119,6 +118,13 @@ def GetRouterIDURL():
     if not _ProxyReceiver:
         return None
     return _ProxyReceiver.router_idurl
+
+
+def GetPossibleRouterIDURL():
+    global _ProxyReceiver
+    if not _ProxyReceiver:
+        return None
+    return _ProxyReceiver.possible_router_idurl
 
 
 def GetRouterIdentity():
@@ -208,6 +214,7 @@ class ProxyReceiver(automat.Automat):
         Method to initialize additional variables and flags at creation phase
         of proxy_receiver() machine.
         """
+        self.possible_router_idurl = None
         self.router_idurl = None
         self.router_identity = None
         self.router_proto_host = None
@@ -369,6 +376,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        self.possible_router_idurl = None
         self.router_idurl = id_url.field(args[0])
         self.router_identity = None
         self.router_proto_host = None
@@ -563,6 +571,14 @@ class ProxyReceiver(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.possible_router_idurl = None
+        self.router_idurl = None
+        self.router_identity = None
+        self.router_proto_host = None
+        self.request_service_packet_id = []
+        self.latest_packet_received = 0
+        self.router_connection_info = None
+        self.traffic_in = 0
         self.unregister()
         global _ProxyReceiver
         del _ProxyReceiver
@@ -639,8 +655,9 @@ class ProxyReceiver(automat.Automat):
             lg.exc()
             return
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity to %s' % self.router_idurl)
-            lg.out(_DebugLevel, '        contacts=%s, sources=%s' % (identity_obj.contacts, identity_obj.sources))
+            lg.out(_DebugLevel, 'proxy_receiver._do_send_identity_to_router to %s' % self.router_idurl)
+            lg.out(_DebugLevel, '        contacts=%r, sources=%r' % (
+                identity_obj.contacts, identity_obj.getSources(as_originals=True)))
         newpacket = signed.Packet(
             Command=commands.Identity(),
             OwnerID=my_id.getLocalID(),
@@ -691,41 +708,37 @@ class ProxyReceiver(automat.Automat):
     def _on_nodes_lookup_finished(self, idurls):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished : %r' % idurls)
-#         excluded_idurls = []
-#         if driver.is_on('service_customer'):
-#             excluded_idurls.extend(contactsdb.suppliers())
         for idurl in idurls:
-#             if idurl in excluded_idurls:
-#                 continue
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
             if len(myprotos.intersection(remoteprotos)) > 0:
-                self.automat('found-one-node', idurl)
+                self.possible_router_idurl = id_url.field(idurl)
+                if _Debug:
+                    lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished found : %r' % self.possible_router_idurl)
+                # d = propagate.PingContact(self.possible_router_idurl, timeout=5)
+                # d.addCallback(lambda resp_tuple: self.automat('found-one-node', self.possible_router_idurl))
+                # d.addErrback(lambda err: self.automat('nodes-not-found'))
+                self.automat('found-one-node', self.possible_router_idurl)
                 return
         self.automat('nodes-not-found')
 
     def _find_random_node(self):
-        # DEBUG
-        # self.automat('found-one-node', 'http://p2p-id.ru/seed0_cb67.xml')
-        # self.automat('found-one-node', 'https://bitdust.io:8084/seed2_b17a.xml')
-        # self.automat('found-one-node', 'http://datahaven.net/seed2_916e.xml')
-        # self.automat('found-one-node', 'http://bitdust.ai/seed1_c2c2.xml')
-        # return
         preferred_routers = []
         preferred_routers_raw = config.conf().getData('services/proxy-transport/preferred-routers').strip()
         if preferred_routers_raw:
             preferred_routers_list = re.split('\n|,|;| ', preferred_routers_raw)
             preferred_routers.extend(preferred_routers_list)
         if preferred_routers:
-            known_router = random.choice(preferred_routers)
+            self.possible_router_idurl = id_url.field(random.choice(preferred_routers))
             if _Debug:
-                lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %s' % known_router)
-            d = propagate.PingContact(known_router, timeout=5)
-            d.addCallback(lambda resp_tuple: self.automat('found-one-node', known_router))
-            d.addErrback(lambda err: self.automat('nodes-not-found'))
-            # d.addErrback(lg.errback)
-            # self.automat('found-one-node', known_router)
+                lg.out(_DebugLevel, 'proxy_receiver._find_random_node selected random item from preferred_routers: %r' % self.possible_router_idurl)
+            # d = propagate.PingContact(self.possible_router_idurl, timeout=5)
+            # d.addCallback(lambda resp_tuple: self.automat('found-one-node', self.possible_router_idurl))
+            # d.addErrback(lambda err: self.automat('nodes-not-found'))
+            idcache_defer = identitycache.immediatelyCaching(self.possible_router_idurl)
+            idcache_defer.addCallback(lambda *args: self.automat('found-one-node', self.possible_router_idurl))
+            idcache_defer.addErrback(lambda err: self.automat('nodes-not-found'))
             return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node will start DHT lookup')

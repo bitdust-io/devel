@@ -61,10 +61,13 @@ class KeysStorageService(LocalService):
         events.remove_subscriber(self._on_my_storage_ready, 'my-storage-ready')
 
     def start(self):
+        from logs import lg
         from access import key_ring
         from storage import index_synchronizer
         if key_ring.is_my_keys_in_sync() and index_synchronizer.is_synchronized():
             return True
+        lg.warn('can not start service_my_data right now, key_ring.is_my_keys_in_sync=%r index_synchronizer.is_synchronized=%r' % (
+            key_ring.is_my_keys_in_sync(), index_synchronizer.is_synchronized()))
         return False
 
     def stop(self):

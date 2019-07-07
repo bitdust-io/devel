@@ -455,7 +455,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     inqueue = {}
     found_previous_packets = 0
     for pkt_out in packet_out.queue():
-        if pkt_out.remote_idurl in idlist:
+        if id_url.is_in(pkt_out.remote_idurl, idlist):
             if pkt_out.description.count('Identity'):
                 if pkt_out.remote_idurl not in inqueue:
                     inqueue[pkt_out.remote_idurl] = 0
@@ -511,9 +511,9 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
 def PingContact(idurl, timeout=30, retries=2):
     """
     Can be called when you need to "ping" another user.
-    This will send your Identity to that node, and it must respond.
+    This will send your Identity to that node, and it must respond with Ack packet.
     """
-    idurl = id_url.field(idurl)
+    idurl = id_url.field(idurl).original()
     if _Debug:
         lg.out(_DebugLevel, "propagate.PingContact [%s]" % nameurl.GetName(idurl))
     ping_result = Deferred()
@@ -531,7 +531,7 @@ def PingContact(idurl, timeout=30, retries=2):
                 ping_result.errback(Exception('remote user did not responded after %d ping attempts : %s' % (attempts, idurl, )))
             return None
         SendToIDs(
-            idlist=[idurl, ],
+            idlist=[id_url.field(idurl), ],
             ack_handler=lambda response, info: _ack_handler(response, info, attempts),
             timeout_handler=lambda pkt_out: _response_timed_out(pkt_out, attempts),
             response_timeout=timeout,
@@ -547,7 +547,7 @@ def PingContact(idurl, timeout=30, retries=2):
         return None
 
     def _identity_cached(idsrc, idurl):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for [%s]" % (
+        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for %r" % (
             len(idsrc), idurl))
         # TODO: Verify()
         _try_to_ping(1)

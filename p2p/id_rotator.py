@@ -255,7 +255,7 @@ class IdRotator(automat.Automat):
         if event == 'check':
             self.check_only = True
         self.alive_idurls = []
-        self.old_sources = my_id.getLocalIdentity().getSources()
+        self.old_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         self.known_servers = known_servers.by_host()
         self.preferred_servers = kwargs.get('preferred_servers', {})
         if _Debug:
@@ -273,7 +273,7 @@ class IdRotator(automat.Automat):
                 lg.exc()
         self.preferred_servers = {strng.to_bin(k): v for k,v in self.preferred_servers.items()}
         self.current_servers = []
-        for idurl in my_id.getLocalIdentity().getSources():
+        for idurl in my_id.getLocalIdentity().getSources(as_originals=True):
             self.current_servers.append(strng.to_bin(nameurl.GetHost(idurl)))
         if _Debug:
             lg.args(_DebugLevel, known_servers=self.known_servers, preferred_servers=self.preferred_servers, current_servers=self.current_servers)
@@ -386,7 +386,7 @@ class IdRotator(automat.Automat):
             settings.MaximumIdentitySources(),
             config.conf().getInt('services/identity-propagate/max-servers') or settings.MaximumIdentitySources(),
         )
-        current_sources = id_url.to_bin_list(my_id.getLocalIdentity().getSources())
+        current_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         new_sources = []
         new_idurl = args[0]
         if _Debug:
@@ -450,7 +450,7 @@ class IdRotator(automat.Automat):
             return None
 
         dl = []
-        for idurl in my_id.getLocalIdentity().getSources():
+        for idurl in my_id.getLocalIdentity().getSources(as_originals=True):
             dl.append(net_misc.getPageTwisted(idurl, timeout=10))
         d = DeferredList(dl)
         d.addCallback(_cb)
@@ -469,7 +469,7 @@ class IdRotator(automat.Automat):
             if self.rotated:
                 events.send('local-identity-rotated', data=dict(
                     old_idurls=self.old_sources,
-                    new_idurls=my_id.getLocalIdentity().getSources(),
+                    new_idurls=my_id.getLocalIdentity().getSources(as_originals=True),
                 ))
 
     def doReportFailed(self, event, *args, **kwargs):
@@ -512,13 +512,13 @@ class IdRotator(automat.Automat):
         """
         """
         self.alive_idurls = []
-        my_sources = my_id.getLocalIdentity().getSources()
+        my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         local_revision = my_id.getLocalIdentity().getRevisionValue()
         latest_revision = -1
         pos = -1
         for result, remote_identity_src in ping_results:
             pos += 1
-            idurl = my_sources[pos]
+            idurl_bin = my_sources[pos]
             if not result:
                 self.alive_idurls.append(None)
                 continue
@@ -536,7 +536,7 @@ class IdRotator(automat.Automat):
                 lg.exc()
                 self.alive_idurls.append(None)
                 continue
-            self.alive_idurls.append(idurl.to_bin())
+            self.alive_idurls.append(idurl_bin)
         if not self.new_revision:
             self.new_revision = max(local_revision, latest_revision) + 1
         if _Debug:
@@ -559,12 +559,12 @@ class IdRotator(automat.Automat):
         """
         from transport.tcp import tcp_node
         sendfilename = settings.LocalIdentityFilename()
-        my_sources = my_id.getLocalIdentity().getSources()
+        my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         dlist = []
         if _Debug:
             lg.out(_DebugLevel, 'id_rotator._do_send_my_identity my_sources=%r' % my_sources)
-        for idurl in my_sources:
-            _, host, _, _ = nameurl.UrlParse(idurl)
+        for idurl_bin in my_sources:
+            _, host, _, _ = nameurl.UrlParse(idurl_bin)
             tcpport = None
             if host in self.preferred_servers:
                 tcpport = int(self.preferred_servers[host][1])
@@ -581,10 +581,10 @@ class IdRotator(automat.Automat):
         return DeferredList(dlist, fireOnOneCallback=True)
 
     def _do_verify_my_sources(self):
-        my_sources = my_id.getLocalIdentity().getSources()
+        my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         dl = []
-        for idurl in my_sources:
-            d = net_misc.getPageTwisted(idurl, timeout=5)
+        for idurl_bin in my_sources:
+            d = net_misc.getPageTwisted(idurl_bin, timeout=5)
             dl.append(d)
         d = DeferredList(dl, consumeErrors=True)
         d.addCallback(self._do_check_ping_results)
@@ -594,10 +594,10 @@ class IdRotator(automat.Automat):
         """
         Just ping all my id servers by sending a HTTP request to the "main page".
         """
-        my_sources = my_id.getLocalIdentity().getSources()
+        my_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         id_servers = []
-        for idurl in my_sources:
-            proto, host, port, _ = nameurl.UrlParse(idurl)
+        for idurl_bin in my_sources:
+            proto, host, port, _ = nameurl.UrlParse(idurl_bin)
             id_servers.append(nameurl.UrlMake(proto, host, port, ''))
         if _Debug:
             lg.args(_DebugLevel, id_servers=id_servers)

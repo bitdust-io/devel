@@ -236,7 +236,7 @@ def loadLocalIdentity():
 #     _LocalName = lid.getIDName()
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
     if _Debug:
-        lg.out(_DebugLevel, "my_id.loadLocalIdentity my name is [%s]" % lid.getIDName())
+        lg.out(_DebugLevel, "my_id.loadLocalIdentity my global id is %s" % getGlobalID())
     return True
 
 
@@ -441,6 +441,7 @@ def buildProtoContacts(id_obj, skip_transports=[]):
     if not driver.is_on('service_gateway'):
         new_contacts = current_contats
         new_order_correct = current_order
+        lg.warn('service_gateway() is not started, use my current contacts as a source')
     else:
         from transport import gateway
         # build contacts data according transports priorities
@@ -461,55 +462,13 @@ def buildProtoContacts(id_obj, skip_transports=[]):
         for nproto in new_order:
             if nproto not in list(new_contacts.keys()):
                 new_order_correct.remove(nproto)
-
-#            cset = set(corder)
-#            cdiff = cset.intersection(current_set)
-#            if cset.isdisjoint()
-#
-#
-#            if len(clist) > 1:
-#                # clist.reverse()
-#                for contact in clist:
-#                    cproto, cdata = contact.split('://')
-#                    cdict[cproto] = contact
-#                    if cproto in new_order:
-#                        new_order.remove(cproto)
-#                    new_order.insert(0, cproto)
-#            else:
-##                 current_order = []
-#                for contact in clist:
-#                    cproto, cdata = contact.split('://')
-#                    cdict[cproto] = contact
-# current_order.append(cproto)
-#                    new_index = -1
-#                    if cproto in new_order:
-#                        new_index = new_order.index(cproto)
-#                    old_index = -1
-#                    if cproto in current_order:
-#                        old_index =  current_order.index(cproto)
-#                    if new_index < 0:
-#                        new_order.insert(0, cproto)
-#                    else:
-#                        if old_index < new_index:
-#                            new_order.remove(cproto)
-#                            new_order.insert(0, cproto)
-#                        else:
-#                            new_order.remove(cproto)
-#                            new_order.append(cproto)
-#            new_contacts.update(cdict)
-
     if _Debug:
         lg.out(_DebugLevel, '    new contacts: %s' % str(new_contacts))
         lg.out(_DebugLevel, '    new order: %s' % str(new_order_correct))
-
-#    new_list = []
-#    for nproto in new_order_correct:
-#        new_list.append(new_contacts[nproto])
-
     return new_contacts, new_order_correct
 
 
-def buildDefaultIdentity(name='', ip='', idurls=[]):
+def buildDefaultIdentity(name='', ip='', idurls=[], revision=0):
     """
     Use some local settings and config files to create some new identity.
 
@@ -557,7 +516,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     # ident.certificates = []
     ident.setDate(time.strftime('%b %d, %Y'))
     ident.setPostage(1)
-    ident.setRevision(0)
+    ident.setRevision(revision)
     ident.setVersion('')  # TODO: put latest git commit hash here
     # update software version number
     # version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
@@ -630,7 +589,7 @@ def rebuildLocalIdentity(identity_object=None, skip_transports=[], new_sources=N
     if _Debug:
         lg.out(_DebugLevel, '    version: %r' % lid.version)
         lg.out(_DebugLevel, '    contacts: %r' % lid.contacts)
-        lg.out(_DebugLevel, '    sources: %r' % lid.sources)
+        lg.out(_DebugLevel, '    sources: %r' % lid.getSources(as_originals=True))
     if changed:
         if save_identity:
             # finally saving modified local identity
