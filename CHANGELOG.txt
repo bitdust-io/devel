@@ -2,6 +2,17 @@ Change Log
 ==========
 
 
+2019-07-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* critical bug fix in id_url
+* bug fix in online_status.shutdown()
+* bug fix in customer/supplier_connector.py
+* solved id_url issues in proxy transport
+* keep track of identity revisions in id_url and populate always latest revision
+* bug fix in DHT code
+
+
+
 2019-06-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in index_synchronizer()
@@ -19,6 +30,14 @@ Change Log
 * added few more makefile regression commands (#342)
 * new core module userid/id_url.py added  (#341)
 * bug fix in initializer.py (#340)
+
+
+
+2019-05-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* critical bug fix in CodernityDB3
+* chat history fixed to be stored after BitDust process stopped
+* a bunch of other Py3 fixes in CodernityDB3 (#338)
 
 
 
