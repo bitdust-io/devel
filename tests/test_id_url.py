@@ -146,7 +146,7 @@ class TestIDURL(TestCase):
                   <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCS5wf0kaJa7zLwYWBEj+/JzfMhxFcMUy6Fz6DcuFCK05i1VgeFHuEEbpkU4yAYiNX1YGb4FBOfJ95UFM8HOB6b8QDqA6uHOkjT/aNiaL7fj+LG7UwqGef5cEWbckIpaeZQiyWaNuTtp2rywPrEakIs7KUFcdtiPhvtjymT8PyFRhSOoRO2U9+54K+FFJH9XQtSPB+KNdNOm18tFPJ4lviEODCKH0rE9BQ4Vn/auO0KBcwX8AGuhUFI0nsaQtHcty1L6u1UXHrEXGZeu2yBhEsHDHunxW+h0YOgCRdI8Usnobdx/dyJ7momABnu6mElt/ylHzM98nM/NfmM5BOrG9Tv</publickey>
                   <signature>13107260235651409913492390604656826449101578484743079806566807521296855989324803242511319779707838174946127035306858215504290452087950300644093221553306839853186323155012108941951146067164825000001482898225482538135328083540275907917650591073062847715060678819674667948896781152495669494916549386439852946976965970389941158492538138518594892617227070532550696583600653695158346473408694303871305287828335597832662071836974941142069312163761621166361732834315345454522029016656941848429213536700288288831888079827237495251089188669161987255910430438434187684912979732275126065406389681858156899388574380125659081087827</signature>
                 </identity>""",
-            'hans0': """<?xml version="1.0" encoding="utf-8"?>
+            'hans1': """<?xml version="1.0" encoding="utf-8"?>
                 <identity>
                   <sources>
                     <source>http://first.com/hans.xml</source>
@@ -164,7 +164,7 @@ class TestIDURL(TestCase):
                   <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCiMX5AjFoK+B8bEts97OEKkJmONy8wDVSTe4Sx356p1fd48UQHq0g3xphfEWqZNVEvvXyVT3ToJZpsn6ZXALR6awp1EosV0Y3eCRn3HJ7VFifsObEBaJlbIpPWO3a44yQuNmB18dpAZsOYF0fuv9O9JZF/r2aS3DwJKKvrb1raPtuOkmLvMFOyFzQ4CzbpzOhxfLyk4VyyqWtxgRWa3cLJRC1s8pZP+Eeujz9lUXJOBJkz458myjcNogZ60HqMWPmNEQxKQKxKz5s1KhTzEa13AbK3mfBz6GYRSUE4PgzPNGt3ggKjm109MCECVLJ20i41l1x0LQogH4io0zN1KGFJ</publickey>
                   <signature>13068553383637753085388545974152093609980484012770452572120600195304903547295645115743544723314736720580808645983593697230309177682054712275065288665744892926477896400614384619512508972942866186572904043048207845632626832350683561290105271937200406689170558357079802162498698787054408426873656285478048378799191423141745937328344899208835186975874729426520455853791306586430419171014111851754881354985456443997095404651969419163775186405638979606072817375092764901667492456855939205354792829575562245938026302306124652445463109637611383925691836897970969979043999831425972117577943735372131767450971245110225874441582</signature>
                 </identity>""",
-            'hans1': """<?xml version="1.0" encoding="utf-8"?>
+            'hans2': """<?xml version="1.0" encoding="utf-8"?>
                 <identity>
                   <sources>
                     <source>http://second.net/hans.xml</source>
@@ -182,7 +182,7 @@ class TestIDURL(TestCase):
                   <publickey>ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCiMX5AjFoK+B8bEts97OEKkJmONy8wDVSTe4Sx356p1fd48UQHq0g3xphfEWqZNVEvvXyVT3ToJZpsn6ZXALR6awp1EosV0Y3eCRn3HJ7VFifsObEBaJlbIpPWO3a44yQuNmB18dpAZsOYF0fuv9O9JZF/r2aS3DwJKKvrb1raPtuOkmLvMFOyFzQ4CzbpzOhxfLyk4VyyqWtxgRWa3cLJRC1s8pZP+Eeujz9lUXJOBJkz458myjcNogZ60HqMWPmNEQxKQKxKz5s1KhTzEa13AbK3mfBz6GYRSUE4PgzPNGt3ggKjm109MCECVLJ20i41l1x0LQogH4io0zN1KGFJ</publickey>
                   <signature>9964338615595898119523219160985389694716834455244251121310208348749311239026480163448985744966067564091031002898262983039746088711129723160991957466541609144298294968214985017280673670405176798626865604720543551314153138295619813468551357860935622955238006750497782286078815952649485259190562480676412057686853832517927221963473242813486514373660489478033158129265672776156687967394550999847921296632829991543789469343181140623972591265599094214576144469741220772769413300453153162888368211327094417654762184709016011327148922218562411856167502006839171679742071717903072564535777785105712764567873880374805969385183</signature>
                 </identity>""",
-            'hans2': """<?xml version="1.0" encoding="utf-8"?>
+            'hans3': """<?xml version="1.0" encoding="utf-8"?>
                 <identity>
                   <sources>
                     <source>http://third.org/hans.xml</source>
@@ -453,9 +453,9 @@ class TestIDURL(TestCase):
         self.assertEqual(id_url.field(fake_frank).to_public_key(), id_url.field(frank_2).to_public_key())
 
     def test_latest_vs_original(self):
-        self._cache_identity('hans0')
         self._cache_identity('hans1')
         self._cache_identity('hans2')
+        self._cache_identity('hans3')
         self.assertEqual(id_url.field(hans1), id_url.field(hans2))
         self.assertNotEqual(id_url.field(hans1).original(), id_url.field(hans2).original())
         self.assertEqual(id_url.field(hans1), id_url.field(hans3))
@@ -467,9 +467,9 @@ class TestIDURL(TestCase):
         self.assertEqual(id_url.field(hans3).to_text(), hans3)
 
     def test_latest_revision_order_123(self):
-        self._cache_identity('hans0')
         self._cache_identity('hans1')
         self._cache_identity('hans2')
+        self._cache_identity('hans3')
         self.assertNotEqual(id_url.field(hans1).to_text(), hans1)
         self.assertNotEqual(id_url.field(hans2).to_text(), hans1)
         self.assertNotEqual(id_url.field(hans3).to_text(), hans1)
@@ -484,18 +484,18 @@ class TestIDURL(TestCase):
         self.assertEqual(id_url.field(hans3).original(), strng.to_bin(hans3))
 
     def test_latest_revision_order_321(self):
+        self._cache_identity('hans3')
         self._cache_identity('hans2')
         self._cache_identity('hans1')
-        self._cache_identity('hans0')
-        self.assertEqual(id_url.field(hans1).to_text(), hans1)
-        self.assertEqual(id_url.field(hans2).to_text(), hans1)
-        self.assertEqual(id_url.field(hans3).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans1).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans2).to_text(), hans1)
+        self.assertNotEqual(id_url.field(hans3).to_text(), hans1)
         self.assertNotEqual(id_url.field(hans1).to_text(), hans2)
         self.assertNotEqual(id_url.field(hans2).to_text(), hans2)
         self.assertNotEqual(id_url.field(hans3).to_text(), hans2)
-        self.assertNotEqual(id_url.field(hans1).to_text(), hans3)
-        self.assertNotEqual(id_url.field(hans2).to_text(), hans3)
-        self.assertNotEqual(id_url.field(hans3).to_text(), hans3)
+        self.assertEqual(id_url.field(hans1).to_text(), hans3)
+        self.assertEqual(id_url.field(hans2).to_text(), hans3)
+        self.assertEqual(id_url.field(hans3).to_text(), hans3)
         self.assertEqual(id_url.field(hans1).original(), strng.to_bin(hans1))
         self.assertEqual(id_url.field(hans2).original(), strng.to_bin(hans2))
         self.assertEqual(id_url.field(hans3).original(), strng.to_bin(hans3))

@@ -281,10 +281,10 @@ class Packet(object):
             's': self.Signature,
         }        
         src = serialization.DictToBytes(dct, encoding='latin1')
-        if _Debug:
-            lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s\n%r' % (
-                len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
-                nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, dct['s']))
+        # if _Debug:
+        #     lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s\n%r' % (
+        #         len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
+        #         nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, dct['s']))
         return src
 
     def __len__(self):
@@ -314,8 +314,8 @@ def Unserialize(data):
 
     dct = serialization.BytesToDict(data, keys_to_text=True, encoding='latin1')
 
-    if _Debug:
-        lg.out(_DebugLevel, 'signed.Unserialize %d bytes : %r' % (len(data), dct['s']))
+    # if _Debug:
+    #     lg.out(_DebugLevel, 'signed.Unserialize %d bytes : %r' % (len(data), dct['s']))
 
     try:
         Command = strng.to_text(dct['m'])
@@ -359,8 +359,8 @@ def Unserialize(data):
         lg.exc()
         return None
 
-    if _Debug:
-        lg.args(_DebugLevel, Command=Command, PacketID=PacketID, OwnerID=OwnerID, CreatorID=CreatorID, RemoteID=RemoteID)
+    # if _Debug:
+    #     lg.args(_DebugLevel, Command=Command, PacketID=PacketID, OwnerID=OwnerID, CreatorID=CreatorID, RemoteID=RemoteID)
 
     return newobject
 

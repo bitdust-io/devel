@@ -254,7 +254,7 @@ def identity_cached(id_obj):
                     new_revision=new_revision,
                 ))
         else:
-            lg.err('found and cached outdated revision %d for %r' % (new_revision, new_sources[0]))
+            lg.warn('cached out-dated revision %d for %r' % (new_revision, new_sources[0]))
     else:
         if _Debug:
             lg.out(_DebugLevel, 'id_url.identity_cached revision %d for %r' % (new_revision, new_sources[0]))
@@ -459,7 +459,7 @@ def get_latest_revision(idurl):
     for rev, another_idurl in _MergedIDURLs[pub_key].items():
         if rev >= latest_rev:
             latest_idurl = another_idurl
-            rev = latest_rev
+            latest_rev = rev
     return latest_idurl, latest_rev
 
 #------------------------------------------------------------------------------
