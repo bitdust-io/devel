@@ -171,9 +171,8 @@ class Packet(object):
             stufftosum += strng.to_bin(self.Payload)
             stufftosum += sep
             stufftosum += self.RemoteID.original()
-            if self.KeyID:
-                stufftosum += sep
-                stufftosum += strng.to_bin(self.KeyID)
+            stufftosum += sep
+            stufftosum += strng.to_bin(self.KeyID)
         except Exception as exc:
             lg.exc()
             raise exc
@@ -282,10 +281,10 @@ class Packet(object):
             's': self.Signature,
         }        
         src = serialization.DictToBytes(dct, encoding='latin1')
-        # if _Debug:
-        #     lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s' % (
-        #         len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
-        #         nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, ))
+        if _Debug:
+            lg.out(_DebugLevel, 'signed.Serialize %d bytes %s(%s) %s/%s/%s KeyID=%s\n%r' % (
+                len(src), self.Command, self.PacketID, nameurl.GetName(self.OwnerID),
+                nameurl.GetName(self.CreatorID), nameurl.GetName(self.RemoteID), self.KeyID, dct['s']))
         return src
 
     def __len__(self):
@@ -316,7 +315,7 @@ def Unserialize(data):
     dct = serialization.BytesToDict(data, keys_to_text=True, encoding='latin1')
 
     if _Debug:
-        lg.out(_DebugLevel, 'signed.Unserialize %d bytes' % len(data))
+        lg.out(_DebugLevel, 'signed.Unserialize %d bytes : %r' % (len(data), dct['s']))
 
     try:
         Command = strng.to_text(dct['m'])

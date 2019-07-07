@@ -566,7 +566,7 @@ class ProxyRouter(automat.Automat):
         receiver_idurl = id_url.field(receiver_idurl)
         route = self.routes.get(sender_idurl.original(), None)
         if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route=route)
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'])
         if not route:
             lg.warn('route with %s not found' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)

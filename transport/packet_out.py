@@ -219,10 +219,9 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     incoming_creator_idurl = newpacket.CreatorID
     incoming_remote_idurl = newpacket.RemoteID
     if _Debug:
-        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s]' % (
+        lg.out(_DebugLevel, 'packet_out.search_by_response_packet for incoming [%s/%s/%s]:%s(%s) from [%s://%s] :\n%s' % (
             nameurl.GetName(incoming_owner_idurl), nameurl.GetName(incoming_creator_idurl), nameurl.GetName(incoming_remote_idurl),
-            newpacket.Command, newpacket.PacketID, proto, host, ))
-        lg.out(_DebugLevel, '    [%s]' % (', '.join([str(p.outpacket) for p in queue()])))
+            newpacket.Command, newpacket.PacketID, proto, host, ('\n'.join([strng.to_text(p.outpacket) for p in queue()]))))
     for p in queue():
         # TODO: investigate 
         if p.outpacket.PacketID.lower() != newpacket.PacketID.lower():
@@ -262,7 +261,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     if len(result) == 0:
         if _Debug:
             lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
-        if newpacket.Command == commands.Ack() and not newpacket.PacketID.lower().startswith('identity:'):
+        if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
             lg.warn('received %s was not a "good reply" from %s://%s' % (newpacket, proto, host, ))
     return result
 
@@ -384,13 +383,23 @@ class PacketOut(automat.Automat):
         self.description = self.outpacket.Command + '(' + self.outpacket.PacketID + ')'
         self.payloadsize = len(self.outpacket.Payload)
         last_modified_time = identitycache.GetLastModifiedTime(self.remote_idurl)
-        if not last_modified_time or time.time() - last_modified_time < 60:
-            # use known identity from cache
+        self.remote_identity = None
+        if last_modified_time and time.time() - last_modified_time < 5 * 60:
+            # use known identity from cache if we sure that it is fresh enough
             self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
+            if self.remote_identity:
+                if _Debug:
+                    lg.out(_DebugLevel, 'packet_out.init  found fresh and cached identity: %s' % self.remote_idurl)
+            else:
+                if _Debug:
+                    lg.out(_DebugLevel, 'packet_out.init  did not found cached identity: %s' % self.remote_idurl)
         else:
-            self.remote_identity = None
-            if _Debug:
-                lg.out(_DebugLevel, 'packet_out.init  cached identity copy is outdated or not exist: %s' % self.remote_idurl)
+            if last_modified_time:
+                if _Debug:
+                    lg.out(_DebugLevel, 'packet_out.init  cached identity copy is out-dated: %s' % self.remote_idurl)
+            else:
+                if _Debug:
+                    lg.out(_DebugLevel, 'packet_out.init  no cached identity copy exist or last caching time unknown: %s' % self.remote_idurl)
         self.packetdata = None
         self.filename = None
         self.filesize = None
@@ -751,9 +760,10 @@ class PacketOut(automat.Automat):
             for cb in self.callbacks[None]:
                 cb(self)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[2;49;90mTIMEOUT %s(%s) sending to %s\033[0m' % (
+            lg.out(0, '\033[2;49;90mTIMEOUT %s(%s) sending from %s to %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID,
-                global_id.UrlToGlobalID(self.remote_idurl)), log_name='packet', showtime=True)
+                global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl)),
+                log_name='packet', showtime=True)
 
     def doReportDoneWithAck(self, *args, **kwargs):
         """
@@ -761,8 +771,9 @@ class PacketOut(automat.Automat):
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes to %s (ACK received) TID:%r\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s (ACK received) TID:%r\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
 
     def doReportDoneNoAck(self, *args, **kwargs):
@@ -774,8 +785,9 @@ class PacketOut(automat.Automat):
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes to %s TID:%r\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
 
     def doReportFailed(self, *args, **kwargs):
@@ -788,8 +800,9 @@ class PacketOut(automat.Automat):
             msg = 'failed'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;91mFAILED %s(%s) with %s bytes to %s TID:%r : %s\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(0, '\033[0;49;91mFAILED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results], msg), log_name='packet', showtime=True)
 
     def doReportCancelled(self, *args, **kwargs):
@@ -803,8 +816,9 @@ class PacketOut(automat.Automat):
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;97mOUT %s(%s) with %s bytes CANCELED to %s TID:%r : %s\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?', global_id.UrlToGlobalID(self.remote_idurl),
+            lg.out(0, '\033[0;49;97mOUT %s(%s) with %s bytes CANCELED from %s to %s TID:%r : %s\033[0m' % (
+                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results], msg), log_name='packet', showtime=True)
 
     def doErrMsg(self, event, *args, **kwargs):
@@ -892,8 +906,8 @@ class PacketOut(automat.Automat):
                 if host.strip() and \
                         settings.transportIsEnabled(proto) and \
                         settings.transportSendingIsEnabled(proto) and \
-                        gateway.can_send(proto) and \
-                        gateway.is_installed(proto):
+                        gateway.is_installed(proto) and \
+                        gateway.can_send(proto):
                     if proto == 'tcp' and localIP:
                         host = localIP
                     gateway.send_file(
