@@ -251,6 +251,13 @@ def OverrideIdentity(idurl, xml_src):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.field(idurl)
+    if not idurl.is_latest():
+        if idurl.original() in _OverriddenIdentities:
+            if idurl.to_bin() not in _OverriddenIdentities:
+                _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
+                    idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     xml_src = strng.to_text(xml_src.strip())
     if idurl in _OverriddenIdentities:
@@ -282,6 +289,13 @@ def StopOverridingIdentity(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.field(idurl)
+    if not idurl.is_latest():
+        if idurl.original() in _OverriddenIdentities:
+            if idurl.to_bin() not in _OverriddenIdentities:
+                _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
+                    idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     result = _OverriddenIdentities.pop(idurl, None)
     if _Debug:
@@ -296,6 +310,13 @@ def IsOverridden(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.field(idurl)
+    if not idurl.is_latest():
+        if idurl.original() in _OverriddenIdentities:
+            if idurl.to_bin() not in _OverriddenIdentities:
+                _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
+                    idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     return idurl in _OverriddenIdentities
 
@@ -304,6 +325,13 @@ def ReadOverriddenIdentityXMLSource(idurl):
     """
     """
     global _OverriddenIdentities
+    idurl = id_url.field(idurl)
+    if not idurl.is_latest():
+        if idurl.original() in _OverriddenIdentities:
+            if idurl.to_bin() not in _OverriddenIdentities:
+                _OverriddenIdentities[idurl.to_bin()] = _OverriddenIdentities.pop(idurl.original())
+                lg.info('detected and processed idurl rotate for overridden identity : %r -> %r' % (
+                    idurl.original(), idurl.to_bin()))
     idurl = id_url.to_bin(idurl)
     return _OverriddenIdentities.get(idurl, None)
 
@@ -355,7 +383,7 @@ def immediatelyCaching(idurl, timeout=10):
     A smart method to cache some identity and get results in callbacks.
     """
     global _CachingTasks
-    idurl = id_url.to_bin(idurl)
+    idurl = id_url.to_original(idurl)
     if not idurl:
         raise Exception('can not cache, idurl is empty')
 
@@ -369,7 +397,7 @@ def immediatelyCaching(idurl, timeout=10):
 
     def _getPageSuccess(src, idurl):
         global _CachingTasks
-        idurl = id_url.to_bin(idurl)
+        idurl = id_url.to_original(idurl)
         result = _CachingTasks.pop(idurl, None)
         if not result:
             lg.warn('caching task for %s was not found' % idurl)
@@ -389,7 +417,7 @@ def immediatelyCaching(idurl, timeout=10):
 
     def _getPageFail(x, idurl):
         global _CachingTasks
-        idurl = id_url.to_bin(idurl)
+        idurl = id_url.to_original(idurl)
         lg.err('identity %r cache failed with error: %r' % (idurl, x))
         result = _CachingTasks.pop(idurl)
         if result:
@@ -401,7 +429,7 @@ def immediatelyCaching(idurl, timeout=10):
             lg.warn('[cache failed] %s : %s' % (idurl, x.getErrorMessage(), ))
         return None
 
-    idurl = id_url.to_bin(idurl)
+    idurl = id_url.to_original(idurl)
     _CachingTasks[idurl] = Deferred()
     d = net_misc.getPageTwisted(idurl, timeout)
     d.addCallback(_getPageSuccess, idurl)

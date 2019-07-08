@@ -154,7 +154,7 @@ def fetch(list_ids):
             continue
         if identitycache.FromCache(url):
             continue
-        dl.append(identitycache.scheduleForCaching(id_url.to_bin(url)))
+        dl.append(identitycache.scheduleForCaching(id_url.to_original(url)))
     return DeferredList(dl, consumeErrors=True)
 
 

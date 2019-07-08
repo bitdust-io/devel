@@ -604,8 +604,8 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
             if not one_customer_idurl.is_latest():
                 latest_customer_path = os.path.join(settings.SuppliersDir(), one_customer_idurl.to_id())
                 if not os.path.exists(latest_customer_path):
-                    lg.info('detected idurl change for customer : %r -> %r' % (customer_id, one_customer_idurl.to_id()))
                     os.rename(os.path.join(settings.SuppliersDir(), customer_id), latest_customer_path)
+                    lg.info('detected and processed idurl rotate when loading suppliers for customer : %r -> %r' % (customer_id, one_customer_idurl.to_id()))
             lst = list(map(lambda i: id_url.field(i), lst))
             set_suppliers(lst, customer_idurl=one_customer_idurl)
             if _Debug:
@@ -655,7 +655,7 @@ def load_customers(path=None):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
-    lst = list(map(lambda i: id_url.field(i), lst))
+    lst = id_url.fields_list(lst)
     set_customers(lst)
     _CustomersMetaInfo = jsn.loads(
         local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}',
@@ -781,6 +781,13 @@ def add_customer_meta_info(customer_idurl, info):
     """
     """
     global _CustomersMetaInfo
+    customer_idurl = id_url.field(customer_idurl)
+    if not customer_idurl.is_latest():
+        if customer_idurl.original() in _CustomersMetaInfo:
+            if customer_idurl.to_bin() not in _CustomersMetaInfo:
+                _CustomersMetaInfo[customer_idurl.to_bin()] = _CustomersMetaInfo.pop(customer_idurl.original())
+                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (
+                    customer_idurl.original(), customer_idurl.to_bin()))
     customer_idurl = id_url.to_bin(customer_idurl)
     if 'family_snapshot' in info:
         info['family_snapshot'] = id_url.to_bin_list(info['family_snapshot'])
@@ -810,6 +817,13 @@ def remove_customer_meta_info(customer_idurl):
     """
     """
     global _CustomersMetaInfo
+    customer_idurl = id_url.field(customer_idurl)
+    if not customer_idurl.is_latest():
+        if customer_idurl.original() in _CustomersMetaInfo:
+            if customer_idurl.to_bin() not in _CustomersMetaInfo:
+                _CustomersMetaInfo[customer_idurl.to_bin()] = _CustomersMetaInfo.pop(customer_idurl.original())
+                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (
+                    customer_idurl.original(), customer_idurl.to_bin()))
     customer_idurl = id_url.to_bin(customer_idurl)
     if customer_idurl not in _CustomersMetaInfo:
         lg.warn('meta info for customer %r not exist' % customer_idurl)
@@ -828,6 +842,13 @@ def get_customer_meta_info(customer_idurl):
     """
     """
     global _CustomersMetaInfo
+    customer_idurl = id_url.field(customer_idurl)
+    if not customer_idurl.is_latest():
+        if customer_idurl.original() in _CustomersMetaInfo:
+            if customer_idurl.to_bin() not in _CustomersMetaInfo:
+                _CustomersMetaInfo[customer_idurl.to_bin()] = _CustomersMetaInfo.pop(customer_idurl.original())
+                lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (
+                    customer_idurl.original(), customer_idurl.to_bin()))
     customer_idurl = id_url.to_bin(customer_idurl)
     return _CustomersMetaInfo.get(customer_idurl, {})
 
