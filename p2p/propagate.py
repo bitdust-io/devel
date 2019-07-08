@@ -154,7 +154,7 @@ def fetch(list_ids):
             continue
         if identitycache.FromCache(url):
             continue
-        dl.append(identitycache.scheduleForCaching(id_url.to_bin(url)))
+        dl.append(identitycache.scheduleForCaching(id_url.to_original(url)))
     return DeferredList(dl, consumeErrors=True)
 
 
@@ -277,7 +277,7 @@ def SendServers():
     LocalIdentity = my_id.getLocalIdentity()
     bpio.WriteTextFile(sendfilename, LocalIdentity.serialize(as_text=True))
     dlist = []
-    for idurl in LocalIdentity.sources:
+    for idurl in LocalIdentity.getSources(as_originals=True):
         # sources for out identity are servers we need to send to
         protocol, host, port, filename = nameurl.UrlParse(idurl)
         # TODO: rebuild identity-server logic to be able to send my identity via HTTP POST instead of TCP and

@@ -76,7 +76,7 @@ def init():
 def read_customers_quotas():
     space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
     free_space = int(space_dict.pop('free', 0))
-    space_dict = {id_url.field(strng.to_bin(k)) : v for k, v in space_dict.items()}
+    space_dict = {id_url.field(k).to_bin() : v for k, v in space_dict.items()}
     return space_dict, free_space
 
 
@@ -87,6 +87,7 @@ def write_customers_quotas(new_space_dict, free_space):
 
 
 def get_customer_quota(customer_idurl):
+    customer_idurl = id_url.field(customer_idurl).to_bin()
     try:
         return int(read_customers_quotas()[0].get(customer_idurl, None))
     except:
@@ -140,7 +141,7 @@ def validate_customers_quotas(space_dict=None, free_space=None):
 
 def read_customers_usage():
     usage_dict = jsn.dict_keys_to_bin(bpio._read_dict(settings.CustomersUsedSpaceFile(), {}))
-    usage_dict = {id_url.field(k) : v for k, v in usage_dict.items()}
+    usage_dict = {id_url.field(k).to_bin() : v for k, v in usage_dict.items()}
     return usage_dict
 
 
@@ -157,9 +158,9 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
     current_customers = contactsdb.customers()
     used_space_ratio_dict = {}
     for idurl in current_customers:
-        allocated_bytes = int(space_dict[idurl])
+        allocated_bytes = int(space_dict[idurl.to_bin()])
         try:
-            files_size = int(used_dict.get(idurl, 0))
+            files_size = int(used_dict.get(idurl.to_bin(), 0))
         except:
             lg.exc()
             files_size = 0
@@ -168,7 +169,7 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
         except:
             lg.exc()
             continue
-        used_space_ratio_dict[idurl] = ratio
+        used_space_ratio_dict[idurl.to_bin()] = ratio
     return used_space_ratio_dict
 
 #------------------------------------------------------------------------------
@@ -220,17 +221,17 @@ def report_donated_storage():
     for idurl in contactsdb.customers():
         consumed_by_customer = 0
         used_by_customer = 0
-        if idurl not in list(space_dict.keys()):
+        if idurl.to_bin() not in list(space_dict.keys()):
             r['errors'].append('space consumed by customer %s is unknown' % idurl)
         else:
             try:
-                consumed_by_customer = int(space_dict.pop(idurl))
+                consumed_by_customer = int(space_dict.pop(idurl.to_bin()))
                 r['consumed'] += consumed_by_customer
             except:
                 r['errors'].append('incorrect value of consumed space for customer %s' % idurl)
-        if idurl in list(used_space_dict.keys()):
+        if idurl.to_bin() in list(used_space_dict.keys()):
             try:
-                used_by_customer = int(used_space_dict.pop(idurl))
+                used_by_customer = int(used_space_dict.pop(idurl.to_bin()))
                 used += used_by_customer
             except:
                 r['errors'].append('incorrect value of used space for customer %s' % idurl)

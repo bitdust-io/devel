@@ -483,7 +483,7 @@ class P2PConnector(automat.Automat):
     def _check_rotate_propagate_my_identity(self):
         from p2p import id_rotator
 
-        def _do_propagate(x):
+        def _do_propagate(*args):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_connector._do_propagate')
             if driver.is_on('service_entangled_dht'):
@@ -502,7 +502,7 @@ class P2PConnector(automat.Automat):
                 return None
             d = propagate.update()
             d.addCallback(_do_propagate)
-            d.addErrback(lambda _: self.automat('my-id-propagated', []))
+            d.addErrback(lambda *args: self.automat('my-id-propagated', []))
 
         def _do_rotate(check_result):
             if _Debug:

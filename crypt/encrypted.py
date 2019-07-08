@@ -188,7 +188,7 @@ class Block(object):
         """
         sep = b'::::'
         StringToHash = b''
-        StringToHash += self.CreatorID.to_bin()
+        StringToHash += self.CreatorID.to_original()
         StringToHash += sep + strng.to_bin(self.BackupID)
         StringToHash += sep + strng.to_bin(str(self.BlockNumber))
         StringToHash += sep + strng.to_bin(self.SessionKeyType)
