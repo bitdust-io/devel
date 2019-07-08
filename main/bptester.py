@@ -235,7 +235,7 @@ def UpdateCustomers():
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
-        curspace = space.get(idurl, None)
+        curspace = space.get(idurl.to_bin(), None)
         if curspace is None:
             remove_list[onecustdir] = 'is not a customer'
             continue
