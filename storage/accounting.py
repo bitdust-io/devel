@@ -76,7 +76,7 @@ def init():
 def read_customers_quotas():
     space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
     free_space = int(space_dict.pop('free', 0))
-    space_dict = {id_url.field(strng.to_bin(k)) : v for k, v in space_dict.items()}
+    space_dict = {id_url.field(k).to_bin() : v for k, v in space_dict.items()}
     return space_dict, free_space
 
 
@@ -87,6 +87,7 @@ def write_customers_quotas(new_space_dict, free_space):
 
 
 def get_customer_quota(customer_idurl):
+    customer_idurl = id_url.field(customer_idurl).to_bin()
     try:
         return int(read_customers_quotas()[0].get(customer_idurl, None))
     except:
@@ -140,7 +141,7 @@ def validate_customers_quotas(space_dict=None, free_space=None):
 
 def read_customers_usage():
     usage_dict = jsn.dict_keys_to_bin(bpio._read_dict(settings.CustomersUsedSpaceFile(), {}))
-    usage_dict = {id_url.field(k) : v for k, v in usage_dict.items()}
+    usage_dict = {id_url.field(k).to_bin() : v for k, v in usage_dict.items()}
     return usage_dict
 
 

@@ -71,7 +71,7 @@ class SupplierService(LocalService):
             known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             events.send('existing-customer-accepted', data=dict(
                 idurl=customer_idurl,
-                allocated_bytes=space_dict.get(customer_idurl),
+                allocated_bytes=space_dict.get(customer_idurl.to_bin()),
                 ecc_map=known_customer_meta_info.get('ecc_map'),
                 position=known_customer_meta_info.get('position'),
             ))
@@ -166,7 +166,7 @@ class SupplierService(LocalService):
         except:
             lg.exc()
             return p2p_service.SendFail(newpacket, 'broken space file')
-        if (customer_idurl not in current_customers and customer_idurl in list(space_dict.keys())):
+        if (customer_idurl not in current_customers and customer_idurl.to_bin() in list(space_dict.keys())):
             lg.warn("broken space file")
             return p2p_service.SendFail(newpacket, 'broken space file')
         if (customer_idurl in current_customers and customer_idurl not in list(space_dict.keys())):
@@ -624,12 +624,12 @@ class SupplierService(LocalService):
         donated_bytes = settings.getDonatedBytes()
         accounting.check_create_customers_quotas(donated_bytes)
         space_dict, free_space = accounting.read_customers_quotas()
-        if newpacket.OwnerID not in list(space_dict.keys()):
+        if newpacket.OwnerID.to_bin() not in list(space_dict.keys()):
             lg.err("no info about donated space for %s" % newpacket.OwnerID)
             p2p_service.SendFail(newpacket, 'no info about donated space')
             return False
         used_space_dict = accounting.read_customers_usage()
-        if newpacket.OwnerID in list(used_space_dict.keys()):
+        if newpacket.OwnerID.to_bin() in list(used_space_dict.keys()):
             try:
                 bytes_used_by_customer = int(used_space_dict[newpacket.OwnerID])
                 bytes_donated_to_customer = int(space_dict[newpacket.OwnerID])

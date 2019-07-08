@@ -497,7 +497,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[], revision=0):
             new_contacts['tcp'] = b'tcp://' + strng.to_bin(ip) + b':' + strng.to_bin(str(settings.getTCPPort()))
             new_order.append('tcp')
         if settings.enableUDP() and settings.enableUDPreceiving():
-            _, servername, _, _ = nameurl.UrlParse(ident.sources[0])
+            _, servername, _, _ = nameurl.UrlParse(ident.getSources(as_originals=True)[0])
             new_contacts['udp'] = b'udp://' + strng.to_bin(name.lower()) + b'@' + strng.to_bin(servername)
             new_order.append('udp')
         if settings.enableHTTP() and settings.enableHTTPreceiving():

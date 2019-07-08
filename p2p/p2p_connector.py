@@ -502,7 +502,6 @@ class P2PConnector(automat.Automat):
                 return None
             d = propagate.update()
             d.addCallback(_do_propagate)
-            d.addErrback(lg.errback)
             d.addErrback(lambda *args: self.automat('my-id-propagated', []))
 
         def _do_rotate(check_result):

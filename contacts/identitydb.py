@@ -456,7 +456,7 @@ def print_id(idurl):
     if has_idurl(idurl):
         idForKey = get(idurl)
         if _Debug:
-            lg.out(_DebugLevel, str(idForKey.sources))
+            lg.out(_DebugLevel, str(idForKey.getSources(as_originals=True)))
             lg.out(_DebugLevel, str(idForKey.contacts))
             lg.out(_DebugLevel, str(idForKey.publickey))
             lg.out(_DebugLevel, str(idForKey.signature))

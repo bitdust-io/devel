@@ -100,15 +100,14 @@ def printlog(txt):
 try:
     from logs import lg
     from system import bpio
-    from lib import nameurl
     from lib import misc
-    from lib import jsn
     from storage import accounting
     from userid import global_id
     from main import settings
     from contacts import contactsdb
     from p2p import commands
     from crypt import signed
+    from userid import id_url
 except:
     import traceback
     printlog(traceback.format_exc())
@@ -145,7 +144,7 @@ def SpaceTime():
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
-        curspace = space.get(idurl, None)
+        curspace = space.get(idurl.to_bin(), None)
         if curspace is None:
             remove_list[onecustdir] = 'not found in space file'
             continue
@@ -183,7 +182,7 @@ def SpaceTime():
                     printlog('SpaceTime ERROR removing ' + path)
                 # time.sleep(0.01)
 
-        used_space[idurl] = str(currentV)
+        used_space[idurl.to_bin()] = str(currentV)
         timedict.clear()
         sizedict.clear()
 
@@ -335,6 +334,7 @@ def main():
     lg.disable_output()
     settings.init()
     lg.set_debug_level(0)
+    id_url.init()
     commands = {
         'update_customers': UpdateCustomers,
         'validate': Validate,

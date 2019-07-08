@@ -568,7 +568,7 @@ class IdRegistrator(automat.Automat):
             # TODO: this is actually can be an issue if one server failed but others are fine...
             self.automat('my-id-not-exist', err)
 
-        for idurl in self.new_identity.sources:
+        for idurl in self.new_identity.getSources(as_originals=True):
             lg.out(8, '        %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=20)
             d.addCallback(_cb)
@@ -639,7 +639,7 @@ class IdRegistrator(automat.Automat):
         from transport.tcp import tcp_node
         sendfilename = settings.LocalIdentityFilename() + '.new'
         dlist = []
-        for idurl in self.new_identity.sources:
+        for idurl in self.new_identity.getSources(as_originals=True):
             self.free_idurls.remove(strng.to_bin(idurl))
             _, host, _, _ = nameurl.UrlParse(idurl)
             _, tcpport = known_servers.by_host().get(
