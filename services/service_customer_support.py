@@ -49,13 +49,15 @@ class CustomerSupportService(LocalService):
         ]
 
     def start(self):
+        from userid import id_url
         from supplier import customer_assistant
         from contacts import contactsdb
         from transport import callback
         for customer_idurl in contactsdb.customers():
-            if customer_idurl and not customer_assistant.by_idurl(customer_idurl):
-                ca = customer_assistant.create(customer_idurl)
-                ca.automat('init')
+            if id_url.is_cached(customer_idurl):
+                if customer_idurl and not customer_assistant.by_idurl(customer_idurl):
+                    ca = customer_assistant.create(customer_idurl)
+                    ca.automat('init')
         callback.add_outbox_callback(self._on_outbox_packet_sent)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         return True

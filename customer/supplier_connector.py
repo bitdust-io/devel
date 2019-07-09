@@ -130,6 +130,10 @@ def is_supplier(supplier_idurl, customer_idurl=None):
     global _SuppliersConnectors
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
+    if not id_url.is_cached(customer_idurl):
+        return False
+    if not id_url.is_cached(supplier_idurl):
+        return False
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
     if customer_idurl not in _SuppliersConnectors:

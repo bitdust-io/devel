@@ -129,10 +129,10 @@ def validate_customers_quotas(space_dict=None, free_space=None):
             unknown_customers.add(idurl)
             continue
     for idurl in contactsdb.customers():
-        if idurl not in list(space_dict.keys()):
+        if idurl.to_bin() not in list(space_dict.keys()):
             unknown_customers.add(idurl)
     for idurl in space_dict.keys():
-        if idurl not in contactsdb.customers():
+        if idurl not in id_url.to_bin_list(contactsdb.customers()):
             unused_quotas.add(idurl)
     return unknown_customers, unused_quotas
 
