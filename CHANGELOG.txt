@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2019-07-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* IDURL fixes in supplier service
+
+
+
 2019-07-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * critical bug fix in id_url
