@@ -856,7 +856,8 @@ class FireHire(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
                 idurl, newstate, self.state))
-        supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
+        if supplier_connector.by_idurl(idurl):
+            supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
             if idurl in self.connect_list:
                 self.connect_list.remove(idurl)
