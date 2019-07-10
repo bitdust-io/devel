@@ -52,8 +52,11 @@ from __future__ import print_function
 _Debug = True
 _DebugLevel = 10
 
+_LogSignVerify = True
+
 #------------------------------------------------------------------------------
 
+import os
 import sys
 
 from twisted.internet import threads
@@ -176,6 +179,12 @@ class Packet(object):
         except Exception as exc:
             lg.exc()
             raise exc
+        if _Debug:
+            if _LogSignVerify:
+                try:
+                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
+                except:
+                    lg.exc()
         return stufftosum
 
     def GenerateHash(self):
@@ -190,8 +199,17 @@ class Packet(object):
         """
         _hash_base = self.GenerateHash()
         if not self.KeyID or self.KeyID == my_id.getGlobalID(key_alias='master'):
-            return key.Sign(_hash_base)
-        return my_keys.sign(self.KeyID, _hash_base)
+            signature = key.Sign(_hash_base)
+        else:
+            signature = my_keys.sign(self.KeyID, _hash_base)
+        if _Debug:
+            if _LogSignVerify:
+                try:
+                    from Cryptodome.Util import number
+                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\GenerateSignature:\n' + strng.to_bin(number.long_to_bytes(signature)) + b'\n\n')
+                except:
+                    lg.exc()
+        return signature
 
     def SignatureChecksOut(self):
         """
@@ -209,7 +227,24 @@ class Packet(object):
                 lg.err("could not get Identity for " + self.CreatorID + " so returning False")
                 return False
             CreatorIdentity = OwnerIdentity
+
+        if _Debug:
+            if _LogSignVerify:
+                try:
+                    from Cryptodome.Util import number
+                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
+                except:
+                    lg.exc()
+
         Result = key.Verify(CreatorIdentity, self.GenerateHash(), self.Signature)
+
+        if _Debug:
+            if _LogSignVerify:
+                try:
+                    open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\Result:' + strng.to_bin(str(Result)) + b'\n\n')
+                except:
+                    lg.exc()
+
         return Result
 
     def Ready(self):
