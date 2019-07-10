@@ -64,6 +64,8 @@ class SupplierRelationsService(LocalService):
         for customer_idurl in contactsdb.customers():
             if not customer_idurl:
                 continue
+            if not id_url.is_cached(customer_idurl):
+                continue
             if customer_idurl == my_id.getLocalID():
                 lg.warn('skipping my own identity')
                 continue

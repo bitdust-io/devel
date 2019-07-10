@@ -81,6 +81,7 @@ from lib import serialization
 from lib import strng
 
 from main import config
+from main import events
 
 from crypt import key
 from crypt import signed
@@ -90,9 +91,9 @@ from userid import identity
 from userid import my_id
 from userid import id_url
 
+from contacts import identitydb
 from contacts import identitycache
 from contacts import contactsdb
-from contacts import identitydb
 
 from transport import callback
 from transport import packet_out
@@ -224,6 +225,7 @@ class ProxyRouter(automat.Automat):
         network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
         callback.insert_inbox_callback(0, self._on_first_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
 
     def doProcessRequest(self, *args, **kwargs):
         """
@@ -238,7 +240,10 @@ class ProxyRouter(automat.Automat):
         idurl = id_url.field(args[0])
         identitycache.StopOverridingIdentity(idurl.original())
         self._remove_route(idurl)
-        self.routes.pop(idurl.original())
+        if idurl.original() in self.routes:
+            self.routes.pop(idurl.original())
+        if idurl.to_bin() in self.routes:
+            self.routes.pop(idurl.to_bin())
 
     def doUnregisterAllRouts(self, *args, **kwargs):
         """
@@ -310,6 +315,7 @@ class ProxyRouter(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         if network_connector.A():
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
         callback.remove_inbox_callback(self._on_first_inbox_packet_received)
@@ -344,15 +350,16 @@ class ProxyRouter(automat.Automat):
                 if not cached_id.isCorrect():
                     lg.warn('incoming identity is not correct')
                     return
-                if user_idurl != cached_id.getIDURL():
-                    lg.warn('incoming identity is not belong to request packet creator')
+                if user_idurl.original() != cached_id.getIDURL().original():
+                    lg.warn('incoming identity is not belong to request packet creator: %r != %r' % (
+                        user_idurl.original(), cached_id.getIDURL().original()))
                     return
-                if contactsdb.is_supplier(user_idurl):
+                if contactsdb.is_supplier(user_idurl.to_bin()):
                     if _Debug:
                         lg.out(_DebugLevel, 'proxy_server.doProcessRequest RequestService rejected: this user is my supplier')
                     p2p_service.SendAck(request, 'rejected', wide=True)
                     return
-                identitycache.UpdateAfterChecking(cached_id.getIDURL(), idsrc)
+                identitycache.UpdateAfterChecking(cached_id.getIDURL().original(), idsrc)
                 oldnew = ''
                 if user_idurl.original() not in list(self.routes.keys()):
                     # accept new route
@@ -656,9 +663,9 @@ class ProxyRouter(automat.Automat):
         # this packet was addressed to someone else
         # it can be different scenarios, if can not found valid scenario - must skip the packet
         receiver_idurl = None
-        known_remote_id = newpacket.RemoteID.original() in list(self.routes.keys())
-        known_creator_id = newpacket.CreatorID.original() in list(self.routes.keys())
-        known_owner_id = newpacket.OwnerID.original() in list(self.routes.keys())
+        known_remote_id = newpacket.RemoteID.original() in list(self.routes.keys()) or newpacket.RemoteID.to_bin() in list(self.routes.keys())
+        known_creator_id = newpacket.CreatorID.original() in list(self.routes.keys()) or newpacket.CreatorID.to_bin() in list(self.routes.keys())
+        known_owner_id = newpacket.OwnerID.original() in list(self.routes.keys()) or newpacket.OwnerID.to_bin() in list(self.routes.keys())
         if known_remote_id:
             # incoming packet from node B addressed to node A behind that proxy, capture it!
             receiver_idurl = newpacket.RemoteID
@@ -712,7 +719,7 @@ class ProxyRouter(automat.Automat):
             return False
         if Command != commands.Ack():
             return False
-        if RemoteID.original() not in list(self.routes.keys()):
+        if RemoteID.original() not in list(self.routes.keys()) and RemoteID.to_bin() not in list(self.routes.keys()):
             return False
         found = False
         for ack in list(self.acks):
@@ -726,6 +733,22 @@ class ProxyRouter(automat.Automat):
     def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('user session disconnected: %s->%s' % (oldstate, newstate))
         self.automat('routed-session-disconnected', user_id)
+
+    def _on_identity_url_changed(self, evt):
+        old = evt['old_idurl']
+        new = evt['new_idurl']
+        if old in self.routes and new not in self.routes:
+            current_route = self.routes[old]
+            self._remove_route(old)
+            identitycache.StopOverridingIdentity(old)
+            self.routes.pop(old)
+            self.routes[new] = current_route
+            if not self._is_my_contacts_present_in_identity(new):
+                if _Debug:
+                    lg.out(_DebugLevel, '    DO OVERRIDE identity for %r' % new)
+                identitycache.OverrideIdentity(new, identitydb.get(new))
+            self._write_route(new)
+            lg.info('replaced route for user after identity rotate detect : %r -> %r' % (old, new))
 
     def _is_my_contacts_present_in_identity(self, ident):
         for my_contact in my_id.getLocalIdentity().getContacts():

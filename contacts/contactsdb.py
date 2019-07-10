@@ -467,6 +467,8 @@ def is_customer(idurl):
     """
     Return True if given ID is found in customers list.
     """
+    if not id_url.is_cached(idurl):
+        return False
     return id_url.field(idurl) in customers()
 
 
@@ -474,6 +476,8 @@ def is_supplier(idurl, customer_idurl=None):
     """
     Return True if given ID is found in suppliers list.
     """
+    if not id_url.is_cached(idurl):
+        return False
     return idurl and id_url.field(idurl) in suppliers(customer_idurl=customer_idurl)
 
 
@@ -481,6 +485,8 @@ def is_correspondent(idurl):
     """
     Return True if given ID is found in correspondents list.
     """
+    if not id_url.is_cached(idurl):
+        return False
     return id_url.field(idurl) in correspondents_ids()
 
 #------------------------------------------------------------------------------
@@ -516,6 +522,8 @@ def supplier_position(idurl, customer_idurl=None):
     """
     if not idurl:
         return -1
+    if not id_url.is_cached(idurl):
+        return -1
     idurl = id_url.field(idurl)
     try:
         index = suppliers(customer_idurl=customer_idurl).index(idurl)
@@ -529,6 +537,8 @@ def customer_position(idurl):
     Return position of supplier with given ID or -1.
     """
     if not idurl:
+        return -1
+    if not id_url.is_cached(idurl):
         return -1
     idurl = id_url.field(idurl)
     try:
@@ -547,6 +557,8 @@ def contact_position(idurl):
     sure we can count on numbers staying.
     """
     if not idurl:
+        return -1
+    if not id_url.is_cached(idurl):
         return -1
     idurl = id_url.field(idurl)
     try:

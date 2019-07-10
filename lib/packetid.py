@@ -58,6 +58,7 @@ See module ``p2p.backup_fs`` to learn how Path ID is generated from file or fold
 from __future__ import absolute_import
 import time
 import re
+import random
 
 #------------------------------------------------------------------------------
 
@@ -78,10 +79,7 @@ def UniqueID():
     _LastUniqueNumber += 1
     if _LastUniqueNumber > 100000000000000:
         _LastUniqueNumber = int(time.time() * 100.0)
-    # inttime = int(time.time() * 100.0)
-    # if _LastUniqueNumber < inttime:
-    #     _LastUniqueNumber = inttime
-    return str(_LastUniqueNumber)
+    return str(int(random.getrandbits(8))) + str(_LastUniqueNumber)
 
 
 def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity, normalize_key_alias=True):
