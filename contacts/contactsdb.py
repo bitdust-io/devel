@@ -811,7 +811,7 @@ def get_contact_identity(idurl):
     if idurl is None:
         return None
     idurl = id_url.field(idurl)
-    if idurl == my_id.getLocalID():
+    if idurl.to_bin() == my_id.getLocalID().to_bin():
         return my_id.getLocalIdentity()
     if is_supplier(idurl):
         return identitycache.FromCache(idurl)
