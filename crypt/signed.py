@@ -182,6 +182,7 @@ class Packet(object):
         if _Debug:
             if _LogSignVerify:
                 try:
+                    from main import settings
                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\nGenerateHashBase:\n' + stufftosum + b'\n\n')
                 except:
                     lg.exc()
@@ -205,6 +206,7 @@ class Packet(object):
         if _Debug:
             if _LogSignVerify:
                 try:
+                    from main import settings
                     from Cryptodome.Util import number
                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\GenerateSignature:\n' + strng.to_bin(number.long_to_bytes(signature)) + b'\n\n')
                 except:
@@ -231,6 +233,7 @@ class Packet(object):
         if _Debug:
             if _LogSignVerify:
                 try:
+                    from main import settings
                     from Cryptodome.Util import number
                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\SignatureChecksOut:\n' + strng.to_bin(number.long_to_bytes(self.Signature)) + b'\n\n')
                 except:
@@ -241,6 +244,7 @@ class Packet(object):
         if _Debug:
             if _LogSignVerify:
                 try:
+                    from main import settings
                     open(os.path.join(settings.LogsDir(), 'crypt.log'), 'wb').write(b'\Result:' + strng.to_bin(str(Result)) + b'\n\n')
                 except:
                     lg.exc()
