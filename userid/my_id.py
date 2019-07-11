@@ -136,7 +136,10 @@ def setLocalIdentity(ident):
     _LocalIdentity = ident
     _LocalIDURL = _LocalIdentity.getIDURL()
     _LocalName = _LocalIdentity.getIDName()
-    id_url.identity_cached(_LocalIdentity)
+    try:
+        id_url.identity_cached(_LocalIdentity)
+    except:
+        lg.exc()
     li_json = _LocalIdentity.serialize_json()
     new_json['revision'] = li_json['revision']
     new_json['contacts'] = li_json['contacts']
