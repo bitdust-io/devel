@@ -217,7 +217,10 @@ def idset(idurl, id_obj):
     if _Debug:
         lg.out(_DebugLevel, 'identitydb.idset %r' % idurl)
     # now make sure we properly handle changes in the sources of that identity
-    id_url.identity_cached(id_obj)
+    try:
+        id_url.identity_cached(id_obj)
+    except:
+        lg.exc()
 
 
 def idget(idurl):

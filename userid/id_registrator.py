@@ -626,7 +626,10 @@ class IdRegistrator(automat.Automat):
         my_identity_xmlsrc = ident.serialize(as_text=True)
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteTextFile(newfilename, my_identity_xmlsrc)
-        id_url.identity_cached(ident)
+        try:
+            id_url.identity_cached(ident)
+        except:
+            lg.exc()
         self.new_identity = ident
         lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
 
