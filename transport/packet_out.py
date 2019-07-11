@@ -146,7 +146,7 @@ def search(proto, host, filename, remote_idurl=None):
                 if not remote_idurl:
                     return p, i
                 if p.remote_idurl and id_url.is_cached(p.remote_idurl) and id_url.is_cached(remote_idurl):
-                    if id_url.field(remote_idurl) != id_url.field(p.remote_idurl):
+                    if id_url.field(remote_idurl).to_bin() != id_url.field(p.remote_idurl).to_bin():
                         if _Debug:
                             lg.out(_DebugLevel, 'packet_out.search found a packet addressed to another user: %s != %s' % (
                                 p.remote_idurl, remote_idurl))
@@ -186,7 +186,7 @@ def search_many(proto=None,
     for p in queue():
         # TODO: to be checked later - need to make sure we identify users correctly
         # if remote_idurl and p.remote_idurl.to_bin() != remote_idurl.to_bin():
-        if remote_idurl and id_url.field(p.remote_idurl) != id_url.field(remote_idurl):
+        if remote_idurl and id_url.field(p.remote_idurl).to_bin() != id_url.field(remote_idurl).to_bin():
             continue
         if filename and p.filename != filename:
             continue
@@ -241,15 +241,15 @@ def search_by_response_packet(newpacket, proto=None, host=None):
             # outgoing packet was addressed to another node, so that means we need to expect response from another node also
             expected_recipient.append(id_url.field(p.remote_idurl))
         matched = False
-        if incoming_owner_idurl in expected_recipient and my_id.getLocalID() == incoming_remote_idurl:
+        if incoming_owner_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_remote_idurl.to_bin():
             if _Debug:
                 lg.out(_DebugLevel, '    matched with incoming owner: %s' % expected_recipient)
             matched = True
-        if incoming_creator_idurl in expected_recipient and my_id.getLocalID() == incoming_remote_idurl:
+        if incoming_creator_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_remote_idurl.to_bin():
             if _Debug:
                 lg.out(_DebugLevel, '    matched with incoming creator: %s' % expected_recipient)
             matched = True
-        if incoming_remote_idurl in expected_recipient and my_id.getLocalID() == incoming_owner_idurl and commands.Data() == newpacket.Command:
+        if incoming_remote_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_owner_idurl.to_bin() and commands.Data() == newpacket.Command:
             if _Debug:
                 lg.out(_DebugLevel, '    matched my own incoming Data with incoming remote: %s' % expected_recipient)
             matched = True
@@ -278,18 +278,17 @@ def search_similar_packets(outpacket):
 
 #------------------------------------------------------------------------------
 
-
 def correct_packet_destination(outpacket):
     """
     """
-    if outpacket.CreatorID == my_id.getLocalID():
+    if outpacket.CreatorID.to_bin() == my_id.getLocalID().to_bin():
         # our data will go where it should go
         return outpacket.RemoteID
     if outpacket.Command == commands.Data():
         # Data belongs to remote customers and stored locally
         # must go to CreatorID, because RemoteID pointing to this device
         # return outpacket.CreatorID
-        # this was changed by Veselin... TODO: test and clean up this
+        # TODO: test and clean up this
         return outpacket.RemoteID
     lg.warn('sending a packet we did not make, and that is not Data packet')
     return outpacket.RemoteID
