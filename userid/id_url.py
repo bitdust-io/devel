@@ -531,12 +531,14 @@ class ID_URL_FIELD(object):
             if idurl in [None, 'None', '', b'None', b'', False, ]:
                 return not bool(self.latest)
             # in other cases must raise an exception
-            caller_method = sys._getframe().f_back.f_code.co_name
+            caller_code = sys._getframe().f_back.f_code
+            caller_method = caller_code.co_name
+            caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
                 self.latest_as_string, idurl, type(idurl)))
-            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
         # could be empty field also
@@ -548,14 +550,16 @@ class ID_URL_FIELD(object):
         other_pub_key = idurl.to_public_key(raise_error=False)
         if my_pub_key is None or other_pub_key is None:
             # if we do not know some of the sources - so can't be sure
-            caller_method = sys._getframe().f_back.f_code.co_name
+            caller_code = sys._getframe().f_back.f_code
+            caller_method = caller_code.co_name
+            caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
                 exc = KeyError('unknown idurl: %r' % self.current)
             else:
                 exc = KeyError('unknown idurl: %r' % idurl.current)
-            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
         # now compare based on public key
@@ -571,12 +575,14 @@ class ID_URL_FIELD(object):
             if idurl in [None, 'None', '', b'None', b'', False, ]:
                 return bool(self.latest)
             # in other cases must raise an exception
-            caller_method = sys._getframe().f_back.f_code.co_name
+            caller_code = sys._getframe().f_back.f_code
+            caller_method = caller_code.co_name
+            caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             exc = TypeError('tried to compare ID_URL_FIELD(%r) with %r of type %r' % (
                 self.latest_as_string, idurl, type(idurl)))
-            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
         # could be empty field also
@@ -588,14 +594,16 @@ class ID_URL_FIELD(object):
         other_pub_key = idurl.to_public_key(raise_error=True)
         if my_pub_key is None or other_pub_key is None:
             # if we do not know some of the sources - so can't be sure
-            caller_method = sys._getframe().f_back.f_code.co_name
+            caller_code = sys._getframe().f_back.f_code
+            caller_method = caller_code.co_name
+            caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             if my_pub_key is None:
                 exc = KeyError('unknown idurl: %r' % self.current)
             else:
                 exc = KeyError('unknown idurl: %r' % idurl.current)
-            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
 
         # now compare based on public key
@@ -684,11 +692,13 @@ class ID_URL_FIELD(object):
         if self.current not in _KnownIDURLs:
             if not raise_error:
                 return None
-            caller_method = sys._getframe().f_back.f_code.co_name
+            caller_code = sys._getframe().f_back.f_code
+            caller_method = caller_code.co_name
+            caller_modul = os.path.basename(caller_code.co_filename).replace('.py', '')
             if caller_method.count('lambda') or caller_method.startswith('_'):
                 caller_method = sys._getframe(1).f_back.f_code.co_name
             exc = KeyError('unknown idurl: %r' % self.current)
-            lg.exc(msg='called from %s()' % caller_method, exc_value=exc)
+            lg.exc(msg='called from %s.%s()' % (caller_modul, caller_method), exc_value=exc)
             raise exc
         pub_key = _KnownIDURLs[self.current]
         return pub_key

@@ -181,7 +181,7 @@ class SupplierRelationsService(LocalService):
             except:
                 lg.exc()
                 return False
-            if customer_idurl == my_id.getLocalID():
+            if customer_idurl.to_bin() == my_id.getLocalID().to_bin():
                 lg.warn('received contacts for my own customer family')
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)
@@ -209,7 +209,7 @@ class SupplierRelationsService(LocalService):
             except:
                 lg.exc()
                 return False
-            if customer_idurl == my_id.getLocalID():
+            if customer_idurl.to_bin() == my_id.getLocalID().to_bin():
                 lg.warn('received contacts for my own customer family')
                 return False
             fm = family_member.by_customer_idurl(customer_idurl)

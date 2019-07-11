@@ -811,7 +811,7 @@ def get_contact_identity(idurl):
     if idurl is None:
         return None
     idurl = id_url.field(idurl)
-    if idurl == my_id.getLocalID():
+    if idurl.to_bin() == my_id.getLocalID().to_bin():
         return my_id.getLocalIdentity()
     if is_supplier(idurl):
         return identitycache.FromCache(idurl)
@@ -909,7 +909,7 @@ def add_customer_meta_info(customer_idurl, info):
     json_info = id_url.to_bin_dict(_CustomersMetaInfo)
     try:
         raw_data = jsn.dumps(
-            json_info, indent=2, sort_keys=True, keys_to_text=True,
+            json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
         )
     except:
         lg.exc()
@@ -938,7 +938,7 @@ def remove_customer_meta_info(customer_idurl):
     _CustomersMetaInfo.pop(customer_idurl)
     json_info = id_url.to_bin_dict(_CustomersMetaInfo)
     local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
-        json_info, indent=2, sort_keys=True, keys_to_text=True,
+        json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
     ))
     return True
 

@@ -524,10 +524,14 @@ def do_backup_key(key_id, keys_folder=None):
         remote_path_for_key = os.path.join('.keys', '%s.public' % key_id)
     global_key_path = global_id.MakeGlobalID(
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
-    res = api.file_create(global_key_path)
-    if res['status'] != 'OK':
-        lg.err('failed to create path "%s" in the catalog: %r' % (global_key_path, res))
-        return False
+    res = api.file_info(global_key_path, include_uploads=False, include_downloads=False)
+    if res['status'] == 'OK':
+        lg.warn('key %s already exists in catalog' % global_key_path)
+    else:
+        res = api.file_create(global_key_path)
+        if res['status'] != 'OK':
+            lg.err('failed to create path "%s" in the catalog: %r' % (global_key_path, res))
+            return False
     res = api.file_upload_start(
         local_path=local_key_filepath,
         remote_path=global_key_path,
@@ -628,6 +632,8 @@ def do_synchronize_keys(keys_folder=None, wait_result=False):
     from storage import index_synchronizer
     from storage import backup_control
     is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+    if _Debug:
+        lg.out(_DebugLevel, 'key_ring.do_synchronize_keys is_in_sync=%r' % is_in_sync)
     if not is_in_sync:
         lg.warn('backup index database is not synchronized yet')
         if wait_result:
