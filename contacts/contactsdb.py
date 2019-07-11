@@ -129,8 +129,6 @@ def suppliers(customer_idurl=None):
         _SuppliersList[customer_idurl] = []
         lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
     result = _SuppliersList[customer_idurl]
-    if _Debug:
-        lg.args(_DebugLevel, result=result, glob_obj_id=id(_SuppliersList))
     return result
 
 
