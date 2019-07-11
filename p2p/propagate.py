@@ -107,7 +107,7 @@ def init():
     Need to call that at start up to link with transport_control.
     """
     if _Debug:
-        lg.out(_DebugLevel, "propagate.init ")
+        lg.out(_DebugLevel, "propagate.init")
     # callback.add_finish_file_sending_callback(OnFileSent)
 
 

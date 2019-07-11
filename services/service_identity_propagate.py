@@ -65,12 +65,12 @@ class IdentityPropagateService(LocalService):
         from contacts import identitycache
         identitycache.init()
         from contacts import contactsdb
-        contactsdb.init()
+        d = contactsdb.init()
         from p2p import propagate
         propagate.init()
         from userid import known_servers
         lg.info('known ID servers are : %r' % known_servers.by_host())
-        return True
+        return d
 
     def stop(self):
         from p2p import propagate

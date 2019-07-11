@@ -176,7 +176,7 @@ class SupplierRelationsService(LocalService):
             try:
                 customer_idurl = id_url.field(json_payload['customer_idurl'])
                 ecc_map = strng.to_text(json_payload['customer_ecc_map'])
-                suppliers_list = list(map(lambda i: id_url.field(i), json_payload['suppliers_list']))
+                suppliers_list = id_url.fields_list(json_payload['suppliers_list'])
                 transaction_revision = json_payload.get('transaction_revision')
             except:
                 lg.exc()

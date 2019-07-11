@@ -162,7 +162,7 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def identity_cached(id_obj):
+def identity_cached(new_id_obj):
     """
     """
     global _IdentityHistoryDir
@@ -170,8 +170,8 @@ def identity_cached(id_obj):
     global _KnownIDURLs
     global _MergedIDURLs
     from userid import identity
-    pub_key = id_obj.getPublicKey()
-    user_name = id_obj.getIDName()
+    pub_key = new_id_obj.getPublicKey()
+    user_name = new_id_obj.getIDName()
     if _Debug:
         lg.args(_DebugLevel, user_name=user_name)
     is_identity_rotated = False
@@ -181,46 +181,74 @@ def identity_cached(id_obj):
         user_path = tempfile.mkdtemp(prefix=user_name+'@', dir=_IdentityHistoryDir)
         _KnownUsers[pub_key] = user_path
         first_identity_file_path = os.path.join(user_path, '0')
-        local_fs.WriteBinaryFile(first_identity_file_path, id_obj.serialize())
+        local_fs.WriteBinaryFile(first_identity_file_path, new_id_obj.serialize())
         if _Debug:
             lg.out(_DebugLevel, '        wrote first item for user %r in identity history: %r' % (
                 user_name, first_identity_file_path))
     else:
         user_path = _KnownUsers[pub_key]
         user_identity_files = sorted(map(int, os.listdir(user_path)))
-        latest_identity_file_path = os.path.join(user_path, strng.to_text(user_identity_files[-1]))
+        if len(user_identity_files) == 0:
+            raise Exception('identity history for user %r is broken, public key is known, but no identity files found' % user_name)
+        latest_identity_file_path = ''
+        latest_pub_key = None
+        latest_revision = -1
+        known_revisions = set()
+        for id_file in user_identity_files:
+            identity_file_path = os.path.join(user_path, strng.to_text(id_file))
+            xmlsrc = local_fs.ReadBinaryFile(identity_file_path)
+            one_id_obj = identity.identity(xmlsrc=xmlsrc)
+            if not one_id_obj.isCorrect():
+                lg.err('identity history for user %r is broken, identity in the file %r is not correct' % (user_name, identity_file_path))
+                continue
+            if not one_id_obj.Valid():
+                lg.err('identity history for user %r is broken, identity in the file %r is not valid' % (user_name, identity_file_path))
+                continue
+            if not latest_pub_key:
+                latest_pub_key = one_id_obj.getPublicKey()
+            if latest_pub_key != one_id_obj.getPublicKey():
+                lg.err('identity history for user %r is broken, public key not matching in the file %r' % (user_name, identity_file_path))
+                continue
+            known_revisions.add(one_id_obj.getRevisionValue())
+            if one_id_obj.getRevisionValue() > latest_revision:
+                latest_revision = one_id_obj.getRevisionValue()
+                latest_identity_file_path = identity_file_path
         xmlsrc = local_fs.ReadBinaryFile(latest_identity_file_path)
         latest_id_obj = identity.identity(xmlsrc=xmlsrc)
-        if latest_id_obj.getPublicKey() != id_obj.getPublicKey():
+        if latest_id_obj.getPublicKey() != new_id_obj.getPublicKey():
             raise Exception('identity history for user %r is broken, public key not matching' % user_name)
-        if latest_id_obj.getIDName() != id_obj.getIDName():
-            lg.warn('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName(), ))
-        latest_sources = latest_id_obj.getSources(as_originals=True)
-        new_sources = id_obj.getSources(as_originals=True)
-        if latest_sources == new_sources:
-            local_fs.WriteBinaryFile(latest_identity_file_path, id_obj.serialize())
+        if latest_id_obj.getIDName() != new_id_obj.getIDName():
+            raise Exception('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName()))
+        if new_id_obj.getRevisionValue() in known_revisions:
             if _Debug:
-                lg.out(_DebugLevel, '        latest identity sources for user %r did not changed, updated file %r' % (
-                    user_name, latest_identity_file_path))
+                lg.out(_DebugLevel, 'id_url.identity_cached revision %d already known for user %r' % (new_id_obj.getRevisionValue(), user_name))
         else:
-            next_identity_file = user_identity_files[-1] + 1
-            next_identity_file_path = os.path.join(user_path, strng.to_text(next_identity_file))
-            local_fs.WriteBinaryFile(next_identity_file_path, id_obj.serialize())
-            is_identity_rotated = True
-            if _Debug:
-                lg.out(_DebugLevel, '        identity sources for user %r changed, wrote new item in the history: %r' % (
-                    user_name, next_identity_file_path))
-    new_revision = id_obj.getRevisionValue()
-    new_sources = id_obj.getSources(as_originals=True)
+            latest_sources = latest_id_obj.getSources(as_originals=True)
+            new_sources = new_id_obj.getSources(as_originals=True)
+            if latest_sources == new_sources:
+                local_fs.WriteBinaryFile(latest_identity_file_path, new_id_obj.serialize())
+                if _Debug:
+                    lg.out(_DebugLevel, 'id_url.identity_cached latest identity sources for user %r did not changed, updated file %r' % (
+                        user_name, latest_identity_file_path))
+            else:
+                next_identity_file = user_identity_files[-1] + 1
+                next_identity_file_path = os.path.join(user_path, strng.to_text(next_identity_file))
+                local_fs.WriteBinaryFile(next_identity_file_path, new_id_obj.serialize())
+                is_identity_rotated = True
+                if _Debug:
+                    lg.out(_DebugLevel, 'id_url.identity_cached identity sources for user %r changed, wrote new item in the history: %r' % (
+                        user_name, next_identity_file_path))
+    new_revision = new_id_obj.getRevisionValue()
+    new_sources = new_id_obj.getSources(as_originals=True)
     for new_idurl in reversed(new_sources):
         if new_idurl not in _KnownIDURLs:
-            _KnownIDURLs[new_idurl] = id_obj.getPublicKey()
+            _KnownIDURLs[new_idurl] = new_id_obj.getPublicKey()
             if _Debug:
-                lg.out(_DebugLevel, '    known IDURL added: %r' % new_idurl)
+                lg.out(_DebugLevel, 'id_url.identity_cached known IDURL added: %r' % new_idurl)
         else:
-            if _KnownIDURLs[new_idurl] != id_obj.getPublicKey():
+            if _KnownIDURLs[new_idurl] != new_id_obj.getPublicKey():
                 lg.warn('another user had same identity source: %r' % new_idurl)
-                _KnownIDURLs[new_idurl] = id_obj.getPublicKey()
+                _KnownIDURLs[new_idurl] = new_id_obj.getPublicKey()
         if pub_key not in _MergedIDURLs:
             _MergedIDURLs[pub_key] = {}
         if new_revision in _MergedIDURLs[pub_key]:
@@ -232,24 +260,24 @@ def identity_cached(id_obj):
         else:
             _MergedIDURLs[pub_key][new_revision] = new_idurl
             if _Debug:
-                lg.out(_DebugLevel, '        added new revision %d for user %r, total revisions %d' % (
+                lg.out(_DebugLevel, 'id_url.identity_cached added new revision %d for user %r, total revisions %d' % (
                     new_revision, user_name, len(_MergedIDURLs[pub_key])))
     if is_identity_rotated and latest_id_obj:
-        _, latest_rev = get_latest_revision(id_obj.getIDURL().original())
+        _, latest_rev = get_latest_revision(new_id_obj.getIDURL().original())
         if new_revision > latest_rev:
             lg.info('found rotated identity after caching %r -> %r' % (
                 latest_id_obj.getSources(as_originals=True)[0], new_sources[0]))
             from main import events
             events.send('identity-rotated', data=dict(
                 old_idurls=latest_id_obj.getSources(as_originals=True),
-                new_idurls=id_obj.getSources(as_originals=True),
+                new_idurls=new_id_obj.getSources(as_originals=True),
                 old_revision=latest_id_obj.getRevisionValue(),
                 new_revision=new_revision,
             ))
-            if latest_id_obj.getIDURL(as_original=True) != id_obj.getIDURL(as_original=True):
+            if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
                 events.send('identity-url-changed', data=dict(
                     old_idurl=latest_id_obj.getIDURL(as_original=True),
-                    new_idurl=id_obj.getIDURL(as_original=True),
+                    new_idurl=new_id_obj.getIDURL(as_original=True),
                     old_revision=latest_id_obj.getRevisionValue(),
                     new_revision=new_revision,
                 ))
@@ -275,7 +303,8 @@ def field(idurl):
         return ID_URL_FIELD(idurl)
     idurl = strng.to_bin(idurl.strip())
     if idurl not in _KnownIDURLs:
-        lg.warn('will try to find %r in local identity cache' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'id_url.field   will try to find %r in local identity cache' % idurl)
         from contacts import identitydb
         cached_ident = identitydb.get(idurl)
         if cached_ident:
@@ -396,7 +425,7 @@ def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False)
 
 def is_cached(idurl):
     """
-    Return True if given identity was already cached.
+    Return True if given identity was already cached - that means I know his public key.
     """
     global _KnownIDURLs
     if isinstance(idurl, ID_URL_FIELD):

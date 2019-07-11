@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2019-07-10 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* idurl fixes in supplier services (#358)
+* catch and process "identity-url-changed" event in proxy_router()
+* made packetid more unique
+
+
+
 2019-07-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * IDURL fixes in supplier service

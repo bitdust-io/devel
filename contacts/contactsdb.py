@@ -36,12 +36,14 @@ from six.moves import range  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
 import os
+
+from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------
 
@@ -92,18 +94,12 @@ def init():
     global _SuppliersChangedCallback
     global _CustomersChangedCallback
     global _CorrespondentsChangedCallback
-    lg.out(4, "contactsdb.init")
-    load_suppliers()
-    load_suppliers(all_customers=True)
-    if _SuppliersChangedCallback is not None:
-        _SuppliersChangedCallback([], suppliers())
-    load_customers()
-    if _CustomersChangedCallback is not None:
-        _CustomersChangedCallback([], customers())
-    load_correspondents()
-    if _CorrespondentsChangedCallback is not None:
-        _CorrespondentsChangedCallback([], correspondents())
-    AddContactsChangedCallback(on_contacts_changed)
+    if _Debug:
+        lg.out(_DebugLevel, "contactsdb.init")
+    d = cache_contacts()
+    d.addCallback(lambda _: load_contacts())
+    d.addErrback(lg.errback)
+    return d
 
 
 def shutdown():
@@ -111,7 +107,8 @@ def shutdown():
     """
     global _SuppliersChangedCallback
     global _CustomersChangedCallback
-    lg.out(4, "contactsdb.shutdown")
+    if _Debug:
+        lg.out(_DebugLevel, "contactsdb.shutdown")
     RemoveContactsChangedCallback(on_contacts_changed)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback = None
@@ -132,8 +129,6 @@ def suppliers(customer_idurl=None):
         _SuppliersList[customer_idurl] = []
         lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
     result = _SuppliersList[customer_idurl]
-    if _Debug:
-        lg.args(_DebugLevel, result=result, glob_obj_id=id(_SuppliersList))
     return result
 
 
@@ -187,6 +182,7 @@ def update_suppliers(idlist, customer_idurl=None):
     global _ContactsChangedCallbacks
     oldsuppliers = list(suppliers(customer_idurl=customer_idurl))
     oldcontacts = list(contacts())
+    idlist = list(map(lambda i: i if id_url.is_cached(i) else b'', idlist))
     set_suppliers(idlist, customer_idurl=customer_idurl)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
@@ -310,7 +306,7 @@ def set_customers(idlist):
     Set customers list.
     """
     global _CustomersList
-    _CustomersList = [id_url.field(idurl) for idurl in idlist]
+    _CustomersList = id_url.fields_list(idlist)
 
 
 def update_customers(idslist):
@@ -322,6 +318,7 @@ def update_customers(idslist):
     global _ContactsChangedCallbacks
     old_customers = list(customers())
     old_contacts = list(contacts())
+    idslist = list(filter(id_url.is_cached, idslist))
     set_customers(idslist)
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback(old_customers, customers())
@@ -456,6 +453,7 @@ def update_correspondents(idslist):
     """
     global _CorrespondentsChangedCallback
     oldcorrespondents = list(correspondents())
+    idslist = list(filter(lambda i: id_url.is_cached(i[0]), idslist))
     set_correspondents(idslist)
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(oldcorrespondents, correspondents())
@@ -578,11 +576,7 @@ def save_suppliers(path=None, customer_idurl=None):
     customer_idurl = id_url.field(customer_idurl)
     customer_id = global_id.UrlToGlobalID(customer_idurl)
     if path is None:
-        path = os.path.join(
-            settings.SuppliersDir(),
-            customer_id,
-            'supplierids',
-        )
+        path = os.path.join(settings.SuppliersDir(), customer_id, 'supplierids')
     lst = suppliers(customer_idurl=customer_idurl)
     lst = list(map(strng.to_text, lst))
     if not os.path.exists(os.path.dirname(path)):
@@ -591,6 +585,7 @@ def save_suppliers(path=None, customer_idurl=None):
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.save_suppliers for customer [%s]:\n%r' % (customer_id, lst, ))
     return True
+
 
 def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     """
@@ -618,7 +613,7 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
                 if not os.path.exists(latest_customer_path):
                     os.rename(os.path.join(settings.SuppliersDir(), customer_id), latest_customer_path)
                     lg.info('detected and processed idurl rotate when loading suppliers for customer : %r -> %r' % (customer_id, one_customer_idurl.to_id()))
-            lst = list(map(lambda i: id_url.field(i), lst))
+            lst = list(map(lambda i: i if id_url.is_cached(i) else b'', lst))
             set_suppliers(lst, customer_idurl=one_customer_idurl)
             if _Debug:
                 lg.out(_DebugLevel, '    loaded %d known suppliers for customer %r' % (len(lst), one_customer_idurl))
@@ -631,11 +626,38 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
-    lst = list(map(lambda i: id_url.field(i), lst))
+    lst = list(map(lambda i: i if id_url.is_cached(i) else b'', lst))
     set_suppliers(lst)
-    lg.out(4, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
     return True
-                
+
+
+def cache_suppliers(path=None):
+    """
+    Make sure identities of all suppliers we know are cached.
+    """
+    dl = []
+    list_local_customers = list(os.listdir(settings.SuppliersDir()))
+    for customer_id in list_local_customers:
+        if not global_id.IsValidGlobalUser(customer_id):
+            lg.warn('invalid customer record %s found in %s' % (customer_id, settings.SuppliersDir()))
+            continue
+        one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+        if not id_url.is_cached(one_customer_idurl):
+            dl.append(identitycache.immediatelyCaching(one_customer_idurl))
+        path = os.path.join(settings.SuppliersDir(), customer_id, 'supplierids')
+        lst = bpio._read_list(path)
+        if lst is None:
+            lg.warn('did not found suppliers ids at %s' % path)
+            continue
+        for one_supplier_idurl in lst:
+            if one_supplier_idurl:
+                if not id_url.is_cached(one_supplier_idurl):
+                    dl.append(identitycache.immediatelyCaching(one_supplier_idurl))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.cache_suppliers prepared %d idurls to be cached' % len(dl))
+    return DeferredList(dl, consumeErrors=True)
 
 #------------------------------------------------------------------------------
 
@@ -667,14 +689,33 @@ def load_customers(path=None):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
-    lst = id_url.fields_list(lst)
+    lst = list(filter(id_url.is_cached, lst))
     set_customers(lst)
     _CustomersMetaInfo = jsn.loads(
         local_fs.ReadTextFile(settings.CustomersMetaInfoFilename()) or '{}',
         keys_to_bin=True,
     )
     _CustomersMetaInfo = id_url.to_bin_dict(_CustomersMetaInfo)
-    lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.load_customers %d items' % len(lst))
+
+
+def cache_customers(path=None):
+    """
+    Make sure identities of all customers we know are cached.
+    """
+    global _CustomersMetaInfo
+    dl = []
+    if path is None:
+        path = settings.CustomerIDsFilename()
+    lst = bpio._read_list(path) or []
+    for one_customer_idurl in lst:
+        if one_customer_idurl:
+            if not id_url.is_cached(one_customer_idurl):
+                dl.append(identitycache.immediatelyCaching(one_customer_idurl))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.cache_customers prepared %d idurls to be cached' % len(dl))
+    return DeferredList(dl, consumeErrors=True)
 
 #------------------------------------------------------------------------------
 
@@ -704,11 +745,63 @@ def load_correspondents(path=None):
             lst[i] = (lst[i][0], '')
         if not lst[i][1].strip():
             lst[i] = (id_url.field(lst[i][0]), nameurl.GetName(lst[i][0]))
+    lst = list(filter(lambda i: id_url.is_cached(i[0]), lst))
     set_correspondents(lst)
-    lg.out(4, 'contactsdb.load_correspondents %d items' % len(lst))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.load_correspondents %d items' % len(lst))
+
+
+def cache_correspondents(path=None):
+    """
+    Make sure identities of all correspondents we know are cached.
+    """
+    dl = []
+    if path is None:
+        path = settings.CorrespondentIDsFilename()
+    lst = bpio._read_list(path) or []
+    for i in range(len(lst)):
+        try:
+            one_correspondent_idurl = lst[i].strip().split(' ', 1)[0]
+        except:
+            lg.exc()
+            continue
+        if one_correspondent_idurl:
+            if not id_url.is_cached(one_correspondent_idurl):
+                dl.append(identitycache.immediatelyCaching(one_correspondent_idurl))
+    if _Debug:
+        lg.out(_DebugLevel, 'contactsdb.cache_correspondents prepared %d idurls to be cached' % len(dl))
+    return DeferredList(dl, consumeErrors=True)
 
 #------------------------------------------------------------------------------
 
+def cache_contacts(suppliers_path=None, customers_path=None, correspondents_path=None, ):
+    """
+    Make sure identities of all my known contacts are cached.
+    """
+    dl = []
+    dl.append(cache_suppliers(suppliers_path))
+    dl.append(cache_customers(customers_path))
+    dl.append(cache_correspondents(correspondents_path))
+    return DeferredList(dl, consumeErrors=True)
+
+
+def load_contacts():
+    """
+    Load all my contacts from disk.
+    """
+    load_suppliers()
+    load_suppliers(all_customers=True)
+    if _SuppliersChangedCallback is not None:
+        _SuppliersChangedCallback([], suppliers())
+    load_customers()
+    if _CustomersChangedCallback is not None:
+        _CustomersChangedCallback([], customers())
+    load_correspondents()
+    if _CorrespondentsChangedCallback is not None:
+        _CorrespondentsChangedCallback([], correspondents())
+    AddContactsChangedCallback(on_contacts_changed)
+
+#------------------------------------------------------------------------------
 
 def get_contact_identity(idurl):
     """
@@ -732,7 +825,7 @@ def get_contact_identity(idurl):
     lg.warn("%s is NOT FOUND IN CACHE" % idurl)
     # TODO:
     # this is not correct:
-    # need to check if other contacts is fine - if internet is turned off we can get lots fails ...
+    # need to check if other contacts is fine - if internet is turned off we can get lots of fails ...
     return None
 
 

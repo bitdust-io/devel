@@ -408,6 +408,7 @@ def sign(key_id, inp):
     """
     Sign some ``inp`` string with given key.
     This will call PyCrypto method ``Crypto.PublicKey.RSA.sign``.
+    Returns byte string.
     """
     if key_id not in known_keys():
         raise Exception('key %s is unknown' % key_id)
