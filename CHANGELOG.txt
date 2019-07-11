@@ -4,6 +4,12 @@ Change Log
 
 2019-07-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* more idurl fixes in packet_out
+
+
+
+2019-07-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * idurl fixes in service_identity_propagate() and service_customer_family() (#359)
 
 
