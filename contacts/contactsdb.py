@@ -460,11 +460,12 @@ def update_correspondents(idslist):
 
 #-------------------------------------------------------------------------------
 
-
 def is_customer(idurl):
     """
     Return True if given ID is found in customers list.
     """
+    if id_url.is_empty(idurl):
+        return False
     if not id_url.is_cached(idurl):
         return False
     return id_url.field(idurl) in customers()
@@ -474,15 +475,19 @@ def is_supplier(idurl, customer_idurl=None):
     """
     Return True if given ID is found in suppliers list.
     """
+    if id_url.is_empty(idurl):
+        return False
     if not id_url.is_cached(idurl):
         return False
-    return idurl and id_url.field(idurl) in suppliers(customer_idurl=customer_idurl)
+    return id_url.field(idurl) in suppliers(customer_idurl=customer_idurl)
 
 
 def is_correspondent(idurl):
     """
     Return True if given ID is found in correspondents list.
     """
+    if id_url.is_empty(idurl):
+        return False
     if not id_url.is_cached(idurl):
         return False
     return id_url.field(idurl) in correspondents_ids()

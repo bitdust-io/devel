@@ -1945,34 +1945,61 @@ def friend_add(idurl_or_global_id, alias=''):
     Add user to the list of friends
     """
     from contacts import contactsdb
+    from contacts import identitycache
     from userid import global_id
+    from userid import id_url
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
         idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
-    if not contactsdb.is_correspondent(idurl):
-        contactsdb.add_correspondent(idurl, alias)
-        contactsdb.save_correspondents()
-        return OK('new friend has been added')
-    return OK('this friend has been already added')
+
+    def _add():
+        if not contactsdb.is_correspondent(idurl):
+            contactsdb.add_correspondent(idurl, alias)
+            contactsdb.save_correspondents()
+            return OK('new friend has been added')
+        return OK('this friend has been already added')
+
+    if id_url.is_cached(idurl):
+        return _add()
+
+    ret = Deferred()
+    d = identitycache.immediatelyCaching(idurl)
+    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity')))
+    d.addCallback(lambda *args: ret.callback(_add()))
+    return ret
+
 
 def friend_remove(idurl_or_global_id):
     """
     Remove user from the list of friends
     """
     from contacts import contactsdb
+    from contacts import identitycache
     from userid import global_id
+    from userid import id_url
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
         idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
-    if contactsdb.is_correspondent(idurl):
-        contactsdb.remove_correspondent(idurl)
-        contactsdb.save_correspondents()
-        return OK('friend has been removed')
-    return ERROR('friend not found')
+
+    def _remove():
+        if contactsdb.is_correspondent(idurl):
+            contactsdb.remove_correspondent(idurl)
+            contactsdb.save_correspondents()
+            return OK('friend has been removed')
+        return ERROR('friend not found')
+
+    if id_url.is_cached(idurl):
+        return _remove()
+
+    ret = Deferred()
+    d = identitycache.immediatelyCaching(idurl)
+    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity')))
+    d.addCallback(lambda *args: ret.callback(_remove()))
+    return ret
 
 #------------------------------------------------------------------------------
 
