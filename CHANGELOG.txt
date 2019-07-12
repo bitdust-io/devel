@@ -4,6 +4,13 @@ Change Log
 
 2019-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* some changes in service_p2p_hookups() and p2p_connector()
+* make sure identity propagate is working correctly
+
+
+
+2019-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * idurl fixes in contactsdb and api  (#363)
 * able to read networks.json file from metadata folder if it exists
 * improved index_synchronizer() automat
