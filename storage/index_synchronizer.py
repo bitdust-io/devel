@@ -220,6 +220,7 @@ class IndexSynchronizer(automat.Automat):
                 self.state = 'SENDING'
                 self.doSuppliersSendIndexFile(*args, **kwargs)
                 self.PushAgain=False
+                self.PullAgain=False
         #---REQUEST?---
         elif self.state == 'REQUEST?':
             if event == 'shutdown':
@@ -234,6 +235,7 @@ class IndexSynchronizer(automat.Automat):
                 self.doCancelRequests(*args, **kwargs)
                 self.doSuppliersSendIndexFile(*args, **kwargs)
                 self.PushAgain=False
+                self.PullAgain=False
             elif event == 'index-file-received':
                 self.doCheckVersion(*args, **kwargs)
             elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs) ) ) and not self.isVersionChanged(*args, **kwargs):
@@ -241,18 +243,21 @@ class IndexSynchronizer(automat.Automat):
                 self.doCancelRequests(*args, **kwargs)
         #---SENDING---
         elif self.state == 'SENDING':
-            if event == 'timer-15sec' and not self.isSomeAcked(*args, **kwargs):
-                self.state = 'NO_INFO'
-            elif event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(*args, **kwargs) ):
-                self.state = 'IN_SYNC!'
-            elif event == 'shutdown':
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'pull':
-                self.state = 'REQUEST?'
-                self.doSuppliersRequestIndexFile(*args, **kwargs)
             elif event == 'push':
                 self.PushAgain=True
+            elif event == 'timer-15sec' and not self.isSomeAcked(*args, **kwargs) and not self.PullAgain:
+                self.state = 'NO_INFO'
+            elif ( event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(*args, **kwargs) ) ) and not self.PullAgain:
+                self.state = 'IN_SYNC!'
+            elif event == 'pull':
+                self.PullAgain=True
+            elif ( event == 'all-acked' or event == 'timer-15sec' ) and self.PullAgain:
+                self.state = 'REQUEST?'
+                self.doSuppliersRequestIndexFile(*args, **kwargs)
+                self.PullAgain=False
         #---NO_INFO---
         elif self.state == 'NO_INFO':
             if event == 'shutdown':
@@ -261,6 +266,8 @@ class IndexSynchronizer(automat.Automat):
             elif event == 'push' or event == 'pull' or event == 'timer-1min':
                 self.state = 'REQUEST?'
                 self.doSuppliersRequestIndexFile(*args, **kwargs)
+                self.PushAgain=False
+                self.PullAgain=False
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass

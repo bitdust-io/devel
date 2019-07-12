@@ -357,7 +357,7 @@ class FamilyMember(automat.Automat):
 #             return
         possible_transaction = self._do_process_request(merged_info, self.current_request) 
         if not possible_transaction:
-            lg.err('failed to process customer family change request, skip transaction')
+            lg.warn('failed to process customer family change request, skip transaction')
             return
         self.transaction = self._do_increment_revision(possible_transaction)
         if _Debug:

@@ -156,6 +156,8 @@ def check_create(idurl):
     """
     if id_url.is_empty(idurl):
         return False
+    if not id_url.is_cached(idurl):
+        return False
     idurl = id_url.field(idurl)
     if idurl not in list(_OnlineStatusDict.keys()):
         A(idurl, 'init')
@@ -176,6 +178,8 @@ def isKnown(idurl):
         return False
     if id_url.is_empty(idurl):
         return False
+    if not id_url.is_cached(idurl):
+        return False
     idurl = id_url.field(idurl)
     return idurl in list(_OnlineStatusDict.keys())
 
@@ -188,6 +192,8 @@ def isOnline(idurl):
     if _ShutdownFlag:
         return False
     if id_url.is_empty(idurl):
+        return False
+    if not id_url.is_cached(idurl):
         return False
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
@@ -204,6 +210,8 @@ def isOffline(idurl):
         return True
     if id_url.is_empty(idurl):
         return True
+    if not id_url.is_cached(idurl):
+        return True
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         return True
@@ -219,6 +227,8 @@ def isCheckingNow(idurl):
         return False
     if id_url.is_empty(idurl):
         return False
+    if not id_url.is_cached(idurl):
+        return False
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         return False
@@ -231,6 +241,8 @@ def getInstance(idurl, autocreate=True):
     if _ShutdownFlag:
         return None
     if id_url.is_empty(idurl):
+        return None
+    if not id_url.is_cached(idurl):
         return None
     idurl = id_url.field(idurl)
     if not isKnown(idurl) and not autocreate:
@@ -253,6 +265,8 @@ def getCurrentState(idurl):
         return None
     if id_url.is_empty(idurl):
         return None
+    if not id_url.is_cached(idurl):
+        return None
     idurl = id_url.field(idurl)
     if not isKnown(idurl):
         return None
@@ -267,6 +281,8 @@ def getStatusLabel(idurl):
     if _ShutdownFlag:
         return '?'
     if id_url.is_empty(idurl):
+        return '?'
+    if not id_url.is_cached(idurl):
         return '?'
     idurl = id_url.field(idurl)
     if not isKnown(idurl):

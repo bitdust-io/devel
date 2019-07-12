@@ -179,6 +179,9 @@ class EmployerService(LocalService):
         if not (dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0):
             lg.warn('no dht records found for my customer family')
             return
+        if id_url.is_some_empty(contactsdb.suppliers()):
+            lg.warn('some of my suppliers are not hired yet, skip doing any changes')
+            return
         suppliers_to_be_dismissed = set()
         dht_suppliers = id_url.to_bin_list(dht_result['suppliers'])
         # clean up old suppliers
@@ -201,10 +204,6 @@ class EmployerService(LocalService):
                 service_name='service_supplier',
                 json_payload=service_info,
             )
-#             p2p_service.SendCancelService(
-#                 remote_idurl=idurl,
-#                 service_name='service_p2p_notifications',
-#             )
         if suppliers_to_be_dismissed:
             lg.info('found %d suppliers to be cleaned and sent CancelService() packets' % len(suppliers_to_be_dismissed))
 

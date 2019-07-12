@@ -446,7 +446,7 @@ def is_empty(idurl):
         return not bool(idurl)
     if idurl in [None, 'None', '', b'None', b'', False, ]:
         return True
-    return bool(idurl)
+    return not bool(idurl)
 
 
 def is_some_empty(iterable_object):

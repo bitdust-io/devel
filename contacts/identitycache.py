@@ -224,7 +224,6 @@ def UpdateAfterChecking(idurl, xml_src):
     Need to call that method to update the cache when some identity sources is
     changed.
     """
-    #out(12, 'identitycache.UpdateAfterChecking ' + url)
     return identitydb.update(idurl, xml_src)
 
 

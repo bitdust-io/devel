@@ -48,8 +48,11 @@ def network_info():
     from system import local_fs
     from lib import serialization
     from main import settings
+    networks_json_path = os.path.join(settings.MetaDataDir(), 'networks.json')
+    if not os.path.isfile(networks_json_path):
+        networks_json_path = os.path.join(bpio.getExecutableDir(), 'networks.json')
     networks_json = serialization.BytesToDict(
-        local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')),
+        local_fs.ReadBinaryFile(networks_json_path),
         keys_to_text=True,
         values_to_text=True,
     )
@@ -71,7 +74,6 @@ def default_nodes():
     dht_seeds = []
     for dht_seed in nw_info['dht-seeds']:
         dht_seeds.append((strng.to_bin(dht_seed['host']), dht_seed['udp_port'], ))
-    # lg.info('Active network is [%s]   dht_seeds=%s' % (my_network, dht_seeds, ))
     return dht_seeds
 
 
@@ -127,8 +129,6 @@ def nodes():
             overridden_dht_nodes.append((dht_node_host, dht_node_port, ))
 
     if overridden_dht_nodes:
-        # from logs import lg
-        # lg.info('DHT seeds was overridden in local settings: %s' % overridden_dht_nodes)
         return overridden_dht_nodes
 
     return default_nodes()

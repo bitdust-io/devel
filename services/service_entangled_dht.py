@@ -58,7 +58,7 @@ class EntangledDHTService(LocalService):
         conf().addCallback('services/entangled-dht/udp-port', self._on_udp_port_modified)
         dht_service.init(udp_port=settings.getDHTPort(), db_file_path=settings.DHTDBFile())
         known_seeds = known_nodes.nodes()
-        lg.info('known seed nodes are : %r' % known_seeds)        
+        lg.info('DHT known seed nodes are : %r' % known_seeds)
         d = dht_service.connect(seed_nodes=known_seeds)
         d.addCallback(self._on_connected)
         d.addErrback(self._on_connect_failed)
@@ -82,22 +82,20 @@ class EntangledDHTService(LocalService):
     def _on_connected(self, nodes):
         from dht import dht_service
         from logs import lg
-        lg.out(self.debug_level, 'service_entangled_dht._on_connected    nodes: %r' % nodes)
-        lg.out(self.debug_level, '        DHT node is active, ID=[%s]' % dht_service.node().id)
+        lg.info('DHT node connected  ID=[%s]  known nodes: %r' % (dht_service.node().id, nodes))
         dht_service.node().add_rpc_callback('store', self._on_dht_rpc_store)
         dht_service.node().add_rpc_callback('request', self._on_dht_rpc_request)
         return nodes
 
     def _on_connect_failed(self, err):
         from logs import lg
-        lg.out(self.debug_level, 'service_entangled_dht._on_connect_failed : %r' % err)
+        lg.err('DHT connect failed : %r' % err)
         return err
 
     def _on_udp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-        lg.out(2, 'service_entangled_dht._on_udp_port_modified %s->%s : %s' % (
-            oldvalue, value, path))
+        lg.info('DHT udp port modified %s->%s : %s' % (oldvalue, value, path))
         if network_connector.A():
             network_connector.A('reconnect')
 

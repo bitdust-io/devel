@@ -25,6 +25,7 @@ venv
 bitdust.egg-info/
 dist/
 tests/data/test_*
+devops/nodes.txt
 
 # IDE specific
 .idea
