@@ -133,7 +133,8 @@ def propagate(selected_contacts, AckHandler=None, wide=False, refresh_cache=Fals
 
     def contacts_fetched(x):
         if _Debug:
-            lg.out(_DebugLevel, "propagate.contacts_fetched: %r" % x)
+            lg.out(_DebugLevel, "propagate.contacts_fetched with %d identities, sending my identity to %d remote nodes" % (
+                len(x), len(selected_contacts)))
         SendToIDs(selected_contacts, ack_handler=AckHandler, wide=wide)
         d.callback(list(selected_contacts))
         return None
