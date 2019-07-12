@@ -201,7 +201,7 @@ def A(event=None, *args, **kwargs):
     if _FireHire is None:
         _FireHire = FireHire(
             name='fire_hire',
-            state='READY',
+            state='AT_STARTUP',
             debug_level=_DebugLevel,
             log_events=_Debug,
             log_transitions=_Debug,
@@ -259,8 +259,13 @@ class FireHire(automat.Automat):
             self.automat('instant')
 
     def A(self, event, *args, **kwargs):
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'init':
+                self.state = 'READY'
+                self.NeedRestart=False
         #---READY---
-        if self.state == 'READY':
+        elif self.state == 'READY':
             if ( event == 'restart' or ( event == 'instant' and self.NeedRestart ) ) and self.isConfigChanged(*args, **kwargs) and self.isExistSomeSuppliers(*args, **kwargs):
                 self.state = 'SUPPLIERS?'
                 self.NeedRestart=False
@@ -333,11 +338,6 @@ class FireHire(automat.Automat):
             elif ( event == 'supplier-state-changed' and self.isAllReady(*args, **kwargs) ) or event == 'timer-15sec':
                 self.state = 'DECISION?'
                 self.doDecideToDismiss(*args, **kwargs)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'READY'
-                self.NeedRestart=False
         return None
 
     def isMoreNeeded(self, *args, **kwargs):

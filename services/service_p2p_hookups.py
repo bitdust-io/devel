@@ -189,15 +189,15 @@ class P2PHookupsService(LocalService):
             if self._starting_defer is not None:
                 self._starting_defer.callback(newstate)
                 self._starting_defer = None
-        from p2p import network_connector
-        from system import tray_icon
-        if network_connector.A():
-            tray_icon.state_changed(network_connector.A().state, newstate)
+        # from p2p import network_connector
+        # from system import tray_icon
+        # if network_connector.A():
+        #     tray_icon.state_changed(network_connector.A().state, newstate)
 
     def _on_network_connector_switched(self, oldstate, newstate, evt, *args, **kwargs):
         from p2p import p2p_connector
-        from system import tray_icon
+        # from system import tray_icon
         if oldstate != newstate:
             if newstate == 'CONNECTED' or newstate == 'DISCONNECTED':
                 p2p_connector.A('network_connector.state', newstate)
-                tray_icon.state_changed(newstate, p2p_connector.A().state)
+                # tray_icon.state_changed(newstate, p2p_connector.A().state)

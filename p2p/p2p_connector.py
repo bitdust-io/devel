@@ -67,7 +67,7 @@ from six.moves import range
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -481,6 +481,7 @@ class P2PConnector(automat.Automat):
         self.automat('my-id-updated', (contacts_changed, identity_changed))
 
     def _check_rotate_propagate_my_identity(self):
+        # TODO: rebuild that method into another state machine
         from p2p import id_rotator
 
         def _do_propagate(*args):
@@ -489,7 +490,7 @@ class P2PConnector(automat.Automat):
             if driver.is_on('service_entangled_dht'):
                 from dht import dht_service
                 dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
-            d = propagate.start(wide=True)
+            d = propagate.start(wide=True, refresh_cache=True)
             d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
             d.addErrback(lg.errback)
 

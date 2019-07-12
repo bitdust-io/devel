@@ -1,4 +1,4 @@
 #!/bin/bash
 
 # shows bitdust main log in real time
-tail -f ~/.bitdust/logs/main.log
+tail -f ~/.bitdust/logs/stdout.log

@@ -120,7 +120,7 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 
-def propagate(selected_contacts, AckHandler=None, wide=False):
+def propagate(selected_contacts, AckHandler=None, wide=False, refresh_cache=False):
     """
     Run the "propagate" process.
 
@@ -138,11 +138,11 @@ def propagate(selected_contacts, AckHandler=None, wide=False):
         d.callback(list(selected_contacts))
         return None
 
-    fetch(selected_contacts).addBoth(contacts_fetched)
+    fetch(list_ids=selected_contacts, refresh_cache=refresh_cache).addBoth(contacts_fetched)
     return d
 
 
-def fetch(list_ids):
+def fetch(list_ids, refresh_cache=False):
     """
     Request a list of identity files.
     """
@@ -152,19 +152,24 @@ def fetch(list_ids):
     for url in list_ids:
         if not url:
             continue
-        if identitycache.FromCache(url):
+        if identitycache.FromCache(url) and not refresh_cache:
             continue
-        dl.append(identitycache.scheduleForCaching(id_url.to_original(url)))
+        dl.append(identitycache.immediatelyCaching(id_url.to_original(url)))
     return DeferredList(dl, consumeErrors=True)
 
 
-def start(AckHandler=None, wide=False):
+def start(AckHandler=None, wide=False, refresh_cache=False):
     """
     Call ``propagate()`` for all known contacts.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'propagate.start')
-    return propagate(contactsdb.contacts_remote(), AckHandler, wide)
+        lg.out(_DebugLevel, 'propagate.start wide=%r refresh_cache=%r' % (wide, refresh_cache))
+    return propagate(
+        selected_contacts=contactsdb.contacts_remote(),
+        AckHandler=AckHandler,
+        wide=wide,
+        refresh_cache=refresh_cache,
+    )
 
 
 def suppliers(AckHandler=None, wide=False, customer_idurl=None):
@@ -285,9 +290,12 @@ def SendServers():
         webport, tcpport = known_servers.by_host().get(host, (
             # by default use "expected" port numbers
             settings.IdentityWebPort(), settings.IdentityServerPort()))
+        normalized_address = net_misc.normalize_address((host, int(tcpport), ))
         dlist.append(tcp_node.send(
-            sendfilename, net_misc.normalize_address((host, int(tcpport), )), 'Identity', keep_alive=False,
+            sendfilename, normalized_address, 'Identity', keep_alive=False,
         ))
+        if _Debug:
+            lg.args(_DebugLevel, normalized_address=normalized_address, filename=filename)
     dl = DeferredList(dlist, consumeErrors=True)
     return dl
 

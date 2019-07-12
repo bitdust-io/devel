@@ -393,10 +393,11 @@ def OutboxStatus(pkt_out, status, error=''):
         #     A(pkt_out.outpacket.RemoteID, 'sent-done', (pkt_out, status, error))
     else:
         if _Debug:
-            lg.out(_DebugLevel, 'online_status.OutboxStatus %s: [%s] with %s' % (status, pkt_out, pkt_out.outpacket))
-        if status == 'cancelled':
-            if _Debug:
-                lg.out(_DebugLevel, '    skipped')
+            lg.out(_DebugLevel, 'online_status.OutboxStatus %s: [%s] with %s error=%r' % (
+                status, pkt_out, pkt_out.outpacket, error))
+        # if status == 'cancelled':
+        #     if _Debug:
+        #         lg.out(_DebugLevel, '    skipped')
         # else:
             # lg.warn('sending event "sent-failed" to contact status of : %s' % pkt_out.remote_idurl)
         #     A(pkt_out.outpacket.RemoteID, 'sent-failed', (pkt_out, status, error))
