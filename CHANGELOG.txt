@@ -2,6 +2,23 @@ Change Log
 ==========
 
 
+2019-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* idurl fixes in contactsdb and api  (#363)
+* able to read networks.json file from metadata folder if it exists
+* improved index_synchronizer() automat
+
+
+
+2019-07-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* check if key file already exists in the catalog
+* py3 fix in contactsdb
+* idurl fix in get_contact_identity()
+* idurl bug fix in service_customer_family()
+
+
+
 2019-07-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * protect code from idurl caching errors when identiy history is broken
