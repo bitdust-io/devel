@@ -179,6 +179,9 @@ class EmployerService(LocalService):
         if not (dht_result and isinstance(dht_result, dict) and len(dht_result.get('suppliers', [])) > 0):
             lg.warn('no dht records found for my customer family')
             return
+        if id_url.is_some_empty(contactsdb.suppliers()):
+            lg.warn('some of my suppliers are not hired yet, skip doing any changes')
+            return
         suppliers_to_be_dismissed = set()
         dht_suppliers = id_url.to_bin_list(dht_result['suppliers'])
         # clean up old suppliers

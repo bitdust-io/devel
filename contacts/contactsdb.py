@@ -466,9 +466,7 @@ def is_customer(idurl):
     """
     if id_url.is_empty(idurl):
         return False
-    if not id_url.is_cached(idurl):
-        return False
-    return id_url.field(idurl) in customers()
+    return id_url.field(idurl).to_bin() in id_url.to_bin_list(customers())
 
 
 def is_supplier(idurl, customer_idurl=None):
@@ -477,9 +475,7 @@ def is_supplier(idurl, customer_idurl=None):
     """
     if id_url.is_empty(idurl):
         return False
-    if not id_url.is_cached(idurl):
-        return False
-    return id_url.field(idurl) in suppliers(customer_idurl=customer_idurl)
+    return id_url.field(idurl).to_bin() in id_url.to_bin_list(suppliers(customer_idurl=customer_idurl))
 
 
 def is_correspondent(idurl):
@@ -488,9 +484,7 @@ def is_correspondent(idurl):
     """
     if id_url.is_empty(idurl):
         return False
-    if not id_url.is_cached(idurl):
-        return False
-    return id_url.field(idurl) in correspondents_ids()
+    return id_url.field(idurl).to_bin() in id_url.to_bin_list(correspondents_ids())
 
 #------------------------------------------------------------------------------
 
@@ -529,7 +523,7 @@ def supplier_position(idurl, customer_idurl=None):
         return -1
     idurl = id_url.field(idurl)
     try:
-        index = suppliers(customer_idurl=customer_idurl).index(idurl)
+        index = id_url.to_bin_list(suppliers(customer_idurl=customer_idurl)).index(idurl.to_bin())
     except:
         index = -1
     return index
@@ -545,7 +539,7 @@ def customer_position(idurl):
         return -1
     idurl = id_url.field(idurl)
     try:
-        index = customers().index(idurl)
+        index = id_url.to_bin_list(customers()).index(idurl.to_bin())
     except:
         index = -1
     return index
@@ -565,7 +559,7 @@ def contact_position(idurl):
         return -1
     idurl = id_url.field(idurl)
     try:
-        index = contacts_list().index(idurl)
+        index = id_url.to_bin_list(contacts_list()).index(idurl.to_bin())
     except:
         index = -1
     return index
@@ -868,7 +862,7 @@ def get_correspondent_nickname(correspondent_idurl):
     """
     """
     for idurl, nickname in correspondents():
-        if id_url.field(idurl) == id_url.field(correspondent_idurl):
+        if id_url.field(idurl).to_bin() == id_url.field(correspondent_idurl).to_bin():
             return nickname
     return None
 
