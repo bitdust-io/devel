@@ -41,9 +41,11 @@ def default_nodes():
     from lib import serialization
     from lib import strng
     from main import settings
-    # from logs import lg
+    networks_json_path = os.path.join(settings.MetaDataDir(), 'networks.json')
+    if not os.path.isfile(networks_json_path):
+        networks_json_path = os.path.join(bpio.getExecutableDir(), 'networks.json')
     networks_json = serialization.BytesToDict(
-        local_fs.ReadBinaryFile(os.path.join(bpio.getExecutableDir(), 'networks.json')),
+        local_fs.ReadBinaryFile(networks_json_path),
         keys_to_text=True,
         values_to_text=True,
     )
