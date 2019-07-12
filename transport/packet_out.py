@@ -346,6 +346,8 @@ class PacketOut(automat.Automat):
             self.remote_idurl = id_url.field(self.route['remoteid'])
         if not self.remote_idurl:
             self.remote_idurl = self.outpacket.RemoteID
+        if not self.remote_idurl:
+            raise ValueError('outgoing packet %r did not define remote idurl' % outpacket)
         self.remote_name = nameurl.GetName(self.outpacket.RemoteID)
         if id_url.to_bin(self.remote_idurl) != self.outpacket.RemoteID.to_bin():
             self.label = 'out_%d_%s_via_%s' % (get_packets_counter(), self.remote_name, nameurl.GetName(self.remote_idurl))

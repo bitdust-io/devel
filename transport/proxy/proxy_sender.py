@@ -252,16 +252,16 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
         return pending_result
 
-    def _add_pending_ping_packet(self, outpacket, wide, callbacks, target, route, response_timeout, keep_alive):
-        if len(self.pending_ping_packets) > self.max_pending_packets:
-            if _Debug:
-                lg.warn('pending ping packets queue is full, skip')
-            return None
-        pending_result = Deferred()
-        self.pending_ping_packets.append((outpacket, wide, callbacks, target, route, response_timeout, keep_alive, pending_result))
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_sender._add_pending_ping_packet %s' % outpacket)
-        return pending_result
+#     def _add_pending_ping_packet(self, outpacket, wide, callbacks, target, route, response_timeout, keep_alive):
+#         if len(self.pending_ping_packets) > self.max_pending_packets:
+#             if _Debug:
+#                 lg.warn('pending ping packets queue is full, skip')
+#             return None
+#         pending_result = Deferred()
+#         self.pending_ping_packets.append((outpacket, wide, callbacks, target, route, response_timeout, keep_alive, pending_result))
+#         if _Debug:
+#             lg.out(_DebugLevel, 'proxy_sender._add_pending_ping_packet %s' % outpacket)
+#         return pending_result
 
     def _on_first_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None, response_timeout=None, keep_alive=True):
         """
@@ -388,6 +388,9 @@ class ProxySender(automat.Automat):
                 lg.out(_DebugLevel, 'proxy_sender._on_network_connector_state_changed will send %d pending "ping" packets' % len(self.pending_ping_packets))
             while len(self.pending_ping_packets):
                 outpacket, wide, callbacks, target, route, response_timeout, keep_alive, pending_result = self.pending_ping_packets.pop(0)
+                if _Debug:
+                    lg.out(_DebugLevel, 'proxy_sender._on_network_connector_state_changed populate one more item, %d more in the queue' % (
+                        len(self.pending_packets)))
                 result_packet = self._on_first_outbox_packet(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
                 if not isinstance(result_packet, packet_out.PacketOut):
                     lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
