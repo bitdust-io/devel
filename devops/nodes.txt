@@ -1,5 +1,0 @@
-bahamas.ai
-p2p-id.ru
-p2p-alice.ai
-bitdust.ai
-seed.bitdust.io
