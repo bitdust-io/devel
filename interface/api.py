@@ -971,6 +971,40 @@ def files_list(remote_path=None, key_id=None, recursive=True, all_customers=Fals
     })
 
 
+def file_exists(remote_path):
+    """
+    """
+    if not driver.is_on('service_backup_db'):
+        return ERROR('service_backup_db() is not started')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.file_exists remote_path=%s' % remote_path)
+    from storage import backup_fs
+    from system import bpio
+    from userid import global_id
+    glob_path = global_id.ParseGlobalID(remote_path)
+    norm_path = global_id.NormalizeGlobalID(glob_path.copy())
+    remotePath = bpio.remotePath(norm_path['path'])
+    customer_idurl = norm_path['idurl']
+    if customer_idurl not in backup_fs.known_customers():
+        return OK(
+            message='customer "%s" not found' % customer_idurl,
+            extra_fields={'result': False, },
+        )
+    pathID = backup_fs.ToID(remotePath, iter=backup_fs.fs(customer_idurl))
+    if not pathID:
+        return OK(
+            message='path "%s" was not found in catalog' % remotePath,
+            extra_fields={'result': False, },
+        )
+    item = backup_fs.GetByID(pathID, iterID=backup_fs.fsID(customer_idurl))
+    if not item:
+        return OK(
+            message='item "%s" is not found in catalog' % pathID,
+            extra_fields={'result': False, },
+        )
+    return OK(extra_fields={'result': True, },)
+
+
 def file_info(remote_path, include_uploads=True, include_downloads=True):
     """
     """

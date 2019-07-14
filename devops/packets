@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# shows bitdust main log in real time
+tail -f ~/.bitdust/logs/packet.log
