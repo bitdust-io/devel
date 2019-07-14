@@ -85,6 +85,7 @@ def init():
     """
     """
     lg.out(4, 'key_ring.init')
+    # TODO check all my keys here 
 
 
 def shutdown():

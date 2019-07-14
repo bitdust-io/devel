@@ -1,4 +1,4 @@
-twisted
+twisted<=18.7.0
 service_identity
 pycryptodomex
 pyparsing

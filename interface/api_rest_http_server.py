@@ -413,10 +413,10 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def file_list_all_v1(self, request):
         return api.files_list(all_customers=True, include_uploads=True, include_downloads=True)
 
-    @GET('^/f/e$')
-    @GET('^/file/exists/v1$')
-    def file_exists_v1(self, request):
-        return api.file_info(remote_path=_request_arg(request, 'remote_path', mandatory=True))
+#     @GET('^/f/e$')
+#     @GET('^/file/exists/v1$')
+#     def file_exists_v1(self, request):
+#         return api.file_info(remote_path=_request_arg(request, 'remote_path', mandatory=True))
 
     @GET('^/f/i$')
     @GET('^/file/info/v1$')
