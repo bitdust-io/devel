@@ -498,7 +498,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=['remote_path', ])
         return api.file_download_stop(remote_path=data['remote_path'])
 
-    @GET('^/f/x$')
+    @GET('^/f/e$')
     @GET('^/file/explore/v1$')
     def file_explore_v1(self, request):
         return api.file_explore(local_path=_request_arg(request, 'local_path', mandatory=True))
