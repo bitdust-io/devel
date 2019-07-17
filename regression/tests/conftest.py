@@ -237,10 +237,10 @@ def global_wrapper(event_loop):
     if os.environ.get('OPEN_TUNNELS', '1') == '1':
         open_all_tunnels(event_loop)
 
-    if os.environ.get('STOP_NODES', '1') == '1':
+    if os.environ.get('STOP_NODES', '0') == '1':
         stop_all_nodes(event_loop)
 
-    if os.environ.get('CLEAN_NODES', '1') == '1':
+    if os.environ.get('CLEAN_NODES', '0') == '1':
         clean_all_nodes(event_loop, skip_checks=True)
 
     if os.environ.get('START_NODES', '1') == '1':
