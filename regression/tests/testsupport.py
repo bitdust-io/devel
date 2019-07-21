@@ -292,8 +292,11 @@ async def health_check_async(node, event_loop):
             try:
                 response = await client.get(tunnel_url(node, 'process/health/v1'))
                 response_json = await response.json()
-            except aiohttp.ServerDisconnectedError:
-                print(f'node {node} is not started yet, count={count}\n')
+            except (
+                aiohttp.ServerDisconnectedError,
+                aiohttp.client_exceptions.ClientOSError,
+            ) as exc:
+                print(f'node {node} is not started yet, count={count} : {exc}\n')
             else:
                 if response.status == 200 and response_json['status'] == 'OK':
                     break
