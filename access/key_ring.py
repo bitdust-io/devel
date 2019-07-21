@@ -85,6 +85,7 @@ def init():
     """
     """
     lg.out(4, 'key_ring.init')
+    # TODO check all my keys here 
 
 
 def shutdown():
@@ -524,8 +525,8 @@ def do_backup_key(key_id, keys_folder=None):
         remote_path_for_key = os.path.join('.keys', '%s.public' % key_id)
     global_key_path = global_id.MakeGlobalID(
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
-    res = api.file_info(global_key_path, include_uploads=False, include_downloads=False)
-    if res['status'] == 'OK':
+    res = api.file_exists(global_key_path)
+    if res['status'] == 'OK' and res['result']:
         lg.warn('key %s already exists in catalog' % global_key_path)
     else:
         res = api.file_create(global_key_path)

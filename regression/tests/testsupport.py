@@ -211,7 +211,8 @@ def tunnel_port(node):
 
 
 def tunnel_url(node, endpoint):
-    print('\n%s [%s]: tunnel_url - %s' % (datetime.datetime.now().strftime("%H:%M:%S.%f"), node, endpoint, ))
+    print('\n%s [%s]: tunnel_url %d - %s' % (
+        datetime.datetime.now().strftime("%H:%M:%S.%f"), node, tunnel_port(node), endpoint, ))
     return f'http://127.0.0.1:{tunnel_port(node)}/{endpoint.lstrip("/")}'
 
 
@@ -291,8 +292,11 @@ async def health_check_async(node, event_loop):
             try:
                 response = await client.get(tunnel_url(node, 'process/health/v1'))
                 response_json = await response.json()
-            except aiohttp.ServerDisconnectedError:
-                print(f'node {node} is not started yet, count={count}\n')
+            except (
+                aiohttp.ServerDisconnectedError,
+                aiohttp.client_exceptions.ClientOSError,
+            ) as exc:
+                print(f'node {node} is not started yet, count={count} : {exc}\n')
             else:
                 if response.status == 200 and response_json['status'] == 'OK':
                     break
