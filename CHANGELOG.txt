@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2019-07-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bump twisted==19.2.1
+* solved regression tests issues with aiohttp call to process/health/v1
+* added /file/exists/v1 REST API method
+
+
+
 2019-07-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * some changes in service_p2p_hookups() and p2p_connector()
