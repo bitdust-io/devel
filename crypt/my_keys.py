@@ -88,7 +88,8 @@ def init():
 def shutdown():
     """
     """
-    lg.out(4, 'my_keys.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'my_keys.shutdown')
     known_keys().clear()
 
 #------------------------------------------------------------------------------
@@ -311,7 +312,8 @@ def generate_key(key_id, key_size=4096, keys_folder=None):
     if key_id in known_keys():
         lg.warn('key "%s" already exists' % key_id)
         return None
-    lg.out(4, 'my_keys.generate_key "%s" of %d bits' % (key_id, key_size))
+    if _Debug:
+        lg.out(_DebugLevel, 'my_keys.generate_key "%s" of %d bits' % (key_id, key_size))
     key_object = rsa_key.RSAKey()
     key_object.generate(key_size)
     known_keys()[key_id] = key_object
@@ -333,14 +335,16 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
         lg.warn('key %s already exists' % key_id)
         return None
     if strng.is_string(key_object_or_string):
-        lg.out(4, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
-            key_id, len(key_object_or_string)))
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
+                key_id, len(key_object_or_string)))
         key_object = unserialize_key_to_object(key_object_or_string)
         if not key_object:
             lg.warn('invalid openssh string, unserialize_key_to_object() failed')
             return None
     else:
-        lg.out(4, 'my_keys.register_key %s from object' % key_id)
+        if _Debug:
+            lg.out(_DebugLevel, 'my_keys.register_key %s from object' % key_id)
         key_object = key_object_or_string
     known_keys()[key_id] = key_object
     if not keys_folder:
@@ -401,6 +405,37 @@ def validate_key(key_object):
             lg.out(_DebugLevel, 'hash_base=%r' % sample_hash_base)
             lg.out(_DebugLevel, 'data=%r' % sample_data)
     return is_valid
+
+
+def rename_key(current_key_id, new_key_id, keys_folder=None):
+    """
+    """
+    if current_key_id not in known_keys():
+        lg.warn('key %s is not found' % current_key_id)
+        return False
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
+    if key_obj(current_key_id).isPublic():
+        current_key_filepath = os.path.join(keys_folder, current_key_id + '.public')
+        new_key_filepath = os.path.join(keys_folder, new_key_id + '.public')
+        is_private = False
+    else:
+        current_key_filepath = os.path.join(keys_folder, current_key_id + '.private')
+        new_key_filepath = os.path.join(keys_folder, new_key_id + '.private')
+        is_private = True
+    try:
+        os.rename(current_key_filepath, new_key_filepath)
+    except:
+        lg.exc()
+        return False
+    key_object = known_keys().pop(current_key_id)
+    known_keys()[new_key_id] = key_object
+    gc.collect()
+    if _Debug:
+        lg.out(_DebugLevel, '    key %s renamed to %s, file %s renamed to %s' % (
+            current_key_id, new_key_id, current_key_filepath, new_key_filepath))
+    events.send('key-renamed', data=dict(old_key_id=current_key_id, new_key_id=new_key_id, is_private=is_private))
+    return True
 
 #------------------------------------------------------------------------------
 

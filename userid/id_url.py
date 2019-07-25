@@ -658,6 +658,11 @@ class ID_URL_FIELD(object):
             lg.args(_DebugLevel, current=self.current, latest=self.latest)
         return self.current
 
+    def original_id(self):
+        if _Debug:
+            lg.args(_DebugLevel, current=self.current_id, latest=self.latest_id)
+        return self.current_id
+
     def is_latest(self):
         if _Debug:
             lg.args(_DebugLevel, current=self.current, latest=self.latest)
