@@ -86,7 +86,6 @@ from crypt import key
 from crypt import my_keys
 
 from userid import global_id
-from userid import id_url
 
 from services import driver
 
@@ -182,7 +181,8 @@ def WriteIndex(filepath=None, encoding='utf-8'):
     json_data = {}
     # json_data = backup_fs.Serialize(to_json=True, encoding=encoding)
     for customer_idurl in backup_fs.known_customers():
-        customer_id = global_id.UrlToGlobalID(customer_idurl)
+        # customer_id = global_id.UrlToGlobalID(customer_idurl)
+        customer_id = customer_idurl.to_id()
         json_data[customer_id] = backup_fs.Serialize(
             iterID=backup_fs.fsID(customer_idurl),
             to_json=True,
@@ -454,7 +454,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         lg.out(8, 'backup_control.DeleteBackup %s is in process, stopping' % backupID)
         return True
     from customer import io_throttle
-    from . import backup_rebuilder
+    from storage import backup_rebuilder
     lg.out(8, 'backup_control.DeleteBackup ' + backupID)
     # if we requested for files for this backup - we do not need it anymore
     io_throttle.DeleteBackupRequests(backupID)
@@ -490,7 +490,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     This removes all backups of given path ID
     Doing same operations as ``DeleteBackup()``.
     """
-    from . import backup_rebuilder
+    from storage import backup_rebuilder
     from customer import io_throttle
     pathID = global_id.CanonicalID(pathID)
     # get the working item
@@ -853,7 +853,7 @@ def OnJobDone(backupID, result):
 
     Here we need to save the index data base.
     """
-    from . import backup_rebuilder
+    from storage import backup_rebuilder
     from customer import io_throttle
     lg.info('job done [%s] with result "%s", %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)

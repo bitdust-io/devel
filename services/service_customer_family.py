@@ -58,9 +58,9 @@ class SupplierRelationsService(LocalService):
         from transport import callback
         # TODO: check all imports.! my_id must be loaded latest as possible!
         from userid import my_id
-        
+
         callback.append_inbox_callback(self._on_inbox_packet_received)
-        
+
         for customer_idurl in contactsdb.customers():
             if not customer_idurl:
                 continue

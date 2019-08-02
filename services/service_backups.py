@@ -134,8 +134,8 @@ class BackupsService(LocalService):
                 lg.warn('%s came, but %s is not my supplier' % (newpacket, newpacket.OwnerID, ))
                 # skip Files() if this is not my supplier
                 return False
-            lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s at %s" % (
-                newpacket, newpacket.CreatorID, info))
+            # lg.out(self.debug_level, "service_backups._on_inbox_packet_received: %r for us from %s at %s" % (
+            #     newpacket, newpacket.CreatorID, info))
             if backup_control.IncomingSupplierListFiles(newpacket, list_files_global_id):
                 # send ack packet back
                 p2p_service.SendAck(newpacket)
