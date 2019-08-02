@@ -56,6 +56,8 @@ class KeysStorageService(LocalService):
         from logs import lg
         from main import events
         from storage import index_synchronizer
+        from storage import keys_synchronizer
+        keys_synchronizer.A('init')
         self.starting_deferred = Deferred()
         self.starting_deferred.addErrback(lg.errback)
         events.add_subscriber(self._on_key_generated, 'key-generated')
@@ -73,11 +75,13 @@ class KeysStorageService(LocalService):
 
     def stop(self):
         from main import events
+        from storage import keys_synchronizer
         events.remove_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
         events.remove_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.remove_subscriber(self._on_key_erased, 'key-erased')
         events.remove_subscriber(self._on_key_registered, 'key-registered')
         events.remove_subscriber(self._on_key_generated, 'key-generated')
+        keys_synchronizer.A('shutdown')
         return True
 
     def health_check(self):
@@ -97,7 +101,7 @@ class KeysStorageService(LocalService):
 
     def _do_synchronize_keys(self):
         from access import key_ring
-        d = key_ring.do_synchronize_keys(wait_result=True)
+        d = key_ring.do_synchronize_keys()
         d.addCallback(self._on_keys_synchronized)
         d.addErrback(self._on_keys_synchronize_failed)
 

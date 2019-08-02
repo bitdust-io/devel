@@ -198,6 +198,25 @@ def is_valid_key_id(global_key_id):
         return False
     return True
 
+
+def latest_key_id(key_id):
+    """
+    Create IDURL object from input key_id and return new key_id (with same key_alias) from that IDURL object.
+    This way you can be sure that given key_id is pointing to the correct owner IDURL.
+    """
+    if not key_id:
+        return key_id
+    if key_id == 'master':
+        return my_id.getGlobalID(key_alias='master')
+    glob_id = global_id.ParseGlobalID(key_id, as_field=True)
+    if not glob_id['idurl']:
+        lg.err('invalid key_id: %r' % key_id)
+        return key_id
+    return global_id.MakeGlobalID(
+        idurl=glob_id['idurl'].to_bin(),
+        key_alias=glob_id['key_alias'],
+    )
+
 #------------------------------------------------------------------------------
 
 def scan_local_keys(keys_folder=None):
@@ -410,11 +429,11 @@ def validate_key(key_object):
 def rename_key(current_key_id, new_key_id, keys_folder=None):
     """
     """
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
     if current_key_id not in known_keys():
         lg.warn('key %s is not found' % current_key_id)
         return False
-    if not keys_folder:
-        keys_folder = settings.KeyStoreDir()
     if key_obj(current_key_id).isPublic():
         current_key_filepath = os.path.join(keys_folder, current_key_id + '.public')
         new_key_filepath = os.path.join(keys_folder, new_key_id + '.public')
@@ -432,8 +451,8 @@ def rename_key(current_key_id, new_key_id, keys_folder=None):
     known_keys()[new_key_id] = key_object
     gc.collect()
     if _Debug:
-        lg.out(_DebugLevel, '    key %s renamed to %s, file %s renamed to %s' % (
-            current_key_id, new_key_id, current_key_filepath, new_key_filepath))
+        lg.out(_DebugLevel, 'my_keys.rename_key   key %s renamed to %s' % (current_key_id, new_key_id, ))
+        lg.out(_DebugLevel, '    file %s renamed to %s' % (current_key_filepath, new_key_filepath, ))
     events.send('key-renamed', data=dict(old_key_id=current_key_id, new_key_id=new_key_id, is_private=is_private))
     return True
 
@@ -445,6 +464,7 @@ def sign(key_id, inp):
     This will call PyCrypto method ``Crypto.PublicKey.RSA.sign``.
     Returns byte string.
     """
+    key_id = latest_key_id(key_id)
     if key_id not in known_keys():
         raise Exception('key %s is unknown' % key_id)
     if known_keys()[key_id] is None:
@@ -465,6 +485,7 @@ def verify(key_id, hashcode, signature):
 
     Return True if signature is correct, otherwise False.
     """
+    key_id = latest_key_id(key_id)
     if key_id not in known_keys():
         raise Exception('key %s is unknown' % key_id)
     if known_keys()[key_id] is None:
@@ -489,6 +510,7 @@ def encrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
         return key.EncryptLocalPublicKey(inp)
+    key_id = latest_key_id(key_id)
     if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.encrypt  payload of %d bytes using my master key' % len(inp))
@@ -522,6 +544,7 @@ def decrypt(key_id, inp):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
         return key.DecryptLocalPrivateKey(inp)
+    key_id = latest_key_id(key_id)
     if key_id == my_id.getGlobalID(key_alias='master'):  # master$user@host.org
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.decrypt  payload of %d bytes using my master key' % len(inp))
@@ -546,6 +569,7 @@ def decrypt(key_id, inp):
 def serialize_key(key_id):
     """
     """
+    key_id = latest_key_id(key_id)
     if key_id not in known_keys():
         raise Exception('key %s is unknown' % key_id)
     if known_keys()[key_id] is None:
@@ -605,9 +629,10 @@ def make_master_key_info(include_private=False):
 
 def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, include_private=False):
     if key_id:
+        key_id = latest_key_id(key_id)
         key_alias, creator_idurl = split_key_id(key_id)
     else:
-        key_id = make_key_id(alias=key_alias, creator_idurl=creator_idurl)
+        key_id = make_key_id(alias=key_alias, creator_idurl=id_url.field(creator_idurl))
     r = {
         'key_id': key_id,
         'alias': key_alias,
@@ -638,7 +663,7 @@ def get_key_info(key_id, include_private=False):
     """
     Returns dictionary with full key info or raise an Exception.
     """
-    key_id = strng.to_text(key_id)
+    key_id = latest_key_id(strng.to_text(key_id))
     if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getGlobalID():
         return make_master_key_info(include_private=include_private)
     key_alias, creator_idurl = split_key_id(key_id)
@@ -673,6 +698,6 @@ def read_key_info(key_json):
     except:
         lg.exc()
         raise Exception('failed reading key info')
-    return key_id, key_object
+    return latest_key_id(key_id), key_object
 
 #------------------------------------------------------------------------------
