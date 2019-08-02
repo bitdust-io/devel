@@ -43,7 +43,7 @@ import os
 import sys
 import base64
 
-from twisted.internet.defer import Deferred, DeferredList, fail, succeed
+from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------
 
@@ -84,12 +84,16 @@ _MyKeysInSync = False
 def init():
     """
     """
-    lg.out(4, 'key_ring.init')
-    # TODO check all my keys here 
+    if _Debug:
+        lg.out(_DebugLevel, 'key_ring.init')
+    check_rename_my_keys()
 
 
 def shutdown():
-    lg.out(4, 'key_ring.shutdown')
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'key_ring.shutdown')
 
 
 #------------------------------------------------------------------------------
@@ -106,7 +110,6 @@ def set_my_keys_in_sync_flag(flag):
 #-------------------------------------------------------------------------------
 
 def _do_request_service_keys_registry(key_id, idurl, include_private, timeout, result):
-    # result = Deferred()
     p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
         commands.Ack(): lambda response, info:
             _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout),
@@ -120,7 +123,7 @@ def _do_request_service_keys_registry(key_id, idurl, include_private, timeout, r
 def _on_service_keys_registry_response(response, info, key_id, idurl, include_private, result, timeout):
     if not strng.to_text(response.Payload).startswith('accepted'):
         result.errback(Exception('request for "service_keys_registry" refused by remote node'))
-        return
+        return None
     d = transfer_key(
         key_id,
         trusted_idurl=idurl,
@@ -129,6 +132,7 @@ def _on_service_keys_registry_response(response, info, key_id, idurl, include_pr
         result=result,
     )
     d.addErrback(lambda *a: lg.err('transfer key failed: %s' % str(*a)))
+    return None
 
 
 def _on_transfer_key_response(response, info, key_id, result):
@@ -156,6 +160,7 @@ def _on_transfer_key_response(response, info, key_id, result):
 
 def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, result=None):
     """
+    Actually sending given key to remote user.
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.transfer_key  %s -> %s' % (key_id, trusted_idurl))
@@ -198,8 +203,6 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
         callbacks={
             commands.Ack(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
             commands.Fail(): lambda response, info: _on_transfer_key_response(response, info, key_id, result),
-            # commands.Ack(): lambda response, info: result.callback(response),
-            # commands.Fail(): lambda response, info: result.errback(Exception(response)),
             None: lambda pkt_out: _on_transfer_key_response(None, None, key_id, result),
         },
         timeout=timeout,
@@ -209,6 +212,8 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
 
 def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     """
+    Method to be used to send given key to one trusted user.
+    Make sure remote user is identified and connected.
     Returns deferred, callback will be fired with response Ack() packet argument.
     """
     result = Deferred()
@@ -216,7 +221,6 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     d.addCallback(lambda response_tuple: _do_request_service_keys_registry(
         key_id, trusted_idurl, include_private, timeout, result,
     ))
-    # d.addErrback(lg.errback)
     d.addErrback(result.errback)
     return result
 
@@ -242,7 +246,6 @@ def _on_audit_public_key_response(response, info, key_id, untrusted_idurl, test_
     if response_sample == orig_sample:
         if _Debug:
             lg.out(_DebugLevel, 'key_ring._on_audit_public_key_response : %s on %s' % (key_id, untrusted_idurl, ))
-            lg.out(_DebugLevel, '         is OK !!!!!!!!!!!!!!!!!!!!!!!!!')
         result.callback(True)
         return True
     lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
@@ -321,7 +324,6 @@ def _on_audit_private_key_response(response, info, key_id, untrusted_idurl, test
     if response_sample == test_sample:
         if _Debug:
             lg.out(_DebugLevel, 'key_ring._on_audit_private_key_response : %s on %s' % (key_id, untrusted_idurl, ))
-            lg.out(_DebugLevel, '         is OK !!!!!!!!!!!!!!!!!!!!!!!!!')
         result.callback(True)
         return True
     lg.warn('key %s on %s is not OK' % (key_id, untrusted_idurl, ))
@@ -394,6 +396,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
 
 def on_key_received(newpacket, info, status, error_message):
     """
+    Callback will be executed when I receive a new key from one remote user.
     """
     block = encrypted.Unserialize(newpacket.Payload)
     if block is None:
@@ -462,6 +465,7 @@ def on_key_received(newpacket, info, status, error_message):
 
 def on_audit_key_received(newpacket, info, status, error_message):
     """
+    Callback will be executed when remote user would like to check if I poses given key locally.
     """
     block = encrypted.Unserialize(newpacket.Payload)
     if block is None:
@@ -504,16 +508,41 @@ def on_audit_key_received(newpacket, info, status, error_message):
 
 #------------------------------------------------------------------------------
 
-def do_backup_key(key_id, keys_folder=None):
+def check_rename_my_keys():
     """
+    Make sure all my keys have correct names according to known latest identities I have cached.
+    For every key checks corresponding IDURL info and decides to rename it if key owner's identity was rotated.
+    """
+    keys_to_be_renamed = {}
+    for key_id in list(my_keys.known_keys().keys()):
+        key_glob_id = global_id.ParseGlobalID(key_id)
+        owner_idurl = key_glob_id['idurl']
+        if not owner_idurl.is_latest():
+            keys_to_be_renamed[key_id] = global_id.MakeGlobalID(
+                idurl=owner_idurl.to_bin(),
+                key_alias=key_glob_id['key_alias'],
+            )
+    for current_key_id, new_key_id in keys_to_be_renamed.items():
+        my_keys.rename_key(current_key_id, new_key_id)
+
+#------------------------------------------------------------------------------
+
+def do_backup_key(key_id, keys_folder=None, wait_result=False):
+    """
+    Send given key to my suppliers to store it remotely.
+    This will make a regular backup copy of that key file - encrypted with my master key.
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_backup_key     key_id=%r' % key_id)
     if key_id == my_id.getGlobalID(key_alias='master') or key_id == 'master':
         lg.err('master key must never leave local host')
+        if wait_result:
+            return fail(Exception('master key must never leave local host'))
         return False
     if not my_keys.is_key_registered(key_id):
         lg.err('unknown key: "%s"' % key_id)
+        if wait_result:
+            return fail(Exception('unknown key: "%s"' % key_id))
         return False
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
@@ -532,23 +561,59 @@ def do_backup_key(key_id, keys_folder=None):
         res = api.file_create(global_key_path)
         if res['status'] != 'OK':
             lg.err('failed to create path "%s" in the catalog: %r' % (global_key_path, res))
+            if wait_result:
+                return fail(Exception('failed to create path "%s" in the catalog: %r' % (global_key_path, res)))
             return False
     res = api.file_upload_start(
         local_path=local_key_filepath,
         remote_path=global_key_path,
-        wait_result=False,
+        wait_result=wait_result,
         open_share=False,
     )
-    if res['status'] != 'OK':
-        lg.err('failed to upload key "%s": %r' % (global_key_path, res))
-        return False
-    if _Debug:
-        lg.out(_DebugLevel, 'key_ring.do_backup_key key_id=%s : %r' % (key_id, res))
-    return True
+    if not wait_result:
+        if res['status'] != 'OK':
+            lg.err('failed to upload key "%s": %r' % (global_key_path, res))
+            return False
+        if _Debug:
+            lg.out(_DebugLevel, 'key_ring.do_backup_key key_id=%s : %r' % (key_id, res))
+        return True
+
+    backup_result = Deferred()
+
+    # TODO: put that code bellow into api.file_upload_start() method with additional parameter
+
+    def _job_done(result):
+        if _Debug:
+            lg.args(_DebugLevel, key_id=key_id, result=result)
+        if result == 'done':
+            backup_result.callback(True)
+        else:
+            backup_result.errback(Exception('failed to upload key "%s", backup is %r' % (key_id, result)))
+        return None
+
+    def _task_started(resp):
+        if _Debug:
+            lg.args(_DebugLevel, key_id=key_id, response=resp)
+        if resp['status'] != 'OK':
+            backup_result.errback(Exception('failed to upload key "%s", task was not started: %r' % (global_key_path, resp)))
+            return None
+        from storage import backup_control
+        backupObj = backup_control.jobs().get(resp['version'])
+        if not backupObj:
+            backup_result.errback(Exception('failed to upload key "%s", task %r failed to start' % (global_key_path, resp['version'])))
+            return None
+        backupObj.resultDefer.addCallback(_job_done)
+        backupObj.resultDefer.addErrback(backup_result.errback)
+        return None
+
+    res.addCallback(_task_started)
+    res.addErrback(backup_result.errback)
+    return backup_result
 
 
 def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
     """
+    Restore given key from my suppliers if I do not have it locally.
     """
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_restore_key     key_id=%r    is_private=%r' % (key_id, is_private, ))
@@ -610,6 +675,7 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
 
 def do_delete_key(key_id, is_private):
     """
+    Remove given key from my suppliers nodes.
     """
     if is_private:
         remote_path_for_key = os.path.join('.keys', '%s.private' % key_id)
@@ -626,10 +692,15 @@ def do_delete_key(key_id, is_private):
     return True
 
 
-def do_synchronize_keys(keys_folder=None, wait_result=False):
+#------------------------------------------------------------------------------
+
+def do_synchronize_keys():
     """
+    Make sure all my keys are stored on my suppliers nodes (encrypted with my master key).
+    If some key I do not have locally, but I know remote copy exists - download it.
+    If some key was not stored - make a remote copy on supplier machine.
+    When key was renamed (after identity rotate) make sure to store the latest copy and remove older one. 
     """
-    from storage import backup_fs
     from storage import index_synchronizer
     from storage import backup_control
     is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
@@ -637,63 +708,22 @@ def do_synchronize_keys(keys_folder=None, wait_result=False):
         lg.out(_DebugLevel, 'key_ring.do_synchronize_keys is_in_sync=%r' % is_in_sync)
     if not is_in_sync:
         lg.warn('backup index database is not synchronized yet')
-        if wait_result:
-            return fail(Exception('backup index database is not synchronized yet'))
-        return False
-    if not backup_fs.Exists('.keys'):
-        if not api.file_create('.keys', as_folder=True):
-            lg.err('failed to create ".keys" folder in the catalog')
-            if wait_result:
-                return fail(Exception('failed to create ".keys" folder in the catalog'))
-            return False
-        lg.info('created new remote folder ".keys" in the catalog')
-    if not backup_fs.IsDir('.keys'):
-        lg.err('remote folder ".keys" not exist in the catalog')
-        if wait_result:
-            return fail(Exception('remote folder ".keys" not exist in the catalog'))
-        return False
-    if not keys_folder:
-        keys_folder = settings.KeyStoreDir()
-    lookup = backup_fs.ListChildsByPath(path='.keys', recursive=False, )
-    restored_count = 0
-    saved_count = 0
-    keys_to_be_restored = []
-    for i in lookup:
-        if i['path'].endswith('.public'):
-            is_private = False
-            key_id = i['path'].replace('.public', '').replace('.keys/', '')
-        else:
-            is_private = True
-            key_id = i['path'].replace('.private', '').replace('.keys/', '')
-        if my_keys.is_key_registered(key_id):
-            if _Debug:
-                lg.out(_DebugLevel, '        skip restoring already known key_id=%r' % key_id)
-            continue
-        res = do_restore_key(key_id, is_private, keys_folder=keys_folder, wait_result=wait_result)
-        restored_count += 1
-        if wait_result:
-            keys_to_be_restored.append(res)
-            continue
-        if not res:
-            lg.err('failed to synchronize keys')
-            return False
-    for key_id in my_keys.known_keys().keys():
-        is_key_stored = False
-        for i in lookup:
-            if i['path'].endswith('.public'):
-                stored_key_id = i['path'].replace('.public', '').replace('.keys/', '')
-            else:
-                stored_key_id = i['path'].replace('.private', '').replace('.keys/', '')
-            if stored_key_id == key_id:
-                is_key_stored = True
-                break
-        if not is_key_stored:
-            if do_backup_key(key_id, keys_folder):
-                saved_count += 1
-    if _Debug:
-        lg.out(_DebugLevel, 'key_ring.do_synchronize_keys restored_count=%d saved_count=%d' % (restored_count, saved_count, ))
-    if not wait_result:
-        return True
-    if not keys_to_be_restored:
-        return succeed(True)
-    return DeferredList(keys_to_be_restored, fireOnOneErrback=True, consumeErrors=True)
+        return fail(Exception('backup index database is not synchronized yet'))
+
+    global_keys_folder_path = global_id.MakeGlobalID(
+        key_alias='master', customer=my_id.getGlobalID(), path='.keys')
+    res = api.file_exists(global_keys_folder_path)
+    if res['status'] == 'OK' and res['result']:
+        if _Debug:
+            lg.out(_DebugLevel, '    folder ".keys" already exists: %r' % global_keys_folder_path)
+    else:
+        res = api.file_create(global_keys_folder_path, as_folder=True)
+        if res['status'] != 'OK':
+            lg.err('failed to create keys folder "%s" in the catalog: %r' % (global_keys_folder_path, res))
+            return fail(Exception('failed to create keys folder "%s" in the catalog: %r' % (global_keys_folder_path, res)))
+        lg.info('created new remote folder ".keys" in the catalog: %r' % global_keys_folder_path)
+
+    result = Deferred()
+    from storage import keys_synchronizer
+    keys_synchronizer.A('sync', result)
+    return result

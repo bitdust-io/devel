@@ -29,7 +29,7 @@ import requests
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
     supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
-    user_ping_v1, identity_get_v1, identity_rotate_v1
+    user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
@@ -208,6 +208,12 @@ def test_identity_rotate_customer_6():
     user_ping_v1('supplier_1', old_global_id)
     user_ping_v1('supplier_2', old_global_id)
 
+    # remember list of existing keys
+    old_keys = [k['key_id'] for k in key_list_v1('customer_6')['result']]
+    assert f'master${old_global_id}' in old_keys
+    assert f'messages${old_global_id}' in old_keys
+    assert f'customer${old_global_id}' in old_keys
+
     # rotate identity sources
     identity_rotate_v1('customer_6')
 
@@ -231,3 +237,14 @@ def test_identity_rotate_customer_6():
     user_ping_v1('customer_2', new_global_id)
     user_ping_v1('supplier_1', new_global_id)
     user_ping_v1('supplier_2', new_global_id)
+
+    # make sure keys are renamed on customer_6
+    new_keys = [k['key_id'] for k in key_list_v1('customer_6')['result']]
+    assert len(old_keys) == len(new_keys)
+    assert f'master${new_global_id}' in new_keys
+    assert f'messages${new_global_id}' in new_keys
+    assert f'customer${new_global_id}' in new_keys
+    assert f'master${old_global_id}' not in new_keys
+    assert f'messages${old_global_id}' not in new_keys
+    assert f'customer${old_global_id}' not in new_keys
+

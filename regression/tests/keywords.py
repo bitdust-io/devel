@@ -429,3 +429,14 @@ def identity_rotate_v1(node):
     print('\nidentity/rotate/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
+
+
+def key_list_v1(node):
+    response = requests.get(
+        url=tunnel_url(node, 'key/list/v1'),
+    )
+    assert response.status_code == 200
+    print('\nkey/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+

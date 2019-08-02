@@ -65,6 +65,11 @@ from io import StringIO
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -89,6 +94,8 @@ from main import settings
 
 from lib import misc
 from lib import packetid
+
+from crypt import my_keys
 
 from userid import my_id
 from userid import global_id
@@ -116,6 +123,29 @@ _DirsCount = 0
 _SizeFiles = 0
 _SizeFolders = 0
 _SizeBackups = 0
+
+#------------------------------------------------------------------------------
+
+def init():
+    """
+    Some initial steps can be done here.
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.init')
+    # fn_index = settings.BackupIndexFileName()
+    # fs()[fn_index] = settings.BackupIndexFileName()
+    # fsID()[fn_index] = FSItemInfo(fn_index, fn_index, FILE)
+    # fsID()[fn_index].read_stats(os.path.join(settings.getLocalBackupsDir(), fn_index))
+    # SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
+
+
+def shutdown():
+    """
+    Should be called when the program is finishing.
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.shutdown')
+
 
 #------------------------------------------------------------------------------
 
@@ -223,26 +253,6 @@ def sizebackups():
     global _SizeBackups
     return _SizeBackups
 
-#------------------------------------------------------------------------------
-
-
-def init():
-    """
-    Some initial steps can be done here.
-    """
-    lg.out(4, 'backup_fs.init')
-    # fn_index = settings.BackupIndexFileName()
-    # fs()[fn_index] = settings.BackupIndexFileName()
-    # fsID()[fn_index] = FSItemInfo(fn_index, fn_index, FILE)
-    # fsID()[fn_index].read_stats(os.path.join(settings.getLocalBackupsDir(), fn_index))
-    # SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
-
-
-def shutdown():
-    """
-    Should be called when the program is finishing.
-    """
-    lg.out(4, 'backup_fs.shutdown')
 
 #------------------------------------------------------------------------------
 
@@ -413,7 +423,7 @@ class FSItemInfo():
                 self.path_id = strng.to_text(src['i'], encoding=decoding)
                 self.type = src['t']
                 self.size = src['s']
-                self.key_id = strng.to_text(src['k'], encoding=decoding)
+                self.key_id = my_keys.latest_key_id(strng.to_text(src['k'], encoding=decoding))
                 self.versions = {
                     strng.to_text(v['n']): [v['b'], v['s'], ] for v in src['v']
                 }
@@ -1484,7 +1494,8 @@ def ListRootItems(iter=None, iterID=None):
 def ListChilds(iterID):
     """
     """
-    lg.out(4, 'backup_fs.ListChilds %s' % (iterID))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.ListChilds %s' % (iterID))
     result = []
     if isinstance(iterID, FSItemInfo):
         return [('', '', iterID), ]
@@ -1513,7 +1524,8 @@ def ListByID(pathID, iterID=None):
     """
     List sub items in the index at given ``ID``.
     """
-    lg.out(4, 'backup_fs.ListByID %s' % (pathID))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.ListByID %s' % (pathID))
     if iterID is None:
         iterID = fsID()
 #     customer_idurl = customerIDURLFromRootItemID(iterID)
@@ -1550,7 +1562,8 @@ def ListByPath(path, iter=None):
     """
     List sub items in the index at given ``path``.
     """
-    lg.out(4, 'backup_fs.ListByPath %s' % (path))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.ListByPath %s' % (path))
     if iter is None:
         iter = fs()
 #     customer_idurl = customerIDURLFromRootItem(iter)
@@ -1998,8 +2011,9 @@ def Calculate(iterID=None):
     if iterID is None:
         iterID = fsID()
     ret = recursive_calculate(iterID)
-    lg.out(16, 'backup_fs.Calculate %d %d %d %d' % (
-        _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.Calculate %d %d %d %d' % (
+            _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
     return ret
 
 #------------------------------------------------------------------------------
@@ -2040,7 +2054,8 @@ def Serialize(iterID=None, to_json=False, encoding='utf-8', filter_cb=None):
     else:
         src = result.getvalue()
         result.close()
-    lg.out(6, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
     return src
 
 
@@ -2092,7 +2107,8 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
                 inpt.close()
                 raise ValueError('Incorrect entry type')
         inpt.close()
-    lg.out(6, 'backup_fs.Unserialize done with %d indexed files' % count)
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_fs.Unserialize done with %d indexed files' % count)
     return count
 
 #------------------------------------------------------------------------------

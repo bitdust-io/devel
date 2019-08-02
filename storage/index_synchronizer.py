@@ -124,14 +124,12 @@ _IndexSynchronizer = None
 
 #------------------------------------------------------------------------------
 
-
 def is_synchronized():
     if not A():
         return False
     return A().state == 'IN_SYNC!'
 
 #------------------------------------------------------------------------------
-
 
 def A(event=None, *args, **kwargs):
     """
@@ -153,7 +151,6 @@ def A(event=None, *args, **kwargs):
     return _IndexSynchronizer
 
 #------------------------------------------------------------------------------
-
 
 class IndexSynchronizer(automat.Automat):
     """
@@ -290,7 +287,7 @@ class IndexSynchronizer(automat.Automat):
         Condition method.
         """
         if self.current_local_revision < 0:
-            # no info about current local version : assume version was changed
+            # no info about current local version - assume version was changed
             return True
         return self.current_local_revision != self.latest_supplier_revision
 
@@ -317,7 +314,6 @@ class IndexSynchronizer(automat.Automat):
             customer=my_id.getGlobalID(key_alias='master'),
             path=settings.BackupIndexFileName(),
         )
-        # packetID = settings.BackupIndexFileName()
         localID = my_id.getLocalID()
         for supplierId in contactsdb.suppliers():
             if not supplierId:
@@ -334,16 +330,6 @@ class IndexSynchronizer(automat.Automat):
                     commands.Fail(): self._on_supplier_response,
                 }
             )
-#             newpacket = signed.Packet(
-#                 commands.Retrieve(),
-#                 localID,
-#                 localID,
-#                 packetid.RemotePath(packetID),
-#                 '',
-#                 supplierId)
-#             pkt_out = gateway.outbox(newpacket, callbacks={
-#                 commands.Data(): self._on_supplier_response,
-#                 commands.Fail(): self._on_supplier_response, })
             if pkt_out:
                 self.requesting_suppliers.add(supplierId)
                 self.requested_suppliers_number += 1
@@ -390,12 +376,6 @@ class IndexSynchronizer(automat.Automat):
                     commands.Fail(): self._on_supplier_acked,
                 },
             )
-            # newpacket = signed.Packet(
-            #     commands.Data(), localID, localID, packetID,
-            #     Payload, supplierId)
-            # pkt_out = gateway.outbox(newpacket, callbacks={
-            #     commands.Ack(): self._on_supplier_acked,
-            #     commands.Fail(): self._on_supplier_acked, })
             if pkt_out:
                 self.sending_suppliers.add(supplierId)
                 self.sent_suppliers_number += 1

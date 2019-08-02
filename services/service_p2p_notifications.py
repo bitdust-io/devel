@@ -157,77 +157,8 @@ class P2PNotificationsService(LocalService):
         return False
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-#         import json
-#         from logs import lg
-#         from main import events
         from p2p import commands
-#         from p2p import p2p_service
         from p2p import p2p_queue
-#         from userid import global_id
-#         from userid import my_id
         if newpacket.Command != commands.Event():
             return False
         return p2p_queue.on_event_packet_received(newpacket, info, status, error_message)
-
-
-#         try:
-#             e_json = json.loads(newpacket.Payload)
-#             event_id = e_json['event_id']
-#             payload = e_json['payload']
-#             queue_id = e_json.get('queue_id')
-#             producer_id = e_json.get('producer_id')
-#             message_id = e_json.get('message_id')
-#             created = e_json.get('created')
-#         except:
-#             lg.warn("invlid json payload")
-#             return False
-#         if queue_id and producer_id and message_id:
-#             # this message have an ID and producer so it came from a queue and needs to be consumed
-#             # also add more info comming from the queue
-#             lg.info('received event from the queue at %s' % queue_id)
-#             payload.update(dict(
-#                 queue_id=queue_id,
-#                 producer_id=producer_id,
-#                 message_id=message_id,
-#                 created=created,
-#             ))
-#             events.send(event_id, data=payload)
-#             p2p_service.SendAck(newpacket)
-#             return True
-#         # this message does not have nor ID nor producer so it came from another user directly
-#         # lets' try to find a queue for that event and see if we need to publish it or not
-#         queue_id = global_id.MakeGlobalQueueID(
-#             queue_alias=event_id,
-#             owner_id=global_id.MakeGlobalID(idurl=newpacket.OwnerID),
-#             supplier_id=global_id.MakeGlobalID(idurl=my_id.getGlobalID()),
-#         )
-#         if queue_id not in p2p_queue.queue():
-#             # such queue is not found locally, that means message is
-#             # probably addressed to that node and needs to be consumed directly
-#             lg.warn('received event was not delivered to any queue, consume now and send an Ack')
-#             # also add more info comming from the queue
-#             payload.update(dict(
-#                 queue_id=queue_id,
-#                 producer_id=producer_id,
-#                 message_id=message_id,
-#                 created=created,
-#             ))
-#             events.send(event_id, data=payload)
-#             p2p_service.SendAck(newpacket)
-#             return True
-#         # found a queue for that message, pushing there
-#         # TODO: add verification of producer's identity and signature
-#         lg.info('pushing event to the queue %s on behalf of producer %s' % (queue_id, producer_id))
-#         try:
-#             p2p_queue.push_message(
-#                 producer_id=producer_id,
-#                 queue_id=queue_id,
-#                 data=payload,
-#                 creation_time=created,
-#             )
-#         except Exception as exc:
-#             lg.warn(exc)
-#             p2p_service.SendFail(newpacket, str(exc))
-#             return True
-#         p2p_service.SendAck(newpacket)
-#         return True

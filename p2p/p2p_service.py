@@ -504,7 +504,6 @@ def Data(request):
 def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
     """
     """
-    # TODO:
     newpacket = signed.Packet(
         Command=commands.Data(),
         OwnerID=ownerID,

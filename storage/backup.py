@@ -97,7 +97,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup.py')
 
-from twisted.internet.defer import maybeDeferred
+from twisted.internet.defer import maybeDeferred, Deferred
 
 #------------------------------------------------------------------------------
 
@@ -175,6 +175,7 @@ class backup(automat.Automat):
         self.dataSent = 0
         self.blocksSent = 0
         self.totalSize = -1
+        self.resultDefer = Deferred()
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
         automat.Automat.__init__(self, 'backup_%s' % self.version, 'AT_STARTUP', _DebugLevel)
@@ -231,12 +232,6 @@ class backup(automat.Automat):
                 self.doClose(*args, **kwargs)
                 self.doReport(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-        #---DONE---
-        elif self.state == 'DONE':
-            pass
-        #---ABORTED---
-        elif self.state == 'ABORTED':
-            pass
         #---ENCRYPT---
         elif self.state == 'ENCRYPT':
             if event == 'block-encrypted':
@@ -251,6 +246,12 @@ class backup(automat.Automat):
                 self.doPopBlock(*args, **kwargs)
                 self.doBlockReport(*args, **kwargs)
                 data_sender.A('new-data')
+        #---DONE---
+        elif self.state == 'DONE':
+            pass
+        #---ABORTED---
+        elif self.state == 'ABORTED':
+            pass
         return None
 
     def isAborted(self, *args, **kwargs):
@@ -468,16 +469,29 @@ class backup(automat.Automat):
         if self.ask4abort:
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'abort')
+            self.resultDefer.callback('abort')
             events.send('backup-aborted', dict(backup_id=self.backupID))
         else:
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'done')
+            self.resultDefer.callback('done')
             events.send('backup-done', dict(backup_id=self.backupID))
 
     def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
+        self.eccmap = None
+        self.pipe = None
+        self.ask4abort = False
+        self.terminating = False
+        self.stateEOF = False
+        self.stateReading = False
+        self.closed = False
+        self.workBlocks = None
+        self.resultDefer = None
+        self.finishCallback = None
+        self.blockResultCallback = None
         self.currentBlockData.close()
         del self.currentBlockData
         self.destroy()
@@ -512,7 +526,7 @@ class backup(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'backup._raidmakeCallback WARNING - result is None :  %r eof=%s dt=%s' % (
                     blockNumber, str(self.stateEOF), str(time.time() - dt)))
-            events.send('backup-aborted', dict(backup_id=self.backupID))
+            events.send('backup-raidmake-failed', dict(backup_id=self.backupID))
             self._kill_pipe()
         else:
             if _Debug:

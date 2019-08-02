@@ -59,7 +59,7 @@ from io import BytesIO
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -119,7 +119,8 @@ def init():
     * scan local files and build the "local" matrix
     * read latest (stored on local disk) ListFiles for suppliers to build "remote" matrix
     """
-    lg.out(4, 'backup_matrix.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.init')
     RepaintingProcess(True)
     ReadLocalFiles()
     ReadLatestRawListFiles()
@@ -129,7 +130,8 @@ def shutdown():
     """
     Correct way to finish all things here.
     """
-    lg.out(4, 'backup_matrix.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.shutdown')
     RepaintingProcess(False)
 
 #------------------------------------------------------------------------------
@@ -245,7 +247,8 @@ def SaveLatestRawListFiles(supplier_idurl, raw_data, customer_idurl=None):
     """
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
-    lg.out(4, 'backup_matrix.SaveLatestRawListFiles, %s, customer_idurl=%s' % (supplier_idurl, customer_idurl))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.SaveLatestRawListFiles, %s, customer_idurl=%s' % (supplier_idurl, customer_idurl))
     supplierPath = settings.SupplierPath(supplier_idurl, customer_idurl)
     if not os.path.isdir(supplierPath):
         try:
@@ -291,8 +294,9 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
             is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
         else:
             is_in_sync = False
-    lg.out(4, 'backup_matrix.ReadRawListFiles, %s : %d bytes, is_in_sync=%s, rev:%d, customer_idurl=%s' % (
-        supplierNum, len(listFileText), is_in_sync, backup_control.revision(), customer_idurl))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.ReadRawListFiles, %s : %d bytes, is_in_sync=%s, rev:%d, customer_idurl=%s' % (
+            supplierNum, len(listFileText), is_in_sync, backup_control.revision(), customer_idurl))
     backups2remove = set()
     paths2remove = set()
     missed_backups = set(remote_files().keys())
@@ -516,9 +520,10 @@ def ReadLatestRawListFiles(customer_idurl=None):
     Call ``ReadRawListFiles()`` for every local file we have on hands and build
     whole "remote" matrix.
     """
-    lg.out(4, 'backup_matrix.ReadLatestRawListFiles')
     if not customer_idurl:
         customer_idurl = my_id.getLocalID()
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.ReadLatestRawListFiles  customer_idurl=%r' % customer_idurl)
     for idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
         if idurl:
             filename = os.path.join(settings.SupplierPath(idurl, customer_idurl, 'listfiles'))
@@ -624,8 +629,9 @@ def DetectSupplierPosition(raw_list_file_text):
                 all_positions[supplier_pos] = 0
             all_positions[supplier_pos] += 1
     inpt.close()
-    lg.out(4, 'backup_matrix.DetectSupplierPosition from %d bytes found: %s' % (
-        len(raw_list_file_text), all_positions))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.DetectSupplierPosition from %d bytes found: %s' % (
+            len(raw_list_file_text), all_positions))
     if not all_positions:
         return -1
     all_positions = list(all_positions.items())
@@ -646,7 +652,8 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     supplierNum = int(supplierNum)
     customer_idurl = packetid.CustomerIDURL(backupID)
     if supplierNum > contactsdb.num_suppliers(customer_idurl=customer_idurl):
-        lg.out(4, 'backup_matrix.RemoteFileReport got too big supplier number, possible this is an old packet')
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_matrix.RemoteFileReport got too big supplier number, possible this is an old packet')
         return
     if backupID not in remote_files():
         remote_files()[backupID] = {}
