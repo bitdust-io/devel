@@ -193,7 +193,7 @@ class ContractChainConsumer(automat.Automat):
         """
         Action method.
         """
-        self.unregister()
+        self.destroy()
         global _ContractChainConsumer
         del _ContractChainConsumer
         _ContractChainConsumer = None

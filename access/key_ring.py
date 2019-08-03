@@ -98,17 +98,6 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def is_my_keys_in_sync():
-    global _MyKeysInSync
-    return _MyKeysInSync
-
-
-def set_my_keys_in_sync_flag(flag):
-    global _MyKeysInSync
-    _MyKeysInSync = flag
-
-#-------------------------------------------------------------------------------
-
 def _do_request_service_keys_registry(key_id, idurl, include_private, timeout, result):
     p2p_service.SendRequestService(idurl, 'service_keys_registry', callbacks={
         commands.Ack(): lambda response, info:
@@ -275,7 +264,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         result.errback(Exception('wrong key_id'))
         return result
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.warn('doing audit of master key (public part) of remote user')
+        lg.info('doing audit of master key (public part) of remote user')
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
@@ -354,7 +343,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         return result
     private_test_sample = key.NewSessionKey()
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.warn('doing audit of master key (private part) of remote user')
+        lg.info('doing audit of master key (private part) of remote user')
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):
@@ -690,40 +679,3 @@ def do_delete_key(key_id, is_private):
     if _Debug:
         lg.out(_DebugLevel, 'key_ring.do_delete_key key_id=%s  is_private=%r : %r' % (key_id, is_private, res))
     return True
-
-
-#------------------------------------------------------------------------------
-
-def do_synchronize_keys():
-    """
-    Make sure all my keys are stored on my suppliers nodes (encrypted with my master key).
-    If some key I do not have locally, but I know remote copy exists - download it.
-    If some key was not stored - make a remote copy on supplier machine.
-    When key was renamed (after identity rotate) make sure to store the latest copy and remove older one. 
-    """
-    from storage import index_synchronizer
-    from storage import backup_control
-    is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
-    if _Debug:
-        lg.out(_DebugLevel, 'key_ring.do_synchronize_keys is_in_sync=%r' % is_in_sync)
-    if not is_in_sync:
-        lg.warn('backup index database is not synchronized yet')
-        return fail(Exception('backup index database is not synchronized yet'))
-
-    global_keys_folder_path = global_id.MakeGlobalID(
-        key_alias='master', customer=my_id.getGlobalID(), path='.keys')
-    res = api.file_exists(global_keys_folder_path)
-    if res['status'] == 'OK' and res['result']:
-        if _Debug:
-            lg.out(_DebugLevel, '    folder ".keys" already exists: %r' % global_keys_folder_path)
-    else:
-        res = api.file_create(global_keys_folder_path, as_folder=True)
-        if res['status'] != 'OK':
-            lg.err('failed to create keys folder "%s" in the catalog: %r' % (global_keys_folder_path, res))
-            return fail(Exception('failed to create keys folder "%s" in the catalog: %r' % (global_keys_folder_path, res)))
-        lg.info('created new remote folder ".keys" in the catalog: %r' % global_keys_folder_path)
-
-    result = Deferred()
-    from storage import keys_synchronizer
-    keys_synchronizer.A('sync', result)
-    return result

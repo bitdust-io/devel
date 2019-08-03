@@ -59,7 +59,7 @@ from __future__ import absolute_import
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -379,6 +379,10 @@ class DataSender(automat.Automat):
         Action method.
         """
         self.statistic = {}
+        self.destroy()
+        global _DataSender
+        del _DataSender
+        _DataSender = None
 
     def _packetAcked(self, packet, ownerID, packetID):
         from storage import backup_matrix

@@ -340,7 +340,7 @@ class KeysSynchronizer(automat.Automat):
         self.keys_to_upload = None
         self.keys_to_erase = None
         self.keys_to_rename = None
-        self.unregister()
+        self.destroy()
         global _KeysSynchronizer
         del _KeysSynchronizer
         _KeysSynchronizer = None

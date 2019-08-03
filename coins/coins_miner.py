@@ -360,7 +360,7 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         callback.remove_inbox_callback(self._on_inbox_packet)
-        self.unregister()
+        self.destroy()
         global _CoinsMiner
         if self == _CoinsMiner:
             del _CoinsMiner

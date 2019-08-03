@@ -127,6 +127,7 @@ class DataReceiver(automat.Automat):
         """
         Action method.
         """
+        callback.remove_finish_file_receiving_callback(self._on_finish_file_receiving)
         callback.remove_begin_file_receiving_callback(self._on_begin_file_receiving)
         self.destroy()
         global _DataReceiver

@@ -66,10 +66,10 @@ class KeysStorageService(LocalService):
         events.add_subscriber(self._on_my_backup_index_synchronized, 'my-backup-index-synchronized')
         events.add_subscriber(self._on_my_backup_index_out_of_sync, 'my-backup-index-out-of-sync')
         if index_synchronizer.A().state == 'NO_INFO':
-            # it can be that machine is offline... we must start here, but expect to be online soon and sync keys later 
+            # it seems I am offline...  must start here, but expect to be online soon and sync keys later 
             return True
         if index_synchronizer.A().state == 'IN_SYNC!':
-            # if we already online and backup index in sync - refresh keys ASAP
+            # if I am already online and backup index in sync - refresh keys ASAP
             self._do_synchronize_keys()
         return self.starting_deferred
 
@@ -85,25 +85,59 @@ class KeysStorageService(LocalService):
         return True
 
     def health_check(self):
-        return True
+        from storage import index_synchronizer
+        from storage import keys_synchronizer
+        return keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized()
 
     def _on_key_generated(self, evt):
-        from access import key_ring
-        key_ring.do_backup_key(key_id=evt.data['key_id'])
+        self._do_synchronize_keys()
+        # from access import key_ring
+        # key_ring.do_backup_key(key_id=evt.data['key_id'])
 
     def _on_key_registered(self, evt):
-        from access import key_ring
-        key_ring.do_backup_key(key_id=evt.data['key_id'])
+        self._do_synchronize_keys()
+        # from access import key_ring
+        # key_ring.do_backup_key(key_id=evt.data['key_id'])
 
     def _on_key_erased(self, evt):
-        from access import key_ring
-        key_ring.do_delete_key(key_id=evt.data['key_id'], is_private=evt.data['is_private'])
+        self._do_synchronize_keys()
+        # from access import key_ring
+        # key_ring.do_delete_key(key_id=evt.data['key_id'], is_private=evt.data['is_private'])
 
     def _do_synchronize_keys(self):
-        from access import key_ring
-        d = key_ring.do_synchronize_keys()
-        d.addCallback(self._on_keys_synchronized)
-        d.addErrback(self._on_keys_synchronize_failed)
+        """
+        Make sure all my keys are stored on my suppliers nodes (encrypted with my master key).
+        If some key I do not have locally, but I know remote copy exists - download it.
+        If some key was not stored - make a remote copy on supplier machine.
+        When key was renamed (after identity rotate) make sure to store the latest copy and remove older one. 
+        """
+        from logs import lg
+        from userid import global_id
+        from userid import my_id
+        from interface import api
+        from storage import backup_control
+        from storage import index_synchronizer
+        from storage import keys_synchronizer
+        from twisted.internet.defer import Deferred
+        result = Deferred()
+        result.addCallback(self._on_keys_synchronized)
+        result.addErrback(self._on_keys_synchronize_failed)
+        is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+        if not is_in_sync:
+            lg.warn('backup index database is not synchronized yet')
+            result.errback(Exception('backup index database is not synchronized yet'))
+            return None
+        global_keys_folder_path = global_id.MakeGlobalID(
+            key_alias='master', customer=my_id.getGlobalID(), path='.keys')
+        res = api.file_exists(global_keys_folder_path)
+        if res['status'] != 'OK' or not res['result']:
+            res = api.file_create(global_keys_folder_path, as_folder=True)
+            if res['status'] != 'OK':
+                lg.err('failed to create keys folder "%s" in the catalog: %r' % (global_keys_folder_path, res))
+                result.errback(Exception('failed to create keys folder "%s" in the catalog: %r' % (global_keys_folder_path, res)))
+                return
+            lg.info('created new remote folder ".keys" in the catalog: %r' % global_keys_folder_path)
+        keys_synchronizer.A('sync', result)
 
     def _on_my_backup_index_synchronized(self, evt):
         import time
@@ -114,60 +148,54 @@ class KeysStorageService(LocalService):
         if not self.last_time_keys_synchronized:
             self._do_synchronize_keys()
             return
+        from storage import keys_synchronizer
+        if not keys_synchronizer.is_synchronized():
+            self._do_synchronize_keys()
+            return
         if time.time() - self.last_time_keys_synchronized > 5 * 60:
             self._do_synchronize_keys()
             return
         from main import events
-        from access import key_ring
-        from storage import index_synchronizer
-        if key_ring.is_my_keys_in_sync() and index_synchronizer.is_synchronized():
-            lg.info('backup index and all keys synchronized')
-            events.send('my-storage-ready', data=dict())
-        else:
-            lg.info('my keys in sync, but backup index still in progress')
-            events.send('my-storage-not-ready-yet', data=dict())
+        lg.info('backup index and all my keys synchronized')
+        events.send('my-storage-ready', data=dict())
 
     def _on_my_backup_index_out_of_sync(self, evt):
         from logs import lg
         from main import events
-        from access import key_ring
-        key_ring.set_my_keys_in_sync_flag(False)
         if self.starting_deferred:
             self.starting_deferred.errback(Exception('not possible to synchronize keys because backup index is out of sync'))
             self.starting_deferred = None
-        events.send('my-keys-out-of-sync', data=dict())
-        events.send('my-storage-not-ready-yet', data=dict())
         lg.info('not possible to synchronize keys because backup index is out of sync')
+        events.send('my-storage-not-ready-yet', data=dict())
 
     def _on_keys_synchronized(self, x):
         import time
         from logs import lg
         from main import events
-        from access import key_ring
-        from storage import index_synchronizer
-        key_ring.set_my_keys_in_sync_flag(True)
+        # from storage import index_synchronizer
+        # from storage import keys_synchronizer
         self.last_time_keys_synchronized = time.time()
         if self.starting_deferred:
             self.starting_deferred.callback(True)
             self.starting_deferred = None
+        lg.info('all my keys are synchronized, my distributed storage is ready')
         events.send('my-keys-synchronized', data=dict())
-        if key_ring.is_my_keys_in_sync() and index_synchronizer.is_synchronized():
-            events.send('my-storage-ready', data=dict())
-            lg.info('all my keys and my backup index synchronized, my distributed storage is ready')
-        else:
-            events.send('my-storage-not-ready-yet', data=dict())
-            lg.info('my keys in sync, but backup index still in progress')
+        events.send('my-storage-ready', data=dict())
+        # if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
+        #     lg.info('all my keys and my backup index synchronized, my distributed storage is ready')
+        #     events.send('my-storage-ready', data=dict())
+        # else:
+        #     lg.info('my keys in sync, but backup index still in progress')
+        #     events.send('my-storage-not-ready-yet', data=dict())
         return None
 
-    def _on_keys_synchronize_failed(self, err):
+    def _on_keys_synchronize_failed(self, err=None):
         from logs import lg
         from main import events
-        from access import key_ring
-        key_ring.set_my_keys_in_sync_flag(False)
         if self.starting_deferred:
             self.starting_deferred.errback(err)
             self.starting_deferred = None
+        lg.err(err)
         events.send('my-keys-out-of-sync', data=dict())
         events.send('my-storage-not-ready-yet', data=dict())
-        lg.err(err)
         return None

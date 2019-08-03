@@ -376,7 +376,7 @@ class AccountantNode(automat.Automat):
         self.pending_coins = None
         self.connected_accountants = None
         callback.remove_inbox_callback(self._on_inbox_packet)
-        self.unregister()
+        self.destroy()
         global _AccountantNode
         del _AccountantNode
         _AccountantNode = None

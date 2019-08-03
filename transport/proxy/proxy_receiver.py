@@ -579,7 +579,7 @@ class ProxyReceiver(automat.Automat):
         self.latest_packet_received = 0
         self.router_connection_info = None
         self.traffic_in = 0
-        self.unregister()
+        self.destroy()
         global _ProxyReceiver
         del _ProxyReceiver
         _ProxyReceiver = None

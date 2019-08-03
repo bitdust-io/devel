@@ -324,7 +324,7 @@ class SupplierContractExecutor(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        self.unregister()
+        self.destroy()
 
     def doRemoveCustomer(self, *args, **kwargs):
         """

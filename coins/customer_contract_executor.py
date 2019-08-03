@@ -313,7 +313,7 @@ class CustomerContractExecutor(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        self.unregister()
+        self.destroy()
 
     def _on_coins_received(self, coins):
         if _Debug:

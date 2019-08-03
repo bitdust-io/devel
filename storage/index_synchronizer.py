@@ -99,6 +99,7 @@ from lib import nameurl
 from p2p import commands
 from p2p import online_status
 from p2p import p2p_service
+from p2p import propagate
 
 from system import bpio
 
@@ -295,6 +296,7 @@ class IndexSynchronizer(automat.Automat):
         """
         Action method.
         """
+        self.ping_required = False
 
     def doSuppliersRequestIndexFile(self, *args, **kwargs):
         """
@@ -310,32 +312,11 @@ class IndexSynchronizer(automat.Automat):
         self.latest_supplier_revision = -1
         self.requesting_suppliers.clear()
         self.requested_suppliers_number = 0
-        packetID = global_id.MakeGlobalID(
-            customer=my_id.getGlobalID(key_alias='master'),
-            path=settings.BackupIndexFileName(),
-        )
-        localID = my_id.getLocalID()
-        for supplierId in contactsdb.suppliers():
-            if not supplierId:
-                continue
-            if online_status.isOffline(supplierId):
-                continue
-            pkt_out = p2p_service.SendRetreive(
-                localID,
-                localID,
-                packetID,
-                supplierId,
-                callbacks={
-                    commands.Data(): self._on_supplier_response,
-                    commands.Fail(): self._on_supplier_response,
-                }
-            )
-            if pkt_out:
-                self.requesting_suppliers.add(supplierId)
-                self.requested_suppliers_number += 1
-            if _Debug:
-                lg.out(_DebugLevel, '    %s sending to %s' %
-                       (pkt_out, nameurl.GetName(supplierId)))
+        if self.ping_required:
+            propagate.ping_suppliers().addBoth(self._do_retrieve)
+            self.ping_required = False
+        else:
+            self._do_retrieve()
 
     def doSuppliersSendIndexFile(self, *args, **kwargs):
         """
@@ -410,7 +391,7 @@ class IndexSynchronizer(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        self.unregister()
+        self.destroy()
         global _IndexSynchronizer
         del _IndexSynchronizer
         _IndexSynchronizer = None
@@ -447,3 +428,31 @@ class IndexSynchronizer(automat.Automat):
                 newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
         if len(self.sending_suppliers) == 0:
             self.automat('all-acked')
+
+    def _do_retrieve(self, x=None):
+        packetID = global_id.MakeGlobalID(
+            customer=my_id.getGlobalID(key_alias='master'),
+            path=settings.BackupIndexFileName(),
+        )
+        localID = my_id.getLocalID()
+        for supplierId in contactsdb.suppliers():
+            if not supplierId:
+                continue
+            if online_status.isOffline(supplierId):
+                continue
+            pkt_out = p2p_service.SendRetreive(
+                localID,
+                localID,
+                packetID,
+                supplierId,
+                callbacks={
+                    commands.Data(): self._on_supplier_response,
+                    commands.Fail(): self._on_supplier_response,
+                }
+            )
+            if pkt_out:
+                self.requesting_suppliers.add(supplierId)
+                self.requested_suppliers_number += 1
+            if _Debug:
+                lg.out(_DebugLevel, '    %s sending to %s' %
+                       (pkt_out, nameurl.GetName(supplierId)))
