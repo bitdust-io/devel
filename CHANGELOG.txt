@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2019-08-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* update key_id in backup index after identity rotated
+* added keys_synchronizer() automat
+* rename local key when owner's identity was rotated
+
+
+
 2019-07-21 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bump twisted==19.2.1
