@@ -516,6 +516,7 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     del alreadysent
     return totalsent
 
+#------------------------------------------------------------------------------
 
 def PingContact(idurl, timeout=30, retries=2):
     """
@@ -587,3 +588,19 @@ def PingContact(idurl, timeout=30, retries=2):
 
     _try_to_cache(1)
     return ping_result
+
+#------------------------------------------------------------------------------
+
+def ping_suppliers(customer_idurl=None, timeout=30, retries=2):
+    l = []
+    for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
+        l.append(PingContact(supplier_idurl, timeout=timeout, retries=retries))
+    return DeferredList(l, consumeErrors=True)
+
+
+def ping_customers(timeout=30, retries=2):
+    l = []
+    for customer_idurl in contactsdb.customers():
+        l.append(PingContact(customer_idurl, timeout=timeout, retries=retries))
+    return DeferredList(l, consumeErrors=True)
+

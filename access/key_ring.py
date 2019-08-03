@@ -264,7 +264,7 @@ def audit_public_key(key_id, untrusted_idurl, timeout=10):
         result.errback(Exception('wrong key_id'))
         return result
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.warn('doing audit of master key (public part) of remote user')
+        lg.info('doing audit of master key (public part) of remote user')
     else:
         if not my_keys.is_key_registered(key_id):
             lg.warn('unknown key: "%s"' % key_id)
@@ -343,7 +343,7 @@ def audit_private_key(key_id, untrusted_idurl, timeout=10):
         return result
     private_test_sample = key.NewSessionKey()
     if untrusted_idurl == creator_idurl and key_alias == 'master':
-        lg.warn('doing audit of master key (private part) of remote user')
+        lg.info('doing audit of master key (private part) of remote user')
         private_test_encrypted_sample = recipient_id_obj.encrypt(private_test_sample)
     else:
         if not my_keys.is_key_registered(key_id):

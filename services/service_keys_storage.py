@@ -85,19 +85,24 @@ class KeysStorageService(LocalService):
         return True
 
     def health_check(self):
-        return True
+        from storage import index_synchronizer
+        from storage import keys_synchronizer
+        return keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized()
 
     def _on_key_generated(self, evt):
-        from access import key_ring
-        key_ring.do_backup_key(key_id=evt.data['key_id'])
+        self._do_synchronize_keys()
+        # from access import key_ring
+        # key_ring.do_backup_key(key_id=evt.data['key_id'])
 
     def _on_key_registered(self, evt):
-        from access import key_ring
-        key_ring.do_backup_key(key_id=evt.data['key_id'])
+        self._do_synchronize_keys()
+        # from access import key_ring
+        # key_ring.do_backup_key(key_id=evt.data['key_id'])
 
     def _on_key_erased(self, evt):
-        from access import key_ring
-        key_ring.do_delete_key(key_id=evt.data['key_id'], is_private=evt.data['is_private'])
+        self._do_synchronize_keys()
+        # from access import key_ring
+        # key_ring.do_delete_key(key_id=evt.data['key_id'], is_private=evt.data['is_private'])
 
     def _do_synchronize_keys(self):
         """
@@ -167,19 +172,21 @@ class KeysStorageService(LocalService):
         import time
         from logs import lg
         from main import events
-        from storage import index_synchronizer
-        from storage import keys_synchronizer
+        # from storage import index_synchronizer
+        # from storage import keys_synchronizer
         self.last_time_keys_synchronized = time.time()
         if self.starting_deferred:
             self.starting_deferred.callback(True)
             self.starting_deferred = None
+        lg.info('all my keys are synchronized, my distributed storage is ready')
         events.send('my-keys-synchronized', data=dict())
-        if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
-            lg.info('all my keys and my backup index synchronized, my distributed storage is ready')
-            events.send('my-storage-ready', data=dict())
-        else:
-            lg.info('my keys in sync, but backup index still in progress')
-            events.send('my-storage-not-ready-yet', data=dict())
+        events.send('my-storage-ready', data=dict())
+        # if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
+        #     lg.info('all my keys and my backup index synchronized, my distributed storage is ready')
+        #     events.send('my-storage-ready', data=dict())
+        # else:
+        #     lg.info('my keys in sync, but backup index still in progress')
+        #     events.send('my-storage-not-ready-yet', data=dict())
         return None
 
     def _on_keys_synchronize_failed(self, err=None):

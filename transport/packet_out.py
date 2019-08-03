@@ -264,7 +264,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
         if _Debug:
             lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
         if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
-            lg.warn('received %s was not a "good reply" from %s://%s' % (newpacket, proto, host, ))
+            lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
     return result
 
 
@@ -373,7 +373,7 @@ class PacketOut(automat.Automat):
         """
         packet_label = '?'
         if self.outpacket:
-            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID[:25], )
+            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID, )
         return '%s[%s](%s)' % (self.id, packet_label, self.state)
 
     def init(self):

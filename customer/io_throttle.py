@@ -686,6 +686,8 @@ class SupplierQueue:
             # if we're closing down this queue
             # (supplier replaced, don't any anything new)
             return
+        if _Debug:
+            lg.args(_DebugLevel, backupName=backupName)
         packetsToRemove = set()
         for packetID in self.fileSendQueue:
             if (backupName and packetID.count(backupName)) or not backupName:
@@ -697,7 +699,7 @@ class SupplierQueue:
                 self.fileSendQueue.remove(packetID)
                 del self.fileSendDict[packetID]
                 if _Debug:
-                    lg.out(_DebugLevel, "io_throttle.DeleteBackupSendings removed %s from %s sending queue, %d more items" % (
+                    lg.out(_DebugLevel, "    removed %s from %s sending queue, %d more items" % (
                         packetID, self.remoteName, len(self.fileSendQueue)))
         if len(self.fileSendQueue) > 0:
             reactor.callLater(0, self.DoSend)  # @UndefinedVariable
@@ -815,7 +817,7 @@ class SupplierQueue:
             return
         self.failedCount += 1
         if PacketID not in list(self.fileSendDict.keys()):
-            lg.warn("packet %s not in fileSendDict anymore" % PacketID)
+            lg.warn('packet %s not in fileSendDict for %r anymore, failed because "%r"' % (PacketID, RemoteID, why))
             return
         self.fileSendDict[PacketID].result = why
         fileToSend = self.fileSendDict[PacketID]

@@ -67,6 +67,7 @@ from services import driver
 from p2p import p2p_service
 from p2p import online_status
 from p2p import p2p_connector
+from p2p import propagate
 
 #------------------------------------------------------------------------------
 
@@ -113,6 +114,11 @@ class ListFilesOrator(automat.Automat):
 
     def init(self):
         self.log_transitions = True
+        self.ping_required = True
+        events.add_subscriber(self._on_my_identity_rotated, 'local-identity-rotated')
+
+    def shutdown(self):
+        events.remove_subscriber(self._on_my_identity_rotated, 'local-identity-rotated')
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if driver.is_on('service_backups'):
@@ -166,6 +172,13 @@ class ListFilesOrator(automat.Automat):
             lambda x: self.automat('local-files-done'))
 
     def doRequestRemoteFiles(self, *args, **kwargs):
+        if self.ping_required:
+            self.ping_required = False
+            propagate.ping_suppliers().addBoth(self._do_request)
+        else:
+            self._do_request()
+
+    def _do_request(self, x=None):
         global _RequestedListFilesCounter
         global _RequestedListFilesPacketIDs
         _RequestedListFilesCounter = 0
@@ -178,6 +191,9 @@ class ListFilesOrator(automat.Automat):
                     _RequestedListFilesPacketIDs.add(idurl)
                 else:
                     lg.out(6, 'list_files_orator.doRequestRemoteFiles SKIP %s is not online' % idurl)
+
+    def _on_my_identity_rotated(self, evt):
+        self.ping_required = True
 
 #------------------------------------------------------------------------------
 
