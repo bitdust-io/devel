@@ -62,12 +62,12 @@ class KeysStorageService(LocalService):
 
     def start(self):
         from logs import lg
-        from access import key_ring
+        from storage import keys_synchronizer
         from storage import index_synchronizer
-        if key_ring.is_my_keys_in_sync() and index_synchronizer.is_synchronized():
+        if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
             return True
-        lg.warn('can not start service_my_data right now, key_ring.is_my_keys_in_sync=%r index_synchronizer.is_synchronized=%r' % (
-            key_ring.is_my_keys_in_sync(), index_synchronizer.is_synchronized()))
+        lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (
+            keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
         return False
 
     def stop(self):

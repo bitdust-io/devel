@@ -73,9 +73,9 @@ class KeysStorageService(LocalService):
     def _on_my_keys_synchronized(self, evt):
         from logs import lg
         from main import settings
-        from access import key_ring
+        from storage import keys_synchronizer
         from crypt import my_keys
         from chat import message_keeper
-        if not my_keys.is_key_registered(message_keeper.messages_key_id()) and key_ring.is_my_keys_in_sync():
+        if not my_keys.is_key_registered(message_keeper.messages_key_id()) and keys_synchronizer.is_synchronized():
             lg.info('key to store messages was not found but we know that all my keys are in sync, generate a new key: %s' % message_keeper.messages_key_id())
             my_keys.generate_key(message_keeper.messages_key_id(), key_size=settings.getPrivateKeySize())
