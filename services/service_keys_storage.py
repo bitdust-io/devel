@@ -60,6 +60,7 @@ class KeysStorageService(LocalService):
         keys_synchronizer.A('init')
         self.starting_deferred = Deferred()
         self.starting_deferred.addErrback(lg.errback)
+        events.add_subscriber(self._on_identity_rotated, 'identity-rotated')
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
         events.add_subscriber(self._on_key_erased, 'key-erased')
@@ -81,6 +82,7 @@ class KeysStorageService(LocalService):
         events.remove_subscriber(self._on_key_erased, 'key-erased')
         events.remove_subscriber(self._on_key_registered, 'key-registered')
         events.remove_subscriber(self._on_key_generated, 'key-generated')
+        events.remove_subscriber(self._on_identity_rotated, 'identity-rotated')
         keys_synchronizer.A('shutdown')
         return True
 
@@ -91,18 +93,12 @@ class KeysStorageService(LocalService):
 
     def _on_key_generated(self, evt):
         self._do_synchronize_keys()
-        # from access import key_ring
-        # key_ring.do_backup_key(key_id=evt.data['key_id'])
 
     def _on_key_registered(self, evt):
         self._do_synchronize_keys()
-        # from access import key_ring
-        # key_ring.do_backup_key(key_id=evt.data['key_id'])
 
     def _on_key_erased(self, evt):
         self._do_synchronize_keys()
-        # from access import key_ring
-        # key_ring.do_delete_key(key_id=evt.data['key_id'], is_private=evt.data['is_private'])
 
     def _do_synchronize_keys(self):
         """
@@ -172,8 +168,6 @@ class KeysStorageService(LocalService):
         import time
         from logs import lg
         from main import events
-        # from storage import index_synchronizer
-        # from storage import keys_synchronizer
         self.last_time_keys_synchronized = time.time()
         if self.starting_deferred:
             self.starting_deferred.callback(True)
@@ -181,12 +175,6 @@ class KeysStorageService(LocalService):
         lg.info('all my keys are synchronized, my distributed storage is ready')
         events.send('my-keys-synchronized', data=dict())
         events.send('my-storage-ready', data=dict())
-        # if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
-        #     lg.info('all my keys and my backup index synchronized, my distributed storage is ready')
-        #     events.send('my-storage-ready', data=dict())
-        # else:
-        #     lg.info('my keys in sync, but backup index still in progress')
-        #     events.send('my-storage-not-ready-yet', data=dict())
         return None
 
     def _on_keys_synchronize_failed(self, err=None):
@@ -199,3 +187,10 @@ class KeysStorageService(LocalService):
         events.send('my-keys-out-of-sync', data=dict())
         events.send('my-storage-not-ready-yet', data=dict())
         return None
+
+    def _on_identity_rotated(self, evt):
+        from access import key_ring
+        from storage import backup_control
+        key_ring.check_rename_my_keys()
+        self._do_synchronize_keys()
+        backup_control.Save()
