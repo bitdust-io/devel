@@ -330,7 +330,7 @@ class BroadcasterNode(automat.Automat):
         """
         self.incoming_broadcast_message_callback = None
         callback.remove_inbox_callback(self._on_inbox_packet)
-        self.unregister()
+        self.destroy()
         global _BroadcasterNode
         del _BroadcasterNode
         _BroadcasterNode = None

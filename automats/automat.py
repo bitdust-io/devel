@@ -433,7 +433,9 @@ class Automat(object):
         self._callbacks_before_die = self._state_callbacks.copy()
         self._state_callbacks.clear()
         self.stopTimers()
-        objects().pop(self.index)
+        # objects().pop(self.index)
+        # clear_object(self.index)
+        return self.unregister()
 
     def state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         """

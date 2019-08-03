@@ -320,7 +320,7 @@ class ProxyRouter(automat.Automat):
             network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
         callback.remove_inbox_callback(self._on_first_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
-        self.unregister()
+        self.destroy()
         global _ProxyRouter
         del _ProxyRouter
         _ProxyRouter = None

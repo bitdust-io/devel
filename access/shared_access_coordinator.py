@@ -456,7 +456,7 @@ class SharedAccessCoordinator(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         self.result_defer = None
-        self.unregister()
+        self.destroy()
 
     def _on_read_customer_suppliers(self, dht_value):
         if _Debug:

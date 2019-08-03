@@ -379,6 +379,10 @@ class DataSender(automat.Automat):
         Action method.
         """
         self.statistic = {}
+        self.destroy()
+        global _DataSender
+        del _DataSender
+        _DataSender = None
 
     def _packetAcked(self, packet, ownerID, packetID):
         from storage import backup_matrix

@@ -236,7 +236,7 @@ class ProxySender(automat.Automat):
         self.pending_packets = []
         self.pending_ping_packets = []
         self.max_pending_packets = 0
-        self.unregister()
+        self.destroy()
         global _ProxySender
         del _ProxySender
         _ProxySender = None

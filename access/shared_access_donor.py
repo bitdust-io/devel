@@ -403,7 +403,7 @@ class SharedAccessDonor(automat.Automat):
         if self.caching_deferred:
             self.caching_deferred.cancel()
             self.caching_deferred = None
-        self.unregister()
+        self.destroy()
 
     def _on_remote_identity_cached(self, xmlsrc):
         self.caching_deferred = None

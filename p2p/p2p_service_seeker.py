@@ -272,10 +272,7 @@ class P2PServiceSeeker(automat.Automat):
         self.lookup_task = None
         self.exclude_nodes = []
         callback.remove_inbox_callback(self._inbox_packet_received)
-        self.unregister()
-        # global _P2PServiceSeeker
-        # del _P2PServiceSeeker
-        # _P2PServiceSeeker = None
+        self.destroy()
 
     #------------------------------------------------------------------------------
 

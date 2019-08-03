@@ -66,10 +66,6 @@ from dht import dht_records
 
 #------------------------------------------------------------------------------
 
-_NicknameObserver = None
-
-#------------------------------------------------------------------------------
-
 
 def find_one(nickname, attempts=3, results_callback=None):
     """

@@ -410,7 +410,7 @@ class IndexSynchronizer(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        self.unregister()
+        self.destroy()
         global _IndexSynchronizer
         del _IndexSynchronizer
         _IndexSynchronizer = None
