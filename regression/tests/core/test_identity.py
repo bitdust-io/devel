@@ -29,7 +29,7 @@ import requests
 from ..testsupport import tunnel_url, run_ssh_command_and_wait
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
     supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
-    user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1
+    user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1, share_create_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
@@ -208,6 +208,28 @@ def test_identity_rotate_customer_6():
     user_ping_v1('supplier_1', old_global_id)
     user_ping_v1('supplier_2', old_global_id)
 
+    # create one share and upload one file for customer_6
+    share_id_customer_6 = share_create_v1('customer_6')
+    filename = 'cat.txt'
+    virtual_filename = filename
+    volume_customer_6 = '/customer_6'
+    filepath_customer_6 = f'{volume_customer_6}/{filename}'
+    run_ssh_command_and_wait('customer_6', f'echo customer_6 > {filepath_customer_6}')
+    remote_path_customer_6 = f'{share_id_customer_6}:{virtual_filename}'
+
+    file_create_v1('customer_6', remote_path_customer_6)
+    file_upload_start_v1('customer_6', remote_path_customer_6, filepath_customer_6)
+
+    packet_list_v1('customer_6', wait_all_finish=True)
+    transfer_list_v1('customer_6', wait_all_finish=True)
+
+    time.sleep(5)
+    
+    service_info_v1('customer_6', 'service_restores', 'ON')
+
+    # make sure file is available before identity rotate
+    file_download_start_v1('customer_6', remote_path=remote_path_customer_6, destination=volume_customer_6)
+
     # remember list of existing keys
     old_keys = [k['key_id'] for k in key_list_v1('customer_6')['result']]
     assert f'master${old_global_id}' in old_keys
@@ -247,4 +269,8 @@ def test_identity_rotate_customer_6():
     assert f'master${old_global_id}' not in new_keys
     assert f'messages${old_global_id}' not in new_keys
     assert f'customer${old_global_id}' not in new_keys
+
+    # make sure file is still available after identity rotate
+    new_remote_path_customer_6 = remote_path_customer_6.replace(old_global_id, new_global_id)
+    file_download_start_v1('customer_6', remote_path=new_remote_path_customer_6, destination='/tmp')
 
