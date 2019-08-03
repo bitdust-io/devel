@@ -297,6 +297,7 @@ def Save(filepath=None):
     commit()
     WriteIndex(filepath)
     if driver.is_on('service_backup_db'):
+        # TODO: switch to event
         from storage import index_synchronizer
         index_synchronizer.A('push')
 

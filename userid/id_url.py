@@ -164,6 +164,15 @@ def shutdown():
 
 def identity_cached(new_id_obj):
     """
+    After receiving identity file of another user we need to check his identity sources.
+    I can be file from identity server or Identity() packet received directly from remote peer.
+    Also it can be my own identity that was changed locally.
+    In any case we need to take certain actions if those identity sources changed.
+    First identity source forms IDURL of that identity and act as unique global ID of that BitDust node.
+    When first identity source changed (because identity server went down) identity is "rotated":
+    second identity source will be placed on the first position and IDURL will change.
+    In that case we need to remember new IDURL and keep track of old IDURL of that user - this way we can
+    match and merge different IDURL's for one owner.
     """
     global _IdentityHistoryDir
     global _KnownUsers
