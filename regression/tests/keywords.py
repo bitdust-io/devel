@@ -110,6 +110,14 @@ def share_create_v1(customer: str, key_size=1024):
     return response.json()['result'][0]['key_id']
 
 
+def share_open_v1(customer: str, key_id):
+    response = requests.post(url=tunnel_url(customer, 'share/open/v1'), json={'key_id': key_id, }, )
+    assert response.status_code == 200
+    print('\nshare/open/v1 : %s\n' % pprint.pformat(response.json()))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def file_list_all_v1(node):
     response = requests.get(
         url=tunnel_url(node, 'file/list/all/v1'),

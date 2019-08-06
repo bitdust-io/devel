@@ -683,12 +683,19 @@ class FamilyMember(automat.Automat):
         return merged_info
 
     def _do_increment_revision(self, possible_transaction):
+        if self.customer_idurl.to_original() != possible_transaction['customer_idurl'].to_original():
+            possible_transaction['customer_idurl'] = self.customer_idurl
+            possible_transaction['revision'] += 1
+            possible_transaction['publisher_idurl'] = my_id.getLocalID()
+            lg.info('incremented family revision after customer %r identity rotated: %r' % (
+                self.customer_idurl, possible_transaction['revision'], ))
+            return possible_transaction
         if self.dht_info:
             if self.dht_info['suppliers'] == possible_transaction['suppliers']:
                 if self.dht_info['ecc_map'] == possible_transaction['ecc_map']:
                     if _Debug:
                         lg.out(_DebugLevel, 'family_member._do_increment_revision did not found any changes, skip transaction')
-                    return None 
+                    return None
         possible_transaction['revision'] += 1
         possible_transaction['publisher_idurl'] = my_id.getLocalID()
         return possible_transaction
@@ -967,6 +974,8 @@ class FamilyMember(automat.Automat):
         if my_position_in_transaction != my_known_position:
             lg.warn('another supplier is trying to put my IDURL on another position in the family of customer %s' % self.customer_idurl)
             return p2p_service.SendFail(incoming_packet, response=serialization.DictToBytes(self.my_info))
+        if _Debug:
+            lg.out(_DebugLevel, '    all correct, refresh customer family for %r' % self.customer_idurl)
         self.automat('family-refresh')
         return p2p_service.SendAck(incoming_packet)
 

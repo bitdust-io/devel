@@ -506,7 +506,11 @@ class ID_URL_FIELD(object):
     
     def __init__(self, idurl):
         self.current = b''
+        self.current_as_string = ''
+        self.current_id = ''
         self.latest = b''
+        self.latest_as_string = ''
+        self.latest_id = ''
         self.latest_revision = -1
         if isinstance(idurl, ID_URL_FIELD):
             self.current = idurl.current
@@ -656,6 +660,27 @@ class ID_URL_FIELD(object):
         if _Debug:
             lg.args(_DebugLevel, latest=self.latest)
         return len(self.latest)
+
+    def refresh(self, replace_original=False):
+        _latest, _latest_revision = get_latest_revision(self.current)
+        if self.latest and self.latest == _latest:
+            if _Debug:
+                lg.args(_DebugLevel, latest=self.latest_as_string, refreshed=False)
+            return False
+        self.latest = _latest
+        self.latest_revision = _latest_revision
+        if not self.latest:
+            self.latest = self.current
+            self.latest_revision = -1
+        self.latest_as_string = strng.to_text(self.latest)
+        self.latest_id = global_id.idurl2glob(self.latest)
+        if replace_original:
+            self.current = self.lates
+            self.current_as_string = self.latest_as_string
+            self.current_id = self.latest_id
+        if _Debug:
+            lg.args(_DebugLevel, latest=self.latest_as_string, current=self.current_as_string, refreshed=True)
+        return True
 
     def strip(self):
         if _Debug:

@@ -57,13 +57,13 @@ class NetworkService(LocalService):
         network_connector.A('init')
         self.task = task.LoopingCall(self._do_check_network_interfaces)
         self.task.start(20, now=False)
-        events.add_subscriber(self._on_local_identity_rotated, event_id='local-identity-rotated')
+        events.add_subscriber(self._on_local_identity_rotated, 'local-identity-rotated')
         return True
 
     def stop(self):
         from main import events
         from p2p import network_connector
-        events.remove_subscriber(self._on_local_identity_rotated)
+        events.remove_subscriber(self._on_local_identity_rotated, 'local-identity-rotated')
         network_connector.Destroy()
         if self.task and self.task.running:
             self.task.stop()
