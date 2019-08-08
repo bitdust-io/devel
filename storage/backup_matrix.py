@@ -100,7 +100,6 @@ _LocalFiles = {}
 _RemoteMaxBlockNumbers = {}
 _LocalMaxBlockNumbers = {}
 _LocalBackupSize = {}
-_BackupsInProcess = []
 _BackupStatusNotifyCallback = None
 _StatusCallBackForGuiBackup = None
 _LocalFilesNotifyCallback = None
@@ -547,7 +546,7 @@ def ReadLocalFiles():
     local_backup_size().clear()
     _counter = [0, ]
 
-    def visit(customer, realpath, subpath, name):
+    def visit(key_id, realpath, subpath, name):
         # subpath is something like 0/0/1/0/F20131120053803PM/0-1-Data
         if not os.path.isfile(realpath):
             return True
@@ -561,20 +560,33 @@ def ReadLocalFiles():
             return False
         if not packetid.IsCanonicalVersion(version):
             return True
-        LocalFileReport(packetID=packetid.MakeBackupID(customer, subpath))
+        LocalFileReport(packetID=packetid.MakeBackupID(key_id, subpath))
         _counter[0] += 1
         return False
 
-    for customer in os.listdir(settings.getLocalBackupsDir()):
-        customer_path = os.path.join(settings.getLocalBackupsDir(), customer)
-        if not global_id.IsValidGlobalUser(customer):
-            lg.warn('found incorrect folder name, not a customer: %s' % customer_path)
+    all_keys = os.listdir(settings.getLocalBackupsDir())
+    from crypt import my_keys
+    for key_id in all_keys:
+        latest_key_id = my_keys.latest_key_id(key_id)
+        if key_id != latest_key_id:
+            old_path = os.path.join(settings.getLocalBackupsDir(), key_id)
+            new_path = os.path.join(settings.getLocalBackupsDir(), my_keys.latest_key_id(key_id))
+            if os.path.isdir(old_path) and not os.path.exists(new_path):
+                try:
+                    os.rename(old_path, new_path)
+                except:
+                    lg.exc()
+            else:
+                lg.warn('found backup folder %r to be renamed, but currently not possible' % old_path)
+        backup_path = os.path.join(settings.getLocalBackupsDir(), latest_key_id)
+        if not global_id.IsValidGlobalUser(latest_key_id):
+            lg.warn('found incorrect folder name, not a customer: %s' % backup_path)
             continue
-        if os.path.isdir(customer_path):
+        if os.path.isdir(backup_path):
             bpio.traverse_dir_recursive(
-                lambda r, s, n: visit(customer, r, s, n), customer_path)
+                lambda r, s, n: visit(latest_key_id, r, s, n), backup_path)
         else:
-            lg.warn('not a folder: %s' % customer_path)
+            lg.warn('not a folder: %s' % backup_path)
 
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.ReadLocalFiles %d files indexed' % _counter[0])

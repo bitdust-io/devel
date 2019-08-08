@@ -57,20 +57,20 @@ class NetworkService(LocalService):
         network_connector.A('init')
         self.task = task.LoopingCall(self._do_check_network_interfaces)
         self.task.start(20, now=False)
-        events.add_subscriber(self._on_local_identity_rotated, 'local-identity-rotated')
+        events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         return True
 
     def stop(self):
         from main import events
         from p2p import network_connector
-        events.remove_subscriber(self._on_local_identity_rotated, 'local-identity-rotated')
+        events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         network_connector.Destroy()
         if self.task and self.task.running:
             self.task.stop()
             self.task = None
         return True
 
-    def _on_local_identity_rotated(self, evt):
+    def _on_my_identity_rotated(self, evt):
         from logs import lg
         from services import driver
         if driver.is_enabled('service_gateway'):

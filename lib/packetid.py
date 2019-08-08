@@ -421,3 +421,23 @@ def parentPathsList(ID):
             path += '/'
         path += word
         yield path
+
+
+def LatestBackupID(backupID):
+    """
+    Create IDURL object from input key_id and return new key_id (with same key_alias) from that IDURL object.
+    This way you can be sure that given key_id is pointing to the correct owner IDURL.
+    """
+    if not backupID:
+        return backupID
+    from userid import global_id
+    glob_id = global_id.ParseGlobalID(backupID, as_field=True)
+    if not glob_id['idurl']:
+        from logs import lg
+        lg.err('invalid backupID: %r' % backupID)
+        return backupID
+    return global_id.MakeGlobalID(
+        key_id=glob_id['key_id'],
+        path=glob_id['path'],
+        version=glob_id['version'],
+    )

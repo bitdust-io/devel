@@ -299,6 +299,21 @@ def identity_cached(new_id_obj):
                     old_revision=latest_id_obj.getRevisionValue(),
                     new_revision=new_revision,
                 ))
+            from userid import my_id
+            if my_id.getLocalID() == new_id_obj.getIDURL():
+                events.send('my-identity-rotated', data=dict(
+                    old_idurls=latest_id_obj.getSources(as_originals=True),
+                    new_idurls=new_id_obj.getSources(as_originals=True),
+                    old_revision=latest_id_obj.getRevisionValue(),
+                    new_revision=new_revision,
+                ))
+                if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
+                    events.send('my-identity-url-changed', data=dict(
+                        old_idurl=latest_id_obj.getIDURL(as_original=True),
+                        new_idurl=new_id_obj.getIDURL(as_original=True),
+                        old_revision=latest_id_obj.getRevisionValue(),
+                        new_revision=new_revision,
+                    ))
         else:
             lg.warn('cached out-dated revision %d for %r' % (new_revision, new_sources[0]))
     else:
@@ -537,12 +552,12 @@ class ID_URL_FIELD(object):
         self.latest_as_string = strng.to_text(self.latest)
         self.latest_id = global_id.idurl2glob(self.latest)
         if _Debug:
-            lg.out(_DebugLevel, 'NEW ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
+            lg.out(_DebugLevel * 2, 'NEW ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
 
     def __del__(self):
         try:
             if _Debug:
-                lg.out(_DebugLevel, 'DELETED ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
+                lg.out(_DebugLevel * 2, 'DELETED ID_URL_FIELD(%r) with id=%r latest=%r' % (self.current, id(self), self.latest))
         except:
             lg.exc()
 

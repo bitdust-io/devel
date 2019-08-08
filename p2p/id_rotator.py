@@ -467,10 +467,7 @@ class IdRotator(automat.Automat):
         elif event == 'my-id-exist':
             self.result_defer.callback(True)
             if self.rotated:
-                events.send('local-identity-rotated', data=dict(
-                    old_idurls=self.old_sources,
-                    new_idurls=my_id.getLocalIdentity().getSources(as_originals=True),
-                ))
+                events.send('my-identity-rotate-complete', data=dict())
 
     def doReportFailed(self, event, *args, **kwargs):
         """

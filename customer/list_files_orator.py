@@ -115,10 +115,10 @@ class ListFilesOrator(automat.Automat):
     def init(self):
         self.log_transitions = True
         self.ping_required = True
-        events.add_subscriber(self._on_my_identity_rotated, 'local-identity-rotated')
+        events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
 
     def shutdown(self):
-        events.remove_subscriber(self._on_my_identity_rotated, 'local-identity-rotated')
+        events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         if driver.is_on('service_backups'):

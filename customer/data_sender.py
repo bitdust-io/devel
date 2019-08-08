@@ -330,26 +330,17 @@ class DataSender(automat.Automat):
                 list(backup_matrix.local_files().keys())):
             if restore_monitor.IsWorking(backupID):
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        '        %s : SKIP, because restoring' %
-                        backupID)
+                    lg.out(_DebugLevel, '        %s : SKIP, because restoring' % backupID)
                 continue
             if backup_rebuilder.IsBackupNeedsWork(backupID):
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        '        %s : SKIP, because needs rebuilding' %
-                        backupID)
+                    lg.out(_DebugLevel, '        %s : SKIP, because needs rebuilding' % backupID)
                 continue
             if not backup_rebuilder.ReadStoppedFlag():
                 if backup_rebuilder.A().currentBackupID is not None:
                     if backup_rebuilder.A().currentBackupID == backupID:
                         if _Debug:
-                            lg.out(
-                                _DebugLevel,
-                                '        %s : SKIP, because rebuilding is in process' %
-                                backupID)
+                            lg.out(_DebugLevel, '        %s : SKIP, because rebuilding is in process' % backupID)
                         continue
             packets = backup_matrix.ScanBlocksToRemove(
                 backupID, settings.getGeneralWaitSuppliers())
@@ -359,7 +350,6 @@ class DataSender(automat.Automat):
                 if os.path.isfile(filename):
                     try:
                         os.remove(filename)
-                        # lg.out(6, '    ' + os.path.basename(filename))
                     except:
                         lg.exc()
                         continue

@@ -134,12 +134,13 @@ def setLocalIdentity(ident):
             old_json['revision'] = li_json['revision']
             old_json['contacts'] = li_json['contacts']
     _LocalIdentity = ident
-    _LocalIDURL = _LocalIdentity.getIDURL()
-    _LocalName = _LocalIdentity.getIDName()
     try:
         id_url.identity_cached(_LocalIdentity)
     except:
         lg.exc()
+    _LocalIDURL = _LocalIdentity.getIDURL()
+    _LocalIDURL.refresh(replace_original=True)
+    _LocalName = _LocalIdentity.getIDName()
     li_json = _LocalIdentity.serialize_json()
     new_json['revision'] = li_json['revision']
     new_json['contacts'] = li_json['contacts']
@@ -250,8 +251,8 @@ def saveLocalIdentity():
     Do sign the identity than serialize to write to the file.
     """
     global _LocalIdentity
-    global _LocalIDURL
-    global _LocalName
+    # global _LocalIDURL
+    # global _LocalName
     if not isLocalIdentityReady():
         lg.warn("ERROR local identity not exist!")
         return False
@@ -262,8 +263,8 @@ def saveLocalIdentity():
     if not _LocalIdentity.Valid():
         lg.err('local identity is not valid')
         return False
-    _LocalIDURL = None
-    _LocalName = None
+    # _LocalIDURL = None
+    # _LocalName = None
     xmlid = _LocalIdentity.serialize(as_text=True)
     filename = bpio.portablePath(settings.LocalIdentityFilename())
     bpio.WriteTextFile(filename, xmlid)
@@ -282,7 +283,7 @@ def forgetLocalIdentity():
     global _LocalName
     if not isLocalIdentityReady():
         if _Debug:
-            lg.out(_DebugLevel, "my_id.forgetLocalIdentity ERROR localidentity not exist!")
+            lg.out(_DebugLevel, "my_id.forgetLocalIdentity ERROR local identity not exist!")
         return False
     if _Debug:
         lg.out(_DebugLevel, "my_id.saveLocalIdentity")
