@@ -243,7 +243,7 @@ class SupplierRelationsService(LocalService):
         from userid import id_url
         from supplier import family_member
         for customer_idurl, fm in family_member.families().items():
-            if customer_idurl == id_url.field(evt['old_idurl']):
+            if customer_idurl == id_url.field(evt.data['old_idurl']):
                 customer_idurl.refresh(replace_original=True)
                 fm.customer_idurl.refresh(replace_original=True)
                 lg.info('found %r for customer with rotated identity and refreshed: %r' % (fm, customer_idurl, ))

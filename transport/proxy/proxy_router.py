@@ -735,8 +735,8 @@ class ProxyRouter(automat.Automat):
         self.automat('routed-session-disconnected', user_id)
 
     def _on_identity_url_changed(self, evt):
-        old = evt['old_idurl']
-        new = evt['new_idurl']
+        old = evt.data['old_idurl']
+        new = evt.data['new_idurl']
         if old in self.routes and new not in self.routes:
             current_route = self.routes[old]
             self._remove_route(old)
@@ -748,7 +748,7 @@ class ProxyRouter(automat.Automat):
                     lg.out(_DebugLevel, '    DO OVERRIDE identity for %r' % new)
                 identitycache.OverrideIdentity(new, identitydb.get(new))
             self._write_route(new)
-            lg.info('replaced route for user after identity rotate detect : %r -> %r' % (old, new))
+            lg.info('replaced route for user after identity rotate detected : %r -> %r' % (old, new))
 
     def _is_my_contacts_present_in_identity(self, ident):
         for my_contact in my_id.getLocalIdentity().getContacts():

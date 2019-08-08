@@ -617,7 +617,7 @@ class ProxyReceiver(automat.Automat):
             newidentity = identity.identity(xmlsrc=routed_packet.Payload)
             idurl = newidentity.getIDURL()
             if not identitycache.HasKey(idurl):
-                lg.info('received new identity: %s' % idurl)
+                lg.info('received new identity %s rev %r' % (idurl.original(), newidentity.getRevisionValue(), ))
             if not identitycache.UpdateAfterChecking(idurl, routed_packet.Payload):
                 lg.warn("ERROR has non-Valid identity")
                 return
