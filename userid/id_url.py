@@ -684,7 +684,7 @@ class ID_URL_FIELD(object):
         self.latest_as_string = strng.to_text(self.latest)
         self.latest_id = global_id.idurl2glob(self.latest)
         if replace_original:
-            self.current = self.lates
+            self.current = self.latest
             self.current_as_string = self.latest_as_string
             self.current_id = self.latest_id
         if _Debug:
