@@ -339,27 +339,27 @@ class ProxyRouter(automat.Automat):
                 try:
                     # idsrc = strng.to_bin(json_payload['identity'])
                     idsrc = json_payload['identity']
-                    cached_id = identity.identity(xmlsrc=idsrc)
+                    cached_ident = identity.identity(xmlsrc=idsrc)
                 except:
                     lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
                     lg.exc()
                     return
-                if not cached_id.Valid():
+                if not cached_ident.Valid():
                     lg.warn('incoming identity is not valid')
                     return
-                if not cached_id.isCorrect():
+                if not cached_ident.isCorrect():
                     lg.warn('incoming identity is not correct')
                     return
-                if user_idurl.original() != cached_id.getIDURL().original():
+                if user_idurl.original() != cached_ident.getIDURL().original():
                     lg.warn('incoming identity is not belong to request packet creator: %r != %r' % (
-                        user_idurl.original(), cached_id.getIDURL().original()))
+                        user_idurl.original(), cached_ident.getIDURL().original()))
                     return
                 if contactsdb.is_supplier(user_idurl.to_bin()):
                     if _Debug:
                         lg.out(_DebugLevel, 'proxy_server.doProcessRequest RequestService rejected: this user is my supplier')
                     p2p_service.SendAck(request, 'rejected', wide=True)
                     return
-                identitycache.UpdateAfterChecking(cached_id.getIDURL().original(), idsrc)
+                identitycache.UpdateAfterChecking(cached_ident.getIDURL().original(), idsrc)
                 oldnew = ''
                 if user_idurl.original() not in list(self.routes.keys()):
                     # accept new route
@@ -368,17 +368,17 @@ class ProxyRouter(automat.Automat):
                 else:
                     # accept existing routed user
                     oldnew = 'OLD'
-                if not self._is_my_contacts_present_in_identity(cached_id):
+                if not self._is_my_contacts_present_in_identity(cached_ident):
                     if _Debug:
                         lg.out(_DebugLevel, '    DO OVERRIDE identity for %s' % user_idurl)
-                    identitycache.OverrideIdentity(user_idurl, cached_id.serialize())
+                    identitycache.OverrideIdentity(user_idurl, cached_ident.serialize())
                 else:
                     if _Debug:
                         lg.out(_DebugLevel, '        SKIP OVERRIDE identity for %s' % user_idurl)
                 self.routes[user_idurl.original()]['time'] = time.time()
-                self.routes[user_idurl.original()]['identity'] = cached_id.serialize(as_text=True)
-                self.routes[user_idurl.original()]['publickey'] = strng.to_text(cached_id.publickey)
-                self.routes[user_idurl.original()]['contacts'] = cached_id.getContactsAsTuples(as_text=True)
+                self.routes[user_idurl.original()]['identity'] = cached_ident.serialize(as_text=True)
+                self.routes[user_idurl.original()]['publickey'] = strng.to_text(cached_ident.publickey)
+                self.routes[user_idurl.original()]['contacts'] = cached_ident.getContactsAsTuples(as_text=True)
                 self.routes[user_idurl.original()]['address'] = []
                 self._write_route(user_idurl)
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
@@ -743,10 +743,11 @@ class ProxyRouter(automat.Automat):
             identitycache.StopOverridingIdentity(old)
             self.routes.pop(old)
             self.routes[new] = current_route
-            if not self._is_my_contacts_present_in_identity(new):
+            new_ident = identitydb.get(new)
+            if new_ident and not self._is_my_contacts_present_in_identity(new_ident):
                 if _Debug:
                     lg.out(_DebugLevel, '    DO OVERRIDE identity for %r' % new)
-                identitycache.OverrideIdentity(new, identitydb.get(new))
+                identitycache.OverrideIdentity(new, new_ident.serialize(as_text=True))
             self._write_route(new)
             lg.info('replaced route for user after identity rotate detected : %r -> %r' % (old, new))
 
