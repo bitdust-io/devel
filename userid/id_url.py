@@ -685,7 +685,7 @@ class ID_URL_FIELD(object):
             lg.args(_DebugLevel * 2, latest=self.latest)
         return len(self.latest)
 
-    def refresh(self, replace_original=False):
+    def refresh(self, replace_original=True):
         _latest, _latest_revision = get_latest_revision(self.current)
         if self.latest and self.latest == _latest:
             if _Debug:

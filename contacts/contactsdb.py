@@ -128,8 +128,7 @@ def suppliers(customer_idurl=None):
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
         lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
-    result = _SuppliersList[customer_idurl]
-    return result
+    return _SuppliersList[customer_idurl]
 
 
 def supplier(index, customer_idurl=None):
@@ -145,10 +144,12 @@ def supplier(index, customer_idurl=None):
     return id_url.field(b'')
 
 
-def all_suppliers():
+def all_suppliers(as_dict=False):
     """
     """
     global _SuppliersList
+    if as_dict:
+        return _SuppliersList
     result = []
     for suppliers_list in _SuppliersList.values():
         for supplier_idurl in suppliers_list:
