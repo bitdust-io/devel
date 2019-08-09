@@ -59,8 +59,8 @@ class SharedDataService(LocalService):
     def stop(self):
         from main import events
         from transport import callback
-        events.remove_subscriber(self._on_my_list_files_refreshed)
-        events.remove_subscriber(self._on_supplier_modified)
+        events.remove_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
+        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 

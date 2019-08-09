@@ -128,8 +128,7 @@ def suppliers(customer_idurl=None):
     if customer_idurl not in _SuppliersList:
         _SuppliersList[customer_idurl] = []
         lg.info('created new suppliers list in memory for customer %r' % customer_idurl)
-    result = _SuppliersList[customer_idurl]
-    return result
+    return _SuppliersList[customer_idurl]
 
 
 def supplier(index, customer_idurl=None):
@@ -145,10 +144,12 @@ def supplier(index, customer_idurl=None):
     return id_url.field(b'')
 
 
-def all_suppliers():
+def all_suppliers(as_dict=False):
     """
     """
     global _SuppliersList
+    if as_dict:
+        return _SuppliersList
     result = []
     for suppliers_list in _SuppliersList.values():
         for supplier_idurl in suppliers_list:
@@ -187,7 +188,7 @@ def update_suppliers(idlist, customer_idurl=None):
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
     for cb in _ContactsChangedCallbacks:
-        cb(oldcontacts, contacts())
+        cb(id_url.to_original_list(oldcontacts), id_url.to_original_list(contacts()))
 
 
 def add_supplier(idurl, position=None, customer_idurl=None):
@@ -323,7 +324,7 @@ def update_customers(idslist):
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback(old_customers, customers())
     for cb in _ContactsChangedCallbacks:
-        cb(old_contacts, contacts())
+        cb(id_url.to_original_list(old_contacts), id_url.to_original_list(contacts()))
     if _Debug:
         lg.args(_DebugLevel, new_customers=idslist, old_customers=old_customers)
 
@@ -877,7 +878,10 @@ def find_correspondent_by_nickname(nickname):
 
 def on_contacts_changed(old_contacts_list, new_contacts_list):
     from main import events
-    events.send('contacts-changed', data=dict(old_contacts=old_contacts_list, new_contacts=new_contacts_list))
+    events.send('contacts-changed', data=dict(
+        old_contacts=old_contacts_list,
+        new_contacts=new_contacts_list,
+    ))
 
 #------------------------------------------------------------------------------
 

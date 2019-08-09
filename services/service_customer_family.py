@@ -81,6 +81,7 @@ class SupplierRelationsService(LocalService):
                 'family_snapshot': id_url.to_bin_list(local_customer_meta_info.get('family_snapshot')),
             })
 
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
@@ -89,9 +90,10 @@ class SupplierRelationsService(LocalService):
     def stop(self):
         from main import events
         from supplier import family_member
-        events.remove_subscriber(self._on_new_customer_accepted)
-        events.remove_subscriber(self._on_existing_customer_accepted)
-        events.remove_subscriber(self._on_existing_customer_terminated)
+        events.remove_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
+        events.remove_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
+        events.remove_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         for fm in family_member.families().values():
             fm.automat('shutdown')
         return True
@@ -235,3 +237,14 @@ class SupplierRelationsService(LocalService):
         if newpacket.Command == commands.Contacts():
             return self._on_incoming_contacts_packet(newpacket, info)
         return False
+
+    def _on_identity_url_changed(self, evt):
+        from logs import lg
+        from userid import id_url
+        from supplier import family_member
+        for customer_idurl, fm in family_member.families().items():
+            if customer_idurl == id_url.field(evt.data['old_idurl']):
+                customer_idurl.refresh(replace_original=True)
+                fm.customer_idurl.refresh(replace_original=True)
+                lg.info('found %r for customer with rotated identity and refreshed: %r' % (fm, customer_idurl, ))
+                fm.automat('family-refresh')

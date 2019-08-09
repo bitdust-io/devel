@@ -56,6 +56,7 @@ class BackupsService(LocalService):
         from storage import backup_monitor
         from main.config import conf
         from main import control
+        from main import events
         from transport import callback
         from p2p import p2p_connector
         backup_fs.init()
@@ -74,6 +75,7 @@ class BackupsService(LocalService):
         p2p_connector.A().addStateChangedCallback(
             self._on_p2p_connector_state_changed, 'MY_IDENTITY', 'CONNECTED')
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         return True
 
     def stop(self):
@@ -82,7 +84,9 @@ class BackupsService(LocalService):
         from storage import backup_control
         from transport import callback
         from p2p import p2p_connector
+        from main import events
         from main.config import conf
+        events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         if p2p_connector.A():
             p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_state_changed)
@@ -143,3 +147,23 @@ class BackupsService(LocalService):
                 p2p_service.SendFail(newpacket)
             return True
         return False
+
+    def _on_my_identity_rotated(self, evt):
+        from logs import lg
+        from lib import packetid
+        from storage import backup_matrix
+        backup_matrix.ReadLocalFiles()
+
+        remote_files_ids = list(backup_matrix.remote_files().keys())
+        for currentID in remote_files_ids:
+            latestID = packetid.LatestBackupID(currentID)
+            if latestID != currentID:
+                backup_matrix.remote_files()[latestID] = backup_matrix.remote_files().pop(currentID)
+                lg.info('detected backup ID change in remote_files() after identity rotate : %r -> %r' % (currentID, latestID, ))
+
+        remote_max_block_numbers_ids = list(backup_matrix.remote_max_block_numbers().keys())
+        for currentID in remote_max_block_numbers_ids:
+            latestID = packetid.LatestBackupID(currentID)
+            if latestID != currentID:
+                backup_matrix.remote_max_block_numbers()[latestID] = backup_matrix.remote_max_block_numbers().pop(currentID)
+                lg.info('detected backup ID change in remote_max_block_numbers() after identity rotate : %r -> %r' % (currentID, latestID, ))

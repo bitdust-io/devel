@@ -93,10 +93,12 @@ _SuppliersConnectors = {}
 
 #------------------------------------------------------------------------------
 
-def connectors(customer_idurl=None):
+def connectors(customer_idurl=None, as_dict=False):
     """
     """
     global _SuppliersConnectors
+    if as_dict:
+        return _SuppliersConnectors
     if customer_idurl is None:
         customer_idurl = my_id.getLocalID()
     customer_idurl = id_url.field(customer_idurl)

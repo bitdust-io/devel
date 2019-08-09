@@ -65,7 +65,7 @@ class CustomerContractsService(LocalService):
     def stop(self):
         from main import events
         from coins import customer_contract_executor
-        events.remove_subscriber(self._on_supplier_modified)
+        events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         for supplier_idurl in list(customer_contract_executor.all_contracts.keys()):
             customer_contract_executor.shutdown_contract(supplier_idurl)
         return True

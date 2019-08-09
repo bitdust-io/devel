@@ -50,6 +50,7 @@ class CustomerSupportService(LocalService):
 
     def start(self):
         from userid import id_url
+        from main import events
         from supplier import customer_assistant
         from contacts import contactsdb
         from transport import callback
@@ -58,15 +59,18 @@ class CustomerSupportService(LocalService):
                 if customer_idurl and not customer_assistant.by_idurl(customer_idurl):
                     ca = customer_assistant.create(customer_idurl)
                     ca.automat('init')
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.add_outbox_callback(self._on_outbox_packet_sent)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
+        from main import events
         from supplier import customer_assistant
         from transport import callback
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_outbox_callback(self._on_outbox_packet_sent)
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         for ca in customer_assistant.assistants().values():
             ca.automat('shutdown')
         return True
@@ -96,3 +100,14 @@ class CustomerSupportService(LocalService):
                     ca.automat(newpacket.Command.lower(), newpacket)
                     return True
         return False
+
+    def _on_identity_url_changed(self, evt):
+        from logs import lg
+        from userid import id_url
+        from supplier import customer_assistant
+        for customer_idurl, ca in customer_assistant.assistants().items():
+            if customer_idurl == id_url.field(evt.data['old_idurl']):
+                customer_idurl.refresh(replace_original=True)
+                ca.customer_idurl.refresh(replace_original=True)
+                lg.info('found %r to be refreshed after rotated identity: %r' % (ca, customer_idurl, ))
+                ca.automat('connect')

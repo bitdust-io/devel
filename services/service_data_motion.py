@@ -64,18 +64,22 @@ class DataMotionService(LocalService):
         if not fire_hire.IsAllHired():
             lg.warn('service_data_motion() can not start right now, not all suppliers hired yet')
             return False
+        from main import events
         from customer import io_throttle
         from customer import data_sender
         from customer import data_receiver
         io_throttle.init()
         data_sender.A('init')
         data_receiver.A('init')
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         return True
 
     def stop(self):
+        from main import events
         from customer import io_throttle
         from customer import data_sender
         from customer import data_receiver
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         data_receiver.A('shutdown')
         data_sender.SetShutdownFlag()
         data_sender.A('shutdown')
@@ -98,3 +102,18 @@ class DataMotionService(LocalService):
         if driver.is_enabled('service_data_motion'):
             lg.info('my suppliers failed to hire, stopping service_data_motion()')
             driver.stop_single('service_data_motion')
+
+    def _on_identity_url_changed(self, evt):
+        from logs import lg
+        from userid import id_url
+        from customer import io_throttle
+        old_idurl = id_url.field(evt.data['old_idurl'])
+        for supplier_idurl, supplier_queue in io_throttle.throttle().supplierQueues.items():
+            if old_idurl == supplier_idurl:
+                supplier_idurl.refresh()
+                lg.info('found supplier idurl rotated in io_throttle: %r -> %r' % (
+                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+            if old_idurl == supplier_queue.customerIDURL:
+                supplier_queue.customerIDURL.refresh()
+                lg.info('found customer idurl rotated in io_throttle %r supplier queue: %r -> %r' % (
+                    supplier_idurl, evt.data['old_idurl'], evt.data['new_idurl'], ))
