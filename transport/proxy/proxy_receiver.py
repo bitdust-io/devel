@@ -342,6 +342,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        callback.add_queue_item_status_callback(self._on_queue_item_status_changed)
 
     def doLoadRouterInfo(self, *args, **kwargs):
         """
@@ -571,6 +572,7 @@ class ProxyReceiver(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        callback.remove_queue_item_status_callback(self._on_queue_item_status_changed)
         self.possible_router_idurl = None
         self.router_idurl = None
         self.router_identity = None
@@ -799,6 +801,24 @@ class ProxyReceiver(automat.Automat):
     def _on_router_session_disconnected(self, oldstate, newstate, event_string, *args, **kwargs):
         lg.warn('router session disconnected: %s->%s' % (oldstate, newstate, ))
         self.automat('router-disconnected')
+
+    def _on_queue_item_status_changed(self, pkt_out, status, error=''):
+        from transport.proxy import proxy_receiver
+        if status == 'finished':
+            return False
+        if error != 'connection failed':
+            return False
+        if not pkt_out.remote_idurl or not pkt_out.outpacket:
+            return False
+        if id_url.to_bin(pkt_out.remote_idurl) == pkt_out.outpacket.RemoteID.to_bin():
+            return False
+        if not proxy_receiver.GetRouterIDURL():
+            return False
+        if pkt_out.remote_idurl != proxy_receiver.GetRouterIDURL():
+            return False
+        lg.warn('connection failed with proxy router, must reconnect to another router')
+        self.automat('router-disconnected')
+        return True
 
 #------------------------------------------------------------------------------
 

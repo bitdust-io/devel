@@ -409,8 +409,8 @@ class TCPFactory(protocol.ClientFactory):
         if connection:
             connection.connector = None
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_node.clientConnectionFailed with %s, %d more connections started' % (
-                str(destaddress), len(started_connections())))
+            lg.out(_DebugLevel, 'tcp_node.clientConnectionFailed with %s, %d more connections started : %r' % (
+                str(destaddress), len(started_connections()), reason, ))
         for filename, description, result_defer, keep_alive in self.pendingoutboxfiles:
             try:
                 tcp_interface.interface_cancelled_file_sending(
