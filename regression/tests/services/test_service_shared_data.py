@@ -113,7 +113,7 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     file_1 = run_ssh_command_and_wait('customer_2', f'cat {volume_customer_2}/sharesamename/cat.txt')[0].strip()
     file_2 = run_ssh_command_and_wait('customer_2', f'cat {volume_customer_2}/sharesamename2/cat.txt')[0].strip()
 
-    assert file_1 != file_2
+    assert file_1 == file_2
 
 
 def test_customer_1_share_file_to_customer_4():

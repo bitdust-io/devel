@@ -524,6 +524,25 @@ def get_latest_revision(idurl):
             latest_rev = rev
     return latest_idurl, latest_rev
 
+
+def get_other_sources(idurl, max_count=3):
+    global _MergedIDURLs
+    global _KnownUsers
+    idurl_bin = to_bin(idurl)
+    if not idurl_bin:
+        return []
+    if idurl_bin not in _KnownIDURLs:
+        return []
+    pub_key = _KnownIDURLs[idurl_bin]
+    if pub_key not in _MergedIDURLs:
+        lg.warn('idurl %r does not have any known revisions' % idurl_bin)
+        return []
+    all_sources = [(rev, another_idurl) for rev, another_idurl in _MergedIDURLs[pub_key].items()]
+    all_sources.sort(key=lambda i: i[0])
+    if max_count:
+        all_sources = all_sources[:max_count]
+    return all_sources
+    
 #------------------------------------------------------------------------------
 
 class ID_URL_FIELD(object):

@@ -141,7 +141,7 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node):
+def file_list_all_v1(node, check_reliable_equal=100):
     response = requests.get(
         url=tunnel_url(node, 'file/list/all/v1'),
     )
