@@ -192,7 +192,7 @@ class SupplierFinder(automat.Automat):
         """
         newpacket, info, status, error_message = args[0]
         if newpacket.Command == commands.Ack():
-            if newpacket.OwnerID == self.target_idurl:
+            if self.target_idurl and newpacket.OwnerID.to_bin() == self.target_idurl.to_bin():
                 # TODO: also check PacketID
                 return True
         return False
