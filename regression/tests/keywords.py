@@ -141,13 +141,16 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node, check_reliable_equal=100):
+def file_list_all_v1(node, check_reliable=100):
     response = requests.get(
         url=tunnel_url(node, 'file/list/all/v1'),
     )
     assert response.status_code == 200
     print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
+    if check_reliable:
+        for fil in response.json()['result']:
+            assert int(fil['reliable'].replace('%', '')) == check_reliable, 'file is not %r %% reliable: %r' % (check_reliable, fil)
     return response.json()
 
 

@@ -280,7 +280,7 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         global _SuppliersToHire
-        self.target_idurl = _SuppliersToHire.pop()
+        self.target_idurl = id_url.field(_SuppliersToHire.pop())
 
     def doReportDone(self, *args, **kwargs):
         """
@@ -349,7 +349,7 @@ class SupplierFinder(automat.Automat):
         self.automat('found-one-user', found_idurl)
 
     def _supplier_connector_state(self, supplier_idurl, newstate, **kwargs):
-        if supplier_idurl != self.target_idurl:
+        if id_url.field(supplier_idurl) != self.target_idurl:
             return
         if newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
             self.automat('supplier-not-connected')
