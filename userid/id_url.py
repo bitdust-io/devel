@@ -229,7 +229,7 @@ def identity_cached(new_id_obj):
         if latest_id_obj.getPublicKey() != new_id_obj.getPublicKey():
             raise Exception('identity history for user %r is broken, public key not matching' % user_name)
         if latest_id_obj.getIDName() != new_id_obj.getIDName():
-            raise Exception('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName()))
+            lg.warn('found another user name in identity history for user %r : %r' % (user_name, latest_id_obj.getIDName()))
         if new_id_obj.getRevisionValue() in known_revisions:
             if _Debug:
                 lg.out(_DebugLevel, 'id_url.identity_cached revision %d already known for user %r' % (new_id_obj.getRevisionValue(), user_name))

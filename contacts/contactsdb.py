@@ -43,7 +43,7 @@ _DebugLevel = 8
 
 import os
 
-from twisted.internet.defer import DeferredList
+from twisted.internet.defer import DeferredList, fail
 
 #------------------------------------------------------------------------------
 
@@ -643,7 +643,11 @@ def cache_suppliers(path=None):
         if not global_id.IsValidGlobalUser(customer_id):
             lg.warn('invalid customer record %s found in %s' % (customer_id, settings.SuppliersDir()))
             continue
-        one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+        try:
+            one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+        except Exception as exc:
+            lg.err('idurl caching failed: %r' % exc)
+            continue
         if not id_url.is_cached(one_customer_idurl):
             dl.append(identitycache.immediatelyCaching(one_customer_idurl))
         path = os.path.join(settings.SuppliersDir(), customer_id, 'supplierids')

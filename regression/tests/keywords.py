@@ -28,7 +28,7 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3, extract_suppliers=True):
     count = 0
     num_connected = 0
     while True:
@@ -55,7 +55,9 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
             time.sleep(delay)
             continue
         break
-    return response.json()
+    if not extract_suppliers:
+        return response.json()
+    return [s['idurl'] for s in response.json()['result']]
 
 
 def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=0):
@@ -102,10 +104,21 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
     return True
 
 
+def supplier_switch_v1(customer: str, supplier: str, position: int):
+    response = requests.put(url=tunnel_url(customer, 'supplier/switch/v1'), json={
+        'index': position,
+        'new_idurl': f'http://is:8084/{supplier}.xml',
+    }, )
+    assert response.status_code == 200
+    print('\nsupplier/switch/v1 [%s] with new supplier [%s] at position %r : %s\n' % (customer, supplier, position, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def share_create_v1(customer: str, key_size=1024):
     response = requests.post(url=tunnel_url(customer, 'share/create/v1'), json={'key_size': key_size, }, )
     assert response.status_code == 200
-    print('\nshare/create/v1 : %s\n' % pprint.pformat(response.json()))
+    print('\nshare/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()['result'][0]['key_id']
 
@@ -113,7 +126,17 @@ def share_create_v1(customer: str, key_size=1024):
 def share_open_v1(customer: str, key_id):
     response = requests.post(url=tunnel_url(customer, 'share/open/v1'), json={'key_id': key_id, }, )
     assert response.status_code == 200
-    print('\nshare/open/v1 : %s\n' % pprint.pformat(response.json()))
+    print('\nshare/open/v1 [%s] key_id=%r : %s\n' % (customer, key_id, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def file_sync_v1(node):
+    response = requests.get(
+        url=tunnel_url(node, 'file/sync/v1'),
+    )
+    assert response.status_code == 200
+    print('\nfile/sync/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
