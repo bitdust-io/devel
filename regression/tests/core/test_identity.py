@@ -295,14 +295,21 @@ def test_identity_rotate_supplier_6_with_customer_3():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
+    r = identity_get_v1('supplier_6')
+    supplier_6_global_id = r['result'][0]['global_id']
+    supplier_6_idurl = r['result'][0]['idurl']
+
+    service_info_v1('supplier_6', 'service_supplier', 'ON', attempts=30, delay=2)
+
     # make sure supplier_6 was hired by customer_3
     current_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
 
-    if f'http://is:8084/supplier_6.xml' not in current_suppliers_idurls:
-        supplier_switch_v1('customer_3', supplier='supplier_6', position=0)
+    # if he is not hired yet, we switch our first supplier to supplier_6
+    if supplier_6_idurl not in current_suppliers_idurls:
+        supplier_switch_v1('customer_3', supplier_idurl=supplier_6_idurl, position=0)
 
     current_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
-    assert f'http://is:8084/supplier_6.xml' in current_suppliers_idurls
+    assert supplier_6_idurl in current_suppliers_idurls
 
     service_info_v1('customer_3', 'service_shared_data', 'ON')
 
@@ -338,8 +345,20 @@ def test_identity_rotate_supplier_6_with_customer_3():
 
     time.sleep(1)
 
+    r = identity_get_v1('supplier_6')
+    supplier_6_global_id_new = r['result'][0]['global_id']
+    supplier_6_idurl_new = r['result'][0]['idurl']
+    assert supplier_6_global_id_new != supplier_6_global_id
+    assert supplier_6_idurl_new != supplier_6_idurl
+
+    service_info_v1('supplier_6', 'service_supplier', 'ON', attempts=30, delay=2)
+
     file_sync_v1('customer_3')
 
     time.sleep(3)
 
     file_list_all_v1('customer_3')
+
+    new_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
+    assert supplier_6_idurl not in new_suppliers_idurls
+    assert supplier_6_idurl_new in new_suppliers_idurls

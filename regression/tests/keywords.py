@@ -104,13 +104,14 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
     return True
 
 
-def supplier_switch_v1(customer: str, supplier: str, position: int):
+def supplier_switch_v1(customer: str, supplier_idurl: str, position: int):
     response = requests.put(url=tunnel_url(customer, 'supplier/switch/v1'), json={
         'index': position,
-        'new_idurl': f'http://is:8084/{supplier}.xml',
+        'new_idurl': supplier_idurl,
     }, )
     assert response.status_code == 200
-    print('\nsupplier/switch/v1 [%s] with new supplier [%s] at position %r : %s\n' % (customer, supplier, position, pprint.pformat(response.json())))
+    print('\nsupplier/switch/v1 [%s] with new supplier %s at position %r : %s\n' % (
+        customer, supplier_idurl, position, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
@@ -141,16 +142,42 @@ def file_sync_v1(node):
     return response.json()
 
 
-def file_list_all_v1(node, check_reliable=100):
-    response = requests.get(
-        url=tunnel_url(node, 'file/list/all/v1'),
-    )
-    assert response.status_code == 200
-    print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
-    assert response.json()['status'] == 'OK', response.json()
-    if check_reliable:
+def file_list_all_v1(node, expected_reliable=100, attempts=30, delay=3):
+    if not expected_reliable:
+        response = requests.get(
+            url=tunnel_url(node, 'file/list/all/v1'),
+        )
+        assert response.status_code == 200
+        print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        assert response.json()['status'] == 'OK', response.json()
+        return response.json()
+
+    response = None
+    latest_reliable = None
+    count = 0
+    while latest_reliable is None or latest_reliable <= expected_reliable:
+        response = requests.get(
+            url=tunnel_url(node, 'file/list/all/v1'),
+        )
+        assert response.status_code == 200
+        print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        assert response.json()['status'] == 'OK', response.json()
+        lowest = 100
+        lowest_file = None
         for fil in response.json()['result']:
-            assert int(fil['reliable'].replace('%', '')) == check_reliable, 'file is not %r %% reliable: %r' % (check_reliable, fil)
+            for ver in fil['versions']:
+                reliable = int(ver['reliable'].replace('%', ''))
+                if reliable < lowest:
+                    lowest = reliable
+                    lowest_file = fil
+        latest_reliable = lowest
+        if latest_reliable >= expected_reliable:
+            break
+        count += 1
+        if count >= attempts:
+            assert False, f"file {lowest_file} is not {expected_reliable} % reliable after {attempts} attempts"
+            return
+        time.sleep(delay)
     return response.json()
 
 
@@ -458,7 +485,7 @@ def identity_get_v1(node):
 
 
 def identity_rotate_v1(node):
-    response = requests.put(url=tunnel_url('customer_6', 'identity/rotate/v1'))
+    response = requests.put(url=tunnel_url(node, 'identity/rotate/v1'))
     assert response.status_code == 200
     print('\nidentity/rotate/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
