@@ -331,7 +331,7 @@ def test_identity_rotate_supplier_6_with_customer_3():
 
     file_1 = run_ssh_command_and_wait('customer_3', f'cat {filepath_customer_3}')[0].strip()
     file_2 = run_ssh_command_and_wait('customer_3', f'cat {download_filepath_customer_3}')[0].strip()
-    assert file_1 != file_2
+    assert file_1 == file_2
 
     # rotate identity sources on supplier_6
     identity_rotate_v1('supplier_6')
