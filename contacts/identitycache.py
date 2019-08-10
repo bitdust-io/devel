@@ -422,6 +422,9 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
         next_idurl = sources[pos]
         next_idurl = id_url.to_original(next_idurl)
 
+        if _Debug:
+            lg.out(_DebugLevel, 'identitycache.immediatelyCaching._next_source  %r from %r : %r' % (pos, sources, next_idurl, ))
+
         if next_idurl in _CachingTasks:
             if _Debug:
                 lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have next task for %r' % next_idurl)
@@ -441,7 +444,6 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     def _fail(err, idurl):
         global _CachingTasks
         idurl = id_url.to_original(idurl)
-        lg.warn('identity %r cache failed with error: %r' % (idurl, err))
         
         result = _CachingTasks.pop(idurl)
 
@@ -456,10 +458,16 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
 
         latest_idurl, latest_rev = id_url.get_latest_revision(idurl)
         latest_ident = None
+        sources = []
         if latest_idurl:
             latest_ident = identitydb.get(latest_idurl)
         if latest_ident:
             sources = latest_ident.getSources(as_fields=False)
+        if sources:
+            if idurl in sources:
+                sources = sources.remove(idurl)
+
+        if sources:
             lg.warn('[cache failed] %s : %s  but will try %d more sources' % (
                 idurl, err.getErrorMessage(), len(sources), ))
             _next_source(err, sources, 0, result)

@@ -401,7 +401,7 @@ def restart(service_name, wait_timeout=None):
         return start_result
 
     def _on_failed(err):
-        lg.err(err)
+        lg.warn('failed service %s in driver.restart() : %r' % (service_name, err, ))
         restart_result.errback(str(err))
         return None
 
@@ -481,7 +481,7 @@ def start_single(service_name):
         return response
 
     def _on_failed(err, action):
-        lg.warn('failed to %s service %s in driver.start_single()' % (action, service_name))
+        lg.warn('failed to %s service %s in driver.start_single() : %r' % (action, service_name, err, ))
         return None
 
     _starting.addCallback(_on_started)
@@ -524,7 +524,7 @@ def stop_single(service_name):
         raise Exception('bad response: %r' % response)
 
     def _on_failed(err, action):
-        lg.warn('failed to %s service %s in driver.stop_single()' % (action, service_name))
+        lg.warn('failed to %s service %s in driver.stop_single() : %r' % (action, service_name, err, ))
         return None
 
     _starting.addCallback(_on_started)
