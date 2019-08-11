@@ -355,7 +355,7 @@ def test_identity_rotate_supplier_6_with_customer_3():
 
     file_sync_v1('customer_3')
 
-    time.sleep(3)
+    time.sleep(1)
 
     file_list_all_v1('customer_3')
 
