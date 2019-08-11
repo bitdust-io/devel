@@ -913,7 +913,7 @@ def add_customer_meta_info(customer_idurl, info):
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
                 customer_idurl, info, ))
         _CustomersMetaInfo[customer_idurl].update(info)
-    json_info = id_url.to_bin_dict(_CustomersMetaInfo)
+    json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
     try:
         raw_data = jsn.dumps(
             json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
