@@ -281,6 +281,8 @@ class SupplierFinder(automat.Automat):
         """
         global _SuppliersToHire
         self.target_idurl = id_url.field(_SuppliersToHire.pop())
+        lg.info('populate supplier %r from "hire" list, %d more in the list' % (
+            self.target_idurl, len(_SuppliersToHire)))
 
     def doReportDone(self, *args, **kwargs):
         """

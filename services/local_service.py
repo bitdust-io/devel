@@ -261,9 +261,9 @@ class LocalService(automat.Automat):
         """
         for svc in services().values():
             if self.service_name in svc.dependent_on():
-                if svc.state != 'OFF' and \
-                        svc.state != 'DEPENDS_OFF' and \
-                        svc.state != 'NOT_INSTALLED':
+                if svc.state != 'OFF' and svc.state != 'DEPENDS_OFF' and svc.state != 'NOT_INSTALLED':
+                    if _Debug:
+                        lg.out(_DebugLevel, '    dependent %r not stopped yet, %r will have to wait' % (svc, self, ))
                     return False
         return True
 

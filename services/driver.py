@@ -608,6 +608,14 @@ def on_service_callback(result, service_name):
             if not depend_service:
                 raise ServiceNotFound(depend_name)
             depend_service.automat('depend-service-stopped')
+    elif result == 'depends_off':
+        if _Debug:
+            lg.out(_DebugLevel, '[%s] DEPENDS_OFF' % service_name)
+        for depend_name in svc.dependent_on():
+            depend_service = services().get(depend_name, None)
+            if not depend_service:
+                raise ServiceNotFound(depend_name)
+            depend_service.automat('depend-service-stopped')
     return result
 
 

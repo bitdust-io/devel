@@ -104,7 +104,7 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
     return True
 
 
-def supplier_switch_v1(customer: str, supplier_idurl: str, position: int):
+def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, validate_retries=30, delay=3):
     response = requests.put(url=tunnel_url(customer, 'supplier/switch/v1'), json={
         'index': position,
         'new_idurl': supplier_idurl,
@@ -113,8 +113,23 @@ def supplier_switch_v1(customer: str, supplier_idurl: str, position: int):
     print('\nsupplier/switch/v1 [%s] with new supplier %s at position %r : %s\n' % (
         customer, supplier_idurl, position, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
-    return response.json()
-
+    if not validate_retries:
+        return response.json()
+    count = 0
+    while True:
+        if count >= validate_retries:
+            break
+        current_suppliers_idurls = supplier_list_v1(customer, expected_min_suppliers=None, expected_max_suppliers=None, attempts=1)
+        if supplier_idurl in current_suppliers_idurls:
+            _pos = current_suppliers_idurls.index(supplier_idurl)
+            assert position == _pos
+            print('\nfound supplier %r at position %d for customer %r' % (supplier_idurl, position, customer))
+            return current_suppliers_idurls
+        count += 1
+        time.sleep(delay)
+    assert False, 'failed to switch supplier at position %r to %r after %d retries' % ( position, supplier_idurl, count, )
+    return None
+        
 
 def share_create_v1(customer: str, key_size=1024):
     response = requests.post(url=tunnel_url(customer, 'share/create/v1'), json={'key_size': key_size, }, )
