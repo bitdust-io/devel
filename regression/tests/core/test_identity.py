@@ -26,7 +26,8 @@ import time
 import shutil
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait
+from ..testsupport import tunnel_url, run_ssh_command_and_wait, create_identity, connect_network
+
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
     supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
     user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1, share_create_v1, share_open_v1, \
@@ -294,6 +295,11 @@ def test_identity_rotate_customer_6():
 def test_identity_rotate_supplier_6_with_customer_3():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
+
+    # first start supplier_6 - his identity will be rotated later
+    create_identity('supplier_6', 'supplier_6')
+
+    connect_network('supplier_6')
 
     r = identity_get_v1('supplier_6')
     supplier_6_global_id = r['result'][0]['global_id']

@@ -488,7 +488,8 @@ def start_dht_seed(node, wait_seconds=0, other_seeds=''):
 
 
 
-async def start_supplier_async(node, identity_name, loop, min_servers=1, max_servers=1, known_servers=[], preferred_servers=[]):
+async def start_supplier_async(node, identity_name, loop, join_network=True,
+                               min_servers=1, max_servers=1, known_servers=[], preferred_servers=[]):
     print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
     # use short key to run tests faster
     await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
@@ -514,8 +515,9 @@ async def start_supplier_async(node, identity_name, loop, min_servers=1, max_ser
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
     await health_check_async(node, loop)
-    await create_identity_async(node, identity_name, loop)
-    await connect_network_async(node, loop)
+    if join_network:
+        await create_identity_async(node, identity_name, loop)
+        await connect_network_async(node, loop)
     print(f'\nSTARTED SUPPLIER [{node}]\n')
 
 
@@ -562,6 +564,7 @@ async def start_one_supplier_async(supplier, loop):
     await start_supplier_async(
         node=supplier['name'],
         identity_name=supplier['name'],
+        join_network=supplier.get('join_network', True),
         min_servers=supplier.get('min_servers'),
         max_servers=supplier.get('max_servers'),
         known_servers=supplier.get('known_servers', []),

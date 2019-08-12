@@ -101,7 +101,8 @@ ALL_ROLES = {
         {'name': 'supplier_3', },
         {'name': 'supplier_4', },
         {'name': 'supplier_5', },
-        {'name': 'supplier_6', 'known_servers': OTHER_KNOWN_ID_SERVERS, 'max_servers': 2, 'min_servers': 2, },
+        {'name': 'supplier_6', 'join_network': False,
+         'known_servers': OTHER_KNOWN_ID_SERVERS, 'max_servers': 2, 'min_servers': 2, },
     ],
     'customers': [
         {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, 'block_size': '10 KB', },
