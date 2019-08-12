@@ -26,7 +26,7 @@ import time
 import shutil
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait, create_identity, connect_network
+from ..testsupport import tunnel_url, run_ssh_command_and_wait, create_identity, connect_network, stop_daemon
 
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
     supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
@@ -368,3 +368,8 @@ def test_identity_rotate_supplier_6_with_customer_3():
     new_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
     assert supplier_6_idurl not in new_suppliers_idurls
     assert supplier_6_idurl_new in new_suppliers_idurls
+
+    # to make sure other customers do not take that supplier need to stop it here
+    stop_daemon('supplier_6')
+
+    time.sleep(2)

@@ -391,6 +391,24 @@ async def connect_network_async(node, loop):
             assert False
 
 
+def stop_daemon(node, skip_checks=False):
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
+    print('\n' + bitdust_stop[0].strip())
+    if not skip_checks:
+        assert (
+            (
+                bitdust_stop[0].strip().startswith('BitDust child processes found') and
+                bitdust_stop[0].strip().endswith('BitDust stopped')
+            ) or (
+                bitdust_stop[0].strip().startswith('found main BitDust process:') and
+                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+            ) or (
+                bitdust_stop[0].strip() == 'BitDust is not running at the moment'
+            )
+        )
+    print(f'stop_daemon [{node}] OK\n')
+
+
 async def stop_daemon_async(node, loop, skip_checks=False):
     bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop)
     print('\n' + bitdust_stop[0].strip())
