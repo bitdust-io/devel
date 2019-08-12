@@ -43,7 +43,7 @@ _DebugLevel = 8
 
 import os
 
-from twisted.internet.defer import DeferredList
+from twisted.internet.defer import DeferredList, fail
 
 #------------------------------------------------------------------------------
 
@@ -643,7 +643,11 @@ def cache_suppliers(path=None):
         if not global_id.IsValidGlobalUser(customer_id):
             lg.warn('invalid customer record %s found in %s' % (customer_id, settings.SuppliersDir()))
             continue
-        one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+        try:
+            one_customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+        except Exception as exc:
+            lg.err('idurl caching failed: %r' % exc)
+            continue
         if not id_url.is_cached(one_customer_idurl):
             dl.append(identitycache.immediatelyCaching(one_customer_idurl))
         path = os.path.join(settings.SuppliersDir(), customer_id, 'supplierids')
@@ -909,7 +913,7 @@ def add_customer_meta_info(customer_idurl, info):
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   update existing meta info for customer %r: %r' % (
                 customer_idurl, info, ))
         _CustomersMetaInfo[customer_idurl].update(info)
-    json_info = id_url.to_bin_dict(_CustomersMetaInfo)
+    json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
     try:
         raw_data = jsn.dumps(
             json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
@@ -939,7 +943,7 @@ def remove_customer_meta_info(customer_idurl):
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.remove_customer_meta_info   erase existing meta info for customer %r' % customer_idurl)
     _CustomersMetaInfo.pop(customer_idurl)
-    json_info = id_url.to_bin_dict(_CustomersMetaInfo)
+    json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
     local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
         json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
     ))

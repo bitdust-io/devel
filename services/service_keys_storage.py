@@ -60,7 +60,7 @@ class KeysStorageService(LocalService):
         keys_synchronizer.A('init')
         self.starting_deferred = Deferred()
         self.starting_deferred.addErrback(lg.errback)
-        events.add_subscriber(self._on_identity_rotated, 'identity-rotated')
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
         events.add_subscriber(self._on_key_erased, 'key-erased')
@@ -82,7 +82,7 @@ class KeysStorageService(LocalService):
         events.remove_subscriber(self._on_key_erased, 'key-erased')
         events.remove_subscriber(self._on_key_registered, 'key-registered')
         events.remove_subscriber(self._on_key_generated, 'key-generated')
-        events.remove_subscriber(self._on_identity_rotated, 'identity-rotated')
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         keys_synchronizer.A('shutdown')
         return True
 
@@ -188,9 +188,15 @@ class KeysStorageService(LocalService):
         events.send('my-storage-not-ready-yet', data=dict())
         return None
 
-    def _on_identity_rotated(self, evt):
+    def _on_identity_url_changed(self, evt):
+        from userid import id_url
+        from userid import my_id
+        if id_url.field(evt.data['new_idurl']) == my_id.getLocalID():
+            # do not take any actions here if my own identity was rotated
+            return None
         from access import key_ring
         from storage import backup_control
         key_ring.check_rename_my_keys()
         self._do_synchronize_keys()
         backup_control.Save()
+        return None

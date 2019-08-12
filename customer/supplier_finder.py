@@ -192,7 +192,7 @@ class SupplierFinder(automat.Automat):
         """
         newpacket, info, status, error_message = args[0]
         if newpacket.Command == commands.Ack():
-            if newpacket.OwnerID == self.target_idurl:
+            if self.target_idurl and newpacket.OwnerID.to_bin() == self.target_idurl.to_bin():
                 # TODO: also check PacketID
                 return True
         return False
@@ -280,7 +280,9 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         global _SuppliersToHire
-        self.target_idurl = _SuppliersToHire.pop()
+        self.target_idurl = id_url.field(_SuppliersToHire.pop())
+        lg.info('populate supplier %r from "hire" list, %d more in the list' % (
+            self.target_idurl, len(_SuppliersToHire)))
 
     def doReportDone(self, *args, **kwargs):
         """
@@ -349,7 +351,7 @@ class SupplierFinder(automat.Automat):
         self.automat('found-one-user', found_idurl)
 
     def _supplier_connector_state(self, supplier_idurl, newstate, **kwargs):
-        if supplier_idurl != self.target_idurl:
+        if id_url.field(supplier_idurl) != self.target_idurl:
             return
         if newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
             self.automat('supplier-not-connected')

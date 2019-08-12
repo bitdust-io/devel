@@ -28,7 +28,7 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3, extract_suppliers=True):
     count = 0
     num_connected = 0
     while True:
@@ -55,7 +55,9 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
             time.sleep(delay)
             continue
         break
-    return response.json()
+    if not extract_suppliers:
+        return response.json()
+    return [s['idurl'] for s in response.json()['result']]
 
 
 def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=0):
@@ -102,10 +104,37 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
     return True
 
 
+def supplier_switch_v1(customer: str, supplier_idurl: str, position: int, validate_retries=30, delay=3):
+    response = requests.put(url=tunnel_url(customer, 'supplier/switch/v1'), json={
+        'index': position,
+        'new_idurl': supplier_idurl,
+    }, )
+    assert response.status_code == 200
+    print('\nsupplier/switch/v1 [%s] with new supplier %s at position %r : %s\n' % (
+        customer, supplier_idurl, position, pprint.pformat(response.json())))
+    assert response.json()['status'] == 'OK', response.json()
+    if not validate_retries:
+        return response.json()
+    count = 0
+    while True:
+        if count >= validate_retries:
+            break
+        current_suppliers_idurls = supplier_list_v1(customer, expected_min_suppliers=None, expected_max_suppliers=None, attempts=1)
+        if supplier_idurl in current_suppliers_idurls:
+            _pos = current_suppliers_idurls.index(supplier_idurl)
+            assert position == _pos
+            print('\nfound supplier %r at position %d for customer %r' % (supplier_idurl, position, customer))
+            return current_suppliers_idurls
+        count += 1
+        time.sleep(delay)
+    assert False, 'failed to switch supplier at position %r to %r after %d retries' % ( position, supplier_idurl, count, )
+    return None
+        
+
 def share_create_v1(customer: str, key_size=1024):
     response = requests.post(url=tunnel_url(customer, 'share/create/v1'), json={'key_size': key_size, }, )
     assert response.status_code == 200
-    print('\nshare/create/v1 : %s\n' % pprint.pformat(response.json()))
+    print('\nshare/create/v1 [%s] : %s\n' % (customer, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()['result'][0]['key_id']
 
@@ -113,18 +142,57 @@ def share_create_v1(customer: str, key_size=1024):
 def share_open_v1(customer: str, key_id):
     response = requests.post(url=tunnel_url(customer, 'share/open/v1'), json={'key_id': key_id, }, )
     assert response.status_code == 200
-    print('\nshare/open/v1 : %s\n' % pprint.pformat(response.json()))
+    print('\nshare/open/v1 [%s] key_id=%r : %s\n' % (customer, key_id, pprint.pformat(response.json())))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
 
-def file_list_all_v1(node):
+def file_sync_v1(node):
     response = requests.get(
-        url=tunnel_url(node, 'file/list/all/v1'),
+        url=tunnel_url(node, 'file/sync/v1'),
     )
     assert response.status_code == 200
-    print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    print('\nfile/sync/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def file_list_all_v1(node, expected_reliable=100, attempts=30, delay=3):
+    if not expected_reliable:
+        response = requests.get(
+            url=tunnel_url(node, 'file/list/all/v1'),
+        )
+        assert response.status_code == 200
+        print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        assert response.json()['status'] == 'OK', response.json()
+        return response.json()
+
+    response = None
+    latest_reliable = None
+    count = 0
+    while latest_reliable is None or latest_reliable <= expected_reliable:
+        response = requests.get(
+            url=tunnel_url(node, 'file/list/all/v1'),
+        )
+        assert response.status_code == 200
+        print('\nfile/list/all/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+        assert response.json()['status'] == 'OK', response.json()
+        lowest = 100
+        lowest_file = None
+        for fil in response.json()['result']:
+            for ver in fil['versions']:
+                reliable = int(ver['reliable'].replace('%', ''))
+                if reliable < lowest:
+                    lowest = reliable
+                    lowest_file = fil
+        latest_reliable = lowest
+        if latest_reliable >= expected_reliable:
+            break
+        count += 1
+        if count >= attempts:
+            assert False, f"file {lowest_file} is not {expected_reliable} % reliable after {attempts} attempts"
+            return
+        time.sleep(delay)
     return response.json()
 
 
@@ -432,7 +500,7 @@ def identity_get_v1(node):
 
 
 def identity_rotate_v1(node):
-    response = requests.put(url=tunnel_url('customer_6', 'identity/rotate/v1'))
+    response = requests.put(url=tunnel_url(node, 'identity/rotate/v1'))
     assert response.status_code == 200
     print('\nidentity/rotate/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()

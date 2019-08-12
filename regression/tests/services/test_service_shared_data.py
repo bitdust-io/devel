@@ -76,7 +76,7 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     transfer_list_v1('customer_2', wait_all_finish=True)
 
     # wait for quite a while to allow files to be uploaded
-    time.sleep(5)
+    # time.sleep(5)
 
     service_info_v1('customer_1', 'service_restores', 'ON')
 

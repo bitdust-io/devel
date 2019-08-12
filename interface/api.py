@@ -2177,12 +2177,20 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         return ERROR('supplier not found')
     if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('peer "%s" is your supplier already' % new_supplier_idurl)
-    from customer import fire_hire
-    from customer import supplier_finder
-    supplier_finder.AddSupplierToHire(new_supplier_idurl)
-    fire_hire.AddSupplierToFire(supplier_idurl)
-    fire_hire.A('restart')
-    return OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl))
+    ret = Deferred()
+
+    def _change(x):
+        from customer import fire_hire
+        from customer import supplier_finder
+        supplier_finder.AddSupplierToHire(new_supplier_idurl)
+        fire_hire.AddSupplierToFire(supplier_idurl)
+        fire_hire.A('restart')
+        ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl)))
+        return None
+
+    from p2p import propagate
+    propagate.PingContact(new_supplier_idurl).addBoth(_change)
+    return ret
 
 
 def suppliers_ping():

@@ -143,6 +143,16 @@ def _request_data(request, mandatory_keys=[], default_value={}):
                 raise Exception('one of mandatory parameters missed: %s' % mandatory_keys)
     return data
 
+
+def _input_value(json_data, keys_list, default_value=None):
+    """
+    Helper method.
+    """
+    for key in keys_list:
+        if key in json_data:
+            return json_data[key]
+    return default_value
+
 #------------------------------------------------------------------------------
 
 class BitDustAPISite(Site):
@@ -628,9 +638,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @PUT('^/su/sw$')
     @PUT('^/supplier/switch/v1$')
     def supplier_switch_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('index', 'idurl', 'global_id', ), ('new_idurl', 'new_global_id', ), ])
+        data = _request_data(request, mandatory_keys=[
+            ('index', 'position', 'pos', 'idurl', 'global_id', ),
+            ('new_idurl', 'new_global_id', ),
+        ])
+        index_or_idurl_or_global_id = _input_value(data, ['index', 'position', 'pos', ])
+        if index_or_idurl_or_global_id is None:
+            index_or_idurl_or_global_id = data.get('global_id') or data.get('idurl') or data.get('id')
         return api.supplier_change(
-            index_or_idurl_or_global_id=data.get('index') or data.get('global_id') or data.get('idurl') or data.get('id'),
+            index_or_idurl_or_global_id=index_or_idurl_or_global_id,
             new_supplier_idurl_or_global_id=data.get('new_global_id') or data.get('new_idurl') or data.get('new_id'),
         )
 

@@ -226,7 +226,7 @@ class Packet(object):
         if CreatorIdentity is None:
             OwnerIdentity = contactsdb.get_contact_identity(self.OwnerID)
             if OwnerIdentity is None:
-                lg.err("could not get Identity for " + self.CreatorID + " so returning False")
+                lg.err("could not get Identity for %s so returning False" % self.CreatorID.to_text())
                 return False
             CreatorIdentity = OwnerIdentity
 

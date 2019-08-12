@@ -26,10 +26,12 @@ import time
 import shutil
 import requests
 
-from ..testsupport import tunnel_url, run_ssh_command_and_wait
+from ..testsupport import tunnel_url, run_ssh_command_and_wait, create_identity, connect_network, stop_daemon
+
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
     supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
-    user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1, share_create_v1, share_open_v1
+    user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1, share_create_v1, share_open_v1, \
+    supplier_switch_v1, file_sync_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
@@ -216,9 +218,11 @@ def test_identity_rotate_customer_6():
     filepath_customer_6 = f'{volume_customer_6}/{filename}'
     run_ssh_command_and_wait('customer_6', f'echo customer_6 > {filepath_customer_6}')
     remote_path_customer_6 = f'{share_id_customer_6}:{virtual_filename}'
+    downloaded_filepath = f'/tmp/{filename}'
+    local_file_src = run_ssh_command_and_wait('customer_6', 'cat %s' % filepath_customer_6)[0].strip()
 
-    file_create_v1('customer_6', remote_path_customer_6)
-    file_upload_start_v1('customer_6', remote_path_customer_6, filepath_customer_6)
+    file_create_v1('customer_6', remote_path=remote_path_customer_6)
+    file_upload_start_v1('customer_6', remote_path=remote_path_customer_6, local_path=filepath_customer_6)
 
     packet_list_v1('customer_6', wait_all_finish=True)
     transfer_list_v1('customer_6', wait_all_finish=True)
@@ -229,7 +233,11 @@ def test_identity_rotate_customer_6():
 
     # make sure file is available before identity rotate
     share_open_v1('customer_6', share_id_customer_6)
-    file_download_start_v1('customer_6', remote_path=remote_path_customer_6, destination=volume_customer_6)
+    file_download_start_v1('customer_6', remote_path=remote_path_customer_6, destination='/tmp')
+
+    # and make sure this is the same file
+    downloaded_file_src = run_ssh_command_and_wait('customer_6', 'cat %s' % downloaded_filepath)[0].strip()
+    assert local_file_src == downloaded_file_src, "source file and received file content is not equal"
 
     # remember list of existing keys
     old_keys = [k['key_id'] for k in key_list_v1('customer_6')['result']]
@@ -275,5 +283,93 @@ def test_identity_rotate_customer_6():
     new_share_id_customer_6 = share_id_customer_6.replace(old_global_id, new_global_id)
     share_open_v1('customer_6', new_share_id_customer_6)
     new_remote_path_customer_6 = remote_path_customer_6.replace(old_global_id, new_global_id)
+    run_ssh_command_and_wait('customer_6', 'rm -rfv %s' % downloaded_filepath)[0].strip()
     file_download_start_v1('customer_6', remote_path=new_remote_path_customer_6, destination='/tmp')
 
+    # and make sure this is still the same file
+    new_downloaded_file_src = run_ssh_command_and_wait('customer_6', 'cat %s' % downloaded_filepath)[0].strip()
+    assert local_file_src == downloaded_file_src, "source file and received file content is not equal after identity rotate"
+    assert new_downloaded_file_src == downloaded_file_src, "received file content before identity rotate is not equal to received file after identity rotate"
+
+
+def test_identity_rotate_supplier_6_with_customer_3():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+
+    # first start supplier_6 - his identity will be rotated later
+    create_identity('supplier_6', 'supplier_6')
+
+    connect_network('supplier_6')
+
+    r = identity_get_v1('supplier_6')
+    supplier_6_global_id = r['result'][0]['global_id']
+    supplier_6_idurl = r['result'][0]['idurl']
+
+    service_info_v1('supplier_6', 'service_supplier', 'ON', attempts=30, delay=2)
+
+    # make sure supplier_6 was hired by customer_3
+    current_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    # if he is not hired yet, we switch our first supplier to supplier_6
+    if supplier_6_idurl not in current_suppliers_idurls:
+        supplier_switch_v1('customer_3', supplier_idurl=supplier_6_idurl, position=0)
+
+    current_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
+    assert supplier_6_idurl in current_suppliers_idurls
+
+    service_info_v1('customer_3', 'service_shared_data', 'ON')
+
+    share_id_customer_3 = share_create_v1('customer_3')
+
+    filename = 'cat.txt'
+    virtual_filename = filename
+    volume_customer_3 = '/customer_3'
+    filepath_customer_3 = f'{volume_customer_3}/{filename}'
+    remote_path_customer_3 = f'{share_id_customer_3}:{virtual_filename}'
+    download_filepath_customer_3 = f'/tmp/{filename}'
+
+    run_ssh_command_and_wait('customer_3', f'echo customer_3 > {filepath_customer_3}')
+
+    file_create_v1('customer_3', remote_path_customer_3)
+
+    file_upload_start_v1('customer_3', remote_path_customer_3, filepath_customer_3)
+
+    packet_list_v1('customer_3', wait_all_finish=True)
+
+    transfer_list_v1('customer_3', wait_all_finish=True)
+
+    service_info_v1('customer_3', 'service_restores', 'ON')
+
+    file_download_start_v1('customer_3', remote_path=remote_path_customer_3, destination='/tmp')
+
+    file_1 = run_ssh_command_and_wait('customer_3', f'cat {filepath_customer_3}')[0].strip()
+    file_2 = run_ssh_command_and_wait('customer_3', f'cat {download_filepath_customer_3}')[0].strip()
+    assert file_1 == file_2
+
+    # rotate identity sources on supplier_6
+    identity_rotate_v1('supplier_6')
+
+    time.sleep(1)
+
+    r = identity_get_v1('supplier_6')
+    supplier_6_global_id_new = r['result'][0]['global_id']
+    supplier_6_idurl_new = r['result'][0]['idurl']
+    assert supplier_6_global_id_new != supplier_6_global_id
+    assert supplier_6_idurl_new != supplier_6_idurl
+
+    service_info_v1('supplier_6', 'service_supplier', 'ON', attempts=30, delay=2)
+
+    file_sync_v1('customer_3')
+
+    time.sleep(1)
+
+    file_list_all_v1('customer_3')
+
+    new_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
+    assert supplier_6_idurl not in new_suppliers_idurls
+    assert supplier_6_idurl_new in new_suppliers_idurls
+
+    # to make sure other customers do not take that supplier need to stop it here
+    stop_daemon('supplier_6')
+
+    time.sleep(2)

@@ -27,8 +27,10 @@ import asyncio
 import pprint
 
 
-from . import testsupport as ts
-from . import keywords
+from .testsupport import open_one_tunnel_async, clean_one_node_async, clean_one_customer_async, \
+    start_dht_seed, start_identity_server_async, start_stun_server_async, start_one_proxy_server_async, \
+    start_one_supplier_async, start_one_customer_async, stop_daemon_async, run_ssh_command_and_wait, \
+    print_exceptions_one_node, report_one_node
 
 #------------------------------------------------------------------------------
 
@@ -94,17 +96,18 @@ ALL_ROLES = {
         'proxy_server_2',
     ],
     'suppliers': [
-        'supplier_1',
-        'supplier_2',
-        'supplier_3',
-        'supplier_4',
-        'supplier_5',
-        'supplier_6',
+        {'name': 'supplier_1', },
+        {'name': 'supplier_2', },
+        {'name': 'supplier_3', },
+        {'name': 'supplier_4', },
+        {'name': 'supplier_5', },
+        {'name': 'supplier_6', 'join_network': False,
+         'known_servers': OTHER_KNOWN_ID_SERVERS, 'max_servers': 2, 'min_servers': 2, },
     ],
     'customers': [
         {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, 'block_size': '10 KB', },
         {'name': 'customer_2', 'join_network': True, 'num_suppliers': 2, },
-        {'name': 'customer_3', 'join_network': False, 'num_suppliers': 2, },
+        {'name': 'customer_3', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4, },
         {'name': 'customer_6', 'join_network': True, 'num_suppliers': 2,
@@ -119,7 +122,7 @@ def open_all_tunnels(event_loop):
     _begin = time.time()
     print('\nStarting all SSH tunnels\n')
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.open_one_tunnel_async(node, 10000+pos, event_loop) for pos, node in enumerate(ALL_NODES)
+        open_one_tunnel_async(node, 10000+pos, event_loop) for pos, node in enumerate(ALL_NODES)
     ]))
     print('\nAll SSH tunnels opened in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -128,10 +131,10 @@ def clean_all_nodes(event_loop, skip_checks=False):
     _begin = time.time()
     print('\nCleaning all nodes')
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.clean_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
+        clean_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
     ]))
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customers']
+        clean_one_customer_async(node['name'], event_loop=event_loop) for node in ALL_ROLES['customers']
     ]))
     print('\n\nAll nodes cleaned in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -142,7 +145,7 @@ def start_all_nodes(event_loop):
 
     for number, dhtseed in enumerate(ALL_ROLES['dht-seeds']):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        ts.start_dht_seed(
+        start_dht_seed(
             node=dhtseed['name'],
             other_seeds=dhtseed['other_seeds'],
             wait_seconds=(15 if number > 0 else 0),
@@ -151,27 +154,27 @@ def start_all_nodes(event_loop):
     print('\nALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.start_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES['identity-servers']
+        start_identity_server_async(idsrv, event_loop) for idsrv in ALL_ROLES['identity-servers']
     ]))
     print(f'\nALL ID SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.start_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES['stun-servers']
+        start_stun_server_async(stunsrv, event_loop) for stunsrv in ALL_ROLES['stun-servers']
     ]))
     print(f'\nALL STUN SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
+        start_one_proxy_server_async(proxy_server, event_loop) for proxy_server in ALL_ROLES['proxy-servers']
     ]))
     print(f'\nALL PROXY SERVERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES['suppliers']
+        start_one_supplier_async(supplier, event_loop) for supplier in ALL_ROLES['suppliers']
     ]))
     print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.start_one_customer_async(customer, event_loop) for customer in ALL_ROLES['customers']
+        start_one_customer_async(customer, event_loop) for customer in ALL_ROLES['customers']
     ]))
     print(f'\nALL CUSTOMERS STARTED\n')
 
@@ -182,7 +185,7 @@ def stop_all_nodes(event_loop):
     _begin = time.time()
     print('\nstop all nodes\n')
     event_loop.run_until_complete(asyncio.gather(*[
-        ts.stop_daemon_async(node, event_loop) for node in ALL_NODES
+        stop_daemon_async(node, event_loop) for node in ALL_NODES
     ]))
     print('\nALL NODES STOPPED in %5.3f seconds\n' % (time.time() - _begin))
 
@@ -190,7 +193,7 @@ def stop_all_nodes(event_loop):
 def kill_all_nodes():
     for node in ALL_NODES:
         print('Shutdown %s' % node)
-        ts.run_ssh_command_and_wait(node, 'pkill -e sshd')
+        run_ssh_command_and_wait(node, 'pkill -e sshd')
     print('All nodes stopped')
 
 
@@ -208,10 +211,10 @@ def report_all_nodes(event_loop):
     print('\n\nALL EXCEPTIONS:')
     failed = False 
     for node in ALL_NODES:
-        failed = failed or ts.print_exceptions_one_node(node)
+        failed = failed or print_exceptions_one_node(node)
 
     for node in ALL_NODES:
-        ts.report_one_node(node)
+        report_one_node(node)
 
     assert not failed, 'found some critical errors'
 

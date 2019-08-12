@@ -261,9 +261,9 @@ class LocalService(automat.Automat):
         """
         for svc in services().values():
             if self.service_name in svc.dependent_on():
-                if svc.state != 'OFF' and \
-                        svc.state != 'DEPENDS_OFF' and \
-                        svc.state != 'NOT_INSTALLED':
+                if svc.state != 'OFF' and svc.state != 'DEPENDS_OFF' and svc.state != 'NOT_INSTALLED':
+                    if _Debug:
+                        lg.out(_DebugLevel, '    dependent %r not stopped yet, %r will have to wait' % (svc, self, ))
                     return False
         return True
 
@@ -290,9 +290,9 @@ class LocalService(automat.Automat):
             lg.out(_DebugLevel, '[%s] STARTING' % self.service_name)
         try:
             result = self.start()
-        except:
+        except Exception as exc:
             lg.exc()
-            self.automat('service-failed', 'exception when starting')
+            self.automat('service-failed', exc)
             return
         if isinstance(result, Deferred):
             result.addCallback(lambda x: self.automat('service-started'))
@@ -301,7 +301,7 @@ class LocalService(automat.Automat):
         if result:
             self.automat('service-started')
         else:
-            self.automat('service-failed', 'result is %r' % result)
+            self.automat('service-failed', Exception('failed to start %r, result is %r' % (self, result, )))
 
     def doStopService(self, *args, **kwargs):
         """
@@ -372,6 +372,8 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, args=args)
         if self.result_deferred:
             self.result_deferred.callback('failed')
             self.result_deferred = None

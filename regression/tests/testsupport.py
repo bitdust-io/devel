@@ -391,6 +391,24 @@ async def connect_network_async(node, loop):
             assert False
 
 
+def stop_daemon(node, skip_checks=False):
+    bitdust_stop = run_ssh_command_and_wait(node, 'bitdust stop')
+    print('\n' + bitdust_stop[0].strip())
+    if not skip_checks:
+        assert (
+            (
+                bitdust_stop[0].strip().startswith('BitDust child processes found') and
+                bitdust_stop[0].strip().endswith('BitDust stopped')
+            ) or (
+                bitdust_stop[0].strip().startswith('found main BitDust process:') and
+                bitdust_stop[0].strip().endswith('BitDust process finished correctly')
+            ) or (
+                bitdust_stop[0].strip() == 'BitDust is not running at the moment'
+            )
+        )
+    print(f'stop_daemon [{node}] OK\n')
+
+
 async def stop_daemon_async(node, loop, skip_checks=False):
     bitdust_stop = await run_ssh_command_and_wait_async(node, 'bitdust stop', loop)
     print('\n' + bitdust_stop[0].strip())
@@ -488,7 +506,8 @@ def start_dht_seed(node, wait_seconds=0, other_seeds=''):
 
 
 
-async def start_supplier_async(node, identity_name, loop):
+async def start_supplier_async(node, identity_name, loop, join_network=True,
+                               min_servers=1, max_servers=1, known_servers=[], preferred_servers=[]):
     print(f'\nNEW SUPPLIER {identity_name} at [{node}]\n')
     # use short key to run tests faster
     await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
@@ -496,8 +515,14 @@ async def start_supplier_async(node, identity_name, loop):
     await run_ssh_command_and_wait_async(node, 'bitdust set services/customer/enabled false', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/proxy-server/enabled false', loop)
     # configure ID servers
-    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers 1', loop)
-    await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers 1', loop)
+    if min_servers is not None:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/min-servers %d' % min_servers, loop)
+    if max_servers is not None:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/max-servers %d' % max_servers, loop)
+    if known_servers:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/known-servers %s' % (','.join(known_servers)), loop)
+    if preferred_servers:
+        await run_ssh_command_and_wait_async(node, 'bitdust set services/identity-propagate/preferred-servers %s' % (','.join(preferred_servers)), loop)
     # configure DHT udp port and node ID
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/udp-port "14441"', loop)
     await run_ssh_command_and_wait_async(node, 'bitdust set services/entangled-dht/node-id "%s"' % DHT_NODE_ID_FIXED[node], loop)
@@ -508,13 +533,14 @@ async def start_supplier_async(node, identity_name, loop):
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
     await health_check_async(node, loop)
-    await create_identity_async(node, identity_name, loop)
-    await connect_network_async(node, loop)
+    if join_network:
+        await create_identity_async(node, identity_name, loop)
+        await connect_network_async(node, loop)
     print(f'\nSTARTED SUPPLIER [{node}]\n')
 
 
 async def start_customer_async(node, identity_name, loop, join_network=True, num_suppliers=2, block_size=None,
-                               min_servers=None, max_servers=None, known_servers=[], preferred_servers=[]):
+                               min_servers=1, max_servers=1, known_servers=[], preferred_servers=[]):
     print('\nNEW CUSTOMER %r at [%s]\n' % (identity_name, node, ))
     # use short key to run tests faster
     await run_ssh_command_and_wait_async(node, 'bitdust set personal/private-key-size 1024', loop)
@@ -553,7 +579,15 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
 
 
 async def start_one_supplier_async(supplier, loop):
-    await start_supplier_async(node=supplier, identity_name=supplier, loop=loop)
+    await start_supplier_async(
+        node=supplier['name'],
+        identity_name=supplier['name'],
+        join_network=supplier.get('join_network', True),
+        min_servers=supplier.get('min_servers'),
+        max_servers=supplier.get('max_servers'),
+        known_servers=supplier.get('known_servers', []),
+        loop=loop,
+    )
 
 
 async def start_one_customer_async(customer, loop):

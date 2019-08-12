@@ -377,7 +377,7 @@ def scheduleForCaching(idurl, timeout=0):
 #------------------------------------------------------------------------------
 
 
-def immediatelyCaching(idurl, timeout=10):
+def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     """
     A smart method to cache some identity and get results in callbacks.
     """
@@ -394,7 +394,7 @@ def immediatelyCaching(idurl, timeout=10):
     if _Debug:
         lg.out(_DebugLevel, 'identitycache.immediatelyCaching started new task for %r' % idurl)
 
-    def _getPageSuccess(src, idurl):
+    def _success(src, idurl):
         global _CachingTasks
         idurl = id_url.to_original(idurl)
         result = _CachingTasks.pop(idurl, None)
@@ -403,36 +403,89 @@ def immediatelyCaching(idurl, timeout=10):
         if UpdateAfterChecking(idurl, src):
             if result:
                 result.callback(src)
-            if _Debug:
-                lg.out(_DebugLevel, '[cached] %s' % idurl)
+            lg.out(_DebugLevel, '[cached] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, len(src))
         else:
             if result:
                 result.errback(Exception(src))
-            if _Debug:
-                lg.warn('[cache error] %s is not valid' % idurl)
+            lg.warn('[cache error] %s is not valid' % idurl)
             p2p_stats.count_identity_cache(idurl, 0)
         return src
 
-    def _getPageFail(x, idurl):
+    def _next_source(err, sources, pos, ret):
+        if pos >= len(sources):
+            lg.warn('[cache failed] %r from %d sources' % (idurl, len(sources)))
+            if ret:
+                ret.errback(Exception('cache failed from %d sources' % len(sources)))
+            return None
+
+        next_idurl = sources[pos]
+        next_idurl = id_url.to_original(next_idurl)
+
+        if _Debug:
+            lg.out(_DebugLevel, 'identitycache.immediatelyCaching._next_source  %r from %r : %r' % (pos, sources, next_idurl, ))
+
+        if next_idurl in _CachingTasks:
+            if _Debug:
+                lg.out(_DebugLevel, 'identitycache.immediatelyCaching already have next task for %r' % next_idurl)
+            d = _CachingTasks[next_idurl]
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, 'identitycache.immediatelyCaching will try another source of %r : %r' % (idurl, next_idurl))
+            _CachingTasks[next_idurl] = Deferred()
+            d = net_misc.getPageTwisted(next_idurl, timeout)
+
+        d.addCallback(_success, next_idurl)
+        if ret:
+            d.addCallback(ret.callback)
+        d.addErrback(_next_source, sources, pos+1, ret)
+        return None
+
+    def _fail(err, idurl):
         global _CachingTasks
         idurl = id_url.to_original(idurl)
-        lg.warn('identity %r cache failed with error: %r' % (idurl, x))
+        
         result = _CachingTasks.pop(idurl)
+
+        if not try_other_sources:
+            if result:
+                result.errback(err)
+            else:
+                lg.warn('caching task for %s was not found' % idurl)
+            p2p_stats.count_identity_cache(idurl, 0)
+            lg.warn('[cache failed] %s : %s' % (idurl, err.getErrorMessage(), ))
+            return None
+
+        latest_idurl, latest_rev = id_url.get_latest_revision(idurl)
+        latest_ident = None
+        sources = []
+        if latest_idurl:
+            latest_ident = identitydb.get(latest_idurl)
+        if latest_ident:
+            sources = latest_ident.getSources(as_fields=False)
+        if sources:
+            if idurl in sources:
+                sources = sources.remove(idurl)
+
+        if sources:
+            lg.warn('[cache failed] %s : %s  but will try %d more sources' % (
+                idurl, err.getErrorMessage(), len(sources), ))
+            _next_source(err, sources, 0, result)
+            return result
+
         if result:
-            result.errback(x)
+            result.errback(err)
         else:
             lg.warn('caching task for %s was not found' % idurl)
         p2p_stats.count_identity_cache(idurl, 0)
-        if _Debug:
-            lg.warn('[cache failed] %s : %s' % (idurl, x.getErrorMessage(), ))
+        lg.warn('[cache failed] and also no other sources found %s : %s' % (idurl, err.getErrorMessage(), ))
         return None
 
     idurl = id_url.to_original(idurl)
     _CachingTasks[idurl] = Deferred()
     d = net_misc.getPageTwisted(idurl, timeout)
-    d.addCallback(_getPageSuccess, idurl)
-    d.addErrback(_getPageFail, idurl)
+    d.addCallback(_success, idurl)
+    d.addErrback(_fail, idurl)
     return _CachingTasks[idurl]
 
 #------------------------------------------------------------------------------
