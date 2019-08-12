@@ -115,7 +115,7 @@ class CustomerAssistant(automat.Automat):
         Create customer_assistant() state machine for given customer.
         """
         self.customer_idurl = customer_idurl
-        self.donated_bytes = accounting.get_customer_quota(self.customer_idurl)
+        self.donated_bytes = accounting.get_customer_quota(self.customer_idurl) or 0
         name = "customer_%s_%s" % (
             nameurl.GetName(self.customer_idurl),
             diskspace.MakeStringFromBytes(self.donated_bytes).replace(' ', ''),
