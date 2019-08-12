@@ -2,6 +2,16 @@ Change Log
 ==========
 
 
+2019-08-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 and idurl fixes
+* must try to ping supplier first before fire him to make sure identity cached
+* fixes in api interface method /supplier/switch/v1
+* checking situation when username in identity changed intentionaly
+* try to cache other sources when identitycache failed
+
+
+
 2019-08-09 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * refresh customer family and republish DHT info after customer identity rotated (#373)
