@@ -31,7 +31,7 @@
                 "udp_port": 14441
             },
             {
-                "host": "new-vennep.ai",
+                "host": "root-node.ai",
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
                 "udp_port": 14441
             },
@@ -72,7 +72,7 @@
                 "tcp_port": 6661
             },
             {
-                "host": "new-vennep.ai",
+                "host": "root-node.ai",
                 "http_port": 80,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
                 "tcp_port": 6661
@@ -107,11 +107,33 @@
                 "host": "blog.bitdust.io",
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
                 "udp_port": 14441
+            },
+            {
+                "host": "bitdust-dev.ai",
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
+                "udp_port": 14441
+            },
+            {
+                "host": "newdomain.ai",
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
+                "udp_port": 14441
             }
         ],
         "identity-servers": [
             {
                 "host": "blog.bitdust.io",
+                "http_port": 80,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
+                "tcp_port": 6661
+            },
+            {
+                "host": "bitdust-dev.ai",
+                "http_port": 80,
+                "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
+                "tcp_port": 6661
+            },
+            {
+                "host": "newdomain.ai",
                 "http_port": 80,
                 "maintainer": "Veselin Penev (penev.veselin@gmail.com)",
                 "tcp_port": 6661
