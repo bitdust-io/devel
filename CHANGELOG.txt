@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+
+2019-08-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* extended development network with two more seed nodes (#376)
+
+
+
 2019-08-12 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * py3 and idurl fixes
