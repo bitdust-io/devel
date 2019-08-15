@@ -2,6 +2,11 @@ Change Log
 ==========
 
 
+2019-08-15 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+*  added option services/identity-propagate/automatic-rotate-enabled (#377)
+
+
 
 2019-08-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
