@@ -141,6 +141,7 @@ def defaults():
         'services/identity-propagate/preferred-servers': TYPE_STRING,
         'services/identity-propagate/min-servers': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/identity-propagate/max-servers': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/identity-propagate/automatic-rotate-enabled': TYPE_BOOLEAN,
         'services/identity-server/enabled': TYPE_BOOLEAN,
         'services/ip-port-responder/enabled': TYPE_BOOLEAN,
         'services/keys-registry/enabled': TYPE_BOOLEAN,

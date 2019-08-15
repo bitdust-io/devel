@@ -2452,6 +2452,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/identity-propagate/preferred-servers', '')
     config.conf().setDefaultValue('services/identity-propagate/min-servers', MinimumIdentitySources() + 1)
     config.conf().setDefaultValue('services/identity-propagate/max-servers', int(MaximumIdentitySources() / 2))
+    config.conf().setDefaultValue('services/identity-propagate/automatic-rotate-enabled', 'false')
 
     config.conf().setDefaultValue('services/ip-port-responder/enabled', 'true')
 

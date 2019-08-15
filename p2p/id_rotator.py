@@ -36,6 +36,7 @@
 BitDust id_rotator() Automat
 
 EVENTS:
+    * :red:`auto-rotate-disabled`
     * :red:`check`
     * :red:`found-new-id-source`
     * :red:`id-server-failed`
@@ -182,13 +183,13 @@ class IdRotator(automat.Automat):
                 self.doSelectNewIDServer(*args, **kwargs)
         #---NEW_SOURCE!---
         elif self.state == 'NEW_SOURCE!':
-            if event == 'no-id-servers-found':
+            if event == 'found-new-id-source':
+                self.state = 'MY_ID_ROTATE'
+                self.doRebuildMyIdentity(*args, **kwargs)
+            elif event == 'no-id-servers-found' or event == 'auto-rotate-disabled':
                 self.state = 'FAILED'
                 self.doReportFailed(event, *args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'found-new-id-source':
-                self.state = 'MY_ID_ROTATE'
-                self.doRebuildMyIdentity(*args, **kwargs)
         #---MY_ID_ROTATE---
         elif self.state == 'MY_ID_ROTATE':
             if event == 'my-id-updated':
@@ -288,6 +289,10 @@ class IdRotator(automat.Automat):
         """
         Action method.
         """
+        if not self.force and not config.conf().getBool('services/identity-propagate/automatic-rotate-enabled'):
+            self.automat('auto-rotate-disabled')
+            return
+
         target_servers = self.preferred_servers
         if not target_servers:
             target_servers = self.known_servers
@@ -477,12 +482,15 @@ class IdRotator(automat.Automat):
         lg.warn('id_rotator finished with failed result %r : %r' % (event, result))
         if not self.result_defer:
             return
+        if event == 'auto-rotate-disabled':
+            self.result_defer.errback(Exception('identity not healthy, but automatic rotate disabled'))
+            return
         if event == 'no-id-servers-found':
             lg.warn('no more available identity servers found')
             self.result_defer.errback(Exception('no more available identity servers found'))
-        else:
-            lg.err(result)
-            self.result_defer.errback(result)
+            return
+        lg.err(result)
+        self.result_defer.errback(result)
 
     def doDestroyMe(self, *args, **kwargs):
         """
