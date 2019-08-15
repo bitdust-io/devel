@@ -289,6 +289,10 @@ class IdRotator(automat.Automat):
         """
         Action method.
         """
+        if not self.force and not config.conf().getBool('services/identity-propagate/automatic-rotate-enabled'):
+            self.automat('auto-rotate-disabled')
+            return
+
         target_servers = self.preferred_servers
         if not target_servers:
             target_servers = self.known_servers
@@ -296,10 +300,6 @@ class IdRotator(automat.Automat):
         for current_server in self.current_servers:
             if current_server in target_servers:
                 target_servers.pop(current_server)
-
-        if not config.conf().getBool('services/identity-propagate/automatic-rotate-enabled'):
-            self.automat('auto-rotate-disabled')
-            return
 
         if not target_servers:
             self.automat('no-id-servers-found')
