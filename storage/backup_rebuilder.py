@@ -165,6 +165,12 @@ class BackupRebuilder(automat.Automat):
         self.backupsWasRebuilt = []
         self.missingPackets = 0
         self.log_transitions = _Debug
+        from customer import data_sender
+        data_sender.A().addStateChangedCallback(self._on_data_sender_state_changed)
+
+    def shutdown(self):
+        from customer import data_sender
+        data_sender.A().removeStateChangedCallback(self._on_data_sender_state_changed)
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -434,6 +440,14 @@ class BackupRebuilder(automat.Automat):
         ClearStoppedFlag()
 
     #-------------------------------------------------------------------------
+
+    def _on_data_sender_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
+        if oldstate == 'SCAN_BLOCKS' and newstate == 'READY':
+            if event_string == 'scan-done' and args and isinstance(args[0], int):
+                if args[0] > 0:
+                    if _Debug:
+                        lg.out(_DebugLevel, 'backup_rebuilder.BackupRebuilder._on_data_sender_state_changed is going to rebuild more')
+                    self.automat('start')
 
     def _request_files(self):
         from storage import backup_matrix

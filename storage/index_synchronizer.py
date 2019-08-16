@@ -368,16 +368,17 @@ class IndexSynchronizer(automat.Automat):
         """
         Action method.
         """
-#         packetID = global_id.MakeGlobalID(
-#             customer=my_id.getGlobalID(key_alias='master'),
-#             path=settings.BackupIndexFileName(),
-#         )
-#         packetsToCancel = packet_out.search_by_backup_id(packetID)
-#         for pkt_out in packetsToCancel:
-#             if pkt_out.outpacket.Command == commands.Retrieve():
-#                 lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
-#                     pkt_out, pkt_out.remote_idurl, ))
-#                 pkt_out.automat('cancel')
+        packetID = global_id.MakeGlobalID(
+            customer=my_id.getGlobalID(key_alias='master'),
+            path=settings.BackupIndexFileName(),
+        )
+        from transport import packet_out
+        packetsToCancel = packet_out.search_by_backup_id(packetID)
+        for pkt_out in packetsToCancel:
+            if pkt_out.outpacket.Command == commands.Retrieve():
+                lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
+                    pkt_out, pkt_out.remote_idurl, ))
+                pkt_out.automat('cancel')
 
     def doCheckVersion(self, *args, **kwargs):
         """

@@ -1,0 +1,339 @@
+#!/usr/bin/env python
+# file_down.py
+#
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
+#
+# This file (file_down.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
+#
+#
+#
+#
+
+"""
+
+.. raw:: html
+
+    <a href="https://bitdust.io/automats/customer/file_down.png" target="_blank">
+    <img src="https://bitdust.io/automats/customer/file_down.png" style="max-width:100%;">
+    </a>
+
+
+.. module:: file_down
+.. role:: red
+
+
+BitDust file_down() Automat
+
+EVENTS:
+    * :red:`fail-received`
+    * :red:`file-already-exists`
+    * :red:`init`
+    * :red:`request-failed`
+    * :red:`retreive-sent`
+    * :red:`start`
+    * :red:`stop`
+    * :red:`valid-data-received`
+"""
+
+#------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 8
+
+#------------------------------------------------------------------------------
+
+import os
+import time
+
+#------------------------------------------------------------------------------
+
+from logs import lg
+
+from automats import automat
+from automats import global_state
+
+from lib import misc
+from lib import utime
+from lib import packetid
+
+from contacts import contactsdb
+
+from userid import my_id
+from userid import id_url
+from userid import global_id
+
+from main import settings
+
+from p2p import online_status
+from p2p import p2p_service
+from p2p import commands
+
+from transport import packet_out
+
+from customer import io_throttle
+
+#------------------------------------------------------------------------------
+
+class FileDown(automat.Automat):
+    """
+    This class implements all the functionality of ``file_down()`` state machine.
+    """
+
+    def __init__(self,
+                 parent, callOnReceived, creatorID, packetID, ownerID, remoteID,
+                 debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, publish_events=False, **kwargs):
+        """
+        Builds `file_down()` state machine.
+        """
+        super(FileDown, self).__init__(
+            name="file_down",
+            state="AT_STARTUP",
+            debug_level=debug_level,
+            log_events=log_events,
+            log_transitions=log_transitions,
+            publish_events=publish_events,
+            **kwargs
+        )
+        self.parent = parent
+        self.callOnReceived = []
+        self.callOnReceived.append(callOnReceived)
+        self.creatorID = creatorID
+        self.packetID = global_id.CanonicalID(packetID)
+        parts = global_id.ParseGlobalID(packetID)
+        self.customerID = parts['customer']
+        self.remotePath = parts['path']
+        self.customerIDURL = parts['idurl']
+        customerGlobalID, remotePath, versionName, fileName = packetid.SplitVersionFilename(packetID)
+        self.backupID = packetid.MakeBackupID(customerGlobalID, remotePath, versionName)
+        self.fileName = fileName
+        self.ownerID = ownerID
+        self.remoteID = remoteID
+        self.requestTime = None
+        self.fileReceivedTime = None
+        self.requestTimeout = max(30, 2 * int(settings.getBackupBlockSize() / settings.SendingSpeedLimit()))
+        self.result = ''
+        self.created = utime.get_sec1970()
+
+    def init(self):
+        """
+        Method to initialize additional variables and flags
+        at creation phase of `file_down()` machine.
+        """
+
+    def state_changed(self, oldstate, newstate, event, *args, **kwargs):
+        """
+        Method to catch the moment when `file_down()` state were changed.
+        """
+
+    def state_not_changed(self, curstate, event, *args, **kwargs):
+        """
+        This method intended to catch the moment when some event was fired in the `file_down()`
+        but automat state was not changed.
+        """
+
+    def A(self, event, *args, **kwargs):
+        """
+        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        """
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'init':
+                self.state = 'IN_QUEUE'
+                self.doInit(*args, **kwargs)
+                self.doQueueAppend(*args, **kwargs)
+        #---IN_QUEUE---
+        elif self.state == 'IN_QUEUE':
+            if event == 'file-already-exists':
+                self.state = 'EXIST'
+                self.doReportExist(*args, **kwargs)
+                self.doQueueRemove(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'start':
+                self.state = 'STARTED'
+                self.doSendRetreive(*args, **kwargs)
+            elif event == 'stop':
+                self.state = 'STOPPED'
+                self.doReportStopped(*args, **kwargs)
+                self.doQueueRemove(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+        #---STARTED---
+        elif self.state == 'STARTED':
+            if event == 'retreive-sent':
+                self.state = 'REQUESTED'
+            elif event == 'stop':
+                self.state = 'STOPPED'
+                self.doCancelPackets(*args, **kwargs)
+                self.doReportStopped(*args, **kwargs)
+                self.doQueueRemove(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'request-failed':
+                self.state = 'FAILED'
+                self.doQueueRemove(*args, **kwargs)
+                self.doReportFailed(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+        #---REQUESTED---
+        elif self.state == 'REQUESTED':
+            if event == 'valid-data-received':
+                self.state = 'RECEIVED'
+                self.doQueueRemove(*args, **kwargs)
+                self.doReportReceived(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'fail-received':
+                self.state = 'FAILED'
+                self.doQueueRemove(*args, **kwargs)
+                self.doReportFailed(event, *args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'stop':
+                self.state = 'STOPPED'
+                self.doCancelPackets(*args, **kwargs)
+                self.doQueueRemove(*args, **kwargs)
+                self.doReportStopped(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
+        #---EXIST---
+        elif self.state == 'EXIST':
+            pass
+        #---FAILED---
+        elif self.state == 'FAILED':
+            pass
+        #---STOPPED---
+        elif self.state == 'STOPPED':
+            pass
+        #---RECEIVED---
+        elif self.state == 'RECEIVED':
+            pass
+        return None
+
+    def doInit(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        io_throttle.PacketReport('request', self.remoteID, self.packetID, 'init')
+
+    def doQueueAppend(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if self.packetID in self.parent.fileRequestQueue:
+            raise Exception('file %r already in downloading queue for %r' % (self.packetID, self.remoteID))
+        if self.packetID in self.parent.fileRequestDict:
+            raise Exception('file %r already in downloading dict for %r' % (self.packetID, self.remoteID))
+        self.parent.fileRequestDict[self.packetID] = self
+        self.parent.fileRequestQueue.append(self.packetID)
+
+    def doQueueRemove(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if self.packetID not in self.parent.fileRequestDict:
+            raise Exception('file %r not found in downloading dict for %r' % (self.packetID, self.remoteID))
+        if self.packetID not in self.parent.fileRequestQueue:
+            raise Exception('file %r not found in downloading queue for %r' % (self.packetID, self.remoteID))
+        self.parent.fileRequestQueue.remove(self.packetID)
+        del self.parent.fileRequestDict[self.packetID]
+
+    def doSendRetreive(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.args(_DebugLevel, packetID=self.packetID, remoteID=self.remoteID)
+        p2p_service.SendRetreive(
+            self.ownerID,
+            self.parent.creatorID,
+            self.packetID,
+            self.remoteID,
+            callbacks={
+                commands.Data(): self.parent.OnDataReceived,
+                commands.Fail(): self.parent.OnDataReceived,
+                # None: lambda pkt_out: self.OnDataReceived(fileRequest.packetID, 'timeout'),  # timeout
+            },
+            # response_timeout=10,
+        )
+        self.requestTime = time.time()
+
+    def doCancelPackets(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        packetsToCancel = packet_out.search_by_backup_id(self.packetID)
+        for pkt_out in packetsToCancel:
+            if pkt_out.outpacket.Command == commands.Retrieve():
+                lg.warn('sending "cancel" to %s addressed to %s because downloading cancelled' % (
+                    pkt_out, pkt_out.remote_idurl, ))
+                pkt_out.automat('cancel')
+
+    def doReportExist(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        for callBack in self.callOnReceived:
+            callBack(self.packetID, 'exist')
+
+    def doReportStopped(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        for callBack in self.callOnReceived:
+            callBack(self.packetID, 'cancelled')
+
+    def doReportReceived(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.fileReceivedTime = time.time()
+        for callBack in self.callOnReceived:
+            callBack(args[0], 'received')
+
+    def doReportFailed(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+        if event == 'fail-received':
+            for callBack in self.callOnReceived:
+                callBack(args[0], 'failed')
+        else:
+            for callBack in self.callOnReceived:
+                callBack(self.packetID, 'failed')
+
+    def doDestroyMe(self, *args, **kwargs):
+        """
+        Remove all references to the state machine object to destroy it.
+        """
+        io_throttle.PacketReport('request', self.remoteID, self.packetID, self.result)
+        self.parent = None
+        self.callOnReceived = None
+        self.creatorID = None
+        self.packetID = None
+        self.customerID = None
+        self.remotePath = None
+        self.customerIDURL = None
+        self.backupID = None
+        self.fileName = None
+        self.ownerID = None
+        self.remoteID = None
+        self.requestTime = None
+        self.fileReceivedTime = None
+        self.requestTimeout = None
+        self.result = None
+        self.created = None
+        self.destroy()
+
