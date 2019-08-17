@@ -321,7 +321,7 @@ class FileUp(automat.Automat):
         self.ackTime = time.time()
         if self.callOnAck:
             newpacket = args[0]
-            reactor.callLater(0, self.callOnAck, newpacket, newpacket.OwnerID, packetID)  # @UndefinedVariable
+            reactor.callLater(0, self.callOnAck, newpacket, newpacket.OwnerID, self.packetID)  # @UndefinedVariable
 
     def doReportStopped(self, *args, **kwargs):
         """

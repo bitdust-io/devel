@@ -648,7 +648,10 @@ class SupplierQueue:
                     f_up = self.fileSendDict[packetID]
                     if _Debug:
                         lg.args(_DebugLevel, obj=f_up, status=status, packetID=packetID, event='data-sent')
-                    f_up.event('data-sent', pkt_out.outpacket)
+                    if error == 'unanswered':
+                        f_up.event('timeout', pkt_out.outpacket)
+                    else:
+                        f_up.event('data-sent', pkt_out.outpacket)
                     return True
             if pkt_out.outpacket.Command == commands.Retrieve():
                 if packetID in self.fileRequestQueue:
@@ -810,9 +813,9 @@ class IOThrottle:
         """
         for idurl in self.supplierQueues.keys():
             if self.supplierQueues[idurl].HasSendingFiles():
-                if _Debug:
-                    lg.out(_DebugLevel, 'io_throttle.IsSendingQueueEmpty   supplier %r has sending files:\n%r' % (
-                        idurl, self.supplierQueues[idurl].fileSendQueue))
+                # if _Debug:
+                #     lg.out(_DebugLevel, 'io_throttle.IsSendingQueueEmpty   supplier %r has sending files:\n%r' % (
+                #         idurl, self.supplierQueues[idurl].fileSendQueue))
                 return False
         return True
 

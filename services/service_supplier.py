@@ -646,7 +646,7 @@ class SupplierService(LocalService):
         del data
         lg.out(self.debug_level, "service_supplier._on_data %r" % newpacket)
         lg.out(self.debug_level, "    from [ %s | %s ]" % (newpacket.OwnerID, newpacket.CreatorID, ))
-        lg.out(self.debug_level, "        saved with %d bytes to %s" % (sz, filename, ))
+        lg.out(self.debug_level, "        saved with %d %s" % (sz, filename, ))
         p2p_service.SendAck(newpacket, str(len(newpacket.Payload)))
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestSpaceTime)  # @UndefinedVariable
