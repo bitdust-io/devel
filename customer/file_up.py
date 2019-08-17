@@ -319,6 +319,7 @@ class FileUp(automat.Automat):
         Action method.
         """
         self.ackTime = time.time()
+        self.parent.uploadingTimeoutCount = 0
         if self.callOnAck:
             newpacket = args[0]
             reactor.callLater(0, self.callOnAck, newpacket, newpacket.OwnerID, self.packetID)  # @UndefinedVariable
@@ -334,14 +335,18 @@ class FileUp(automat.Automat):
         """
         Action method.
         """
-        if self.callOnFail:
-            if event == 'fail-received':
+        if event == 'fail-received':
+            if self.callOnFail:
                 reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'failed')  # @UndefinedVariable
-            elif event == 'timeout':
+        elif event == 'timeout':
+            self.parent.uploadingTimeoutCount += 1
+            if self.callOnFail:
                 reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'timeout')  # @UndefinedVariable
-            elif event == 'sending-failed':
+        elif event == 'sending-failed':
+            if self.callOnFail:
                 reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'failed')  # @UndefinedVariable
-            else:
+        else:
+            if self.callOnFail:
                 reactor.callLater(0, self.callOnFail, self.remoteID, self.packetID, 'failed')  # @UndefinedVariable
 
     def doDestroyMe(self, *args, **kwargs):

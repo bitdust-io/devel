@@ -294,6 +294,9 @@ class SupplierQueue:
         self.ackedCount = 0
         self.failedCount = 0
 
+        self.uploadingTimeoutCount = 0
+        self.downloadingTimeoutCount = 0
+
         self._runSend = False
         self.sendTask = None
         self.sendTaskDelay = 0.1
