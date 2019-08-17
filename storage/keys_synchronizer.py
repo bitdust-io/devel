@@ -238,6 +238,8 @@ class KeysSynchronizer(automat.Automat):
                 stored_key_id = i['path'].replace('.private', '').replace('.keys/', '')
                 is_private = True
             self.stored_keys[stored_key_id] = is_private
+        if _Debug:
+            lg.args(_DebugLevel, stored_keys=len(self.stored_keys))
 
     def doRestoreKeys(self, *args, **kwargs):
         """
@@ -258,6 +260,8 @@ class KeysSynchronizer(automat.Automat):
             res = key_ring.do_restore_key(key_id, is_private, wait_result=True)
             self.restored_count += 1
             self.keys_to_download.append(res)
+        if _Debug:
+            lg.args(_DebugLevel, keys_to_download=len(self.keys_to_download))
         wait_all_restored = DeferredList(self.keys_to_download, fireOnOneErrback=False, consumeErrors=True)
         wait_all_restored.addCallback(lambda ok: self.automat('restore-ok', ok))
         wait_all_restored.addErrback(lambda err: self.automat('error', err))
@@ -280,6 +284,8 @@ class KeysSynchronizer(automat.Automat):
             res = key_ring.do_backup_key(key_id, wait_result=True)
             keys_saved.append(res)
             self.saved_count += 1
+        if _Debug:
+            lg.args(_DebugLevel, keys_saved=len(keys_saved))
         wait_all_saved = DeferredList(keys_saved, fireOnOneErrback=False, consumeErrors=True)
         wait_all_saved.addCallback(lambda ok: self.automat('backup-ok', ok))
         wait_all_saved.addErrback(lambda err: self.automat('error', err))

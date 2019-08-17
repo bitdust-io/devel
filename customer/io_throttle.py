@@ -116,6 +116,7 @@ def init():
     lg.out(4, "io_throttle.init")
     throttle()
     callback.add_queue_item_status_callback(OutboxStatus)
+    callback.add_finish_file_sending_callback(FileSendingFinished)
 
 
 def shutdown():
@@ -123,6 +124,7 @@ def shutdown():
     To stop program correctly - need to call this before shut down.
     """
     lg.out(4, "io_throttle.shutdown")
+    callback.remove_finish_file_sending_callback(FileSendingFinished)
     callback.remove_queue_item_status_callback(OutboxStatus)
     throttle().DeleteBackupRequests('')
     throttle().DeleteBackupSendings('')
@@ -211,6 +213,12 @@ def OutboxStatus(pkt_out, status, error):
     """
     """
     return throttle().OutboxStatus(pkt_out, status, error)
+
+
+def FileSendingFinished(pkt_out, item, status, size, error_message):
+    """
+    """
+    return throttle().FileSendingFinished(pkt_out, item, status, size, error_message)
 
 
 def IsSendingQueueEmpty():
@@ -641,8 +649,39 @@ class SupplierQueue:
 
     #------------------------------------------------------------------------------
 
+    def OnFileSendingFinished(self, pkt_out, item, status, size, error_message):
+        if self.shutdown:
+            lg.warn('supplier queue is shutting down')
+            return
+        packetID = global_id.CanonicalID(pkt_out.outpacket.PacketID)
+        if status == 'finished':
+            if pkt_out.outpacket.Command == commands.Retrieve():
+                if packetID in self.fileRequestQueue:
+                    f_down = self.fileRequestDict[packetID]
+                    if _Debug:
+                        lg.args(_DebugLevel, obj=f_down, status=status, packetID=packetID, event='retrieve-sent')
+                    f_down.event('retrieve-sent', pkt_out.outpacket)
+            elif pkt_out.outpacket.Command == commands.Data():
+                if packetID in self.fileSendQueue:
+                    f_up = self.fileSendDict[packetID]
+                    if _Debug:
+                        lg.args(_DebugLevel, obj=f_up, status=status, packetID=packetID, event='data-sent')
+                    f_up.event('data-sent', pkt_out.outpacket)
+        else:
+            if pkt_out.outpacket.Command == commands.Retrieve():
+                if packetID in self.fileRequestQueue:
+                    lg.warn('packet %r is %r during downloading from %s' % (packetID, status, self.remoteID))
+                    f_down = self.fileRequestDict[packetID]
+                    f_down.event('request-failed')
+            elif pkt_out.outpacket.Command == commands.Data():
+                if packetID in self.fileSendQueue:
+                    lg.warn('packet %r is %r during uploading to %s' % (packetID, status, self.remoteID))
+                    f_up = self.fileSendDict[packetID]
+                    f_up.event('sending-failed')
+
     def OutboxStatus(self, pkt_out, status, error):
         if self.shutdown:
+            lg.warn('supplier queue is shutting down')
             return False
         packetID = global_id.CanonicalID(pkt_out.outpacket.PacketID)
         if status == 'finished':
@@ -655,27 +694,14 @@ class SupplierQueue:
                         f_up.event('timeout', pkt_out.outpacket)
                     else:
                         f_up.event('data-sent', pkt_out.outpacket)
-                    return True
-            if pkt_out.outpacket.Command == commands.Retrieve():
-                if packetID in self.fileRequestQueue:
-                    f_down = self.fileRequestDict[packetID]
-                    if _Debug:
-                        lg.args(_DebugLevel, obj=f_down, status=status, packetID=packetID, event='retrieve-sent')
-                    f_down.event('retrieve-sent', pkt_out.outpacket)
-                    return True
+                    return False
         else:
             if pkt_out.outpacket.Command == commands.Data():
                 if packetID in self.fileSendQueue:
                     lg.warn('packet %r is %r during uploading to %s' % (packetID, status, self.remoteID))
                     f_up = self.fileSendDict[packetID]
                     f_up.event('sending-failed')
-                    return True
-            if pkt_out.outpacket.Command == commands.Retrieve():
-                if packetID in self.fileRequestQueue:
-                    lg.warn('packet %r is %r during downloading from %s' % (packetID, status, self.remoteID))
-                    f_down = self.fileRequestDict[packetID]
-                    f_down.event('request-failed')
-                    return True
+                    return False
         return False
 
     #------------------------------------------------------------------------------
@@ -808,6 +834,11 @@ class IOThrottle:
         for supplierQueue in self.supplierQueues.values():
             if supplierQueue.OutboxStatus(pkt_out, status, error):
                 return True
+        return False
+
+    def FileSendingFinished(self, pkt_out, item, status, size, error_message):
+        for supplierQueue in self.supplierQueues.values():
+            supplierQueue.OnFileSendingFinished(pkt_out, item, status, size, error_message)
         return False
 
     def IsSendingQueueEmpty(self):

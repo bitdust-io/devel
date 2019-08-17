@@ -61,14 +61,18 @@ class KeysStorageService(LocalService):
         events.remove_subscriber(self._on_my_storage_ready, 'my-storage-ready')
 
     def start(self):
+        from twisted.internet.defer import Deferred
         from logs import lg
         from storage import keys_synchronizer
         from storage import index_synchronizer
+        self.starting_deferred = Deferred()
+        self.starting_deferred.addErrback(lg.errback)
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
-            return True
-        lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (
-            keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
-        return False
+            self.starting_deferred.callback(True)
+        else:
+            lg.warn('can not start service_my_data right now, keys_synchronizer.is_synchronized=%r index_synchronizer.is_synchronized=%r' % (
+                keys_synchronizer.is_synchronized(), index_synchronizer.is_synchronized()))
+        return self.starting_deferred
 
     def stop(self):
         return True
@@ -79,6 +83,9 @@ class KeysStorageService(LocalService):
     def _on_my_storage_ready(self, evt):
         from logs import lg
         from services import driver
+        if self.starting_deferred:
+            self.starting_deferred.callback(True)
+            self.starting_deferred = None
         if driver.is_enabled('service_my_data'):
             lg.info('my storage is ready, starting service_my_data()')
             driver.start_single('service_my_data')
@@ -86,6 +93,9 @@ class KeysStorageService(LocalService):
     def _on_my_storage_not_ready_yet(self, evt):
         from logs import lg
         from services import driver
+        if self.starting_deferred:
+            self.starting_deferred.errback(Exception('my storage is not ready yet'))
+            self.starting_deferred = None
         if driver.is_enabled('service_my_data'):
             lg.info('my storage is not ready yet, stopping service_my_data()')
             driver.stop_single('service_my_data')
