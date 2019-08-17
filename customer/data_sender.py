@@ -362,7 +362,7 @@ class DataSender(automat.Automat):
         """
         Action method.
         """
-        io_throttle.DeleteAllSuppliers()
+        # io_throttle.DeleteAllSuppliers()
 
     def doDestroyMe(self, *args, **kwargs):
         """

@@ -675,6 +675,8 @@ class SupplierQueue:
     #------------------------------------------------------------------------------
 
     def RemoveSupplierWork(self):
+        if _Debug:
+            lg.out(_DebugLevel, 'io_throttle.RemoveSupplierWork for %r' % self.remoteID)
         self.DeleteBackupSendings(backupName=None)
         self.DeleteBackupRequests(backupName=None)
 

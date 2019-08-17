@@ -121,7 +121,7 @@ class FileUp(automat.Automat):
         self.customerID = parts['customer']
         self.remotePath = parts['path']
         self.customerIDURL = parts['idurl']
-        customerGlobalID, remotePath, versionName, _ = packetid.SplitVersionFilename(packetID)
+        customerGlobalID, remotePath, versionName, fileName = packetid.SplitVersionFilename(packetID)
         self.backupID = packetid.MakeBackupID(customerGlobalID, remotePath, versionName)
         self.remoteID = remoteID
         self.ownerID = ownerID
@@ -133,7 +133,7 @@ class FileUp(automat.Automat):
         self.result = ''
         self.created = utime.get_sec1970()
         super(FileUp, self).__init__(
-            name="file_up_%s_%s_%s" % (nameurl.GetName(self.remoteID), remotePath, versionName),
+            name="file_up_%s_%s/%s/%s" % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,

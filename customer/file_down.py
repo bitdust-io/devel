@@ -125,7 +125,7 @@ class FileDown(automat.Automat):
         self.result = ''
         self.created = utime.get_sec1970()
         super(FileDown, self).__init__(
-            name="file_down_%s_%s_%s" % (nameurl.GetName(self.remoteID), remotePath, versionName),
+            name="file_down_%s_%s/%s/%s" % (nameurl.GetName(self.remoteID), remotePath, versionName, fileName),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
