@@ -44,7 +44,7 @@ EVENTS:
     * :red:`file-already-exists`
     * :red:`init`
     * :red:`request-failed`
-    * :red:`retreive-sent`
+    * :red:`retrieve-sent`
     * :red:`start`
     * :red:`stop`
     * :red:`valid-data-received`
@@ -61,29 +61,30 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
-import os
+import sys
 import time
+
+#------------------------------------------------------------------------------
+
+try:
+    from twisted.internet import reactor  # @UnresolvedImport
+except:
+    sys.exit('Error initializing twisted.internet.reactor in file_down.py')
 
 #------------------------------------------------------------------------------
 
 from logs import lg
 
 from automats import automat
-from automats import global_state
 
-from lib import misc
 from lib import utime
 from lib import packetid
+from lib import nameurl
 
-from contacts import contactsdb
-
-from userid import my_id
-from userid import id_url
 from userid import global_id
 
 from main import settings
 
-from p2p import online_status
 from p2p import p2p_service
 from p2p import commands
 
@@ -104,15 +105,6 @@ class FileDown(automat.Automat):
         """
         Builds `file_down()` state machine.
         """
-        super(FileDown, self).__init__(
-            name="file_down",
-            state="AT_STARTUP",
-            debug_level=debug_level,
-            log_events=log_events,
-            log_transitions=log_transitions,
-            publish_events=publish_events,
-            **kwargs
-        )
         self.parent = parent
         self.callOnReceived = []
         self.callOnReceived.append(callOnReceived)
@@ -132,6 +124,15 @@ class FileDown(automat.Automat):
         self.requestTimeout = max(30, 2 * int(settings.getBackupBlockSize() / settings.SendingSpeedLimit()))
         self.result = ''
         self.created = utime.get_sec1970()
+        super(FileDown, self).__init__(
+            name="file_down_%s_%s_%s" % (nameurl.GetName(self.remoteID), remotePath, versionName),
+            state="AT_STARTUP",
+            debug_level=debug_level,
+            log_events=log_events,
+            log_transitions=log_transitions,
+            publish_events=publish_events,
+            **kwargs
+        )
 
     def init(self):
         """
@@ -164,49 +165,56 @@ class FileDown(automat.Automat):
         elif self.state == 'IN_QUEUE':
             if event == 'file-already-exists':
                 self.state = 'EXIST'
-                self.doReportExist(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
+                self.doReportExist(*args, **kwargs)
+                self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'start':
                 self.state = 'STARTED'
                 self.doSendRetreive(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'STOPPED'
-                self.doReportStopped(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
+                self.doReportStopped(*args, **kwargs)
+                self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---STARTED---
         elif self.state == 'STARTED':
-            if event == 'retreive-sent':
-                self.state = 'REQUESTED'
-            elif event == 'stop':
+            if event == 'stop':
                 self.state = 'STOPPED'
                 self.doCancelPackets(*args, **kwargs)
-                self.doReportStopped(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
+                self.doReportStopped(*args, **kwargs)
+                self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'request-failed':
                 self.state = 'FAILED'
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportFailed(event, *args, **kwargs)
+                self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
+            elif event == 'retrieve-sent':
+                self.state = 'REQUESTED'
         #---REQUESTED---
         elif self.state == 'REQUESTED':
             if event == 'valid-data-received':
                 self.state = 'RECEIVED'
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportReceived(*args, **kwargs)
+                self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'fail-received':
                 self.state = 'FAILED'
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportFailed(event, *args, **kwargs)
+                self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'stop':
                 self.state = 'STOPPED'
                 self.doCancelPackets(*args, **kwargs)
                 self.doQueueRemove(*args, **kwargs)
                 self.doReportStopped(*args, **kwargs)
+                self.doQueueNext(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
         #---EXIST---
         elif self.state == 'EXIST':
@@ -281,19 +289,25 @@ class FileDown(automat.Automat):
                     pkt_out, pkt_out.remote_idurl, ))
                 pkt_out.automat('cancel')
 
+    def doQueueNext(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        self.parent.DoRequest()
+
     def doReportExist(self, *args, **kwargs):
         """
         Action method.
         """
         for callBack in self.callOnReceived:
-            callBack(self.packetID, 'exist')
+            reactor.callLater(0, callBack, self.packetID, 'exist')  # @UndefinedVariable
 
     def doReportStopped(self, *args, **kwargs):
         """
         Action method.
         """
         for callBack in self.callOnReceived:
-            callBack(self.packetID, 'cancelled')
+            reactor.callLater(0, callBack, self.packetID, 'cancelled')  # @UndefinedVariable
 
     def doReportReceived(self, *args, **kwargs):
         """
@@ -301,7 +315,7 @@ class FileDown(automat.Automat):
         """
         self.fileReceivedTime = time.time()
         for callBack in self.callOnReceived:
-            callBack(args[0], 'received')
+            reactor.callLater(0, callBack, args[0], 'received')  # @UndefinedVariable
 
     def doReportFailed(self, event, *args, **kwargs):
         """
@@ -309,10 +323,10 @@ class FileDown(automat.Automat):
         """
         if event == 'fail-received':
             for callBack in self.callOnReceived:
-                callBack(args[0], 'failed')
+                reactor.callLater(0, callBack, args[0], 'failed')  # @UndefinedVariable
         else:
             for callBack in self.callOnReceived:
-                callBack(self.packetID, 'failed')
+                reactor.callLater(0, callBack, self.packetID, 'failed')  # @UndefinedVariable
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -336,4 +350,5 @@ class FileDown(automat.Automat):
         self.result = None
         self.created = None
         self.destroy()
+
 

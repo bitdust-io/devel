@@ -274,6 +274,8 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         self.target_idurl = id_url.field(args[0])
+        if _Debug:
+            lg.args(_DebugLevel, target_idurl=self.target_idurl)
 
     def doPopCandidate(self, *args, **kwargs):
         """

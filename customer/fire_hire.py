@@ -892,7 +892,7 @@ class FireHire(automat.Automat):
 #    * old code,
 #    * too many network errors,
 #    * timeout during sending
-#    If we can not send him our data or retreive it back - how can we do a backups to him even if he is online?
+#    If we can not send him our data or retrieve it back - how can we do a backups to him even if he is online?
 #    """
 #
 #    for supplier_idurl in contactsdb.suppliers():

@@ -345,7 +345,7 @@ def start(services_list=[]):
         return succeed(1)
     _StartingDeferred = DeferredList(dl)
     _StartingDeferred.addCallback(on_started_all_services)
-    _StartingDeferred.addErrback(lg.errback)
+    _StartingDeferred.addErrback(on_services_failed_to_start, services_list)
     return _StartingDeferred
 
 
@@ -375,7 +375,7 @@ def stop(services_list=[]):
         svc.automat('stop', d)
     _StopingDeferred = DeferredList(dl)
     _StopingDeferred.addCallback(on_stopped_all_services)
-    _StopingDeferred.addErrback(lg.errback)
+    _StopingDeferred.addErrback(on_services_failed_to_stop, services_list)
     return _StopingDeferred
 
 
@@ -437,6 +437,11 @@ def restart(service_name, wait_timeout=None):
         _do_stop()
         return None
 
+    def _on_wait_timeout(err):
+        if _Debug:
+            lg.out(_DebugLevel, 'driver.restart._on_wait_timeout %s : %s' % (service_name, err))
+        return None
+
     dl = []
     if _StopingDeferred and not _StopingDeferred.called:
         dl.append(_StopingDeferred)
@@ -447,7 +452,7 @@ def restart(service_name, wait_timeout=None):
         if 'INFLUENCE' in all_states or 'STARTING' in all_states or 'STOPPING' in all_states:
             wait_timeout_defer = Deferred()
             wait_timeout_defer.addTimeout(wait_timeout, clock=reactor)
-            wait_timeout_defer.addErrback(lg.errback)
+            wait_timeout_defer.addErrback(_on_wait_timeout)
             dl.append(wait_timeout_defer)
     if not dl:
         dl.append(succeed(True))
@@ -627,12 +632,28 @@ def on_started_all_services(results):
     return results
 
 
+def on_services_failed_to_start(err, services_list):
+    if _Debug:
+        lg.args(_DebugLevel, err=err, services_list=services_list)
+    global _StartingDeferred
+    _StartingDeferred = None
+    return None
+
+
 def on_stopped_all_services(results):
     if _Debug:
         lg.out(_DebugLevel, 'driver.on_stopped_all_services')
     global _StopingDeferred
     _StopingDeferred = None
     return results
+
+
+def on_services_failed_to_stop(err, services_list):
+    if _Debug:
+        lg.args(_DebugLevel, err=err, services_list=services_list)
+    global _StopingDeferred
+    _StopingDeferred = None
+    return None
 
 
 def on_service_enabled_disabled(path, newvalue, oldvalue, result):

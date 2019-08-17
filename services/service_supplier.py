@@ -360,7 +360,7 @@ class SupplierService(LocalService):
         if newpacket.Command == commands.DeleteFile():
             return self._on_delete_file(newpacket)
         elif newpacket.Command == commands.Retrieve():
-            return self._on_retreive(newpacket)
+            return self._on_retrieve(newpacket)
         elif newpacket.Command == commands.Data():
             return self._on_data(newpacket)
         elif newpacket.Command == commands.ListFiles():
@@ -483,14 +483,13 @@ class SupplierService(LocalService):
         p2p_service.SendAck(newpacket)
         return True
 
-    def _on_retreive(self, newpacket):
+    def _on_retrieve(self, newpacket):
         import os
         from logs import lg
         from system import bpio
         from userid import my_id
         from userid import global_id
         from crypt import signed
-        from contacts import contactsdb
         from transport import gateway
         from p2p import p2p_service
         from p2p import commands
@@ -510,7 +509,7 @@ class SupplierService(LocalService):
             return False
         if not glob_path['idurl']:
             lg.warn('no customer global id found in PacketID: %s' % newpacket.PacketID)
-            p2p_service.SendFail(newpacket, 'incorrect retreive request')
+            p2p_service.SendFail(newpacket, 'incorrect retrieve request')
             return False
         if newpacket.CreatorID != glob_path['idurl']:
             lg.warn('one of customers requesting a Data from another customer!')
@@ -569,11 +568,11 @@ class SupplierService(LocalService):
             RemoteID=recipient_idurl,
         )
         if recipient_idurl == stored_packet.OwnerID:
-            lg.out(self.debug_level, 'service_supplier._on_retreive   from request %r : sending %r back to owner: %s' % (
+            lg.out(self.debug_level, 'service_supplier._on_retrieve   from request %r : sending %r back to owner: %s' % (
                 newpacket, stored_packet, recipient_idurl))
             gateway.outbox(routed_packet)  # , target=recipient_idurl)
             return True
-        lg.out(self.debug_level, 'service_supplier._on_retreive   from request %r : returning data owned by %s to %s' % (
+        lg.out(self.debug_level, 'service_supplier._on_retrieve   from request %r : returning data owned by %s to %s' % (
             newpacket, stored_packet.OwnerID, recipient_idurl))
         gateway.outbox(routed_packet)
         return True
@@ -582,7 +581,6 @@ class SupplierService(LocalService):
         import os
         from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
-        from lib import jsn
         from system import bpio
         from main import settings
         from userid import my_id
