@@ -334,6 +334,8 @@ class PacketOut(automat.Automat):
 
     def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True, skip_ack=False):
         self.outpacket = outpacket
+        packetID = global_id.CanonicalID(self.outpacket.PacketID)
+        parts = global_id.ParseGlobalID(packetID)
         self.wide = wide
         self.callbacks = {}
         self.caching_deferred = None
@@ -350,9 +352,9 @@ class PacketOut(automat.Automat):
             raise ValueError('outgoing packet %r did not define remote idurl' % outpacket)
         self.remote_name = nameurl.GetName(self.outpacket.RemoteID)
         if id_url.to_bin(self.remote_idurl) != self.outpacket.RemoteID.to_bin():
-            self.label = 'out_%d_%s_via_%s' % (get_packets_counter(), self.remote_name, nameurl.GetName(self.remote_idurl))
+            self.label = 'out_%d_%s_%s_via_%s' % (get_packets_counter(), parts['path'], self.remote_name, nameurl.GetName(self.remote_idurl))
         else:
-            self.label = 'out_%d_%s' % (get_packets_counter(), self.remote_name)
+            self.label = 'out_%d_%s_%s' % (get_packets_counter(), parts['path'], self.remote_name)
         self.keep_alive = keep_alive
         self.skip_ack = skip_ack
         automat.Automat.__init__(self,

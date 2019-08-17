@@ -855,7 +855,7 @@ def OnJobDone(backupID, result):
     Here we need to save the index data base.
     """
     from storage import backup_rebuilder
-    from customer import io_throttle
+    # from customer import io_throttle
     lg.info('job done [%s] with result "%s", %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
     customerGlobalID, remotePath, version = packetid.SplitBackupID(backupID)
@@ -871,8 +871,8 @@ def OnJobDone(backupID, result):
                         item.delete_version(version)
                         backupID = packetid.MakeBackupID(customerGlobalID, remotePath, version)
                         backup_rebuilder.RemoveBackupToWork(backupID)
-                        io_throttle.DeleteBackupRequests(backupID)
-                        io_throttle.DeleteBackupSendings(backupID)
+                        # io_throttle.DeleteBackupRequests(backupID)
+                        # io_throttle.DeleteBackupSendings(backupID)
                         # callback.delete_backup_interest(backupID)
                         backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)

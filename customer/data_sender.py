@@ -177,7 +177,7 @@ class DataSender(automat.Automat):
         return None
 
     def isQueueEmpty(self, *args, **kwargs):
-        if not args or not args[0]:
+        if not args or not args[0] or not isinstance(args[0], list) or not isinstance(args[0], tuple):
             is_empty = io_throttle.IsSendingQueueEmpty()
             if _Debug:
                 lg.out(_DebugLevel, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
@@ -204,7 +204,7 @@ class DataSender(automat.Automat):
         if _ShutdownFlag:
             if _Debug:
                 lg.out(_DebugLevel, '        _ShutdownFlag is True\n')
-            self.automat('scan-done')
+            self.automat('scan-done', 0)
             return
         from storage import backup_matrix
         backup_matrix.ReadLocalFiles()
@@ -290,7 +290,7 @@ class DataSender(automat.Automat):
                                 lg.out(_DebugLevel, '        io_throttle.QueueSendFile FAILED %s' % packetID)
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doScanAndQueue progress=%s' % progress)
-        self.automat('scan-done')
+        self.automat('scan-done', progress)
 
 #     def doPrintStats(self, *args, **kwargs):
 #         """
@@ -362,7 +362,7 @@ class DataSender(automat.Automat):
         """
         Action method.
         """
-        io_throttle.DeleteAllSuppliers()
+        # io_throttle.DeleteAllSuppliers()
 
     def doDestroyMe(self, *args, **kwargs):
         """

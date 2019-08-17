@@ -391,7 +391,7 @@ class AccountantNode(automat.Automat):
         d.callback(acoin)
         return d
 
-    def _on_command_retreive_coin(self, newpacket, info):
+    def _on_command_retrieve_coin(self, newpacket, info):
         query_j = coins_io.read_query_from_packet(newpacket)
         if not query_j:
             p2p_service.SendFail(newpacket, 'incorrect query received')
@@ -451,7 +451,7 @@ class AccountantNode(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'accountant_node._on_inbox_packet %r' % newpacket)
         if newpacket.Command == commands.RetrieveCoin():
-            return self._on_command_retreive_coin(newpacket, info)
+            return self._on_command_retrieve_coin(newpacket, info)
         if newpacket.Command == commands.Coin():
             return self._on_command_coin(newpacket, info)
         return False

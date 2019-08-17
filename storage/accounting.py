@@ -218,27 +218,27 @@ def report_donated_storage():
     except:
         r['free'] = 0
     used = 0
-    for idurl in contactsdb.customers():
+    for idurl in id_url.to_bin_list(contactsdb.customers()):
         consumed_by_customer = 0
         used_by_customer = 0
-        if idurl.to_bin() not in list(space_dict.keys()):
-            r['errors'].append('space consumed by customer %s is unknown' % idurl)
+        if idurl not in list(space_dict.keys()):
+            r['errors'].append('space consumed by customer %r is unknown' % idurl)
         else:
             try:
-                consumed_by_customer = int(space_dict.pop(idurl.to_bin()))
+                consumed_by_customer = int(space_dict.pop(idurl))
                 r['consumed'] += consumed_by_customer
             except:
-                r['errors'].append('incorrect value of consumed space for customer %s' % idurl)
-        if idurl.to_bin() in list(used_space_dict.keys()):
+                r['errors'].append('incorrect value of consumed space for customer %r' % idurl)
+        if idurl in list(used_space_dict.keys()):
             try:
-                used_by_customer = int(used_space_dict.pop(idurl.to_bin()))
+                used_by_customer = int(used_space_dict.pop(idurl))
                 used += used_by_customer
             except:
-                r['errors'].append('incorrect value of used space for customer %s' % idurl)
+                r['errors'].append('incorrect value of used space for customer %r' % idurl)
         if consumed_by_customer < used_by_customer:
-            r['errors'].append('customer %s currently using more space than requested' % idurl)
+            r['errors'].append('customer %r currently using more space than requested' % idurl)
         c = {}
-        c['idurl'] = idurl
+        c['idurl'] = strng.to_text(idurl)
         c['used'] = used_by_customer
         c['used_str'] = diskspace.MakeStringFromBytes(c['used'])
         c['consumed'] = consumed_by_customer
@@ -261,10 +261,9 @@ def report_donated_storage():
         r['errors'].append('current info needs update, known size is %d bytes but real is %d bytes' % (
             r['used'], r['real']))
     for idurl in used_space_dict.keys():
-        idurl = id_url.field(idurl)
         real = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
         r['old_customers'].append({
-            'idurl': idurl,
+            'idurl': strng.to_text(idurl),
             'used': used_space_dict[idurl],
             'used_str': diskspace.MakeStringFromBytes(used_space_dict[idurl]),
             'real': real,
