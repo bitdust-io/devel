@@ -221,7 +221,11 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        self._load_routes()
+        # TODO: need to check again...
+        # looks like we do not need to load routes at all...
+        # proxy router must always start with no routes and keep them in memory
+        # when proxy router restarts all connections with other nodes will be stopped anyway
+        # self._load_routes()
         network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
         callback.insert_inbox_callback(0, self._on_first_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
@@ -239,7 +243,7 @@ class ProxyRouter(automat.Automat):
         """
         idurl = id_url.field(args[0])
         identitycache.StopOverridingIdentity(idurl.original())
-        self._remove_route(idurl)
+        # self._remove_route(idurl)
         if idurl.original() in self.routes:
             self.routes.pop(idurl.original())
         if idurl.to_bin() in self.routes:
@@ -252,7 +256,7 @@ class ProxyRouter(automat.Automat):
         for idurl in self.routes.keys():
             identitycache.StopOverridingIdentity(idurl)
         self.routes.clear()
-        self._clear_routes()
+        # self._clear_routes()
 
     def doForwardOutboxPacket(self, *args, **kwargs):
         """
@@ -283,7 +287,7 @@ class ProxyRouter(automat.Automat):
         idurl, _, item, _, _, _ = args[0]
         idurl = id_url.field(idurl).original()
         self.routes[idurl]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
-        self._write_route(idurl)
+        # self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
                 item.proto, item.host, nameurl.GetName(idurl)))
@@ -380,7 +384,7 @@ class ProxyRouter(automat.Automat):
                 self.routes[user_idurl.original()]['publickey'] = strng.to_text(cached_ident.publickey)
                 self.routes[user_idurl.original()]['contacts'] = cached_ident.getContactsAsTuples(as_text=True)
                 self.routes[user_idurl.original()]['address'] = []
-                self._write_route(user_idurl)
+                # self._write_route(user_idurl)
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
                 if active_user_sessions:
                     user_connection_info = {
@@ -415,7 +419,7 @@ class ProxyRouter(automat.Automat):
         elif request.Command == commands.CancelService():
             if user_idurl.original() in list(self.routes.keys()):
                 # cancel existing route
-                self._remove_route(user_idurl)
+                # self._remove_route(user_idurl)
                 self.routes.pop(user_idurl.original())
                 identitycache.StopOverridingIdentity(user_idurl.original())
                 p2p_service.SendAck(request, 'accepted', wide=True)
@@ -739,7 +743,7 @@ class ProxyRouter(automat.Automat):
         new = evt.data['new_idurl']
         if old in self.routes and new not in self.routes:
             current_route = self.routes[old]
-            self._remove_route(old)
+            # self._remove_route(old)
             identitycache.StopOverridingIdentity(old)
             self.routes.pop(old)
             self.routes[new] = current_route
@@ -748,7 +752,7 @@ class ProxyRouter(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '    DO OVERRIDE identity for %r' % new)
                 identitycache.OverrideIdentity(new, new_ident.serialize(as_text=True))
-            self._write_route(new)
+            # self._write_route(new)
             lg.info('replaced route for user after identity rotate detected : %r -> %r' % (old, new))
 
     def _is_my_contacts_present_in_identity(self, ident):

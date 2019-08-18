@@ -296,12 +296,13 @@ class LocalService(automat.Automat):
             return
         if isinstance(result, Deferred):
             result.addCallback(lambda x: self.automat('service-started'))
-            result.addErrback(lambda x: self.automat('service-failed', x))
+            result.addErrback(lambda err: self.automat('service-failed', err))
             return
         if result:
             self.automat('service-started')
         else:
-            self.automat('service-failed', Exception('failed to start %r, result is %r' % (self, result, )))
+            lg.warn('failed to start %r, result from .start() method is %r' % (self, result, ))
+            self.automat('service-failed', Exception('service %r failed to start' % self))
 
     def doStopService(self, *args, **kwargs):
         """
@@ -345,6 +346,8 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, service=self, result='started')
         if self.result_deferred:
             self.result_deferred.callback('started')
             self.result_deferred = None
@@ -354,6 +357,8 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, service=self, result='stopped')
         if self.result_deferred:
             self.result_deferred.callback('stopped')
             self.result_deferred = None
@@ -363,6 +368,8 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, service=self, result='not_installed')
         if self.result_deferred:
             self.result_deferred.callback('not_installed')
             self.result_deferred = None
@@ -373,7 +380,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.args(_DebugLevel, args=args)
+            lg.args(_DebugLevel, service=self, result='failed')
         if self.result_deferred:
             self.result_deferred.callback('failed')
             self.result_deferred = None
@@ -383,6 +390,8 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, service=self, result='depends_off')
         if self.result_deferred:
             self.result_deferred.callback('depends_off')
             self.result_deferred = None
