@@ -486,7 +486,7 @@ def start_single(service_name):
         return response
 
     def _on_failed(err, action):
-        lg.warn('failed to %s service %s in driver.start_single() : %r' % (action, service_name, err, ))
+        lg.warn('failed to %s service %s in driver.start_single()' % (action, service_name, ))
         return None
 
     _starting.addCallback(_on_started)
@@ -529,7 +529,7 @@ def stop_single(service_name):
         raise Exception('bad response: %r' % response)
 
     def _on_failed(err, action):
-        lg.warn('failed to %s service %s in driver.stop_single() : %r' % (action, service_name, err, ))
+        lg.warn('failed to %s service %s in driver.stop_single()' % (action, service_name, ))
         return None
 
     _starting.addCallback(_on_started)

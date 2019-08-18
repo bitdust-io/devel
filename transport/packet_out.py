@@ -334,11 +334,9 @@ class PacketOut(automat.Automat):
 
     def __init__(self, outpacket, wide, callbacks={}, target=None, route=None, response_timeout=None, keep_alive=True, skip_ack=False):
         self.outpacket = outpacket
-        if global_id.IsFullGlobalID(self.outpacket.PacketID):
-            packetID = global_id.CanonicalID(self.outpacket.PacketID)
-            parts = global_id.ParseGlobalID(packetID)
-            packet_label = parts['path']
-        else:
+        parts = global_id.ParseGlobalID(self.outpacket.PacketID)
+        packet_label = parts['path']
+        if not packet_label:
             packet_label = self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', '')
         self.wide = wide
         self.callbacks = {}
@@ -396,7 +394,7 @@ class PacketOut(automat.Automat):
         last_modified_time = identitycache.GetLastModifiedTime(self.remote_idurl)
         self.remote_identity = None
         if last_modified_time and time.time() - last_modified_time < 5 * 60:
-            # use known identity from cache if we sure that it is fresh enough
+            # use known that identity from cache if we sure that it is fresh enough
             self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
             if self.remote_identity:
                 if _Debug:
