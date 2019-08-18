@@ -4,6 +4,19 @@ Change Log
 
 2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* one more bug fix in  transport/gateway.py
+
+
+
+2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in transport.gateway
+* bug fix in service_my_data()
+
+
+
+2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * big rework in io_throttle
 * added file_up() and file_down() state machines (#378)
 * changes in service_my_data()
