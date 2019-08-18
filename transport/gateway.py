@@ -70,7 +70,7 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------
@@ -112,6 +112,7 @@ from main import events
 from crypt import signed
 
 from userid import my_id
+from userid import id_url
 
 from contacts import identitycache
 
@@ -772,6 +773,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None, respon
             if callbacks:
                 for command, cb in callbacks.items():
                     active_packet.set_callback(command, cb)
+            lg.warn('skip creating new outbox packet because found similar packet: %r' % active_packet)
             return active_packet
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route, response_timeout, keep_alive)
     if _Debug and lg.is_debug(_DebugLevel):
@@ -874,28 +876,26 @@ def on_message_received(host, remote_user_id, data):
 
 def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, description=''):
     """
-    Called from transport plug-in when sending a single file were started to
-    some remote peer. Must return a unique transfer ID so plug-in will know
-    that ID.
-
+    Called from transport plug-in when sending of a single file started towards remote peer.
+    Must return a unique transfer ID so plug-in will know that ID.
     After finishing that given transfer - that ID is passed to `unregister_file_sending()`.
+    Need to first find existing outgoing packet and register that item.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s' % (filename, description))
-    pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
+        lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s to %r' % (filename, description, receiver_idurl))
+    if id_url.field(receiver_idurl).to_bin() == my_id.getLocalID().to_bin():
+        pkt_out, work_item = packet_out.search(proto, host, filename)
+    else:
+        pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
     if pkt_out is None:
-        if _Debug:
-            lg.out(_DebugLevel, '    skip, packet_out not found: %r %r %r' % (
-                proto, host, os.path.basename(filename)))
+        lg.warn('skip register file sending, packet_out not found: %r %r %r %r' % (
+                proto, host, os.path.basename(filename), receiver_idurl, ))
         return None
     transfer_id = make_transfer_ID()
     if _Debug:
         lg.out(_DebugLevel, '... OUT ... %s (%d) send {%s} via [%s] to %s at %s' % (
             pkt_out.description, transfer_id, os.path.basename(filename), proto,
             nameurl.GetName(receiver_idurl), host))
-#    if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
-#        if _Debug:
-#            lg.out(_DebugLevel, 'gateway.on_register_file_sending [%s] receiver idurl is different [%s]' % (pkt_out.remote_idurl, receiver_idurl))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
     control.request_update([('stream', transfer_id)])
     return transfer_id
