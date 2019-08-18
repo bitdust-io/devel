@@ -180,12 +180,12 @@ class DataSender(automat.Automat):
         if not args or not args[0] or not isinstance(args[0], list) or not isinstance(args[0], tuple):
             is_empty = io_throttle.IsSendingQueueEmpty()
             if _Debug:
-                lg.out(_DebugLevel, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
+                lg.out(_DebugLevel * 2, 'data_sender.isQueueEmpty is_empty=%s' % is_empty)
             return is_empty
         remoteID, _ = args[0]
         can_send_to = io_throttle.OkToSend(remoteID)
         if _Debug:
-            lg.out(_DebugLevel, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (can_send_to, remoteID, ))
+            lg.out(_DebugLevel * 2, 'data_sender.isQueueEmpty can_send_to=%s remoteID=%r' % (can_send_to, remoteID, ))
         return can_send_to
 
     def doInit(self, *args, **kwargs):
