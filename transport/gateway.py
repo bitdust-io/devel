@@ -883,10 +883,11 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s to %r' % (filename, description, receiver_idurl))
-    if id_url.field(receiver_idurl).to_bin() == my_id.getLocalID().to_bin():
-        pkt_out, work_item = packet_out.search(proto, host, filename)
-    else:
-        pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
+#     if id_url.field(receiver_idurl).to_bin() == my_id.getLocalID().to_bin():
+#         pkt_out, work_item = packet_out.search(proto, host, filename)
+#     else:
+#         pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
+    pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
         lg.warn('skip register file sending, packet_out not found: %r %r %r %r' % (
                 proto, host, os.path.basename(filename), receiver_idurl, ))
