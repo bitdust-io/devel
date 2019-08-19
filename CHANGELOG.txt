@@ -4,6 +4,13 @@ Change Log
 
 2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* for proxy router keep current routes only in RAM, do not store on disk as not required (#381)
+* one more bug fix in transport/gateway.py  (#380)
+
+
+
+2019-08-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * one more bug fix in  transport/gateway.py
 
 

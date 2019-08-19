@@ -433,6 +433,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
             if iter_path is None:
                 # this version is not found in the index
                 if is_in_sync:
+                    missed_backups.discard(backupID)
                     backups2remove.add(backupID)
                     paths2remove.add(
                         packetid.MakeBackupID(
