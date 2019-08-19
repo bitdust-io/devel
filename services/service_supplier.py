@@ -359,6 +359,8 @@ class SupplierService(LocalService):
         from p2p import commands
         if newpacket.Command == commands.DeleteFile():
             return self._on_delete_file(newpacket)
+        elif newpacket.Command == commands.DeleteBackup():
+            return self._on_delete_backup(newpacket)
         elif newpacket.Command == commands.Retrieve():
             return self._on_retrieve(newpacket)
         elif newpacket.Command == commands.Data():
