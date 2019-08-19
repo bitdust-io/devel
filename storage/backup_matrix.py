@@ -294,7 +294,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
         else:
             is_in_sync = False
     if _Debug:
-        lg.out(_DebugLevel, 'backup_matrix.ReadRawListFiles, %s : %d bytes, is_in_sync=%s, rev:%d, customer_idurl=%s' % (
+        lg.out(_DebugLevel, 'backup_matrix.ReadRawListFiles %s : %d bytes, is_in_sync=%s, rev:%d, customer_idurl=%s' % (
             supplierNum, len(listFileText), is_in_sync, backup_control.revision(), customer_idurl))
     backups2remove = set()
     paths2remove = set()
@@ -316,7 +316,8 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
         # also don't consider the identity a backup
         if line.find('http://') != -1 or line.find('.xml') != -1:
             continue
-        lg.out(8, '    %s:{%s}' % (typ, line))
+        if _Debug:
+            lg.out(_DebugLevel, '    %s %s' % (typ, line))
         if typ == 'K':
             current_key_alias = line.strip()
 
@@ -373,10 +374,10 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                             )
                         )
                         if _Debug:
-                            lg.out(2, '        F%s - remove, not found in the index' % pth)
+                            lg.out(_DebugLevel, '        FILE "%s" to be removed, not found in the index' % pth)
                     else:
                         if _Debug:
-                            lg.out(2, '        F%s - skip removing, not found in the index, but we are not in sync' % pth)
+                            lg.out(_DebugLevel, '        FILE "%s" skip removing, index not in sync yet' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
             try:
@@ -394,10 +395,10 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                         )
                     )
                     if _Debug:
-                        lg.out(2, '        D%s - remove, not found in the index' % pth)
+                        lg.out(_DebugLevel, '        DIR "%s" to be removed, not found in the index' % pth)
                 else:
                     if _Debug:
-                        lg.out(2, '        D%s - skip removing, not found in the index, but we are not in sync' % pth)
+                        lg.out(_DebugLevel, '        DIR "%s" skip removing, index not in sync' % pth)
         elif typ == 'V':
             # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
@@ -427,7 +428,7 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                 # this mean supplier have old files and we do not need those files
                 backups2remove.add(backupID)
                 if _Debug:
-                    lg.out(2, '        V%s - remove, different supplier number' % backupID)
+                    lg.out(_DebugLevel, '        VERSION "%s" to be removed, different supplier number' % backupID)
                 continue
             iter_path = backup_fs.WalkByID(remotePath, iterID=backup_fs.fsID(customer_idurl))
             if iter_path is None:
@@ -444,10 +445,10 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                         )
                     )
                     if _Debug:
-                        lg.out(2, '        V%s - remove, path not found in the index' % remotePath)
+                        lg.out(_DebugLevel, '        VERSION "%s" to be remove, path not found in the index' % backupID)
                 else:
                     if _Debug:
-                        lg.out(2, '        V%s - skip removing, path is not found in the index, but we are not in sync' % remotePath)
+                        lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
                 continue
             item, _ = iter_path
             if isinstance(item, dict):
@@ -459,10 +460,10 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                 if is_in_sync:
                     backups2remove.add(backupID)
                     if _Debug:
-                        lg.out(2, '        V%s - remove, version is not found in the index' % backupID)
+                        lg.out(_DebugLevel, '        VERSION "%s" to be remove, version is not found in the index' % backupID)
                 else:
                     if _Debug:
-                        lg.out(2, '        V%s - skip removing, we are not in sync, but version is not found in the index' % backupID)
+                        lg.out(_DebugLevel, '        VERSION "%s" skip removing, index not in sync' % backupID)
                 continue
             item_version_info = item.get_version_info(versionName)
             missingBlocksSet = {'Data': set(), 'Parity': set()}
@@ -480,7 +481,8 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
                         break
             if backupID not in remote_files():
                 remote_files()[backupID] = {}
-                # lg.out(6, 'backup_matrix.ReadRawListFiles new remote entry for %s created in the memory' % backupID)
+                if _Debug:
+                    lg.out(_DebugLevel, '            new remote entry for %s created in the memory' % backupID)
             # +1 because range(2) give us [0,1] but we want [0,1,2]
             for blockNum in range(maxBlockNum + 1):
                 if blockNum not in remote_files()[backupID]:
@@ -507,8 +509,9 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
             # mark this backup to be repainted
             RepaintBackup(backupID)
     inpt.close()
-    lg.out(8, '            remote_files_changed:%s, old:%d, new:%d, backups2remove:%d, paths2remove:%d' % (
-        remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove)))
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.ReadRawListFiles remote_files_changed:%s old:%d new:%d backups2remove:%d paths2remove:%d missed_backups:%d remote_files:%d' % (
+            remote_files_changed, oldfiles, newfiles, len(backups2remove), len(paths2remove), len(missed_backups), len(remote_files())))
     if remote_files_changed and is_in_sync:
         backup_control.Save()
     # finally return list of items which are too old but stored on suppliers machines
