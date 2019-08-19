@@ -93,15 +93,17 @@ class DataMotionService(LocalService):
         from logs import lg
         from services import driver
         if driver.is_enabled('service_data_motion'):
-            lg.info('all my suppliers are hired, starting service_data_motion()')
-            driver.start_single('service_data_motion')
+            if not driver.is_started('service_data_motion'):
+                lg.info('all my suppliers are hired, starting service_data_motion()')
+                driver.start_single('service_data_motion')
 
     def _on_my_suppliers_yet_not_hired(self, evt):
         from logs import lg
         from services import driver
         if driver.is_enabled('service_data_motion'):
-            lg.info('my suppliers failed to hire, stopping service_data_motion()')
-            driver.stop_single('service_data_motion')
+            if driver.is_started('service_data_motion'):
+                lg.info('my suppliers failed to hire, stopping service_data_motion()')
+                driver.stop_single('service_data_motion')
 
     def _on_identity_url_changed(self, evt):
         from logs import lg

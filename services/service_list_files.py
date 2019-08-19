@@ -77,12 +77,16 @@ class ListFilesService(LocalService):
         from logs import lg
         from services import driver
         if driver.is_enabled('service_list_files'):
-            lg.info('all my suppliers are hired, starting service_list_files()')
-            driver.start_single('service_list_files')
+            if not driver.is_started('service_list_files'):
+                lg.info('all my suppliers are hired, starting service_list_files()')
+                driver.start_single('service_list_files')
+            from customer import list_files_orator
+            list_files_orator.A('need-files')
 
     def _on_my_suppliers_yet_not_hired(self, evt):
         from logs import lg
         from services import driver
         if driver.is_enabled('service_list_files'):
-            lg.info('my suppliers failed to hire, stopping service_list_files()')
-            driver.stop_single('service_list_files')
+            if driver.is_started('service_list_files'):
+                lg.info('my suppliers failed to hire, stopping service_list_files()')
+                driver.stop_single('service_list_files')
