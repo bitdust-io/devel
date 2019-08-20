@@ -81,11 +81,7 @@ def jdumps(obj):
         try:
             return json.dumps(obj, default=_to_text)
         except Exception as e:
-            try:
-                from lib import jsn
-                return jsn.dumps(obj, keys_to_text=True, values_to_text=True)
-            except:
-                raise ValueError(str(e))
+            raise ValueError(str(e))
 
 
 def jloads(json_string):
@@ -161,6 +157,9 @@ def decodeResponse(json_response):
     @raise ValueError: If the response is not valid JSON-RPC response.
     @TODO support batch requests
     """
+
+    if isinstance(json_response, six.binary_type):
+        json_response = json_response.decode(encoding='utf-8')
 
     response = jloads(json_response)
 
