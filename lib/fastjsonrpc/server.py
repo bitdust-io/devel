@@ -63,7 +63,9 @@ class JSONRPCServer(resource.Resource):
 
         request.content.seek(0, 0)
         request_json = request.content.read()
-        request_content = jsonrpc.decodeRequest(request_json)
+        if isinstance(request_json, six.binary_type):
+            request_json = request_json.decode(encoding='utf-8')
+        request_content = jsonrpc.decodeRequest(request_json.decode())
 
         return request_content
 
