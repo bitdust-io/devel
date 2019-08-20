@@ -309,6 +309,8 @@ class FamilyMember(automat.Automat):
         """
         Condition method.
         """
+        if not self.dht_value_exists:
+            return True
         return self.transaction is not None
 
     def doInit(self, *args, **kwargs):
@@ -320,6 +322,7 @@ class FamilyMember(automat.Automat):
         self.dht_info = None
         self.my_info = None
         self.transaction = None
+        self.dht_value_exists = False
         self.refresh_period = DHT_RECORD_REFRESH_INTERVAL * settings.DefaultDesiredSuppliers()
         self.refresh_task = LoopingCall(self._on_family_refresh_task)
 
@@ -882,15 +885,18 @@ class FamilyMember(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'family_member._on_dht_read_success  result with %d suppliers' % len(dht_result.get('suppliers', [])))
             self.dht_info = dht_result
+            self.dht_value_exists = True
             self.automat('dht-value-exist', dht_result)
         else:
             if _Debug:
                 lg.out(_DebugLevel, 'family_member._on_dht_read_success  result with %s' % type(dht_result))
             self.dht_info = None
+            self.dht_value_exists = False
             self.automat('dht-value-not-exist', None)
 
     def _on_dht_read_failed(self, err):
         self.dht_info = None
+        self.dht_value_exists = False
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_dht_read_failed : %r' % err)
         self.automat('dht-read-fail')
