@@ -43,7 +43,7 @@ _DebugLevel = 8
 
 import os
 
-from twisted.internet.defer import DeferredList, fail
+from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------
 
@@ -700,6 +700,7 @@ def load_customers(path=None):
         keys_to_bin=True,
     )
     _CustomersMetaInfo = id_url.to_bin_dict(_CustomersMetaInfo)
+    _CustomersMetaInfo = jsn.dict_values_to_text(_CustomersMetaInfo)
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.load_customers %d items' % len(lst))
 
@@ -708,7 +709,6 @@ def cache_customers(path=None):
     """
     Make sure identities of all customers we know are cached.
     """
-    global _CustomersMetaInfo
     dl = []
     if path is None:
         path = settings.CustomerIDsFilename()
@@ -903,6 +903,8 @@ def add_customer_meta_info(customer_idurl, info):
     customer_idurl = id_url.to_bin(customer_idurl)
     if 'family_snapshot' in info:
         info['family_snapshot'] = id_url.to_bin_list(info['family_snapshot'])
+    if 'ecc_map' in info:
+        info['ecc_map'] = strng.to_text(info['ecc_map'])
     if customer_idurl not in _CustomersMetaInfo:
         if _Debug:
             lg.out(_DebugLevel, 'contactsdb.add_customer_meta_info   store new meta info for customer %r: %r' % (
@@ -962,7 +964,7 @@ def get_customer_meta_info(customer_idurl):
                 lg.info('detected and processed idurl rotate for customer meta info : %r -> %r' % (
                     customer_idurl.original(), customer_idurl.to_bin()))
     customer_idurl = id_url.to_bin(customer_idurl)
-    return _CustomersMetaInfo.get(customer_idurl, {})
+    return jsn.dict_keys_to_text(jsn.dict_values_to_text(_CustomersMetaInfo.get(customer_idurl, {})))
 
 #------------------------------------------------------------------------------
 
@@ -1010,7 +1012,8 @@ def get_supplier_meta_info(supplier_idurl, customer_idurl=None):
         customer_idurl = my_id.getLocalID()
     customer_idurl = id_url.field(customer_idurl)
     supplier_idurl = id_url.field(supplier_idurl)
-    return _SuppliersMetaInfo.get(customer_idurl, {}).get(supplier_idurl, {})
+    return jsn.dict_keys_to_text(jsn.dict_values_to_text(
+        _SuppliersMetaInfo.get(customer_idurl, {}).get(supplier_idurl, {})))
 
 #------------------------------------------------------------------------------
 
