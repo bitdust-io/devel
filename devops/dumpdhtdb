@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python -c "import sqlite3,os,pprint; db=sqlite3.connect(os.path.expanduser('~/.bitdust/metadata/dhtdb')); db.isolation_level = None; cursor=db.cursor(); cursor.execute('SELECT * FROM data'); pprint.pprint(cursor.fetchall()); pprint.pprint(cursor.description);"
