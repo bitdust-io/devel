@@ -309,8 +309,6 @@ class FamilyMember(automat.Automat):
         """
         Condition method.
         """
-        if not self.dht_value_exists:
-            return True
         return self.transaction is not None
 
     def doInit(self, *args, **kwargs):
@@ -723,6 +721,11 @@ class FamilyMember(automat.Automat):
                 current_request['ecc_map'], self.customer_idurl))
             merged_info['ecc_map'] = current_request['ecc_map']
         if not merged_info['ecc_map']:
+            known_ecc_map = contactsdb.get_customer_meta_info(self.customer_idurl).get('ecc_map', None)
+            if known_ecc_map:
+                lg.warn('unknown ecc_map, will populate known value from customer meta info: %s' % known_ecc_map)
+                merged_info['ecc_map'] = known_ecc_map
+        if not merged_info['ecc_map']:
             lg.warn('still did not found actual ecc_map from DHT or from the request')
             return None
 
@@ -831,7 +834,7 @@ class FamilyMember(automat.Automat):
                 merged_info['suppliers'] += [b'', ] * (my_expected_suppliers_count - len(merged_info['suppliers']))
             else:
                 merged_info['suppliers'] = merged_info['suppliers'][:my_expected_suppliers_count]
-            
+
         try:
             existing_position = merged_info['suppliers'].index(my_id.getLocalID().to_bin())
         except ValueError:
@@ -900,7 +903,7 @@ class FamilyMember(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_dht_read_failed : %r' % err)
         self.automat('dht-read-fail')
-        
+
     def _on_dht_write_success(self, dht_result):
         if _Debug:
             lg.out(_DebugLevel, 'family_member._on_dht_write_success  result: %r' % dht_result)
@@ -925,7 +928,7 @@ class FamilyMember(automat.Automat):
             lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %s' % err_msg)
         if err_msg.count('current revision is') and retries < 3:
             try:
-                current_revision = re.search("current revision is (\d+?)", err_msg).group(1)
+                current_revision = re.search("current revision is (\d+)", err_msg).group(1)
                 current_revision = int(current_revision)
             except:
                 lg.exc()
@@ -947,7 +950,7 @@ class FamilyMember(automat.Automat):
         if not self.my_info:
             if _Debug:
                 lg.out(_DebugLevel, '    current DHT info is not yet known, skip')
-            return p2p_service.SendAck(incoming_packet)    
+            return p2p_service.SendAck(incoming_packet)
         try:
             another_ecc_map = inp['customer_ecc_map']
             another_suppliers_list = id_url.to_bin_list(inp['suppliers_list'])

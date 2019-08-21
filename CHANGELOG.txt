@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2019-08-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 fix in fastjsonrpc (#386)
+* bug fix in family_member() state machine
+
+
+
 2019-08-19 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * fixed missing DeleteBackup() packet handling in service_supplier()  (#384)
