@@ -924,8 +924,7 @@ class FamilyMember(automat.Automat):
                 except:
                     errmsg = str(err)
         err_msg = strng.to_text(errmsg)
-        if _Debug:
-            lg.out(_DebugLevel, 'family_member._on_dht_write_failed : %s' % err_msg)
+        lg.err('failed to write family info for %s : %s' % (self.customer_idurl, err_msg))
         if err_msg.count('current revision is') and retries < 3:
             try:
                 current_revision = re.search("current revision is (\d+)", err_msg).group(1)
@@ -1055,4 +1054,7 @@ class FamilyMember(automat.Automat):
             if not self.suppliers_requests:
                 self.automat('all-suppliers-agree')
             return None
-        self.automat('one-supplier-not-agree', ecc_map=ecc_map, suppliers_list=suppliers_list, supplier_idurl=response.OwnerID.to_bin())
+        if _Debug:
+            lg.args(_DebugLevel, ecc_map=ecc_map, suppliers_list=suppliers_list, supplier_idurl=response.OwnerID.to_bin())
+        self.automat('one-supplier-not-agree',
+                     ecc_map=ecc_map, suppliers_list=suppliers_list, supplier_idurl=response.OwnerID.to_bin())

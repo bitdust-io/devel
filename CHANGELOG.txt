@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+
+2019-08-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added helper devops script devops/dumpdhtdb
+* more bug fixes in family_member() automat  (#387)
+
+
+
 2019-08-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * py3 fix in fastjsonrpc (#386)
