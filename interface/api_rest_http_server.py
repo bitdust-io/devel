@@ -153,6 +153,16 @@ def _input_value(json_data, keys_list, default_value=None):
             return json_data[key]
     return default_value
 
+
+def _index_or_idurl_or_global_id(data, index_fields=['index', 'position', 'pos', ], id_fields=['global_id', 'idurl', 'id']):
+    """
+    Helper method.
+    """
+    value = _input_value(data, index_fields)
+    if value is None:
+        value = _input_value(data, id_fields)
+    return value
+
 #------------------------------------------------------------------------------
 
 class BitDustAPISite(Site):
@@ -624,29 +634,20 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @POST('^/supplier/rotate/v1$')
     @POST('^/supplier/replace/v1$')
     def supplier_replace_v1(self, request):
-        data = _request_data(request, mandatory_keys=[('index', 'position', 'idurl', 'global_id', 'id', ), ])
+        data = _request_data(request, mandatory_keys=[('index', 'pos', 'position', 'idurl', 'global_id', 'id', ), ])
         return api.supplier_replace(
-            index_or_idurl_or_global_id=(
-                data.get('index') or
-                data.get('position') or
-                data.get('global_id') or
-                data.get('idurl') or
-                data.get('id')
-            ),
+            index_or_idurl_or_global_id=_index_or_idurl_or_global_id(data)
         )
 
     @PUT('^/su/sw$')
     @PUT('^/supplier/switch/v1$')
     def supplier_switch_v1(self, request):
         data = _request_data(request, mandatory_keys=[
-            ('index', 'position', 'pos', 'idurl', 'global_id', ),
+            ('index', 'position', 'pos', 'idurl', 'global_id', 'id', ),
             ('new_idurl', 'new_global_id', ),
         ])
-        index_or_idurl_or_global_id = _input_value(data, ['index', 'position', 'pos', ])
-        if index_or_idurl_or_global_id is None:
-            index_or_idurl_or_global_id = data.get('global_id') or data.get('idurl') or data.get('id')
         return api.supplier_change(
-            index_or_idurl_or_global_id=index_or_idurl_or_global_id,
+            index_or_idurl_or_global_id=_index_or_idurl_or_global_id(data),
             new_supplier_idurl_or_global_id=data.get('new_global_id') or data.get('new_idurl') or data.get('new_id'),
         )
 
