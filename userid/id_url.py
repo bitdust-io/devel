@@ -65,6 +65,7 @@ from system import bpio
 from system import local_fs
 
 from lib import strng
+from lib import nameurl
 
 from main import settings
 
@@ -267,8 +268,9 @@ def identity_cached(new_id_obj):
         prev_idurl = _MergedIDURLs[pub_key].get(new_revision, None)
         if new_revision in _MergedIDURLs[pub_key]:
             if _MergedIDURLs[pub_key][new_revision] != new_idurl:
-                if _MergedIDURLs[pub_key][new_revision] not in new_sources:
-                    lg.warn('rewriting existing identity revision %d : %r -> %r' % (
+                if nameurl.GetName(_MergedIDURLs[pub_key][new_revision]) == nameurl.GetName(new_idurl):
+                    if _MergedIDURLs[pub_key][new_revision] not in new_sources:
+                        lg.warn('rewriting existing identity revision %d : %r -> %r' % (
                         new_revision, _MergedIDURLs[pub_key][new_revision], new_idurl))
             _MergedIDURLs[pub_key][new_revision] = new_idurl
         else:

@@ -53,6 +53,7 @@ import imp
 import platform
 import glob
 import re
+import shutil
 
 #------------------------------------------------------------------------------
 
@@ -318,6 +319,24 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
             os.rmdir(dirpath)
         except:
             lg.out(6, 'bpio.rmdir_recursive can not remove dir ' + dirpath)
+
+
+def move_dir_recursive(src, dest, ignore=None):
+    if os.path.isdir(src):
+        if not os.path.isdir(dest):
+            os.makedirs(dest)
+        files = os.listdir(src)
+        if ignore is not None:
+            ignored = ignore(src, files)
+        else:
+            ignored = set()
+        for f in files:
+            if f not in ignored:
+                move_dir_recursive(os.path.join(src, f), 
+                                   os.path.join(dest, f), 
+                                   ignore)
+    else:
+        shutil.copyfile(src, dest)
 
 
 def getDirectorySize(directory, include_subfolders=True):

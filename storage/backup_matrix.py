@@ -65,6 +65,7 @@ _DebugLevel = 6
 
 import os
 import sys
+import distutils
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
@@ -502,8 +503,8 @@ def ReadRawListFiles(supplierNum, listFileText, customer_idurl=None, is_in_sync=
             if len(missingBlocksSet['Data']) == 0 and len(missingBlocksSet['Parity']) == 0:
                 missed_backups.discard(backupID)
             if item_version_info[0] != maxBlockNum or item_version_info[1] != versionSize:
-                lg.warn('updating version %s info with %s / %s from recent ListFiles()' % (
-                    backupID, maxBlockNum, versionSize, ))
+                # lg.warn('updating version %s info with %s / %s from recent ListFiles()' % (
+                #     backupID, maxBlockNum, versionSize, ))
                 item.set_version_info(versionName, maxBlockNum, versionSize)
                 remote_files_changed = True
             # mark this backup to be repainted
@@ -575,13 +576,15 @@ def ReadLocalFiles():
         if key_id != latest_key_id:
             old_path = os.path.join(settings.getLocalBackupsDir(), key_id)
             new_path = os.path.join(settings.getLocalBackupsDir(), my_keys.latest_key_id(key_id))
-            if os.path.isdir(old_path) and not os.path.exists(new_path):
+            if os.path.isdir(old_path):
                 try:
-                    os.rename(old_path, new_path)
+                    bpio.move_dir_recursive(old_path, new_path)
+                    lg.warn('copied %r into %r' % (old_path, new_path, ))
+                    if os.path.exists(old_path):
+                        bpio._dir_remove(old_path)
+                        lg.warn('removed %r' % old_path)
                 except:
                     lg.exc()
-            else:
-                lg.warn('found backup folder %r to be renamed, but currently not possible' % old_path)
         backup_path = os.path.join(settings.getLocalBackupsDir(), latest_key_id)
         if not global_id.IsValidGlobalUser(latest_key_id):
             lg.warn('found incorrect folder name, not a customer: %s' % backup_path)
