@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2019-08-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in api.supplier_switch_v1() method (#389)
+* more idurl fixes
+* added helper devops script devops/dumpdhtdb (#388)
+
+
+
 2019-08-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added helper devops script devops/dumpdhtdb
