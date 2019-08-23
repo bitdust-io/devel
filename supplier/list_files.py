@@ -67,7 +67,7 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl):
     if parts['key_alias'] == 'master' and parts['idurl'] != my_id.getLocalID():
         # lg.warn('incoming ListFiles() request with customer "master" key: %r' % key_id)
         if not my_keys.is_key_registered(key_id) and identitycache.HasKey(parts['idurl']):
-            lg.info('customer key %r to be registered locally for the first time' % key_id)
+            lg.info('customer public key %r to be registered locally for the first time' % key_id)
             known_ident = identitycache.FromCache(parts['idurl'])
             if not my_keys.register_key(key_id, known_ident.getPublicKey()):
                 lg.err('failed to register known public key of the customer: %r' % key_id)
