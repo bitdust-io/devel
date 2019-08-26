@@ -62,6 +62,7 @@ class SupplierService(LocalService):
         from contacts import contactsdb
         from storage import accounting
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-denied')
@@ -84,6 +85,7 @@ class SupplierService(LocalService):
         events.remove_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.remove_subscriber(self._on_customer_terminated, 'existing-customer-denied')
         events.remove_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
 
@@ -532,8 +534,8 @@ class SupplierService(LocalService):
             p2p_service.SendFail(newpacket, 'empty filename')
             return False
         if not os.path.exists(filename):
-            lg.warn("did not find requested file locally : %s" % filename)
-            p2p_service.SendFail(newpacket, 'did not find requested file locally')
+            lg.warn("did not found requested file locally : %s" % filename)
+            p2p_service.SendFail(newpacket, 'did not found requested file locally')
             return False
         if not os.access(filename, os.R_OK):
             lg.warn("no read access to requested packet %s" % filename)
@@ -768,3 +770,78 @@ class SupplierService(LocalService):
                 p2p_queue.close_queue(queue_id)
             except Exception as exc:
                 lg.warn('failed to stop queue %s : %s' % (queue_id, str(exc)))
+
+    def _on_identity_url_changed(self, evt):
+        import os
+        from logs import lg
+        from userid import id_url
+        from userid import global_id
+        from contacts import contactsdb
+        from storage import accounting
+        from system import bpio
+        from main import settings
+        old_idurl = id_url.field(evt.data['old_idurl'])
+        # update customer idurl in "space" file
+        contacts_changed = False
+        for customer_idurl in contactsdb.customers():
+            if old_idurl == customer_idurl:
+                customer_idurl.refresh()
+                contacts_changed = True
+                lg.info('found customer idurl rotated : %r -> %r' % (
+                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+        if contacts_changed:
+            contactsdb.save_customers()
+        # update meta info for that customer
+        meta_info_changed = False
+        all_meta_info = contactsdb.read_customers_meta_info_all()
+        for customer_idurl_bin in list(all_meta_info.keys()):
+            if old_idurl == id_url.field(customer_idurl_bin):
+                latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
+                if latest_customer_idurl_bin != customer_idurl_bin:
+                    all_meta_info[latest_customer_idurl_bin] = all_meta_info.pop(customer_idurl_bin)
+                    meta_info_changed = True
+                    lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (
+                        latest_customer_idurl_bin, customer_idurl_bin, ))
+        if meta_info_changed:
+            contactsdb.write_customers_meta_info_all(all_meta_info)
+        # update customer idurl in "space" file
+        space_dict, free_space = accounting.read_customers_quotas()
+        space_changed = False
+        for customer_idurl_bin in list(space_dict.keys()):
+            if id_url.field(customer_idurl_bin) == old_idurl:
+                latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
+                if latest_customer_idurl_bin != customer_idurl_bin:
+                    space_dict[latest_customer_idurl_bin] = space_dict.pop(customer_idurl_bin)
+                    space_changed = True
+                    lg.info('found customer idurl rotated in customer quotas dictionary : %r -> %r' % (
+                        latest_customer_idurl_bin, customer_idurl_bin, ))
+        if space_changed:
+            accounting.write_customers_quotas(space_dict, free_space)
+        # update customer idurl in "spaceused" file
+        used_space_dict = accounting.read_customers_usage()
+        usage_changed = False
+        for customer_idurl_bin in list(used_space_dict.keys()):
+            if id_url.field(customer_idurl_bin) == old_idurl:
+                latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
+                if latest_customer_idurl_bin != customer_idurl_bin:
+                    used_space_dict[latest_customer_idurl_bin] = used_space_dict.pop(customer_idurl_bin)
+                    usage_changed = True
+                    lg.info('found customer idurl rotated in customer usage dictionary : %r -> %r' % (
+                        latest_customer_idurl_bin, customer_idurl_bin, ))
+        if usage_changed:
+            accounting.update_customers_usage(used_space_dict)
+        # rename customer folder where I store all his files
+        old_customer_dirname = str(global_id.UrlToGlobalID(evt.data['old_idurl']))
+        new_customer_dirname = str(global_id.UrlToGlobalID(evt.data['new_idurl']))
+        customers_dir = settings.getCustomersFilesDir()
+        old_owner_dir = os.path.join(customers_dir, old_customer_dirname)
+        new_owner_dir = os.path.join(customers_dir, new_customer_dirname)
+        if os.path.isdir(old_owner_dir):
+            try:
+                bpio.move_dir_recursive(old_owner_dir, new_owner_dir)
+                lg.info('copied %r into %r' % (old_owner_dir, new_owner_dir, ))
+                if os.path.exists(old_owner_dir):
+                    bpio._dir_remove(old_owner_dir)
+                    lg.warn('removed %r' % old_owner_dir)
+            except:
+                lg.exc()

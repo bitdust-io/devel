@@ -259,7 +259,7 @@ def test_identity_rotate_customer_6():
 
     service_info_v1('customer_6', 'service_customer', 'ON', attempts=30, delay=2)
 
-    supplier_list_v1('customer_6', expected_min_suppliers=2, expected_max_suppliers=2)
+    customer6_suppliers = supplier_list_v1('customer_6', expected_min_suppliers=2, expected_max_suppliers=2, extract_suppliers=True)
 
     service_info_v1('customer_6', 'service_my_data', 'ON', attempts=30, delay=2)
 
@@ -290,6 +290,21 @@ def test_identity_rotate_customer_6():
     new_downloaded_file_src = run_ssh_command_and_wait('customer_6', 'cat %s' % downloaded_filepath)[0].strip()
     assert local_file_src == downloaded_file_src, "source file and received file content is not equal after identity rotate"
     assert new_downloaded_file_src == downloaded_file_src, "received file content before identity rotate is not equal to received file after identity rotate"
+
+    first_supplier = customer6_suppliers[0].replace('http://is:8084/', '').replace('.xml', '')
+    old_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{old_global_id}/')[0].strip()
+    new_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{new_global_id}/')[0].strip()
+    assert old_folder_first_supplier == ''
+    assert new_folder_first_supplier != ''
+    print(f'first supplier {first_supplier} :\n', new_folder_first_supplier)
+
+    second_supplier = customer6_suppliers[1].replace('http://is:8084/', '').replace('.xml', '')
+    old_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{old_global_id}/')[0].strip()
+    new_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{new_global_id}/')[0].strip()
+    assert old_folder_second_supplier == ''
+    assert new_folder_second_supplier != ''
+    print(f'second supplier {second_supplier} :\n', new_folder_second_supplier)
+
 
 
 def test_identity_rotate_supplier_6_with_customer_3():

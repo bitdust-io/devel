@@ -680,7 +680,7 @@ def save_customers(path=None, save_meta_info=False):
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
             json_info, indent=2, sort_keys=True, keys_to_text=True, ))
     if _Debug:
-        lg.out(_DebugLevel, 'contactsdb.save_customers : %r' % lst)
+        lg.out(_DebugLevel, 'contactsdb.save_customers save_meta_info=%r : %r' % (save_meta_info, lst, ))
 
 
 def load_customers(path=None):
@@ -888,6 +888,30 @@ def on_contacts_changed(old_contacts_list, new_contacts_list):
     ))
 
 #------------------------------------------------------------------------------
+
+def read_customers_meta_info_all():
+    """
+    """
+    global _CustomersMetaInfo
+    return _CustomersMetaInfo
+
+
+def write_customers_meta_info_all(new_customers_info):
+    """
+    """
+    global _CustomersMetaInfo
+    _CustomersMetaInfo = new_customers_info
+    json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
+    try:
+        raw_data = jsn.dumps(
+            json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
+        )
+    except:
+        lg.exc()
+        return None
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), raw_data)
+    return _CustomersMetaInfo
+
 
 def add_customer_meta_info(customer_idurl, info):
     """
