@@ -65,7 +65,6 @@ _DebugLevel = 6
 
 import os
 import sys
-import distutils
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport

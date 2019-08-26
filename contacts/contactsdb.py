@@ -680,7 +680,7 @@ def save_customers(path=None, save_meta_info=False):
         local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), jsn.dumps(
             json_info, indent=2, sort_keys=True, keys_to_text=True, ))
     if _Debug:
-        lg.out(_DebugLevel, 'contactsdb.save_customers : %r' % lst)
+        lg.out(_DebugLevel, 'contactsdb.save_customers save_meta_info=%r : %r' % (save_meta_info, lst, ))
 
 
 def load_customers(path=None):
