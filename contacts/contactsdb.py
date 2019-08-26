@@ -889,6 +889,30 @@ def on_contacts_changed(old_contacts_list, new_contacts_list):
 
 #------------------------------------------------------------------------------
 
+def read_customers_meta_info_all():
+    """
+    """
+    global _CustomersMetaInfo
+    return _CustomersMetaInfo
+
+
+def write_customers_meta_info_all(new_customers_info):
+    """
+    """
+    global _CustomersMetaInfo
+    _CustomersMetaInfo = new_customers_info
+    json_info = {k: jsn.dict_keys_to_text(v) for k, v in id_url.to_bin_dict(_CustomersMetaInfo).items()}
+    try:
+        raw_data = jsn.dumps(
+            json_info, indent=2, sort_keys=True, keys_to_text=True, values_to_text=True,
+        )
+    except:
+        lg.exc()
+        return None
+    local_fs.WriteTextFile(settings.CustomersMetaInfoFilename(), raw_data)
+    return _CustomersMetaInfo
+
+
 def add_customer_meta_info(customer_idurl, info):
     """
     """

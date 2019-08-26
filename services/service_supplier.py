@@ -791,6 +791,19 @@ class SupplierService(LocalService):
                     evt.data['old_idurl'], evt.data['new_idurl'], ))
         if contacts_changed:
             contactsdb.save_customers()
+        # update meta info for that customer
+        meta_info_changed = False
+        all_meta_info = contactsdb.read_customers_meta_info_all()
+        for customer_idurl_bin in list(all_meta_info.keys()):
+            if old_idurl == id_url.field(customer_idurl_bin):
+                latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
+                if latest_customer_idurl_bin != customer_idurl_bin:
+                    all_meta_info[latest_customer_idurl_bin] = all_meta_info.pop(customer_idurl_bin)
+                    meta_info_changed = True
+                    lg.info('found customer idurl rotated in customers meta info : %r -> %r' % (
+                        latest_customer_idurl_bin, customer_idurl_bin, ))
+        if meta_info_changed:
+            contactsdb.write_customers_meta_info_all(all_meta_info)
         # update customer idurl in "space" file
         space_dict, free_space = accounting.read_customers_quotas()
         space_changed = False
