@@ -50,18 +50,22 @@ class PrivateMessagesService(LocalService):
         ]
 
     def start(self):
+        from main import events
         from transport import callback
         from chat import message
         from chat import nickname_holder
         message.init()
         nickname_holder.A('set')
         callback.append_inbox_callback(self._on_inbox_packet_received)
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         return True
 
     def stop(self):
+        from main import events
         from transport import callback
         from chat import message
         from chat import nickname_holder
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         nickname_holder.Destroy()
         message.shutdown()
@@ -73,3 +77,18 @@ class PrivateMessagesService(LocalService):
         if newpacket.Command != commands.Message():
             return False
         return message.on_incoming_message(newpacket, info, status, error_message)
+
+    def _on_identity_url_changed(self, evt):
+        from logs import lg
+        from contacts import contactsdb
+        from userid import id_url
+        old_idurl = id_url.field(evt.data['old_idurl'])
+        contacts_changed = False
+        for idurl, alias in list(contactsdb.correspondents()):
+            if old_idurl == idurl:
+                idurl.refresh()
+                contacts_changed = True
+                lg.info('found correspond idurl rotated : %r -> %r' % (
+                    evt.data['old_idurl'], evt.data['new_idurl'], ))
+        if contacts_changed:
+            contactsdb.save_correspondents()

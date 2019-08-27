@@ -43,10 +43,6 @@ class ProxyServerService(LocalService):
     service_name = 'service_proxy_server'
     config_path = 'services/proxy-server/enabled'
 
-    # def init(self):
-        # self.debug_level = 2
-        # self.log_events = True
-
     def dependent_on(self):
         return [
             'service_p2p_hookups',
