@@ -508,11 +508,33 @@ def identity_rotate_v1(node):
 
 
 def key_list_v1(node):
-    response = requests.get(
-        url=tunnel_url(node, 'key/list/v1'),
-    )
+    response = requests.get(url=tunnel_url(node, 'key/list/v1'))
     assert response.status_code == 200
     print('\nkey/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
     assert response.json()['status'] == 'OK', response.json()
     return response.json()
 
+
+def friend_add_v1(node, friend_idurl, friend_alias=''):
+    response = requests.post(
+        url=tunnel_url(node, 'friend/add/v1'),
+        json={
+            'idurl': friend_idurl,
+            'alias': friend_alias,
+        },
+    )
+    assert response.status_code == 200
+    print('\nfriend/add/v1 [%s] idurl=%r alias=%r : %s\n' % (
+        node, friend_idurl, friend_alias, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
+def friend_list_v1(node, extract_idurls=False):
+    response = requests.get(url=tunnel_url(node, 'friend/list/v1'))
+    assert response.status_code == 200
+    print('\nfriend/list/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    if not extract_idurls:
+        return response.json()
+    return [f['idurl'] for f in response.json()['result']]

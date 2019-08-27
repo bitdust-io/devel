@@ -49,13 +49,19 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import sys
 
 from logs import lg
 
 from automats import automat
-
-from lib import strng
 
 from main import settings
 
@@ -211,7 +217,6 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        # self.key = self.nickname + ':' + '0'
         self.key = dht_service.make_key(
             key=self.nickname,
             index=0,
@@ -224,13 +229,11 @@ class NicknameHolder(automat.Automat):
         """
         try:
             key_info = dht_service.split_key(self.key)
-            # nik, number = self.key.rsplit(':', 1)
             index = int(key_info['index'])
         except:
             lg.exc()
             index = 0
         index += 1
-        # self.key = self.nickname + ':' + str(index)
         self.key = dht_service.make_key(
             key=self.nickname,
             index=index,
@@ -270,7 +273,8 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, args[0], ))
+        if _Debug:
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameOwn : %s with %s' % (self.key, args[0], ))
         for cb in self.result_callbacks:
             cb('my own', self.key)
 
@@ -278,7 +282,8 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
+        if _Debug:
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
         for cb in self.result_callbacks:
             cb('registered', self.key)
 
@@ -286,7 +291,8 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameExist : %s' % self.key)
+        if _Debug:
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameExist : %s' % self.key)
         for cb in self.result_callbacks:
             cb('exist', self.key)
 
@@ -294,8 +300,9 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s with %s' % (
-            self.key, args[0] if args else None, ))
+        if _Debug:
+            lg.out(_DebugLevel, 'nickname_holder.doReportNicknameFailed : %s with %s' % (
+                self.key, args[0] if args else None, ))
         for cb in self.result_callbacks:
             cb('failed', self.key)
 
@@ -307,7 +314,8 @@ class NicknameHolder(automat.Automat):
         try:
             v = id_url.field(value['idurl'])
         except:
-            lg.out(8, '%r' % value)
+            if _Debug:
+                lg.out(_DebugLevel, '%r' % value)
             lg.exc()
             self.automat('dht-read-failed')
             return
