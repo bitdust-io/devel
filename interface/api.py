@@ -3241,16 +3241,19 @@ def message_receive(consumer_id):
         for msg in pending_messages:
             if msg['type'] != 'private_message':
                 continue
-            result.append({
-                'data': msg['data'],
-                'recipient': msg['to'],
-                'sender': msg['from'],
-                'time': msg['time'],
-                'message_id': msg['id'],
-                'dir': msg['dir'],
-            })
+            try:
+                result.append({
+                    'data': msg['data'],
+                    'recipient': msg['to'],
+                    'sender': msg['from'],
+                    'time': msg['time'],
+                    'message_id': msg['id'],
+                    'dir': msg['dir'],
+                })
+            except:
+                lg.exc()
         if _Debug:
-            lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %s' % result)
+            lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
         ret.callback(OK(result))
         return len(result) > 0
 

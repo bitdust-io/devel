@@ -541,7 +541,11 @@ def pop_messages():
                     lg.out(_DebugLevel, 'message.pop_message %d messages waiting consuming by "%s", callback state is "called"' % (
                         len(message_queue()[consumer_id]), consumer_id))
                 continue
-            consumer_callback.callback(pending_messages)
+            try:
+                consumer_callback.callback(pending_messages)
+            except:
+                lg.exc()
+                continue
             message_queue()[consumer_id] = []
             if _Debug:
                 lg.out(_DebugLevel, 'message.pop_message %d messages consumed by "%s"' % (len(pending_messages), consumer_id))

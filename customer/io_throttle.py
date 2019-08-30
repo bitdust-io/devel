@@ -542,6 +542,8 @@ class SupplierQueue:
             lg.warn('supplier queue is shutting down')
             self.StopAllRequests()
             return
+        if _Debug:
+            lg.out(_DebugLevel, 'io_throttle.DeleteBackupRequests  will cancel all requests for %s' % backupName)
         packetsToRemove = set()
         for packetID in self.fileRequestQueue:
             if (backupName and packetID.count(backupName)) or not backupName:
@@ -549,11 +551,14 @@ class SupplierQueue:
                 if _Debug:
                     lg.out(_DebugLevel, 'io_throttle.DeleteBackupRequests %s from downloading queue' % packetID)
         for packetID in packetsToRemove:
-            f_down = self.fileRequestDict[packetID]
-            f_down.event('stop')
-            if _Debug:
-                lg.out(_DebugLevel, "io_throttle.DeleteBackupRequests stopped %r in %s downloading queue, %d more items" % (
-                    packetID, self.remoteID, len(self.fileRequestQueue)))
+            f_down = self.fileRequestDict.get(packetID)
+            if f_down:
+                f_down.event('stop')
+                if _Debug:
+                    lg.out(_DebugLevel, "io_throttle.DeleteBackupRequests stopped %r in %s downloading queue, %d more items" % (
+                        packetID, self.remoteID, len(self.fileRequestQueue)))
+            else:
+                lg.warn('can not find %r in request queue' % packetID)
         if len(self.fileRequestQueue) > 0:
             reactor.callLater(0, self.DoRequest)  # @UndefinedVariable
 
