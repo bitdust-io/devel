@@ -54,6 +54,7 @@ class SharedDataService(LocalService):
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
+        self._do_open_known_shares()
         return True
 
     def stop(self):
@@ -236,3 +237,15 @@ class SharedDataService(LocalService):
         p2p_service.SendAck(newpacket)
         lg.info('received list of packets from external supplier %s for customer %s' % (external_supplier_idurl, trusted_customer_idurl))
         return True
+
+    def _do_open_known_shares(self):
+        from crypt import my_keys
+        from access import shared_access_coordinator
+        for key_id in my_keys.known_keys():
+            if not key_id.startswith('share_'):
+                continue
+            active_share = shared_access_coordinator.get_active_share(key_id)
+            if active_share:
+                continue
+            active_share = shared_access_coordinator.SharedAccessCoordinator(key_id, log_events=True, publish_events=False, )
+            active_share.automat('restart')

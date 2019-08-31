@@ -433,6 +433,7 @@ class SupplierService(LocalService):
     def _on_delete_backup(self, newpacket):
         import os
         from logs import lg
+        from lib import strng
         from system import bpio
         from userid import global_id
         from p2p import p2p_service
@@ -440,7 +441,7 @@ class SupplierService(LocalService):
         if not newpacket.Payload:
             ids = [newpacket.PacketID, ]
         else:
-            ids = newpacket.Payload.split('\n')
+            ids = strng.to_text(newpacket.Payload).split('\n')
         count = 0
         lg.warn('going to erase backup ids: %s' % ids)
         customer_id = global_id.UrlToGlobalID(newpacket.OwnerID)
