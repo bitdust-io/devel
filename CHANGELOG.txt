@@ -2,6 +2,17 @@ Change Log
 ==========
 
 
+2019-08-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor adjustments in packets logging
+* fix issue when supplier is switching (#398)
+* bug fix in proxy_receiver() (#397)
+* critical bug fix in contactsdb (#396)
+* minor fixes in logging (#395)
+* open all known shares at startup (#394)
+
+
+
 2019-08-27 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * process "identity-url-changed" event in service_private_messages() (#392)
