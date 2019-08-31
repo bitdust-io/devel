@@ -371,7 +371,8 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
         CreatorID=my_id.getLocalID(),
         PacketID=packetid.UniqueID(),
         Payload=service_info_raw,
-        RemoteID=remote_idurl, )
+        RemoteID=remote_idurl,
+    )
     gateway.outbox(result, wide=wide, callbacks=callbacks, response_timeout=timeout)
     return result
 
@@ -398,7 +399,8 @@ def SendCancelService(remote_idurl, service_name, json_payload={}, wide=False, c
         CreatorID=my_id.getLocalID(),
         PacketID=packetid.UniqueID(),
         Payload=service_info_raw,
-        RemoteID=remote_idurl, )
+        RemoteID=remote_idurl,
+    )
     gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
 
