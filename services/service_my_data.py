@@ -66,7 +66,7 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         from storage import index_synchronizer
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lg.errback)
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err)))
         if keys_synchronizer.is_synchronized() and index_synchronizer.is_synchronized():
             if not self.starting_deferred.called:
                 self.starting_deferred.callback(True)

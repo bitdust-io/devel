@@ -1004,9 +1004,7 @@ class DHTNode(EntangledNode):
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.DHTNode.request key=[%r]' % key)
         if 'request' in self.rpc_callbacks:
-            self.rpc_callbacks['request'](
-                key=key,
-            )
+            self.rpc_callbacks['request'](key=key)
         value = get_node_data(key)
         if value is None:
             value = 0

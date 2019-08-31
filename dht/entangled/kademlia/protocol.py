@@ -361,7 +361,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     # ...or simply call it if that fails
                     result = func(*args)
             except Exception as e:
-                traceback.print_exc()
+                if _Debug:
+                    print('                                failed with %r' % e)
+                    # traceback.print_exc()
                 df.errback(failure.Failure(e))
             else:
                 if _Debug:

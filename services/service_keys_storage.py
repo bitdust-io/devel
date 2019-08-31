@@ -59,7 +59,7 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         keys_synchronizer.A('init')
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lg.errback)
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err)))
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
