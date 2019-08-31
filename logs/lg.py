@@ -74,8 +74,8 @@ def fqn(o):
 
 def out(level, msg, nl='\n', log_name='main', showtime=False):
     """
-    The core method, most useful thing in any project :-))) Print a text line
-    to the log file or console.
+    The core method, most useful thing in any Python project!
+    Prints a text line to the log file or console.
 
     :param level: lower values is count as more important messages.
                         Usually I am using only even values from 0 to 18.
@@ -203,11 +203,11 @@ def args(level, *args, **kwargs):
 
 def info(message):
     global _UseColors
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
         output_string = '\033[6;37;42m INFO %s \033[0m in %s.%s()' % (message, modul, caller, )
     else:
@@ -218,11 +218,11 @@ def info(message):
 
 def warn(message, level=2):
     global _UseColors
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
-    if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
         output_string = '\033[0;35mWARNING %s\033[0m in %s.%s()' % (message, modul, caller, )
     else:
@@ -233,6 +233,8 @@ def warn(message, level=2):
 
 def err(message, level=0):
     global _UseColors
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
@@ -244,8 +246,6 @@ def err(message, level=0):
     if not message.count('ERROR'):
         message = 'ERROR!!!  ' + message
     message = '%s%s   ' % ((' ' * (level + 11)), message)
-    if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
         message = '\033[6;37;41m%s\033[0m' % message
     out(level, message)
@@ -273,12 +273,14 @@ def errback(*args, **kwargs):
 
 def exception(level, maxTBlevel, exc_info):
     """
-    This is second most common method in good error handling Python project :-)
+    This is second most common method in a Python project with good error handling practices
     Print detailed info about last/given exception to the logs.
     """
     global _LogFileName
     global _StoreExceptionsEnabled
     global _UseColors
+    if _UseColors is None:
+        _UseColors = platform.uname()[0] != 'Windows'
     if exc_info is None:
         _, value, trbk = sys.exc_info()
     else:
@@ -295,8 +297,6 @@ def exception(level, maxTBlevel, exc_info):
         excTb = []
     exc_name = exception_name(value)
     s = 'Exception: <' + exc_name + '>'
-    if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
     if _UseColors:
         out(level, '\033[1;31m%s\033[0m' % (s.strip()))
     else:

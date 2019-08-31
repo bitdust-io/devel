@@ -94,6 +94,8 @@ from p2p import online_status
 
 from contacts import identitycache
 
+from services import driver
+
 from transport import callback
 from transport import packet_in
 from transport import packet_out
@@ -787,6 +789,12 @@ class ProxyReceiver(automat.Automat):
         if newpacket.CreatorID == self.router_idurl:
             self.latest_packet_received = time.time()
         if newpacket.Command == commands.Relay():
+            if driver.is_enabled('service_proxy_server'):
+                # TODO:
+                # in case this node already running proxy router service this will not work
+                # actually you can not use proxy transport for receiving and running proxy router at same time
+                # need to change one of the services to solve that dependency and prevent this
+                return False
             self.automat('inbox-packet', (newpacket, info, status, error_message))
             return True
         return False

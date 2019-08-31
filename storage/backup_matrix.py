@@ -962,7 +962,7 @@ def ScanBlocksToSend(backupID, limit_per_supplier=None):
         bySupplier[supplierNum] = set()
     if backupID not in remote_files():
         if _Debug:
-            lg.out('backup_matrix.ScanBlocksToSend  backupID %r not found in remote files' % backupID)
+            lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r not found in remote files' % backupID)
         for blockNum in range(localMaxBlockNum + 1):
             localData = GetLocalDataArray(backupID, blockNum)
             localParity = GetLocalParityArray(backupID, blockNum)
@@ -980,7 +980,7 @@ def ScanBlocksToSend(backupID, limit_per_supplier=None):
                         break
     else:
         if _Debug:
-            lg.out('backup_matrix.ScanBlocksToSend  backupID %r was found in remote files' % backupID)
+            lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r was found in remote files' % backupID)
         for blockNum in range(localMaxBlockNum + 1):
             remoteData = GetRemoteDataArray(backupID, blockNum)
             remoteParity = GetRemoteParityArray(backupID, blockNum)
