@@ -341,9 +341,8 @@ class Automat(object):
         self.startTimers()
         self.register()
         if _Debug and self.log_transitions:
-            self.log(max(_DebugLevel, self.debug_level),
-                     'CREATED AUTOMAT %s with index %d, %d running' % (
-                str(self), self.index, len(objects())))
+            self.log(max(_DebugLevel, self.debug_level), 'CREATED AUTOMAT with index %d, total running %d' % (
+                self.index, len(objects())))
 
     def _on_state_change(self, oldstate, newstate, event_string, *args, **kwargs):
         from main import events
@@ -362,7 +361,6 @@ class Automat(object):
         if self is None:
             # Some crazy stuff happens?
             return
-        o = self
         automatid = self.id
         name = self.name
         index = self.index
@@ -371,9 +369,8 @@ class Automat(object):
         debug_level = max(_DebugLevel or 0, self.debug_level or 0)
         erase_index(automatid)
         if _Debug and self.log_transitions:
-            self.log(debug_level,
-                     'DESTROYED AUTOMAT %s with index %d, %d running' % (
-                         str(o), index, len(objects())))
+            self.log(debug_level, 'DESTROYED AUTOMAT with index %d, total running %d' % (
+                index, len(objects())))
 
     def __repr__(self):
         """

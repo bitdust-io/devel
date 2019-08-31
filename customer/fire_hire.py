@@ -559,7 +559,8 @@ class FireHire(automat.Automat):
             self.automat('made-decision', [])
             return
         if not disconnected_suppliers:
-            lg.warn('SKIP, no OFFLINE suppliers found at the moment')
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    SKIP, no OFFLINE suppliers found at the moment')
             # TODO: add more conditions to fire "slow" suppliers - they are still connected but useless
             self.automat('made-decision', [])
             return

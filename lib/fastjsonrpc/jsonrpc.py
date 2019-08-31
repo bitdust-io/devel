@@ -70,6 +70,8 @@ def jdumps(obj):
     def _to_text(v):
         if isinstance(v, six.binary_type):
             v = v.decode('utf-8')
+        if not isinstance(v, six.text_type):
+            v = str(v)
         return v
 
     if cjson_loaded:
