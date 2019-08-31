@@ -187,8 +187,9 @@ def update_suppliers(idlist, customer_idurl=None):
     set_suppliers(idlist, customer_idurl=customer_idurl)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback(oldsuppliers, suppliers(customer_idurl=customer_idurl))
-    for cb in _ContactsChangedCallbacks:
-        cb(id_url.to_original_list(oldcontacts), id_url.to_original_list(contacts()))
+    if id_url.to_original_list(oldcontacts) != id_url.to_original_list(contacts()): 
+        for cb in _ContactsChangedCallbacks:
+            cb(id_url.to_original_list(oldcontacts), id_url.to_original_list(contacts()))
 
 
 def add_supplier(idurl, position=None, customer_idurl=None):
@@ -594,7 +595,7 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     if all_customers:
         list_local_customers = list(os.listdir(settings.SuppliersDir()))
         if _Debug:
-                lg.out(_DebugLevel, 'contactsdb.load_suppliers %d known customers' % len(list_local_customers))
+            lg.out(_DebugLevel, 'contactsdb.load_suppliers %d known customers' % len(list_local_customers))
         for customer_id in list_local_customers:
             if not global_id.IsValidGlobalUser(customer_id):
                 lg.warn('invalid customer record %s found in %s' % (customer_id, settings.SuppliersDir()))
@@ -610,9 +611,14 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
                 continue
             if not one_customer_idurl.is_latest():
                 latest_customer_path = os.path.join(settings.SuppliersDir(), one_customer_idurl.to_id())
+                old_customer_path = os.path.join(settings.SuppliersDir(), customer_id)
                 if not os.path.exists(latest_customer_path):
-                    os.rename(os.path.join(settings.SuppliersDir(), customer_id), latest_customer_path)
+                    os.rename(old_customer_path, latest_customer_path)
                     lg.info('detected and processed idurl rotate when loading suppliers for customer : %r -> %r' % (customer_id, one_customer_idurl.to_id()))
+                else:
+                    bpio._dir_remove(old_customer_path)
+                    lg.warn('found old customer dir %r and removed' % old_customer_path)
+                    continue
             lst = list(map(lambda i: i if id_url.is_cached(i) else b'', lst))
             set_suppliers(lst, customer_idurl=one_customer_idurl)
             if _Debug:
@@ -627,7 +633,7 @@ def load_suppliers(path=None, customer_idurl=None, all_customers=False):
     if lst is None:
         lst = list()
     lst = list(map(lambda i: i if id_url.is_cached(i) else b'', lst))
-    set_suppliers(lst)
+    set_suppliers(lst, customer_idurl=customer_idurl)
     if _Debug:
         lg.out(_DebugLevel, 'contactsdb.load_suppliers %d items from %s' % (len(lst), path))
     return True
@@ -793,7 +799,6 @@ def load_contacts():
     """
     Load all my contacts from disk.
     """
-    load_suppliers()
     load_suppliers(all_customers=True)
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback([], suppliers())
