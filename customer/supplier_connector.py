@@ -579,6 +579,11 @@ class SupplierConnector(automat.Automat):
             self.automat('connect')
 
     def _do_request_supplier_service(self, ecc_map, family_position, family_snapshot):
+        if _Debug:
+            lg.args(_DebugLevel, ecc_map=ecc_map, family_position=family_position, family_snapshot=family_snapshot)
+        if not self.supplier_idurl:
+            lg.warn('supplier idurl is empty, SKIP sending supplier_service request')
+            return
         service_info = {
             'needed_bytes': self.needed_bytes,
             'customer_id': global_id.UrlToGlobalID(self.customer_idurl),
