@@ -1130,7 +1130,7 @@ def Exists(path, iter=None):
 
 def ExistsID(pathID, iterID=None):
     """
-    Use ``WalkByPath()`` to check existence if that ``ID``.
+    Use ``WalkByPath()`` to check existence if that ``ID`` in the catalog.
     """
     iter_and_path = WalkByID(pathID, iterID=iterID)
     if iter_and_path is None:
