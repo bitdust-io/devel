@@ -769,7 +769,7 @@ class PacketOut(automat.Automat):
             for cb in self.callbacks[None]:
                 cb(self)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[2;49;90mTIMEOUT %s(%s) sending from %s to %s\033[0m' % (
+            lg.out(0, '    \033[2;49;90mTIMEOUT %s(%s) sending from %s to %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID,
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl)),
                 log_name='packet', showtime=True)
@@ -780,7 +780,7 @@ class PacketOut(automat.Automat):
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s (ACK received) TID:%r\033[0m' % (
+            lg.out(0, '      \033[0;49;95mOUT %s(%s) with %s bytes from %s to %s (ACK received) TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
@@ -794,7 +794,7 @@ class PacketOut(automat.Automat):
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+            lg.out(0, '      \033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
@@ -825,7 +825,7 @@ class PacketOut(automat.Automat):
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'cancelled', msg)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;97mOUT %s(%s) with %s bytes CANCELED from %s to %s TID:%r : %s\033[0m' % (
+            lg.out(0, '      \033[0;49;97mOUT %s(%s) with %s bytes CANCELED from %s to %s TID:%r : %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results], msg), log_name='packet', showtime=True)

@@ -437,7 +437,7 @@ class PacketIn(automat.Automat):
         from transport import gateway
         self.status, self.bytes_received, self.error_message = args[0]
         if _PacketLogFileEnabled:
-            lg.out(0, '     \033[2;49;90mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
+            lg.out(0, '     \033[2;49;32mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
                 self.bytes_received, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
