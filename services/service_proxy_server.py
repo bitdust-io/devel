@@ -50,6 +50,8 @@ class ProxyServerService(LocalService):
 
     def enabled(self):
         from main import settings
+        if settings.transportIsEnabled('proxy'):
+            return False
         return settings.enableProxyServer()
 
     def start(self):

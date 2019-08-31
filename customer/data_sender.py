@@ -228,9 +228,10 @@ class DataSender(automat.Automat):
                 this_customer_idurl = packetid.CustomerIDURL(backupID)
                 if this_customer_idurl != customer_idurl:
                     continue
-                packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
+                packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID, limit_per_supplier=None)
+                total_for_customer = sum([len(v) for v in packetsBySupplier.values()])
                 if _Debug:
-                    lg.out(_DebugLevel, '        packets for customer %r : %s' % (customer_idurl, packetsBySupplier))
+                    lg.out(_DebugLevel, '        to be delivered for customer %r : %d' % (customer_idurl, total_for_customer))
                 for supplierNum in packetsBySupplier.keys():
                     # supplier_idurl = contactsdb.supplier(supplierNum, customer_idurl=customer_idurl)
                     if supplierNum >= 0 and supplierNum < len(known_suppliers):
@@ -257,7 +258,7 @@ class DataSender(automat.Automat):
                             continue
                         if not io_throttle.OkToSend(supplier_idurl):
                             if _Debug:
-                                lg.out(_DebugLevel + 6, '        skip sending, not ok to send %s\n' % supplier_idurl)
+                                lg.out(_DebugLevel + 6, '        skip sending, queue is busy for %r\n' % supplier_idurl)
                             continue
                         customerGlobalID, pathID = packetid.SplitPacketID(packetID)
                         # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])

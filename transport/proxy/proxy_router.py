@@ -466,12 +466,12 @@ class ProxyRouter(automat.Automat):
         )
         raw_data = block.Serialize()
         routed_packet = signed.Packet(
-            commands.Relay(),
-            newpacket.OwnerID,
-            my_id.getLocalID(),
-            newpacket.PacketID,
-            raw_data,
-            receiver_idurl,
+            Command=commands.Relay(),
+            OwnerID=newpacket.OwnerID,
+            CreatorID=my_id.getLocalID(),
+            PacketID=newpacket.PacketID,
+            Payload=raw_data,
+            RemoteID=receiver_idurl,
         )
         pout = packet_out.create(
             newpacket,

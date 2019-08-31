@@ -947,7 +947,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
     return packets
 
 
-def ScanBlocksToSend(backupID):
+def ScanBlocksToSend(backupID, limit_per_supplier=None):
     """
     Opposite method - search for pieces which is not yet delivered to remote suppliers.
     """
@@ -961,6 +961,8 @@ def ScanBlocksToSend(backupID):
     for supplierNum in range(len(supplierActiveArray)):
         bySupplier[supplierNum] = set()
     if backupID not in remote_files():
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r not found in remote files' % backupID)
         for blockNum in range(localMaxBlockNum + 1):
             localData = GetLocalDataArray(backupID, blockNum)
             localParity = GetLocalParityArray(backupID, blockNum)
@@ -973,7 +975,12 @@ def ScanBlocksToSend(backupID):
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Data'))
                 if localParity[supplierNum] == 1:
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Parity'))
+                if limit_per_supplier:
+                    if len(bySupplier[supplierNum]) > limit_per_supplier:
+                        break
     else:
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToSend  backupID %r was found in remote files' % backupID)
         for blockNum in range(localMaxBlockNum + 1):
             remoteData = GetRemoteDataArray(backupID, blockNum)
             remoteParity = GetRemoteParityArray(backupID, blockNum)
@@ -988,6 +995,9 @@ def ScanBlocksToSend(backupID):
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Data'))
                 if remoteParity[supplierNum] != 1 and localParity[supplierNum] == 1:
                     bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Parity'))
+                if limit_per_supplier:
+                    if len(bySupplier[supplierNum]) > limit_per_supplier:
+                        break
     return bySupplier
 
 #------------------------------------------------------------------------------

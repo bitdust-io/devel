@@ -50,6 +50,10 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 4
+
+#------------------------------------------------------------------------------
 from logs import lg
 
 from system import bpio
@@ -78,17 +82,7 @@ _BackupMaxBlockSize = None
 
 def init(base_dir=None):
     """
-    Must be called before all other things here.
-    """
-    global _InitDone
-    if _InitDone:
-        return
-    _InitDone = True
-    _init(base_dir)
-
-
-def _init(base_dir=None):
-    """
+    Must be called before all other things.
     This is called only once, prepare a bunch of things:
 
     - Set the base folder where for program data
@@ -98,11 +92,17 @@ def _init(base_dir=None):
     - Validate most important user settings
     - Check custom folders
     """
-    lg.out(2, 'settings.init')
+    global _InitDone
+    if _InitDone:
+        return
+    _InitDone = True
     deploy.init_base_dir(base_dir)
-    lg.out(2, 'settings.init data location: ' + BaseDir())
+    if _Debug:
+        lg.out(_DebugLevel, 'settings.init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     _checkConfigDirectory()
+    # TODO: keep that here as an example solution for possible manual migrations
+    # migration from uconfig() to config.conf()
     # if not os.path.isdir(ConfigDir()):
     #     uconfig()
     #     bpio._dir_make(ConfigDir())
@@ -125,7 +125,8 @@ def override(key, value):
     Useful when user pass some params via command line - they should override the local settings.
     """
     global _OverrideDict
-    lg.out(4, 'settings.override %s=%s' % (key, value))
+    if _Debug:
+        lg.out(_DebugLevel, 'settings.override %s=%s' % (key, value))
     _OverrideDict[key] = value
 
 
@@ -1538,16 +1539,19 @@ def update_proxy_settings():
             d = net_misc.detect_proxy_settings()
             # setProxySettings(d)
             # enableLocalProxy(d.get('host', '') != '')
-            lg.out(2, 'settings.update_proxy_settings : loaded from ENVIRONMENT')
+            if _Debug:
+                lg.out(_DebugLevel, 'settings.update_proxy_settings : loaded from ENVIRONMENT')
         else:
             d = getProxySettingsDict()
-            lg.out(2, 'settings.update_proxy_settings : loaded from settings')
+            if _Debug:
+                lg.out(_DebugLevel, 'settings.update_proxy_settings : loaded from settings')
         net_misc.set_proxy_settings(d)
-        lg.out(2, '    HOST:      ' + net_misc.get_proxy_host())
-        lg.out(2, '    PORT:      ' + str(net_misc.get_proxy_port()))
-        lg.out(2, '    USERNAME:  ' + net_misc.get_proxy_username())
-        lg.out(2, '    PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
-        lg.out(2, '    SSL:       ' + net_misc.get_proxy_ssl())
+        if _Debug:
+            lg.out(_DebugLevel, '    HOST:      ' + net_misc.get_proxy_host())
+            lg.out(_DebugLevel, '    PORT:      ' + str(net_misc.get_proxy_port()))
+            lg.out(_DebugLevel, '    USERNAME:  ' + net_misc.get_proxy_username())
+            lg.out(_DebugLevel, '    PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
+            lg.out(_DebugLevel, '    SSL:       ' + net_misc.get_proxy_ssl())
 
 #------------------------------------------------------------------------------
 #---OTHER USER CONFIGURATIONS--------------------------------------------------
@@ -2301,15 +2305,18 @@ def RenameBaseDir(newdir):
         lg.exc()
         return False
     deploy.set_base_dir(newdir)
-    lg.out(2, 'settings.RenameBaseDir  directory was copied,  BaseDir=' + BaseDir())
+    if _Debug:
+        lg.out(_DebugLevel, 'settings.RenameBaseDir  directory was copied,  BaseDir=' + BaseDir())
     pathfilename = BaseDirPathFileName()
     bpio.WriteTextFile(pathfilename, deploy.current_base_dir())
-    lg.out(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
+    if _Debug:
+        lg.out(_DebugLevel, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
     logfilename = lg.log_filename()
     lg.close_log_file()
     try:
         bpio.rmdir_recursive(olddir, True)
-        lg.out(4, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
     except:
         lg.exc()
     lg.open_log_file(logfilename, True)
@@ -2327,10 +2334,12 @@ def _checkMetaDataDirectory():
     if os.path.isfile(MetaDataDir()):
         raise Exception('file already exist:' + MetaDataDir())
     if not os.path.exists(MetaDataDir()):
-        lg.out(2, 'settings._checkMetaDataDirectory want to create "metadata" folder in : ' + MetaDataDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings._checkMetaDataDirectory want to create "metadata" folder in : ' + MetaDataDir())
         bpio._dirs_make(MetaDataDir())
         return
-    lg.out(4, 'settings._checkMetaDataDirectory OK , folder already exist: ' + MetaDataDir())
+    if _Debug:
+        lg.out(_DebugLevel, 'settings._checkMetaDataDirectory OK , folder already exist: ' + MetaDataDir())
 
 
 def _checkConfigDirectory():
@@ -2340,10 +2349,12 @@ def _checkConfigDirectory():
     if os.path.isfile(ConfigDir()):
         raise Exception('file already exist:' + ConfigDir())
     if not os.path.exists(ConfigDir()):
-        lg.out(2, 'settings._checkConfigDirectory want to create "config" folder in : ' + ConfigDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings._checkConfigDirectory want to create "config" folder in : ' + ConfigDir())
         bpio._dir_make(ConfigDir())
     else:
-        lg.out(4, 'settings._checkConfigDirectory OK , folder already exist: ' + ConfigDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings._checkConfigDirectory OK , folder already exist: ' + ConfigDir())
     config.init(ConfigDir())
 
 
@@ -2564,7 +2575,8 @@ def _createNotExisingSettings():
         if not config.conf().exist(key):
             value = config.conf().getDefaultValue(key)
             config.conf().setData(key, value)
-            lg.out(2, '    created option %s with default value : [%s]' % (key, value))
+            if _Debug:
+                lg.out(_DebugLevel, '    created option %s with default value : [%s]' % (key, value))
             # print '    created option %s with default value : [%s]' % (key, value)
 
 
@@ -2573,37 +2585,48 @@ def _checkStaticDirectories():
     Check existance of static data folders.
     """
     if not os.path.exists(TempDir()):
-        lg.out(6, 'settings.init want to create folder: ' + TempDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + TempDir())
         os.makedirs(TempDir())
     if not os.path.exists(BandwidthInDir()):
-        lg.out(6, 'settings.init want to create folder: ' + BandwidthInDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthInDir())
         os.makedirs(BandwidthInDir())
     if not os.path.exists(BandwidthOutDir()):
-        lg.out(6, 'settings.init want to create folder: ' + BandwidthOutDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BandwidthOutDir())
         os.makedirs(BandwidthOutDir())
     if not os.path.exists(LogsDir()):
-        lg.out(6, 'settings.init want to create folder: ' + LogsDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + LogsDir())
         os.makedirs(LogsDir())
     if not os.path.exists(IdentityCacheDir()):
-        lg.out(6, 'settings.init want to create folder: ' + IdentityCacheDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + IdentityCacheDir())
         os.makedirs(IdentityCacheDir())
     if not os.path.exists(SuppliersDir()):
-        lg.out(6, 'settings.init want to create folder: ' + SuppliersDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + SuppliersDir())
         os.makedirs(SuppliersDir())
     if not os.path.exists(RatingsDir()):
-        lg.out(6, 'settings.init want to create folder: ' + RatingsDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
     if not os.path.exists(KeyStoreDir()):
-        lg.out(6, 'settings.init want to create folder: ' + KeyStoreDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + KeyStoreDir())
         os.makedirs(KeyStoreDir())
     if not os.path.exists(ChatChannelsDir()):
-        lg.out(6, 'settings.init want to create folder: ' + ChatChannelsDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + ChatChannelsDir())
         os.makedirs(ChatChannelsDir())
     if not os.path.exists(ChatHistoryDir()):
-        lg.out(6, 'settings.init want to create folder: ' + ChatHistoryDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + ChatHistoryDir())
         os.makedirs(ChatHistoryDir())
     if not os.path.exists(BlockchainDir()):
-        lg.out(6, 'settings.init want to create folder: ' + BlockchainDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BlockchainDir())
         os.makedirs(BlockchainDir())
 
 
@@ -2614,17 +2637,20 @@ def _checkCustomDirectories():
     if config.conf().getString('paths/customers', '') == '':
         config.conf().setString('paths/customers', DefaultCustomersDir())
     if not os.path.exists(getCustomersFilesDir()):
-        lg.out(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
     if config.conf().getString('paths/backups', '') == '':
         config.conf().setString('paths/backups', DefaultBackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
-        lg.out(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
     if config.conf().getString('paths/receipts', '') == '':
         config.conf().setString('paths/receipts', DefaultReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
-        lg.out(6, 'settings.init want to create folder: ' + getReceiptsDir())
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + getReceiptsDir())
         os.makedirs(getReceiptsDir())
     if config.conf().getString('paths/restore', '') == '':
         config.conf().setString('paths/restore', DefaultRestoreDir())
