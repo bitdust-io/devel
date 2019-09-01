@@ -412,9 +412,9 @@ class RestoreWorker(automat.Automat):
         if not blockbits:
             self.automat('block-failed')
             return
-        splitindex = blockbits.index(b":")
-        lengthstring = blockbits[0:splitindex]
         try:
+            splitindex = blockbits.index(b":")
+            lengthstring = blockbits[0:splitindex]
             datalength = int(lengthstring)                                        # real length before raidmake/ECC
             blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]     # remove padding from raidmake/ECC
             newblock = encrypted.Unserialize(blockdata, decrypt_key=self.key_id)  # convert to object
