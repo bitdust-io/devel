@@ -52,6 +52,8 @@ from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 10
 
+_PacketLogFileEnabled = True
+
 #------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
@@ -76,6 +78,7 @@ from p2p import commands
 from p2p import network_connector
 
 from userid import my_id
+from userid import global_id
 
 from transport import callback
 from transport import packet_out
@@ -373,6 +376,11 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
             lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
+        if _PacketLogFileEnabled:
+            lg.out(0, '\033[0;49;94mRELAY_OUT %s(%s) with %s bytes from %s to %s\033[0m' % (
+                outpacket.Command, outpacket.PacketID, len(raw_bytes),
+                global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID),),
+                log_name='packet', showtime=True,)
         del raw_bytes
         del block
         del newpacket
