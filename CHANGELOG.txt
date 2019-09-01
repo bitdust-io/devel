@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2019-09-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* prevent sending outdated data to my suppliers (#399)
+* few more critical bug fixes
+
+
+
 2019-08-31 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * minor adjustments in packets logging
