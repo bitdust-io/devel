@@ -136,7 +136,9 @@ def _on_transfer_key_response(response, info, key_id, result):
             lg.info('key %s transfer success to %s' % (key_id, response.OwnerID))
         return None
     if response.Command == commands.Fail():
-        if response.Payload == 'key already registered':
+        err_msg = strng.to_text(response.Payload, errors='ignore')
+        if err_msg.count('key already registered'):
+            # it is okay to have "Fail()" response in that case
             result.callback(response)
             if _Debug:
                 lg.warn('key %s already registered on %s' % (key_id, response.OwnerID))

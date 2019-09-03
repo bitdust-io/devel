@@ -223,10 +223,11 @@ def ParseGlobalID(inp, detect_version=False, as_field=True):
                 pass
     if not result['key_alias']:
         result['key_alias'] = 'master'
-    result['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
-        key_alias=result['key_alias'],
-        user=result['customer'],
-    )
+    if result['customer']:
+        result['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
+            key_alias=result['key_alias'],
+            user=result['customer'],
+        )
     if as_field:
         from userid import id_url
         result['idurl'] = id_url.field(result['idurl'])
@@ -260,6 +261,11 @@ def NormalizeGlobalID(inp, detect_version=False, as_field=True):
     if not g['idhost']:
         from lib import nameurl
         g['idhost'] = nameurl.GetHost(g['idurl'])
+    if not g['key_id']:
+        g['key_id'] = _FORMAT_GLOBAL_ID_KEY_USER.format(
+            key_alias=g['key_alias'],
+            user=g['customer'],
+        )
     if as_field:
         from userid import id_url
         g['idurl'] = id_url.field(g['idurl'])

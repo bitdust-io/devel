@@ -291,6 +291,14 @@ def GetFireHireErrors(suppliers_number):
     global __fire_hire_errors
     return __fire_hire_errors[suppliers_number]
 
+
+def GetCorrectablePercent(suppliers_number):
+    """
+    """
+    global __correctable_errors
+    return 100.0 * (float(__correctable_errors[suppliers_number]) / float(suppliers_number))
+
+
 #------------------------------------------------------------------------------
 
 
@@ -338,13 +346,6 @@ class eccmap:
         self.type = 0             # 0 is data+parity on same nodes, 1 is different
         self.from_memory(self.name)
         self.convert()
-        # lg.out(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
-
-    # def __del__(self):
-    #     try:
-    #         # lg.out(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
-    #     except:
-    #         pass
 
     def __repr__(self):
         return '%s' % self.name

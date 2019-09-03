@@ -54,6 +54,11 @@ from twisted.internet.defer import maybeDeferred
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -73,7 +78,7 @@ from p2p import propagate
 
 _ListFilesOrator = None
 _RequestedListFilesPacketIDs = set()
-_RequestedListFilesCounter = 0
+_ReceivedListFilesCounter = 0
 
 #------------------------------------------------------------------------------
 
@@ -84,7 +89,13 @@ def A(event=None, *args, **kwargs):
     """
     global _ListFilesOrator
     if _ListFilesOrator is None:
-        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4)
+        _ListFilesOrator = ListFilesOrator(
+            name='list_files_orator',
+            state='NO_FILES',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _ListFilesOrator.automat(event, *args, **kwargs)
     return _ListFilesOrator
@@ -113,7 +124,6 @@ class ListFilesOrator(automat.Automat):
     }
 
     def init(self):
-        self.log_transitions = True
         self.ping_required = True
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
 
@@ -162,9 +172,11 @@ class ListFilesOrator(automat.Automat):
         return len(_RequestedListFilesPacketIDs) == 0
 
     def isSomeListFilesReceived(self, *args, **kwargs):
-        global _RequestedListFilesCounter
-        lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
-        return _RequestedListFilesCounter > 0
+        global _ReceivedListFilesCounter
+        lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _ReceivedListFilesCounter)
+        from raid import eccmap
+        critical_suppliers_number = eccmap.GetCorrectableErrors(eccmap.Current().suppliers_number)
+        return _ReceivedListFilesCounter >= critical_suppliers_number
 
     def doReadLocalFiles(self, *args, **kwargs):
         from storage import backup_matrix
@@ -179,16 +191,19 @@ class ListFilesOrator(automat.Automat):
             self._do_request()
 
     def _do_request(self, x=None):
-        global _RequestedListFilesCounter
+        global _ReceivedListFilesCounter
         global _RequestedListFilesPacketIDs
-        _RequestedListFilesCounter = 0
+        _ReceivedListFilesCounter = 0
         _RequestedListFilesPacketIDs.clear()
         for idurl in contactsdb.suppliers():
             if idurl:
                 if online_status.isOnline(idurl):
                     lg.out(6, 'list_files_orator.doRequestRemoteFiles from my supplier %s' % idurl)
-                    p2p_service.SendListFiles(target_supplier=idurl)
-                    _RequestedListFilesPacketIDs.add(idurl)
+                    outpacket = p2p_service.SendListFiles(target_supplier=idurl)
+                    if outpacket:
+                        _RequestedListFilesPacketIDs.add(outpacket.PacketID)
+                    else:
+                        lg.err('failed sending ListFiles() to %r' % idurl)
                 else:
                     lg.out(6, 'list_files_orator.doRequestRemoteFiles SKIP %s is not online' % idurl)
 
@@ -197,14 +212,14 @@ class ListFilesOrator(automat.Automat):
 
 #------------------------------------------------------------------------------
 
-
 def IncomingListFiles(newpacket):
     """
     Called from ``p2p.backup_control`` to pass incoming "ListFiles" packet
     here.
     """
     global _RequestedListFilesPacketIDs
-    global _RequestedListFilesCounter
-    _RequestedListFilesCounter += 1
-    _RequestedListFilesPacketIDs.discard(newpacket.OwnerID)
-    A('inbox-files', newpacket)
+    global _ReceivedListFilesCounter
+    if newpacket.PacketID in _RequestedListFilesPacketIDs:
+        _ReceivedListFilesCounter += 1
+        _RequestedListFilesPacketIDs.discard(newpacket.PacketID)
+        A('inbox-files', newpacket)

@@ -65,6 +65,8 @@ from crypt import my_keys
 
 from storage import backup_fs
 
+from raid import eccmap
+
 from access import key_ring
 
 #------------------------------------------------------------------------------
@@ -116,6 +118,8 @@ class KeysSynchronizer(automat.Automat):
         """
         Method to catch the moment when `keys_synchronizer()` state were changed.
         """
+        if newstate == 'NO_INFO':
+            self.automat('instant')
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
@@ -133,6 +137,17 @@ class KeysSynchronizer(automat.Automat):
                 self.state = 'NO_INFO'
                 self.doInit(*args, **kwargs)
                 self.SyncAgain=False
+        #---NO_INFO---
+        elif self.state == 'NO_INFO':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
+            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
+                self.state = 'RESTORE'
+                self.SyncAgain=False
+                self.doSaveCallback(*args, **kwargs)
+                self.doPrepare(*args, **kwargs)
+                self.doRestoreKeys(*args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'shutdown':
@@ -140,17 +155,6 @@ class KeysSynchronizer(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'disconnected':
                 self.state = 'NO_INFO'
-            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
-                self.state = 'RESTORE'
-                self.SyncAgain=False
-                self.doSaveCallback(*args, **kwargs)
-                self.doPrepare(*args, **kwargs)
-                self.doRestoreKeys(*args, **kwargs)
-        #---NO_INFO---
-        elif self.state == 'NO_INFO':
-            if event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
             elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
                 self.state = 'RESTORE'
                 self.SyncAgain=False
@@ -230,6 +234,7 @@ class KeysSynchronizer(automat.Automat):
         self.keys_to_erase = {}
         self.keys_to_rename = {}
         lookup = backup_fs.ListChildsByPath(path='.keys', recursive=False, )
+        minimum_reliable_percent = eccmap.GetCorrectablePercent(eccmap.Current().suppliers_number)
         for i in lookup:
             if i['path'].endswith('.public'):
                 stored_key_id = i['path'].replace('.public', '').replace('.keys/', '')
@@ -237,7 +242,18 @@ class KeysSynchronizer(automat.Automat):
             else:
                 stored_key_id = i['path'].replace('.private', '').replace('.keys/', '')
                 is_private = True
-            self.stored_keys[stored_key_id] = is_private
+            is_reliable = False
+            for v in i['versions']:
+                try:
+                    reliable = float(v['reliable'].replace('%', ''))
+                except:
+                    lg.exc()
+                    reliable = 0.0
+                if reliable > minimum_reliable_percent:
+                    is_reliable = True
+                    break
+            if is_reliable:
+                self.stored_keys[stored_key_id] = is_private
         if _Debug:
             lg.args(_DebugLevel, stored_keys=len(self.stored_keys))
 
