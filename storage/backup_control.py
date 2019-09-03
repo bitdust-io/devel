@@ -67,8 +67,6 @@ from system import bpio
 from system import tmpfile
 from system import dirsize
 
-from contacts import contactsdb
-
 from lib import misc
 from lib import packetid
 from lib import nameurl
@@ -86,8 +84,12 @@ from crypt import key
 from crypt import my_keys
 
 from userid import global_id
+from userid import id_url
 
 from services import driver
+
+from contacts import contactsdb
+from contacts import identitycache
 
 from storage import backup_fs
 from storage import backup_matrix
@@ -233,6 +235,10 @@ def ReadIndex(text_data, encoding='utf-8'):
                 return False
         else:
             customer_idurl = global_id.GlobalUserToIDURL(customer_id)
+            if not id_url.is_cached(customer_idurl):
+                lg.warn('identity %r is not yet cached, skip reading related catalog items' % customer_idurl)
+                identitycache.immediatelyCaching(customer_idurl, try_other_sources=False)
+                continue
             try:
                 count = backup_fs.Unserialize(
                     json_data[customer_id],
