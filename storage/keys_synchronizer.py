@@ -229,7 +229,7 @@ class KeysSynchronizer(automat.Automat):
         self.saved_count = 0
         self.deleted_count = 0
         self.stored_keys = {}
-        self.keys_to_download = []
+        self.unreliable_keys = {}
         self.keys_to_upload = set()
         self.keys_to_erase = {}
         self.keys_to_rename = {}
@@ -254,13 +254,16 @@ class KeysSynchronizer(automat.Automat):
                     break
             if is_reliable:
                 self.stored_keys[stored_key_id] = is_private
+            else:
+                self.unreliable_keys[stored_key_id] = is_private
         if _Debug:
-            lg.args(_DebugLevel, stored_keys=len(self.stored_keys))
+            lg.args(_DebugLevel, stored_keys=len(self.stored_keys), unreliable_keys=len(self.unreliable_keys))
 
     def doRestoreKeys(self, *args, **kwargs):
         """
         Action method.
         """
+        keys_to_be_restored = []
         for key_id, is_private in self.stored_keys.items():
             latest_key_id = my_keys.latest_key_id(key_id)
             if latest_key_id != key_id:
@@ -273,14 +276,30 @@ class KeysSynchronizer(automat.Automat):
                 if _Debug:
                     lg.out(_DebugLevel, '        skip restoring already known latest key_id=%r' % latest_key_id)
                 continue
-            res = key_ring.do_restore_key(key_id, is_private, wait_result=True)
-            self.restored_count += 1
-            self.keys_to_download.append(res)
+            keys_to_be_restored.append((key_id, is_private, ))
+
         if _Debug:
-            lg.args(_DebugLevel, keys_to_download=len(self.keys_to_download))
-        wait_all_restored = DeferredList(self.keys_to_download, fireOnOneErrback=False, consumeErrors=True)
-        wait_all_restored.addCallback(lambda ok: self.automat('restore-ok', ok))
-        wait_all_restored.addErrback(lambda err: self.automat('error', err))
+            lg.args(_DebugLevel, keys_to_be_restored=len(keys_to_be_restored))
+
+        def _on_restored_one(res, pos, key_id):
+            self.restored_count += 1
+            _do_restore_one(pos+1)
+            return None
+
+        def _on_failed_one(err, pos, key_id):
+            self.automat('error', Exception('failed to restore key %r : %r' % (key_id, err, )))
+            return None
+
+        def _do_restore_one(pos):
+            if pos >= len(keys_to_be_restored):
+                self.automat('restore-ok', True)
+                return
+            key_id, is_private = keys_to_be_restored[pos]
+            res = key_ring.do_restore_key(key_id, is_private, wait_result=True)
+            res.addCallback(_on_restored_one, pos, key_id)
+            res.addErrback(_on_failed_one, pos, key_id)
+
+        _do_restore_one(0)
 
     def doBackupKeys(self, *args, **kwargs):
         """
@@ -358,7 +377,6 @@ class KeysSynchronizer(automat.Automat):
         self.saved_count = 0
         self.deleted_count = 0
         self.stored_keys = None
-        self.keys_to_download = None
         self.keys_to_upload = None
         self.keys_to_erase = None
         self.keys_to_rename = None
