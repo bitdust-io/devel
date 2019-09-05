@@ -55,9 +55,13 @@ class GatewayService(LocalService):
         return True
 
     def start(self):
+        from transport import packet_out
+        from transport import packet_in
         from transport import gateway
         from transport import callback
         from transport import bandwidth
+        packet_out.init()
+        packet_in.init()
         gateway.init()
         bandwidth.init()
         callback.insert_inbox_callback(0, bandwidth.INfile)
@@ -65,6 +69,8 @@ class GatewayService(LocalService):
         return True
 
     def stop(self):
+        from transport import packet_out
+        from transport import packet_in
         from transport import gateway
         from transport import callback
         from transport import bandwidth
@@ -73,4 +79,6 @@ class GatewayService(LocalService):
         d = gateway.stop()
         bandwidth.shutdown()
         gateway.shutdown()
+        packet_out.shutdown()
+        packet_in.shutdown()
         return d

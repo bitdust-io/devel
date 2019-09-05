@@ -65,7 +65,7 @@ from io import BytesIO
 _Debug = False
 _DebugLevel = 10
 
-_PacketLogFileEnabled = True
+_PacketLogFileEnabled = False
 
 #------------------------------------------------------------------------------
 
@@ -115,7 +115,6 @@ from userid import id_url
 _ProxyReceiver = None
 
 #------------------------------------------------------------------------------
-
 
 def GetRouterIDURL():
     global _ProxyReceiver
@@ -346,6 +345,8 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        global _PacketLogFileEnabled
+        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
         callback.add_queue_item_status_callback(self._on_queue_item_status_changed)
 
     def doLoadRouterInfo(self, *args, **kwargs):
@@ -576,6 +577,8 @@ class ProxyReceiver(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _PacketLogFileEnabled
+        _PacketLogFileEnabled = False
         callback.remove_queue_item_status_callback(self._on_queue_item_status_changed)
         self.possible_router_idurl = None
         self.router_idurl = None
@@ -618,7 +621,7 @@ class ProxyReceiver(automat.Automat):
             lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s with %d bytes' % (
                 str(routed_packet), info.proto, info.host, len(data)))
         if _PacketLogFileEnabled:
-            lg.out(0, '  \033[0;49;36m RELAY_IN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+            lg.out(0, '                \033[0;40;33mRELAY_IN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
                 routed_packet.Command, routed_packet.PacketID, info.bytes_received,
                 global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(routed_packet.RemoteID),
                 info.transfer_id), log_name='packet', showtime=True)

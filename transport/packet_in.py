@@ -53,7 +53,7 @@ from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 8
 
-_PacketLogFileEnabled = True
+_PacketLogFileEnabled = False
 
 #------------------------------------------------------------------------------
 
@@ -67,6 +67,7 @@ from twisted.internet import reactor  # @UnresolvedImport
 from logs import lg
 
 from main import settings
+from main import config
 from main import events
 
 from automats import automat
@@ -98,6 +99,20 @@ _History = []
 
 #------------------------------------------------------------------------------
 
+def init():
+    """
+    """
+    global _PacketLogFileEnabled
+    _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+
+
+def shutdown():
+    """
+    """
+    global _PacketLogFileEnabled
+    _PacketLogFileEnabled = False
+
+#------------------------------------------------------------------------------
 
 def get_packets_counter():
     global _PacketsCounter
@@ -183,11 +198,11 @@ def process(newpacket, info):
         if _Debug:
             lg.out(_DebugLevel, '    skip, packet status is : [%s]' % info.status)
         return None
-    if _PacketLogFileEnabled:
-        lg.out(0, '        \033[0;49;92m IN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
-            newpacket.Command, newpacket.PacketID, info.bytes_received,
-            global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
-            info.transfer_id), log_name='packet', showtime=True)
+#     if _PacketLogFileEnabled:
+#         lg.out(0, '        \033[0;49;92mIN %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+#             newpacket.Command, newpacket.PacketID, info.bytes_received,
+#             global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
+#             info.transfer_id), log_name='packet', showtime=True)
     # we must know recipient identity
     if not id_url.is_cached(newpacket.RemoteID):
         d = identitycache.immediatelyCaching(newpacket.RemoteID)
@@ -253,7 +268,18 @@ def handle(newpacket, info):
         lg.exc()
     if not handled and newpacket.Command not in [commands.Ack(), commands.Fail(), commands.Identity(), ]:
         lg.warn('incoming %s from [%s://%s] was NOT HANDLED' % (newpacket, info.proto, info.host))
-    if _Debug:
+        if _PacketLogFileEnabled:
+            lg.out(0, '                \033[1;40;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                newpacket.Command, newpacket.PacketID, info.bytes_received,
+                global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
+                info.transfer_id), log_name='packet', showtime=True)
+    else:
+        if _PacketLogFileEnabled:
+            lg.out(0, '                \033[0;49;32mIN OK %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+                newpacket.Command, newpacket.PacketID, info.bytes_received,
+                global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
+                info.transfer_id), log_name='packet', showtime=True)
+    if _Debug and False:
         history().append({
             'time': newpacket.Date,
             'command': newpacket.Command,
@@ -437,7 +463,7 @@ class PacketIn(automat.Automat):
         from transport import gateway
         self.status, self.bytes_received, self.error_message = args[0]
         if _PacketLogFileEnabled:
-            lg.out(0, '     \033[2;49;32mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
+            lg.out(0, '                \033[2;49;32mRECEIVED %d bytes from %s://%s TID:%s\033[0m' % (
                 self.bytes_received, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
@@ -495,7 +521,7 @@ class PacketIn(automat.Automat):
         p2p_stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.out(18, 'packet_in.doReportFailed WARNING %s with %s' % (self.transfer_id, status))
         if _PacketLogFileEnabled:
-            lg.out(0, '        \033[0;49;31mFAILED with status "%s" from %s://%s TID:%s\033[0m' % (
+            lg.out(0, '                \033[0;49;31mIN FAILED with status "%s" from %s://%s TID:%s\033[0m' % (
                 status, self.proto, self.host, self.transfer_id), log_name='packet', showtime=True)
 
     def doReportCacheFailed(self, *args, **kwargs):
@@ -511,7 +537,7 @@ class PacketIn(automat.Automat):
             msg = 'unknown reason'
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
         if _PacketLogFileEnabled:
-            lg.out(0, '        \033[0;49;31mCACHE FAILED with "%s" for %s TID:%s\033[0m' % (
+            lg.out(0, '                \033[0;49;31mIN CACHE FAILED with "%s" for %s TID:%s\033[0m' % (
                 msg, self.sender_idurl, self.transfer_id), log_name='packet', showtime=True)
 
     def doDestroyMe(self, *args, **kwargs):

@@ -52,7 +52,7 @@ from __future__ import absolute_import
 _Debug = False
 _DebugLevel = 10
 
-_PacketLogFileEnabled = True
+_PacketLogFileEnabled = False
 
 #------------------------------------------------------------------------------
 
@@ -67,6 +67,8 @@ from logs import lg
 
 from lib import nameurl
 from lib import serialization
+
+from main import config
 
 from crypt import encrypted
 from crypt import key
@@ -187,6 +189,8 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
+        global _PacketLogFileEnabled
+        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
         self.traffic_out = 0
         self.pending_packets = []
         self.pending_ping_packets = []
@@ -234,6 +238,8 @@ class ProxySender(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _PacketLogFileEnabled
+        _PacketLogFileEnabled = False
         # network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
         self.traffic_out = 0
         self.pending_packets = []
@@ -377,7 +383,7 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;94mRELAY_OUT %s(%s) with %s bytes from %s to %s\033[0m' % (
+            lg.out(0, '\033[0;49;36mRELAY_OUT %s(%s) with %s bytes from %s to %s\033[0m' % (
                 outpacket.Command, outpacket.PacketID, len(raw_bytes),
                 global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID),),
                 log_name='packet', showtime=True,)
