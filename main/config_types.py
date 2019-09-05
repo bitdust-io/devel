@@ -126,6 +126,7 @@ def defaults():
         'services/entangled-dht/node-id': TYPE_STRING,
         'services/employer/enabled': TYPE_BOOLEAN,
         'services/gateway/enabled': TYPE_BOOLEAN,
+        'services/gateway/packet-log-enabled': TYPE_BOOLEAN,
         'services/http-connections/enabled': TYPE_BOOLEAN,
         'services/http-connections/http-port': TYPE_PORT_NUMBER,
         'services/http-transport/enabled': TYPE_BOOLEAN,

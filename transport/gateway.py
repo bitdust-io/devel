@@ -73,6 +73,8 @@ from io import open
 _Debug = True
 _DebugLevel = 12
 
+_PacketLogFileEnabled = False
+
 #------------------------------------------------------------------------------
 
 import os
@@ -107,12 +109,13 @@ from system import tmpfile
 
 from main import settings
 from main import control
+from main import config
 from main import events
 
 from crypt import signed
 
 from userid import my_id
-from userid import id_url
+from userid import global_id
 
 from contacts import identitycache
 
@@ -137,6 +140,40 @@ _TransportLogFilename = None
 
 #------------------------------------------------------------------------------
 
+def init():
+    """
+    """
+    global _LocalListener
+    global _PacketLogFileEnabled
+    if _Debug:
+        lg.out(4, 'gateway.init')
+    open_transport_log(settings.TransportLog())
+    if _LocalListener:
+        lg.warn('local listener already exist')
+    else:
+        _LocalListener = TransportGateLocalProxy()
+    _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+
+
+def shutdown():
+    """
+    Shut down the gateway, need to stop all transports.
+    """
+    global _LocalListener
+    global _XMLRPCListener
+    global _XMLRPCPort
+    global _XMLRPCURL
+    global _PacketLogFileEnabled
+    if _Debug:
+        lg.out(4, 'gateway.shutdown')
+    if _LocalListener:
+        _LocalListener = None
+    else:
+        lg.warn('local listener not exist')
+    close_transport_log()
+    _PacketLogFileEnabled = False
+
+#------------------------------------------------------------------------------
 
 def transport(proto):
     """
@@ -190,37 +227,6 @@ def last_inbox_time():
 
 #------------------------------------------------------------------------------
 
-
-def init():
-    """
-    """
-    global _LocalListener
-    if _Debug:
-        lg.out(4, 'gateway.init')
-    open_transport_log(settings.TransportLog())
-    if _LocalListener:
-        lg.warn('local listener already exist')
-    else:
-        _LocalListener = TransportGateLocalProxy()
-
-
-def shutdown():
-    """
-    Shut down the gateway, need to stop all transports.
-    """
-    global _LocalListener
-    global _XMLRPCListener
-    global _XMLRPCPort
-    global _XMLRPCURL
-    if _Debug:
-        lg.out(4, 'gateway.shutdown')
-    if _LocalListener:
-        _LocalListener = None
-    else:
-        lg.warn('local listener not exist')
-    close_transport_log()
-
-
 def start():
     """
     """
@@ -268,6 +274,7 @@ def cold_start():
     reactor.callLater(5, packets_timeout_loop)  # @UndefinedVariable
     return result
 
+#------------------------------------------------------------------------------
 
 def stop():
     """
@@ -292,6 +299,7 @@ def stop():
     callback.remove_outbox_filter_callback(on_outbox_packet)
     return result
 
+#------------------------------------------------------------------------------
 
 def verify():
     """
@@ -459,6 +467,13 @@ def inbox(info):
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
     # control.request_update([('packet', newpacket.PacketID)])
+    if _PacketLogFileEnabled:
+        lg.out(0, '                \033[1;49;92mINBOX %s(%s) %s %s for %s\033[0m' % (
+            newpacket.Command, newpacket.PacketID,
+            global_id.UrlToGlobalID(newpacket.OwnerID),
+            global_id.UrlToGlobalID(newpacket.CreatorID),
+            global_id.UrlToGlobalID(newpacket.RemoteID),
+        ), log_name='packet', showtime=True)
     return newpacket
 
 
@@ -495,6 +510,13 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None, respons
             nameurl.GetName(target),
             wide,
         ))
+    if _PacketLogFileEnabled:
+        lg.out(0, '\033[1;49;96mOUTBOX %s(%s) %s %s to %s\033[0m' % (
+            outpacket.Command, outpacket.PacketID,
+            global_id.UrlToGlobalID(outpacket.OwnerID),
+            global_id.UrlToGlobalID(outpacket.CreatorID),
+            global_id.UrlToGlobalID(outpacket.RemoteID),
+        ), log_name='packet', showtime=True)
     return callback.run_outbox_filter_callbacks(
         outpacket,
         wide=wide,

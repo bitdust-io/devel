@@ -33,6 +33,7 @@ module:: lg
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import six
 import os
 import sys
 import time
@@ -240,6 +241,8 @@ def err(message, level=0):
     caller = cod.co_name
     funcname = '%s.%s' % (modul, caller)
     if isinstance(message, Exception):
+        message = str(message)
+    if not isinstance(message, six.text_type):  # @UndefinedVariable
         message = str(message)
     if not message.count(funcname):
         message = ' in %s() : "%s"' % (funcname, message)

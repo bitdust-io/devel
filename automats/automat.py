@@ -488,10 +488,9 @@ class Automat(object):
         global _StateChangedCallback
         if _LogEvents and getattr(self, 'log_events', False) and _Debug:
             if self.log_events or not event_string.startswith('timer-'):
-                self.log(
-                    max(self.debug_level, _DebugLevel),
-                    '%s fired with event "%s", refs=%d' % (
-                        repr(self), event_string, sys.getrefcount(self)))
+#                 self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s", refs=%d' % (
+#                     repr(self), event_string, sys.getrefcount(self)))
+                self.log(max(self.debug_level, _DebugLevel), '%s fired with event "%s"' % (repr(self), event_string, ))
         old_state = self.state
         if self.post:
             try:

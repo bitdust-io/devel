@@ -325,12 +325,12 @@ def IncomingSupplierListFiles(newpacket, list_files_global_id):
         return False
     from supplier import list_files
     from customer import list_files_orator
+    target_key_id = my_keys.latest_key_id(list_files_global_id['key_id'])
+    if not my_keys.is_key_private(target_key_id):
+        lg.warn('key %r not registered, not possible to decrypt ListFiles() packet from %r' % (target_key_id, supplier_idurl, ))
+        return False
     try:
-        block = encrypted.Unserialize(
-            newpacket.Payload,
-            # decrypt_key=my_keys.make_key_id(alias='customer', creator_idurl=my_id.getLocalID(), ),
-            decrypt_key=my_keys.latest_key_id(list_files_global_id['key_id']),
-        )
+        block = encrypted.Unserialize(newpacket.Payload, decrypt_key=target_key_id, )
         input_data = block.Data()
     except:
         lg.exc()
@@ -373,7 +373,7 @@ def IncomingSupplierBackupIndex(newpacket):
     b = encrypted.Unserialize(newpacket.Payload)
     if b is None:
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
-        return
+        return None
     try:
         session_key = key.DecryptLocalPrivateKey(b.EncryptedSessionKey)
         padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData)
@@ -390,16 +390,13 @@ def IncomingSupplierBackupIndex(newpacket):
             inpt.close()
         except:
             pass
-        return
-    if driver.is_on('service_backup_db'):
-        from storage import index_synchronizer
-        index_synchronizer.A('index-file-received', (newpacket, supplier_revision))
+        return None
     if revision() >= supplier_revision:
         inpt.close()
         if _Debug:
             lg.out(_DebugLevel, 'backup_control.IncomingSupplierBackupIndex SKIP, supplier %s revision=%d, local revision=%d' % (
                 newpacket.RemoteID, supplier_revision, revision(), ))
-        return
+        return supplier_revision
     text_data = inpt.read()
     inpt.close()
     if ReadIndex(text_data):
@@ -413,6 +410,7 @@ def IncomingSupplierBackupIndex(newpacket):
                 revision(), newpacket.RemoteID))
     else:
         lg.warn('failed to read catalog index from supplier')
+    return supplier_revision
 
 #------------------------------------------------------------------------------
 

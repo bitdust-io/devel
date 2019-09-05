@@ -62,6 +62,8 @@ from io import BytesIO
 _Debug = True
 _DebugLevel = 10
 
+_PacketLogFileEnabled = False
+
 #------------------------------------------------------------------------------
 
 import time
@@ -90,6 +92,7 @@ from crypt import encrypted
 from userid import identity
 from userid import my_id
 from userid import id_url
+from userid import global_id
 
 from contacts import identitydb
 from contacts import identitycache
@@ -221,6 +224,8 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
+        global _PacketLogFileEnabled
+        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
         # TODO: need to check again...
         # looks like we do not need to load routes at all...
         # proxy router must always start with no routes and keep them in memory
@@ -318,6 +323,8 @@ class ProxyRouter(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _PacketLogFileEnabled
+        _PacketLogFileEnabled = False
         # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         if network_connector.A():
@@ -489,10 +496,19 @@ class ProxyRouter(automat.Automat):
             skip_ack=True,
         )
         if _Debug:
-            lg.out(_DebugLevel, '<<<Relay-IN-OUT %s %s:%s' % (
+            lg.out(_DebugLevel, '<<<Route-IN %s %s:%s' % (
                 str(newpacket), info.proto, info.host,))
             lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
                 receiver_proto, receiver_host, len(raw_data), pout))
+        if _PacketLogFileEnabled:
+            lg.out(0, '        \033[0;49;32mROUTE IN %s(%s) %s %s for %s forwarded to %s at %s://%s\033[0m' % (
+                newpacket.Command, newpacket.PacketID,
+                global_id.UrlToGlobalID(newpacket.OwnerID),
+                global_id.UrlToGlobalID(newpacket.CreatorID),
+                global_id.UrlToGlobalID(newpacket.RemoteID),
+                global_id.UrlToGlobalID(receiver_idurl),
+                receiver_proto, receiver_host,
+            ), log_name='packet', showtime=True)
         del raw_data
         del block
         del newpacket
@@ -597,9 +613,17 @@ class ProxyRouter(automat.Automat):
             skip_ack=True,
         )
         if _Debug:
-            lg.out(_DebugLevel, '>>>Relay-IN-OUT %d bytes from %s at %s://%s :' % (
+            lg.out(_DebugLevel, '>>>Route-OUT %d bytes from %s at %s://%s :' % (
                 len(routed_data), nameurl.GetName(sender_idurl), info.proto, info.host,))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
+        if _PacketLogFileEnabled:
+            lg.out(0, '        \033[0;49;36mROUTE OUT %s(%s) %s %s for %s forwarded to %s\033[0m' % (
+                newpacket.Command, newpacket.PacketID,
+                global_id.UrlToGlobalID(newpacket.OwnerID),
+                global_id.UrlToGlobalID(newpacket.CreatorID),
+                global_id.UrlToGlobalID(newpacket.RemoteID),
+                global_id.UrlToGlobalID(receiver_idurl),
+            ), log_name='packet', showtime=True)
         del routed_data
         del route
         del routed_packet
@@ -622,7 +646,7 @@ class ProxyRouter(automat.Automat):
         if newpacket.RemoteID == my_id.getLocalID():
             # check command type, filter Routed traffic first
             if newpacket.Command == commands.Relay():
-                # look like this is a routed packet addressed to someone else
+                # look like this is a routed packet from node behind my proxy addressed to someone else
                 if newpacket.CreatorID.original() in list(self.routes.keys()):
                     # sent by proxy_sender() from node A : a man behind proxy_router()
                     # addressed to some third node B in outside world - need to route
@@ -632,7 +656,7 @@ class ProxyRouter(automat.Automat):
                     self.automat('routed-outbox-packet-received', (newpacket, info))
                     return True
                 # looks like we do not know this guy, so why he is sending us routed traffic?
-                lg.warn('unknown %s from %s received, no known routes with %s' % (
+                lg.err('unknown %s from %s received, no known routes with %s' % (
                     newpacket, newpacket.CreatorID, newpacket.CreatorID))
                 self.automat('unknown-packet-received', (newpacket, info))
                 return True

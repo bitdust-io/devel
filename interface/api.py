@@ -1614,7 +1614,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                 },
             ))
         return True
-    
+
     def _start_restore():
         if _Debug:
             lg.out(_DebugLevel, 'api.file_download_start._start_restore %s to %s, wait_result=%s' % (
@@ -1637,7 +1637,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             },
         ))
         return True
-    
+
     def _on_share_connected(active_share, callback_id, result):
         if _Debug:
             lg.out(_DebugLevel, 'api.download_start._on_share_connected callback_id=%s result=%s' % (callback_id, result, ))
