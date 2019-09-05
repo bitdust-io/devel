@@ -397,25 +397,32 @@ class IndexSynchronizer(automat.Automat):
         del _IndexSynchronizer
         _IndexSynchronizer = None
 
-    def _on_supplier_response(self, newpacket, pkt_out):
-        if newpacket.Command == commands.Data():
-            wrapped_packet = signed.Unserialize(newpacket.Payload)
-            if not wrapped_packet or not wrapped_packet.Valid():
-                lg.err('incoming Data() is not valid')
-                return
-            from storage import backup_control
-            backup_control.IncomingSupplierBackupIndex(wrapped_packet)
-            # p2p_service.SendAck(newpacket)
-            self.requesting_suppliers.discard(wrapped_packet.RemoteID)
-        elif newpacket.Command == commands.Fail():
-            self.requesting_suppliers.discard(newpacket.OwnerID)
-        else:
-            raise Exception('wrong type of response')
+    def _on_supplier_response(self, newpacket, info, supplier_idurl):
+        wrapped_packet = signed.Unserialize(newpacket.Payload)
+        if not wrapped_packet or not wrapped_packet.Valid():
+            lg.err('incoming Data() is not valid')
+            return
+        from storage import backup_control
+        supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
+        if supplier_idurl != wrapped_packet.RemoteID:
+            lg.err('supplier idurl %r not matching with response packet: %r' % (supplier_idurl, wrapped_packet.RemoteID, ))
+        self.requesting_suppliers.discard(wrapped_packet.RemoteID)
+        if supplier_revision is not None:
+            self.automat('index-file-received', (newpacket, supplier_revision, ))
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s, pending: %d, total: %d' % (
-                newpacket, len(self.requesting_suppliers), self.requested_suppliers_number))
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, pending: %d, total: %d' % (
+                newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
             self.automat('all-responded')
+
+    def _on_supplier_fail(self, newpacket, info, supplier_idurl):
+        self.requesting_suppliers.discard(supplier_idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (
+                newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
+        if len(self.requesting_suppliers) == 0:
+            self.automat('all-responded')
+
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
@@ -447,8 +454,8 @@ class IndexSynchronizer(automat.Automat):
                 packetID,
                 supplierId,
                 callbacks={
-                    commands.Data(): self._on_supplier_response,
-                    commands.Fail(): self._on_supplier_response,
+                    commands.Data(): lambda newpacket, info: self._on_supplier_response(newpacket, info, supplierId),
+                    commands.Fail(): lambda newpacket, info: self._on_supplier_fail(newpacket, info, supplierId),
                 }
             )
             if pkt_out:
