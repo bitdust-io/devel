@@ -100,6 +100,7 @@ from contacts import contactsdb
 
 from transport import callback
 from transport import packet_out
+from transport import packet_in
 from transport import gateway
 
 from p2p import p2p_service
@@ -603,6 +604,20 @@ class ProxyRouter(automat.Automat):
             lg.err('failed to unserialize packet from %s' % newpacket.RemoteID)
             p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
             return
+        if receiver_idurl == my_id.getLocalID():
+            if _Debug:
+                lg.out(_DebugLevel, '        proxy_router() INCOMING packet %r from %s for me' % (
+                    routed_packet, sender_idurl))
+            # node A sending routed data but I am the actual recipient, so need to handle the packet right away
+            packet_in.process(routed_packet, info)
+            return 
+        if receiver_idurl.original() in list(self.routes.keys()) or receiver_idurl.to_bin() in list(self.routes.keys()):
+            # if both node A and node B are behind my proxy I need to send routed packet directly to B
+            if _Debug:
+                lg.out(_DebugLevel, '        proxy_router() ROUTED (same router) packet %s from %s to %s' % (
+                    routed_packet, sender_idurl, receiver_idurl))
+            self.automat('routed-inbox-packet-received', (receiver_idurl, routed_packet, info))
+            return
         # send the packet directly to target user
         # do not pass callbacks, because all response packets from this call will be also re-routed
         pout = packet_out.create(
@@ -647,7 +662,11 @@ class ProxyRouter(automat.Automat):
             # check command type, filter Routed traffic first
             if newpacket.Command == commands.Relay():
                 # look like this is a routed packet from node behind my proxy addressed to someone else
-                if newpacket.CreatorID.original() in list(self.routes.keys()):
+                if (newpacket.CreatorID.original() in list(self.routes.keys()) or
+                    newpacket.CreatorID.to_bin() in list(self.routes.keys()) or 
+                    newpacket.OwnerID.original() in list(self.routes.keys()) or
+                    newpacket.OwnerID.to_bin() in list(self.routes.keys())
+                ):
                     # sent by proxy_sender() from node A : a man behind proxy_router()
                     # addressed to some third node B in outside world - need to route
                     # A is my consumer and B is a recipient which A wants to contact
@@ -663,7 +682,9 @@ class ProxyRouter(automat.Automat):
             # and this is not a Relay packet, Identity
             elif newpacket.Command == commands.Identity():
                 # this is a "propagate" packet from node A addressed to this proxy router
-                if newpacket.CreatorID.original() in list(self.routes.keys()):
+                if (newpacket.CreatorID.original() in list(self.routes.keys()) or
+                    newpacket.CreatorID.to_bin() in list(self.routes.keys())
+                ):
                     # also we need to "reset" overriden identity
                     # return False so that other services also can process that Identity()
                     if _Debug:
@@ -702,7 +723,7 @@ class ProxyRouter(automat.Automat):
                     newpacket, info.sender_idurl, receiver_idurl))
             self.automat('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
-        # uknown RemoteID...
+        # unknown RemoteID...
         # Data() packets may have two cases: a new Data or response with existing Data
         # in that case RemoteID of the Data packet is not pointing to the real recipient
         # need to filter this scenario here and do workaround
