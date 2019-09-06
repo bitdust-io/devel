@@ -59,7 +59,8 @@ class KeysStorageService(LocalService):
         from storage import keys_synchronizer
         keys_synchronizer.A('init')
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err)))
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
+            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_key_generated, 'key-generated')
         events.add_subscriber(self._on_key_registered, 'key-registered')
@@ -183,7 +184,7 @@ class KeysStorageService(LocalService):
         if self.starting_deferred:
             self.starting_deferred.errback(err)
             self.starting_deferred = None
-        lg.err(err)
+        lg.err(err.getErrorMessage() if err else 'synchronize keys failed with unknown reason')
         events.send('my-keys-out-of-sync', data=dict())
         events.send('my-storage-not-ready-yet', data=dict())
         return None
