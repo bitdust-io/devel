@@ -4,6 +4,13 @@ Change Log
 
 2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* trying to solve proxy router issue for nodes behind same proxy router  (#407)
+* bug fix in id_rotator() machine when not enough sources are found need to continue
+
+
+
+2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * bug fix in id_url
 * minor fixes in packet logging
 
