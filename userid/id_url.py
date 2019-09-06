@@ -102,7 +102,16 @@ def init():
         lg.info('using existing folder %r' % _IdentityHistoryDir)
     for one_user_dir in os.listdir(_IdentityHistoryDir):
         one_user_dir_path = os.path.join(_IdentityHistoryDir, one_user_dir)
-        one_user_identity_files = sorted(map(int, os.listdir(one_user_dir_path)))
+        one_user_identity_files = []
+        for one_filename in os.listdir(one_user_dir_path):
+            try:
+                one_ident_number = int(one_filename)
+            except:
+                lg.exc()
+                continue
+            one_user_identity_files.append(one_ident_number)
+        if _Debug:
+            lg.out(_DebugLevel, 'id_url.init   found %d historical records in %r' % (len(one_user_identity_files), one_user_dir_path, ))
         for one_ident_file in one_user_identity_files:
             one_ident_path = os.path.join(one_user_dir_path, strng.to_text(one_ident_file))
             try:
