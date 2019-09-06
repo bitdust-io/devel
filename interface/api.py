@@ -1991,6 +1991,7 @@ def friend_add(idurl_or_global_id, alias=''):
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
         idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
+    idurl = id_url.field(idurl)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
 
@@ -2022,6 +2023,7 @@ def friend_remove(idurl_or_global_id):
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl_or_global_id):
         idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
+    idurl = id_url.field(idurl)
     if not idurl:
         return ERROR('you must specify the global IDURL address where your identity file was last located')
 
@@ -2073,6 +2075,7 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
     from p2p import online_status
     from lib import misc
     from userid import my_id
+    from userid import id_url
     from userid import global_id
     from storage import backup_matrix
     customer_idurl = strng.to_bin(customer_idurl_or_global_id)
@@ -2081,6 +2084,7 @@ def suppliers_list(customer_idurl_or_global_id=None, verbose=False):
     else:
         if global_id.IsValidGlobalUser(customer_idurl):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
+    customer_idurl = id_url.field(customer_idurl)
     results = []
     for (pos, supplier_idurl, ) in enumerate(contactsdb.suppliers(customer_idurl)):
         if not supplier_idurl:
@@ -2140,6 +2144,7 @@ def supplier_replace(index_or_idurl_or_global_id):
         return ERROR('service_employer() is not started')
     from contacts import contactsdb
     from userid import my_id
+    from userid import id_url
     from userid import global_id
     customer_idurl = my_id.getLocalID()
     supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
@@ -2148,6 +2153,7 @@ def supplier_replace(index_or_idurl_or_global_id):
     else:
         if global_id.IsValidGlobalUser(supplier_idurl):
             supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     if supplier_idurl and supplier_idurl and contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         from customer import fire_hire
         fire_hire.AddSupplierToFire(supplier_idurl)
@@ -2168,6 +2174,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         return ERROR('service_employer() is not started')
     from contacts import contactsdb
     from userid import my_id
+    from userid import id_url
     from userid import global_id
     customer_idurl = my_id.getLocalID()
     supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
@@ -2176,9 +2183,11 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     else:
         if global_id.IsValidGlobalUser(supplier_idurl):
             supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
+    supplier_idurl = id_url.field(supplier_idurl)
     new_supplier_idurl = new_supplier_idurl_or_global_id
     if global_id.IsValidGlobalUser(new_supplier_idurl):
         new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl)
+    new_supplier_idurl = id_url.field(new_supplier_idurl)
     if not supplier_idurl or not contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('supplier not found')
     if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
@@ -2211,7 +2220,7 @@ def suppliers_ping():
         return ERROR('service_customer() is not started')
     from p2p import propagate
     propagate.SlowSendSuppliers(0.1)
-    return OK('requests to all suppliers was sent')
+    return OK('sent requests to all suppliers')
 
 
 def suppliers_dht_lookup(customer_idurl_or_global_id):
@@ -2223,6 +2232,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
         return ERROR('service_entangled_dht() is not started')
     from dht import dht_relations
     from userid import my_id
+    from userid import id_url
     from userid import global_id
     customer_idurl = strng.to_bin(customer_idurl_or_global_id)
     if not customer_idurl:
@@ -2230,6 +2240,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     else:
         if global_id.IsValidGlobalUser(customer_idurl):
             customer_idurl = global_id.GlobalUserToIDURL(customer_idurl, as_field=False)
+    customer_idurl = id_url.field(customer_idurl)
     ret = Deferred()
     d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False)
     d.addCallback(lambda result: ret.callback(RESULT(result)))
@@ -2304,9 +2315,11 @@ def customer_reject(idurl_or_global_id):
     from p2p import p2p_service
     from lib import packetid
     from userid import global_id
+    from userid import id_url
     customer_idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(customer_idurl):
         customer_idurl = global_id.GlobalUserToIDURL(customer_idurl)
+    customer_idurl = id_url.field(customer_idurl)
     if not contactsdb.is_customer(customer_idurl):
         return ERROR('customer not found')
     # send packet to notify about service from us was rejected
@@ -2343,7 +2356,7 @@ def customers_ping():
         return ERROR('service_supplier() is not started')
     from p2p import propagate
     propagate.SlowSendCustomers(0.1)
-    return OK('requests to all customers was sent')
+    return OK('sent requests to all customers')
 
 #------------------------------------------------------------------------------
 
@@ -2942,9 +2955,11 @@ def user_ping(idurl_or_global_id, timeout=10, retries=2):
         return ERROR('service_identity_propagate() is not started')
     from p2p import propagate
     from userid import global_id
+    from userid import id_url
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
+    idurl = id_url.field(idurl)
     ret = Deferred()
     d = propagate.PingContact(idurl, timeout=int(timeout), retries=int(retries))
     d.addCallback(
@@ -2963,9 +2978,11 @@ def user_status(idurl_or_global_id):
         return ERROR('service_identity_propagate() is not started')
     from p2p import online_status
     from userid import global_id
+    from userid import id_url
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
+    idurl = id_url.field(idurl)
     if not online_status.isKnown(idurl):
         return ERROR('unknown user')
     # state_machine_inst = contact_status.getInstance(idurl)
@@ -2986,9 +3003,11 @@ def user_status_check(idurl_or_global_id, timeout=5):
         return ERROR('service_identity_propagate() is not started')
     from p2p import online_status
     from userid import global_id
+    from userid import id_url
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
+    idurl = id_url.field(idurl)
     peer_status = online_status.getInstance(idurl)
     if not peer_status:
         return ERROR('failed to check peer status')

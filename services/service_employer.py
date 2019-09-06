@@ -57,7 +57,8 @@ class EmployerService(LocalService):
         from raid import eccmap
         from customer import fire_hire
         self.starting_deferred = Deferred()
-        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (self.service_name, err)))
+        self.starting_deferred.addErrback(lambda err: lg.warn('service %r was not started: %r' % (
+            self.service_name, err.getErrorMessage() if err else 'unknown reason')))
         self.all_suppliers_hired_event_sent = False 
         eccmap.Update()
         fire_hire.A('init')
