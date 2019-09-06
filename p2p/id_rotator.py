@@ -259,6 +259,7 @@ class IdRotator(automat.Automat):
         self.old_sources = my_id.getLocalIdentity().getSources(as_originals=True)
         self.known_servers = known_servers.by_host()
         self.preferred_servers = kwargs.get('preferred_servers', {})
+        self.possible_sources = []
         if _Debug:
             lg.args(_DebugLevel, preferred_servers=self.preferred_servers)
         self.force = kwargs.get('force', False)
@@ -332,6 +333,8 @@ class IdRotator(automat.Automat):
                 if latest_revision <= existing_identity_with_same_name.getRevisionValue():
                     self.new_revision = max(self.new_revision or -1, existing_identity_with_same_name.getRevisionValue() + 1)
                 lg.info('found my own identity on "old" ID server and will re-use that source again: %r' % new_idurl)
+                if new_idurl not in self.possible_sources:
+                    self.possible_sources.append(new_idurl)
                 self.automat('found-new-id-source', new_idurl)
                 return
 
@@ -342,6 +345,8 @@ class IdRotator(automat.Automat):
 
         def _new_idurl_not_exist(err, new_idurl):
             lg.info('found new identity source available to use: %r' % new_idurl)
+            if new_idurl not in self.possible_sources:
+                self.possible_sources.append(new_idurl)
             self.automat('found-new-id-source', new_idurl)
 
         def _server_replied(htmlsrc, host, pos):
@@ -410,10 +415,15 @@ class IdRotator(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, new_sources=new_sources, min_servers=min_servers, max_servers=max_servers)
         if len(new_sources) > max_servers:
-            possible_sources = list(new_sources)
+            all_new_sources = list(new_sources)
             new_sources = new_sources[max(0, len(new_sources) - max_servers):]
-            lg.warn('removed %d identity sources amount, require maximum %d sources' % (
-                len(possible_sources)-len(new_sources), max_servers, ))
+            lg.warn('skip %d identity sources, require maximum %d sources' % (
+                len(all_new_sources)-len(new_sources), max_servers, ))
+        if len(new_sources) < min_servers:
+            additional_sources = self.possible_sources[:min_servers-len(new_sources)]
+            if additional_sources:
+                lg.warn('additional sources to be used: %r' % additional_sources)
+                new_sources.extend(additional_sources)
         if len(new_sources) < min_servers:
             lg.warn('not enough identity sources, need to rotate again')
             self.automat('need-more-sources')
@@ -502,6 +512,7 @@ class IdRotator(automat.Automat):
         self.current_servers = None
         self.preferred_servers = None
         self.known_servers = None
+        self.possible_sources = None
         self.destroy()
 
     def _is_healthy(self, ping_results):
