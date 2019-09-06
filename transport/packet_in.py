@@ -269,7 +269,7 @@ def handle(newpacket, info):
     if not handled and newpacket.Command not in [commands.Ack(), commands.Fail(), commands.Identity(), ]:
         lg.warn('incoming %s from [%s://%s] was NOT HANDLED' % (newpacket, info.proto, info.host))
         if _PacketLogFileEnabled:
-            lg.out(0, '                \033[1;40;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
+            lg.out(0, '                \033[1;49;91mIN NOT HANDLED %s(%s) with %d bytes from %s to %s TID:%s\033[0m' % (
                 newpacket.Command, newpacket.PacketID, info.bytes_received,
                 global_id.UrlToGlobalID(info.sender_idurl), global_id.UrlToGlobalID(newpacket.RemoteID),
                 info.transfer_id), log_name='packet', showtime=True)
