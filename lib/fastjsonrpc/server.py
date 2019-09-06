@@ -65,8 +65,11 @@ class JSONRPCServer(resource.Resource):
         request_json = request.content.read()
         if isinstance(request_json, six.binary_type):
             request_json = request_json.decode(encoding='utf-8')
-        request_content = jsonrpc.decodeRequest(request_json.decode())
-
+        try:
+            request_content = jsonrpc.decodeRequest(request_json)
+        except jsonrpc.JSONRPCError:
+            self._parseError(request)
+            return ''
         return request_content
 
     def _parseError(self, request):
