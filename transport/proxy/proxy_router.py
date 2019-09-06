@@ -225,7 +225,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         global _PacketLogFileEnabled
-        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+        _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
         # TODO: need to check again...
         # looks like we do not need to load routes at all...
         # proxy router must always start with no routes and keep them in memory

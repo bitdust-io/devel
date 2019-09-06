@@ -190,7 +190,7 @@ class ProxySender(automat.Automat):
         Action method.
         """
         global _PacketLogFileEnabled
-        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+        _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
         self.traffic_out = 0
         self.pending_packets = []
         self.pending_ping_packets = []

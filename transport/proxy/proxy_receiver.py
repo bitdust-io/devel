@@ -346,7 +346,7 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         global _PacketLogFileEnabled
-        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+        _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
         callback.add_queue_item_status_callback(self._on_queue_item_status_changed)
 
     def doLoadRouterInfo(self, *args, **kwargs):

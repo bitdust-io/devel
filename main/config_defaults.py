@@ -29,6 +29,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('logs/stream-port', settings.DefaultWebLogPort())
     conf_obj.setDefaultValue('logs/traffic-enabled', 'false')
     conf_obj.setDefaultValue('logs/traffic-port', settings.DefaultWebTrafficPort())
+    conf_obj.setDefaultValue('logs/packet-enabled', 'false')
 
     conf_obj.setDefaultValue('paths/backups', '')
     conf_obj.setDefaultValue('paths/customers', '')
@@ -92,7 +93,6 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/employer/enabled', 'true')
 
     conf_obj.setDefaultValue('services/gateway/enabled', 'true')
-    conf_obj.setDefaultValue('services/gateway/packet-log-enabled', 'false')
 
     conf_obj.setDefaultValue('services/http-connections/enabled', 'false')
     conf_obj.setDefaultValue('services/http-connections/http-port', settings.DefaultHTTPPort())
