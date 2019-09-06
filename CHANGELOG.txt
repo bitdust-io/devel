@@ -2,6 +2,19 @@ Change Log
 ==========
 
 
+
+2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* py3 bug fix in command line interface
+* restore keys one by one instead of all at once (#403)
+* fix in key_ring (#402)
+* fix in backup_rebuilder() automat
+* added main/config_defaults.py to simplify configurations
+* fixes in index_synchronizer() automat
+* added 'services/gateway/packet-log-enabled' config and improved packets logging
+
+
+
 2019-09-01 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in restore_worker()  (#401)
