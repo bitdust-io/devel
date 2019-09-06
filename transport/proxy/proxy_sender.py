@@ -190,7 +190,7 @@ class ProxySender(automat.Automat):
         Action method.
         """
         global _PacketLogFileEnabled
-        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+        _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
         self.traffic_out = 0
         self.pending_packets = []
         self.pending_ping_packets = []
@@ -383,7 +383,7 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;36mRELAY_OUT %s(%s) with %s bytes from %s to %s\033[0m' % (
+            lg.out(0, '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s\033[0m' % (
                 outpacket.Command, outpacket.PacketID, len(raw_bytes),
                 global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID),),
                 log_name='packet', showtime=True,)

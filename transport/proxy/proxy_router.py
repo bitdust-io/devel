@@ -225,7 +225,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         global _PacketLogFileEnabled
-        _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+        _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
         # TODO: need to check again...
         # looks like we do not need to load routes at all...
         # proxy router must always start with no routes and keep them in memory
@@ -618,10 +618,10 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         if _PacketLogFileEnabled:
             lg.out(0, '        \033[0;49;36mROUTE OUT %s(%s) %s %s for %s forwarded to %s\033[0m' % (
-                newpacket.Command, newpacket.PacketID,
-                global_id.UrlToGlobalID(newpacket.OwnerID),
-                global_id.UrlToGlobalID(newpacket.CreatorID),
-                global_id.UrlToGlobalID(newpacket.RemoteID),
+                routed_packet.Command, routed_packet.PacketID,
+                global_id.UrlToGlobalID(routed_packet.OwnerID),
+                global_id.UrlToGlobalID(routed_packet.CreatorID),
+                global_id.UrlToGlobalID(routed_packet.RemoteID),
                 global_id.UrlToGlobalID(receiver_idurl),
             ), log_name='packet', showtime=True)
         del routed_data

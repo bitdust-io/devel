@@ -152,7 +152,7 @@ def init():
         lg.warn('local listener already exist')
     else:
         _LocalListener = TransportGateLocalProxy()
-    _PacketLogFileEnabled = config.conf().getBool('services/gateway/packet-log-enabled')
+    _PacketLogFileEnabled = config.conf().getBool('logs/packet-enabled')
 
 
 def shutdown():
