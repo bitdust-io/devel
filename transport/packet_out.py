@@ -798,7 +798,7 @@ class PacketOut(automat.Automat):
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         if _PacketLogFileEnabled:
             newpacket, _ = args[0]
-            lg.out(0, '\033[1;49;92mREPLY %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+            lg.out(0, '\033[1;49;92mRECEIVE %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
                 newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
