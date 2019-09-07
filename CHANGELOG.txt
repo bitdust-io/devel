@@ -4,6 +4,18 @@ Change Log
 
 2019-09-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* small fix in packets logging
+* improve keys_synchronizer() automat
+* improve list_files_orator() machine
+* populate 'supplier-connected' event from supplier_connector()
+* added services/data-motion/supplier-sending-queue-size config
+* added services/data-motion/supplier-request-queue-size config
+* populate "my-keys-synchronize-failed" event from keys_synchronizer()
+
+
+
+2019-09-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * improved service_my_ip_port()
 * fixed index_synchronizer()
 
