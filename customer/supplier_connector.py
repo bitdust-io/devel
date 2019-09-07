@@ -67,6 +67,7 @@ from automats import automat
 from system import bpio
 
 from main import settings
+from main import events
 
 from lib import strng
 from lib import nameurl
@@ -210,11 +211,11 @@ class SupplierConnector(automat.Automat):
         self._last_known_family_position = None
         self._last_known_ecc_map = None
         self._last_known_family_snapshot = None
+        self._supplier_connected_event_sent = False
         online_status.add_online_status_listener_callback(
             idurl=self.supplier_idurl,
             callback_method=self._on_online_status_state_changed,
         )
-        
         # contact_peer = contact_status.getInstance(self.supplier_idurl)
         # if contact_peer:
         #     contact_peer.addStateChangedCallback(self._on_contact_status_state_changed)
@@ -236,6 +237,17 @@ class SupplierConnector(automat.Automat):
                 settings.SupplierServiceFilename(self.supplier_idurl, customer_idurl=self.customer_idurl),
                 newstate,
             )
+        if newstate == 'CONNECTED' and oldstate != newstate:
+            if not self._supplier_connected_event_sent:
+                self._supplier_connected_event_sent = True
+                events.send('supplier-connected', data=dict(
+                    supplier_idurl=self.supplier_idurl,
+                    customer_idurl=self.customer_idurl,
+                    needed_bytes=self.needed_bytes,
+                    key_id=self.key_id,
+                ))
+        if newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
+            self._supplier_connected_event_sent = False
 
     def set_callback(self, name, cb):
         self.callbacks[name] = cb
