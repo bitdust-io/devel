@@ -52,8 +52,8 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/backups/block-size', diskspace.MakeStringFromBytes(settings.DefaultBackupBlockSize()))
     conf_obj.setDefaultValue('services/backups/max-block-size', diskspace.MakeStringFromBytes(settings.DefaultBackupMaxBlockSize()))
     conf_obj.setDefaultValue('services/backups/max-copies', '2')
-    conf_obj.setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
-    conf_obj.setDefaultValue('services/backups/wait-suppliers-enabled', 'false')
+    conf_obj.setDefaultValue('services/backups/keep-local-copies-enabled', 'true')
+    conf_obj.setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
 
     conf_obj.setDefaultValue('services/blockchain/enabled', 'false')
     conf_obj.setDefaultValue('services/blockchain/host', '127.0.0.1')

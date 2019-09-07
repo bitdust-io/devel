@@ -440,7 +440,15 @@ class FixedTypesConfig(NotifiableConfig):
                      config_types.TYPE_FILE_PATH,
                      config_types.TYPE_COMBO_BOX,
                      config_types.TYPE_PASSWORD, ]:
-            value = self.getString(entryPath)
+            value = self.getString(entryPath) or ''
+            if typ in [config_types.TYPE_FOLDER_PATH, ]:
+                if value:
+                    from system import bpio
+                    if bpio.Windows():
+                        if not value.endswith(u'/') and not value.endswith(u'\\'):
+                            value = value + u'\\'
+                    elif not value.endswith(u'/'):
+                        value = value + u'/'
         else:
             value = self.getData(entryPath)
         return value
