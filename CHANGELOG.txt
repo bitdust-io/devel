@@ -2,6 +2,14 @@ Change Log
 ==========
 
 
+2019-09-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* reduce logs
+* improved service_my_ip_port()
+* fixed index_synchronizer()
+
+
+
 2019-09-06 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * minor logging changes (#408)

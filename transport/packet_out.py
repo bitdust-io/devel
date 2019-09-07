@@ -253,31 +253,33 @@ def search_by_response_packet(newpacket, proto=None, host=None):
         # TODO: to be checked later - need to make sure we identify users correctly
         expected_recipient = [p.outpacket.RemoteID, ]
         if p.outpacket.RemoteID != id_url.field(p.remote_idurl):
-            # outgoing packet was addressed to another node, so that means we need to expect response from another node also
-            expected_recipient.append(id_url.field(p.remote_idurl))
+            # for Retreive() packets I expect response exactly from target node
+            if p.outpacket.Command != commands.Retrieve():
+                # outgoing packet was addressed to another node, so that means we need to expect response from another node also
+                expected_recipient.append(id_url.field(p.remote_idurl))
         matched = False
         if incoming_owner_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_remote_idurl.to_bin():
             if _Debug:
-                lg.out(_DebugLevel, '    matched with incoming owner: %s' % expected_recipient)
+                lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming owner: %s' % expected_recipient)
             matched = True
         if incoming_creator_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_remote_idurl.to_bin():
             if _Debug:
-                lg.out(_DebugLevel, '    matched with incoming creator: %s' % expected_recipient)
+                lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched with incoming creator: %s' % expected_recipient)
             matched = True
-        if incoming_remote_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_owner_idurl.to_bin() and commands.Data() == newpacket.Command:
+        if incoming_remote_idurl in expected_recipient and my_id.getLocalID().to_bin() == incoming_owner_idurl.to_bin() and newpacket.Command == commands.Data():
             if _Debug:
-                lg.out(_DebugLevel, '    matched my own incoming Data with incoming remote: %s' % expected_recipient)
+                lg.out(_DebugLevel, 'packet_out.search_by_response_packet    matched my own incoming Data with incoming remote: %s' % expected_recipient)
             matched = True
         if matched:
             result.append(p)
             if _Debug:
-                lg.out(_DebugLevel, '        found pending outbox [%s/%s/%s]:%s(%s) cb:%s' % (
+                lg.out(_DebugLevel, 'packet_out.search_by_response_packet        found pending outbox [%s/%s/%s]:%s(%s) cb:%s' % (
                     nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
                     nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
                     list(p.callbacks.keys())))
     if len(result) == 0:
         if _Debug:
-            lg.out(_DebugLevel, '        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
         if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
             lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
     return result

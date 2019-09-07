@@ -410,7 +410,7 @@ class ProxyRouter(automat.Automat):
                         )
                         if _Debug:
                             lg.out(_DebugLevel, 'proxy_server.doProcessRequest connected %s routed user, set active session: %s' % (
-                                oldnew.capitalize(), user_connection_info))
+                                oldnew.upper(), user_connection_info))
                     else:
                         lg.err('not found session state machine: %s' % user_connection_info['index'])
                 else:
@@ -422,7 +422,7 @@ class ProxyRouter(automat.Automat):
                     p2p_service.SendAck(request, 'accepted', wide=True))
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %r  contacts=%s' % (
-                        oldnew.capitalize(), user_idurl, self.routes[user_idurl.original()]['contacts'], ))
+                        oldnew.upper(), user_idurl, self.routes[user_idurl.original()]['contacts'], ))
         #--- commands.CancelService()
         elif request.Command == commands.CancelService():
             if user_idurl.original() in list(self.routes.keys()):

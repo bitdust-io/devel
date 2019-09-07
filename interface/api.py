@@ -377,7 +377,6 @@ def identity_backup(destination_filepath):
     from system import bpio
     if not my_id.isLocalIdentityReady():
         return ERROR('local identity is not ready')
-    # TextToSave = strng.to_text(my_id.getLocalID()) + u"\n" + key.MyPrivateKey()
     TextToSave = ''
     for id_source in my_id.getLocalIdentity().getSources(as_originals=True):
         TextToSave += strng.to_text(id_source) + u'\n'
