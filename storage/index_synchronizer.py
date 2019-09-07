@@ -368,17 +368,17 @@ class IndexSynchronizer(automat.Automat):
         """
         Action method.
         """
-        packetID = global_id.MakeGlobalID(
-            customer=my_id.getGlobalID(key_alias='master'),
-            path=settings.BackupIndexFileName(),
-        )
-        from transport import packet_out
-        packetsToCancel = packet_out.search_by_backup_id(packetID)
-        for pkt_out in packetsToCancel:
-            if pkt_out.outpacket.Command == commands.Retrieve():
-                lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
-                    pkt_out, pkt_out.remote_idurl, ))
-                pkt_out.automat('cancel')
+#         packetID = global_id.MakeGlobalID(
+#             customer=my_id.getGlobalID(key_alias='master'),
+#             path=settings.BackupIndexFileName(),
+#         )
+#         from transport import packet_out
+#         packetsToCancel = packet_out.search_by_backup_id(packetID)
+#         for pkt_out in packetsToCancel:
+#             if pkt_out.outpacket.Command == commands.Retrieve():
+#                 lg.warn('sending "cancel" to %s addressed to %s from index_synchronizer' % (
+#                     pkt_out, pkt_out.remote_idurl, ))
+#                 pkt_out.automat('cancel')
 
     def doCheckVersion(self, *args, **kwargs):
         """
@@ -397,16 +397,17 @@ class IndexSynchronizer(automat.Automat):
         del _IndexSynchronizer
         _IndexSynchronizer = None
 
-    def _on_supplier_response(self, newpacket, info, supplier_idurl):
+    def _on_supplier_response(self, newpacket, info):
         wrapped_packet = signed.Unserialize(newpacket.Payload)
+        if _Debug:
+            lg.args(_DebugLevel, newpacket=newpacket, wrapped_packet=wrapped_packet)
         if not wrapped_packet or not wrapped_packet.Valid():
             lg.err('incoming Data() is not valid')
             return
+        supplier_idurl = wrapped_packet.RemoteID
         from storage import backup_control
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
-        if supplier_idurl != wrapped_packet.RemoteID:
-            lg.err('supplier idurl %r not matching with response packet: %r' % (supplier_idurl, wrapped_packet.RemoteID, ))
-        self.requesting_suppliers.discard(wrapped_packet.RemoteID)
+        self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
             self.automat('index-file-received', (newpacket, supplier_revision, ))
         if _Debug:
@@ -415,14 +416,16 @@ class IndexSynchronizer(automat.Automat):
         if len(self.requesting_suppliers) == 0:
             self.automat('all-responded')
 
-    def _on_supplier_fail(self, newpacket, info, supplier_idurl):
+    def _on_supplier_fail(self, newpacket, info):
+        if _Debug:
+            lg.args(_DebugLevel, newpacket=newpacket)
+        supplier_idurl = newpacket.CreatorID
         self.requesting_suppliers.discard(supplier_idurl)
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (
                 newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
             self.automat('all-responded')
-
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
@@ -454,8 +457,8 @@ class IndexSynchronizer(automat.Automat):
                 packetID,
                 supplierId,
                 callbacks={
-                    commands.Data(): lambda newpacket, info: self._on_supplier_response(newpacket, info, supplierId),
-                    commands.Fail(): lambda newpacket, info: self._on_supplier_fail(newpacket, info, supplierId),
+                    commands.Data(): self._on_supplier_response,
+                    commands.Fail(): self._on_supplier_fail,
                 }
             )
             if pkt_out:

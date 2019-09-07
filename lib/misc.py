@@ -111,14 +111,14 @@ def readLocalIP():
     """
     Read local IP stored in the file [BitDust data dir]/metadata/localip.
     """
-    return bpio.ReadTextFile(settings.LocalIPFilename())
+    return bpio.ReadTextFile(settings.LocalIPFilename()).strip()
 
 
 def readExternalIP():
     """
     Read external IP stored in the file [BitDust data dir]/metadata/externalip.
     """
-    return bpio.ReadTextFile(settings.ExternalIPFilename())
+    return bpio.ReadTextFile(settings.ExternalIPFilename()).strip()
 
 
 def readSupplierData(supplier_idurl, filename, customer_idurl):
@@ -131,7 +131,7 @@ def readSupplierData(supplier_idurl, filename, customer_idurl):
     path = settings.SupplierPath(supplier_idurl, customer_idurl, filename)
     if not os.path.isfile(path):
         return ''
-    return bpio.ReadTextFile(path)
+    return bpio.ReadTextFile(path).strip()
 
 
 def writeSupplierData(supplier_idurl, filename, data, customer_idurl):

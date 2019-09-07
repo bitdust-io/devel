@@ -49,8 +49,8 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 4
+_Debug = True
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
@@ -76,8 +76,10 @@ from lib import strng
 from lib import udp
 from lib import net_misc
 from lib import nameurl
+from lib import misc
 
 from main import settings
+from main import events
 
 from services import driver
 
@@ -379,14 +381,14 @@ class StunClient(automat.Automat):
             lg.exc()
             result = ('stun-failed', None, None, [])
             self.my_address = None
+        if _Debug:
+            lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %r' % (len(self.stun_results), result, ))
         if self.my_address:
+            current_external_ip = misc.readExternalIP()
+            if current_external_ip != self.my_address[0]:
+                events.send('my-external-ip-changed', data=dict(old=current_external_ip, new=self.my_address[0], ))
             bpio.WriteTextFile(settings.ExternalIPFilename(), self.my_address[0])
             bpio.WriteTextFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
-        if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %s' % (
-                len(self.stun_results), str(self.my_address)))
-        if _Debug:
-            lg.out(_DebugLevel + 4, '    %s' % str(result))
         for cb in self.callbacks:
             cb(result[0], result[1], result[2], result[3])
         self.callbacks = []
@@ -450,7 +452,7 @@ class StunClient(automat.Automat):
     def _some_nodes_found(self, nodes):
         if _Debug:
             lg.out(_DebugLevel + 4, 'stun_client._some_nodes_found : %r' % nodes)
-        if len(nodes) > 0:
+        if nodes and len(nodes) > 0:
             self.automat('found-some-nodes', nodes)
         else:
             self.automat('dht-nodes-not-found')

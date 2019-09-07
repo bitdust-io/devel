@@ -58,17 +58,25 @@ class NetworkService(LocalService):
         self.task = task.LoopingCall(self._do_check_network_interfaces)
         self.task.start(20, now=False)
         events.add_subscriber(self._on_my_identity_rotate_complete, 'my-identity-rotate-complete')
+        events.add_subscriber(self._on_my_external_ip_changed, 'my-external-ip-changed')
         return True
 
     def stop(self):
         from main import events
         from p2p import network_connector
+        events.remove_subscriber(self._on_my_external_ip_changed, 'my-external-ip-changed')
         events.remove_subscriber(self._on_my_identity_rotate_complete, 'my-identity-rotate-complete')
         network_connector.Destroy()
         if self.task and self.task.running:
             self.task.stop()
             self.task = None
         return True
+
+    def _on_my_external_ip_changed(self, evt):
+        from logs import lg
+        lg.info('my external IP changed %r -> %r need to reconnect' % (evt.data['old'], evt.data['new'], ))
+        from p2p import network_connector
+        network_connector.A('reconnect')
 
     def _on_my_identity_rotate_complete(self, evt):
         from logs import lg

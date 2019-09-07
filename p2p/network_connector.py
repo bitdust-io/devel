@@ -367,28 +367,6 @@ class NetworkConnector(automat.Automat):
     def doSetUp(self, *args, **kwargs):
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetUp')
-
-#         Second attempt
-#         l = []
-#         for service_name in driver.affecting('service_network'):
-#             d = driver.start_single(service_name)
-#             l.append(d)
-# 
-#         def _ok(x):
-#             lg.info('network child services is UP')
-#             self.automat('network-up')
-#             return None
-#         
-#         def _fail(err):
-#             lg.err(err)
-#             self.automat('network-up')
-#             return None
-# 
-#         dl = DeferredList(l, fireOnOneErrback=True, consumeErrors=True)
-#         dl.addCallback(_ok)
-#         d.addErrback(_fail)
-        
-        # First Solution
         if driver.is_on('service_udp_datagrams'):
             from lib import udp
             udp_port = settings.getUDPPort()
@@ -418,28 +396,6 @@ class NetworkConnector(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetDown')
-
-#         Second Approach
-#         l = []
-#         for service_name in driver.affecting('service_network'):
-#             d = driver.stop_single(service_name)
-#             l.append(d)
-# 
-#         def _ok(x):
-#             lg.info('network child services is DOWN')
-#             self.automat('network-down')
-#             return None
-#         
-#         def _fail(err):
-#             lg.err(err)
-#             self.automat('network-down')
-#             return None
-# 
-#         dl = DeferredList(l, fireOnOneErrback=True, consumeErrors=True)
-#         dl.addCallback(_ok)
-#         d.addErrback(_fail)
-
-        # First Solution        
         if driver.is_on('service_gateway'):
             from transport import gateway
             gateway.stop()
