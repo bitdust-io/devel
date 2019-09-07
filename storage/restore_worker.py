@@ -108,6 +108,7 @@ from main import settings
 from main import events
 
 from lib import packetid
+from lib import strng
 
 from contacts import contactsdb
 
@@ -334,6 +335,7 @@ class RestoreWorker(automat.Automat):
         """
         Action method.
         """
+        self._do_block_rebuilding()
         self.known_suppliers = [_f for _f in contactsdb.suppliers(customer_idurl=self.customer_idurl) if _f]
         known_eccmap_dict = {}
         for supplier_idurl in self.known_suppliers:
@@ -558,8 +560,8 @@ class RestoreWorker(automat.Automat):
             tmpfile.throw_out(filename, 'block restored')
         if settings.getBackupsKeepLocalCopies():
             return
-        from . import backup_rebuilder
-        from . import backup_matrix
+        from storage import backup_matrix
+        from storage import backup_rebuilder
         if not backup_rebuilder.ReadStoppedFlag():
             if backup_rebuilder.A().currentBackupID is not None:
                 if backup_rebuilder.A().currentBackupID == self.backup_id:
@@ -644,6 +646,7 @@ class RestoreWorker(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self._do_unblock_rebuilding()
         if data_receiver.A():
             data_receiver.A().removeStateChangedCallback(self._on_data_receiver_state_changed)
         self.OnHandData = None
@@ -655,6 +658,14 @@ class RestoreWorker(automat.Automat):
         self.MyDeferred = None
         self.output_stream = None
         self.destroy()
+
+    def _do_block_rebuilding(self):
+        from storage import backup_rebuilder
+        backup_rebuilder.BlockBackup(self.backup_id)
+
+    def _do_unblock_rebuilding(self):
+        from storage import backup_rebuilder
+        backup_rebuilder.UnBlockBackup(self.backup_id)
 
     def _on_block_restored(self, restored_blocks, filename):
         if _Debug:
@@ -674,7 +685,7 @@ class RestoreWorker(automat.Automat):
         elif result == 'in queue':
             lg.warn('packet already in the request queue')
         elif result == 'failed':
-            if isinstance(NewPacketOrPacketID, six.string_types):
+            if strng.is_string(NewPacketOrPacketID):
                 self.RequestFails.append(NewPacketOrPacketID)
                 self.automat('request-failed', NewPacketOrPacketID)
             else:
@@ -682,7 +693,7 @@ class RestoreWorker(automat.Automat):
                 self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
         else:
             lg.warn('packet %s got not recognized result: %s' % (NewPacketOrPacketID, result, ))
-            if isinstance(NewPacketOrPacketID, six.string_types):
+            if strng.is_string(NewPacketOrPacketID):
                 self.RequestFails.append(NewPacketOrPacketID)
                 self.automat('request-failed', NewPacketOrPacketID)
             else:

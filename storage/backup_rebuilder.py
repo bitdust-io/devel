@@ -109,6 +109,8 @@ from services import driver
 
 _BackupRebuilder = None
 _StoppedFlag = True
+
+_BackupIDsExclude = set()
 _BackupIDsQueue = []
 _BlockRebuildersQueue = []
 
@@ -259,7 +261,10 @@ class BackupRebuilder(automat.Automat):
         Condition method.
         """
         global _BackupIDsQueue
-        return len(_BackupIDsQueue) > 0
+        global _BackupIDsExclude
+        more_backups = set(_BackupIDsQueue)
+        more_backups.difference_update(_BackupIDsExclude)
+        return len(more_backups) > 0
 
     def isMoreBlocks(self, *args, **kwargs):
         """
@@ -278,7 +283,7 @@ class BackupRebuilder(automat.Automat):
         """
         Condition method.
         """
-        return ReadStoppedFlag()  # :-)
+        return ReadStoppedFlag()
 
     def isChanceToRebuild(self, *args, **kwargs):
         """
@@ -316,14 +321,18 @@ class BackupRebuilder(automat.Automat):
         Action method.
         """
         global _BackupIDsQueue
+        global _BackupIDsExclude
+        more_backups = set(_BackupIDsQueue)
+        more_backups.difference_update(_BackupIDsExclude)
         # check it, may be we already fixed all things
-        if len(_BackupIDsQueue) == 0:
+        if len(more_backups) == 0:
             self.automat('backup-ready')
             if _Debug:
                 lg.out(_DebugLevel, 'backup_rebuilder.doOpenNextBackup SKIP, queue is empty')
             return
         # take a first backup from queue to work on it
-        self.currentBackupID = _BackupIDsQueue.pop(0)
+        self.currentBackupID = list(more_backups)[0]
+        # _BackupIDsQueue.pop(self.currentBackupID)
         self.currentCustomerIDURL = packetid.CustomerIDURL(self.currentBackupID)
         if _Debug:
             lg.out(_DebugLevel, 'backup_rebuilder.doOpenNextBackup %s started, queue length: %d' % (
@@ -333,11 +342,14 @@ class BackupRebuilder(automat.Automat):
         """
         Action method.
         """
+        global _BackupIDsQueue
+        global _BackupIDsExclude
         self.workingBlocksQueue = []
         if _Debug:
             lg.out(_DebugLevel, 'backup_rebuilder.doCloseThisBackup %s about to finish, queue length: %d' % (
                 self.currentBackupID, len(_BackupIDsQueue)))
         if self.currentBackupID:
+            RemoveBackupToWork(self.currentBackupID)
             # clear requesting queue from previous task
             from customer import io_throttle
             io_throttle.DeleteBackupRequests(self.currentBackupID)
@@ -701,11 +713,28 @@ def RemoveBackupToWork(backupID):
             lg.out(_DebugLevel, 'backup_rebuilder.RemoveBackupToWork %s not in the queue' % backupID)
 
 
+def BlockBackup(backupID):
+    """
+    """
+    global _BackupIDsExclude
+    _BackupIDsExclude.add(backupID)
+    if A():
+        if A().currentBackupID == backupID:
+            SetStoppedFlag()
+
+
+def UnBlockBackup(backupID):
+    """
+    """
+    global _BackupIDsExclude
+    _BackupIDsExclude.discard(backupID)
+
+
 def IsBackupNeedsWork(backupID):
     """
     """
     global _BackupIDsQueue
-    return backupID in _BackupIDsQueue
+    return backupID in _BackupIDsQueue and backupID not in _BackupIDsExclude
 
 
 def RemoveAllBackupsToWork():
