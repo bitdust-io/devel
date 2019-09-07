@@ -54,6 +54,7 @@ _DebugLevel = 8
 #------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred, DeferredList
+from twisted.python import failure
 
 #------------------------------------------------------------------------------
 
@@ -64,6 +65,8 @@ from automats import automat
 from crypt import my_keys
 
 from storage import backup_fs
+
+from main import events
 
 from raid import eccmap
 
@@ -263,6 +266,12 @@ class KeysSynchronizer(automat.Automat):
         """
         Action method.
         """
+        if self.unreliable_keys:
+            lg.err('not possible to restore some keys, backup copies unreliable')
+            if _Debug:
+                lg.args(_DebugLevel, unreliable_keys=list(self.unreliable_keys.keys()))
+            self.automat('error', Exception('not possible to restore some keys, backup copies unreliable'))
+            return
         keys_to_be_restored = []
         for key_id, is_private in self.stored_keys.items():
             latest_key_id = my_keys.latest_key_id(key_id)
@@ -357,7 +366,7 @@ class KeysSynchronizer(automat.Automat):
         """
         Action method.
         """
-        if args:
+        if args and args[0]:
             err = args[0]
         else:
             err = Exception('failed to synchronize my keys')
@@ -366,6 +375,14 @@ class KeysSynchronizer(automat.Automat):
                 cb.errback(err)
             else:
                 cb(err)
+        err_msg = ''
+        if isinstance(err, failure.Failure):
+            err_msg = err.getErrorMessage()
+        else:
+            err_msg = str(err)
+        events.send('my-keys-synchronize-failed', data=dict(
+            error=err_msg,
+        ))
         self.result_callbacks = []
 
     def doDestroyMe(self, *args, **kwargs):
