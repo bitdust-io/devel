@@ -113,6 +113,7 @@ class EmployerService(LocalService):
             self._do_cleanup_dht_suppliers()
             if not self.all_suppliers_hired_event_sent:
                 lg.info('at the moment all my suppliers are hired and known')
+                self.all_suppliers_hired_event_sent = True
                 events.send('my-suppliers-all-hired', data=dict())
             if self.starting_deferred and not self.starting_deferred.called:
                 self.starting_deferred.callback(True)

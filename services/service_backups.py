@@ -153,7 +153,6 @@ class BackupsService(LocalService):
         from lib import packetid
         from storage import backup_matrix
         backup_matrix.ReadLocalFiles()
-
         remote_files_ids = list(backup_matrix.remote_files().keys())
         for currentID in remote_files_ids:
             latestID = packetid.LatestBackupID(currentID)
