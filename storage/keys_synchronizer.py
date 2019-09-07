@@ -38,6 +38,7 @@ EVENTS:
     * :red:`init`
     * :red:`instant`
     * :red:`restore-ok`
+    * :red:`run`
     * :red:`shutdown`
     * :red:`sync`
 """
@@ -50,6 +51,17 @@ from __future__ import absolute_import
 
 _Debug = True
 _DebugLevel = 8
+
+#------------------------------------------------------------------------------
+
+import sys
+
+#------------------------------------------------------------------------------
+
+try:
+    from twisted.internet import reactor  # @UnresolvedImport
+except:
+    sys.exit('Error initializing twisted.internet.reactor in keys_synchronizer.py')
 
 #------------------------------------------------------------------------------
 
@@ -145,12 +157,14 @@ class KeysSynchronizer(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
+            elif event == 'run':
                 self.state = 'RESTORE'
-                self.SyncAgain=False
-                self.doSaveCallback(*args, **kwargs)
                 self.doPrepare(*args, **kwargs)
                 self.doRestoreKeys(*args, **kwargs)
+            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
+                self.SyncAgain=False
+                self.doSaveCallback(*args, **kwargs)
+                self.doCheckAndRun(*args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'shutdown':
@@ -223,6 +237,16 @@ class KeysSynchronizer(automat.Automat):
         """
         if args and args[0]:
             self.result_callbacks.append(args[0])
+
+    def doCheckAndRun(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        from customer import list_files_orator
+        if list_files_orator.A().state in ['SAW_FILES', 'NO_FILES', ]:
+            self.automat('run')
+        else:
+            reactor.callLater(5, self.automat, 'sync')  # @UndefinedVariable
 
     def doPrepare(self, *args, **kwargs):
         """
@@ -401,4 +425,3 @@ class KeysSynchronizer(automat.Automat):
         global _KeysSynchronizer
         del _KeysSynchronizer
         _KeysSynchronizer = None
-

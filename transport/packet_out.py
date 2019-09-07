@@ -797,8 +797,9 @@ class PacketOut(automat.Automat):
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT with ACK  %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+            newpacket, _ = args[0]
+            lg.out(0, '\033[1;49;92mREPLY %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+                newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
 
@@ -811,7 +812,7 @@ class PacketOut(automat.Automat):
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT no ACK %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)

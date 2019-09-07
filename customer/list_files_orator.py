@@ -184,7 +184,7 @@ class ListFilesOrator(automat.Automat):
         Condition method.
         """
         from customer import supplier_connector
-        for one_supplier_connector in supplier_connector.connectors():
+        for one_supplier_connector in supplier_connector.connectors().values():
             if one_supplier_connector.state not in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE', ]:
                 return True
         return False
