@@ -597,6 +597,10 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
         backupObj.resultDefer.addErrback(backup_result.errback)
         return None
 
+    if not isinstance(res, Deferred):
+        res_defer = Deferred()
+        res_defer.callback(res)
+        res = res_defer
     res.addCallback(_task_started)
     res.addErrback(backup_result.errback)
     return backup_result
