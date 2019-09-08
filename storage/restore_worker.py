@@ -327,8 +327,8 @@ class RestoreWorker(automat.Automat):
         result = self.EccMap.Fixable(self.OnHandData, self.OnHandParity)
         if _Debug:
             lg.out(_DebugLevel, 'restore_worker.isBlockFixable returns %s for block %d' % (result, self.block_number, ))
-            lg.out(_DebugLevel, '    OnHandData: %s' % self.OnHandData)
-            lg.out(_DebugLevel, '    OnHandParity: %s' % self.OnHandParity)
+            lg.out(_DebugLevel, '    OnHandData: %r' % self.OnHandData)
+            lg.out(_DebugLevel, '    OnHandParity: %r' % self.OnHandParity)
         return result
 
     def doInit(self, *args, **kwargs):

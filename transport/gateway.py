@@ -418,7 +418,7 @@ def inbox(info):
         lg.err("bad filename=" + info.filename)
         return None
     try:
-        data = bpio.ReadBinaryFile(info.filename)
+        data = bpio.ReadBinaryFile(info.filename, decode_encoding=None)
     except:
         lg.err("gateway.inbox ERROR reading file " + info.filename)
         return None

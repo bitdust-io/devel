@@ -498,13 +498,15 @@ class eccmap:
             ParitySegs[i] = NodeMap[i]
         return (self.Fixable(DataSegs, ParitySegs))
 
-    def Fixable(self, DataSegs, ParitySegs):
+    def Fixable(self, data_segs, parity_segs):
         """
         Check is reconstruction is possible.
 
         Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is
         don't have 1 is have.
         """
+        DataSegs = data_segs.copy()
+        ParitySegs = parity_segs.copy()
         stillMissing = 0
         for i in range(self.datasegments):
             if DataSegs[i] != 1:
