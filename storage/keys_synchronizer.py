@@ -38,6 +38,7 @@ EVENTS:
     * :red:`init`
     * :red:`instant`
     * :red:`restore-ok`
+    * :red:`run`
     * :red:`shutdown`
     * :red:`sync`
 """
@@ -53,7 +54,19 @@ _DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
+import sys
+
+#------------------------------------------------------------------------------
+
+try:
+    from twisted.internet import reactor  # @UnresolvedImport
+except:
+    sys.exit('Error initializing twisted.internet.reactor in keys_synchronizer.py')
+
+#------------------------------------------------------------------------------
+
 from twisted.internet.defer import Deferred, DeferredList
+from twisted.python import failure
 
 #------------------------------------------------------------------------------
 
@@ -64,6 +77,8 @@ from automats import automat
 from crypt import my_keys
 
 from storage import backup_fs
+
+from main import events
 
 from raid import eccmap
 
@@ -142,12 +157,14 @@ class KeysSynchronizer(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
+            elif event == 'run':
                 self.state = 'RESTORE'
-                self.SyncAgain=False
-                self.doSaveCallback(*args, **kwargs)
                 self.doPrepare(*args, **kwargs)
                 self.doRestoreKeys(*args, **kwargs)
+            elif event == 'sync' or ( event == 'instant' and self.SyncAgain ):
+                self.SyncAgain=False
+                self.doSaveCallback(*args, **kwargs)
+                self.doCheckAndRun(*args, **kwargs)
         #---IN_SYNC!---
         elif self.state == 'IN_SYNC!':
             if event == 'shutdown':
@@ -221,6 +238,16 @@ class KeysSynchronizer(automat.Automat):
         if args and args[0]:
             self.result_callbacks.append(args[0])
 
+    def doCheckAndRun(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        from customer import list_files_orator
+        if list_files_orator.A().state in ['SAW_FILES', 'NO_FILES', ]:
+            self.automat('run')
+        else:
+            reactor.callLater(5, self.automat, 'sync')  # @UndefinedVariable
+
     def doPrepare(self, *args, **kwargs):
         """
         Action method.
@@ -263,6 +290,12 @@ class KeysSynchronizer(automat.Automat):
         """
         Action method.
         """
+        if self.unreliable_keys:
+            lg.err('not possible to restore some keys, backup copies unreliable')
+            if _Debug:
+                lg.args(_DebugLevel, unreliable_keys=list(self.unreliable_keys.keys()))
+            self.automat('error', Exception('not possible to restore some keys, backup copies unreliable'))
+            return
         keys_to_be_restored = []
         for key_id, is_private in self.stored_keys.items():
             latest_key_id = my_keys.latest_key_id(key_id)
@@ -357,7 +390,7 @@ class KeysSynchronizer(automat.Automat):
         """
         Action method.
         """
-        if args:
+        if args and args[0]:
             err = args[0]
         else:
             err = Exception('failed to synchronize my keys')
@@ -366,6 +399,14 @@ class KeysSynchronizer(automat.Automat):
                 cb.errback(err)
             else:
                 cb(err)
+        err_msg = ''
+        if isinstance(err, failure.Failure):
+            err_msg = err.getErrorMessage()
+        else:
+            err_msg = str(err)
+        events.send('my-keys-synchronize-failed', data=dict(
+            error=err_msg,
+        ))
         self.result_callbacks = []
 
     def doDestroyMe(self, *args, **kwargs):
@@ -384,4 +425,3 @@ class KeysSynchronizer(automat.Automat):
         global _KeysSynchronizer
         del _KeysSynchronizer
         _KeysSynchronizer = None
-

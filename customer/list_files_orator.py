@@ -44,6 +44,7 @@ EVENTS:
     * :red:`init`
     * :red:`local-files-done`
     * :red:`need-files`
+    * :red:`supplier-connected`
     * :red:`timer-10sec`
 """
 
@@ -73,6 +74,9 @@ from p2p import p2p_service
 from p2p import online_status
 from p2p import p2p_connector
 from p2p import propagate
+
+from userid import my_id
+from userid import id_url
 
 #------------------------------------------------------------------------------
 
@@ -126,8 +130,10 @@ class ListFilesOrator(automat.Automat):
     def init(self):
         self.ping_required = True
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
+        events.add_subscriber(self._on_supplier_connected, 'supplier-connected')
 
     def shutdown(self):
+        events.remove_subscriber(self._on_supplier_connected, 'supplier-connected')
         events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
@@ -150,14 +156,16 @@ class ListFilesOrator(automat.Automat):
         elif self.state == 'LOCAL_FILES':
             if event == 'local-files-done' and p2p_connector.A().state is 'CONNECTED':
                 self.state = 'REMOTE_FILES'
-                self.doRequestRemoteFiles(*args, **kwargs)
+                self.doRequestFilesAllSuppliers(*args, **kwargs)
             elif event == 'local-files-done' and p2p_connector.A().state is not 'CONNECTED':
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
-            if (event == 'timer-10sec' and self.isSomeListFilesReceived(*args, **kwargs)) or (event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs)):
+            if ( event == 'timer-10sec' and self.isEnoughListFilesReceived(*args, **kwargs) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(*args, **kwargs) ):
                 self.state = 'SAW_FILES'
-            elif event == 'timer-10sec' and not self.isSomeListFilesReceived(*args, **kwargs):
+            elif event == 'supplier-connected':
+                self.doRequestFilesOneSupplier(*args, **kwargs)
+            elif event == 'timer-10sec' and not self.isEnoughListFilesReceived(*args, **kwargs) and not self.isSomeConnecting(*args, **kwargs):
                 self.state = 'NO_FILES'
         #---SAW_FILES---
         elif self.state == 'SAW_FILES':
@@ -171,7 +179,20 @@ class ListFilesOrator(automat.Automat):
         lg.out(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
         return len(_RequestedListFilesPacketIDs) == 0
 
-    def isSomeListFilesReceived(self, *args, **kwargs):
+    def isSomeConnecting(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        from customer import supplier_connector
+        for one_supplier_connector in supplier_connector.connectors().values():
+            if one_supplier_connector.state not in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE', ]:
+                return True
+        return False
+
+    def isEnoughListFilesReceived(self, *args, **kwargs):
+        """
+        Condition method.
+        """
         global _ReceivedListFilesCounter
         lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _ReceivedListFilesCounter)
         from raid import eccmap
@@ -183,12 +204,27 @@ class ListFilesOrator(automat.Automat):
         maybeDeferred(backup_matrix.ReadLocalFiles).addBoth(
             lambda x: self.automat('local-files-done'))
 
-    def doRequestRemoteFiles(self, *args, **kwargs):
+    def doRequestFilesAllSuppliers(self, *args, **kwargs):
+        """
+        Action method.
+        """
         if self.ping_required:
             self.ping_required = False
             propagate.ping_suppliers().addBoth(self._do_request)
         else:
             self._do_request()
+
+    def doRequestFilesOneSupplier(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        supplier_idurl = args[0]
+        lg.out(6, 'list_files_orator.doRequestFilesOneSupplier from %s' % supplier_idurl)
+        outpacket = p2p_service.SendListFiles(target_supplier=supplier_idurl)
+        if outpacket:
+            _RequestedListFilesPacketIDs.add(outpacket.PacketID)
+        else:
+            lg.err('failed sending ListFiles() to %r' % supplier_idurl)
 
     def _do_request(self, x=None):
         global _ReceivedListFilesCounter
@@ -198,17 +234,21 @@ class ListFilesOrator(automat.Automat):
         for idurl in contactsdb.suppliers():
             if idurl:
                 if online_status.isOnline(idurl):
-                    lg.out(6, 'list_files_orator.doRequestRemoteFiles from my supplier %s' % idurl)
+                    lg.out(6, 'list_files_orator._do_request  ListFiles() from my supplier %s' % idurl)
                     outpacket = p2p_service.SendListFiles(target_supplier=idurl)
                     if outpacket:
                         _RequestedListFilesPacketIDs.add(outpacket.PacketID)
                     else:
                         lg.err('failed sending ListFiles() to %r' % idurl)
                 else:
-                    lg.out(6, 'list_files_orator.doRequestRemoteFiles SKIP %s is not online' % idurl)
+                    lg.warn('skip sending ListFiles() because %s is not online' % idurl)
 
     def _on_my_identity_rotated(self, evt):
         self.ping_required = True
+
+    def _on_supplier_connected(self, evt):
+        if id_url.field(evt.data['customer_idurl']) == my_id.getLocalID():
+            self.automat('supplier-connected', evt.data['supplier_idurl'])
 
 #------------------------------------------------------------------------------
 

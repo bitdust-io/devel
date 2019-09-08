@@ -343,8 +343,8 @@ class RaidWorker(automat.Automat):
         global _MODULES
 
         if len(self.activetasks) >= self.processor.get_ncpus():
-            lg.warn('SKIP active=%d cpus=%d' % (
-                    len(self.activetasks), self.processor.get_ncpus()))
+            # lg.warn('SKIP active=%d cpus=%d' % (
+            #         len(self.activetasks), self.processor.get_ncpus()))
             return
 
         try:

@@ -797,10 +797,17 @@ class PacketOut(automat.Automat):
         """
         callback.run_queue_item_status_callbacks(self, 'finished', '')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT with ACK  %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
-                self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
-                global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
-                [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
+            newpacket, _ = args[0]
+            if newpacket.Command in [commands.Fail(), ]:
+                lg.out(0, '\033[0;49;31mRECEIVE %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+                    newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                    global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
+                    [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
+            else:
+                lg.out(0, '\033[1;49;92mRECEIVE %s on %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+                    newpacket.Command, self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
+                    global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
+                    [i.transfer_id for i in self.results]), log_name='packet', showtime=True)
 
     def doReportDoneNoAck(self, *args, **kwargs):
         """
@@ -811,7 +818,7 @@ class PacketOut(automat.Automat):
         else:
             callback.run_queue_item_status_callbacks(self, 'finished', 'unanswered')
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;95mOUT no ACK %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
+            lg.out(0, '\033[0;49;95mOUT %s(%s) with %s bytes from %s to %s TID:%r\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl),
                 [i.transfer_id for i in self.results]), log_name='packet', showtime=True)

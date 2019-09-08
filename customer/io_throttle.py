@@ -51,7 +51,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -76,6 +76,7 @@ from lib import nameurl
 from lib import packetid
 
 from main import settings
+from main import config
 
 from userid import my_id
 from userid import global_id
@@ -277,9 +278,8 @@ class SupplierQueue:
 
         # all sends we'll hold on to, only several will be active,
         # but will hold onto the next ones to be sent
-        # self.fileSendQueueMaxLength = 32
         # active files
-        self.fileSendMaxLength = 2
+        self.fileSendMaxLength = config.conf().getInt('services/data-motion/supplier-sending-queue-size', 4)
         # an array of packetId, preserving first in first out,
         # of which the first maxLength are the "active" sends
         self.fileSendQueue = []
@@ -289,9 +289,8 @@ class SupplierQueue:
 
         # all requests we'll hold on to,
         # only several will be active, but will hold onto the next ones to be sent
-        # self.fileRequestQueueMaxLength = 6
         # active requests
-        self.fileRequestMaxLength = 2
+        self.fileRequestMaxLength = config.conf().getInt('services/data-motion/supplier-request-queue-size', 4)
         # an array of PacketIDs, preserving first in first out
         self.fileRequestQueue = []
         # FileDown's, indexed by PacketIDs

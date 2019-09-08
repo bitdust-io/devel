@@ -121,6 +121,8 @@ def defaults():
         'services/customer-patrol/enabled': TYPE_BOOLEAN,
         'services/customer-support/enabled': TYPE_BOOLEAN,
         'services/data-motion/enabled': TYPE_BOOLEAN,
+        'services/data-motion/supplier-request-queue-size': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/data-motion/supplier-sending-queue-size': TYPE_NON_ZERO_POSITIVE_INTEGER,
         'services/entangled-dht/enabled': TYPE_BOOLEAN,
         'services/entangled-dht/udp-port': TYPE_PORT_NUMBER,
         'services/entangled-dht/known-nodes': TYPE_STRING,
