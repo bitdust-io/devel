@@ -256,6 +256,7 @@ class KeysSynchronizer(automat.Automat):
         self.saved_count = 0
         self.deleted_count = 0
         self.stored_keys = {}
+        self.not_stored_keys = {}
         self.unreliable_keys = {}
         self.keys_to_upload = set()
         self.keys_to_erase = {}
@@ -282,9 +283,17 @@ class KeysSynchronizer(automat.Automat):
             if is_reliable:
                 self.stored_keys[stored_key_id] = is_private
             else:
-                self.unreliable_keys[stored_key_id] = is_private
+                if is_private and my_keys.is_key_private(stored_key_id):
+                    self.not_stored_keys[stored_key_id] = is_private
+                elif not is_private and my_keys.is_key_registered(stored_key_id):
+                    self.not_stored_keys[stored_key_id] = is_private
+                else:
+                    self.unreliable_keys[stored_key_id] = is_private
         if _Debug:
-            lg.args(_DebugLevel, stored_keys=len(self.stored_keys), unreliable_keys=len(self.unreliable_keys))
+            lg.args(_DebugLevel,
+                    stored_keys=len(self.stored_keys),
+                    not_stored_keys=list(self.not_stored_keys.keys()),
+                    unreliable_keys=len(self.unreliable_keys))
 
     def doRestoreKeys(self, *args, **kwargs):
         """
@@ -345,7 +354,7 @@ class KeysSynchronizer(automat.Automat):
             if new_key_id in self.stored_keys and old_key_id in self.stored_keys:
                 self.keys_to_erase[old_key_id] = is_private
         for key_id in my_keys.known_keys().keys():
-            if key_id not in self.stored_keys:
+            if key_id not in self.stored_keys or key_id in self.not_stored_keys:
                 self.keys_to_upload.add(key_id)
         keys_saved = []
         for key_id in self.keys_to_upload:

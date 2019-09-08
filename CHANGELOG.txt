@@ -2,6 +2,21 @@ Change Log
 ==========
 
 
+2019-09-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in keys_synchronizer()
+
+
+
+2019-09-08 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* raising "my-keys-synchronize-failed" event from keys_synchronizer() (#411)
+* prevent backup_rebuilder() and restore_worker() automats to work on same file at once
+* added slashes to folder paths in settings
+* solving issues with keys_synchronizer() automat (#64)
+
+
+
 2019-09-07 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * small fix in packets logging
