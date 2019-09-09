@@ -496,7 +496,7 @@ class eccmap:
         for i in range(0, self.datasegments):
             DataSegs[i] = NodeMap[i]
             ParitySegs[i] = NodeMap[i]
-        return (self.Fixable(DataSegs, ParitySegs))
+        return self.Fixable(DataSegs, ParitySegs)
 
     def Fixable(self, data_segs, parity_segs):
         """
@@ -505,8 +505,8 @@ class eccmap:
         Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is
         don't have 1 is have.
         """
-        DataSegs = data_segs.copy()
-        ParitySegs = parity_segs.copy()
+        DataSegs = list(data_segs)
+        ParitySegs = list(parity_segs)
         stillMissing = 0
         for i in range(self.datasegments):
             if DataSegs[i] != 1:
