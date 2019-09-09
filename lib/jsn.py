@@ -258,11 +258,14 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
         )
     except Exception as exc:
         if _Debug:
-            import os
-            import tempfile
-            fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
-            os.write(fd, s)
-            os.close(fd)
+            try:
+                import os
+                import tempfile
+                fd, _ = tempfile.mkstemp(suffix='err', prefix='jsn_loads_', text=True)
+                os.write(fd, s)
+                os.close(fd)
+            except:
+                pass
         raise exc
 
 #------------------------------------------------------------------------------
