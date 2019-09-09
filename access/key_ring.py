@@ -539,10 +539,10 @@ def do_backup_key(key_id, keys_folder=None, wait_result=False):
         keys_folder = settings.KeyStoreDir()
     if my_keys.is_key_private(key_id):
         local_key_filepath = os.path.join(keys_folder, '%s.private' % key_id)
-        remote_path_for_key = os.path.join('.keys', '%s.private' % key_id)
+        remote_path_for_key = '.keys/%s.private' % key_id
     else:
         local_key_filepath = os.path.join(keys_folder, '%s.public' % key_id)
-        remote_path_for_key = os.path.join('.keys', '%s.public' % key_id)
+        remote_path_for_key = '.keys/%s.public' % key_id
     global_key_path = global_id.MakeGlobalID(
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_exists(global_key_path)
@@ -620,9 +620,9 @@ def do_restore_key(key_id, is_private, keys_folder=None, wait_result=False):
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
     if is_private:
-        remote_path_for_key = os.path.join('.keys', '%s.private' % key_id)
+        remote_path_for_key = '.keys/%s.private' % key_id
     else:
-        remote_path_for_key = os.path.join('.keys', '%s.public' % key_id)
+        remote_path_for_key = '.keys/%s.public' % key_id
     global_key_path = global_id.MakeGlobalID(
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     ret = api.file_download_start(
@@ -673,9 +673,9 @@ def do_delete_key(key_id, is_private):
     Remove given key from my suppliers nodes.
     """
     if is_private:
-        remote_path_for_key = os.path.join('.keys', '%s.private' % key_id)
+        remote_path_for_key = '.keys/%s.private' % key_id
     else:
-        remote_path_for_key = os.path.join('.keys', '%s.public' % key_id)
+        remote_path_for_key = '.keys/%s.public' % key_id
     global_key_path = global_id.MakeGlobalID(
         key_alias='master', customer=my_id.getGlobalID(), path=remote_path_for_key)
     res = api.file_delete(global_key_path)
