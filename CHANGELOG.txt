@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2019-09-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* share pub key from customer to supplier if key is missing for shared access
+* also make sure local backup files are removed after upload/download finished (#415)
+
+
+
 2019-09-09 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * few more fixes for file uploading / downloading (#413)
