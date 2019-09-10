@@ -77,6 +77,8 @@ from lib import misc
 
 from lib import packetid
 
+from system import bpio
+
 from contacts import contactsdb
 
 from userid import my_id
@@ -87,6 +89,7 @@ from main import settings
 from p2p import online_status
 
 from customer import io_throttle
+from customer import list_files_orator
 
 #------------------------------------------------------------------------------
 
@@ -319,6 +322,9 @@ class DataSender(automat.Automat):
         """
         Action method.
         """
+        if not list_files_orator.is_synchronized():
+            # always make sure we have a very fresh info about remote files before take any actions
+            return
         # we want to remove files for this block
         # because we only need them during rebuilding
         if settings.getBackupsKeepLocalCopies() is True:
@@ -338,8 +344,7 @@ class DataSender(automat.Automat):
         from storage import backup_rebuilder
         if _Debug:
             lg.out(_DebugLevel, 'data_sender.doRemoveUnusedFiles')
-        for backupID in misc.sorted_backup_ids(
-                list(backup_matrix.local_files().keys())):
+        for backupID in misc.sorted_backup_ids(list(backup_matrix.local_files().keys())):
             if restore_monitor.IsWorking(backupID):
                 if _Debug:
                     lg.out(_DebugLevel, '        %s : SKIP, because restoring' % backupID)
@@ -354,8 +359,18 @@ class DataSender(automat.Automat):
                         if _Debug:
                             lg.out(_DebugLevel, '        %s : SKIP, because rebuilding is in process' % backupID)
                         continue
-            packets = backup_matrix.ScanBlocksToRemove(
-                backupID, settings.getGeneralWaitSuppliers())
+            if backupID not in backup_matrix.remote_files():
+                if _Debug:
+                    lg.out(_DebugLevel, '        going to erase %s because not found in remote files' % backupID)
+                customer, pathID, version = packetid.SplitBackupID(backupID)
+                dirpath = os.path.join(settings.getLocalBackupsDir(), customer, pathID, version)
+                if os.path.isdir(dirpath):
+                    try:
+                        count += bpio.rmdir_recursive(dirpath, ignore_errors=True)
+                    except:
+                        lg.exc()
+                continue
+            packets = backup_matrix.ScanBlocksToRemove(backupID, check_all_suppliers=settings.getGeneralWaitSuppliers())
             for packetID in packets:
                 customer, pathID = packetid.SplitPacketID(packetID)
                 filename = os.path.join(settings.getLocalBackupsDir(), customer, pathID)

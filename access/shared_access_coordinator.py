@@ -58,6 +58,8 @@ from logs import lg
 
 from automats import automat
 
+from lib import strng
+
 from main import events
 
 from dht import dht_relations
@@ -65,9 +67,12 @@ from dht import dht_relations
 from userid import global_id
 from userid import id_url
 
+from p2p import commands
 from p2p import p2p_service
 
 from contacts import identitycache
+
+from access import key_ring
 
 from storage import backup_fs
 
@@ -392,10 +397,15 @@ class SharedAccessCoordinator(automat.Automat):
         """
         Action method.
         """
+        supplier_idurl = args[0]
         p2p_service.SendListFiles(
-            target_supplier=args[0],
+            target_supplier=supplier_idurl,
             customer_idurl=self.customer_idurl,
             key_id=self.key_id,
+            callbacks={
+                commands.Files(): lambda r, i: self._on_list_files_response(r, i, self.customer_idurl, supplier_idurl, self.key_id),
+                commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, self.customer_idurl, supplier_idurl, self.key_id),
+            }
         )
 
     def doProcessCustomerListFiles(self, *args, **kwargs):
@@ -475,3 +485,29 @@ class SharedAccessCoordinator(automat.Automat):
             sc.remove_callback('shared_access_coordinator')
         if newstate == 'CONNECTED':
             self.automat('supplier-connected', idurl)
+
+    def _on_list_files_response(self, response, info, customer_idurl, supplier_idurl, key_id):
+        # TODO: remember the response and prevent sending ListFiles() too often
+        if _Debug:
+            lg.args(_DebugLevel, response=response, customer_idurl=customer_idurl, supplier_idurl=supplier_idurl, key_id=key_id)
+
+    def _on_list_files_failed(self, response, info, customer_idurl, supplier_idurl, key_id):
+        if strng.to_text(response.Payload) == 'key not registered':
+            lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (
+                supplier_idurl, customer_idurl, key_id, ))
+            result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False)
+            result.addCallback(lambda r: self._on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
+            result.addErrback(lambda err: lg.err('failed sending key %r : %r' % (key_id, err, )))
+        else:
+            lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (
+                key_id, customer_idurl, supplier_idurl, ))
+        return None
+
+    def _on_key_transfer_success(self, customer_idurl, supplier_idurl, key_id):
+        if _Debug:
+            lg.out(_DebugLevel, 'shared_access_coordinator._on_key_transfer_success public key %r shared to supplier %r of customer %r, now will send ListFiles() again' % (key_id, supplier_idurl, customer_idurl))
+        p2p_service.SendListFiles(
+            target_supplier=supplier_idurl,
+            customer_idurl=customer_idurl,
+            key_id=key_id,
+        )
