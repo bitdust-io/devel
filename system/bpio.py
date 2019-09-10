@@ -285,6 +285,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
     will continue even if some errors happens. Method ``pre_callback``
     can be used to decide before remove the file.
     """
+    counter = 0
     for name in os.listdir(dirpath):
         full_name = os.path.join(dirpath, name)
         # on Windows, if we don't have write permission we can't remove
@@ -295,7 +296,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
             except:
                 continue
         if os.path.isdir(full_name):
-            rmdir_recursive(full_name, ignore_errors, pre_callback)
+            counter += rmdir_recursive(full_name, ignore_errors, pre_callback)
         else:
             if pre_callback:
                 if not pre_callback(full_name):
@@ -303,22 +304,25 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
             if os.path.isfile(full_name):
                 if not ignore_errors:
                     os.remove(full_name)
+                    counter += 1
                 else:
                     try:
                         os.remove(full_name)
-                    except:
-                        lg.out(6, 'bpio.rmdir_recursive can not remove file ' + full_name)
+                        counter += 1
+                    except Exception as exc:
+                        lg.err('can not remove file %r : %r' % (full_name, exc, ))
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
-            return
+            return counter
     if not ignore_errors:
         os.rmdir(dirpath)
     else:
         try:
             os.rmdir(dirpath)
-        except:
-            lg.out(6, 'bpio.rmdir_recursive can not remove dir ' + dirpath)
+        except Exception as exc:
+            lg.err('can not remove dir %r : %r' % (dirpath, exc, ))
+    return counter
 
 
 def move_dir_recursive(src, dest, ignore=None):

@@ -88,6 +88,7 @@ class SharedDataService(LocalService):
         from access import shared_access_coordinator
         from customer import supplier_connector
         from p2p import p2p_service
+        from p2p import commands
         for key_id in shared_access_coordinator.list_active_shares():
             cur_share = shared_access_coordinator.get_active_share(key_id)
             if not cur_share:
@@ -104,7 +105,40 @@ class SharedDataService(LocalService):
                         target_supplier=supplier_idurl,
                         customer_idurl=cur_share.customer_idurl,
                         key_id=cur_share.key_id,
+                        callbacks={
+                            commands.Files(): lambda r, i: self._on_list_files_response(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
+                            commands.Fail(): lambda r, i: self._on_list_files_failed(r, i, cur_share.customer_idurl, supplier_idurl, cur_share.key_id),
+                        }
                     )
+
+    def _on_list_files_response(self, response, info, customer_idurl, supplier_idurl, key_id):
+        from logs import lg
+        # TODO: remember the response and prevent sending ListFiles() too often
+
+    def _on_list_files_failed(self, response, info, customer_idurl, supplier_idurl, key_id):
+        from logs import lg
+        from lib import strng
+        from access import key_ring
+        if strng.to_text(response.Payload) == 'key not registered' or strng.to_text(response.Payload) == '':
+            lg.warn('supplier %r of customer %r do not possess public key %r yet, sending it now' % (
+                supplier_idurl, customer_idurl, key_id, ))
+            result = key_ring.transfer_key(key_id, supplier_idurl, include_private=False)
+            result.addCallback(lambda r: self._on_key_transfer_success(customer_idurl, supplier_idurl, key_id))
+            result.addErrback(lambda err: lg.err('failed sending key %r : %r' % (key_id, err, )))
+        else:
+            lg.err('failed requesting ListFiles() with %r for customer %r from supplier %r' % (
+                key_id, customer_idurl, supplier_idurl, ))
+        return None
+
+    def _on_key_transfer_success(self, customer_idurl, supplier_idurl, key_id):
+        from logs import lg
+        from p2p import p2p_service
+        lg.info('public key %r shared to supplier %r of customer %r, now will send ListFiles()' % (key_id, supplier_idurl, customer_idurl))
+        p2p_service.SendListFiles(
+            target_supplier=supplier_idurl,
+            customer_idurl=customer_idurl,
+            key_id=key_id,
+        )
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         from p2p import commands

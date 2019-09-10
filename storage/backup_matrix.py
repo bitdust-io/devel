@@ -58,7 +58,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -596,22 +596,19 @@ def ReadLocalFiles():
 
     if _Debug:
         lg.out(_DebugLevel, 'backup_matrix.ReadLocalFiles %d files indexed' % _counter[0])
-        if lg.is_debug(_DebugLevel + 2):
-            try:
-                if sys.version_info >= (2, 6):
-                    #localSZ = sys.getsizeof(local_files())
-                    #remoteSZ = sys.getsizeof(remote_files())
-                    import lib.getsizeof
-                    localSZ = lib.getsizeof.total_size(local_files())
-                    remoteSZ = lib.getsizeof.total_size(remote_files())
-                    indexByName = lib.getsizeof.total_size(backup_fs.fs())
-                    indexByID = lib.getsizeof.total_size(backup_fs.fsID())
-                    lg.out(_DebugLevel + 2, '    all local info uses %d bytes in the memory' % localSZ)
-                    lg.out(_DebugLevel + 2, '    all remote info uses %d bytes in the memory' % remoteSZ)
-                    lg.out(_DebugLevel + 2, '    index by name takes %d bytes in the memory' % indexByName)
-                    lg.out(_DebugLevel + 2, '    index by ID takes %d bytes in the memory' % indexByID)
-            except:
-                lg.exc()
+        try:
+            if sys.version_info >= (2, 6):
+                import lib.getsizeof
+                localSZ = lib.getsizeof.total_size(local_files())
+                remoteSZ = lib.getsizeof.total_size(remote_files())
+                indexByName = lib.getsizeof.total_size(backup_fs.fs())
+                indexByID = lib.getsizeof.total_size(backup_fs.fsID())
+                lg.out(_DebugLevel, '    all local info uses %d bytes in the memory' % localSZ)
+                lg.out(_DebugLevel, '    all remote info uses %d bytes in the memory' % remoteSZ)
+                lg.out(_DebugLevel, '    index by name takes %d bytes in the memory' % indexByName)
+                lg.out(_DebugLevel, '    index by ID takes %d bytes in the memory' % indexByID)
+        except:
+            lg.exc()
     if _LocalFilesNotifyCallback is not None:
         _LocalFilesNotifyCallback()
 
@@ -902,7 +899,8 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
     HDD.
     """
     from customer import io_throttle
-    lg.out(10, 'backup_matrix.ScanBlocksToRemove for %s' % backupID)
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_matrix.ScanBlocksToRemove for %r' % backupID)
     customer_idurl = packetid.CustomerIDURL(backupID)
     packets = []
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)

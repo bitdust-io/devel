@@ -66,6 +66,7 @@ from automats import automat
 
 from contacts import contactsdb
 
+
 from main import events
 
 from services import driver
@@ -86,12 +87,20 @@ _ReceivedListFilesCounter = 0
 
 #------------------------------------------------------------------------------
 
+def is_synchronized():
+    if not A():
+        return False
+    return A().state == 'SAW_FILES'
+
+#------------------------------------------------------------------------------
 
 def A(event=None, *args, **kwargs):
     """
     Access method to interact with the state machine.
     """
     global _ListFilesOrator
+    if event is None:
+        return _ListFilesOrator
     if _ListFilesOrator is None:
         _ListFilesOrator = ListFilesOrator(
             name='list_files_orator',
@@ -219,7 +228,8 @@ class ListFilesOrator(automat.Automat):
         Action method.
         """
         supplier_idurl = args[0]
-        lg.out(6, 'list_files_orator.doRequestFilesOneSupplier from %s' % supplier_idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'list_files_orator.doRequestFilesOneSupplier from %s' % supplier_idurl)
         outpacket = p2p_service.SendListFiles(target_supplier=supplier_idurl)
         if outpacket:
             _RequestedListFilesPacketIDs.add(outpacket.PacketID)
@@ -234,7 +244,8 @@ class ListFilesOrator(automat.Automat):
         for idurl in contactsdb.suppliers():
             if idurl:
                 if online_status.isOnline(idurl):
-                    lg.out(6, 'list_files_orator._do_request  ListFiles() from my supplier %s' % idurl)
+                    if _Debug:
+                        lg.out(_DebugLevel, 'list_files_orator._do_request  ListFiles() from my supplier %s' % idurl)
                     outpacket = p2p_service.SendListFiles(target_supplier=idurl)
                     if outpacket:
                         _RequestedListFilesPacketIDs.add(outpacket.PacketID)

@@ -74,7 +74,7 @@ def send(customer_idurl, packet_id, format_type, key_id, remote_idurl):
     if not my_keys.is_key_registered(key_id):
         lg.warn('not able to return Files() for customer %s, key %s not registered' % (
             customer_idurl, key_id, ))
-        return p2p_service.SendFailNoRequest(customer_idurl, packet_id)
+        return p2p_service.SendFailNoRequest(customer_idurl, packet_id, response='key not registered')
     if _Debug:
         lg.out(_DebugLevel, "list_files.send to %s, customer_idurl=%s, key_id=%s" % (
             remote_idurl, customer_idurl, key_id, ))

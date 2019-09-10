@@ -435,8 +435,6 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, wide=False,
     if not RemoteID:
         lg.warn("RemoteID is empty target_supplier=%s" % str(target_supplier))
         return None
-    if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendListFiles to %s" % nameurl.GetName(RemoteID))
     if not key_id:
         # key_id = global_id.MakeGlobalID(idurl=customer_idurl, key_alias='customer')
         # TODO: due to issue with "customer" key backup/restore decided to always use my "master" key
@@ -450,6 +448,9 @@ def SendListFiles(target_supplier, customer_idurl=None, key_id=None, wide=False,
         key_id = my_id.getGlobalID(key_alias='master')
     PacketID = "%s:%s" % (key_id, packetid.UniqueID(), )
     Payload = settings.ListFilesFormat()
+    if _Debug:
+        lg.out(_DebugLevel, "p2p_service.SendListFiles %r to %s with %d bytes" % (
+            PacketID, nameurl.GetName(RemoteID), len(Payload), ))
     result = signed.Packet(
         Command=commands.ListFiles(),
         OwnerID=MyID,
