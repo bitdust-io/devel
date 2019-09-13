@@ -305,7 +305,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/identity/my/get/v1$')
     def identity_get_v1(self, request):
         return api.identity_get(
-            include_xml_source=bool(_request_arg(request, 'include_xml_source', '0') in ['1', 'true', ]),
+            include_xml_source=bool(_request_arg(request, 'xml_source', '0') in ['1', 'true', ]),
         )
 
     @POST('^/i/c$')
@@ -434,8 +434,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key_id=_request_arg(request, 'key_id', None),
             recursive=bool(_request_arg(request, 'recursive', '0') in ['1', 'true', ]),
             all_customers=bool(_request_arg(request, 'all_customers', '0') in ['1', 'true', ]),
-            include_uploads=bool(_request_arg(request, 'include_uploads', '0') in ['1', 'true', ]),
-            include_downloads=bool(_request_arg(request, 'include_downloads', '0') in ['1', 'true', ]),
+            include_uploads=bool(_request_arg(request, 'uploads', '0') in ['1', 'true', ]),
+            include_downloads=bool(_request_arg(request, 'downloads', '0') in ['1', 'true', ]),
         )
 
     @GET('^/f/l/a$')
@@ -453,8 +453,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def file_info_v1(self, request):
         return api.file_info(
             remote_path=_request_arg(request, 'remote_path', mandatory=True),
-            include_uploads=bool(_request_arg(request, 'include_uploads', '1') in ['1', 'true', ]),
-            include_downloads=bool(_request_arg(request, 'include_downloads', '1') in ['1', 'true', ]),
+            include_uploads=bool(_request_arg(request, 'uploads', '1') in ['1', 'true', ]),
+            include_downloads=bool(_request_arg(request, 'downloads', '1') in ['1', 'true', ]),
         )
 
     @GET('^/f/s$')
@@ -481,8 +481,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/file/upload/v1$')
     def files_uploads_v1(self, request):
         return api.files_uploads(
-            include_running=bool(_request_arg(request, 'include_running', '1') in ['1', 'true', ]),
-            include_pending=bool(_request_arg(request, 'include_pending', '1') in ['1', 'true', ]),
+            include_running=bool(_request_arg(request, 'running', '1') in ['1', 'true', ]),
+            include_pending=bool(_request_arg(request, 'pending', '1') in ['1', 'true', ]),
         )
 
     @POST('^/f/u/o$')
