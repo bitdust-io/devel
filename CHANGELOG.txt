@@ -2,6 +2,19 @@ Change Log
 ==========
 
 
+
+2019-09-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* minor changes in api interface
+* small fix in messaging
+* fix in id_url when my identity not exists yet
+* make possible to set "label" for shares
+* added "label" meta field to all my keys
+* added new api.key_label() method to modify key labels
+* minor py3 fixex
+
+
+
 2019-09-11 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * share pub key from customer to supplier if key is missing for shared access
