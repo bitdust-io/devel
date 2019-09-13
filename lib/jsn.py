@@ -28,12 +28,16 @@
 
 #------------------------------------------------------------------------------
 
+import sys
 import json
-import six
 
 #------------------------------------------------------------------------------
 
 _Debug = True
+
+#------------------------------------------------------------------------------
+
+from lib import strng
 
 #------------------------------------------------------------------------------
 
@@ -43,7 +47,7 @@ def dict_keys_to_text(dct, encoding='utf-8', errors='strict'):
     Only works for keys in a "root" level of the dict.
     """
     return {
-        (k.decode(encoding, errors=errors) if isinstance(k, six.binary_type) else k) : v
+        (k.decode(encoding, errors=errors) if strng.is_bin(k) else k) : v
         for k, v in dct.items()
     }
 
@@ -54,7 +58,7 @@ def dict_keys_to_bin(dct, encoding='utf-8', errors='strict'):
     Only works for keys in a "root" level of the dict.
     """
     return {
-        (k.encode(encoding, errors=errors) if isinstance(k, six.text_type) else k) : v
+        (k.encode(encoding, errors=errors) if strng.is_text(k) else k) : v
         for k, v in dct.items()
     }
 
@@ -69,14 +73,14 @@ def dict_values_to_text(dct, encoding='utf-8', errors='strict'):
     _d = {}
     for k, v in dct.items():
         _v = v
-        if isinstance(_v, six.binary_type):
+        if strng.is_bin(_v):
             _v = _v.decode(encoding, errors=errors)
         elif isinstance(_v, dict):
             _v = dict_values_to_text(_v, encoding=encoding, errors=errors)
         elif isinstance(_v, list):
-            _v = [i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v]
+            _v = [i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v]
         elif isinstance(_v, tuple):
-            _v = tuple([i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v])
+            _v = tuple([i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v])
         _d[k] = _v
     return _d
 
@@ -90,14 +94,14 @@ def dict_items_to_text(dct, encoding='utf-8', errors='strict'):
     _d = {}
     for k in dct.keys():
         _v = dct[k]
-        if isinstance(_v, six.binary_type):
+        if strng.is_bin(_v):
             _v = _v.decode(encoding, errors=errors)
         elif isinstance(_v, list):
-            _v = [i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v]
+            _v = [i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v]
         elif isinstance(_v, tuple):
-            _v = tuple([i.decode(encoding, errors=errors) if isinstance(i, six.binary_type) else i for i in _v])
+            _v = tuple([i.decode(encoding, errors=errors) if strng.is_bin(i) else i for i in _v])
         _k = k
-        if isinstance(_k, six.binary_type):
+        if strng.is_bin(_k):
             _k = _k.decode(encoding, errors=errors)
         _d[_k] = _v
     return _d
@@ -115,7 +119,7 @@ def pack_dict(dct, encoding='utf-8', errors='strict'):
     for k, v in dct.items():
         _k = k
         _ktyp = 's'
-        if isinstance(_k, six.binary_type):
+        if strng.is_bin(_k):
             _k = _k.decode(encoding, errors=errors)
             _ktyp = 'b'
         elif isinstance(_k, int):
@@ -126,7 +130,7 @@ def pack_dict(dct, encoding='utf-8', errors='strict'):
             _ktyp = 'n'
         _v = v
         _vtyp = 's'
-        if isinstance(_v, six.binary_type):
+        if strng.is_bin(_v):
             _v = _v.decode(encoding, errors=errors)
             _vtyp = 'b'
         elif isinstance(_v, int):
@@ -184,10 +188,10 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
     enc_errors = kw.pop('errors', 'strict')
 
     def _to_text(v):
-        if isinstance(v, six.binary_type):
+        if strng.is_bin(v):
             v = v.decode(encoding, errors=enc_errors)
-        if not isinstance(v, six.text_type):
-            v = six.text_type(v)
+        if not strng.is_text(v):
+            v = strng.to_text(v)
         return v
 
     if keys_to_text:
@@ -197,7 +201,7 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
         obj = dict_values_to_text(obj, encoding=encoding, errors=enc_errors)
 
     try:
-        if six.PY2:
+        if sys.version_info[0] < 3:
             return json.dumps(
                 obj=obj,
                 indent=indent,
@@ -227,7 +231,7 @@ def dumps(obj, indent=None, separators=None, sort_keys=None, ensure_ascii=False,
                 os.write(fd, repr(obj))
             except:
                 try:
-                    os.write(fd, six.binary_type(repr(type(obj))))
+                    os.write(fd, strng.to_bin(repr(type(obj))))
                 except:
                     os.write(fd, b'failed to serialize object')
             os.close(fd)
@@ -244,10 +248,10 @@ def loads(s, encoding='utf-8', keys_to_bin=False, **kw):
 
     def _to_bin(dct):
         for k in dct.keys():
-            if isinstance(dct[k], six.text_type):
+            if strng.is_text(dct[k]):
                 dct[k] = dct[k].encode(encoding)
         if keys_to_bin:
-            return {(k.encode(encoding) if isinstance(k, six.text_type) else k) : v for k, v in dct.items()}
+            return {(k.encode(encoding) if strng.is_text(k) else k) : v for k, v in dct.items()}
         return dct
 
     try:

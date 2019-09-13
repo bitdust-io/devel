@@ -599,7 +599,7 @@ def key_create(key_alias, key_size=None, include_private=False):
     from crypt import my_keys
     from main import settings
     from userid import my_id
-    key_alias = str(key_alias)
+    key_alias = strng.to_text(key_alias)
     key_alias = key_alias.strip().lower()
     key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getLocalID())
     if not my_keys.is_valid_key_id(key_id):
@@ -620,6 +620,29 @@ def key_create(key_alias, key_size=None, include_private=False):
     )
     key_info.pop('include_private', None)
     return OK(key_info, message='new private key "%s" was generated successfully' % key_alias, )
+
+
+def key_label(key_id, label):
+    """
+    Set new label for given key.
+    """
+    if not driver.is_on('service_keys_registry'):
+        return ERROR('service_keys_registry() is not started')
+    from crypt import my_keys
+    from userid import my_id
+    key_label = strng.to_text(label)
+    if not my_keys.is_valid_key_id(key_id):
+        return ERROR('key "%s" is not valid' % key_id)
+    if not my_keys.is_key_registered(key_id):
+        return ERROR('key "%s" not exist' % key_id)
+    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getGlobalID():
+        return ERROR('master key label can not be changed')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.key_label id=%s, label=%r' % (key_id, key_label))
+    my_keys.key_obj(key_id).label = label
+    if not my_keys.save_key(key_id):
+        return ERROR('key "%s" store failed' % key_id)
+    return OK(message='key "%s" label updated successfully' % key_id)
 
 
 def key_erase(key_id):

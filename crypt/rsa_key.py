@@ -61,6 +61,7 @@ class RSAKey(object):
     
     def __init__(self):
         self.keyObject = None
+        self.label = ''
     
     def isReady(self):
         return self.keyObject is not None
@@ -69,6 +70,9 @@ class RSAKey(object):
         self.keyObject = None
         gc.collect()
         return True
+
+    def size(self):
+        return self.keyObject.size_in_bits()
 
     def generate(self, bits):
         if self.keyObject:
@@ -95,6 +99,17 @@ class RSAKey(object):
             return self
         return self.keyObject.publickey()
 
+    def fromDict(self, key_dict):
+        if self.keyObject:
+            raise ValueError('key object already exist')
+        key_src = key_dict['body']
+        result = self.fromString(key_src)
+        if result:
+            self.label = key_dict['label']
+        del key_src
+        gc.collect()
+        return result
+
     def fromString(self, key_src):
         if self.keyObject:
             raise ValueError('key object already exist')
@@ -104,6 +119,8 @@ class RSAKey(object):
         except:
             if _Debug:
                 lg.exc('key_src=%r' % key_src)
+        del key_src
+        gc.collect()
         return True
 
     def fromFile(self, keyfilename):
@@ -131,6 +148,21 @@ class RSAKey(object):
         if not self.keyObject:
             raise ValueError('key object is not exist')
         return strng.to_text(self.keyObject.publickey().exportKey(format=output_format))
+
+    def toDict(self, include_private=False, output_format_private='PEM', output_format_public='OpenSSH'):
+        if not self.keyObject:
+            raise ValueError('key object is not exist')
+        if include_private and not self.keyObject.has_private():
+            raise ValueError('this key contains only public component')
+        if include_private:
+            key_body = strng.to_text(self.keyObject.exportKey(format=output_format_private))
+        else:
+            key_body = strng.to_text(self.keyObject.publickey().exportKey(format=output_format_public))
+        key_dict = {
+            'body': key_body,
+            'label': self.label,
+        }
+        return key_dict
 
     def sign(self, message, as_digits=True):
         if not self.keyObject:

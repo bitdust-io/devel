@@ -387,6 +387,15 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
         )
 
+    @POST('^/k/lb$')
+    @POST('^/key/label/v1$')
+    def key_label_v1(self, request):
+        data = _request_data(request, mandatory_keys=['label', 'key_id', ])
+        return api.key_label(
+            key_id=data['key_id'],
+            label=data['label'],
+        )
+
     @DELETE('^/k/d$')
     @DELETE('^/key/delete/v1$')
     @DELETE('^/key/erase/v1$')

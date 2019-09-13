@@ -44,6 +44,7 @@ import os
 import sys
 import gc
 import base64
+import time
 
 #------------------------------------------------------------------------------
 
@@ -59,6 +60,9 @@ from system import bpio
 
 from lib import misc
 from lib import strng
+from lib import jsn
+
+from system import local_fs
 
 from main import settings
 from main import events
@@ -252,9 +256,27 @@ def load_key(key_id, keys_folder=None):
     if not os.path.exists(key_filepath):
         key_filepath = os.path.join(keys_folder, '%s.public' % key_id)
         is_private = False
+    key_raw = local_fs.ReadTextFile(key_filepath)
+    if not key_raw:
+        lg.warn('failed reading key from %r' % key_filepath)
+        return False
+    key_raw_strip = key_raw.strip()
+    need_to_convert = False
+    try:
+        if key_raw_strip.startswith('{') and key_raw_strip.endswith('}'):
+            key_dict = jsn.loads_text(key_raw_strip)
+        else:
+            key_dict = {
+                'label': key_id,
+                'body': key_raw_strip,
+            }
+            need_to_convert = True
+    except:
+        lg.exc()
+        return False
     try:
         key_object = rsa_key.RSAKey()
-        key_object.fromFile(key_filepath)
+        key_object.fromDict(key_dict)
     except:
         lg.exc()
         return False
@@ -264,7 +286,11 @@ def load_key(key_id, keys_folder=None):
             return False
     known_keys()[key_id] = key_object
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.load_key %r  is_private=%r  from %s' % (key_id, is_private, keys_folder, ))
+        lg.out(_DebugLevel, 'my_keys.load_key %r  label=%r  is_private=%r  from %s' % (
+            key_id, key_object.label, is_private, keys_folder, ))
+    if need_to_convert:
+        save_key(key_id, keys_folder=keys_folder)
+        lg.info('key %r format converted to JSON' % key_id)
     return True
 
 
@@ -283,9 +309,25 @@ def load_local_keys(keys_folder=None):
         if not is_valid_key_id(key_id):
             lg.warn('key_id is not valid: %s' % key_id)
             continue
+        key_raw = local_fs.ReadTextFile(key_filepath)
+        if not key_raw:
+            lg.warn('failed reading key from %r' % key_filepath)
+            continue
+        key_raw_strip = key_raw.strip()
+        try:
+            if key_raw_strip.startswith('{') and key_raw_strip.endswith('}'):
+                key_dict = jsn.loads_text(key_raw_strip)
+            else:
+                key_dict = {
+                    'label': key_id,
+                    'body': key_raw_strip,
+                }
+        except:
+            lg.exc()
+            continue
         try:
             key_object = rsa_key.RSAKey()
-            key_object.fromFile(key_filepath)
+            key_object.fromDict(key_dict)
         except:
             lg.exc()
             continue
@@ -300,6 +342,31 @@ def load_local_keys(keys_folder=None):
     return count
 
 
+def save_key(key_id, keys_folder=None):
+    """
+    """
+    key_object = known_keys()[key_id]
+    if key_object is None:
+        lg.warn('can not save key %s because it is not loaded yet' % key_id)
+        return False
+    if not keys_folder:
+        keys_folder = settings.KeyStoreDir()
+    if key_object.isPublic():
+        key_filepath = os.path.join(keys_folder, key_id + '.public')
+        key_dict = key_object.toDict(include_private=False)
+        key_string = jsn.dumps(key_dict, indent=1, separators=(',', ':'))
+    else:
+        key_filepath = os.path.join(keys_folder, key_id + '.private')
+        key_dict = key_object.toDict(include_private=True)
+        key_string = jsn.dumps(key_dict, indent=1, separators=(',', ':'))
+    if not bpio.WriteTextFile(key_filepath, key_string):
+        lg.warn('failed saving key %r to %r' % (key_id, key_filepath, ))
+        return False
+    if _Debug:
+        lg.out(_DebugLevel, 'my_keys.save_key stored key %r locally in %r' % (key_id, key_filepath, ))
+    return True
+
+
 def save_keys_local(keys_folder=None):
     """
     """
@@ -308,51 +375,56 @@ def save_keys_local(keys_folder=None):
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.save_keys_local will store all known keys in %s' % keys_folder)
     count = 0
-    for key_id, key_object in known_keys().items():
-        if key_object is None:
-            lg.warn('can not save key %s because it is not loaded yet' % key_id)
-            continue
-        if key_object.isPublic():
-            key_filepath = os.path.join(keys_folder, key_id + '.public')
-        else:
-            key_filepath = os.path.join(keys_folder, key_id + '.private')
-        key_string = key_object.toPrivateString()
-        bpio.WriteTextFile(key_filepath, key_string)
-        count += 1
+    for key_id in known_keys().keys():
+        if save_key(key_id, keys_folder=keys_folder):
+            count += 1
     if _Debug:
         lg.out(_DebugLevel, '    %d keys saved' % count)
     return count
 
 #------------------------------------------------------------------------------
 
-def generate_key(key_id, key_size=4096, keys_folder=None):
+def generate_key(key_id, label='', key_size=4096, keys_folder=None):
     """
     """
     if key_id in known_keys():
         lg.warn('key "%s" already exists' % key_id)
         return None
+    if not label:
+        time_st = time.localtime()
+        ampm = time.strftime("%p", time_st)
+        if not ampm:
+            lg.warn('time.strftime() returns empty string')
+            ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
+        label = "key" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     if _Debug:
-        lg.out(_DebugLevel, 'my_keys.generate_key "%s" of %d bits' % (key_id, key_size))
+        lg.out(_DebugLevel, 'my_keys.generate_key "%s" of %d bits, label=%r' % (key_id, key_size, label))
     key_object = rsa_key.RSAKey()
     key_object.generate(key_size)
+    key_object.label = label
     known_keys()[key_id] = key_object
+    if _Debug:
+        lg.out(_DebugLevel, '    key %s generated' % key_id)
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
-    key_string = key_object.toPrivateString()
-    key_filepath = os.path.join(keys_folder, key_id + '.private')
-    bpio.WriteTextFile(key_filepath, key_string)
-    if _Debug:
-        lg.out(_DebugLevel, '    key %s generated, saved to %s' % (key_id, key_filepath))
-    events.send('key-generated', data=dict(key_id=key_id, ))
+    save_key(key_id, keys_folder=keys_folder)
+    events.send('key-generated', data=dict(key_id=key_id, label=label, key_size=key_size, ))
     return key_object
 
 
-def register_key(key_id, key_object_or_string, keys_folder=None):
+def register_key(key_id, key_object_or_string, label='', keys_folder=None):
     """
     """
     if key_id in known_keys():
         lg.warn('key %s already exists' % key_id)
         return None
+    if not label:
+        time_st = time.localtime()
+        ampm = time.strftime("%p", time_st)
+        if not ampm:
+            lg.warn('time.strftime() returns empty string')
+            ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
+        label = "key" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     if strng.is_string(key_object_or_string):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
@@ -366,20 +438,13 @@ def register_key(key_id, key_object_or_string, keys_folder=None):
             lg.out(_DebugLevel, 'my_keys.register_key %s from object' % key_id)
         key_object = key_object_or_string
     known_keys()[key_id] = key_object
+    if _Debug:
+        lg.out(_DebugLevel, '    key %s added' % key_id)
     if not keys_folder:
         keys_folder = settings.KeyStoreDir()
-    if key_object.isPublic():
-        key_string = key_object.toPublicString()
-        key_filepath = os.path.join(keys_folder, key_id + '.public')
-        bpio.WriteTextFile(key_filepath, key_string)
-    else:
-        key_string = key_object.toPrivateString()
-        key_filepath = os.path.join(keys_folder, key_id + '.private')
-        bpio.WriteTextFile(key_filepath, key_string)
-    if _Debug:
-        lg.out(_DebugLevel, '    key %s added, saved to %s' % (key_id, key_filepath))
-    events.send('key-registered', data=dict(key_id=key_id, ))
-    return key_filepath
+    save_key(key_id, keys_folder=keys_folder)
+    events.send('key-registered', data=dict(key_id=key_id, label=label, key_size=key_object.size(), ))
+    return key_object
 
 
 def erase_key(key_id, keys_folder=None):
@@ -609,6 +674,7 @@ def make_master_key_info(include_private=False):
     r = {
         'key_id': my_id.getGlobalID(key_alias='master'),
         'alias': 'master',
+        'label': my_id.getGlobalID(key_alias='master'),
         'creator': my_id.getLocalID(),
         'is_public': key.MyPrivateKeyObject().isPublic(),
         # 'fingerprint': str(key.MyPrivateKeyObject().fingerprint()),
@@ -636,6 +702,7 @@ def make_key_info(key_object, key_id=None, key_alias=None, creator_idurl=None, i
     r = {
         'key_id': key_id,
         'alias': key_alias,
+        'label': key_object.label,
         'creator': creator_idurl,
         'is_public': key_object.isPublic(),
         # 'fingerprint': str(key_object.fingerprint()),
@@ -689,12 +756,13 @@ def read_key_info(key_json):
         key_id = strng.to_text(key_json['key_id'])
         include_private = bool(key_json['include_private'])
         if include_private:
-            raw_openssh_string = str(key_json['private'])
+            raw_openssh_string = strng.to_text(key_json['private'])
         else:
-            raw_openssh_string = str(key_json['public'])
+            raw_openssh_string = strng.to_text(key_json['public'])
         key_object = unserialize_key_to_object(raw_openssh_string)
         if not key_object:
             raise Exception('unserialize failed')
+        key_object.label = strng.to_text(key_json.get('label', ''))
     except:
         lg.exc()
         raise Exception('failed reading key info')
