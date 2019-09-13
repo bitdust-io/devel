@@ -384,6 +384,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.key_create(
             key_alias=data['alias'],
             key_size=int(data.get('size', 2048)),
+            label=data.get('label', ''),
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
         )
 
@@ -550,6 +551,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.share_create(
             owner_id=data.get('owner_id', None),
             key_size=int(data.get('key_size', '2048')),
+            label=data.get('label', ''),
         )
 
     @PUT('^/sh/g$')

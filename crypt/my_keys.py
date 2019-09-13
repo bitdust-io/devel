@@ -44,7 +44,6 @@ import os
 import sys
 import gc
 import base64
-import time
 
 #------------------------------------------------------------------------------
 
@@ -61,6 +60,7 @@ from system import bpio
 from lib import misc
 from lib import strng
 from lib import jsn
+from lib import utime
 
 from system import local_fs
 
@@ -391,12 +391,7 @@ def generate_key(key_id, label='', key_size=4096, keys_folder=None):
         lg.warn('key "%s" already exists' % key_id)
         return None
     if not label:
-        time_st = time.localtime()
-        ampm = time.strftime("%p", time_st)
-        if not ampm:
-            lg.warn('time.strftime() returns empty string')
-            ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
-        label = "key" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
+        label = 'key%s' % utime.make_timestamp() 
     if _Debug:
         lg.out(_DebugLevel, 'my_keys.generate_key "%s" of %d bits, label=%r' % (key_id, key_size, label))
     key_object = rsa_key.RSAKey()
@@ -419,12 +414,7 @@ def register_key(key_id, key_object_or_string, label='', keys_folder=None):
         lg.warn('key %s already exists' % key_id)
         return None
     if not label:
-        time_st = time.localtime()
-        ampm = time.strftime("%p", time_st)
-        if not ampm:
-            lg.warn('time.strftime() returns empty string')
-            ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
-        label = "key" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
+        label = 'key%s' % utime.make_timestamp() 
     if strng.is_string(key_object_or_string):
         if _Debug:
             lg.out(_DebugLevel, 'my_keys.register_key %s from %d bytes openssh_input_string' % (
