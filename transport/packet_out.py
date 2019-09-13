@@ -786,7 +786,7 @@ class PacketOut(automat.Automat):
             for cb in self.callbacks[None]:
                 cb(self)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;90mOUT TIMEOUT %s(%s) sending from %s to %s\033[0m' % (
+            lg.out(0, '\033[1;49;91mOUT TIMEOUT %s(%s) sending from %s to %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID,
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl)),
                 log_name='packet', showtime=True)
