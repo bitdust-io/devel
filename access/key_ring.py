@@ -397,6 +397,7 @@ def on_key_received(newpacket, info, status, error_message):
         key_data = block.Data()
         key_json = serialization.BytesToDict(key_data, keys_to_text=True, values_to_text=True)
         key_id = key_json['key_id']
+        key_label = key_json.get('label', '')
         key_id, key_object = my_keys.read_key_info(key_json)
         if key_object.isPublic():
             # received key is a public key
@@ -411,7 +412,7 @@ def on_key_received(newpacket, info, status, error_message):
                 p2p_service.SendAck(newpacket)
                 lg.warn('received existing public key: %s, skip' % key_id)
                 return True
-            if not my_keys.register_key(key_id, key_object):
+            if not my_keys.register_key(key_id, key_object, label=key_label):
                 raise Exception('key register failed')
             else:
                 lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
@@ -437,13 +438,13 @@ def on_key_received(newpacket, info, status, error_message):
                 raise Exception('another public key already registered with that ID and it is not matching with private key')
             lg.info('erasing public key %s' % key_id)
             my_keys.erase_key(key_id)
-            if not my_keys.register_key(key_id, key_object):
+            if not my_keys.register_key(key_id, key_object, label=key_label):
                 raise Exception('key register failed')
             lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
             p2p_service.SendAck(newpacket)
             return True
         # no private key with given ID was registered
-        if not my_keys.register_key(key_id, key_object):
+        if not my_keys.register_key(key_id, key_object, label=key_label):
             raise Exception('key register failed')
         lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
         p2p_service.SendAck(newpacket)
