@@ -621,7 +621,7 @@ class RestoreWorker(automat.Automat):
             lg.out(_DebugLevel, 'restore_worker.doReportDone')
         self.done_flag = True
         self.MyDeferred.callback('done')
-        events.send('restore-done', dict(backup_id=self.backup_id))
+        # events.send('restore-done', dict(backup_id=self.backup_id))
 
     def doReportFailed(self, *args, **kwargs):
         """

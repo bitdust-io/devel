@@ -311,20 +311,21 @@ def identity_cached(new_id_obj):
                     new_revision=new_revision,
                 ))
             from userid import my_id
-            if my_id.getLocalID() == new_id_obj.getIDURL():
-                events.send('my-identity-rotated', data=dict(
-                    old_idurls=latest_id_obj.getSources(as_originals=True),
-                    new_idurls=new_id_obj.getSources(as_originals=True),
-                    old_revision=latest_id_obj.getRevisionValue(),
-                    new_revision=new_revision,
-                ))
-                if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
-                    events.send('my-identity-url-changed', data=dict(
-                        old_idurl=latest_id_obj.getIDURL(as_original=True),
-                        new_idurl=new_id_obj.getIDURL(as_original=True),
+            if my_id.isLocalIdentityReady():
+                if my_id.getLocalID() == new_id_obj.getIDURL():
+                    events.send('my-identity-rotated', data=dict(
+                        old_idurls=latest_id_obj.getSources(as_originals=True),
+                        new_idurls=new_id_obj.getSources(as_originals=True),
                         old_revision=latest_id_obj.getRevisionValue(),
                         new_revision=new_revision,
                     ))
+                    if latest_id_obj.getIDURL(as_original=True) != new_id_obj.getIDURL(as_original=True):
+                        events.send('my-identity-url-changed', data=dict(
+                            old_idurl=latest_id_obj.getIDURL(as_original=True),
+                            new_idurl=new_id_obj.getIDURL(as_original=True),
+                            old_revision=latest_id_obj.getRevisionValue(),
+                            new_revision=new_revision,
+                        ))
         else:
             lg.warn('cached out-dated revision %d for %r' % (new_revision, new_sources[0]))
     else:

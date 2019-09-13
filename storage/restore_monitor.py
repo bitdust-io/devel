@@ -47,6 +47,8 @@ from twisted.internet import threads
 
 from logs import lg
 
+from main import events
+
 from system import tmpfile
 
 from storage import backup_tar
@@ -91,47 +93,49 @@ def packet_in_callback(backupID, newpacket):
     SupplierNumber = newpacket.SupplierNumber()
     if _Debug:
         lg.out(_DebugLevel, 'restore_monitor.packet_in_callback %s from suppier %s' % (backupID, SupplierNumber))
-
     # want to count the data we restoring
     if SupplierNumber not in list(_WorkingRestoreProgress[backupID].keys()):
         _WorkingRestoreProgress[backupID][SupplierNumber] = 0
     _WorkingRestoreProgress[backupID][SupplierNumber] += len(newpacket.Payload)
-
     packetID = global_id.CanonicalID(newpacket.PacketID)
     backup_matrix.LocalFileReport(packetID)
-
     if OnRestorePacketFunc is not None:
         OnRestorePacketFunc(backupID, SupplierNumber, newpacket)
 
 
-def extract_done(retcode, backupID, tarfilename, callback_method):
-    lg.info('extract success of %s  tarfile=%s, result=%s' % (backupID, tarfilename, str(retcode)))
+def extract_done(retcode, backupID, source_filename, output_location, callback_method):
+    lg.info('extract success of %r with result : %r' % (backupID, str(retcode)))
     global OnRestoreDoneFunc
-
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-
-    tmpfile.throw_out(tarfilename, 'file extracted')
-
+    tmpfile.throw_out(source_filename, 'file extracted')
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, 'restore done')
-
     if callback_method:
         try:
             callback_method(backupID, 'restore done')
         except:
             lg.exc()
-
+    events.send('restore-done', dict(
+        backup_id=backupID,
+        output_location=output_location,
+    ))
     return retcode
 
 
-def extract_failed(err, backupID, callback_method):
+def extract_failed(err, backupID, source_filename, output_location, callback_method):
     lg.err('extract failed of %s with: %s' % (backupID, str(err)))
     if callback_method:
         try:
             callback_method(backupID, 'extract failed')
         except:
             lg.exc()
+    events.send('restore-failed', dict(
+        backup_id=backupID,
+        output_location=output_location,
+        reason='extracting file failed',
+        error=str(err),
+    ))
     return err
 
 
@@ -151,8 +155,8 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
         p = backup_tar.extracttar(tarfilename, outputlocation)
         if p:
             d = threads.deferToThread(p.wait)
-            d.addCallback(extract_done, backupID, tarfilename, callback_method)
-            d.addErrback(extract_failed, backupID, callback_method)
+            d.addCallback(extract_done, backupID, tarfilename, outputlocation, callback_method)
+            d.addErrback(extract_failed, backupID, tarfilename, outputlocation, callback_method)
             return d
         result = 'extract failed'
     _WorkingBackupIDs.pop(backupID, None)

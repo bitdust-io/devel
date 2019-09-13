@@ -645,7 +645,10 @@ class Server(object):
         if ncpus < 0:
             raise ValueError("ncpus must be an integer > 0")
         if ncpus > len(self.__workers):
-            self.__workers.extend([_Worker(self.__restart_on_free, self.__pickle_proto) for x in range(ncpus - len(self.__workers))])
+            try:
+                self.__workers.extend([_Worker(self.__restart_on_free, self.__pickle_proto) for x in range(ncpus - len(self.__workers))])
+            except:
+                traceback.print_exc()
         self.__stats["local"].ncpus = ncpus
         self.__ncpus = ncpus
 
