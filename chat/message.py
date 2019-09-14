@@ -417,7 +417,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
     return result
 
 
-def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
+def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=10, ping_retries=0):
     """
     Send command.Message() packet to remote peer.
     Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
@@ -443,15 +443,15 @@ def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
         lg.out(_DebugLevel, "    is_ping_expired=%r  remote_identity=%r  is_online=%r" % (
             is_ping_expired, bool(remote_identity), is_online, ))
     if is_ping_expired or remote_identity is None or not is_online:
-        d = propagate.PingContact(remote_idurl, timeout=timeout or 5)
+        d = propagate.PingContact(remote_idurl, timeout=ping_timeout, retries=ping_retries)
         d.addCallback(lambda response_tuple: on_ping_success(response_tuple, remote_idurl))
         d.addCallback(lambda _: do_send_message(
-            json_data, recipient_global_id, packet_id, timeout, result_defer=ret))
+            json_data, recipient_global_id, packet_id, message_ack_timeout, result_defer=ret))
         d.addErrback(lambda err: on_message_failed(
             remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret, error=err))
         return ret
     try:
-        do_send_message(json_data, recipient_global_id, packet_id, timeout, ret)
+        do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeout, ret)
     except Exception as exc:
         lg.warn(str(exc))
         on_message_failed(remote_idurl, json_data, recipient_global_id, packet_id, None, None, error=exc)

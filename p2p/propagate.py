@@ -526,17 +526,21 @@ def PingContact(idurl, timeout=30, retries=2):
     idurl = id_url.field(idurl).original()
     if _Debug:
         lg.out(_DebugLevel, "propagate.PingContact [%s]" % nameurl.GetName(idurl))
+
     ping_result = Deferred()
 
     def _ack_handler(response, info, attempts):
-        lg.out(_DebugLevel, "propagate.PingContact [%s] SUCCESS after %d attempts : %s from %s://%s" % (
-            nameurl.GetName(idurl), attempts, response, info.proto, info.host, ))
+        if _Debug:
+            lg.out(_DebugLevel, "propagate.PingContact [%s] SUCCESS after %d attempts : %s from %s://%s" % (
+                nameurl.GetName(idurl), attempts, response, info.proto, info.host, ))
         if not ping_result.called:
             ping_result.callback((response, info, ))
         return None
 
     def _try_to_ping(attempts):
         if attempts > retries + 1:
+            if _Debug:
+                lg.out(_DebugLevel, "propagate.PingContact._try_to_ping %r failed after %d attempts" % (idurl, attempts, ))
             if not ping_result.called:
                 ping_result.errback(Exception('remote user did not responded after %d ping attempts : %s' % (attempts, idurl, )))
             return None
@@ -550,15 +554,14 @@ def PingContact(idurl, timeout=30, retries=2):
         return None
 
     def _response_timed_out(pkt_out, attempts):
-        lg.out(_DebugLevel, "propagate.PingContact._response_timed_out : %s" % pkt_out)
-        # if not ping_result.called:
-        #     ping_result.errback(TimeoutError('remote user did not responded'))
+        if _Debug:
+            lg.out(_DebugLevel, "propagate.PingContact._response_timed_out : %s" % pkt_out)
         _try_to_ping(attempts + 1)
         return None
 
     def _identity_cached(idsrc, idurl):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for %r" % (
-            len(idsrc), idurl))
+        if _Debug:
+            lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for %r" % (len(idsrc), idurl))
         # TODO: Verify()
         _try_to_ping(1)
         return idsrc
@@ -570,20 +573,19 @@ def PingContact(idurl, timeout=30, retries=2):
             msg = str(err)
         if _Debug:
             lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed attempts=%d %s : %s" % (attempts, idurl, msg, ))
-        # if not ping_result.called:
-        #     ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg, )))
         _try_to_cache(attempts + 1)
         return None
 
     def _try_to_cache(attempts):
         if attempts > retries + 1:
+            if _Debug:
+                lg.out(_DebugLevel, "propagate.PingContact._try_to_cache %r failed after %d attempts" % (idurl, attempts, ))
             if not ping_result.called:
                 ping_result.errback(Exception('failed to fetch remote identity after %d attempts : %s' % (attempts, idurl, )))
             return None
         idcache_defer = identitycache.scheduleForCaching(strng.to_text(idurl), timeout=timeout)
         idcache_defer.addCallback(_identity_cached, idurl)
         idcache_defer.addErrback(_identity_cache_failed, idurl, attempts)
-        # ping_result.addErrback(lg.errback)
         return None
 
     _try_to_cache(1)

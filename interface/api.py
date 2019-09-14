@@ -3250,12 +3250,8 @@ def message_send(recipient, json_data, timeout=5):
         timeout=timeout,
     )
     ret = Deferred()
-    result.addCallback(
-        lambda packet: ret.callback(
-            OK(str(packet))))
-    result.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+    result.addCallback(lambda packet: ret.callback(OK(str(packet))))
+    result.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
     return ret
 
 

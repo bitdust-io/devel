@@ -384,8 +384,9 @@ class NetworkConnector(automat.Automat):
             stun_server.A('start', udp_port)
         if driver.is_on('service_my_ip_port'):
             from stun import stun_client
-            stun_client.A().dropMyExternalAddress()
-            stun_client.A('start')
+            if not stun_client.A() or stun_client.A().state in ['STOPPED', ]: 
+                stun_client.A().dropMyExternalAddress()
+                stun_client.A('start')
         if driver.is_on('service_private_messages'):
             from chat import nickname_holder
             nickname_holder.A('set')
