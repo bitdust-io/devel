@@ -573,7 +573,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        online_status.remove_online_status_listener_callbackove_(
+        online_status.remove_online_status_listener_callback(
             idurl=self.supplier_idurl,
             callback_method=self._on_online_status_state_changed,
         )

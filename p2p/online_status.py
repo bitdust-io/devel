@@ -48,6 +48,7 @@ every remote contact and monitor his status.
 
 
 EVENTS:
+    * :red:`ack-received`
     * :red:`inbox-packet`
     * :red:`init`
     * :red:`offline-check`
@@ -358,7 +359,7 @@ def add_online_status_listener_callback(idurl, callback_method, oldstate=None, n
     return True
 
 
-def remove_online_status_listener_callbackove_(idurl, callback_method=None, callback_id=None):
+def remove_online_status_listener_callback(idurl, callback_method=None, callback_id=None):
     """
     Release already added listener callback from the corresponding ``online_contact()`` automat.
     """
@@ -557,11 +558,11 @@ class OnlineStatus(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'inbox-packet':
-                self.state = 'CONNECTED'
-                self.doRememberTime(*args, **kwargs)
             elif event == 'ping-failed' or event == 'timer-15sec':
                 self.state = 'OFFLINE'
+            elif event == 'ack-received' or event == 'inbox-packet':
+                self.state = 'CONNECTED'
+                self.doRememberTime(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'ping-failed':
@@ -646,13 +647,14 @@ class OnlineStatus(automat.Automat):
 
     def _on_ping_success(self, result):
         try:
-            response, info = result
-            if _Debug:
-                lg.out(_DebugLevel, 'online_status._on_ping_success %s : %s %s' % (
-                    self.idurl, response, info, ))
+            response = result[0]
+            info = result[1]
         except:
             lg.exc()
-        return (response, info, )
+        if _Debug:
+            lg.out(_DebugLevel, 'online_status._on_ping_success %r : %r' % (self.idurl, result, ))
+        self.automat('ack-received', (response, info, ))
+        return None
 
     def _on_ping_failed(self, err):
         try:
@@ -660,7 +662,7 @@ class OnlineStatus(automat.Automat):
         except:
             msg = str(err)
         if _Debug:
-            lg.out(_DebugLevel, 'online_status._on_ping_failed %s : %s' % (self.idurl, msg, ))
+            lg.out(_DebugLevel, 'online_status._on_ping_failed %r : %s' % (self.idurl, msg, ))
         self.automat('ping-failed')
         return None
 

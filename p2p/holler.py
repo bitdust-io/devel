@@ -95,14 +95,13 @@ def ping(idurl,
     """
     global _OpenedHollers
     remote_idurl = id_url.field(idurl).to_bin()
+    result = Deferred()
     if remote_idurl in _OpenedHollers:
-        existing_result = _OpenedHollers[remote_idurl]
-        if not existing_result.called:
-            return existing_result
-    _OpenedHollers[remote_idurl] = Deferred()
+        _OpenedHollers[remote_idurl].append(result)
+        return result
+    _OpenedHollers[remote_idurl] = [result, ]
     h = Holler(
         remote_idurl=remote_idurl,
-        result_defer=_OpenedHollers[remote_idurl],
         ack_timeout=ack_timeout,
         cache_timeout=cache_timeout,
         cache_retries=cache_retries,
@@ -120,7 +119,7 @@ def ping(idurl,
         h.automat('cache-and-ping')
     else:
         h.automat('ping')
-    return _OpenedHollers[remote_idurl]
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -130,7 +129,7 @@ class Holler(automat.Automat):
     """
 
     def __init__(self,
-                 remote_idurl, result_defer,
+                 remote_idurl,
                  ack_timeout, cache_timeout,
                  cache_retries, ping_retries,
                  skip_outbox, keep_alive, fake_identity, channel, channel_counter,
@@ -140,7 +139,6 @@ class Holler(automat.Automat):
         """
         global _KnownChannels
         self.remote_idurl = remote_idurl
-        self.result_defer = result_defer
         self.ack_timeout = ack_timeout
         self.cache_timeout = cache_timeout
         self.cache_retries = cache_retries
@@ -323,33 +321,41 @@ class Holler(automat.Automat):
         """
         Action method.
         """
+        global _OpenedHollers
         lg.warn('failed to cache remote identity %r after %d attempts' % (
             self.remote_idurl, self.cache_attempts, ))
-        self.result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
-            self.remote_idurl, self.cache_attempts, )))
+        for result_defer in _OpenedHollers[self.remote_idurl]:
+            result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
+                self.remote_idurl, self.cache_attempts, )))
 
     def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
+        global _OpenedHollers
         lg.warn('ping failed because received Fail() from remote user %r' % self.remote_idurl)
-        self.result_defer.errback(Exception('ping failed because received Fail() from remote user %r' % self.remote_idurl))
+        for result_defer in _OpenedHollers[self.remote_idurl]:
+            result_defer.errback(Exception('ping failed because received Fail() from remote user %r' % self.remote_idurl))
 
     def doReportTimeOut(self, *args, **kwargs):
         """
         Action method.
         """
+        global _OpenedHollers
         lg.warn('remote user %r did not responded after %d ping attempts' % (self.remote_idurl, self.ping_attempts, ))
-        self.result_defer.errback(Exception('remote user %r did not responded after %d ping attempts' % (
-            self.remote_idurl, self.ping_attempts, )))
+        for result_defer in _OpenedHollers[self.remote_idurl]:
+            result_defer.errback(Exception('remote user %r did not responded after %d ping attempts' % (
+                self.remote_idurl, self.ping_attempts, )))
 
     def doReportSuccess(self, *args, **kwargs):
         """
         Action method.
         """
+        global _OpenedHollers
         if _Debug:
             lg.args(_DebugLevel, idurl=self.remote_idurl, ack_packet=args[0], info=args[1])
-        self.result_defer.callback((args[0], args[1], ))
+        for result_defer in _OpenedHollers[self.remote_idurl]:
+            result_defer.callback((args[0], args[1], ))
 
     def doDestroyMe(self, *args, **kwargs):
         """
@@ -361,7 +367,6 @@ class Holler(automat.Automat):
         else:
             lg.warn('did not found my registered opened instance')
         self.remote_idurl = None
-        self.result_defer = None
         self.ack_timeout = None
         self.cache_timeout = None
         self.cache_retries = None

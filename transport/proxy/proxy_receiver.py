@@ -493,11 +493,11 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         if online_status.isKnown(self.router_idurl):
-            online_status.remove_online_status_listener_callbackove_(
+            online_status.remove_online_status_listener_callback(
                 idurl=self.router_idurl,
                 callback_method=self._on_router_contact_status_connected,
             )
-            online_status.remove_online_status_listener_callbackove_(
+            online_status.remove_online_status_listener_callback(
                 idurl=self.router_idurl,
                 callback_method=self._on_router_contact_status_offline,
             )

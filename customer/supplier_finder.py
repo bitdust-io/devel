@@ -36,6 +36,7 @@ EVENTS:
     * :red:`supplier-connected`
     * :red:`supplier-not-connected`
     * :red:`timer-10sec`
+    * :red:`timer-15sec`
     * :red:`users-not-found`
 """
 
@@ -111,7 +112,8 @@ class SupplierFinder(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['ACK?', 'SERVICE?']),
+        'timer-10sec': (10.0, ['ACK?']),
+        'timer-15sec': (15.0, ['SERVICE?']),
     }
 
     def init(self):
@@ -171,16 +173,16 @@ class SupplierFinder(automat.Automat):
                 self.state = 'DONE'
                 self.doDestroyMe(*args, **kwargs)
                 self.doReportDone(*args, **kwargs)
-            elif event == 'timer-10sec' and self.Attempts<5:
-                self.state = 'RANDOM_USER'
-                self.doDHTFindRandomUser(*args, **kwargs)
-            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'supplier-not-connected' ):
-                self.state = 'FAILED'
-                self.doDestroyMe(*args, **kwargs)
-                self.doReportFailed(*args, **kwargs)
             elif self.Attempts<5 and event == 'supplier-not-connected':
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(*args, **kwargs)
+            elif event == 'timer-15sec' and self.Attempts<5:
+                self.state = 'RANDOM_USER'
+                self.doDHTFindRandomUser(*args, **kwargs)
+            elif self.Attempts==5 and ( event == 'timer-15sec' or event == 'supplier-not-connected' ):
+                self.state = 'FAILED'
+                self.doDestroyMe(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
         #---FAILED---
         elif self.state == 'FAILED':
             pass
@@ -188,17 +190,6 @@ class SupplierFinder(automat.Automat):
         elif self.state == 'DONE':
             pass
         return None
-
-    def isAckFromUser(self, *args, **kwargs):
-        """
-        Condition method.
-        """
-        newpacket = args[0]
-        if newpacket.Command == commands.Ack():
-            if self.target_idurl and newpacket.OwnerID.to_bin() == self.target_idurl.to_bin():
-                # TODO: also check PacketID
-                return True
-        return False
 
     def isSomeCandidatesListed(self, *args, **kwargs):
         """
