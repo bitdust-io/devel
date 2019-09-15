@@ -36,7 +36,7 @@ EVENTS:
     * :red:`supplier-connected`
     * :red:`supplier-not-connected`
     * :red:`timer-10sec`
-    * :red:`timer-15sec`
+    * :red:`timer-30sec`
     * :red:`users-not-found`
 """
 
@@ -112,8 +112,8 @@ class SupplierFinder(automat.Automat):
     """
 
     timers = {
+        'timer-30sec': (30.0, ['SERVICE?']),
         'timer-10sec': (10.0, ['ACK?']),
-        'timer-15sec': (15.0, ['SERVICE?']),
     }
 
     def init(self):
@@ -176,10 +176,10 @@ class SupplierFinder(automat.Automat):
             elif self.Attempts<5 and event == 'supplier-not-connected':
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(*args, **kwargs)
-            elif event == 'timer-15sec' and self.Attempts<5:
+            elif event == 'timer-30sec' and self.Attempts<5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(*args, **kwargs)
-            elif self.Attempts==5 and ( event == 'timer-15sec' or event == 'supplier-not-connected' ):
+            elif self.Attempts==5 and ( event == 'timer-30sec' or event == 'supplier-not-connected' ):
                 self.state = 'FAILED'
                 self.doDestroyMe(*args, **kwargs)
                 self.doReportFailed(*args, **kwargs)
