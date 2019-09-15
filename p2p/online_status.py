@@ -615,6 +615,7 @@ class OnlineStatus(automat.Automat):
         d = holler.ping(
             idurl=self.idurl,
             ack_timeout=timeout,
+            ping_retries=0,
             channel='online_status',
         )
         d.addCallback(self._on_ping_success)

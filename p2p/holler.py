@@ -98,8 +98,12 @@ def ping(idurl,
     result = Deferred()
     if remote_idurl in _OpenedHollers:
         _OpenedHollers[remote_idurl].append(result)
+        if _Debug:
+            lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
         return result
     _OpenedHollers[remote_idurl] = [result, ]
+    if _Debug:
+        lg.args(_DebugLevel, already_opened=False, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
     h = Holler(
         remote_idurl=remote_idurl,
         ack_timeout=ack_timeout,
@@ -281,9 +285,9 @@ class Holler(automat.Automat):
         if not identity_object.Valid():
             raise Exception('can not use invalid identity for ping')
         if self.channel_counter:
-            packet_id = '%s:%d' % (self.channel, _KnownChannels[self.channel], )
+            packet_id = '%s:%d:%d' % (self.channel, _KnownChannels[self.channel], self.ping_attempts)
         else:
-            packet_id = '%s:%s' % (self.channel, packetid.UniqueID(), )
+            packet_id = '%s:%s:%d' % (self.channel, packetid.UniqueID(), self.ping_attempts)
         ping_packet = signed.Packet(
             Command=commands.Identity(),
             OwnerID=my_id.getLocalID(),
@@ -355,7 +359,7 @@ class Holler(automat.Automat):
         """
         global _OpenedHollers
         if _Debug:
-            lg.args(_DebugLevel, idurl=self.remote_idurl, ack_packet=args[0], info=args[1])
+            lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl, ack_packet=args[0], info=args[1])
         for result_defer in _OpenedHollers[self.remote_idurl]:
             result_defer.callback((args[0], args[1], ))
 

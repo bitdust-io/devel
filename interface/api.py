@@ -2995,9 +2995,15 @@ def user_ping(idurl_or_global_id, timeout=10, retries=2):
         idurl = global_id.GlobalUserToIDURL(idurl)
     idurl = id_url.field(idurl)
     ret = Deferred()
-    d = holler.ping(idurl, ack_timeout=int(timeout), cache_timeout=int(timeout),
-                    cache_retries=int(retries), ping_retries=int(retries),
-                    force_cache=True)
+    d = holler.ping(
+        idurl,
+        ack_timeout=int(timeout),
+        cache_timeout=int(timeout),
+        cache_retries=int(retries),
+        ping_retries=int(retries),
+        force_cache=True,
+        channel='api_user_ping',
+    )
     d.addCallback(
         lambda resp_tuple: ret.callback(
             OK(str(resp_tuple))))

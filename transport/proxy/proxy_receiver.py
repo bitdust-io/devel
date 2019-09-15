@@ -678,6 +678,7 @@ class ProxyReceiver(automat.Automat):
             force_cache=False,
             skip_outbox=True,
             fake_identity=identity_obj,
+            channel='proxy_receiver',
         )
         d.addCallback(lambda resp_tuple: self.automat('ack-received', (resp_tuple[0], resp_tuple[1])))
         d.addErrback(lambda err: self.automat(failed_event, err))
