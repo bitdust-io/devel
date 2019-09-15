@@ -62,7 +62,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -672,23 +672,32 @@ class ProxyReceiver(automat.Automat):
             lg.out(_DebugLevel, 'proxy_receiver._do_send_identity_to_router to %s' % self.router_idurl)
             lg.out(_DebugLevel, '        contacts=%r, sources=%r' % (
                 identity_obj.contacts, identity_obj.getSources(as_originals=True)))
-        newpacket = signed.Packet(
-            Command=commands.Identity(),
-            OwnerID=my_id.getLocalID(),
-            CreatorID=my_id.getLocalID(),
-            PacketID=('identity:%s' % packetid.UniqueID()),  # commands.Identity(),
-            Payload=identity_obj.serialize(),
-            RemoteID=self.router_idurl,
+        from p2p import holler
+        d = holler.ping(
+            idurl=self.router_idurl,
+            force_cache=False,
+            skip_outbox=True,
+            fake_identity=identity_obj,
         )
-        packet_out.create(
-            newpacket,
-            wide=True,
-            callbacks={
-                commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
-                commands.Fail(): lambda x: self.automat(failed_event),
-            },
-            keep_alive=True,
-        )
+        d.addCallback(lambda resp_tuple: self.automat('ack-received', (resp_tuple[0], resp_tuple[1])))
+        d.addErrback(lambda err: self.automat(failed_event, err))
+#         newpacket = signed.Packet(
+#             Command=commands.Identity(),
+#             OwnerID=my_id.getLocalID(),
+#             CreatorID=my_id.getLocalID(),
+#             PacketID=('identity:%s' % packetid.UniqueID()),  # commands.Identity(),
+#             Payload=identity_obj.serialize(),
+#             RemoteID=self.router_idurl,
+#         )
+#         packet_out.create(
+#             newpacket,
+#             wide=True,
+#             callbacks={
+#                 commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
+#                 commands.Fail(): lambda x: self.automat(failed_event),
+#             },
+#             keep_alive=True,
+#         )
 
     def _do_send_request_service(self, *args, **kwargs):
         if len(self.request_service_packet_id) >= 3:

@@ -83,6 +83,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
     }
 
     def __init__(self):
+        self.force_keep_alive = False
         self.stream = None
         self.peer_address = None
         self.peer_external_address = None
@@ -454,14 +455,14 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             # so we check it here and skip not existed files
             if not os.path.isfile(filename):
                 self.failed_outbox_queue_item(filename, description, 'file not exist')
-                if not keep_alive:
+                if not (keep_alive or self.force_keep_alive):
                     self.automat('shutdown')
                 continue
             try:
                 filesize = os.path.getsize(filename)
             except:
                 self.failed_outbox_queue_item(filename, description, 'can not get file size')
-                if not keep_alive:
+                if not (keep_alive or self.force_keep_alive):
                     self.automat('shutdown')
                 continue
             self.stream.create_outbox_file(filename, filesize, description, result_defer, keep_alive)

@@ -350,8 +350,14 @@ def SendIdentity(remote_idurl, wide=False, timeout=10, callbacks={}):
 def RequestService(request, info):
     """
     """
+    try:
+        service_info = serialization.BytesToDict(request.Payload)
+    except:
+        lg.exc()
+        service_info = {}
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.RequestService %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, 'p2p_service.RequestService %s with "%s" in %d bytes' % (
+            request.PacketID, service_info.get('name', 'unknown service name'), len(request.Payload)))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
 
@@ -378,8 +384,14 @@ def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, 
 
 
 def CancelService(request, info):
+    try:
+        service_info = serialization.BytesToDict(request.Payload)
+    except:
+        lg.exc()
+        service_info = {}
     if _Debug:
-        lg.out(_DebugLevel, 'p2p_service.CancelService %d bytes in [%s]' % (len(request.Payload), request.PacketID))
+        lg.out(_DebugLevel, 'p2p_service.CancelService %s with "%s" in %d bytes' % (
+            request.PacketID, service_info.get('name', 'unknown service name'), len(request.Payload), ))
         lg.out(_DebugLevel, '  from remoteID=%s  ownerID=%s  creatorID=%s' % (
             request.RemoteID, request.OwnerID, request.CreatorID))
 

@@ -482,7 +482,7 @@ class SharedAccessCoordinator(automat.Automat):
                 idurl, newstate, self.state))
         sc = supplier_connector.by_idurl(idurl)
         if sc:
-            sc.remove_callback('shared_access_coordinator')
+            sc.remove_callback('shared_access_coordinator', self._on_supplier_connector_state_changed)
         if newstate == 'CONNECTED':
             self.automat('supplier-connected', idurl)
 

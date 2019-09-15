@@ -47,11 +47,10 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
-
 
 import os
 import sys
@@ -518,93 +517,20 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
 
 #------------------------------------------------------------------------------
 
-def PingContact(idurl, timeout=30, retries=2):
-    """
-    Can be called when you need to "ping" another user.
-    This will send your Identity to that node, and it must respond with Ack packet.
-    """
-    idurl = id_url.field(idurl).original()
-    if _Debug:
-        lg.out(_DebugLevel, "propagate.PingContact [%s]" % nameurl.GetName(idurl))
-
-    ping_result = Deferred()
-
-    def _ack_handler(response, info, attempts):
-        if _Debug:
-            lg.out(_DebugLevel, "propagate.PingContact [%s] SUCCESS after %d attempts : %s from %s://%s" % (
-                nameurl.GetName(idurl), attempts, response, info.proto, info.host, ))
-        if not ping_result.called:
-            ping_result.callback((response, info, ))
-        return None
-
-    def _try_to_ping(attempts):
-        if attempts > retries + 1:
-            if _Debug:
-                lg.out(_DebugLevel, "propagate.PingContact._try_to_ping %r failed after %d attempts" % (idurl, attempts, ))
-            if not ping_result.called:
-                ping_result.errback(Exception('remote user did not responded after %d ping attempts : %s' % (attempts, idurl, )))
-            return None
-        SendToIDs(
-            idlist=[id_url.field(idurl), ],
-            ack_handler=lambda response, info: _ack_handler(response, info, attempts),
-            timeout_handler=lambda pkt_out: _response_timed_out(pkt_out, attempts),
-            response_timeout=timeout,
-            wide=True,
-        )
-        return None
-
-    def _response_timed_out(pkt_out, attempts):
-        if _Debug:
-            lg.out(_DebugLevel, "propagate.PingContact._response_timed_out : %s" % pkt_out)
-        _try_to_ping(attempts + 1)
-        return None
-
-    def _identity_cached(idsrc, idurl):
-        if _Debug:
-            lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for %r" % (len(idsrc), idurl))
-        # TODO: Verify()
-        _try_to_ping(1)
-        return idsrc
-
-    def _identity_cache_failed(err, idurl, attempts):
-        try:
-            msg = err.getErrorMessage()
-        except:
-            msg = str(err)
-        if _Debug:
-            lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed attempts=%d %s : %s" % (attempts, idurl, msg, ))
-        _try_to_cache(attempts + 1)
-        return None
-
-    def _try_to_cache(attempts):
-        if attempts > retries + 1:
-            if _Debug:
-                lg.out(_DebugLevel, "propagate.PingContact._try_to_cache %r failed after %d attempts" % (idurl, attempts, ))
-            if not ping_result.called:
-                ping_result.errback(Exception('failed to fetch remote identity after %d attempts : %s' % (attempts, idurl, )))
-            return None
-        idcache_defer = identitycache.scheduleForCaching(strng.to_text(idurl), timeout=timeout)
-        idcache_defer.addCallback(_identity_cached, idurl)
-        idcache_defer.addErrback(_identity_cache_failed, idurl, attempts)
-        return None
-
-    _try_to_cache(1)
-    return ping_result
-
-#------------------------------------------------------------------------------
-
 def ping_suppliers(customer_idurl=None, timeout=30, retries=2):
+    from p2p import holler
     l = []
     for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
         if supplier_idurl:
-            l.append(PingContact(supplier_idurl, timeout=timeout, retries=retries))
+            l.append(holler.ping(idurl=supplier_idurl, ack_timeout=timeout, ping_retries=retries, channel='ping_suppliers'))
     return DeferredList(l, consumeErrors=True)
 
 
 def ping_customers(timeout=30, retries=2):
+    from p2p import holler
     l = []
     for customer_idurl in contactsdb.customers():
         if customer_idurl:
-            l.append(PingContact(customer_idurl, timeout=timeout, retries=retries))
+            l.append(holler.ping(idurl=customer_idurl, ack_timeout=timeout, ping_retries=retries, channel='ping_customers'))
     return DeferredList(l, consumeErrors=True)
 

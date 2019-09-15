@@ -766,8 +766,7 @@ class FireHire(automat.Automat):
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc:
-                sc.set_callback('fire_hire',
-                                self._on_supplier_connector_state_changed)
+                sc.set_callback('fire_hire', self._on_supplier_connector_state_changed)
                 sc.automat('disconnect')
             else:
                 lg.warn('supplier_connector must exist, but not found %s' % supplier_idurl)
@@ -858,7 +857,7 @@ class FireHire(automat.Automat):
             lg.out(_DebugLevel, 'fire_hire._on_supplier_connector_state_changed %s to %s, own state is %s' % (
                 idurl, newstate, self.state))
         if supplier_connector.by_idurl(idurl):
-            supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
+            supplier_connector.by_idurl(idurl).remove_callback('fire_hire', self._on_supplier_connector_state_changed)
         if self.state == 'SUPPLIERS?':
             if idurl in self.connect_list:
                 self.connect_list.remove(idurl)

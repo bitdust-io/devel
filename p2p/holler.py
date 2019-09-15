@@ -66,6 +66,7 @@ from crypt import signed
 
 from p2p import commands
 
+from transport import packet_out
 from transport import gateway
 
 from userid import global_id
@@ -74,15 +75,43 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-def ping(idurl, ack_timeout=10, cache_timeout=5, cache_retries=2, ping_retries=2, force_cache=False):
-    result = Deferred()
+_OpenedHollers = {}
+_KnownChannels = {}
+
+#------------------------------------------------------------------------------
+
+def ping(idurl,
+         ack_timeout=10, cache_timeout=5, cache_retries=2, ping_retries=2,
+         force_cache=False, skip_outbox=False, keep_alive=True,
+         fake_identity=None,
+         channel='identity', channel_counter=True,
+    ):
+    """
+    Doing peer-to-peer ping with acknowledgment and return `Deferred` object to receive result.
+    First read remote identity file from `idurl` location.
+    Then sending my own identity to remote node and wait for ack.
+    If Ack() packet from remote node times out (or another error happened)
+    should return failed result in the result `Deferred`.
+    """
+    global _OpenedHollers
+    remote_idurl = id_url.field(idurl).to_bin()
+    if remote_idurl in _OpenedHollers:
+        existing_result = _OpenedHollers[remote_idurl]
+        if not existing_result.called:
+            return existing_result
+    _OpenedHollers[remote_idurl] = Deferred()
     h = Holler(
-        remote_idurl=id_url.field(idurl),
-        result_defer=result,
+        remote_idurl=remote_idurl,
+        result_defer=_OpenedHollers[remote_idurl],
         ack_timeout=ack_timeout,
         cache_timeout=cache_timeout,
         cache_retries=cache_retries,
         ping_retries=ping_retries,
+        skip_outbox=skip_outbox,
+        keep_alive=keep_alive,
+        fake_identity=fake_identity,
+        channel=channel,
+        channel_counter=channel_counter,
         debug_level=_DebugLevel,
         log_events=_Debug,
         log_transitions=_Debug,
@@ -91,7 +120,7 @@ def ping(idurl, ack_timeout=10, cache_timeout=5, cache_retries=2, ping_retries=2
         h.automat('cache-and-ping')
     else:
         h.automat('ping')
-    return result
+    return _OpenedHollers[remote_idurl]
 
 #------------------------------------------------------------------------------
 
@@ -100,19 +129,33 @@ class Holler(automat.Automat):
     This class implements all the functionality of ``holler()`` state machine.
     """
 
-    def __init__(self, remote_idurl, result_defer, ack_timeout, cache_timeout, cache_retries, ping_retries,
+    def __init__(self,
+                 remote_idurl, result_defer,
+                 ack_timeout, cache_timeout,
+                 cache_retries, ping_retries,
+                 skip_outbox, keep_alive, fake_identity, channel, channel_counter,
                  debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
         Builds `holler()` state machine.
         """
+        global _KnownChannels
         self.remote_idurl = remote_idurl
         self.result_defer = result_defer
         self.ack_timeout = ack_timeout
         self.cache_timeout = cache_timeout
         self.cache_retries = cache_retries
         self.ping_retries = ping_retries
+        self.skip_outbox = skip_outbox
+        self.keep_alive = keep_alive
+        self.fake_identity = fake_identity
+        self.channel = channel
+        self.channel_counter = channel_counter
+        if self.channel not in _KnownChannels:
+            _KnownChannels[self.channel] = 0
+        _KnownChannels[self.channel] += 1
         super(Holler, self).__init__(
-            name="holler_%s" % global_id.idurl2glob(self.remote_idurl),
+            name="holler_%s_%d_%s" % (self.channel, _KnownChannels[self.channel],
+                                      global_id.idurl2glob(self.remote_idurl)),
             state="AT_STARTUP",
             debug_level=debug_level,
             log_events=log_events,
@@ -231,60 +274,101 @@ class Holler(automat.Automat):
         """
         Action method.
         """
+        global _KnownChannels
         self.ping_attempts += 1
+        if self.fake_identity:
+            identity_object = self.fake_identity
+        else:
+            identity_object = my_id.getLocalIdentity()
+        if not identity_object.Valid():
+            raise Exception('can not use invalid identity for ping')
+        if self.channel_counter:
+            packet_id = '%s:%d' % (self.channel, _KnownChannels[self.channel], )
+        else:
+            packet_id = '%s:%s' % (self.channel, packetid.UniqueID(), )
         ping_packet = signed.Packet(
             Command=commands.Identity(),
             OwnerID=my_id.getLocalID(),
             CreatorID=my_id.getLocalID(),
-            PacketID=('identity:%s' % packetid.UniqueID()),
-            Payload=strng.to_bin(my_id.getLocalIdentity().serialize()),
+            PacketID=packet_id,
+            Payload=strng.to_bin(identity_object.serialize()),
             RemoteID=self.remote_idurl,
         )
-        gateway.outbox(ping_packet, wide=True, response_timeout=self.ack_timeout, callbacks={
-            commands.Ack(): lambda response, info: self.automat('ack-received', response, info),
-            commands.Fail(): lambda response, info: self.automat('fail-received', response, info),
-            None: lambda pkt_out: self.automat('ack-timeout', pkt_out),
-        })
+        if self.skip_outbox:
+            packet_out.create(
+                outpacket=ping_packet,
+                wide=True,
+                response_timeout=self.ack_timeout,
+                callbacks={
+                    commands.Ack(): lambda response, info: self.automat('ack-received', response, info),
+                    commands.Fail(): lambda response, info: self.automat('fail-received', response, info),
+                    None: lambda pkt_out: self.automat('ack-timeout', pkt_out),
+                },
+                keep_alive=self.keep_alive,
+            )
+        else:
+            gateway.outbox(
+                outpacket=ping_packet,
+                wide=True,
+                response_timeout=self.ack_timeout,
+                callbacks={
+                    commands.Ack(): lambda response, info: self.automat('ack-received', response, info),
+                    commands.Fail(): lambda response, info: self.automat('fail-received', response, info),
+                    None: lambda pkt_out: self.automat('ack-timeout', pkt_out),
+                },
+                keep_alive=self.keep_alive,
+            )
 
     def doReportNoIdentity(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.warn('failed to cache remote identity %s after %d attempts' % (
+        lg.warn('failed to cache remote identity %r after %d attempts' % (
             self.remote_idurl, self.cache_attempts, ))
-        self.result_defer.errback(Exception('failed to cache remote identity %s after %d attempts' % (
+        self.result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
             self.remote_idurl, self.cache_attempts, )))
 
     def doReportFailed(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.warn('ping failed because received Fail() from remote user %s' % self.remote_idurl)
-        self.result_defer.errback(Exception('ping failed because received Fail() from remote user %s' % self.remote_idurl))
+        lg.warn('ping failed because received Fail() from remote user %r' % self.remote_idurl)
+        self.result_defer.errback(Exception('ping failed because received Fail() from remote user %r' % self.remote_idurl))
 
     def doReportTimeOut(self, *args, **kwargs):
         """
         Action method.
         """
-        lg.warn('remote user %s did not responded after %d ping attempts' % (self.remote_idurl, self.ping_attempts, ))
-        self.result_defer.errback(Exception('remote user %s did not responded after %d ping attempts' % (
+        lg.warn('remote user %r did not responded after %d ping attempts' % (self.remote_idurl, self.ping_attempts, ))
+        self.result_defer.errback(Exception('remote user %r did not responded after %d ping attempts' % (
             self.remote_idurl, self.ping_attempts, )))
 
     def doReportSuccess(self, *args, **kwargs):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, idurl=self.remote_idurl, ack_packet=args[0], info=args[1])
         self.result_defer.callback((args[0], args[1], ))
 
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _OpenedHollers
+        if self.remote_idurl in _OpenedHollers:
+            _OpenedHollers.pop(self.remote_idurl)
+        else:
+            lg.warn('did not found my registered opened instance')
         self.remote_idurl = None
         self.result_defer = None
         self.ack_timeout = None
         self.cache_timeout = None
         self.cache_retries = None
         self.ping_retries = None
+        self.skip_outbox = None
+        self.fake_identity = None
+        self.channel = None
+        self.channel_counter = None
         self.destroy()
 

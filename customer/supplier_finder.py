@@ -29,8 +29,9 @@ BitDust supplier_finder() Automat
 
 
 EVENTS:
+    * :red:`ack-received`
     * :red:`found-one-user`
-    * :red:`inbox-packet`
+    * :red:`ping-failed`
     * :red:`start`
     * :red:`supplier-connected`
     * :red:`supplier-not-connected`
@@ -56,6 +57,8 @@ from automats import automat
 from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
+from p2p import propagate
+from p2p import holler
 
 from contacts import identitycache
 from contacts import contactsdb
@@ -138,24 +141,6 @@ class SupplierFinder(automat.Automat):
                 self.doPopCandidate(*args, **kwargs)
                 self.Attempts=1
                 self.doSendMyIdentity(*args, **kwargs)
-        #---ACK?---
-        elif self.state == 'ACK?':
-            if event == 'inbox-packet' and self.isAckFromUser(*args, **kwargs):
-                self.state = 'SERVICE?'
-                self.doSupplierConnect(*args, **kwargs)
-            elif self.Attempts==5 and event == 'timer-10sec':
-                self.state = 'FAILED'
-                self.doDestroyMe(*args, **kwargs)
-                self.doReportFailed(*args, **kwargs)
-            elif event == 'timer-10sec' and self.Attempts<5:
-                self.state = 'RANDOM_USER'
-                self.doDHTFindRandomUser(*args, **kwargs)
-        #---FAILED---
-        elif self.state == 'FAILED':
-            pass
-        #---DONE---
-        elif self.state == 'DONE':
-            pass
         #---RANDOM_USER---
         elif self.state == 'RANDOM_USER':
             if event == 'users-not-found':
@@ -168,6 +153,18 @@ class SupplierFinder(automat.Automat):
                 self.doRememberUser(*args, **kwargs)
                 self.Attempts+=1
                 self.doSendMyIdentity(*args, **kwargs)
+        #---ACK?---
+        elif self.state == 'ACK?':
+            if self.Attempts==5 and ( event == 'timer-10sec' or event == 'ping-failed' ):
+                self.state = 'FAILED'
+                self.doDestroyMe(*args, **kwargs)
+                self.doReportFailed(*args, **kwargs)
+            elif ( event == 'ping-failed' or event == 'timer-10sec' ) and self.Attempts<5:
+                self.state = 'RANDOM_USER'
+                self.doDHTFindRandomUser(*args, **kwargs)
+            elif event == 'ack-received':
+                self.state = 'SERVICE?'
+                self.doSupplierConnect(*args, **kwargs)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'supplier-connected':
@@ -184,13 +181,19 @@ class SupplierFinder(automat.Automat):
             elif self.Attempts<5 and event == 'supplier-not-connected':
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(*args, **kwargs)
+        #---FAILED---
+        elif self.state == 'FAILED':
+            pass
+        #---DONE---
+        elif self.state == 'DONE':
+            pass
         return None
 
     def isAckFromUser(self, *args, **kwargs):
         """
         Condition method.
         """
-        newpacket, info, status, error_message = args[0]
+        newpacket = args[0]
         if newpacket.Command == commands.Ack():
             if self.target_idurl and newpacket.OwnerID.to_bin() == self.target_idurl.to_bin():
                 # TODO: also check PacketID
@@ -208,7 +211,6 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        callback.append_inbox_callback(self._inbox_packet_received)
         self.family_position = kwargs.get('family_position', None)
         self.ecc_map = kwargs.get('ecc_map')
         self.family_snapshot = kwargs.get('family_snapshot')
@@ -217,7 +219,12 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendIdentity(self.target_idurl, wide=True)
+        d = holler.ping(
+            idurl=self.target_idurl,
+            channel='supplier_finder',
+        )
+        d.addCallback(lambda res_tuple: self.automat('ack-received', res_tuple[0]))
+        d.addErrback(lambda err: self.automat('ping-failed'))
 
     def doSupplierConnect(self, *args, **kwargs):
         """
@@ -243,13 +250,13 @@ class SupplierFinder(automat.Automat):
                 supplier_idurl=self.target_idurl,
                 customer_idurl=my_id.getLocalID(),
             )
+        sc.set_callback('supplier_finder', self._supplier_connector_state)
         sc.automat(
             'connect',
             family_position=position,
             ecc_map=(self.ecc_map or eccmap.Current().name),
             family_snapshot=self.family_snapshot,
         )
-        sc.set_callback('supplier_finder', self._supplier_connector_state)
 
     def doDHTFindRandomUser(self, *args, **kwargs):
         """
@@ -266,7 +273,7 @@ class SupplierFinder(automat.Automat):
         from customer import supplier_connector
         sc = supplier_connector.by_idurl(self.target_idurl)
         if sc:
-            sc.remove_callback('supplier_finder')
+            sc.remove_callback('supplier_finder', self._supplier_connector_state)
         self.target_idurl = None
 
     def doRememberUser(self, *args, **kwargs):
@@ -308,19 +315,14 @@ class SupplierFinder(automat.Automat):
         global _SupplierFinder
         del _SupplierFinder
         _SupplierFinder = None
-        callback.remove_inbox_callback(self._inbox_packet_received)
         if self.target_idurl:
             sc = supplier_connector.by_idurl(self.target_idurl)
             if sc:
-                sc.remove_callback('supplier_finder')
+                sc.remove_callback('supplier_finder', self._supplier_connector_state)
             self.target_idurl = None
         self.destroy()
 
     #------------------------------------------------------------------------------
-
-    def _inbox_packet_received(self, newpacket, info, status, error_message):
-        self.automat('inbox-packet', (newpacket, info, status, error_message))
-        return False
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:

@@ -90,7 +90,7 @@ from automats import automat
 
 from p2p import ratings
 from p2p import commands
-from p2p import propagate
+from p2p import holler
 
 from transport import callback
 
@@ -611,7 +611,11 @@ class OnlineStatus(automat.Automat):
             timeout = int(args[0])
         except:
             timeout = 15
-        d = propagate.PingContact(self.idurl, timeout=timeout)
+        d = holler.ping(
+            idurl=self.idurl,
+            ack_timeout=timeout,
+            channel='online_status',
+        )
         d.addCallback(self._on_ping_success)
         d.addErrback(self._on_ping_failed)
 

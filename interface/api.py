@@ -2222,7 +2222,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         return ERROR('peer "%s" is your supplier already' % new_supplier_idurl)
     ret = Deferred()
 
-    def _change(x):
+    def _do_change(x):
         from customer import fire_hire
         from customer import supplier_finder
         supplier_finder.AddSupplierToHire(new_supplier_idurl)
@@ -2231,8 +2231,14 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl)))
         return None
 
-    from p2p import propagate
-    propagate.PingContact(new_supplier_idurl).addBoth(_change)
+    from p2p import holler
+    d = holler.ping(
+        idurl=new_supplier_idurl,
+        force_cache=True,
+        channel='supplier_change',
+    )
+    d.addCallback(_do_change)
+    d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
 
 
@@ -2981,7 +2987,7 @@ def user_ping(idurl_or_global_id, timeout=10, retries=2):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
-    from p2p import propagate
+    from p2p import holler
     from userid import global_id
     from userid import id_url
     idurl = idurl_or_global_id
@@ -2989,10 +2995,12 @@ def user_ping(idurl_or_global_id, timeout=10, retries=2):
         idurl = global_id.GlobalUserToIDURL(idurl)
     idurl = id_url.field(idurl)
     ret = Deferred()
-    d = propagate.PingContact(idurl, timeout=int(timeout), retries=int(retries))
+    d = holler.ping(idurl, ack_timeout=int(timeout), cache_timeout=int(timeout),
+                    cache_retries=int(retries), ping_retries=int(retries),
+                    force_cache=True)
     d.addCallback(
-        lambda resp: ret.callback(
-            OK(str(resp))))
+        lambda resp_tuple: ret.callback(
+            OK(str(resp_tuple))))
     d.addErrback(
         lambda err: ret.callback(
             ERROR(err.getErrorMessage())))
@@ -3247,7 +3255,8 @@ def message_send(recipient, json_data, timeout=5):
     result = message.send_message(
         json_data=json_data,
         recipient_global_id=target_glob_id,
-        timeout=timeout,
+        ping_timeout=timeout,
+        message_ack_timeout=timeout,
     )
     ret = Deferred()
     result.addCallback(lambda packet: ret.callback(OK(str(packet))))
@@ -3492,7 +3501,7 @@ def network_connected(wait_timeout=5):
                 lg.warn('disconnected, reason is "p2p_connector_not_exist"')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
                 return None
-            if p2p_connector_machine.state != 'CONNECTED':
+            if p2p_connector_machine.state in ['DISCONNECTED', ]:
                 lg.warn('disconnected, reason is "p2p_connector_disconnected", sending "check-synchronize" event to p2p_connector()')
                 p2p_connector_machine.automat('check-synchronize')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))

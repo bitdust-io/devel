@@ -62,7 +62,7 @@ from main import settings
 
 from contacts import identitycache
 
-from p2p import propagate
+from p2p import holler
 from p2p import p2p_service
 from p2p import commands
 
@@ -208,7 +208,11 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     Returns deferred, callback will be fired with response Ack() packet argument.
     """
     result = Deferred()
-    d = propagate.PingContact(trusted_idurl, timeout=timeout)
+    d = holler.ping(
+        idurl=trusted_idurl,
+        ack_timeout=timeout,
+        channel='share_key',
+    )
     d.addCallback(lambda response_tuple: _do_request_service_keys_registry(
         key_id, trusted_idurl, include_private, timeout, result,
     ))
