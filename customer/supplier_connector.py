@@ -41,7 +41,7 @@ EVENTS:
     * :red:`fail`
     * :red:`shutdown`
     * :red:`timer-10sec`
-    * :red:`timer-20sec`
+    * :red:`timer-30sec`
 """
 
 #------------------------------------------------------------------------------
@@ -165,8 +165,8 @@ class SupplierConnector(automat.Automat):
     """
 
     timers = {
+        'timer-30sec': (30.0, ['REQUEST']),
         'timer-10sec': (10.0, ['REFUSE', 'QUEUE?']),
-        'timer-20sec': (20.0, ['REQUEST']),
     }
 
     def __init__(self, supplier_idurl, customer_idurl, needed_bytes,
@@ -339,10 +339,6 @@ class SupplierConnector(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-20sec':
-                self.state = 'DISCONNECTED'
-                self.doCleanRequest(*args, **kwargs)
-                self.doReportDisconnect(*args, **kwargs)
             elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(*args, **kwargs) and not self.GoDisconnect ):
                 self.state = 'NO_SERVICE'
                 self.doReportNoService(*args, **kwargs)
@@ -352,6 +348,10 @@ class SupplierConnector(automat.Automat):
             elif self.GoDisconnect and event == 'ack' and self.isServiceAccepted(*args, **kwargs):
                 self.state = 'REFUSE'
                 self.doCancelService(*args, **kwargs)
+            elif event == 'timer-30sec':
+                self.state = 'DISCONNECTED'
+                self.doCleanRequest(*args, **kwargs)
+                self.doReportDisconnect(*args, **kwargs)
         #---REFUSE---
         elif self.state == 'REFUSE':
             if event == 'shutdown':
@@ -408,16 +408,25 @@ class SupplierConnector(automat.Automat):
         ecc_map = kwargs.get('ecc_map')
         family_position = kwargs.get('family_position')
         family_snapshot = kwargs.get('family_snapshot')
-        d = holler.ping(
-            idurl=self.supplier_idurl,
-            channel='supplier_connector',
-        )
-        d.addCallback(lambda result: self._do_request_supplier_service(
-            ecc_map=ecc_map,
-            family_position=family_position,
-            family_snapshot=family_snapshot,
-        ))
-        d.addErrback(lambda err: self.automat('fail', None))
+        if online_status.isOnline(self.supplier_idurl):
+            self._do_request_supplier_service(
+                ecc_map=ecc_map,
+                family_position=family_position,
+                family_snapshot=family_snapshot,
+            )
+        else:
+            d = holler.ping(
+                idurl=self.supplier_idurl,
+                channel='supplier_connector',
+                ack_timeout=5,
+                ping_retries=1,
+            )
+            d.addCallback(lambda result: self._do_request_supplier_service(
+                ecc_map=ecc_map,
+                family_position=family_position,
+                family_snapshot=family_snapshot,
+            ))
+            d.addErrback(lambda err: self.automat('fail', None))
 
     def doCancelService(self, *args, **kwargs):
         """

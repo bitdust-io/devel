@@ -316,6 +316,8 @@ class Holler(automat.Automat):
                 },
                 keep_alive=self.keep_alive,
             )
+        if _Debug:
+            lg.args(_DebugLevel, packet_id=packet_id, remote_idurl=self.remote_idurl, ping_attempts=self.ping_attempts)
 
     def doReportNoIdentity(self, *args, **kwargs):
         """
