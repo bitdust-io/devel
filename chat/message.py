@@ -58,7 +58,6 @@ from logs import lg
 
 from p2p import commands
 from p2p import online_status
-from p2p import holler
 
 from lib import strng
 from lib import packetid
@@ -337,12 +336,12 @@ def on_incoming_message(request, info, status, error_message):
     return True
 
 
-def on_ping_success(response_tuple, idurl):
+def on_ping_success(ok, idurl):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
     _LastUserPingTime[idurl] = time.time()
-    lg.info('node %r replied with Ack : %s' % (idurl, response_tuple, ))
-    return response_tuple
+    lg.info('shaked up hands %r before sending a message : %s' % (idurl, ok, ))
+    return ok
 
 
 def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None):
@@ -443,13 +442,13 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
         lg.out(_DebugLevel, "    is_ping_expired=%r  remote_identity=%r  is_online=%r" % (
             is_ping_expired, bool(remote_identity), is_online, ))
     if is_ping_expired or remote_identity is None or not is_online:
-        d = holler.ping(
+        d = online_status.ping(
             idurl=remote_idurl,
             ack_timeout=ping_timeout,
             ping_retries=ping_retries,
             channel='send_message',
         )
-        d.addCallback(lambda response_tuple: on_ping_success(response_tuple, remote_idurl))
+        d.addCallback(lambda ok: on_ping_success(ok, remote_idurl))
         d.addCallback(lambda _: do_send_message(
             json_data, recipient_global_id, packet_id, message_ack_timeout, result_defer=ret))
         d.addErrback(lambda err: on_message_failed(

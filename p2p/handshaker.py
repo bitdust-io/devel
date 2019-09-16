@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# holler.py
+# handshaker.py
 #
 # Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
-# This file (online_status.py) is part of BitDust Software.
+# This file (handshaker.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -23,10 +23,10 @@
 
 
 """
-.. module:: holler
+.. module:: handshaker
 .. role:: red
 
-BitDust holler() Automat
+BitDust handshaker() Automat
 
 EVENTS:
     * :red:`ack-received`
@@ -76,7 +76,7 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-_OpenedHollers = {}
+_RunningHandshakers = {}
 _KnownChannels = {}
 
 #------------------------------------------------------------------------------
@@ -94,23 +94,23 @@ def ping(idurl,
     If Ack() packet from remote node times out (or another error happened)
     should return failed result in the result `Deferred`.
     """
-    global _OpenedHollers
+    global _RunningHandshakers
     remote_idurl = id_url.field(idurl).to_bin()
     if not remote_idurl:
         raise Exception('empty idurl provided')
     result = Deferred()
-    if remote_idurl in _OpenedHollers:
-        _OpenedHollers[remote_idurl]['results'].append(result)
+    if remote_idurl in _RunningHandshakers:
+        _RunningHandshakers[remote_idurl]['results'].append(result)
         if _Debug:
             lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
         return result
-    _OpenedHollers[remote_idurl] = {
+    _RunningHandshakers[remote_idurl] = {
         'instance': None,
         'results': [result, ],
     }
     if _Debug:
         lg.args(_DebugLevel, already_opened=False, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
-    h = Holler(
+    h = Handshaker(
         remote_idurl=remote_idurl,
         ack_timeout=ack_timeout,
         cache_timeout=cache_timeout,
@@ -125,7 +125,7 @@ def ping(idurl,
         log_events=_Debug,
         log_transitions=_Debug,
     )
-    _OpenedHollers[remote_idurl]['instance'] = h
+    _RunningHandshakers[remote_idurl]['instance'] = h
     if force_cache:
         h.automat('cache-and-ping')
     else:
@@ -137,26 +137,29 @@ def is_running(idurl):
     """
     Returns True if some "ping" is currently running towards given user.
     """
-    global _OpenedHollers
+    global _RunningHandshakers
     remote_idurl = id_url.field(idurl).to_bin()
     if not remote_idurl:
         return False
-    return remote_idurl in _OpenedHollers
+    return remote_idurl in _RunningHandshakers
 
 #------------------------------------------------------------------------------
 
-def on_outbox_status_failed(pkt_out, status, error):
-    global _OpenedHollers
+def on_identity_packet_outbox_status(pkt_out, status, error):
+    global _RunningHandshakers
     remote_idurl = id_url.field(pkt_out.outpacket.RemoteID).to_bin()
-    if remote_idurl in _OpenedHollers:
-        inst = _OpenedHollers[remote_idurl]['instance']
-        inst.automat('outbox-failed', status, error)
+    if remote_idurl in _RunningHandshakers:
+        inst = _RunningHandshakers[remote_idurl]['instance']
+        if status == 'finished':
+            inst.automat('identity-sent')
+        else:
+            inst.automat('outbox-failed', status, error)
 
 #------------------------------------------------------------------------------
 
-class Holler(automat.Automat):
+class Handshaker(automat.Automat):
     """
-    This class implements all the functionality of ``holler()`` state machine.
+    This class implements all the functionality of ``handshaker()`` state machine.
     """
 
     def __init__(self,
@@ -166,7 +169,7 @@ class Holler(automat.Automat):
                  skip_outbox, keep_alive, fake_identity, channel, channel_counter,
                  debug_level=0, log_events=False, log_transitions=False, publish_events=False, **kwargs):
         """
-        Builds `holler()` state machine.
+        Builds `handshaker()` state machine.
         """
         global _KnownChannels
         self.remote_idurl = remote_idurl
@@ -182,8 +185,8 @@ class Holler(automat.Automat):
         if self.channel not in _KnownChannels:
             _KnownChannels[self.channel] = 0
         _KnownChannels[self.channel] += 1
-        super(Holler, self).__init__(
-            name="holler_%s_%d_%s" % (self.channel, _KnownChannels[self.channel],
+        super(Handshaker, self).__init__(
+            name="handshake_%s%d_%s" % (self.channel, _KnownChannels[self.channel],
                                       global_id.idurl2glob(self.remote_idurl)),
             state="AT_STARTUP",
             debug_level=debug_level,
@@ -196,19 +199,19 @@ class Holler(automat.Automat):
     def init(self):
         """
         Method to initialize additional variables and flags
-        at creation phase of `holler()` machine.
+        at creation phase of `handshaker()` machine.
         """
         self.cache_attempts = 0
         self.ping_attempts = 0
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
-        Method to catch the moment when `holler()` state were changed.
+        Method to catch the moment when `handshaker()` state were changed.
         """
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
-        This method intended to catch the moment when some event was fired in the `holler()`
+        This method intended to catch the moment when some event was fired in the `handshaker()`
         but automat state was not changed.
         """
 
@@ -312,9 +315,9 @@ class Holler(automat.Automat):
         if not identity_object.Valid():
             raise Exception('can not use invalid identity for ping')
         if self.channel_counter:
-            packet_id = '%s:%d:%d' % (self.channel, _KnownChannels[self.channel], self.ping_attempts)
+            packet_id = '%s:%d:%d:%s' % (self.channel, _KnownChannels[self.channel], self.ping_attempts, packetid.UniqueID())
         else:
-            packet_id = '%s:%s:%d' % (self.channel, packetid.UniqueID(), self.ping_attempts)
+            packet_id = '%s:%d:%s' % (self.channel, self.ping_attempts, packetid.UniqueID())
         ping_packet = signed.Packet(
             Command=commands.Identity(),
             OwnerID=my_id.getLocalID(),
@@ -354,10 +357,10 @@ class Holler(automat.Automat):
         """
         Action method.
         """
-        global _OpenedHollers
+        global _RunningHandshakers
         lg.warn('failed to cache remote identity %r after %d attempts' % (
             self.remote_idurl, self.cache_attempts, ))
-        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
+        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
             result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
                 self.remote_idurl, self.cache_attempts, )))
 
@@ -365,18 +368,18 @@ class Holler(automat.Automat):
         """
         Action method.
         """
-        global _OpenedHollers
+        global _RunningHandshakers
         lg.warn('ping failed because received Fail() from remote user %r' % self.remote_idurl)
-        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
+        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
             result_defer.errback(Exception('ping failed because received Fail() from remote user %r' % self.remote_idurl))
 
     def doReportTimeOut(self, *args, **kwargs):
         """
         Action method.
         """
-        global _OpenedHollers
+        global _RunningHandshakers
         lg.warn('remote user %r did not responded after %d ping attempts' % (self.remote_idurl, self.ping_attempts, ))
-        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
+        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
             result_defer.errback(Exception('remote user %r did not responded after %d ping attempts' % (
                 self.remote_idurl, self.ping_attempts, )))
 
@@ -384,20 +387,20 @@ class Holler(automat.Automat):
         """
         Action method.
         """
-        global _OpenedHollers
+        global _RunningHandshakers
         if _Debug:
             lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl, ack_packet=args[0], info=args[1])
-        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
+        for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
             result_defer.callback((args[0], args[1], ))
 
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
-        global _OpenedHollers
-        if self.remote_idurl in _OpenedHollers:
-            _OpenedHollers[self.remote_idurl]['instance'] = None
-            _OpenedHollers.pop(self.remote_idurl)
+        global _RunningHandshakers
+        if self.remote_idurl in _RunningHandshakers:
+            _RunningHandshakers[self.remote_idurl]['instance'] = None
+            _RunningHandshakers.pop(self.remote_idurl)
         else:
             lg.warn('did not found my registered opened instance')
         self.remote_idurl = None

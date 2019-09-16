@@ -48,15 +48,18 @@ every remote contact and monitor his status.
 
 
 EVENTS:
+    * :red:`ack-receieved`
     * :red:`ack-received`
+    * :red:`handshake`
     * :red:`inbox-packet`
     * :red:`init`
     * :red:`offline-check`
     * :red:`ping-failed`
     * :red:`ping-now`
+    * :red:`shook-up-hands`
     * :red:`shutdown`
-    * :red:`timer-15sec`
     * :red:`timer-1min`
+    * :red:`timer-20sec`
 """
 
 
@@ -80,6 +83,7 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in online_status.py')
 
 from twisted.internet.task import LoopingCall
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -91,7 +95,7 @@ from automats import automat
 
 from p2p import ratings
 from p2p import commands
-from p2p import holler
+from p2p import handshaker
 
 from transport import callback
 
@@ -165,6 +169,32 @@ def check_create(idurl):
         if _Debug:
             lg.out(_DebugLevel, 'online_status.check_create instance for %r was not found, made a new with state OFFLINE' % idurl)
     return True
+
+#------------------------------------------------------------------------------
+
+def ping(idurl, channel=None, ack_timeout=10, ping_retries=0):
+    """
+    Doing handshake with remote node only if it is currently not connected.
+    Returns Deferred object. 
+    """
+    if not isKnown(idurl):
+        check_create(idurl)
+    result = Deferred()
+    A(idurl, 'ping-now', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
+    return result
+
+
+def handshake(idurl, channel=None, ack_timeout=10, ping_retries=2):
+    """
+    Immediately doing handshake with remote node by fetching remote identity file and then
+    sending my own Identity() to remote peer and wait for an Ack() packet.
+    Returns Deferred object. 
+    """
+    if not isKnown(idurl):
+        check_create(idurl)
+    result = Deferred()
+    A(idurl, 'handshake', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
+    return result
 
 #------------------------------------------------------------------------------
 
@@ -386,26 +416,15 @@ def OutboxStatus(pkt_out, status, error=''):
         return False
     if status == 'finished':
         if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
-            if not holler.is_running(pkt_out.outpacket.RemoteID):
-                check_create(pkt_out.outpacket.RemoteID)
-                if _Debug:
-                    lg.out(_DebugLevel, 'online_status.OutboxStatus packet %s was "unanswered"' % pkt_out)
-                A(pkt_out.outpacket.RemoteID, 'ping-failed', (pkt_out, status, error))
-        # else:
-        #     A(pkt_out.outpacket.RemoteID, 'sent-done', (pkt_out, status, error))
+            if pkt_out.outpacket.OwnerID == my_id.getLocalID() and pkt_out.outpacket.CreatorID == my_id.getLocalID():
+                if not handshaker.is_running(pkt_out.outpacket.RemoteID):
+                    lg.warn('packet %s was "unanswered" and this was not a handshake' % pkt_out)
     else:
-        if _Debug:
-            lg.out(_DebugLevel, 'online_status.OutboxStatus %s: [%s] with %s error=%r' % (
-                status, pkt_out, pkt_out.outpacket, error))
-        if pkt_out.outpacket.Command == commands.Identity():
-            if holler.is_running(pkt_out.outpacket.RemoteID):
-                holler.on_outbox_status_failed(pkt_out, status, error)
-        # if status == 'cancelled':
-        #     if _Debug:
-        #         lg.out(_DebugLevel, '    skipped')
-        # else:
-            # lg.warn('sending event "sent-failed" to contact status of : %s' % pkt_out.remote_idurl)
-        #     A(pkt_out.outpacket.RemoteID, 'sent-failed', (pkt_out, status, error))
+        lg.warn('packet %s is "%s" with %s error: %r' % (pkt_out, status, pkt_out.outpacket, error))
+    if pkt_out.outpacket.Command == commands.Identity():
+        if pkt_out.outpacket.OwnerID == my_id.getLocalID() and pkt_out.outpacket.CreatorID == my_id.getLocalID():
+            if handshaker.is_running(pkt_out.outpacket.RemoteID):
+                handshaker.on_identity_packet_outbox_status(pkt_out, status, error)
     return False
 
 
@@ -504,7 +523,7 @@ class OnlineStatus(automat.Automat):
 
     timers = {
         'timer-1min': (60, ['CONNECTED']),
-        'timer-15sec': (15.0, ['PING?']),
+        'timer-20sec': (20.0, ['PING?']),
         }
 
     def __init__(self, idurl, name, state, debug_level=0, log_events=False, log_transitions=False, **kwargs):
@@ -514,6 +533,7 @@ class OnlineStatus(automat.Automat):
         self.idurl = idurl
         self.latest_inbox_time = None
         self.latest_check_time = None
+        self.keep_alive = False
         super(OnlineStatus, self).__init__(
             name=name,
             state=state,
@@ -562,39 +582,50 @@ class OnlineStatus(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'ping-failed' or event == 'timer-15sec':
+            elif event == 'ping-failed' or event == 'timer-20sec':
                 self.state = 'OFFLINE'
-            elif event == 'ack-received' or event == 'inbox-packet':
+                self.doReportOffline(*args, **kwargs)
+            elif event == 'handshake' or event == 'ping-now':
+                self.doSetCallback(*args, **kwargs)
+            elif event == 'ack-received' or event == 'shook-up-hands':
                 self.state = 'CONNECTED'
                 self.doRememberTime(*args, **kwargs)
+                self.doReportConnected(*args, **kwargs)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'ping-failed':
                 self.state = 'OFFLINE'
-            elif event == 'ping-now':
-                self.state = 'PING?'
-                self.doPing(*args, **kwargs)
+                self.doReportOffline(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-1min' and not self.isRecentInbox(*args, **kwargs):
-                self.doPing(*args, **kwargs)
-            elif event == 'inbox-packet':
+                self.doHandshake(event, *args, **kwargs)
+            elif event == 'handshake':
+                self.state = 'PING?'
+                self.doSetCallback(*args, **kwargs)
+                self.doHandshake(event, *args, **kwargs)
+            elif event == 'ping-now':
+                self.doSetCallback(*args, **kwargs)
+                self.doReportAlreadyConnected(*args, **kwargs)
+            elif event == 'inbox-packet' or event == 'shook-up-hands' or event == 'ack-receieved':
                 self.doRememberTime(*args, **kwargs)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
-            if event == 'ping-now':
-                self.state = 'PING?'
-                self.doPing(*args, **kwargs)
-            elif event == 'shutdown':
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'inbox-packet':
+            elif event == 'handshake' or event == 'ping-now':
+                self.state = 'PING?'
+                self.doSetCallback(*args, **kwargs)
+                self.doHandshake(event, *args, **kwargs)
+            elif event == 'inbox-packet' or event == 'shook-up-hands':
                 self.state = 'CONNECTED'
                 self.doRememberTime(*args, **kwargs)
-            elif event == 'offline-check':
+                self.doReportConnected(*args, **kwargs)
+            elif event == 'offline-check' or event == 'ack-received':
                 self.doRememberCheckTime(*args, **kwargs)
-                self.doPing(*args, **kwargs)
+                self.doHandshake(event, *args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -612,21 +643,56 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
+        self.handshake_callbacks = []
 
-    def doPing(self, *args, **kwargs):
+    def doSetCallback(self, *args, **kwargs):
         """
         Action method.
         """
-        try:
-            timeout = int(args[0])
-        except:
-            timeout = 14
-        d = holler.ping(
-            idurl=self.idurl,
-            ack_timeout=timeout,
-            ping_retries=0,
-            channel='online_status',
-        )
+        if args and args[0]:
+            self.handshake_callbacks.append(args[0])
+
+    def doHandshake(self, event, *args, **kwargs):
+        """
+        Action method.
+        """
+        channel = kwargs.get('channel', None)
+        ack_timeout = kwargs.get('ack_timeout', 15)
+        ping_retries = kwargs.get('ping_retries', 2)
+        if event == 'ping-now':
+            d = handshaker.ping(
+                idurl=self.idurl,
+                ack_timeout=ack_timeout,
+                ping_retries=ping_retries,
+                channel=channel or 'ping',
+            )
+        elif event == 'handshake':
+            self.keep_alive = True
+            d = handshaker.ping(
+                idurl=self.idurl,
+                ack_timeout=ack_timeout,
+                ping_retries=ping_retries,
+                force_cache=True,
+                channel=channel or 'handshake',
+            )
+        elif event == 'offline-ping':
+            d = handshaker.ping(
+                idurl=self.idurl,
+                ack_timeout=ack_timeout,
+                cache_timeout=20,
+                ping_retries=ping_retries,
+                force_cache=True,
+                channel='offline_ping',
+            )
+        else:
+            d = handshaker.ping(
+                idurl=self.idurl,
+                ack_timeout=ack_timeout,
+                cache_timeout=20,
+                ping_retries=ping_retries,
+                force_cache=True,
+                channel='idle_ping',
+            )
         d.addCallback(self._on_ping_success)
         d.addErrback(self._on_ping_failed)
 
@@ -642,12 +708,48 @@ class OnlineStatus(automat.Automat):
         """
         self.latest_check_time = time.time()
 
+    def doReportAlreadyConnected(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        for cb in self.handshake_callbacks:
+            if isinstance(cb, Deferred):
+                cb.callback(None)
+            else:
+                cb(None)
+        self.handshake_callbacks = []
+
+    def doReportOffline(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        err = args[0] if (args and args[0]) else None
+        for cb in self.handshake_callbacks:
+            if isinstance(cb, Deferred):
+                cb.errback(err)
+            else:
+                cb(err)
+        self.handshake_callbacks = []
+
+    def doReportConnected(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        response = args[0] if (args and args[0]) else None
+        for cb in self.handshake_callbacks:
+            if isinstance(cb, Deferred):
+                cb.callback(response)
+            else:
+                cb(response)
+        self.handshake_callbacks = []
+
     def doDestroyMe(self, *args, **kwargs):
         """
         Remove all references to the state machine object to destroy it.
         """
         self.idurl = None
         self.latest_inbox_time = None
+        self.handshake_callbacks = None
         self.destroy()
 
     def _on_ping_success(self, result):
@@ -658,7 +760,7 @@ class OnlineStatus(automat.Automat):
             lg.exc()
         if _Debug:
             lg.out(_DebugLevel, 'online_status._on_ping_success %r : %r' % (self.idurl, result, ))
-        self.automat('ack-received', (response, info, ))
+        self.automat('shook-up-hands', (response, info, ))
         return None
 
     def _on_ping_failed(self, err):
@@ -668,6 +770,6 @@ class OnlineStatus(automat.Automat):
             msg = str(err)
         if _Debug:
             lg.out(_DebugLevel, 'online_status._on_ping_failed %r : %s' % (self.idurl, msg, ))
-        self.automat('ping-failed')
+        self.automat('ping-failed', err)
         return None
 

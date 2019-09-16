@@ -84,7 +84,6 @@ from crypt import my_keys
 from p2p import commands
 from p2p import p2p_service
 from p2p import online_status
-from p2p import holler
 
 from raid import eccmap
 
@@ -408,25 +407,16 @@ class SupplierConnector(automat.Automat):
         ecc_map = kwargs.get('ecc_map')
         family_position = kwargs.get('family_position')
         family_snapshot = kwargs.get('family_snapshot')
-        if online_status.isOnline(self.supplier_idurl):
-            self._do_request_supplier_service(
-                ecc_map=ecc_map,
-                family_position=family_position,
-                family_snapshot=family_snapshot,
-            )
-        else:
-            d = holler.ping(
-                idurl=self.supplier_idurl,
-                channel='supplier_connector',
-                ack_timeout=5,
-                ping_retries=1,
-            )
-            d.addCallback(lambda result: self._do_request_supplier_service(
-                ecc_map=ecc_map,
-                family_position=family_position,
-                family_snapshot=family_snapshot,
-            ))
-            d.addErrback(lambda err: self.automat('fail', None))
+        d = online_status.ping(
+            idurl=self.supplier_idurl,
+            channel='supplier_connector',
+        )
+        d.addCallback(lambda ok: self._do_request_supplier_service(
+            ecc_map=ecc_map,
+            family_position=family_position,
+            family_snapshot=family_snapshot,
+        ))
+        d.addErrback(lambda err: self.automat('fail', err))
 
     def doCancelService(self, *args, **kwargs):
         """

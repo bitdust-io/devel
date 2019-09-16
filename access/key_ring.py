@@ -62,7 +62,7 @@ from main import settings
 
 from contacts import identitycache
 
-from p2p import holler
+from p2p import online_status
 from p2p import p2p_service
 from p2p import commands
 
@@ -208,12 +208,12 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
     Returns deferred, callback will be fired with response Ack() packet argument.
     """
     result = Deferred()
-    d = holler.ping(
+    d = online_status.ping(
         idurl=trusted_idurl,
         ack_timeout=timeout,
         channel='share_key',
     )
-    d.addCallback(lambda response_tuple: _do_request_service_keys_registry(
+    d.addCallback(lambda ok: _do_request_service_keys_registry(
         key_id, trusted_idurl, include_private, timeout, result,
     ))
     d.addErrback(result.errback)

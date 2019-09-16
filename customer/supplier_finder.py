@@ -59,7 +59,7 @@ from p2p import commands
 from p2p import p2p_service
 from p2p import lookup
 from p2p import propagate
-from p2p import holler
+from p2p import online_status
 
 from contacts import identitycache
 from contacts import contactsdb
@@ -210,11 +210,11 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        d = holler.ping(
+        d = online_status.ping(
             idurl=self.target_idurl,
             channel='supplier_finder',
         )
-        d.addCallback(lambda res_tuple: self.automat('ack-received', res_tuple[0]))
+        d.addCallback(lambda ok: self.automat('ack-received', ok))
         d.addErrback(lambda err: self.automat('ping-failed'))
 
     def doSupplierConnect(self, *args, **kwargs):

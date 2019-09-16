@@ -2231,10 +2231,9 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl)))
         return None
 
-    from p2p import holler
-    d = holler.ping(
+    from p2p import online_status
+    d = online_status.handshake(
         idurl=new_supplier_idurl,
-        force_cache=True,
         channel='supplier_change',
     )
     d.addCallback(_do_change)
@@ -2987,7 +2986,7 @@ def user_ping(idurl_or_global_id, timeout=10, retries=2):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
-    from p2p import holler
+    from p2p import online_status
     from userid import global_id
     from userid import id_url
     idurl = idurl_or_global_id
@@ -2995,21 +2994,14 @@ def user_ping(idurl_or_global_id, timeout=10, retries=2):
         idurl = global_id.GlobalUserToIDURL(idurl)
     idurl = id_url.field(idurl)
     ret = Deferred()
-    d = holler.ping(
+    d = online_status.handshake(
         idurl,
         ack_timeout=int(timeout),
-        cache_timeout=int(timeout),
-        cache_retries=int(retries),
         ping_retries=int(retries),
-        force_cache=True,
         channel='api_user_ping',
     )
-    d.addCallback(
-        lambda resp_tuple: ret.callback(
-            OK(str(resp_tuple))))
-    d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+    d.addCallback(lambda ok: ret.callback(OK(strng.to_text(ok or 'connected'))))
+    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
     return ret
 
 
