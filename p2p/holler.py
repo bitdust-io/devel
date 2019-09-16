@@ -33,6 +33,7 @@ EVENTS:
     * :red:`ack-timeout`
     * :red:`cache-and-ping`
     * :red:`fail-received`
+    * :red:`outbox-failed`
     * :red:`ping`
     * :red:`remote-identity-cached`
     * :red:`remote-identity-failed`
@@ -95,13 +96,18 @@ def ping(idurl,
     """
     global _OpenedHollers
     remote_idurl = id_url.field(idurl).to_bin()
+    if not remote_idurl:
+        raise Exception('empty idurl provided')
     result = Deferred()
     if remote_idurl in _OpenedHollers:
-        _OpenedHollers[remote_idurl].append(result)
+        _OpenedHollers[remote_idurl]['results'].append(result)
         if _Debug:
             lg.args(_DebugLevel, already_opened=True, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
         return result
-    _OpenedHollers[remote_idurl] = [result, ]
+    _OpenedHollers[remote_idurl] = {
+        'instance': None,
+        'results': [result, ],
+    }
     if _Debug:
         lg.args(_DebugLevel, already_opened=False, idurl=remote_idurl, channel=channel, skip_outbox=skip_outbox, )
     h = Holler(
@@ -119,11 +125,32 @@ def ping(idurl,
         log_events=_Debug,
         log_transitions=_Debug,
     )
+    _OpenedHollers[remote_idurl]['instance'] = h
     if force_cache:
         h.automat('cache-and-ping')
     else:
         h.automat('ping')
     return result
+
+
+def is_running(idurl):
+    """
+    Returns True if some "ping" is currently running towards given user.
+    """
+    global _OpenedHollers
+    remote_idurl = id_url.field(idurl).to_bin()
+    if not remote_idurl:
+        return False
+    return remote_idurl in _OpenedHollers
+
+#------------------------------------------------------------------------------
+
+def on_outbox_status_failed(pkt_out, status, error):
+    global _OpenedHollers
+    remote_idurl = id_url.field(pkt_out.outpacket.RemoteID).to_bin()
+    if remote_idurl in _OpenedHollers:
+        inst = _OpenedHollers[remote_idurl]['instance']
+        inst.automat('outbox-failed', status, error)
 
 #------------------------------------------------------------------------------
 
@@ -212,11 +239,7 @@ class Holler(automat.Automat):
                 self.doSendMyIdentity(*args, **kwargs)
         #---ACK?---
         elif self.state == 'ACK?':
-            if event == 'fail-received':
-                self.state = 'FAILED'
-                self.doReportFailed(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
-            elif event == 'ack-received':
+            if event == 'ack-received':
                 self.state = 'SUCCESS'
                 self.doReportSuccess(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
@@ -226,6 +249,10 @@ class Holler(automat.Automat):
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'ack-timeout' and self.isMorePingRetries(*args, **kwargs):
                 self.doSendMyIdentity(*args, **kwargs)
+            elif event == 'fail-received' or event == 'outbox-failed':
+                self.state = 'FAILED'
+                self.doReportFailed(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---SUCCESS---
         elif self.state == 'SUCCESS':
             pass
@@ -238,7 +265,7 @@ class Holler(automat.Automat):
         #---FAILED---
         elif self.state == 'FAILED':
             pass
-
+        return None
 
     def isCached(self, *args, **kwargs):
         """
@@ -330,7 +357,7 @@ class Holler(automat.Automat):
         global _OpenedHollers
         lg.warn('failed to cache remote identity %r after %d attempts' % (
             self.remote_idurl, self.cache_attempts, ))
-        for result_defer in _OpenedHollers[self.remote_idurl]:
+        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
             result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
                 self.remote_idurl, self.cache_attempts, )))
 
@@ -340,7 +367,7 @@ class Holler(automat.Automat):
         """
         global _OpenedHollers
         lg.warn('ping failed because received Fail() from remote user %r' % self.remote_idurl)
-        for result_defer in _OpenedHollers[self.remote_idurl]:
+        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
             result_defer.errback(Exception('ping failed because received Fail() from remote user %r' % self.remote_idurl))
 
     def doReportTimeOut(self, *args, **kwargs):
@@ -349,7 +376,7 @@ class Holler(automat.Automat):
         """
         global _OpenedHollers
         lg.warn('remote user %r did not responded after %d ping attempts' % (self.remote_idurl, self.ping_attempts, ))
-        for result_defer in _OpenedHollers[self.remote_idurl]:
+        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
             result_defer.errback(Exception('remote user %r did not responded after %d ping attempts' % (
                 self.remote_idurl, self.ping_attempts, )))
 
@@ -360,7 +387,7 @@ class Holler(automat.Automat):
         global _OpenedHollers
         if _Debug:
             lg.args(_DebugLevel, channel=self.channel, idurl=self.remote_idurl, ack_packet=args[0], info=args[1])
-        for result_defer in _OpenedHollers[self.remote_idurl]:
+        for result_defer in _OpenedHollers[self.remote_idurl]['results']:
             result_defer.callback((args[0], args[1], ))
 
     def doDestroyMe(self, *args, **kwargs):
@@ -369,6 +396,7 @@ class Holler(automat.Automat):
         """
         global _OpenedHollers
         if self.remote_idurl in _OpenedHollers:
+            _OpenedHollers[self.remote_idurl]['instance'] = None
             _OpenedHollers.pop(self.remote_idurl)
         else:
             lg.warn('did not found my registered opened instance')

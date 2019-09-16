@@ -58,7 +58,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 _PacketLogFileEnabled = False
@@ -396,7 +396,8 @@ class PacketOut(automat.Automat):
         """
         packet_label = '?'
         if self.outpacket:
-            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID, )
+            packet_label = '%s:%s' % (
+                self.outpacket.Command, self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', ''), )
         return '%s[%s](%s)' % (self.id, packet_label, self.state)
 
     def init(self):

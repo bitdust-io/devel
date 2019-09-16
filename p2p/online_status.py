@@ -386,16 +386,20 @@ def OutboxStatus(pkt_out, status, error=''):
         return False
     if status == 'finished':
         if error == 'unanswered' and pkt_out.outpacket.Command == commands.Identity():
-            check_create(pkt_out.outpacket.RemoteID)
-            if _Debug:
-                lg.out(_DebugLevel, 'online_status.OutboxStatus packet %s was "unanswered"' % pkt_out)
-            A(pkt_out.outpacket.RemoteID, 'ping-failed', (pkt_out, status, error))
+            if not holler.is_running(pkt_out.outpacket.RemoteID):
+                check_create(pkt_out.outpacket.RemoteID)
+                if _Debug:
+                    lg.out(_DebugLevel, 'online_status.OutboxStatus packet %s was "unanswered"' % pkt_out)
+                A(pkt_out.outpacket.RemoteID, 'ping-failed', (pkt_out, status, error))
         # else:
         #     A(pkt_out.outpacket.RemoteID, 'sent-done', (pkt_out, status, error))
     else:
         if _Debug:
             lg.out(_DebugLevel, 'online_status.OutboxStatus %s: [%s] with %s error=%r' % (
                 status, pkt_out, pkt_out.outpacket, error))
+        if pkt_out.outpacket.Command == commands.Identity():
+            if holler.is_running(pkt_out.outpacket.RemoteID):
+                holler.on_outbox_status_failed(pkt_out, status, error)
         # if status == 'cancelled':
         #     if _Debug:
         #         lg.out(_DebugLevel, '    skipped')
@@ -604,6 +608,11 @@ class OnlineStatus(automat.Automat):
             return False
         return time.time() - self.latest_inbox_time > 20
 
+    def doInit(self, *args, **kwargs):
+        """
+        Action method.
+        """
+
     def doPing(self, *args, **kwargs):
         """
         Action method.
@@ -611,7 +620,7 @@ class OnlineStatus(automat.Automat):
         try:
             timeout = int(args[0])
         except:
-            timeout = 15
+            timeout = 14
         d = holler.ping(
             idurl=self.idurl,
             ack_timeout=timeout,
@@ -632,11 +641,6 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         self.latest_check_time = time.time()
-
-    def doInit(self, *args, **kwargs):
-        """
-        Action method.
-        """
 
     def doDestroyMe(self, *args, **kwargs):
         """

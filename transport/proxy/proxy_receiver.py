@@ -49,9 +49,8 @@ EVENTS:
     * :red:`start`
     * :red:`stop`
     * :red:`timer-10sec`
-    * :red:`timer-1sec`
     * :red:`timer-20sec`
-    * :red:`timer-4sec`
+    * :red:`timer-3sec`
     * :red:`timer-5sec`
 """
 
@@ -205,11 +204,10 @@ class ProxyReceiver(automat.Automat):
     """
 
     timers = {
-        'timer-1sec': (1.0, ['ACK?']),
-        'timer-5sec': (5.0, ['SERVICE?']),
-        'timer-10sec': (10.0, ['LISTEN']),
+        'timer-3sec': (3.0, ['ACK?']),
+        'timer-10sec': (10.0, ['ACK?', 'LISTEN']),
         'timer-20sec': (20.0, ['FIND_NODE?']),
-        'timer-4sec': (10.0, ['ACK?']),
+        'timer-5sec': (5.0, ['SERVICE?']),
     }
 
     def init(self):
@@ -264,9 +262,9 @@ class ProxyReceiver(automat.Automat):
             elif event == 'stop':
                 self.state = 'OFFLINE'
                 self.doNotifyFailed(*args, **kwargs)
-            elif event == 'timer-1sec':
+            elif event == 'timer-3sec':
                 self.doSendMyIdentity(*args, **kwargs)
-            elif event == 'timer-4sec' or event == 'fail-received':
+            elif event == 'timer-10sec' or event == 'fail-received':
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---LISTEN---
@@ -672,33 +670,33 @@ class ProxyReceiver(automat.Automat):
             lg.out(_DebugLevel, 'proxy_receiver._do_send_identity_to_router to %s' % self.router_idurl)
             lg.out(_DebugLevel, '        contacts=%r, sources=%r' % (
                 identity_obj.contacts, identity_obj.getSources(as_originals=True)))
-        from p2p import holler
-        d = holler.ping(
-            idurl=self.router_idurl,
-            force_cache=False,
-            skip_outbox=True,
-            fake_identity=identity_obj,
-            channel='proxy_receiver',
+#         from p2p import holler
+#         d = holler.ping(
+#             idurl=self.router_idurl,
+#             force_cache=False,
+#             skip_outbox=True,
+#             fake_identity=identity_obj,
+#             channel='proxy_receiver',
+#         )
+#         d.addCallback(lambda resp_tuple: self.automat('ack-received', (resp_tuple[0], resp_tuple[1])))
+#         d.addErrback(lambda err: self.automat(failed_event, err))
+        newpacket = signed.Packet(
+            Command=commands.Identity(),
+            OwnerID=my_id.getLocalID(),
+            CreatorID=my_id.getLocalID(),
+            PacketID=('proxy_receiver:%s' % packetid.UniqueID()),  # commands.Identity(),
+            Payload=identity_obj.serialize(),
+            RemoteID=self.router_idurl,
         )
-        d.addCallback(lambda resp_tuple: self.automat('ack-received', (resp_tuple[0], resp_tuple[1])))
-        d.addErrback(lambda err: self.automat(failed_event, err))
-#         newpacket = signed.Packet(
-#             Command=commands.Identity(),
-#             OwnerID=my_id.getLocalID(),
-#             CreatorID=my_id.getLocalID(),
-#             PacketID=('identity:%s' % packetid.UniqueID()),  # commands.Identity(),
-#             Payload=identity_obj.serialize(),
-#             RemoteID=self.router_idurl,
-#         )
-#         packet_out.create(
-#             newpacket,
-#             wide=True,
-#             callbacks={
-#                 commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
-#                 commands.Fail(): lambda x: self.automat(failed_event),
-#             },
-#             keep_alive=True,
-#         )
+        packet_out.create(
+            newpacket,
+            wide=True,
+            callbacks={
+                commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
+                commands.Fail(): lambda x: self.automat(failed_event),
+            },
+            keep_alive=True,
+        )
 
     def _do_send_request_service(self, *args, **kwargs):
         if len(self.request_service_packet_id) >= 3:
