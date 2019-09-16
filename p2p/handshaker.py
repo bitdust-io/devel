@@ -51,6 +51,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
+from twisted.python import failure
 
 #------------------------------------------------------------------------------
 
@@ -361,8 +362,8 @@ class Handshaker(automat.Automat):
         lg.warn('failed to cache remote identity %r after %d attempts' % (
             self.remote_idurl, self.cache_attempts, ))
         for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('failed to cache remote identity %r after %d attempts' % (
-                self.remote_idurl, self.cache_attempts, )))
+            result_defer.errback(failure.Failure(Exception('failed to cache remote identity %r after %d attempts' % (
+                self.remote_idurl, self.cache_attempts, ))))
 
     def doReportFailed(self, *args, **kwargs):
         """
@@ -371,7 +372,7 @@ class Handshaker(automat.Automat):
         global _RunningHandshakers
         lg.warn('ping failed because received Fail() from remote user %r' % self.remote_idurl)
         for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('ping failed because received Fail() from remote user %r' % self.remote_idurl))
+            result_defer.errback(failure.Failure(Exception('ping failed because not possible to send packets to user %r' % self.remote_idurl)))
 
     def doReportTimeOut(self, *args, **kwargs):
         """
@@ -380,8 +381,8 @@ class Handshaker(automat.Automat):
         global _RunningHandshakers
         lg.warn('remote user %r did not responded after %d ping attempts' % (self.remote_idurl, self.ping_attempts, ))
         for result_defer in _RunningHandshakers[self.remote_idurl]['results']:
-            result_defer.errback(Exception('remote user %r did not responded after %d ping attempts' % (
-                self.remote_idurl, self.ping_attempts, )))
+            result_defer.errback(failure.Failure(Exception('remote user %r did not responded after %d ping attempts' % (
+                self.remote_idurl, self.ping_attempts, ))))
 
     def doReportSuccess(self, *args, **kwargs):
         """
