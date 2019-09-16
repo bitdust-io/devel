@@ -746,7 +746,7 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
-        err = args[0] if (args and args[0]) else None
+        err = args[0] if (args and args[0]) else Exception('user is offline')
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 cb.errback(err)
