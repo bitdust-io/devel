@@ -172,7 +172,7 @@ def check_create(idurl):
 
 #------------------------------------------------------------------------------
 
-def ping(idurl, channel=None, ack_timeout=10, ping_retries=0):
+def ping(idurl, channel=None, ack_timeout=15, ping_retries=0):
     """
     Doing handshake with remote node only if it is currently not connected.
     Returns Deferred object. 
@@ -196,7 +196,7 @@ def ping(idurl, channel=None, ack_timeout=10, ping_retries=0):
     return result
 
 
-def handshake(idurl, channel=None, ack_timeout=15, ping_retries=2):
+def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2):
     """
     Immediately doing handshake with remote node by fetching remote identity file and then
     sending my own Identity() to remote peer and wait for an Ack() packet.
@@ -680,7 +680,7 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         channel = kwargs.get('channel', None)
-        ack_timeout = kwargs.get('ack_timeout', 15)
+        ack_timeout = kwargs.get('ack_timeout', 30)
         ping_retries = kwargs.get('ping_retries', 2)
         if event == 'ping-now':
             d = handshaker.ping(
@@ -702,7 +702,7 @@ class OnlineStatus(automat.Automat):
             d = handshaker.ping(
                 idurl=self.idurl,
                 ack_timeout=ack_timeout,
-                cache_timeout=20,
+                cache_timeout=10,
                 ping_retries=ping_retries,
                 force_cache=True,
                 channel='offline_ping',
@@ -711,7 +711,7 @@ class OnlineStatus(automat.Automat):
             d = handshaker.ping(
                 idurl=self.idurl,
                 ack_timeout=ack_timeout,
-                cache_timeout=20,
+                cache_timeout=10,
                 ping_retries=ping_retries,
                 force_cache=True,
                 channel='idle_ping',

@@ -2972,7 +2972,7 @@ def queue_list():
 
 #------------------------------------------------------------------------------
 
-def user_ping(idurl_or_global_id, timeout=10, retries=2):
+def user_ping(idurl_or_global_id, timeout=15, retries=2):
     """
     Sends Identity packet to remote peer and wait for Ack packet to check connection status.
     The "ping" command performs following actions:
@@ -3221,7 +3221,7 @@ def message_history(user):
     return RESULT(messages)
 
 
-def message_send(recipient, json_data, timeout=5):
+def message_send(recipient, json_data, timeout=10):
     """
     Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
 

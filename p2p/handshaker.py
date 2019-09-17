@@ -83,7 +83,7 @@ _KnownChannels = {}
 #------------------------------------------------------------------------------
 
 def ping(idurl,
-         ack_timeout=10, cache_timeout=5, cache_retries=2, ping_retries=2,
+         ack_timeout=15, cache_timeout=5, cache_retries=2, ping_retries=2,
          force_cache=False, skip_outbox=False, keep_alive=True,
          fake_identity=None,
          channel='identity', channel_counter=True,
