@@ -96,7 +96,7 @@ def ping(idurl,
     should return failed result in the result `Deferred`.
     """
     global _RunningHandshakers
-    remote_idurl = id_url.field(idurl).to_original()
+    remote_idurl = id_url.field(idurl).to_bin()
     if not remote_idurl:
         raise Exception('empty idurl provided')
     result = Deferred()
