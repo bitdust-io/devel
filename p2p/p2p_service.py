@@ -362,7 +362,7 @@ def RequestService(request, info):
             request.RemoteID, request.OwnerID, request.CreatorID))
 
 
-def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=10):
+def SendRequestService(remote_idurl, service_name, json_payload={}, wide=False, callbacks={}, timeout=60):
     service_info = {
         'name': service_name,
         'payload': json_payload,
