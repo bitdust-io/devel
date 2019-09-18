@@ -75,7 +75,7 @@ def AddSupplierToHire(idurl):
     """
     """
     global _SuppliersToHire
-    idurl = idurl.field(idurl).to_bin()
+    idurl = id_url.field(idurl).to_bin()
     if idurl not in _SuppliersToHire:
         _SuppliersToHire.insert(0, idurl)
         if _Debug:
