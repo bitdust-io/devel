@@ -28,7 +28,7 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3, extract_suppliers=True):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True):
     count = 0
     num_connected = 0
     while True:
@@ -60,7 +60,7 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return [s['idurl'] for s in response.json()['result']]
 
 
-def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=0):
+def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=40, delay=3, accepted_mistakes=0):
 
     def _validate(obs):
         response = None
