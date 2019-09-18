@@ -2215,7 +2215,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     new_supplier_idurl = new_supplier_idurl_or_global_id
     if global_id.IsValidGlobalUser(new_supplier_idurl):
         new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl)
-    new_supplier_idurl = id_url.field(new_supplier_idurl)
+    new_supplier_idurl = id_url.field(new_supplier_idurl).to_original()
     if not supplier_idurl or not contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('supplier not found')
     if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
@@ -2993,7 +2993,7 @@ def user_ping(idurl_or_global_id, timeout=15, retries=2):
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
         idurl = global_id.GlobalUserToIDURL(idurl)
-    idurl = id_url.field(idurl)
+    idurl = id_url.field(idurl).to_original()
     ret = Deferred()
     d = online_status.handshake(
         idurl,

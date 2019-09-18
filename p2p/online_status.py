@@ -177,6 +177,8 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     Doing handshake with remote node only if it is currently not connected.
     Returns Deferred object. 
     """
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel)
     result = Deferred()
     if id_url.is_empty(idurl):
         result.errback(Exception('empty idurl provided'))
@@ -203,6 +205,8 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=Fa
     sending my own Identity() to remote peer and wait for an Ack() packet.
     Returns Deferred object. 
     """
+    if _Debug:
+        lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel)
     result = Deferred()
     if id_url.is_empty(idurl):
         result.errback(Exception('empty idurl provided'))

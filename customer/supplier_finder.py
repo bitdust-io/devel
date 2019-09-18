@@ -75,10 +75,11 @@ def AddSupplierToHire(idurl):
     """
     """
     global _SuppliersToHire
+    idurl = idurl.field(idurl).to_bin()
     if idurl not in _SuppliersToHire:
         _SuppliersToHire.insert(0, idurl)
         if _Debug:
-            lg.dbg(_DebugLevel, 'added %s as a supplier candidate' % idurl)
+            lg.dbg(_DebugLevel, 'added %r as a supplier candidate' % idurl)
 
 #------------------------------------------------------------------------------
 
