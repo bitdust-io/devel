@@ -89,9 +89,11 @@ from twisted.internet.defer import Deferred
 
 from logs import lg
 
-from contacts import contactsdb
-
 from automats import automat
+
+from lib import strng
+
+from contacts import contactsdb
 
 from p2p import ratings
 from p2p import commands
@@ -159,6 +161,7 @@ def check_create(idurl, keep_alive=True):
     """
     Creates new instance of online_status() state machine and send "init" event to it.
     """
+    idurl = strng.to_bin(idurl)
     if id_url.is_empty(idurl):
         return False
     if not id_url.is_cached(idurl):
@@ -177,6 +180,7 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     Doing handshake with remote node only if it is currently not connected.
     Returns Deferred object. 
     """
+    idurl = strng.to_bin(idurl)
     if _Debug:
         lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel)
     result = Deferred()
@@ -205,6 +209,7 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=Fa
     sending my own Identity() to remote peer and wait for an Ack() packet.
     Returns Deferred object. 
     """
+    idurl = strng.to_bin(idurl)
     if _Debug:
         lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel)
     result = Deferred()
@@ -745,6 +750,8 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.args(_DebugLevel, idurl=self.idurl, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 cb.callback(None)
@@ -757,6 +764,8 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         err = args[0] if (args and args[0]) else Exception('user is offline')
+        if _Debug:
+            lg.args(_DebugLevel, idurl=self.idurl, err=err, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 cb.errback(err)
@@ -769,6 +778,8 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         response = args[0] if (args and args[0]) else None
+        if _Debug:
+            lg.args(_DebugLevel, idurl=self.idurl, response=response, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 cb.callback(response)

@@ -96,7 +96,7 @@ def ping(idurl,
     should return failed result in the result `Deferred`.
     """
     global _RunningHandshakers
-    remote_idurl = id_url.field(idurl).to_bin()
+    remote_idurl = strng.to_bin(idurl)
     if not remote_idurl:
         raise Exception('empty idurl provided')
     result = Deferred()
@@ -139,7 +139,7 @@ def is_running(idurl):
     Returns True if some "ping" is currently running towards given user.
     """
     global _RunningHandshakers
-    remote_idurl = id_url.field(idurl).to_bin()
+    remote_idurl = strng.to_bin(idurl)
     if not remote_idurl:
         return False
     return remote_idurl in _RunningHandshakers
@@ -148,7 +148,7 @@ def is_running(idurl):
 
 def on_identity_packet_outbox_status(pkt_out, status, error):
     global _RunningHandshakers
-    remote_idurl = id_url.field(pkt_out.outpacket.RemoteID).to_bin()
+    remote_idurl = strng.to_bin(pkt_out.outpacket.RemoteID)
     if remote_idurl in _RunningHandshakers:
         inst = _RunningHandshakers[remote_idurl]['instance']
         if status == 'finished':
@@ -173,7 +173,7 @@ class Handshaker(automat.Automat):
         Builds `handshaker()` state machine.
         """
         global _KnownChannels
-        self.remote_idurl = id_url.field(remote_idurl).to_bin()
+        self.remote_idurl = strng.to_bin(remote_idurl)
         self.ack_timeout = ack_timeout
         self.cache_timeout = cache_timeout
         self.cache_retries = cache_retries

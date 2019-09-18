@@ -45,7 +45,6 @@ EVENTS:
     * :red:`remote-identity-on-hand`
     * :red:`response-timeout`
     * :red:`run`
-    * :red:`timer-30sec`
     * :red:`unregister-item`
     * :red:`write-error`
 """
@@ -337,10 +336,6 @@ class PacketOut(automat.Automat):
     machine.
     """
 
-    timers = {
-        'timer-30sec': (30.0, ['RESPONSE?']),
-    }
-
     MESSAGES = {
         'MSG_1': 'file in queue was cancelled',
         'MSG_2': 'sending file was cancelled',
@@ -583,7 +578,7 @@ class PacketOut(automat.Automat):
             elif event == 'unregister-item' or event == 'item-cancelled':
                 self.doPopItem(*args, **kwargs)
                 self.doReportItem(*args, **kwargs)
-            elif ( event == 'response-timeout' or event == 'timer-30sec' ) and not self.isDataExpected(*args, **kwargs):
+            elif event == 'response-timeout' and not self.isDataExpected(*args, **kwargs):
                 self.state = 'SENT'
                 self.doReportTimeOut(*args, **kwargs)
                 self.doReportDoneNoAck(*args, **kwargs)
