@@ -55,10 +55,7 @@ from logs import lg
 
 from automats import automat
 
-from p2p import commands
-from p2p import p2p_service
 from p2p import lookup
-from p2p import propagate
 from p2p import online_status
 
 from contacts import identitycache
@@ -67,8 +64,6 @@ from contacts import contactsdb
 from userid import my_id
 from userid import id_url
 
-from transport import callback
-
 #------------------------------------------------------------------------------
 
 _SupplierFinder = None
@@ -76,12 +71,14 @@ _SuppliersToHire = []
 
 #------------------------------------------------------------------------------
 
-
 def AddSupplierToHire(idurl):
     """
     """
     global _SuppliersToHire
-    _SuppliersToHire.append(idurl)
+    if idurl not in _SuppliersToHire:
+        _SuppliersToHire.insert(0, idurl)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'added %s as a supplier candidate' % idurl)
 
 #------------------------------------------------------------------------------
 
@@ -196,7 +193,11 @@ class SupplierFinder(automat.Automat):
         Condition method.
         """
         global _SuppliersToHire
-        return len(_SuppliersToHire) > 0
+        available = []
+        for idurl in _SuppliersToHire:
+            if id_url.is_not_in(idurl, contactsdb.suppliers(), as_field=False):
+                available.append(idurl)
+        return len(available) > 0
 
     def doInit(self, *args, **kwargs):
         """

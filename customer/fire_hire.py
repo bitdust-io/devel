@@ -126,7 +126,9 @@ from automats import automat
 
 from lib import misc
 from lib import diskspace
+from lib import strng
 
+from main import config
 from main import settings
 from main import events
 
@@ -630,8 +632,11 @@ class FireHire(automat.Automat):
             lg.err('did not found position for new supplier')
             self.automat('search-failed')
             return
-        self.hire_list.append(position_for_new_supplier)
         from customer import supplier_finder
+        for idurl_txt in strng.to_text(config.conf().getData('services/employer/candidates')).split(','):
+            if idurl_txt.strip():
+                supplier_finder.AddSupplierToHire(idurl_txt)
+        self.hire_list.append(position_for_new_supplier)
         supplier_finder.A(
             'start',
             family_position=position_for_new_supplier,
@@ -774,9 +779,6 @@ class FireHire(automat.Automat):
                 idurl=supplier_idurl,
                 callback_method=self._on_supplier_online_status_state_changed,
             )
-#             supplier_contact_status = contact_status.getInstance(supplier_idurl)
-#             if supplier_contact_status:
-#                 supplier_contact_status.removeStateChangedCallback(self._on_supplier_contact_status_state_changed)
 
     def doCloseConnector(self, *args, **kwargs):
         """

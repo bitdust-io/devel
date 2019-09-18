@@ -1424,8 +1424,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         localPath=local_path,
         keyID=keyID,
     )
-    tsk.result_defer.addCallback(lambda result: lg.dbg(
-        'callback from api.file_upload_start.task(%s) done with %s' % (result[0], result[1], )))
+    # tsk.result_defer.addCallback(lambda result: lg.dbg(
+    #     'callback from api.file_upload_start.task(%s) done with %s' % (result[0], result[1], )))
     tsk.result_defer.addErrback(lambda result: lg.err(
         'errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1], )))
     backup_fs.Calculate()

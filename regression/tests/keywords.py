@@ -71,7 +71,11 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
                 print('\nDHT info still wrong after %d retries, currently see %d suppliers, but expected %d' % (
                     count, num_suppliers, expected_suppliers_number))
                 return False
-            response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
+            try:
+                response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
+            except requests.exceptions.ConnectionError as exc:
+                print('\nconnection error: %r' % exc)
+                return False
             assert response.status_code == 200
             print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_node, obs, pprint.pformat(response.json())))
             assert response.json()['status'] == 'OK', response.json()

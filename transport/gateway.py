@@ -70,8 +70,8 @@ from io import open
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 12
+_Debug = True
+_DebugLevel = 10
 
 _PacketLogFileEnabled = False
 

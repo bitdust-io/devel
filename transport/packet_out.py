@@ -280,8 +280,8 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     if len(result) == 0:
         if _Debug:
             lg.out(_DebugLevel, 'packet_out.search_by_response_packet        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
-        if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
-            lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
+        # if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
+        #     lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
     return result
 
 

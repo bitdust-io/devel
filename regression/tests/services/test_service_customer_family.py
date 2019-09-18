@@ -27,8 +27,8 @@ from ..keywords import supplier_list_dht_v1, config_set_v1, supplier_list_v1, se
 
 
 def test_customer_family_published_for_customer_1():
-    if os.environ.get('RUN_TESTS', '1') == '0':
-        return pytest.skip()  # @UndefinedVariable
+    # if os.environ.get('RUN_TESTS', '1') == '0':
+    #     return pytest.skip()  # @UndefinedVariable
 
     supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
     supplier_list_dht_v1(

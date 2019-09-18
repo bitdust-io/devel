@@ -96,8 +96,8 @@ ALL_ROLES = {
         'proxy_server_2',
     ],
     'suppliers': [
-        {'name': 'supplier_1', },
-        {'name': 'supplier_2', },
+        {'name': 'supplier_1', 'preferred_routers': 'http://is:8084/proxy_server_1.xml', },
+        {'name': 'supplier_2', 'preferred_routers': 'http://is:8084/proxy_server_2.xml', },
         {'name': 'supplier_3', },
         {'name': 'supplier_4', },
         {'name': 'supplier_5', },
@@ -105,7 +105,9 @@ ALL_ROLES = {
          'known_servers': OTHER_KNOWN_ID_SERVERS, 'max_servers': 2, 'min_servers': 2, },
     ],
     'customers': [
-        {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, 'block_size': '10 KB', },
+        {'name': 'customer_1', 'join_network': True, 'num_suppliers': 2, 'block_size': '10 KB',
+         'supplier_candidates': 'http://is:8084/supplier_1.xml,http://is:8084/supplier_2.xml',
+         'preferred_routers': 'http://is:8084/proxy_server_1.xml', },
         {'name': 'customer_2', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_3', 'join_network': True, 'num_suppliers': 2, },
         {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2, },

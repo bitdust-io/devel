@@ -59,7 +59,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -616,7 +616,7 @@ class ProxyRouter(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, '        proxy_router() ROUTED (same router) packet %s from %s to %s' % (
                     routed_packet, sender_idurl, receiver_idurl))
-            self.automat('routed-inbox-packet-received', (receiver_idurl, routed_packet, info))
+            self.event('routed-inbox-packet-received', (receiver_idurl, routed_packet, info))
             return
         # send the packet directly to target user
         # do not pass callbacks, because all response packets from this call will be also re-routed
@@ -672,7 +672,7 @@ class ProxyRouter(automat.Automat):
                     # A is my consumer and B is a recipient which A wants to contact
                     if _Debug:
                         lg.out(_DebugLevel, '        sending "routed-outbox-packet-received" event')
-                    self.automat('routed-outbox-packet-received', (newpacket, info))
+                    self.event('routed-outbox-packet-received', (newpacket, info))
                     return True
                 # looks like we do not know this guy, so why he is sending us routed traffic?
                 lg.err('unknown %s from %s received, no known routes with %s' % (
@@ -721,7 +721,7 @@ class ProxyRouter(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, '        proxy_router() ROUTED packet %s from %s to %s' % (
                     newpacket, info.sender_idurl, receiver_idurl))
-            self.automat('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
+            self.event('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
         # unknown RemoteID...
         # Data() packets may have two cases: a new Data or response with existing Data
@@ -742,7 +742,7 @@ class ProxyRouter(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, '        proxy_router() based on %s ROUTED packet %s from %s to %s' % (
                     based_on, newpacket, info.sender_idurl, receiver_idurl))
-            self.automat('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
+            self.event('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
         # this packet is not related to any of the routes
         if _Debug:

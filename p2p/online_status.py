@@ -155,7 +155,7 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
-def check_create(idurl):
+def check_create(idurl, keep_alive=True):
     """
     Creates new instance of online_status() state machine and send "init" event to it.
     """
@@ -165,7 +165,7 @@ def check_create(idurl):
         return False
     idurl = id_url.field(idurl)
     if idurl not in list(_OnlineStatusDict.keys()):
-        A(idurl, 'init')
+        A(idurl, 'init', keep_alive=keep_alive)
         if _Debug:
             lg.out(_DebugLevel, 'online_status.check_create instance for %r was not found, made a new with state OFFLINE' % idurl)
     return True
@@ -189,7 +189,7 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0):
             channel=channel or 'clean_ping',
         )
     if not isKnown(idurl):
-        if not check_create(idurl):
+        if not check_create(idurl, keep_alive=False):
             raise Exception('can not create instance')
     result = Deferred()
     A(idurl, 'ping-now', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
@@ -214,7 +214,7 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2):
             channel=channel or 'clean_handshake',
         )
     if not isKnown(idurl):
-        if not check_create(idurl):
+        if not check_create(idurl, keep_alive=True):
             raise Exception('can not create instance')
     A(idurl, 'handshake', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
     return result
@@ -667,6 +667,7 @@ class OnlineStatus(automat.Automat):
         Action method.
         """
         self.handshake_callbacks = []
+        self.keep_alive = kwargs.get('keep_alive', True)
 
     def doSetCallback(self, *args, **kwargs):
         """
@@ -682,6 +683,7 @@ class OnlineStatus(automat.Automat):
         channel = kwargs.get('channel', None)
         ack_timeout = kwargs.get('ack_timeout', 30)
         ping_retries = kwargs.get('ping_retries', 2)
+        d = None
         if event == 'ping-now':
             d = handshaker.ping(
                 idurl=self.idurl,
@@ -690,7 +692,6 @@ class OnlineStatus(automat.Automat):
                 channel=channel or 'ping',
             )
         elif event == 'handshake':
-            self.keep_alive = True
             d = handshaker.ping(
                 idurl=self.idurl,
                 ack_timeout=ack_timeout,
@@ -699,25 +700,28 @@ class OnlineStatus(automat.Automat):
                 channel=channel or 'handshake',
             )
         elif event == 'offline-ping':
-            d = handshaker.ping(
-                idurl=self.idurl,
-                ack_timeout=ack_timeout,
-                cache_timeout=10,
-                ping_retries=ping_retries,
-                force_cache=True,
-                channel='offline_ping',
-            )
+            if self.keep_alive:
+                d = handshaker.ping(
+                    idurl=self.idurl,
+                    ack_timeout=ack_timeout,
+                    cache_timeout=10,
+                    ping_retries=ping_retries,
+                    force_cache=True,
+                    channel='offline_ping',
+                )
         else:
-            d = handshaker.ping(
-                idurl=self.idurl,
-                ack_timeout=ack_timeout,
-                cache_timeout=10,
-                ping_retries=ping_retries,
-                force_cache=True,
-                channel='idle_ping',
-            )
-        d.addCallback(self._on_ping_success)
-        d.addErrback(self._on_ping_failed)
+            if self.keep_alive:
+                d = handshaker.ping(
+                    idurl=self.idurl,
+                    ack_timeout=ack_timeout,
+                    cache_timeout=10,
+                    ping_retries=ping_retries,
+                    force_cache=True,
+                    channel='idle_ping',
+                )
+        if d:
+            d.addCallback(self._on_ping_success)
+            d.addErrback(self._on_ping_failed)
 
     def doRememberTime(self, *args, **kwargs):
         """

@@ -405,7 +405,7 @@ def to_list(iterable_object, as_field=True, as_bin=False, as_original=False):
         return list(map(field, iterable_object))
     if as_bin:
         return list(map(to_bin, iterable_object))
-    return list(iterable_object)
+    return list(map(strng.to_text, iterable_object))
 
 
 def to_bin_list(iterable_object):
@@ -445,14 +445,14 @@ def is_in(idurl, iterable_object, as_field=True, as_bin=False):
         return field(idurl) in fields_list(iterable_object)
     if as_bin:
         return to_bin(idurl) in to_bin_list(iterable_object)
-    return idurl in to_list(iterable_object, as_field=False, as_bin=False)
+    return strng.to_text(idurl) in to_list(iterable_object, as_field=False, as_bin=False)
 
 
 def is_not_in(idurl, iterable_object, as_field=True, as_bin=False):
     """
-    Vise versa of `is_in()` method.
+    Vise-versa of `is_in()` method.
     """
-    return (not is_in(idurl=idurl, iterable_object=iterable_object, as_field=as_field, as_bin=as_bin))
+    return not is_in(idurl=idurl, iterable_object=iterable_object, as_field=as_field, as_bin=as_bin)
 
 
 def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False):
@@ -465,7 +465,7 @@ def get_from_dict(idurl, dict_object, default=None, as_field=True, as_bin=False)
         return dict_object.get(field(idurl), default)
     if as_bin:
         return dict_object.get(to_bin(idurl), default)
-    return dict_object.get(idurl, default)
+    return dict_object.get(strng.to_text(idurl), default)
 
 
 def is_cached(idurl):
