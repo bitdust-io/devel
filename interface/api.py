@@ -2235,6 +2235,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     d = online_status.handshake(
         idurl=new_supplier_idurl,
         channel='supplier_change',
+        keep_alive=True,
     )
     d.addCallback(_do_change)
     d.addErrback(lambda err: ret.callback(ERROR([err, ])))
@@ -2999,6 +3000,7 @@ def user_ping(idurl_or_global_id, timeout=15, retries=2):
         ack_timeout=int(timeout),
         ping_retries=int(retries),
         channel='api_user_ping',
+        keep_alive=False,
     )
     d.addCallback(lambda ok: ret.callback(OK(strng.to_text(ok or 'connected'))))
     d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))

@@ -212,6 +212,7 @@ def share_key(key_id, trusted_idurl, include_private=False, timeout=20):
         idurl=trusted_idurl,
         ack_timeout=timeout,
         channel='share_key',
+        keep_alive=False,
     )
     d.addCallback(lambda ok: _do_request_service_keys_registry(
         key_id, trusted_idurl, include_private, timeout, result,

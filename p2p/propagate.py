@@ -501,7 +501,7 @@ def ping_suppliers(customer_idurl=None, timeout=30):
     l = []
     for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
         if supplier_idurl:
-            l.append(online_status.ping(idurl=supplier_idurl, ack_timeout=timeout, channel='ping_suppliers'))
+            l.append(online_status.ping(idurl=supplier_idurl, ack_timeout=timeout, channel='ping_suppliers', keep_alive=True))
     return DeferredList(l, consumeErrors=True)
 
 
@@ -510,6 +510,6 @@ def ping_customers(timeout=30):
     l = []
     for customer_idurl in contactsdb.customers():
         if customer_idurl:
-            l.append(online_status.ping(idurl=customer_idurl, ack_timeout=timeout, channel='ping_customers'))
+            l.append(online_status.ping(idurl=customer_idurl, ack_timeout=timeout, channel='ping_customers', keep_alive=True))
     return DeferredList(l, consumeErrors=True)
 

@@ -172,7 +172,7 @@ def check_create(idurl, keep_alive=True):
 
 #------------------------------------------------------------------------------
 
-def ping(idurl, channel=None, ack_timeout=15, ping_retries=0):
+def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
     """
     Doing handshake with remote node only if it is currently not connected.
     Returns Deferred object. 
@@ -187,16 +187,17 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0):
             ack_timeout=ack_timeout,
             ping_retries=ping_retries,
             channel=channel or 'clean_ping',
+            keep_alive=keep_alive,
         )
     if not isKnown(idurl):
-        if not check_create(idurl, keep_alive=False):
+        if not check_create(idurl, keep_alive=keep_alive):
             raise Exception('can not create instance')
     result = Deferred()
     A(idurl, 'ping-now', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
     return result
 
 
-def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2):
+def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=False):
     """
     Immediately doing handshake with remote node by fetching remote identity file and then
     sending my own Identity() to remote peer and wait for an Ack() packet.
@@ -212,9 +213,10 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2):
             ack_timeout=ack_timeout,
             ping_retries=ping_retries,
             channel=channel or 'clean_handshake',
+            keep_alive=keep_alive,
         )
     if not isKnown(idurl):
-        if not check_create(idurl, keep_alive=True):
+        if not check_create(idurl, keep_alive=keep_alive):
             raise Exception('can not create instance')
     A(idurl, 'handshake', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
     return result

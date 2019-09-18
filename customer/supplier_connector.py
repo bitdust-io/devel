@@ -410,6 +410,7 @@ class SupplierConnector(automat.Automat):
         d = online_status.ping(
             idurl=self.supplier_idurl,
             channel='supplier_connector',
+            keep_alive=True,
         )
         d.addCallback(lambda ok: self._do_request_supplier_service(
             ecc_map=ecc_map,

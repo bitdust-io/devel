@@ -447,6 +447,7 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
             ack_timeout=ping_timeout,
             ping_retries=ping_retries,
             channel='send_message',
+            keep_alive=True,
         )
         d.addCallback(lambda ok: on_ping_success(ok, remote_idurl))
         d.addCallback(lambda _: do_send_message(

@@ -214,6 +214,7 @@ class SupplierFinder(automat.Automat):
         d = online_status.ping(
             idurl=self.target_idurl,
             channel='supplier_finder',
+            keep_alive=False,
         )
         d.addCallback(lambda ok: self.automat('ack-received', ok))
         d.addErrback(lambda err: self.automat('ping-failed'))
