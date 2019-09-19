@@ -732,11 +732,10 @@ class FireHire(automat.Automat):
                 len(current_suppliers), desired_suppliers))
         removed_suppliers = []
         for supplier_idurl in self.dismiss_list:
-            if supplier_idurl not in current_suppliers:
+            if id_url.is_not_in(supplier_idurl, current_suppliers, as_field=False):
                 lg.warn('%s not a supplier' % supplier_idurl)
                 continue
-            pos = current_suppliers.index(supplier_idurl)
-            # current_suppliers.remove(supplier_idurl)
+            pos = current_suppliers.index(id_url.field(supplier_idurl))
             current_suppliers[pos] = ''
             removed_suppliers.append((pos, supplier_idurl,))
             misc.writeSupplierData(

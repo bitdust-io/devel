@@ -2202,7 +2202,6 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         return ERROR('service_employer() is not started')
     from contacts import contactsdb
     from userid import my_id
-    from userid import id_url
     from userid import global_id
     customer_idurl = my_id.getLocalID()
     supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
@@ -2211,11 +2210,11 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     else:
         if global_id.IsValidGlobalUser(supplier_idurl):
             supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
-    supplier_idurl = id_url.field(supplier_idurl)
+    supplier_idurl = strng.to_bin(supplier_idurl)
     new_supplier_idurl = new_supplier_idurl_or_global_id
     if global_id.IsValidGlobalUser(new_supplier_idurl):
-        new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl)
-    new_supplier_idurl = id_url.field(new_supplier_idurl).to_original()
+        new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl, as_field=False)
+    new_supplier_idurl = strng.to_bin(new_supplier_idurl)
     if not supplier_idurl or not contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('supplier not found')
     if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
@@ -2989,11 +2988,10 @@ def user_ping(idurl_or_global_id, timeout=15, retries=2):
         return ERROR('service_identity_propagate() is not started')
     from p2p import online_status
     from userid import global_id
-    from userid import id_url
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
-        idurl = global_id.GlobalUserToIDURL(idurl)
-    idurl = id_url.field(idurl).to_original()
+        idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
+    idurl = strng.to_bin(idurl)
     ret = Deferred()
     d = online_status.handshake(
         idurl,

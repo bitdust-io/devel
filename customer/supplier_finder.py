@@ -55,6 +55,8 @@ from logs import lg
 
 from automats import automat
 
+from lib import strng
+
 from p2p import lookup
 from p2p import online_status
 
@@ -75,7 +77,7 @@ def AddSupplierToHire(idurl):
     """
     """
     global _SuppliersToHire
-    idurl = id_url.field(idurl).to_bin()
+    idurl = strng.to_bin(idurl)
     if idurl not in _SuppliersToHire:
         _SuppliersToHire.insert(0, idurl)
         if _Debug:
