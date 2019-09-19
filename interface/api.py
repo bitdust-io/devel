@@ -2224,7 +2224,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     def _do_change(x):
         from customer import fire_hire
         from customer import supplier_finder
-        supplier_finder.AddSupplierToHire(new_supplier_idurl)
+        supplier_finder.InsertSupplierToHire(new_supplier_idurl)
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
         ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl)))

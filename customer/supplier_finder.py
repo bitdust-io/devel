@@ -79,9 +79,20 @@ def AddSupplierToHire(idurl):
     global _SuppliersToHire
     idurl = strng.to_bin(idurl)
     if idurl not in _SuppliersToHire:
-        _SuppliersToHire.insert(0, idurl)
+        _SuppliersToHire.append(idurl)
         if _Debug:
             lg.dbg(_DebugLevel, 'added %r as a supplier candidate' % idurl)
+
+
+def InsertSupplierToHire(idurl):
+    """
+    """
+    global _SuppliersToHire
+    idurl = strng.to_bin(idurl)
+    if idurl not in _SuppliersToHire:
+        _SuppliersToHire.insert(0, idurl)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'added %r as a FIRST supplier candidate' % idurl)
 
 #------------------------------------------------------------------------------
 
@@ -286,7 +297,7 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         global _SuppliersToHire
-        self.target_idurl = id_url.field(_SuppliersToHire.pop())
+        self.target_idurl = id_url.field(_SuppliersToHire.pop(0))
         lg.info('populate supplier %r from "hire" list, %d more in the list' % (
             self.target_idurl, len(_SuppliersToHire)))
 

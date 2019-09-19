@@ -91,7 +91,7 @@ _OutgoingMessageCallbacks = []
 _MessageQueuePerConsumer = {}
 
 _LastUserPingTime = {}
-_PingTrustIntervalSeconds = 60 * 2
+_PingTrustIntervalSeconds = 60 * 5
 
 #------------------------------------------------------------------------------
 
@@ -361,7 +361,7 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
-        result_defer.errback(Exception(response or str(error)))
+        result_defer.errback(Exception(response or error))
 
 #------------------------------------------------------------------------------
 
@@ -442,7 +442,7 @@ def send_message(json_data, recipient_global_id, packet_id=None, message_ack_tim
         lg.out(_DebugLevel, "    is_ping_expired=%r  remote_identity=%r  is_online=%r" % (
             is_ping_expired, bool(remote_identity), is_online, ))
     if is_ping_expired or remote_identity is None or not is_online:
-        d = online_status.ping(
+        d = online_status.handshake(
             idurl=remote_idurl,
             ack_timeout=ping_timeout,
             ping_retries=ping_retries,

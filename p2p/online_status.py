@@ -188,6 +188,8 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
         result.errback(Exception('empty idurl provided'))
         return result
     if not id_url.is_cached(idurl):
+        if _Debug:
+            lg.dbg(_DebugLevel, 'user identity %r not cached yet, executing clean handshake' % idurl)
         return handshaker.ping(
             idurl=idurl,
             ack_timeout=ack_timeout,
@@ -195,11 +197,12 @@ def ping(idurl, channel=None, ack_timeout=15, ping_retries=0, keep_alive=False):
             channel=channel or 'clean_ping',
             keep_alive=keep_alive,
         )
+    idurl = id_url.field(idurl)
     if not isKnown(idurl):
         if not check_create(idurl, keep_alive=keep_alive):
             raise Exception('can not create instance')
     result = Deferred()
-    A(idurl, 'ping-now', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
+    A(idurl, 'ping-now', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries, original_idurl=idurl.to_original())
     return result
 
 
@@ -217,6 +220,8 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=Fa
         result.errback(Exception('empty idurl provided'))
         return result
     if not id_url.is_cached(idurl):
+        if _Debug:
+            lg.dbg(_DebugLevel, 'user identity %r not cached yet, executing clean handshake' % idurl)
         return handshaker.ping(
             idurl=idurl,
             ack_timeout=ack_timeout,
@@ -224,10 +229,11 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=Fa
             channel=channel or 'clean_handshake',
             keep_alive=keep_alive,
         )
+    idurl = id_url.field(idurl)
     if not isKnown(idurl):
         if not check_create(idurl, keep_alive=keep_alive):
             raise Exception('can not create instance')
-    A(idurl, 'handshake', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
+    A(idurl, 'handshake', result, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries, original_idurl=idurl.to_original())
     return result
 
 #------------------------------------------------------------------------------
@@ -694,17 +700,18 @@ class OnlineStatus(automat.Automat):
         channel = kwargs.get('channel', None)
         ack_timeout = kwargs.get('ack_timeout', 30)
         ping_retries = kwargs.get('ping_retries', 2)
+        original_idurl = kwargs.get('original_idurl', self.idurl.to_bin())
         d = None
         if event == 'ping-now':
             d = handshaker.ping(
-                idurl=self.idurl,
+                idurl=original_idurl,
                 ack_timeout=ack_timeout,
                 ping_retries=ping_retries,
                 channel=channel or 'ping',
             )
         elif event == 'handshake':
             d = handshaker.ping(
-                idurl=self.idurl,
+                idurl=original_idurl,
                 ack_timeout=ack_timeout,
                 ping_retries=ping_retries,
                 force_cache=True,
@@ -713,7 +720,7 @@ class OnlineStatus(automat.Automat):
         elif event == 'offline-ping':
             if self.keep_alive:
                 d = handshaker.ping(
-                    idurl=self.idurl,
+                    idurl=original_idurl,
                     ack_timeout=ack_timeout,
                     cache_timeout=10,
                     ping_retries=ping_retries,
@@ -723,7 +730,7 @@ class OnlineStatus(automat.Automat):
         else:
             if self.keep_alive:
                 d = handshaker.ping(
-                    idurl=self.idurl,
+                    idurl=original_idurl,
                     ack_timeout=ack_timeout,
                     cache_timeout=10,
                     ping_retries=ping_retries,
