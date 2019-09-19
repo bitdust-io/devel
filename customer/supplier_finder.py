@@ -234,10 +234,11 @@ class SupplierFinder(automat.Automat):
             lg.warn('position for new supplier is unknown, will "guess"')
             current_suppliers = list(contactsdb.suppliers())
             for i in range(len(current_suppliers)):
-                if not current_suppliers[i].strip():
+                supplier_idurl = current_suppliers[i].to_bin()
+                if not supplier_idurl:
                     position = i
                     break
-                if current_suppliers[i] in fire_hire.A().dismiss_list:
+                if id_url.is_in(supplier_idurl, fire_hire.A().dismiss_list, as_field=False):
                     position = i
                     break
         sc = supplier_connector.by_idurl(self.target_idurl)

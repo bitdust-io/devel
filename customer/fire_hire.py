@@ -358,8 +358,8 @@ class FireHire(automat.Automat):
             dismissed = args[0]
         else:
             dismissed = self.dismiss_list
-        s = set(contactsdb.suppliers())
-        s.difference_update(set(dismissed))
+        s = set(id_url.to_bin_list(contactsdb.suppliers()))
+        s.difference_update(set(id_url.to_bin_list(dismissed)))
         result = len(s) < settings.getSuppliersNumberDesired()
         if _Debug:
             lg.out(_DebugLevel, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
@@ -407,9 +407,9 @@ class FireHire(automat.Automat):
         # if '' in needed_suppliers:
         # lg.warn('found empty suppliers!!!')
         # return True
-        s = set(needed_suppliers)
-        s.add(supplier_idurl)
-        s.difference_update(set(self.dismiss_list))
+        s = set(id_url.to_bin_list(needed_suppliers))
+        s.add(id_url.to_bin(supplier_idurl))
+        s.difference_update(set(id_url.to_bin_list(self.dismiss_list)))
         result = len(s) - empty_suppliers < settings.getSuppliersNumberDesired()
         # if _Debug:
         #     lg.out(_DebugLevel, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
@@ -494,7 +494,7 @@ class FireHire(automat.Automat):
             self.automat('made-decision', [])
             return
         # if certain suppliers needs to be removed by manual/external request just do that
-        to_be_fired = list(set(_SuppliersToFire))
+        to_be_fired = id_url.to_list(set(_SuppliersToFire))
         _SuppliersToFire = []
         if to_be_fired:
             lg.warn('going to fire %d suppliers from external request' % len(to_be_fired))
@@ -599,7 +599,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        self.dismiss_list = args[0]
+        self.dismiss_list = id_url.to_list(args[0])
 
     def doFindNewSupplier(self, *args, **kwargs):
         """
@@ -623,7 +623,7 @@ class FireHire(automat.Automat):
                 lg.info('found empty supplier at position %d and going to find new supplier on that position' % pos)
                 position_for_new_supplier = pos
                 break
-            if supplier_idurl in self.dismiss_list:
+            if id_url.is_in(supplier_idurl, self.dismiss_list, as_field=False):
                 lg.info('going to find new supplier on existing position %d to replace supplier %s' % (
                     pos, supplier_idurl, ))
                 position_for_new_supplier = pos
@@ -668,8 +668,7 @@ class FireHire(automat.Automat):
                 if not current_suppliers[i].strip():
                     position = i
                     break
-                if current_suppliers[i] in self.dismiss_list:
-                    # self.dismiss_list.remove(current_suppliers[i])
+                if id_url.is_in(current_suppliers[i], self.dismiss_list, as_field=False):
                     position = i
                     old_idurl = current_suppliers[i]
                     break
@@ -789,7 +788,7 @@ class FireHire(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, supplier_idurl=supplier_idurl, dismiss_list=self.dismiss_list)
         sc = supplier_connector.by_idurl(supplier_idurl)
-        if supplier_idurl in self.dismiss_list:
+        if id_url.is_in(supplier_idurl.to_bin(), self.dismiss_list, as_field=False):
             self.dismiss_list.remove(supplier_idurl)
         if sc:
             sc.automat('shutdown')
@@ -803,7 +802,7 @@ class FireHire(automat.Automat):
         from customer import supplier_connector
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
-            if supplier_idurl in self.dismiss_list:
+            if id_url.is_in(supplier_idurl, self.dismiss_list, as_field=False):
                 self.dismiss_list.remove(supplier_idurl)
             if sc:
                 sc.automat('shutdown')
