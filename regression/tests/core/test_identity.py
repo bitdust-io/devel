@@ -66,6 +66,20 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
         expected_suppliers_number=2,
     )
 
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='customer_2',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='supplier_1',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
     file_create_v1('customer_backup', remote_path)
 
     file_upload_start_v1('customer_backup', remote_path, source_local_path)
@@ -145,6 +159,27 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
     supplier_list_dht_v1(
         customer_node='customer_backup',
         observer_node='customer_restore',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='customer_1',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='customer_2',
+        expected_ecc_map='ecc/2x2',
+        expected_suppliers_number=2,
+    )
+
+    supplier_list_dht_v1(
+        customer_node='customer_backup',
+        observer_node='supplier_1',
         expected_ecc_map='ecc/2x2',
         expected_suppliers_number=2,
     )

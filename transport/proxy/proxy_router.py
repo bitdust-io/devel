@@ -59,7 +59,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 _PacketLogFileEnabled = False
@@ -150,7 +150,7 @@ class ProxyRouter(automat.Automat):
         of proxy_router() machine.
         """
         self.routes = {}
-        self.acks = []
+        self.acks = {}
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
         """
@@ -292,11 +292,11 @@ class ProxyRouter(automat.Automat):
         """
         idurl, _, item, _, _, _ = args[0]
         idurl = id_url.field(idurl).original()
-        self.routes[idurl]['address'].append((strng.to_text(item.proto), strng.to_text(item.host), ))
+        new_address = (strng.to_text(item.proto), strng.to_text(item.host), )
+        if new_address not in self.routes[idurl]['address']:
+            self.routes[idurl]['address'].append(new_address)
+            lg.info('added new active address %r for %s' % (new_address, nameurl.GetName(idurl), ))
         # self._write_route(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
-                item.proto, item.host, nameurl.GetName(idurl)))
 
     def doSetContactsOverride(self, *args, **kwargs):
         """
@@ -326,6 +326,7 @@ class ProxyRouter(automat.Automat):
         """
         global _PacketLogFileEnabled
         _PacketLogFileEnabled = False
+        self.acks.clear()
         # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         if network_connector.A():
@@ -392,6 +393,7 @@ class ProxyRouter(automat.Automat):
                 self.routes[user_idurl.original()]['publickey'] = strng.to_text(cached_ident.publickey)
                 self.routes[user_idurl.original()]['contacts'] = cached_ident.getContactsAsTuples(as_text=True)
                 self.routes[user_idurl.original()]['address'] = []
+                self.routes[user_idurl.original()]['connection_info'] = None
                 # self._write_route(user_idurl)
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
                 if active_user_sessions:
@@ -404,6 +406,7 @@ class ProxyRouter(automat.Automat):
                     }
                     active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
                     if active_user_session_machine:
+                        self.routes[user_idurl.original()]['connection_info'] = user_connection_info
                         active_user_session_machine.addStateChangedCallback(
                             lambda o, n, e, a: self._on_user_session_disconnected(user_idurl, o, n, e, a),
                             oldstate='CONNECTED',
@@ -418,8 +421,10 @@ class ProxyRouter(automat.Automat):
                         lg.out(_DebugLevel, 'proxy_server.doProcessRequest active connection with user %s at %s:%s not yet exist' % (
                             user_idurl.original(), info.proto, info.host, ))
                         lg.out(_DebugLevel, '    current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
-                self.acks.append(
-                    p2p_service.SendAck(request, 'accepted', wide=True))
+                out_ack = p2p_service.SendAck(request, 'accepted', wide=True)
+                if out_ack.PacketID in self.acks:
+                    raise Exception('Ack() already sent: %r' % out_ack.PacketID)
+                self.acks[out_ack.PacketID] = out_ack.RemoteID
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %r  contacts=%s' % (
                         oldnew.upper(), user_idurl, self.routes[user_idurl.original()]['contacts'], ))
@@ -771,12 +776,17 @@ class ProxyRouter(automat.Automat):
         if RemoteID.original() not in list(self.routes.keys()) and RemoteID.to_bin() not in list(self.routes.keys()):
             return False
         found = False
-        for ack in list(self.acks):
-            if PacketID.lower() == ack.PacketID.lower() and RemoteID == ack.RemoteID:
-                self.acks.remove(ack)
+        to_remove = []
+        for ack_packet_id, ack_remote_id in self.acks.items():
+            if PacketID.lower() == ack_packet_id.lower() and RemoteID == ack_remote_id:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'found outgoing Ack() packet %r to %r' % (ack_packet_id, ack_remote_id))
+                to_remove.append(ack_packet_id)
                 # TODO: clean up self.acks for un-acked requests
                 self.automat('request-route-ack-sent', (RemoteID, pkt_out, item, status, size, error_message))
                 found = True
+        for ack_packet_id in to_remove:
+            self.acks.pop(ack_remote_id)
         return found
 
     def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, *args, **kwargs):

@@ -374,12 +374,13 @@ def dht_db_dump_v1(node):
     return response.json()
 
 
-def message_send_v1(node, recipient, data):
+def message_send_v1(node, recipient, data, timeout=30):
     response = requests.post(
         url=tunnel_url(node, 'message/send/v1'),
         json={
             'id': recipient,
             'data': data,
+            'timeout': timeout,
         },
     )
     assert response.status_code == 200

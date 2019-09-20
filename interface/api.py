@@ -3221,7 +3221,7 @@ def message_history(user):
     return RESULT(messages)
 
 
-def message_send(recipient, json_data, timeout=10):
+def message_send(recipient, json_data, timeout=15):
     """
     Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
 
