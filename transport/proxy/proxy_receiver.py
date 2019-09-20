@@ -475,8 +475,8 @@ class ProxyReceiver(automat.Automat):
             }
             active_router_session_machine = automat.objects().get(self.router_connection_info['index'], None)
             if active_router_session_machine:
-                active_router_session_machine.addStateChangedCallback(
-                    self._on_router_session_disconnected, oldstate='CONNECTED')
+                # active_router_session_machine.addStateChangedCallback(
+                #     self._on_router_session_disconnected, oldstate='CONNECTED')
                 lg.info('connected to proxy router and set active session: %s' % self.router_connection_info)
             else:
                 lg.err('not found proxy router session state machine: %s' % self.router_connection_info['index'])

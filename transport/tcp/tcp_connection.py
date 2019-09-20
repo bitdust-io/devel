@@ -42,7 +42,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -101,6 +101,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def get_host(self):
         return '%s:%d' % (strng.to_text(self.peer_address[0]), int(self.peer_address[1]))
+
+    def get_idurl(self):
+        return self.peer_idurl
 
     def connectionMade(self):
         if _Debug:
@@ -372,7 +375,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %r' % self.peer_address)
+            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s' % self.peer_address)
         try:
             self.transport.stopListening()
         except:

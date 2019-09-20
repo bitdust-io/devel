@@ -637,14 +637,14 @@ def list_active_streams(proto):
     return transport(proto).call('list_streams')
 
 
-def find_active_session(proto, host):
+def find_active_session(proto, host=None, idurl=None):
     """
     """
     if not is_ready():
         return fail(Exception('gateway is not ready'))
     if not is_installed(proto):
         return fail(Exception('transport %r not installed' % proto))
-    return transport(proto).call('find_session', host)
+    return transport(proto).call('find_session', host, idurl)
 
 def find_active_stream(proto, stream_id=None, transfer_id=None):
     """

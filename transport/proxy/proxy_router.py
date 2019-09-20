@@ -367,11 +367,11 @@ class ProxyRouter(automat.Automat):
                     lg.warn('incoming identity is not belong to request packet creator: %r != %r' % (
                         user_idurl.original(), cached_ident.getIDURL().original()))
                     return
-                if contactsdb.is_supplier(user_idurl.to_bin()):
-                    if _Debug:
-                        lg.out(_DebugLevel, 'proxy_server.doProcessRequest RequestService rejected: this user is my supplier')
-                    p2p_service.SendAck(request, 'rejected', wide=True)
-                    return
+#                 if contactsdb.is_supplier(user_idurl.to_bin()):
+#                     if _Debug:
+#                         lg.out(_DebugLevel, 'proxy_server.doProcessRequest RequestService rejected: this user is my supplier')
+#                     p2p_service.SendAck(request, 'rejected', wide=True)
+#                     return
                 identitycache.UpdateAfterChecking(cached_ident.getIDURL().original(), idsrc)
                 oldnew = ''
                 if user_idurl.original() not in list(self.routes.keys()):
@@ -396,6 +396,8 @@ class ProxyRouter(automat.Automat):
                 self.routes[user_idurl.original()]['connection_info'] = None
                 # self._write_route(user_idurl)
                 active_user_sessions = gateway.find_active_session(info.proto, info.host)
+                if not active_user_sessions:
+                    active_user_sessions = gateway.find_active_session(info.proto, idurl=user_idurl.original())
                 if active_user_sessions:
                     user_connection_info = {
                         'id': active_user_sessions[0].id,
@@ -459,10 +461,10 @@ class ProxyRouter(automat.Automat):
         connection_info = route_info.get('connection_info', {})
         active_user_session_machine = None
         if not connection_info or not connection_info.get('index'):
-            active_user_sessions = gateway.find_active_session(info.proto, info.host)
+            active_user_sessions = gateway.find_active_session(info.proto, idurl=receiver_idurl.to_original())
             if not active_user_sessions:
                 lg.warn('route with %s found but no active sessions found with %s://%s, fire "routed-session-disconnected" event' % (
-                    info.proto, info.host, receiver_idurl))
+                    receiver_idurl, info.proto, info.host, ))
                 self.automat('routed-session-disconnected', receiver_idurl)
                 return
             user_connection_info = {

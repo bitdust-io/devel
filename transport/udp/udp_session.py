@@ -284,8 +284,10 @@ class UDPSession(automat.Automat):
         return 'udp'
 
     def get_host(self):
-        # return udp_interface.idurl_to_id(self.peer_idurl)
         return self.peer_id
+
+    def get_idurl(self):
+        return self.peer_idurl
 
     def msg(self, msgid, *args, **kwargs):
         return self.MESSAGES.get(msgid, '')
