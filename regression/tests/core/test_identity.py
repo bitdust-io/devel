@@ -50,7 +50,7 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
 
     supplier_list_v1('customer_backup', expected_min_suppliers=2, expected_max_suppliers=2)
 
-    service_info_v1('customer_backup', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_backup', 'service_shared_data', 'ON')
 
     supplier_list_dht_v1(
         customer_node='customer_backup',
@@ -70,7 +70,7 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
 
     file_upload_start_v1('customer_backup', remote_path, source_local_path)
 
-    service_info_v1('customer_backup', 'service_restores', 'ON')
+    service_info_v1('customer_backup', 'service_shared_data', 'ON')
     
     file_download_start_v1('customer_backup', remote_path, download_volume, open_share=False)
 
@@ -140,7 +140,7 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
 
     supplier_list_v1('customer_restore', expected_min_suppliers=2, expected_max_suppliers=2)
 
-    service_info_v1('customer_restore', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_restore', 'service_shared_data', 'ON')
 
     supplier_list_dht_v1(
         customer_node='customer_backup',
@@ -193,11 +193,11 @@ def test_identity_rotate_customer_6():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable
 
-    service_info_v1('customer_6', 'service_customer', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_6', 'service_customer', 'ON')
 
     supplier_list_v1('customer_6', expected_min_suppliers=2, expected_max_suppliers=2)
 
-    service_info_v1('customer_6', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_6', 'service_shared_data', 'ON')
 
     # remember current ID sources
     r = identity_get_v1('customer_6')
@@ -230,7 +230,7 @@ def test_identity_rotate_customer_6():
 
     time.sleep(5)
     
-    service_info_v1('customer_6', 'service_restores', 'ON')
+    service_info_v1('customer_6', 'service_shared_data', 'ON')
 
     # make sure file is available before identity rotate
     share_open_v1('customer_6', share_id_customer_6)
@@ -266,11 +266,11 @@ def test_identity_rotate_customer_6():
     assert new_global_id != old_global_id
     assert new_idurl != old_idurl
 
-    service_info_v1('customer_6', 'service_customer', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_6', 'service_customer', 'ON')
 
     customer6_suppliers = supplier_list_v1('customer_6', expected_min_suppliers=2, expected_max_suppliers=2, extract_suppliers=True)
 
-    service_info_v1('customer_6', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_6', 'service_shared_data', 'ON')
 
     # test other nodes able to talk to customer_6 again on new IDURL
     user_ping_v1('customer_1', new_global_id)
@@ -334,7 +334,7 @@ def test_identity_rotate_supplier_6_with_customer_3():
     supplier_6_global_id = r['result'][0]['global_id']
     supplier_6_idurl = r['result'][0]['idurl']
 
-    service_info_v1('supplier_6', 'service_supplier', 'ON', attempts=30, delay=2)
+    service_info_v1('supplier_6', 'service_supplier', 'ON')
 
     # make sure supplier_6 was hired by customer_3
     current_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
@@ -367,7 +367,7 @@ def test_identity_rotate_supplier_6_with_customer_3():
 
     transfer_list_v1('customer_3', wait_all_finish=True)
 
-    service_info_v1('customer_3', 'service_restores', 'ON')
+    service_info_v1('customer_3', 'service_shared_data', 'ON')
 
     file_download_start_v1('customer_3', remote_path=remote_path_customer_3, destination='/tmp')
 
@@ -386,7 +386,7 @@ def test_identity_rotate_supplier_6_with_customer_3():
     assert supplier_6_global_id_new != supplier_6_global_id
     assert supplier_6_idurl_new != supplier_6_idurl
 
-    service_info_v1('supplier_6', 'service_supplier', 'ON', attempts=30, delay=2)
+    service_info_v1('supplier_6', 'service_supplier', 'ON')
 
     file_sync_v1('customer_3')
 

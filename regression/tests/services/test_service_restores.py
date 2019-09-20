@@ -61,7 +61,7 @@ def test_customer_1_upload_download_file_with_master_key():
         count += 1
         time.sleep(5)
 
-    service_info_v1('customer_1', 'service_my_data', 'ON', attempts=30, delay=2)
+    service_info_v1('customer_1', 'service_shared_data', 'ON')
 
     file_create_v1('customer_1', remote_path)
 

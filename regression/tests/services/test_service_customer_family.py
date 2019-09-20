@@ -63,7 +63,6 @@ def test_customer_family_increase_for_customer_4():
         expected_suppliers_number=2,
     )
     service_info_v1('customer_4', 'service_shared_data', 'ON')
-    service_info_v1('customer_4', 'service_restores', 'ON')
 
     config_set_v1('customer_4', 'services/customer/suppliers-number', '4')
     supplier_list_dht_v1(
@@ -80,7 +79,6 @@ def test_customer_family_increase_for_customer_4():
     )
     supplier_list_v1('customer_4', expected_min_suppliers=4, expected_max_suppliers=4)
     service_info_v1('customer_4', 'service_shared_data', 'ON')
-    service_info_v1('customer_4', 'service_restores', 'ON')
 
     config_set_v1('customer_4', 'services/customer/suppliers-number', '2')
     supplier_list_dht_v1(
@@ -97,7 +95,6 @@ def test_customer_family_increase_for_customer_4():
     )
     supplier_list_v1('customer_4', expected_min_suppliers=2, expected_max_suppliers=2)
     service_info_v1('customer_4', 'service_shared_data', 'ON')
-    service_info_v1('customer_4', 'service_restores', 'ON')
 
 
 def test_customer_family_decrease_for_customer_5():
@@ -120,7 +117,6 @@ def test_customer_family_decrease_for_customer_5():
         # accepted_mistakes=0,
     )
     service_info_v1('customer_5', 'service_shared_data', 'ON')
-    service_info_v1('customer_5', 'service_restores', 'ON')
 
     config_set_v1('customer_5', 'services/customer/suppliers-number', '2')
     supplier_list_dht_v1(
@@ -137,7 +133,6 @@ def test_customer_family_decrease_for_customer_5():
     )
     supplier_list_v1('customer_5', expected_min_suppliers=2, expected_max_suppliers=2)
     service_info_v1('customer_5', 'service_shared_data', 'ON')
-    service_info_v1('customer_5', 'service_restores', 'ON')
 
     config_set_v1('customer_5', 'services/customer/suppliers-number', '4')
     supplier_list_dht_v1(
@@ -154,4 +149,3 @@ def test_customer_family_decrease_for_customer_5():
     )
     supplier_list_v1('customer_5', expected_min_suppliers=4, expected_max_suppliers=4)
     service_info_v1('customer_5', 'service_shared_data', 'ON')
-    service_info_v1('customer_5', 'service_restores', 'ON')
