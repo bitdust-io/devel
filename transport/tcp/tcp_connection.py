@@ -93,6 +93,15 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.outboxQueue = []
         self.last_wazap_received = 0
 
+    def is_connected(self):
+        return self.state in ['CONNECTED', ]
+
+    def get_proto(self):
+        return 'tcp'
+
+    def get_host(self):
+        return self.peer_address
+
     def connectionMade(self):
         if _Debug:
             lg.out(_DebugLevel, 'tcp_connection.connectionMade %s' % net_misc.pack_address(self.getTransportAddress()))

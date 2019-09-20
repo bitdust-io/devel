@@ -293,7 +293,7 @@ class ProxyRouter(automat.Automat):
         idurl, _, item, _, _, _ = args[0]
         idurl = id_url.field(idurl).original()
         new_address = (strng.to_text(item.proto), strng.to_text(item.host), )
-        if new_address not in self.routes[idurl]['address']:
+        if idurl in self.routes and (new_address not in self.routes[idurl]['address']):
             self.routes[idurl]['address'].append(new_address)
             lg.info('added new active address %r for %s' % (new_address, nameurl.GetName(idurl), ))
         # self._write_route(idurl)
@@ -456,12 +456,34 @@ class ProxyRouter(automat.Automat):
         if not route_info:
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
             return
-        hosts = route_info['address']
+        connection_info = route_info.get('connection_info', {})
+        if not connection_info or not connection_info.get('index'):
+            lg.warn('route with %s found but no connection info, fire "routed-session-disconnected" event' % receiver_idurl)
+            self.automat('routed-session-disconnected', receiver_idurl)
+            return
+        active_user_session_machine = automat.objects().get(connection_info['index'], None)
+        if not active_user_session_machine:
+            lg.warn('route with %s found but no active user session, fire "routed-session-disconnected" event' % receiver_idurl)
+            self.automat('routed-session-disconnected', receiver_idurl)
+            return
+        if not active_user_session_machine.is_connected():
+            lg.warn('route with %s found but session is not connected, fire "routed-session-disconnected" event' % receiver_idurl)
+            self.automat('routed-session-disconnected', receiver_idurl)
+            return
+        hosts = []
+        try:
+            hosts.append((active_user_session_machine.get_proto(), active_user_session_machine.get_host(), ))
+        except:
+            lg.exc()
+        if not hosts:
+            lg.warn('found active user session but host is empty in %r, try use recorded info' % active_user_session_machine)
+            hosts = route_info['address']
         if len(hosts) == 0:
             lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % receiver_idurl)
             hosts = route_info['contacts']
         if len(hosts) == 0:
             lg.warn('has no known contacts for route with %s' % receiver_idurl)
+            self.automat('routed-session-disconnected', receiver_idurl)
             return
         if len(hosts) > 1:
             lg.warn('found more then one channel with receiver %s : %r' % (receiver_idurl, hosts, ))
