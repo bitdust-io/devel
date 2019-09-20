@@ -2,6 +2,22 @@ Change Log
 ==========
 
 
+2019-09-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fix in proxy_router() machine
+* bug fix in supplier_finder() machine
+* added "services/employer/candidates" option
+* added "keep_alive" parameter to online_status() automat
+* increased ping timeouts and response time in few places
+* bug fix in online_status() machine
+* built new handshaker() automat
+* improvements in supplier_connector()
+* replaced propagate.PingContact() with online_status ping()/hanshake() methods
+* bug fix in tcp transport
+* solving issues with messaging
+* make possible to set "label" for a key
+
+
 
 2019-09-13 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
