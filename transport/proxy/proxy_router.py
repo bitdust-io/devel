@@ -407,20 +407,20 @@ class ProxyRouter(automat.Automat):
                     active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
                     if active_user_session_machine:
                         self.routes[user_idurl.original()]['connection_info'] = user_connection_info
-                        active_user_session_machine.addStateChangedCallback(
-                            lambda o, n, e, a: self._on_user_session_disconnected(user_idurl, o, n, e, a),
-                            oldstate='CONNECTED',
-                        )
+#                         active_user_session_machine.addStateChangedCallback(
+#                             lambda o, n, e, a: self._on_user_session_disconnected(user_idurl, o, n, e, a),
+#                             oldstate='CONNECTED',
+#                         )
                         if _Debug:
-                            lg.out(_DebugLevel, 'proxy_server.doProcessRequest connected %s routed user, set active session: %s' % (
+                            lg.dbg(_DebugLevel, 'connected %s routed user, set active session: %s' % (
                                 oldnew.upper(), user_connection_info))
                     else:
                         lg.err('not found session state machine: %s' % user_connection_info['index'])
                 else:
                     if _Debug:
-                        lg.out(_DebugLevel, 'proxy_server.doProcessRequest active connection with user %s at %s:%s not yet exist' % (
+                        lg.dbg(_DebugLevel, 'active connection with user %s at %s:%s not yet exist' % (
                             user_idurl.original(), info.proto, info.host, ))
-                        lg.out(_DebugLevel, '    current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
+                        lg.dbg(_DebugLevel, 'current active sessions: %d' % len(gateway.list_active_sessions(info.proto)))
                 out_ack = p2p_service.SendAck(request, 'accepted', wide=True)
                 if out_ack.PacketID in self.acks:
                     raise Exception('Ack() already sent: %r' % out_ack.PacketID)
@@ -457,11 +457,32 @@ class ProxyRouter(automat.Automat):
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
             return
         connection_info = route_info.get('connection_info', {})
+        active_user_session_machine = None
         if not connection_info or not connection_info.get('index'):
-            lg.warn('route with %s found but no connection info, fire "routed-session-disconnected" event' % receiver_idurl)
-            self.automat('routed-session-disconnected', receiver_idurl)
-            return
-        active_user_session_machine = automat.objects().get(connection_info['index'], None)
+            active_user_sessions = gateway.find_active_session(info.proto, info.host)
+            if not active_user_sessions:
+                lg.warn('route with %s found but no active sessions found with %s://%s, fire "routed-session-disconnected" event' % (
+                    info.proto, info.host, receiver_idurl))
+                self.automat('routed-session-disconnected', receiver_idurl)
+                return
+            user_connection_info = {
+                'id': active_user_sessions[0].id,
+                'index': active_user_sessions[0].index,
+                'proto': info.proto,
+                'host': info.host,
+                'idurl': receiver_idurl,
+            }
+            active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
+            if active_user_session_machine:
+                self.routes[receiver_idurl.original()]['connection_info'] = user_connection_info
+#                 active_user_session_machine.addStateChangedCallback(
+#                     lambda o, n, e, a: self._on_user_session_disconnected(user_idurl, o, n, e, a),
+#                     oldstate='CONNECTED',
+#                 )
+                lg.info('found and remember active connection info: %r' % user_connection_info)
+        if not active_user_session_machine:
+            if connection_info.get('index'):
+                active_user_session_machine = automat.objects().get(connection_info['index'], None)
         if not active_user_session_machine:
             lg.warn('route with %s found but no active user session, fire "routed-session-disconnected" event' % receiver_idurl)
             self.automat('routed-session-disconnected', receiver_idurl)
