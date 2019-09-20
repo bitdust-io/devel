@@ -100,7 +100,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         return 'tcp'
 
     def get_host(self):
-        return self.peer_address
+        return '%s:%d' % (strng.to_text(self.peer_address[0]), int(self.peer_address[1]))
 
     def connectionMade(self):
         if _Debug:
@@ -372,7 +372,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
+            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %r' % self.peer_address)
         try:
             self.transport.stopListening()
         except:
@@ -393,7 +393,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 tcp_node.opened_connections().pop(self.peer_address)
             tcp_node.decrease_connections_counter()
         else:
-            raise Exception('not found %s in the opened connections' % self.peer_address)
+            raise Exception('not found %r in the opened connections' % self.peer_address)
         self.stream = None
         self.peer_address = None
         self.peer_external_address = None

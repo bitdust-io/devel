@@ -118,7 +118,7 @@ def create(node, peer_address, peer_id=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'udp_session.create peer_address=%s' % str(peer_address))
+        lg.out(_DebugLevel, 'udp_session.create peer_address=%r' % peer_address)
     s = UDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
     try:
@@ -284,7 +284,8 @@ class UDPSession(automat.Automat):
         return 'udp'
 
     def get_host(self):
-        return self.peer_address
+        # return udp_interface.idurl_to_id(self.peer_idurl)
+        return self.peer_id
 
     def msg(self, msgid, *args, **kwargs):
         return self.MESSAGES.get(msgid, '')
