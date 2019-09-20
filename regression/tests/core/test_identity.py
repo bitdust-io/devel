@@ -374,14 +374,16 @@ def test_identity_rotate_supplier_6_with_customer_3():
     # make sure supplier_6 was hired by customer_3
     current_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
 
+    service_info_v1('customer_3', 'service_shared_data', 'ON')
+
     # if he is not hired yet, we switch our first supplier to supplier_6
     if supplier_6_idurl not in current_suppliers_idurls:
         supplier_switch_v1('customer_3', supplier_idurl=supplier_6_idurl, position=0)
 
+    service_info_v1('customer_3', 'service_shared_data', 'ON')
+
     current_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
     assert supplier_6_idurl in current_suppliers_idurls
-
-    service_info_v1('customer_3', 'service_shared_data', 'ON')
 
     share_id_customer_3 = share_create_v1('customer_3')
 

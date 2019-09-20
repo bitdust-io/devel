@@ -777,16 +777,16 @@ class ProxyRouter(automat.Automat):
             return False
         found = False
         to_remove = []
-        for ack_packet_id, ack_remote_id in self.acks.items():
-            if PacketID.lower() == ack_packet_id.lower() and RemoteID == ack_remote_id:
+        for ack_packet_id, ack_remote_idurl in self.acks.items():
+            if PacketID.lower() == ack_packet_id.lower() and RemoteID == ack_remote_idurl:
                 if _Debug:
-                    lg.dbg(_DebugLevel, 'found outgoing Ack() packet %r to %r' % (ack_packet_id, ack_remote_id))
+                    lg.dbg(_DebugLevel, 'found outgoing Ack() packet %r to %r' % (ack_packet_id, ack_remote_idurl))
                 to_remove.append(ack_packet_id)
                 # TODO: clean up self.acks for un-acked requests
                 self.automat('request-route-ack-sent', (RemoteID, pkt_out, item, status, size, error_message))
                 found = True
         for ack_packet_id in to_remove:
-            self.acks.pop(ack_remote_id)
+            self.acks.pop(ack_packet_id)
         return found
 
     def _on_user_session_disconnected(self, user_id, oldstate, newstate, event_string, *args, **kwargs):
