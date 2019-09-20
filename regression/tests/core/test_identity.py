@@ -429,11 +429,22 @@ def test_identity_rotate_supplier_6_with_customer_3():
 
     time.sleep(1)
 
+    packet_list_v1('customer_3', wait_all_finish=True)
+
+    transfer_list_v1('customer_3', wait_all_finish=True)
+
+    service_info_v1('customer_3', 'service_shared_data', 'ON')
+
     file_list_all_v1('customer_3')
 
-    new_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
-    assert supplier_6_idurl not in new_suppliers_idurls
-    assert supplier_6_idurl_new in new_suppliers_idurls
+    # step3: recover key on customer_restore container and join network
+    for i in range(10):
+        new_suppliers_idurls = supplier_list_v1('customer_3', expected_min_suppliers=2, expected_max_suppliers=2)
+        if supplier_6_idurl not in new_suppliers_idurls and supplier_6_idurl_new in new_suppliers_idurls:
+            break
+        time.sleep(1)
+    else:
+        assert False, 'customer_3 still see old idurl of supplier_6 in supplier/list/v1'
 
     # to make sure other customers do not take that supplier need to stop it here
     stop_daemon('supplier_6')
