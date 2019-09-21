@@ -38,7 +38,8 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -226,10 +227,22 @@ class GateInterface():
         result.extend(tcp_node.list_output_streams(sorted_by_time))
         return result
 
-    def find_session(self, host):
+    def find_session(self, host=None, idurl=None):
         """
         """
-        return tcp_node.opened_connections().get(net_misc.normalize_address(host), [])
+        if idurl:
+            for opened_connection in tcp_node.opened_connections().values():
+                for channel in opened_connection:
+                    if channel.get_idurl() and channel.get_idurl() == idurl:
+                        if _Debug:
+                            lg.dbg(_DebugLevel, 'found active connection for %r' % idurl)
+                        return [channel, ]
+            return []
+        search_for_host = net_misc.normalize_address(host)
+        if _Debug:
+            lg.dbg(_DebugLevel, 'looking for %r, known connections: %r' % (
+                search_for_host, list(tcp_node.opened_connections().keys()), ))
+        return tcp_node.opened_connections().get(search_for_host, [])
 
     def find_stream(self, stream_id=None, transfer_id=None):
         """

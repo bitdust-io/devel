@@ -58,7 +58,6 @@ from logs import lg
 
 from p2p import commands
 from p2p import online_status
-from p2p import propagate
 
 from lib import strng
 from lib import packetid
@@ -92,7 +91,7 @@ _OutgoingMessageCallbacks = []
 _MessageQueuePerConsumer = {}
 
 _LastUserPingTime = {}
-_PingTrustIntervalSeconds = 60 * 2
+_PingTrustIntervalSeconds = 60 * 5
 
 #------------------------------------------------------------------------------
 
@@ -337,12 +336,12 @@ def on_incoming_message(request, info, status, error_message):
     return True
 
 
-def on_ping_success(response_tuple, idurl):
+def on_ping_success(ok, idurl):
     global _LastUserPingTime
     idurl = id_url.to_bin(idurl)
     _LastUserPingTime[idurl] = time.time()
-    lg.info('node %r replied with Ack : %s' % (idurl, response_tuple, ))
-    return response_tuple
+    lg.info('shaked up hands %r before sending a message : %s' % (idurl, ok, ))
+    return ok
 
 
 def on_message_delivered(idurl, json_data, recipient_global_id, packet_id, response, info, result_defer=None):
@@ -362,7 +361,7 @@ def on_message_failed(idurl, json_data, recipient_global_id, packet_id, response
     if idurl in _LastUserPingTime:
         _LastUserPingTime[idurl] = 0
     if result_defer and not result_defer.called:
-        result_defer.errback(Exception(response or str(error)))
+        result_defer.errback(Exception(response or error))
 
 #------------------------------------------------------------------------------
 
@@ -417,7 +416,7 @@ def do_send_message(json_data, recipient_global_id, packet_id, timeout, result_d
     return result
 
 
-def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
+def send_message(json_data, recipient_global_id, packet_id=None, message_ack_timeout=None, ping_timeout=20, ping_retries=0):
     """
     Send command.Message() packet to remote peer.
     Returns Deferred (if remote_idurl was not cached yet) or outbox packet object.
@@ -443,15 +442,21 @@ def send_message(json_data, recipient_global_id, packet_id=None, timeout=None):
         lg.out(_DebugLevel, "    is_ping_expired=%r  remote_identity=%r  is_online=%r" % (
             is_ping_expired, bool(remote_identity), is_online, ))
     if is_ping_expired or remote_identity is None or not is_online:
-        d = propagate.PingContact(remote_idurl, timeout=timeout or 5)
-        d.addCallback(lambda response_tuple: on_ping_success(response_tuple, remote_idurl))
+        d = online_status.handshake(
+            idurl=remote_idurl,
+            ack_timeout=ping_timeout,
+            ping_retries=ping_retries,
+            channel='send_message',
+            keep_alive=True,
+        )
+        d.addCallback(lambda ok: on_ping_success(ok, remote_idurl))
         d.addCallback(lambda _: do_send_message(
-            json_data, recipient_global_id, packet_id, timeout, result_defer=ret))
+            json_data, recipient_global_id, packet_id, message_ack_timeout, result_defer=ret))
         d.addErrback(lambda err: on_message_failed(
             remote_idurl, json_data, recipient_global_id, packet_id, None, None, result_defer=ret, error=err))
         return ret
     try:
-        do_send_message(json_data, recipient_global_id, packet_id, timeout, ret)
+        do_send_message(json_data, recipient_global_id, packet_id, message_ack_timeout, ret)
     except Exception as exc:
         lg.warn(str(exc))
         on_message_failed(remote_idurl, json_data, recipient_global_id, packet_id, None, None, error=exc)

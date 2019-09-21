@@ -118,7 +118,7 @@ def create(node, peer_address, peer_id=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'udp_session.create peer_address=%s' % str(peer_address))
+        lg.out(_DebugLevel, 'udp_session.create peer_address=%r' % peer_address)
     s = UDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
     try:
@@ -277,6 +277,18 @@ class UDPSession(automat.Automat):
             self.peer_address[0], self.peer_address[1], str(self.peer_id))
         automat.Automat.__init__(self, name, 'AT_STARTUP', debug_level=_DebugLevel, log_events=_Debug)
 
+    def is_connected(self):
+        return self.state in ['CONNECTED', ]
+
+    def get_proto(self):
+        return 'udp'
+
+    def get_host(self):
+        return self.peer_id
+
+    def get_idurl(self):
+        return self.peer_idurl
+
     def msg(self, msgid, *args, **kwargs):
         return self.MESSAGES.get(msgid, '')
 
@@ -300,8 +312,21 @@ class UDPSession(automat.Automat):
                                 payload, self.peer_address)
 
     def A(self, event, *args, **kwargs):
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'init':
+                self.state = 'PING'
+                self.doInit(*args, **kwargs)
+                self.doStartRTT(*args, **kwargs)
+                self.doPing(*args, **kwargs)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doErrMsg(event,self.msg('MSG_4', *args, **kwargs))
+                self.doClosePendingFiles(*args, **kwargs)
+                self.doNotifyDisconnected(*args, **kwargs)
+                self.doDestroyMe(*args, **kwargs)
         #---CONNECTED---
-        if self.state == 'CONNECTED':
+        elif self.state == 'CONNECTED':
             if event == 'shutdown' or ( event == 'timer-10sec' and not self.isSessionActive(*args, **kwargs) ):
                 self.state = 'CLOSED'
                 self.doErrMsg(event,self.msg('MSG_1', *args, **kwargs))
@@ -319,19 +344,6 @@ class UDPSession(automat.Automat):
                 self.doGreeting(*args, **kwargs)
             elif event == 'send-keep-alive' or event == 'timer-10sec':
                 self.doAlive(*args, **kwargs)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'PING'
-                self.doInit(*args, **kwargs)
-                self.doStartRTT(*args, **kwargs)
-                self.doPing(*args, **kwargs)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_4', *args, **kwargs))
-                self.doClosePendingFiles(*args, **kwargs)
-                self.doNotifyDisconnected(*args, **kwargs)
-                self.doDestroyMe(*args, **kwargs)
         #---PING---
         elif self.state == 'PING':
             if event == 'timer-1sec':

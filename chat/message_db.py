@@ -107,9 +107,8 @@ def init(reindex=True, recreate=True):
         try:
             db().open()
             # patch_flush_fsync(db())
-        except:
-            lg.exc()
-            lg.err('failed to open database')
+        except Exception as exc:
+            lg.err('failed to open local database : %r' % exc)
             if not recreate:
                 raise Exception('failed to open database')
             lg.info('local DB will be recreated now')
@@ -179,7 +178,10 @@ def recreate_db(chat_history_dir):
     """
     """
     global _LocalStorage
-    _LocalStorage.close()
+    try:
+        _LocalStorage.close()
+    except Exception as exc:
+        lg.warn('failed closing local storage : %r' % exc)
     _LocalStorage = None
     dbs = Database(chat_history_dir)
     dbs.custom_header = message_index.make_custom_header()
@@ -191,18 +193,25 @@ def recreate_db(chat_history_dir):
         bpio._dir_remove(orig_dir)
     dbt = Database(temp_dir)
     dbt.custom_header = message_index.make_custom_header()
-    dbs.open()
+    source_opened = False
+    try:
+        dbs.open()
+        source_opened = True
+    except:
+        lg.warn('failed open local storage : %r' % exc)
     # patch_flush_fsync(dbs)
     dbt.create()
     dbt.close()
     refresh_indexes(dbt, reindex=False)
     dbt.open()
     # patch_flush_fsync(dbt)
-    for c in dbs.all('id'):
-        del c['_rev']
-        dbt.insert(c)
+    if source_opened:
+        for c in dbs.all('id'):
+            del c['_rev']
+            dbt.insert(c)
     dbt.close()
-    dbs.close()
+    if source_opened:
+        dbs.close()
     os.rename(dbs.path, orig_dir)
     os.rename(dbt.path, dbs.path)
     _LocalStorage = Database(chat_history_dir)

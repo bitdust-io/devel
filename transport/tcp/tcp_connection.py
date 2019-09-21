@@ -42,7 +42,7 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -83,6 +83,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
     }
 
     def __init__(self):
+        self.force_keep_alive = False
         self.stream = None
         self.peer_address = None
         self.peer_external_address = None
@@ -91,6 +92,18 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.total_bytes_sent = 0
         self.outboxQueue = []
         self.last_wazap_received = 0
+
+    def is_connected(self):
+        return self.state in ['CONNECTED', ]
+
+    def get_proto(self):
+        return 'tcp'
+
+    def get_host(self):
+        return '%s:%d' % (strng.to_text(self.peer_address[0]), int(self.peer_address[1]))
+
+    def get_idurl(self):
+        return self.peer_idurl
 
     def connectionMade(self):
         if _Debug:
@@ -362,7 +375,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
+            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s %s' % (str(self.peer_address), self.peer_idurl))
         try:
             self.transport.stopListening()
         except:
@@ -383,7 +396,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 tcp_node.opened_connections().pop(self.peer_address)
             tcp_node.decrease_connections_counter()
         else:
-            raise Exception('not found %s in the opened connections' % self.peer_address)
+            raise Exception('not found %r in the opened connections' % self.peer_address)
         self.stream = None
         self.peer_address = None
         self.peer_external_address = None
@@ -454,14 +467,14 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             # so we check it here and skip not existed files
             if not os.path.isfile(filename):
                 self.failed_outbox_queue_item(filename, description, 'file not exist')
-                if not keep_alive:
+                if not (keep_alive or self.force_keep_alive):
                     self.automat('shutdown')
                 continue
             try:
                 filesize = os.path.getsize(filename)
             except:
                 self.failed_outbox_queue_item(filename, description, 'can not get file size')
-                if not keep_alive:
+                if not (keep_alive or self.force_keep_alive):
                     self.automat('shutdown')
                 continue
             self.stream.create_outbox_file(filename, filesize, description, result_defer, keep_alive)

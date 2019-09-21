@@ -574,7 +574,7 @@ def keys_list(sort=False, include_private=False):
     return RESULT(r)
 
 
-def key_create(key_alias, key_size=None, include_private=False):
+def key_create(key_alias, key_size=None, label='', include_private=False):
     """
     Generate new Private Key and add it to the list of known keys with given `key_id`.
 
@@ -596,10 +596,11 @@ def key_create(key_alias, key_size=None, include_private=False):
     """
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
+    from lib import utime
     from crypt import my_keys
     from main import settings
     from userid import my_id
-    key_alias = str(key_alias)
+    key_alias = strng.to_text(key_alias)
     key_alias = key_alias.strip().lower()
     key_id = my_keys.make_key_id(key_alias, creator_idurl=my_id.getLocalID())
     if not my_keys.is_valid_key_id(key_id):
@@ -610,7 +611,9 @@ def key_create(key_alias, key_size=None, include_private=False):
         key_size = settings.getPrivateKeySize()
     if _Debug:
         lg.out(_DebugLevel, 'api.key_create id=%s, size=%s' % (key_id, key_size))
-    key_object = my_keys.generate_key(key_id, key_size=key_size)
+    if not label:
+        label = 'share%s' % utime.make_timestamp()
+    key_object = my_keys.generate_key(key_id, label=label, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
     key_info = my_keys.make_key_info(
@@ -620,6 +623,29 @@ def key_create(key_alias, key_size=None, include_private=False):
     )
     key_info.pop('include_private', None)
     return OK(key_info, message='new private key "%s" was generated successfully' % key_alias, )
+
+
+def key_label(key_id, label):
+    """
+    Set new label for given key.
+    """
+    if not driver.is_on('service_keys_registry'):
+        return ERROR('service_keys_registry() is not started')
+    from crypt import my_keys
+    from userid import my_id
+    key_label = strng.to_text(label)
+    if not my_keys.is_valid_key_id(key_id):
+        return ERROR('key "%s" is not valid' % key_id)
+    if not my_keys.is_key_registered(key_id):
+        return ERROR('key "%s" not exist' % key_id)
+    if key_id == 'master' or key_id == my_id.getGlobalID(key_alias='master') or key_id == my_id.getGlobalID():
+        return ERROR('master key label can not be changed')
+    if _Debug:
+        lg.out(_DebugLevel, 'api.key_label id=%s, label=%r' % (key_id, key_label))
+    my_keys.key_obj(key_id).label = label
+    if not my_keys.save_key(key_id):
+        return ERROR('key "%s" store failed' % key_id)
+    return OK(message='key "%s" label updated successfully' % key_id)
 
 
 def key_erase(key_id):
@@ -1398,8 +1424,8 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
         localPath=local_path,
         keyID=keyID,
     )
-    tsk.result_defer.addCallback(lambda result: lg.dbg(
-        'callback from api.file_upload_start.task(%s) done with %s' % (result[0], result[1], )))
+    # tsk.result_defer.addCallback(lambda result: lg.dbg(
+    #     'callback from api.file_upload_start.task(%s) done with %s' % (result[0], result[1], )))
     tsk.result_defer.addErrback(lambda result: lg.err(
         'errback from api.file_upload_start.task(%s) failed with %s' % (result[0], result[1], )))
     backup_fs.Calculate()
@@ -1822,11 +1848,12 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
     return RESULT(results)
 
 
-def share_create(owner_id=None, key_size=2048):
+def share_create(owner_id=None, key_size=2048, label=''):
     """
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
+    from lib import utime
     from crypt import key
     from crypt import my_keys
     from userid import my_id
@@ -1840,7 +1867,9 @@ def share_create(owner_id=None, key_size=2048):
         if my_keys.is_key_registered(key_id):
             continue
         break
-    key_object = my_keys.generate_key(key_id, key_size=key_size)
+    if not label:
+        label = 'share%s' % utime.make_timestamp()
+    key_object = my_keys.generate_key(key_id, label=label, key_size=key_size)
     if key_object is None:
         return ERROR('failed to generate private key "%s"' % key_id)
     key_info = my_keys.make_key_info(
@@ -2173,7 +2202,6 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         return ERROR('service_employer() is not started')
     from contacts import contactsdb
     from userid import my_id
-    from userid import id_url
     from userid import global_id
     customer_idurl = my_id.getLocalID()
     supplier_idurl = strng.to_text(index_or_idurl_or_global_id)
@@ -2182,28 +2210,34 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
     else:
         if global_id.IsValidGlobalUser(supplier_idurl):
             supplier_idurl = global_id.GlobalUserToIDURL(supplier_idurl)
-    supplier_idurl = id_url.field(supplier_idurl)
+    supplier_idurl = strng.to_bin(supplier_idurl)
     new_supplier_idurl = new_supplier_idurl_or_global_id
     if global_id.IsValidGlobalUser(new_supplier_idurl):
-        new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl)
-    new_supplier_idurl = id_url.field(new_supplier_idurl)
+        new_supplier_idurl = global_id.GlobalUserToIDURL(new_supplier_idurl, as_field=False)
+    new_supplier_idurl = strng.to_bin(new_supplier_idurl)
     if not supplier_idurl or not contactsdb.is_supplier(supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('supplier not found')
     if contactsdb.is_supplier(new_supplier_idurl, customer_idurl=customer_idurl):
         return ERROR('peer "%s" is your supplier already' % new_supplier_idurl)
     ret = Deferred()
 
-    def _change(x):
+    def _do_change(x):
         from customer import fire_hire
         from customer import supplier_finder
-        supplier_finder.AddSupplierToHire(new_supplier_idurl)
+        supplier_finder.InsertSupplierToHire(new_supplier_idurl)
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
         ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl)))
         return None
 
-    from p2p import propagate
-    propagate.PingContact(new_supplier_idurl).addBoth(_change)
+    from p2p import online_status
+    d = online_status.handshake(
+        idurl=new_supplier_idurl,
+        channel='supplier_change',
+        keep_alive=True,
+    )
+    d.addCallback(_do_change)
+    d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
 
 
@@ -2938,7 +2972,7 @@ def queue_list():
 
 #------------------------------------------------------------------------------
 
-def user_ping(idurl_or_global_id, timeout=10, retries=2):
+def user_ping(idurl_or_global_id, timeout=15, retries=2):
     """
     Sends Identity packet to remote peer and wait for Ack packet to check connection status.
     The "ping" command performs following actions:
@@ -2952,21 +2986,22 @@ def user_ping(idurl_or_global_id, timeout=10, retries=2):
     """
     if not driver.is_on('service_identity_propagate'):
         return ERROR('service_identity_propagate() is not started')
-    from p2p import propagate
+    from p2p import online_status
     from userid import global_id
-    from userid import id_url
     idurl = idurl_or_global_id
     if global_id.IsValidGlobalUser(idurl):
-        idurl = global_id.GlobalUserToIDURL(idurl)
-    idurl = id_url.field(idurl)
+        idurl = global_id.GlobalUserToIDURL(idurl, as_field=False)
+    idurl = strng.to_bin(idurl)
     ret = Deferred()
-    d = propagate.PingContact(idurl, timeout=int(timeout), retries=int(retries))
-    d.addCallback(
-        lambda resp: ret.callback(
-            OK(str(resp))))
-    d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+    d = online_status.handshake(
+        idurl,
+        ack_timeout=int(timeout),
+        ping_retries=int(retries),
+        channel='api_user_ping',
+        keep_alive=False,
+    )
+    d.addCallback(lambda ok: ret.callback(OK(strng.to_text(ok or 'connected'))))
+    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
     return ret
 
 
@@ -3186,7 +3221,7 @@ def message_history(user):
     return RESULT(messages)
 
 
-def message_send(recipient, json_data, timeout=5):
+def message_send(recipient, json_data, timeout=15):
     """
     Sends a text message to remote peer, `recipient` is a string with nickname or global_id.
 
@@ -3218,15 +3253,12 @@ def message_send(recipient, json_data, timeout=5):
     result = message.send_message(
         json_data=json_data,
         recipient_global_id=target_glob_id,
-        timeout=timeout,
+        ping_timeout=timeout,
+        message_ack_timeout=timeout,
     )
     ret = Deferred()
-    result.addCallback(
-        lambda packet: ret.callback(
-            OK(str(packet))))
-    result.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+    result.addCallback(lambda packet: ret.callback(OK(str(packet))))
+    result.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
     return ret
 
 
@@ -3467,7 +3499,7 @@ def network_connected(wait_timeout=5):
                 lg.warn('disconnected, reason is "p2p_connector_not_exist"')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
                 return None
-            if p2p_connector_machine.state != 'CONNECTED':
+            if p2p_connector_machine.state in ['DISCONNECTED', ]:
                 lg.warn('disconnected, reason is "p2p_connector_disconnected", sending "check-synchronize" event to p2p_connector()')
                 p2p_connector_machine.automat('check-synchronize')
                 ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))

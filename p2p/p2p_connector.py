@@ -494,6 +494,10 @@ class P2PConnector(automat.Automat):
             d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
             d.addErrback(lg.errback)
 
+        def _on_propagate_failed(**kw):
+            import pdb; pdb.set_trace();
+            lg.err('')
+
         def _do_update(check_rotate_result):
             if _Debug:
                 lg.out(_DebugLevel, 'p2p_connector._do_update  check_rotate_result=%r' % check_rotate_result)
@@ -503,6 +507,7 @@ class P2PConnector(automat.Automat):
                 return None
             d = propagate.update()
             d.addCallback(_do_propagate)
+            d.addErrback(_on_propagate_failed)
             d.addErrback(lambda *args: self.automat('my-id-propagated', []))
 
         def _do_rotate(check_result):

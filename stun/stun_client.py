@@ -95,6 +95,8 @@ def A(event=None, *args, **kwargs):
     Access method to interact with the state machine.
     """
     global _StunClient
+    if event is None:
+        return _StunClient
     if _StunClient is None:
         # set automat name and starting state here
         _StunClient = StunClient(
@@ -150,8 +152,13 @@ class StunClient(automat.Automat):
         self.my_address = None
 
     def A(self, event, *args, **kwargs):
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'init':
+                self.state = 'STOPPED'
+                self.doInit(*args, **kwargs)
         #---STOPPED---
-        if self.state == 'STOPPED':
+        elif self.state == 'STOPPED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
@@ -191,14 +198,6 @@ class StunClient(automat.Automat):
                 self.state = 'RANDOM_NODES'
                 self.doAddCallback(*args, **kwargs)
                 self.doDHTFindRandomNode(*args, **kwargs)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'STOPPED'
-                self.doInit(*args, **kwargs)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
-            pass
         #---RANDOM_NODES---
         elif self.state == 'RANDOM_NODES':
             if event == 'shutdown':
@@ -231,6 +230,9 @@ class StunClient(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
         return None
 
     def isMyIPPort(self, *args, **kwargs):

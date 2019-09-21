@@ -28,7 +28,7 @@ import pprint
 from .testsupport import tunnel_url
 
 
-def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=30, delay=3, extract_suppliers=True):
+def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_suppliers=None, attempts=40, delay=3, extract_suppliers=True):
     count = 0
     num_connected = 0
     while True:
@@ -60,7 +60,7 @@ def supplier_list_v1(customer: str, expected_min_suppliers=None, expected_max_su
     return [s['idurl'] for s in response.json()['result']]
 
 
-def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=30, delay=3, accepted_mistakes=0):
+def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expected_suppliers_number, retries=40, delay=3, accepted_mistakes=0):
 
     def _validate(obs):
         response = None
@@ -71,7 +71,11 @@ def supplier_list_dht_v1(customer_node, observer_node, expected_ecc_map, expecte
                 print('\nDHT info still wrong after %d retries, currently see %d suppliers, but expected %d' % (
                     count, num_suppliers, expected_suppliers_number))
                 return False
-            response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
+            try:
+                response = requests.get(url=tunnel_url(obs, 'supplier/list/dht/v1?id=%s@is_8084' % customer_node))
+            except requests.exceptions.ConnectionError as exc:
+                print('\nconnection error: %r' % exc)
+                return False
             assert response.status_code == 200
             print('\nsupplier/list/dht/v1?id=%s from %s\n%s\n' % (customer_node, obs, pprint.pformat(response.json())))
             assert response.json()['status'] == 'OK', response.json()
@@ -370,12 +374,13 @@ def dht_db_dump_v1(node):
     return response.json()
 
 
-def message_send_v1(node, recipient, data):
+def message_send_v1(node, recipient, data, timeout=30):
     response = requests.post(
         url=tunnel_url(node, 'message/send/v1'),
         json={
             'id': recipient,
             'data': data,
+            'timeout': timeout,
         },
     )
     assert response.status_code == 200

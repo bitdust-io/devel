@@ -172,15 +172,13 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
     return None
 
 
-def dbg(message):
+def dbg(level, message, *args, **kwargs):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     funcname = '%s.%s' % (modul, caller)
-    o = '%s' % funcname
-    if message:
-        o += ' : ' + message
-    out(0, o)
+    o = '%s %s' % (funcname, message)
+    out(level, o)
     return o
 
 
@@ -197,7 +195,7 @@ def args(level, *args, **kwargs):
     funcname = '%s.%s' % (modul, caller)
     o = '%s(%s)' % (funcname, ', '.join(funcargs), )
     if message:
-        o += ' : ' + message
+        o += ' ' + message
     out(level, o)
     return o
 
@@ -210,7 +208,7 @@ def info(message):
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     if _UseColors:
-        output_string = '\033[6;37;42m INFO %s \033[0m in %s.%s()' % (message, modul, caller, )
+        output_string = '\033[7;49;32m INFO %s \033[0m in %s.%s()' % (message, modul, caller, )
     else:
         output_string = ' INFO %s in %s.%s()' % (message, modul, caller, )
     out(0, output_string, showtime=True)

@@ -45,7 +45,6 @@ EVENTS:
     * :red:`remote-identity-on-hand`
     * :red:`response-timeout`
     * :red:`run`
-    * :red:`timer-30sec`
     * :red:`unregister-item`
     * :red:`write-error`
 """
@@ -58,7 +57,7 @@ from six.moves import range
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 _PacketLogFileEnabled = False
@@ -280,8 +279,8 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     if len(result) == 0:
         if _Debug:
             lg.out(_DebugLevel, 'packet_out.search_by_response_packet        NOT FOUND pending packets in outbox queue matching incoming %s' % newpacket)
-        if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
-            lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
+        # if newpacket.Command in [commands.Ack(), commands.Fail()] and not newpacket.PacketID.lower().startswith('identity:'):
+        #     lg.warn('received %s from %s://%s   but no matching outgoing packets found' % (newpacket, proto, host, ))
     return result
 
 
@@ -336,10 +335,6 @@ class PacketOut(automat.Automat):
     This class implements all the functionality of the ``packet_out()`` state
     machine.
     """
-
-    timers = {
-        'timer-30sec': (30.0, ['RESPONSE?']),
-    }
 
     MESSAGES = {
         'MSG_1': 'file in queue was cancelled',
@@ -396,7 +391,8 @@ class PacketOut(automat.Automat):
         """
         packet_label = '?'
         if self.outpacket:
-            packet_label = '%s:%s' % (self.outpacket.Command, self.outpacket.PacketID, )
+            packet_label = '%s:%s' % (
+                self.outpacket.Command, self.outpacket.PacketID.replace(':', '').replace('/', '').replace('_', ''), )
         return '%s[%s](%s)' % (self.id, packet_label, self.state)
 
     def init(self):
@@ -582,7 +578,7 @@ class PacketOut(automat.Automat):
             elif event == 'unregister-item' or event == 'item-cancelled':
                 self.doPopItem(*args, **kwargs)
                 self.doReportItem(*args, **kwargs)
-            elif ( event == 'response-timeout' or event == 'timer-30sec' ) and not self.isDataExpected(*args, **kwargs):
+            elif event == 'response-timeout' and not self.isDataExpected(*args, **kwargs):
                 self.state = 'SENT'
                 self.doReportTimeOut(*args, **kwargs)
                 self.doReportDoneNoAck(*args, **kwargs)
@@ -786,7 +782,7 @@ class PacketOut(automat.Automat):
             for cb in self.callbacks[None]:
                 cb(self)
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;90mOUT TIMEOUT %s(%s) sending from %s to %s\033[0m' % (
+            lg.out(0, '\033[1;49;91mOUT TIMEOUT %s(%s) sending from %s to %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID,
                 global_id.UrlToGlobalID(self.outpacket.CreatorID), global_id.UrlToGlobalID(self.remote_idurl)),
                 log_name='packet', showtime=True)

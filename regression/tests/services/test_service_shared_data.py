@@ -78,11 +78,11 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     # wait for quite a while to allow files to be uploaded
     # time.sleep(5)
 
-    service_info_v1('customer_1', 'service_restores', 'ON')
+    service_info_v1('customer_1', 'service_shared_data', 'ON')
 
     file_download_start_v1('customer_1', remote_path=remote_path_customer_1, destination=volume_customer_1)
 
-    service_info_v1('customer_2', 'service_restores', 'ON')
+    service_info_v1('customer_2', 'service_shared_data', 'ON')
 
     file_download_start_v1('customer_2', remote_path=remote_path_customer_2, destination=volume_customer_2)
 
@@ -104,7 +104,7 @@ def test_customer_1_share_file_to_customer_2_same_name_as_existing():
     run_ssh_command_and_wait('customer_2', f'mkdir {volume_customer_2}/sharesamename')
     run_ssh_command_and_wait('customer_2', f'mkdir {volume_customer_2}/sharesamename2')
 
-    service_info_v1('customer_2', 'service_restores', 'ON')
+    service_info_v1('customer_2', 'service_shared_data', 'ON')
 
     file_download_start_v1('customer_2', remote_path=remote_path_customer_1, destination=f'{volume_customer_2}/sharesamename')
 
@@ -144,7 +144,7 @@ def test_customer_1_share_file_to_customer_4():
 
     transfer_list_v1('customer_1', wait_all_finish=True)
 
-    service_info_v1('customer_1', 'service_restores', 'ON')
+    service_info_v1('customer_1', 'service_shared_data', 'ON')
 
     file_download_start_v1('customer_1', remote_path=remote_path, destination='/customer_1')
 
@@ -160,7 +160,7 @@ def test_customer_1_share_file_to_customer_4():
     assert response.json()['status'] == 'OK', response.json()
     print('\n\nshare/grant/v1 trusted_global_id=%s key_id=%s : %s\n' % ('customer_4@is_8084', key_id, response.json(), ))
 
-    service_info_v1('customer_4', 'service_restores', 'ON')
+    service_info_v1('customer_4', 'service_shared_data', 'ON')
 
     file_download_start_v1('customer_4', remote_path=remote_path, destination=download_volume)
 

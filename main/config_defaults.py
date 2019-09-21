@@ -93,6 +93,7 @@ def reset(conf_obj):
     conf_obj.setDefaultValue('services/entangled-dht/node-id', '')
 
     conf_obj.setDefaultValue('services/employer/enabled', 'true')
+    conf_obj.setDefaultValue('services/employer/candidates', '')
 
     conf_obj.setDefaultValue('services/gateway/enabled', 'true')
 

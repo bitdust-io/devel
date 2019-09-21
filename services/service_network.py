@@ -74,9 +74,10 @@ class NetworkService(LocalService):
 
     def _on_my_external_ip_changed(self, evt):
         from logs import lg
-        lg.info('my external IP changed %r -> %r need to reconnect' % (evt.data['old'], evt.data['new'], ))
-        from p2p import network_connector
-        network_connector.A('reconnect')
+        if evt.data['old'].strip():
+            lg.info('need to reconnect because my external IP changed %r -> %r' % (evt.data['old'], evt.data['new'], ))
+            from p2p import network_connector
+            network_connector.A('reconnect')
 
     def _on_my_identity_rotate_complete(self, evt):
         from logs import lg
@@ -97,10 +98,10 @@ class NetworkService(LocalService):
             known_interfaces.remove('127.0.0.1')
         if self.current_network_interfaces is None:
             self.current_network_interfaces = known_interfaces
-            lg.out(2, 'service_network._do_check_network_interfaces START UP: %s' % self.current_network_interfaces)
+            lg.info('current network interfaces on START UP: %r' % self.current_network_interfaces)
         else:
             if self.current_network_interfaces != known_interfaces:
-                lg.out(2, 'service_network._do_check_network_interfaces recognized changes: %s -> %s' % (
+                lg.info('need to reconnect, recognized changes in network interfaces: %r -> %r' % (
                     self.current_network_interfaces, known_interfaces))
                 self.current_network_interfaces = known_interfaces
                 network_connector.A('check-reconnect')

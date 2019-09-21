@@ -41,7 +41,7 @@ EVENTS:
     * :red:`fail`
     * :red:`shutdown`
     * :red:`timer-10sec`
-    * :red:`timer-20sec`
+    * :red:`timer-30sec`
 """
 
 #------------------------------------------------------------------------------
@@ -84,7 +84,6 @@ from crypt import my_keys
 from p2p import commands
 from p2p import p2p_service
 from p2p import online_status
-from p2p import propagate
 
 from raid import eccmap
 
@@ -165,8 +164,8 @@ class SupplierConnector(automat.Automat):
     """
 
     timers = {
+        'timer-30sec': (30.0, ['REQUEST']),
         'timer-10sec': (10.0, ['REFUSE', 'QUEUE?']),
-        'timer-20sec': (20.0, ['REQUEST']),
     }
 
     def __init__(self, supplier_idurl, customer_idurl, needed_bytes,
@@ -200,8 +199,9 @@ class SupplierConnector(automat.Automat):
             log_events=_Debug,
             log_transitions=_Debug,
         )
-        for cb in self.callbacks.values():
-            cb(self.supplier_idurl, self.state, self.state)
+        for cb_list in self.callbacks.values():
+            for cb in cb_list:
+                cb(self.supplier_idurl, self.state, self.state)
 
     def init(self):
         """
@@ -250,11 +250,21 @@ class SupplierConnector(automat.Automat):
             self._supplier_connected_event_sent = False
 
     def set_callback(self, name, cb):
-        self.callbacks[name] = cb
+        if name not in self.callbacks:
+            self.callbacks[name] = []
+        self.callbacks[name].append(cb)
 
-    def remove_callback(self, name):
-        if name in list(self.callbacks.keys()):
-            self.callbacks.pop(name)
+    def remove_callback(self, name, cb=None):
+        if name in self.callbacks:
+            if cb:
+                if cb in self.callbacks[name]:
+                    self.callbacks[name].remove(cb)
+                else:
+                    lg.warn('callback %r not registered in %r with name %s' % (cb, self, name, ))
+            else:
+                self.callbacks.pop(name)
+        else:
+            lg.warn('callback with name %s not registered in %r' % (name, self, ))
 
     def do_calculate_needed_bytes(self):
         if self.needed_bytes is None:
@@ -328,10 +338,6 @@ class SupplierConnector(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-20sec':
-                self.state = 'DISCONNECTED'
-                self.doCleanRequest(*args, **kwargs)
-                self.doReportDisconnect(*args, **kwargs)
             elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(*args, **kwargs) and not self.GoDisconnect ):
                 self.state = 'NO_SERVICE'
                 self.doReportNoService(*args, **kwargs)
@@ -341,6 +347,10 @@ class SupplierConnector(automat.Automat):
             elif self.GoDisconnect and event == 'ack' and self.isServiceAccepted(*args, **kwargs):
                 self.state = 'REFUSE'
                 self.doCancelService(*args, **kwargs)
+            elif event == 'timer-30sec':
+                self.state = 'DISCONNECTED'
+                self.doCleanRequest(*args, **kwargs)
+                self.doReportDisconnect(*args, **kwargs)
         #---REFUSE---
         elif self.state == 'REFUSE':
             if event == 'shutdown':
@@ -397,13 +407,17 @@ class SupplierConnector(automat.Automat):
         ecc_map = kwargs.get('ecc_map')
         family_position = kwargs.get('family_position')
         family_snapshot = kwargs.get('family_snapshot')
-        d = propagate.PingContact(self.supplier_idurl)
-        d.addCallback(lambda result: self._do_request_supplier_service(
+        d = online_status.ping(
+            idurl=self.supplier_idurl,
+            channel='supplier_connector',
+            keep_alive=True,
+        )
+        d.addCallback(lambda ok: self._do_request_supplier_service(
             ecc_map=ecc_map,
             family_position=family_position,
             family_snapshot=family_snapshot,
         ))
-        d.addErrback(lambda err: self.automat('fail', None))
+        d.addErrback(lambda err: self.automat('fail', err))
 
     def doCancelService(self, *args, **kwargs):
         """
@@ -506,20 +520,41 @@ class SupplierConnector(automat.Automat):
         """
         self.request_packet_id = None
 
+    def doReportNoService(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.out(_DebugLevel, 'supplier_connector.doReportNoService : %s' % self.supplier_idurl)
+        for cb_list in list(self.callbacks.values()):
+            for cb in cb_list:
+                cb(self.supplier_idurl, 'NO_SERVICE')
+
+    def doReportDisconnect(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        if _Debug:
+            lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect : %s' % self.supplier_idurl)
+        for cb_list in list(self.callbacks.values()):
+            for cb in cb_list:
+                cb(self.supplier_idurl, 'DISCONNECTED')
+
     def doReportConnect(self, *args, **kwargs):
         """
         Action method.
         """
         if _Debug:
-            lg.out(14, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
-        for cb in list(self.callbacks.values()):
-            cb(
-                self.supplier_idurl,
-                'CONNECTED',
-                family_position=self._last_known_family_position,
-                ecc_map=self._last_known_ecc_map,
-                family_snapshot=self._last_known_family_snapshot,
-            )
+            lg.out(_DebugLevel, 'supplier_connector.doReportConnect : %s' % self.supplier_idurl)
+        for cb_list in list(self.callbacks.values()):
+            for cb in cb_list:
+                cb(
+                    self.supplier_idurl,
+                    'CONNECTED',
+                    family_position=self._last_known_family_position,
+                    ecc_map=self._last_known_ecc_map,
+                    family_snapshot=self._last_known_family_snapshot,
+                )
 #         if self._last_known_family_position is not None:
 #             p2p_service.SendContacts(
 #                 remote_idurl=self.supplier_idurl,
@@ -534,29 +569,11 @@ class SupplierConnector(automat.Automat):
 #                 },
 #             )
 
-    def doReportNoService(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        if _Debug:
-            lg.out(14, 'supplier_connector.doReportNoService : %s' % self.supplier_idurl)
-        for cb in list(self.callbacks.values()):
-            cb(self.supplier_idurl, 'NO_SERVICE')
-
-    def doReportDisconnect(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        if _Debug:
-            lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect : %s' % self.supplier_idurl)
-        for cb in list(self.callbacks.values()):
-            cb(self.supplier_idurl, 'DISCONNECTED')
-
     def doDestroyMe(self, *args, **kwargs):
         """
         Action method.
         """
-        online_status.remove_online_status_listener_callbackove_(
+        online_status.remove_online_status_listener_callback(
             idurl=self.supplier_idurl,
             callback_method=self._on_online_status_state_changed,
         )
@@ -572,12 +589,12 @@ class SupplierConnector(automat.Automat):
 
     def _supplier_acked(self, response, info):
         if _Debug:
-            lg.out(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
+            lg.out(_DebugLevel, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
     def _supplier_failed(self, response, info):
         if _Debug:
-            lg.out(16, 'supplier_connector._supplier_failed %r %r' % (response, info))
+            lg.out(_DebugLevel, 'supplier_connector._supplier_failed %r %r' % (response, info))
         if response:
             self.automat(response.Command.lower(), response)
         else:
@@ -586,7 +603,7 @@ class SupplierConnector(automat.Automat):
     def _on_online_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
             if _Debug:
-                lg.out(10, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
+                lg.out(_DebugLevel, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
                     self.supplier_idurl, oldstate, newstate))
             self.automat('connect')
 

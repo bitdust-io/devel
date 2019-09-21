@@ -470,12 +470,12 @@ class backup(automat.Automat):
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'abort')
             self.resultDefer.callback('abort')
-            events.send('backup-aborted', dict(backup_id=self.backupID))
+            events.send('backup-aborted', dict(backup_id=self.backupID, source_path=self.sourcePath))
         else:
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'done')
             self.resultDefer.callback('done')
-            events.send('backup-done', dict(backup_id=self.backupID))
+            events.send('backup-done', dict(backup_id=self.backupID, source_path=self.sourcePath))
 
     def doDestroyMe(self, *args, **kwargs):
         """

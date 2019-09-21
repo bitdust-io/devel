@@ -62,7 +62,7 @@ from main import settings
 
 from contacts import identitycache
 
-from p2p import propagate
+from p2p import online_status
 from p2p import p2p_service
 from p2p import commands
 
@@ -201,15 +201,20 @@ def transfer_key(key_id, trusted_idurl, include_private=False, timeout=10, resul
     return result
 
 
-def share_key(key_id, trusted_idurl, include_private=False, timeout=10):
+def share_key(key_id, trusted_idurl, include_private=False, timeout=20):
     """
     Method to be used to send given key to one trusted user.
     Make sure remote user is identified and connected.
     Returns deferred, callback will be fired with response Ack() packet argument.
     """
     result = Deferred()
-    d = propagate.PingContact(trusted_idurl, timeout=timeout)
-    d.addCallback(lambda response_tuple: _do_request_service_keys_registry(
+    d = online_status.ping(
+        idurl=trusted_idurl,
+        ack_timeout=timeout,
+        channel='share_key',
+        keep_alive=False,
+    )
+    d.addCallback(lambda ok: _do_request_service_keys_registry(
         key_id, trusted_idurl, include_private, timeout, result,
     ))
     d.addErrback(result.errback)
@@ -397,6 +402,7 @@ def on_key_received(newpacket, info, status, error_message):
         key_data = block.Data()
         key_json = serialization.BytesToDict(key_data, keys_to_text=True, values_to_text=True)
         key_id = key_json['key_id']
+        key_label = key_json.get('label', '')
         key_id, key_object = my_keys.read_key_info(key_json)
         if key_object.isPublic():
             # received key is a public key
@@ -411,7 +417,7 @@ def on_key_received(newpacket, info, status, error_message):
                 p2p_service.SendAck(newpacket)
                 lg.warn('received existing public key: %s, skip' % key_id)
                 return True
-            if not my_keys.register_key(key_id, key_object):
+            if not my_keys.register_key(key_id, key_object, label=key_label):
                 raise Exception('key register failed')
             else:
                 lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
@@ -437,13 +443,13 @@ def on_key_received(newpacket, info, status, error_message):
                 raise Exception('another public key already registered with that ID and it is not matching with private key')
             lg.info('erasing public key %s' % key_id)
             my_keys.erase_key(key_id)
-            if not my_keys.register_key(key_id, key_object):
+            if not my_keys.register_key(key_id, key_object, label=key_label):
                 raise Exception('key register failed')
             lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
             p2p_service.SendAck(newpacket)
             return True
         # no private key with given ID was registered
-        if not my_keys.register_key(key_id, key_object):
+        if not my_keys.register_key(key_id, key_object, label=key_label):
             raise Exception('key register failed')
         lg.info('added new key %s, is_public=%s' % (key_id, key_object.isPublic()))
         p2p_service.SendAck(newpacket)

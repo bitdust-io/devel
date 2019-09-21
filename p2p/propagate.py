@@ -47,11 +47,10 @@ from __future__ import absolute_import
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 8
 
 #------------------------------------------------------------------------------
-
 
 import os
 import sys
@@ -98,6 +97,7 @@ from dht import dht_records
 #------------------------------------------------------------------------------
 
 _SlowSendIsWorking = False
+_PropagateCounter = 0
 
 #------------------------------------------------------------------------------
 
@@ -189,16 +189,6 @@ def customers(AckHandler=None, wide=False):
     if _Debug:
         lg.out(_DebugLevel, 'propagate.customers')
     return propagate(contactsdb.customers(), AckHandler, wide)
-
-
-def allcontacts(AckHandler=None, wide=False):
-    """
-    Call ``propagate()`` for all contacts and correspondents, almost the same
-    to ``start()``.
-    """
-    if _Debug:
-        lg.out(_DebugLevel, 'propagate.allcontacts')
-    return propagate(contactsdb.contacts_full(), AckHandler, wide)
 
 
 def single(idurl, ack_handler=None, wide=False, fail_handler=None):
@@ -413,6 +403,7 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
     Create ``packet`` with my Identity file and calls
     ``transport.gateway.outbox()`` to send it.
     """
+    global _PropagateCounter
     if _Debug:
         lg.out(_DebugLevel, "propagate.SendToID [%s] wide=%s" % (nameurl.GetName(idurl), str(wide)))
     if ack_handler is None:
@@ -424,14 +415,13 @@ def SendToID(idurl, Payload=None, wide=False, ack_handler=None, timeout_handler=
         thePayload = strng.to_bin(my_id.getLocalIdentity().serialize())
     p = signed.Packet(
         Command=commands.Identity(),
-        OwnerID=my_id.getLocalID(),  # MyID,
-        CreatorID=my_id.getLocalID(),  # MyID,
-        # commands.Identity(),  #  'Identity',  # my_id.getLocalID(), #PacketID,
-        PacketID=('identity:%s' % packetid.UniqueID()),
+        OwnerID=my_id.getLocalID(),
+        CreatorID=my_id.getLocalID(),
+        PacketID=('propagate:%d:%s' % (_PropagateCounter, packetid.UniqueID())),
         Payload=thePayload,
         RemoteID=idurl,
     )
-    # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
+    _PropagateCounter += 1
     result = gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
         commands.Ack(): ack_handler,
         commands.Fail(): ack_handler,
@@ -448,17 +438,15 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
     """
     Same, but send to many IDs and also check previous packets to not re-send.
     """
+    global _PropagateCounter
     if _Debug:
         lg.out(_DebugLevel, "propagate.SendToIDs to %d users, wide=%s" % (len(idlist), wide))
     if ack_handler is None:
         ack_handler = HandleAck
     if timeout_handler is None:
         timeout_handler = HandleTimeOut
-    # MyID = my_id.getLocalID()
-    # PacketID = MyID
     LocalIdentity = my_id.getLocalIdentity()
     Payload = strng.to_bin(LocalIdentity.serialize())
-    # Hash = key.Hash(Payload)
     alreadysent = set()
     totalsent = 0
     inqueue = {}
@@ -481,27 +469,17 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
             if _Debug:
                 lg.out(_DebugLevel, '        skip sending [Identity] to %s, packet already in the queue' % contact)
             continue
-#        found_previous_packets = 0
-#        for transfer_id in gate.transfers_out_by_idurl().get(contact, []):
-#            ti = gate.transfers_out().get(transfer_id, None)
-#            if ti and ti.description.count('Identity'):
-#                found_previous_packets += 1
-#                break
-#        if found_previous_packets >= 3:
-#            lg.out(8, '        skip sending to %s' % contact)
-#            continue
         p = signed.Packet(
             Command=commands.Identity(),
-            OwnerID=my_id.getLocalID(),  # MyID,
-            CreatorID=my_id.getLocalID(),  # MyID,
-            # commands.Identity(),  #'Identity',  # my_id.getLocalID(), #PacketID,
-            PacketID=('identity:%s' % packetid.UniqueID()),
+            OwnerID=my_id.getLocalID(),
+            CreatorID=my_id.getLocalID(),
+            PacketID=('propagate:%d:%s' % (_PropagateCounter, packetid.UniqueID())),
             Payload=Payload,
             RemoteID=contact,
         )
+        _PropagateCounter += 1
         if _Debug:
             lg.out(_DebugLevel, "        sending [Identity] to %s" % nameurl.GetName(contact))
-        # callback.register_interest(AckHandler, signed.RemoteID, signed.PacketID)
         gateway.outbox(p, wide, response_timeout=response_timeout, callbacks={
             commands.Ack(): ack_handler,
             commands.Fail(): ack_handler,
@@ -518,91 +496,20 @@ def SendToIDs(idlist, wide=False, ack_handler=None, timeout_handler=None, respon
 
 #------------------------------------------------------------------------------
 
-def PingContact(idurl, timeout=30, retries=2):
-    """
-    Can be called when you need to "ping" another user.
-    This will send your Identity to that node, and it must respond with Ack packet.
-    """
-    idurl = id_url.field(idurl).original()
-    if _Debug:
-        lg.out(_DebugLevel, "propagate.PingContact [%s]" % nameurl.GetName(idurl))
-    ping_result = Deferred()
-
-    def _ack_handler(response, info, attempts):
-        lg.out(_DebugLevel, "propagate.PingContact [%s] SUCCESS after %d attempts : %s from %s://%s" % (
-            nameurl.GetName(idurl), attempts, response, info.proto, info.host, ))
-        if not ping_result.called:
-            ping_result.callback((response, info, ))
-        return None
-
-    def _try_to_ping(attempts):
-        if attempts > retries + 1:
-            if not ping_result.called:
-                ping_result.errback(Exception('remote user did not responded after %d ping attempts : %s' % (attempts, idurl, )))
-            return None
-        SendToIDs(
-            idlist=[id_url.field(idurl), ],
-            ack_handler=lambda response, info: _ack_handler(response, info, attempts),
-            timeout_handler=lambda pkt_out: _response_timed_out(pkt_out, attempts),
-            response_timeout=timeout,
-            wide=True,
-        )
-        return None
-
-    def _response_timed_out(pkt_out, attempts):
-        lg.out(_DebugLevel, "propagate.PingContact._response_timed_out : %s" % pkt_out)
-        # if not ping_result.called:
-        #     ping_result.errback(TimeoutError('remote user did not responded'))
-        _try_to_ping(attempts + 1)
-        return None
-
-    def _identity_cached(idsrc, idurl):
-        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes for %r" % (
-            len(idsrc), idurl))
-        # TODO: Verify()
-        _try_to_ping(1)
-        return idsrc
-
-    def _identity_cache_failed(err, idurl, attempts):
-        try:
-            msg = err.getErrorMessage()
-        except:
-            msg = str(err)
-        if _Debug:
-            lg.out(_DebugLevel, "propagate.PingContact._identity_cache_failed attempts=%d %s : %s" % (attempts, idurl, msg, ))
-        # if not ping_result.called:
-        #     ping_result.errback(Exception('failed to fetch remote identity %s: %s' % (idurl, msg, )))
-        _try_to_cache(attempts + 1)
-        return None
-
-    def _try_to_cache(attempts):
-        if attempts > retries + 1:
-            if not ping_result.called:
-                ping_result.errback(Exception('failed to fetch remote identity after %d attempts : %s' % (attempts, idurl, )))
-            return None
-        idcache_defer = identitycache.scheduleForCaching(strng.to_text(idurl), timeout=timeout)
-        idcache_defer.addCallback(_identity_cached, idurl)
-        idcache_defer.addErrback(_identity_cache_failed, idurl, attempts)
-        # ping_result.addErrback(lg.errback)
-        return None
-
-    _try_to_cache(1)
-    return ping_result
-
-#------------------------------------------------------------------------------
-
-def ping_suppliers(customer_idurl=None, timeout=30, retries=2):
+def ping_suppliers(customer_idurl=None, timeout=30):
+    from p2p import online_status
     l = []
     for supplier_idurl in contactsdb.suppliers(customer_idurl=customer_idurl):
         if supplier_idurl:
-            l.append(PingContact(supplier_idurl, timeout=timeout, retries=retries))
+            l.append(online_status.ping(idurl=supplier_idurl, ack_timeout=timeout, channel='ping_suppliers', keep_alive=True))
     return DeferredList(l, consumeErrors=True)
 
 
-def ping_customers(timeout=30, retries=2):
+def ping_customers(timeout=30):
+    from p2p import online_status
     l = []
     for customer_idurl in contactsdb.customers():
         if customer_idurl:
-            l.append(PingContact(customer_idurl, timeout=timeout, retries=retries))
+            l.append(online_status.ping(idurl=customer_idurl, ack_timeout=timeout, channel='ping_customers', keep_alive=True))
     return DeferredList(l, consumeErrors=True)
 

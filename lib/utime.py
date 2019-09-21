@@ -74,3 +74,14 @@ def get_sec1970():
     TODO: extra methods for time synchronization accross the nodes to be added here
     """
     return int(time.time())
+
+
+def make_timestamp():
+    """
+    Returns text string based on current time.
+    """
+    time_st = time.localtime()
+    ampm = time.strftime("%p", time_st)
+    if not ampm:
+        ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
+    return time.strftime("%Y%m%d%I%M%S", time_st) + ampm

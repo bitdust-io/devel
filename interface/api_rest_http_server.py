@@ -305,7 +305,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/identity/my/get/v1$')
     def identity_get_v1(self, request):
         return api.identity_get(
-            include_xml_source=bool(_request_arg(request, 'include_xml_source', '0') in ['1', 'true', ]),
+            include_xml_source=bool(_request_arg(request, 'xml_source', '0') in ['1', 'true', ]),
         )
 
     @POST('^/i/c$')
@@ -384,7 +384,17 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.key_create(
             key_alias=data['alias'],
             key_size=int(data.get('size', 2048)),
+            label=data.get('label', ''),
             include_private=bool(data.get('include_private', '0') in ['1', 'true', ]),
+        )
+
+    @POST('^/k/lb$')
+    @POST('^/key/label/v1$')
+    def key_label_v1(self, request):
+        data = _request_data(request, mandatory_keys=['label', 'key_id', ])
+        return api.key_label(
+            key_id=data['key_id'],
+            label=data['label'],
         )
 
     @DELETE('^/k/d$')
@@ -424,8 +434,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
             key_id=_request_arg(request, 'key_id', None),
             recursive=bool(_request_arg(request, 'recursive', '0') in ['1', 'true', ]),
             all_customers=bool(_request_arg(request, 'all_customers', '0') in ['1', 'true', ]),
-            include_uploads=bool(_request_arg(request, 'include_uploads', '0') in ['1', 'true', ]),
-            include_downloads=bool(_request_arg(request, 'include_downloads', '0') in ['1', 'true', ]),
+            include_uploads=bool(_request_arg(request, 'uploads', '0') in ['1', 'true', ]),
+            include_downloads=bool(_request_arg(request, 'downloads', '0') in ['1', 'true', ]),
         )
 
     @GET('^/f/l/a$')
@@ -443,8 +453,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def file_info_v1(self, request):
         return api.file_info(
             remote_path=_request_arg(request, 'remote_path', mandatory=True),
-            include_uploads=bool(_request_arg(request, 'include_uploads', '1') in ['1', 'true', ]),
-            include_downloads=bool(_request_arg(request, 'include_downloads', '1') in ['1', 'true', ]),
+            include_uploads=bool(_request_arg(request, 'uploads', '1') in ['1', 'true', ]),
+            include_downloads=bool(_request_arg(request, 'downloads', '1') in ['1', 'true', ]),
         )
 
     @GET('^/f/s$')
@@ -471,8 +481,8 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/file/upload/v1$')
     def files_uploads_v1(self, request):
         return api.files_uploads(
-            include_running=bool(_request_arg(request, 'include_running', '1') in ['1', 'true', ]),
-            include_pending=bool(_request_arg(request, 'include_pending', '1') in ['1', 'true', ]),
+            include_running=bool(_request_arg(request, 'running', '1') in ['1', 'true', ]),
+            include_pending=bool(_request_arg(request, 'pending', '1') in ['1', 'true', ]),
         )
 
     @POST('^/f/u/o$')
@@ -541,6 +551,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.share_create(
             owner_id=data.get('owner_id', None),
             key_size=int(data.get('key_size', '2048')),
+            label=data.get('label', ''),
         )
 
     @PUT('^/sh/g$')
@@ -717,7 +728,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def user_status_check_v1(self, request):
         return api.user_status_check(
             idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
-            timeout=_request_arg(request, 'timeout', 5),
+            timeout=_request_arg(request, 'timeout', 10),
         )
 
     @POST('^/us/png$')
@@ -726,7 +737,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         data = _request_data(request, mandatory_keys=[('idurl', 'global_id', 'id', ), ])
         return api.user_ping(
             idurl_or_global_id=data.get('global_id') or data.get('idurl') or data.get('id'),
-            timeout=data.get('timeout', 10),
+            timeout=data.get('timeout', 15),
             retries=data.get('retries', 2),
         )
 
@@ -735,7 +746,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     def user_ping_get_v1(self, request):
         return api.user_ping(
             idurl_or_global_id=_request_arg(request, 'global_id') or _request_arg(request, 'idurl') or _request_arg(request, 'id'),
-            timeout=_request_arg(request, 'timeout', 10),
+            timeout=_request_arg(request, 'timeout', 15),
             retries=_request_arg(request, 'retries', 2),
         )
 
@@ -758,7 +769,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
         return api.message_send(
             recipient=data.get('global_id') or data.get('idurl') or data.get('id'),
             json_data=data['data'],
-            timeout=data.get('timeout', 5),
+            timeout=data.get('timeout', 15),
         )
 
     #------------------------------------------------------------------------------

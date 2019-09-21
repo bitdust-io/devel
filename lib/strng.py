@@ -75,7 +75,7 @@ def to_text(s, encoding='utf-8', errors='strict'):
     if s is None:
         return s
     if not is_string(s):
-        s = text_type(s)
+        s = '{0}'.format(s)
     if is_text(s):
         return s
     return s.decode(encoding=encoding, errors=errors)
@@ -90,7 +90,7 @@ def to_bin(s, encoding='utf-8', errors='strict'):
     if s is None:
         return s
     if not is_string(s):
-        s = text_type(s)
+        s = '{0}'.format(s)
     if is_bin(s):
         return s
     return s.encode(encoding=encoding, errors=errors)

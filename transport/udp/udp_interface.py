@@ -291,10 +291,12 @@ class GateInterface():
             result.sort(key=lambda stream: stream.started)
         return result
 
-    def find_session(self, host):
+    def find_session(self, host=None, idurl=None):
         """
         """
         from transport.udp import udp_session
+        if idurl:
+            return udp_session.sessions_by_peer_id().get(idurl_to_id(idurl), [])
         return udp_session.sessions_by_peer_id().get(host, [])
 
     def find_stream(self, stream_id=None, transfer_id=None):
