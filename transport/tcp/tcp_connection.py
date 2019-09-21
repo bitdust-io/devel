@@ -375,7 +375,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s' % self.peer_address)
+            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s %s' % (str(self.peer_address), self.peer_idurl))
         try:
             self.transport.stopListening()
         except:
