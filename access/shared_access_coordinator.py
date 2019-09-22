@@ -72,6 +72,8 @@ from p2p import p2p_service
 
 from contacts import identitycache
 
+from crypt import my_keys
+
 from access import key_ring
 
 from storage import backup_fs
@@ -182,8 +184,9 @@ class SharedAccessCoordinator(automat.Automat):
     def to_json(self):
         return {
             'key_id': self.key_id,
-            'global_id': self.glob_id,
-            'idurl': self.customer_idurl,
+            'alias': self.glob_id['key_alias'],
+            'label': my_keys.get_label(self.key_id),
+            'creator': self.customer_idurl,
             'state': self.state,
             'suppliers': self.known_suppliers_list,
             'ecc_map': self.known_ecc_map,

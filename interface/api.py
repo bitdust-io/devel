@@ -539,6 +539,7 @@ def keys_list(sort=False, include_private=False):
              'private': '-----BEGIN RSA PRIVATE KEY-----\nMIIJKAIBAAKCAgEAj8uw...'
          }, {
              'alias': 'another_key01',
+             'label': 'ABC',
              'key_id': 'another_key01$veselin@p2p-id.ru',
              'creator': 'http://p2p-id.ru/veselin.xml',
              'fingerprint': '43:c8:3b:b6:da:3e:8a:3c:48:6f:92:bb:74:b4:05:6b',
@@ -1831,19 +1832,22 @@ def share_list(only_active=False, include_mine=True, include_granted=True):
     for key_id in my_keys.known_keys():
         if not key_id.startswith('share_'):
             continue
-        _glob_id = global_id.ParseGlobalID(key_id)
+        key_alias, creator_idurl = my_keys.split_key_id(key_id)
         to_be_listed = False
-        if include_mine and _glob_id['idurl'] == my_id.getLocalID():
+        if include_mine and creator_idurl == my_id.getLocalID():
             to_be_listed = True
-        if include_granted and _glob_id['idurl'] != my_id.getLocalID():
+        if include_granted and creator_idurl != my_id.getLocalID():
             to_be_listed = True
         if not to_be_listed:
             continue
         results.append({
             'key_id': key_id,
-            'idurl': _glob_id['idurl'],
+            'alias': key_alias,
+            'label': my_keys.get_label(key_id),
+            'creator': creator_idurl,
             'state': None,
             'suppliers': [],
+            'ecc_map': None,
         })
     return RESULT(results)
 

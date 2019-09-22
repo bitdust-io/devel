@@ -759,3 +759,14 @@ def read_key_info(key_json):
     return latest_key_id(key_id), key_object
 
 #------------------------------------------------------------------------------
+
+def get_label(key_id):
+    """
+    Returns known label for given key.
+    """
+    key_id = latest_key_id(strng.to_text(key_id))
+    if key_id not in known_keys():
+        return None
+    return key_obj(key_id).label
+
+#------------------------------------------------------------------------------
