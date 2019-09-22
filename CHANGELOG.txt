@@ -2,6 +2,12 @@ Change Log
 ==========
 
 
+2019-09-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added "label" field to api.share_*() methods (#417)
+
+
+
 2019-09-20 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * bug fix in proxy_router() machine
