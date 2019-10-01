@@ -169,12 +169,21 @@ def normalize_address(host_port):
 
 def pack_address(host_port):
     """
-    Same as `normalize_address()`, but always return address as string/bytes: b"123.45.67.89:8080"
+    Same as `normalize_address()`, but always return address as byte string: b"123.45.67.89:8080"
     """
     if not host_port:
         return host_port
     norm = normalize_address(host_port)
     return norm[0] + b':' + str(norm[1]).encode()
+
+
+def pack_address_text(host_port):
+    """
+    Same as `pack_address()`, but returns text string or None.
+    """
+    if not host_port:
+        return None
+    return strng.to_text(pack_address(host_port))
 
 #------------------------------------------------------------------------------
 

@@ -33,9 +33,14 @@
 
 from __future__ import absolute_import
 
-from Cryptodome.Hash import MD5
-from Cryptodome.Hash import SHA1
-from Cryptodome.Hash import SHA256
+try:
+    from Cryptodome.Hash import MD5
+    from Cryptodome.Hash import SHA1
+    from Cryptodome.Hash import SHA256
+except:
+    from Crypto.Hash import MD5  # @UnresolvedImport @Reimport
+    from Crypto.Hash import SHA1  # @UnresolvedImport @Reimport
+    from Crypto.Hash import SHA256  # @UnresolvedImport @Reimport
 
 from lib import strng
 

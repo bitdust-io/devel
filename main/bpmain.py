@@ -70,6 +70,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     lg.out(4, 'bpmain.run UI="%s"' % UI)
 
     from system import bpio
+    lg.out(4, 'bpmain.run ostype=%r' % bpio.ostype())
 
     #---settings---
     from main import settings

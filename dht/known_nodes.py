@@ -51,11 +51,15 @@ def network_info():
     networks_json_path = os.path.join(settings.MetaDataDir(), 'networks.json')
     if not os.path.isfile(networks_json_path):
         networks_json_path = os.path.join(bpio.getExecutableDir(), 'networks.json')
-    networks_json = serialization.BytesToDict(
-        local_fs.ReadBinaryFile(networks_json_path),
-        keys_to_text=True,
-        values_to_text=True,
-    )
+    networks_json_raw = local_fs.ReadBinaryFile(networks_json_path)
+    if networks_json_raw:
+        networks_json = serialization.BytesToDict(
+            networks_json_raw,
+            keys_to_text=True,
+            values_to_text=True,
+        )
+    else:
+        networks_json = {}
     my_network = local_fs.ReadTextFile(settings.NetworkFileName()).strip()
     if not my_network:
         my_network = 'main'

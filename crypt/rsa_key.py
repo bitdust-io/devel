@@ -40,10 +40,16 @@ _Debug = True
 
 #------------------------------------------------------------------------------
 
-from Cryptodome.PublicKey import RSA
-from Cryptodome.Signature import pkcs1_15
-from Cryptodome.Cipher import PKCS1_OAEP
-from Cryptodome.Util import number
+try:
+    from Cryptodome.PublicKey import RSA
+    from Cryptodome.Signature import pkcs1_15
+    from Cryptodome.Cipher import PKCS1_OAEP
+    from Cryptodome.Util import number
+except:
+    from Crypto.PublicKey import RSA  # @UnresolvedImport @Reimport
+    from Crypto.Signature import pkcs1_15  # @UnresolvedImport @Reimport
+    from Crypto.Cipher import PKCS1_OAEP  # @UnresolvedImport @Reimport
+    from Crypto.Util import number  # @UnresolvedImport @Reimport
 
 #------------------------------------------------------------------------------
 

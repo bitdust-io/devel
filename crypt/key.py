@@ -59,7 +59,6 @@ if __name__ == '__main__':
 #------------------------------------------------------------------------------
 
 from logs import lg
-from lib import strng
 
 from system import bpio
 from system import local_fs
