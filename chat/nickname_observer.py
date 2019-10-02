@@ -49,6 +49,11 @@ from __future__ import print_function
 
 #------------------------------------------------------------------------------
 
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
 import sys
 
 #------------------------------------------------------------------------------
@@ -70,8 +75,15 @@ from dht import dht_records
 def find_one(nickname, attempts=3, results_callback=None):
     """
     """
-    lg.out(12, 'nickname_observer.find_one %s %d' % (nickname, attempts))
-    observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
+    if _Debug:
+        lg.out(_DebugLevel, 'nickname_observer.find_one %s %d' % (nickname, attempts))
+    observer = NicknameObserver(
+        name='nickname_observer_%s' % nickname,
+        state='AT_STARTUP',
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+    )
     observer.automat('find-one', (nickname, attempts, results_callback))
     return observer
 
@@ -79,8 +91,15 @@ def find_one(nickname, attempts=3, results_callback=None):
 def observe_many(nickname, attempts=10, results_callback=None):
     """
     """
-    lg.out(12, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
-    observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
+    if _Debug:
+        lg.out(_DebugLevel, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
+    observer = NicknameObserver(
+        name='nickname_observer_%s' % nickname,
+        state='AT_STARTUP',
+        debug_level=_DebugLevel,
+        log_events=_Debug,
+        log_transitions=_Debug,
+    )
     observer.automat('observe-many', (nickname, attempts, results_callback))
     return observer
 
@@ -90,7 +109,8 @@ def stop_all():
     """
     for a in automat.objects().values():
         if isinstance(a, NicknameObserver):
-            lg.out(12, 'nickname_observer.stop_all sends "stop" to %r' % a)
+            if _Debug:
+                lg.out(_DebugLevel, 'nickname_observer.stop_all sends "stop" to %r' % a)
             a.automat('stop')
 
 #------------------------------------------------------------------------------
@@ -112,7 +132,6 @@ class NicknameObserver(automat.Automat):
         self.key = None
         self.dht_read_defer = None
         self.result_callback = None
-        self.log_events = True
 
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
@@ -239,7 +258,8 @@ class NicknameObserver(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, args[0], ))
+        if _Debug:
+            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, args[0], ))
         if self.result_callback is not None:
             try:
                 key_info = dht_service.split_key(self.key)
@@ -257,7 +277,8 @@ class NicknameObserver(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_observer.doReportNicknameNotExist : %s' % self.nickname)
+        if _Debug:
+            lg.out(_DebugLevel, 'nickname_observer.doReportNicknameNotExist : %s' % self.nickname)
         if self.result_callback is not None:
             self.result_callback('not exist', self.nickname, -1, '')
 
@@ -265,7 +286,8 @@ class NicknameObserver(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_observer.doReportFinished')
+        if _Debug:
+            lg.out(_DebugLevel, 'nickname_observer.doReportFinished')
         if self.result_callback is not None:
             self.result_callback('finished', '', -1, '')
 

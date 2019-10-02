@@ -90,7 +90,7 @@ def loop_event_listen():
                 # pprint.pprint(evt)
         else:
             print('.', end=' ')
-        d = proxy.callRemote('events_listen', 'test_event_consumer')
+        d = proxy.callRemote('event_listen', 'test_event_consumer')
         d.addCallback(_loop)
         d.addErrback(lambda err: reactor.callLater(1, _loop))
 

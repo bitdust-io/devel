@@ -400,7 +400,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return api.event_send(event_id, json_data=json_data)
 
     def jsonrpc_events_listen(self, consumer_id):
-        return api.events_listen(consumer_id)
+        return api.event_listen(consumer_id)
 
     def jsonrpc_network_stun(self, udp_port=None, dht_port=None):
         return api.network_stun(udp_port=udp_port, dht_port=dht_port)

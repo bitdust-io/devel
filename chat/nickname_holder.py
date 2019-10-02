@@ -83,9 +83,17 @@ def A(event=None, *args, **kwargs):
     Access method to interact with the state machine.
     """
     global _NicknameHolder
+    if event is None:
+        return _NicknameHolder
     if _NicknameHolder is None:
         # set automat name and starting state here
-        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 4, True)
+        _NicknameHolder = NicknameHolder(
+            name='nickname_holder',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=_Debug,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _NicknameHolder.automat(event, *args, **kwargs)
     return _NicknameHolder
