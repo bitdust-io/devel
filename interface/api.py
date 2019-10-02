@@ -3609,7 +3609,7 @@ def network_connected(wait_timeout=5):
 
 
 def network_status(show_suppliers=True, show_customers=True, show_cache=True,
-                   show_tcp=True, show_udp=True, show_proxy=True, ):
+                   show_tcp=True, show_udp=True, show_proxy=True, show_dht=True):
     """
     """
     if not driver.is_on('service_network'):
@@ -3639,9 +3639,9 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
     if my_id.isLocalIdentityReady():
         r['idurl'] = my_id.getLocalID()
         r['global_id'] = my_id.getGlobalID()
-    if True in [show_suppliers, show_customers, show_cache, ]:
-        if not driver.is_on('service_p2p_hookups'):
-            return ERROR('service_p2p_hookups() is not started')
+        r['identity_sources'] = my_id.getLocalIdentity().getSources(as_originals=True)
+        r['identity_contacts'] = my_id.getLocalIdentity().getContacts()
+    if True in [show_suppliers, show_customers, show_cache, ] and driver.is_on('service_p2p_hookups'):
         from contacts import contactsdb
         from p2p import online_status
         if show_suppliers:
@@ -3758,7 +3758,7 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                         'state': s.state,
                         'id': s.id,
                         'idurl': s.peer_idurl,
-                        'address': _tupl_addr_to_str(s.peer_address),
+                        'address': net_misc.pack_address_text(s.peer_address),
                         'bytes_received': s.bytes_sent,
                         'bytes_sent': s.bytes_received,
                         'outgoing': len(s.file_queue.outboxFiles),
@@ -3802,6 +3802,18 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                         i['queue'] = len(s.pending_packets)
                     sessions.append(i)
                 r['proxy']['sessions' ] = sessions
+    if show_dht:
+        from dht import dht_service
+        r['dht'] = {}
+        if driver.is_on('service_entangled_dht'):
+            r['dht'].update({
+                'data_store_items': len(dht_service.node()._dataStore.keys()),
+                'node_items': len(dht_service.node().data),
+                'node_id': dht_service.node().id,
+                'udp_port': dht_service.node().port,
+                'buckets': len(dht_service.node()._routingTable._buckets),
+                'contacts': dht_service.node()._routingTable.totalContacts(),
+            })
     return RESULT([r, ])
 
 #------------------------------------------------------------------------------
