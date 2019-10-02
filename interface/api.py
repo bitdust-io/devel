@@ -69,7 +69,7 @@ def on_api_result_prepared(result):
 #------------------------------------------------------------------------------
 
 
-def OK(result='', message=None, status='OK', extra_fields=None):
+def OK(result='', message=None, status='OK', extra_fields=None, **kwargs):
     o = {'status': status, }
     if result:
         o['result'] = result if isinstance(result, list) else [result, ]
@@ -79,9 +79,11 @@ def OK(result='', message=None, status='OK', extra_fields=None):
         o.update(extra_fields)
     o = on_api_result_prepared(o)
     if _Debug:
-        api_method = sys._getframe().f_back.f_code.co_name
-        if api_method.count('lambda') or api_method.startswith('_'):
-            api_method = sys._getframe(1).f_back.f_code.co_name
+        api_method = kwargs.get('api_method', None)
+        if not api_method:
+            api_method = sys._getframe().f_back.f_code.co_name
+            if api_method.count('lambda') or api_method.startswith('_'):
+                api_method = sys._getframe(1).f_back.f_code.co_name
         if api_method not in [
             'process_health',
             'network_connected',
@@ -90,7 +92,7 @@ def OK(result='', message=None, status='OK', extra_fields=None):
     return o
 
 
-def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra_fields=None):
+def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra_fields=None, **kwargs):
     o = {}
     if source is not None:
         o.update(source)
@@ -103,9 +105,11 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
         o.update(extra_fields)
     o = on_api_result_prepared(o)
     if _Debug:
-        api_method = sys._getframe().f_back.f_code.co_name
-        if api_method.count('lambda'):
-            api_method = sys._getframe(1).f_back.f_code.co_name
+        api_method = kwargs.get('api_method', None)
+        if not api_method:
+            api_method = sys._getframe().f_back.f_code.co_name
+            if api_method.count('lambda') or api_method.startswith('_'):
+                api_method = sys._getframe(1).f_back.f_code.co_name
         try:
             sample = jsn.dumps(o, ensure_ascii=True, sort_keys=True)[:150]
         except:
@@ -115,10 +119,10 @@ def RESULT(result=[], message=None, status='OK', errors=None, source=None, extra
     return o
 
 
-def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
+def ERROR(errors=[], message=None, status='ERROR', extra_fields=None, **kwargs):
     if isinstance(errors, Exception):
         try:
-            errors = str(errors)
+            errors = strng.to_text(errors)
         except:
             errors = 'unknown exception'
     elif isinstance(errors, Failure):
@@ -134,9 +138,11 @@ def ERROR(errors=[], message=None, status='ERROR', extra_fields=None):
         o.update(extra_fields)
     o = on_api_result_prepared(o)
     if _Debug:
-        api_method = sys._getframe().f_back.f_code.co_name
-        if api_method.count('lambda'):
-            api_method = sys._getframe(1).f_back.f_code.co_name
+        api_method = kwargs.get('api_method', None)
+        if not api_method:
+            api_method = sys._getframe().f_back.f_code.co_name
+            if api_method.count('lambda') or api_method.startswith('_'):
+                api_method = sys._getframe(1).f_back.f_code.co_name
         lg.out(_DebugLevel, 'api.%s return ERROR(%s)' % (api_method, jsn.dumps(o, sort_keys=True)[:150]))
     return o
 
@@ -355,15 +361,15 @@ def identity_create(username, preferred_servers=[]):
         if ret.called:
             return
         if newstate == 'FAILED':
-            ret.callback(ERROR(my_id_registrator.last_message))
+            ret.callback(ERROR(my_id_registrator.last_message, api_method='identity_create'))
             return
         if newstate == 'DONE':
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
-                return ERROR('identity creation failed, please try again later')
+                return ERROR('identity creation failed, please try again later', api_method='identity_create')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
-            ret.callback(RESULT([r, ]))
+            ret.callback(RESULT([r, ], api_method='identity_create'))
             return
 
     my_id_registrator.addStateChangedCallback(_id_registrator_state_changed)
@@ -426,15 +432,15 @@ def identity_recover(private_key_source, known_idurl=None):
         if ret.called:
             return
         if newstate == 'FAILED':
-            ret.callback(ERROR(my_id_restorer.last_message))
+            ret.callback(ERROR(my_id_restorer.last_message, api_method='identity_recover'))
             return
         if newstate == 'RESTORED!':
             my_id.loadLocalIdentity()
             if not my_id.isLocalIdentityReady():
-                return ERROR('identity recovery FAILED')
+                return ERROR('identity recovery FAILED', api_method='identity_recover')
             r = my_id.getLocalIdentity().serialize_json()
             r['xml'] = my_id.getLocalIdentity().serialize(as_text=True)
-            ret.callback(RESULT([r, ]))
+            ret.callback(RESULT([r, ], api_method='identity_recover'))
             return
 
     try:
@@ -443,8 +449,7 @@ def identity_recover(private_key_source, known_idurl=None):
         # TODO: iterate over idurl_list to find at least one reliable source
     except Exception as exc:
         lg.exc()
-        ret.callback(ERROR(str(exc)))
-
+        ret.callback(ERROR(strng.to_text(exc), api_method='identity_recover'))
     return ret
 
 
@@ -458,17 +463,20 @@ def identity_rotate():
     old_sources = my_id.getLocalIdentity().getSources(as_originals=True)
     ret = Deferred()
     d = id_rotator.run(force=True)
+
     def _cb(result):
         if not result:
-            ret.callback(ERROR(result))
+            ret.callback(ERROR(result, api_method='identity_rotate'))
             return None
         r = my_id.getLocalIdentity().serialize_json()
         r['old_sources'] = old_sources
-        ret.callback(RESULT([r, ]))
+        ret.callback(RESULT([r, ], api_method='identity_rotate'))
         return None
+
     def _eb(e):
-        ret.callback(ERROR(e))
+        ret.callback(ERROR(e, api_method='identity_rotate'))
         return None
+
     d.addCallback(_cb)
     d.addErrback(_eb)
     return ret
@@ -516,7 +524,7 @@ def key_get(key_id, include_private=False):
         key_info = my_keys.get_key_info(key_id=key_id, include_private=include_private)
         key_info.pop('include_private', None)
     except Exception as exc:
-        return ERROR(str(exc))
+        return ERROR(exc)
     return RESULT([key_info, ])
 
 
@@ -704,12 +712,8 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
     from access import key_ring
     ret = Deferred()
     d = key_ring.share_key(key_id=full_key_id, trusted_idurl=idurl, include_private=include_private, timeout=timeout)
-    d.addCallback(
-        lambda resp: ret.callback(
-            OK(str(resp))))
-    d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+    d.addCallback(lambda resp: ret.callback(OK(strng.to_text(resp), api_method='key_share')))
+    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='key_share')))
     return ret
 
 
@@ -743,12 +747,8 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
         d = key_ring.audit_private_key(key_id=key_id, untrusted_idurl=idurl, timeout=timeout)
     else:
         d = key_ring.audit_public_key(key_id=key_id, untrusted_idurl=idurl, timeout=timeout)
-    d.addCallback(
-        lambda resp: ret.callback(
-            OK(str(resp))))
-    d.addErrback(
-        lambda err: ret.callback(
-            ERROR(err.getErrorMessage())))
+    d.addCallback(lambda resp: ret.callback(OK(strng.to_text(resp), api_method='key_audit')))
+    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='key_audit')))
     return ret
 
 #------------------------------------------------------------------------------
@@ -1409,10 +1409,12 @@ def file_upload_start(local_path, remote_path, wait_result=False, open_share=Fal
                 'key_id': tsk.keyID,
                 'source_path': local_path,
                 'path_id': pathID,
-            }
+            },
+            api_method='file_upload_start',
         )))
         tsk.result_defer.addErrback(lambda result: d.callback(ERROR(
-            'upload task %d for "%s" failed: %s' % (tsk.number, tsk.pathID, result[1], )
+            'upload task %d for "%s" failed: %s' % (tsk.number, tsk.pathID, result[1], ),
+            api_method='file_upload_start',
         )))
         backup_fs.Calculate()
         backup_control.Save()
@@ -1628,6 +1630,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                     'path_id': pathID_target,
                     'remote_path': knownPath,
                 },
+                api_method='file_download_start'
             ))
         else:
             ret.callback(ERROR(
@@ -1638,6 +1641,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                     'path_id': pathID_target,
                     'remote_path': knownPath,
                 },
+                api_method='file_download_start',
             ))
         return True
 
@@ -1661,6 +1665,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
                 'path_id': pathID_target,
                 'remote_path': knownPath,
             },
+            api_method='file_download_start',
         ))
         return True
 
@@ -1907,7 +1912,7 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
     ret = Deferred()
 
     def _on_shared_access_donor_success(result):
-        ret.callback(OK() if result else ERROR(result))
+        ret.callback(OK(api_method='share_grant') if result else ERROR(result, api_method='share_grant'))
         return None
 
     def _on_shared_access_donor_failed(err):
@@ -1943,11 +1948,11 @@ def share_open(key_id):
         active_share.removeStateChangedCallback(_on_shared_access_coordinator_state_changed)
         if newstate == 'CONNECTED':
             if new_share:
-                ret.callback(OK('share "%s" opened' % key_id, extra_fields=active_share.to_json()))
+                ret.callback(OK('share "%s" opened' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
             else:
-                ret.callback(OK('share "%s" refreshed' % key_id, extra_fields=active_share.to_json()))
+                ret.callback(OK('share "%s" refreshed' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
         else:
-            ret.callback(ERROR('share "%s" was not opened' % key_id, extra_fields=active_share.to_json()))
+            ret.callback(ERROR('share "%s" was not opened' % key_id, extra_fields=active_share.to_json(), api_method='share_open'))
         return None
 
     active_share.addStateChangedCallback(_on_shared_access_coordinator_state_changed, oldstate=None, newstate='CONNECTED')
@@ -1977,6 +1982,7 @@ def share_history():
     """
     if not driver.is_on('service_shared_data'):
         return ERROR('service_shared_data() is not started')
+    # TODO: key share history to be implemented
     return RESULT([],)
 
 #------------------------------------------------------------------------------
@@ -2031,8 +2037,8 @@ def friend_add(idurl_or_global_id, alias=''):
         if not contactsdb.is_correspondent(idurl):
             contactsdb.add_correspondent(idurl, alias)
             contactsdb.save_correspondents()
-            return OK('new friend has been added')
-        return OK('this friend has been already added')
+            return OK('new friend has been added', api_method='friend_add')
+        return OK('this friend has been already added', api_method='friend_add')
 
     if id_url.is_cached(idurl):
         return _add()
@@ -2063,15 +2069,15 @@ def friend_remove(idurl_or_global_id):
         if contactsdb.is_correspondent(idurl):
             contactsdb.remove_correspondent(idurl)
             contactsdb.save_correspondents()
-            return OK('friend has been removed')
-        return ERROR('friend not found')
+            return OK('friend has been removed', api_method='friend_remove')
+        return ERROR('friend not found', api_method='friend_remove')
 
     if id_url.is_cached(idurl):
         return _remove()
 
     ret = Deferred()
     d = identitycache.immediatelyCaching(idurl)
-    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity')))
+    d.addErrback(lambda *args: ret.callback(ERROR('failed caching user identity', api_method='friend_remove')))
     d.addCallback(lambda *args: ret.callback(_remove()))
     return ret
 
@@ -2231,7 +2237,7 @@ def supplier_change(index_or_idurl_or_global_id, new_supplier_idurl_or_global_id
         supplier_finder.InsertSupplierToHire(new_supplier_idurl)
         fire_hire.AddSupplierToFire(supplier_idurl)
         fire_hire.A('restart')
-        ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl)))
+        ret.callback(OK('supplier "%s" will be replaced by "%s"' % (supplier_idurl, new_supplier_idurl), api_method='supplier_change'))
         return None
 
     from p2p import online_status
@@ -2280,7 +2286,7 @@ def suppliers_dht_lookup(customer_idurl_or_global_id):
     customer_idurl = id_url.field(customer_idurl)
     ret = Deferred()
     d = dht_relations.read_customer_suppliers(customer_idurl, as_fields=False)
-    d.addCallback(lambda result: ret.callback(RESULT(result)))
+    d.addCallback(lambda result: ret.callback(RESULT(result, api_method='suppliers_dht_lookup')))
     d.addErrback(lambda err: ret.callback(ERROR([err, ])))
     return ret
 
@@ -2699,10 +2705,8 @@ def service_restart(service_name, wait_timeout=10):
         return ERROR('service "%s" not found' % service_name)
     ret = Deferred()
     d = driver.restart(service_name, wait_timeout=wait_timeout)
-    d.addCallback(
-        lambda resp: ret.callback(OK(resp)))
-    d.addErrback(
-        lambda err: ret.callback(ERROR(err.getErrorMessage())))
+    d.addCallback(lambda resp: ret.callback(OK(resp, api_method='service_restart')))
+    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='service_restart')))
     return ret
 
 #------------------------------------------------------------------------------
@@ -3004,8 +3008,8 @@ def user_ping(idurl_or_global_id, timeout=15, retries=2):
         channel='api_user_ping',
         keep_alive=False,
     )
-    d.addCallback(lambda ok: ret.callback(OK(strng.to_text(ok or 'connected'))))
-    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
+    d.addCallback(lambda ok: ret.callback(OK(strng.to_text(ok or 'connected'), api_method='user_ping')))
+    d.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='user_ping')))
     return ret
 
 
@@ -3056,12 +3060,15 @@ def user_status_check(idurl_or_global_id, timeout=5):
             return None
         if newstate == 'OFFLINE' and oldstate == 'OFFLINE' and not event_string == 'ping-failed':
             return None
-        ret.callback(OK(extra_fields=dict(
-            idurl=idurl,
-            global_id=global_id.UrlToGlobalID(idurl),
-            contact_state=newstate,
-            contact_status=online_status.stateToLabel(newstate),
-        )))
+        ret.callback(OK(
+            extra_fields=dict(
+                idurl=idurl,
+                global_id=global_id.UrlToGlobalID(idurl),
+                contact_state=newstate,
+                contact_status=online_status.stateToLabel(newstate),
+            ),
+            api_method='user_status_check',
+        ))
         return None
 
     def _do_clean(x):
@@ -3100,7 +3107,7 @@ def user_search(nickname, attempts=1):
             'position': pos,
             'global_id': global_id.UrlToGlobalID(idurl),
             'idurl': idurl,
-        }]))
+        }], api_method='user_search'))
 
     nickname_observer.find_one(
         nickname,
@@ -3139,7 +3146,7 @@ def user_observe(nickname, attempts=3):
                 'idurl': idurl,
             })
             return None
-        ret.callback(RESULT(results, ))
+        ret.callback(RESULT(results, api_method='user_observe'))
         return None
 
     from twisted.internet import reactor  # @UnresolvedImport
@@ -3181,12 +3188,15 @@ def nickname_set(nickname):
 
     def _nickname_holder_result(result, key):
         nickname_holder.A().remove_result_callback(_nickname_holder_result)
-        return ret.callback(OK(extra_fields={
-            'result': result,
-            'nickname': key,
-            'global_id': my_id.getGlobalID(),
-            'idurl': my_id.getLocalID(),
-        }))
+        return ret.callback(OK(
+            extra_fields={
+                'result': result,
+                'nickname': key,
+                'global_id': my_id.getGlobalID(),
+                'idurl': my_id.getLocalID(),
+            },
+            api_method='nickname_set',
+        ))
 
     nickname_holder.A().add_result_callback(_nickname_holder_result)
     nickname_holder.A('set', nickname)
@@ -3261,8 +3271,8 @@ def message_send(recipient, json_data, timeout=15):
         message_ack_timeout=timeout,
     )
     ret = Deferred()
-    result.addCallback(lambda packet: ret.callback(OK(str(packet))))
-    result.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage())))
+    result.addCallback(lambda packet: ret.callback(OK(strng.to_text(packet), api_method='message_send')))
+    result.addErrback(lambda err: ret.callback(ERROR(err.getErrorMessage(), api_method='message_send')))
     return ret
 
 
@@ -3314,7 +3324,7 @@ def message_receive(consumer_id):
                 lg.exc()
         if _Debug:
             lg.out(_DebugLevel, 'api.message_receive._on_pending_messages returning : %r' % result)
-        ret.callback(OK(result))
+        ret.callback(OK(result, api_method='message_receive'))
         return len(result) > 0
 
     d = message.consume_messages(consumer_id)
@@ -3377,7 +3387,8 @@ def event_send(event_id, json_data=None):
         lg.out(_DebugLevel, 'api.event_send "%s" was fired to local node with %d bytes payload' % (event_id, json_length, ))
     return OK({'event_id': event_id, 'created': evt.created, })
 
-def events_listen(consumer_id):
+
+def event_listen(consumer_id):
     from main import events
     ret = Deferred()
 
@@ -3391,16 +3402,12 @@ def events_listen(consumer_id):
                 'data': evt['data'],
                 'time': evt['time'],
             })
-        # if _Debug:
-        #     lg.out(_DebugLevel, 'api.events_listen._on_pending_events returning : %s' % result)
-        ret.callback(OK(result))
+        ret.callback(OK(result, api_method='event_listen'))
         return len(result) > 0
 
     d = events.consume_events(consumer_id)
     d.addCallback(_on_pending_events)
-    d.addErrback(lambda err: ret.callback(ERROR(str(err))))
-    # if _Debug:
-    #     lg.out(_DebugLevel, 'api.events_listen "%s"' % consumer_id)
+    d.addErrback(lambda err: ret.callback(ERROR(err, api_method='event_listen')))
     return ret
 
 #------------------------------------------------------------------------------
@@ -3411,7 +3418,7 @@ def network_stun(udp_port=None, dht_port=None):
     from stun import stun_client
     ret = Deferred()
     d = stun_client.safe_stun(udp_port=udp_port, dht_port=dht_port)
-    d.addBoth(lambda r: ret.callback(RESULT([r, ])))
+    d.addBoth(lambda r: ret.callback(RESULT([r, ], api_method='network_stun')))
     return ret
 
 
@@ -3464,7 +3471,7 @@ def network_connected(wait_timeout=5):
                         'service_p2p_hookups': 'started',
                         'service_proxy_transport': 'started',
                         'proxy_receiver_state': proxy_receiver_machine.state,
-                    })))
+                    }, api_method='network_connected')))
                     return ret
             else:
                 wait_timeout_defer = Deferred()
@@ -3475,7 +3482,7 @@ def network_connected(wait_timeout=5):
                     'service_p2p_hookups': 'started',
                     'service_proxy_transport': 'disabled',
                     'p2p_connector_state': p2p_connector_machine.state,
-                })))
+                }, api_method='network_connected')))
                 return ret
 
     if not my_id.isLocalIdentityReady():
@@ -3496,23 +3503,23 @@ def network_connected(wait_timeout=5):
             p2p_connector_lookup = automat.find('p2p_connector')
             if not p2p_connector_lookup:
                 lg.warn('disconnected, reason is "p2p_connector_not_found"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}))
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_found'}, api_method='network_connected'))
                 return None
             p2p_connector_machine = automat.objects().get(p2p_connector_lookup[0])
             if not p2p_connector_machine:
                 lg.warn('disconnected, reason is "p2p_connector_not_exist"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}))
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_not_exist'}, api_method='network_connected'))
                 return None
             if p2p_connector_machine.state in ['DISCONNECTED', ]:
                 lg.warn('disconnected, reason is "p2p_connector_disconnected", sending "check-synchronize" event to p2p_connector()')
                 p2p_connector_machine.automat('check-synchronize')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}))
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_disconnected'}, api_method='network_connected'))
                 return None
             # ret.callback(OK('connected'))
             _do_service_proxy_transport_test()
         except:
             lg.exc()
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_error'}))
+            ret.callback(ERROR('disconnected', extra_fields={'reason': 'p2p_connector_error'}, api_method='network_connected'))
         return None
 
     def _do_service_proxy_transport_test():
@@ -3522,23 +3529,23 @@ def network_connected(wait_timeout=5):
                 'service_gateway': 'started',
                 'service_p2p_hookups': 'started',
                 'service_proxy_transport': 'disabled',
-            }))
+            }, api_method='network_connected'))
             return None
         try:
             proxy_receiver_lookup = automat.find('proxy_receiver')
             if not proxy_receiver_lookup:
                 lg.warn('disconnected, reason is "proxy_receiver_not_found"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_found'}))
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_found'}, api_method='network_connected'))
                 return None
             proxy_receiver_machine = automat.objects().get(proxy_receiver_lookup[0])
             if not proxy_receiver_machine:
                 lg.warn('disconnected, reason is "proxy_receiver_not_exist"')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_exist'}))
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_not_exist'}, api_method='network_connected'))
                 return None
             if proxy_receiver_machine.state != 'LISTEN':
                 lg.warn('disconnected, reason is "proxy_receiver_disconnected", sending "start" event to proxy_receiver()')
                 proxy_receiver_machine.automat('start')
-                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_disconnected'}))
+                ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_disconnected'}, api_method='network_connected'))
                 return None
             ret.callback(OK({
                 'service_network': 'started',
@@ -3546,10 +3553,10 @@ def network_connected(wait_timeout=5):
                 'service_p2p_hookups': 'started',
                 'service_proxy_transport': 'started',
                 'proxy_receiver_state': proxy_receiver_machine.state,
-            }))
+            }, api_method='network_connected'))
         except:
             lg.exc()
-            ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_error'}))
+            ret.callback(ERROR('disconnected', extra_fields={'reason': 'proxy_receiver_error'}, api_method='network_connected'))
         return None
 
     def _on_service_restarted(resp, service_name):
@@ -3565,7 +3572,7 @@ def network_connected(wait_timeout=5):
         d = service_restart(service_name, wait_timeout=wait_timeout)
         d.addCallback(_on_service_restarted, service_name)
         d.addErrback(lambda err: ret.callback(dict(
-            list(ERROR(err.getErrorMessage()).items()) + list({'reason': '{}_restart_error'.format(service_name)}.items()))))
+            list(ERROR(err.getErrorMessage(), api_method='network_connected').items()) + list({'reason': '{}_restart_error'.format(service_name)}.items()))))
         return None
 
     def _do_service_test(service_name):
@@ -3574,7 +3581,13 @@ def network_connected(wait_timeout=5):
             svc_state = svc_info['result'][0]['state']
         except:
             lg.exc('service "%s" test failed' % service_name)
-            ret.callback(ERROR('disconnected', extra_fields={'reason': '{}_info_error'.format(service_name)}))
+            ret.callback(ERROR(
+                'disconnected',
+                extra_fields={
+                    'reason': '{}_info_error'.format(service_name),
+                },
+                api_method='network_connected',
+            ))
             return None
         if svc_state != 'ON':
             _do_service_restart(service_name)
@@ -3814,15 +3827,15 @@ def dht_node_find(node_id_64=None):
                         'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
-                }))
-            return ret.callback(ERROR('unexpected DHT response'))
+                }, api_method='dht_node_find'))
+            return ret.callback(ERROR('unexpected DHT response', api_method='dht_node_find'))
         except Exception as exc:
             lg.exc()
-            return ret.callback(ERROR(exc))
+            return ret.callback(ERROR(exc, api_method='dht_node_find'))
 
     def _eb(err):
         lg.err(str(err))
-        ret.callback(ERROR(str(err)))
+        ret.callback(ERROR(err, api_method='dht_node_find'))
         return None
 
     d = dht_service.find_node(node_id)
@@ -3851,7 +3864,7 @@ def dht_value_get(key, record_type='skip_validation'):
                 'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
                 'value': value,
-            }))
+            }, api_method='dht_value_get'))
         closest_nodes = []
         if isinstance(value, list):
             closest_nodes = value
@@ -3865,11 +3878,11 @@ def dht_value_get(key, record_type='skip_validation'):
                 'dht_id': c.id,
                 'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
             } for c in closest_nodes],
-        }))
+        }, api_method='dht_value_get'))
 
     def _eb(err):
-        lg.err(str(err))
-        ret.callback(ERROR(err))
+        lg.err(err)
+        ret.callback(ERROR(err, api_method='dht_value_get'))
         return None
 
     d = dht_service.get_valid_data(
@@ -3920,13 +3933,13 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                         'dht_id': c.id,
                         'address': '%s:%d' % (strng.to_text(c.address, errors='ignore'), c.port),
                     } for c in response],
-                }))
+                }, api_method='dht_value_set'))
             if _Debug:
                 lg.out(_DebugLevel, 'api.dht_value_set ERROR: %r' % response)
-            return ret.callback(ERROR('unexpected DHT response'))
+            return ret.callback(ERROR('unexpected DHT response', api_method='dht_value_set'))
         except Exception as exc:
             lg.exc()
-            return ret.callback(ERROR(exc))
+            return ret.callback(ERROR(exc, api_method='dht_value_set'))
 
     def _eb(err):
         try:
@@ -3955,10 +3968,10 @@ def dht_value_set(key, value, expire=None, record_type='skip_validation'):
                 'my_dht_id': dht_service.node().id,
                 'key': strng.to_text(key, errors='ignore'),
                 'closest_nodes': closest_nodes,
-            }))
+            }, api_method='dht_value_set'))
         except Exception as exc:
             lg.exc()
-            return ERROR(exc)
+            return ERROR(exc, api_method='dht_value_set')
 
     d = dht_service.set_valid_data(
         key=key,

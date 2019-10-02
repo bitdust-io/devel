@@ -873,7 +873,7 @@ class BitDustRESTHTTPServer(JsonAPIResource):
     @GET('^/ev/l/(?P<consumer_id>[^/]+)/$')
     @GET('^/event/listen/(?P<consumer_id>[^/]+)/v1$')
     def event_listen_v1(self, request, consumer_id):
-        return api.events_listen(consumer_id)
+        return api.event_listen(consumer_id)
 
     #------------------------------------------------------------------------------
 
