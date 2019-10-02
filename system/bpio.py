@@ -130,7 +130,9 @@ def ostype():
     """
     global PlatformInfo
     if PlatformInfo is None:
-        PlatformInfo = platform.uname()
+        PlatformInfo = list(platform.uname())
+        if sys.executable == 'android_python':
+            PlatformInfo[0] = 'Android'
     return PlatformInfo[0]
 
 
@@ -140,7 +142,7 @@ def osversion():
     """
     global PlatformInfo
     if PlatformInfo is None:
-        PlatformInfo = platform.uname()
+        PlatformInfo = list(platform.uname())
     return PlatformInfo[2]
 
 
@@ -149,7 +151,13 @@ def osinfo():
     Return full OS info, like: "Linux-2.6.32.9-rscloud-x86_64-with-
     Ubuntu-12.04-precise" or "Windows-XP-5.1.2600-SP3".
     """
-    return str(platform.platform()).strip()
+    if Android():
+        try:
+            u = platform.uname()
+            return '%s %s %s' % (strng.to_text(u[0]), strng.to_text(u[2]), strng.to_text(u[3]))
+        except:
+            return 'Android'
+    return strng.to_text(platform.platform()).strip()
 
 
 def osinfofull():
@@ -161,9 +169,9 @@ def osinfofull():
     o += '=====================================================\n'
     o += '=====================================================\n'
     o += '=====================================================\n'
-    o += 'platform.uname(): ' + str(platform.uname()) + '\n'
+    o += 'platform.uname(): ' + strng.to_text(platform.uname()) + '\n'
     try:
-        o += '__file__: ' + str(__file__) + '\n'
+        o += '__file__: ' + strng.to_text(__file__) + '\n'
     except:
         o += 'variable __file__ is not defined\n'
     o += 'sys.executable: ' + sys.executable + '\n'
@@ -213,7 +221,8 @@ def Android():
     """
     Return True if running on Android inside Kivy.
     """
-    return 'ANDROID_ARGUMENT' in os.environ
+    # return 'ANDROID_ARGUMENT' in os.environ
+    return ostype() == 'Android'
 
 
 def isFrozen():
@@ -418,7 +427,7 @@ def _pack_list(lst):
     strings and not contain "\n".\ This is useful to store a list of
     users IDs in the local file.
     """
-    return str(len(lst)) + u'\n' + u'\n'.join(lst)
+    return strng.to_text(len(lst)) + u'\n' + u'\n'.join(lst)
 
 
 def _unpack_list(src):
@@ -474,7 +483,7 @@ def _pack_dict(dictionary, sort=False):
         seq = sorted(dictionary.keys())
     else:
         seq = list(dictionary.keys())
-    return u'\n'.join([u'%s %s' % (k, strng.to_text(str(dictionary[k]))) for k in seq])
+    return u'\n'.join([u'%s %s' % (k, strng.to_text(strng.to_text(dictionary[k]))) for k in seq])
 
 
 def _unpack_dict_from_list(lines):
@@ -1074,6 +1083,8 @@ def find_process(applist):
 
     You can provide a name or regexp to scan.
     """
+    if Android():
+        return []
     try:
         import psutil
         pidsL = []
@@ -1100,8 +1111,7 @@ def find_process(applist):
             return pidsL
     except:
         pass
-    ostype = platform.uname()[0]
-    if ostype == "Windows":
+    if Windows():
         return find_process_win32(applist)
     else:
         return find_process_linux(applist)

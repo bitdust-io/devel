@@ -3602,14 +3602,10 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
     if not driver.is_on('service_network'):
         return ERROR('service_network() is not started')
     from automats import automat
+    from lib import net_misc
     from main import settings
     from userid import my_id
     from userid import global_id
-
-    def _tupl_addr_to_str(addr):
-        if not addr:
-            return None
-        return ':'.join(map(str, addr))
 
     r = {
         'p2p_connector_state': None,
@@ -3713,9 +3709,9 @@ def network_status(show_suppliers=True, show_customers=True, show_cache=True,
                         'state': getattr(s, 'state', None),
                         'id': getattr(s, 'id', None),
                         'idurl': getattr(s, 'peer_idurl', None),
-                        'address': _tupl_addr_to_str(getattr(s, 'peer_address', None)),
-                        'external_address': _tupl_addr_to_str(getattr(s, 'peer_external_address', None)),
-                        'connection_address': _tupl_addr_to_str(getattr(s, 'connection_address', None)),
+                        'address': net_misc.pack_address_text(getattr(s, 'peer_address', None)),
+                        'external_address': net_misc.pack_address_text(getattr(s, 'peer_external_address', None)),
+                        'connection_address': net_misc.pack_address_text(getattr(s, 'connection_address', None)),
                         'bytes_received': getattr(s, 'total_bytes_received', 0),
                         'bytes_sent': getattr(s, 'total_bytes_sent', 0),
                     }

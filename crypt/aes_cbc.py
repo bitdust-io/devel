@@ -34,9 +34,14 @@
 from __future__ import absolute_import
 import base64
 
-from Cryptodome.Cipher import AES
-from Cryptodome.Util import Padding
-from Cryptodome.Random import get_random_bytes
+try:
+    from Cryptodome.Cipher import AES
+    from Cryptodome.Util import Padding
+    from Cryptodome.Random import get_random_bytes
+except:
+    from Crypto.Cipher import AES  # @UnresolvedImport @Reimport
+    from Crypto.Util import Padding  # @UnresolvedImport @Reimport
+    from Crypto.Random import get_random_bytes  # @UnresolvedImport @Reimport
 
 #------------------------------------------------------------------------------
 
