@@ -158,8 +158,14 @@ class TreeRoutingTable(RoutingTable):
         @type parentNodeID: str
         """
         # Create the initial (single) k-bucket covering the range of the entire 160-bit ID space
-        self._buckets = [kbucket.KBucket(rangeMin=0, rangeMax=2**160)]
+        self._buckets = [kbucket.KBucket(rangeMin=0, rangeMax=2**160), ]
         self._parentNodeID = parentNodeID
+
+    def totalContacts(self):
+        counter = 0
+        for bucket in self._buckets:
+            counter += len(bucket._contacts)
+        return counter
 
     def addContact(self, contact):
         """

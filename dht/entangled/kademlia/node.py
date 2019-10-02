@@ -97,6 +97,8 @@ class Node(object):
         # Create k-buckets (for storing contacts)
         if routingTable is None:
             self._routingTable = routingtable.TreeRoutingTable(self.id)
+        else:
+            self._routingTable = routingTable
 
         # Initialize this node's network access mechanisms
         if networkProtocol is None:

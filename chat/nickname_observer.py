@@ -246,13 +246,11 @@ class NicknameObserver(automat.Automat):
         Action method.
         """
         if self.dht_read_defer is not None:
-            self.dht_read_defer.pause()
             self.dht_read_defer.cancel()
             self.dht_read_defer = None
-        d = dht_records.get_nickname(self.key)
-        d.addCallback(self._dht_read_result, self.key)
-        d.addErrback(self._dht_read_failed)
-        self.dht_read_defer = d
+        self.dht_read_defer = dht_records.get_nickname(self.key)
+        self.dht_read_defer.addCallback(self._dht_read_result, self.key)
+        self.dht_read_defer.addErrback(self._dht_read_failed)
 
     def doReportNicknameExist(self, *args, **kwargs):
         """
