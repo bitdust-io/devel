@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+
+2019-10-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* more smart events in list_files_orator() and index_synchronizer() (#422)
+* make sure corresponding files are removed after api.key_erase() call  (#421)
+
+
+
 2019-10-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * extended api.network_status() method with DHT details (#420)
