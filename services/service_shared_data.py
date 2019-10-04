@@ -54,16 +54,24 @@ class SharedDataService(LocalService):
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         events.add_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
+        events.add_subscriber(self._on_key_erased, 'key-erased')
         self._do_open_known_shares()
         return True
 
     def stop(self):
         from main import events
         from transport import callback
+        events.remove_subscriber(self._on_key_erased, 'key-erased')
         events.remove_subscriber(self._on_my_list_files_refreshed, 'my-list-files-refreshed')
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         return True
+
+    def _on_key_erased(self, evt):
+        from access import shared_access_coordinator
+        active_share = shared_access_coordinator.get_active_share(evt.data['key_id'])
+        if active_share:
+            active_share.automat('shutdown')
 
     def _on_supplier_modified(self, evt):
         from access import key_ring

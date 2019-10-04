@@ -76,6 +76,7 @@ class BackupsService(LocalService):
             self._on_p2p_connector_state_changed, 'MY_IDENTITY', 'CONNECTED')
         callback.append_inbox_callback(self._on_inbox_packet_received)
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
+        events.add_subscriber(self._on_key_erased, 'key-erased')
         return True
 
     def stop(self):
@@ -86,6 +87,7 @@ class BackupsService(LocalService):
         from p2p import p2p_connector
         from main import events
         from main.config import conf
+        events.remove_subscriber(self._on_key_erased, 'key-erased')
         events.remove_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         if p2p_connector.A():
@@ -99,6 +101,18 @@ class BackupsService(LocalService):
     def health_check(self):
         from storage import backup_monitor
         return backup_monitor.A().state in ['READY', 'FIRE_HIRE', 'LIST_FILES', 'LIST_BACKUPS', 'REBUILDING', ]
+
+    def _on_key_erased(self, evt):
+        from interface import api
+        ret = api.files_list(
+            remote_path='',
+            key_id=evt.data['key_id'],
+            recursive=True,
+            all_customers=True,
+        )
+        if ret.get('status') == 'OK':
+            for one_file in ret['result']:
+                api.file_delete(one_file['remote_path'])
 
     def _on_keep_local_copies_modified(self, path, value, oldvalue, result):
         from storage import backup_monitor

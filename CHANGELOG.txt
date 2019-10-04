@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+2019-10-02 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* extended api.network_status() method with DHT details (#420)
+* logging improvements (#419)
+* running on Android, part 1  (#418)
+
+
 
 2019-09-22 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
