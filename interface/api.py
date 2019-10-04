@@ -348,7 +348,7 @@ def identity_create(username, preferred_servers=[]):
     from userid import my_id
     from userid import id_registrator
     try:
-        username = str(username)
+        username = strng.to_text(username)
     except:
         return ERROR('invalid user name')
     if not misc.ValidUserName(username):
@@ -664,23 +664,23 @@ def key_erase(key_id):
     Return:
 
         {'status': 'OK',
-         'message': 'private key "ccc2" was erased successfully',
+         'message': 'private key "abcd$veselin@p2p-id.ru" was erased successfully',
         }
     """
     if not driver.is_on('service_keys_registry'):
         return ERROR('service_keys_registry() is not started')
     from crypt import my_keys
-    key_id = str(key_id)
+    key_id = strng.to_text(key_id)
     if _Debug:
         lg.out(_DebugLevel, 'api.keys_list')
     if key_id == 'master':
-        return ERROR('"master" key can not be removed')
+        return ERROR('"master" key can not be erased')
     key_alias, creator_idurl = my_keys.split_key_id(key_id)
     if not key_alias or not creator_idurl:
         return ERROR('icorrect key_id format')
     if not my_keys.erase_key(key_id):
-        return ERROR('failed to erase private key "%s"' % key_alias)
-    return OK(message='private key "%s" was erased successfully' % key_alias)
+        return ERROR('failed to erase private key "%s"' % key_id)
+    return OK(message='private key "%s" was erased successfully' % key_id)
 
 
 def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout=10):
@@ -695,8 +695,8 @@ def key_share(key_id, trusted_global_id_or_idurl, include_private=False, timeout
     """
     from userid import global_id
     try:
-        trusted_global_id_or_idurl = str(trusted_global_id_or_idurl)
-        full_key_id = str(key_id)
+        trusted_global_id_or_idurl = strng.to_text(trusted_global_id_or_idurl)
+        full_key_id = strng.to_text(key_id)
     except:
         return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
@@ -728,8 +728,8 @@ def key_audit(key_id, untrusted_global_id_or_idurl, is_private=False, timeout=10
     """
     from userid import global_id
     try:
-        untrusted_global_id_or_idurl = str(untrusted_global_id_or_idurl)
-        full_key_id = str(key_id)
+        untrusted_global_id_or_idurl = strng.to_text(untrusted_global_id_or_idurl)
+        full_key_id = strng.to_text(key_id)
     except:
         return ERROR('error reading input parameters')
     if not driver.is_on('service_keys_registry'):
@@ -1713,7 +1713,7 @@ def file_download_start(remote_path, destination_path=None, wait_result=False, o
             if _Debug:
                 lg.out(_DebugLevel, 'api.download_start._open_share found existing share : %s' % active_share.key_id)
         if active_share.state != 'CONNECTED':
-            cb_id = 'file_download_start_' + str(time.time())
+            cb_id = 'file_download_start_' + strng.to_text(time.time())
             active_share.add_connected_callback(cb_id, lambda _id, _result: _on_share_connected(active_share, _id, _result))
             active_share.automat('restart')
             if _Debug:
@@ -1916,7 +1916,7 @@ def share_grant(trusted_remote_user, key_id, timeout=30):
         return None
 
     def _on_shared_access_donor_failed(err):
-        ret.callback(ERROR(str(err)))
+        ret.callback(ERROR(strng.to_text(err)))
         return None
 
     d = Deferred()
@@ -3329,7 +3329,7 @@ def message_receive(consumer_id):
 
     d = message.consume_messages(consumer_id)
     d.addCallback(_on_pending_messages)
-    d.addErrback(lambda err: ret.callback(ERROR(str(err))))
+    d.addErrback(lambda err: ret.callback(ERROR(strng.to_text(err))))
     if _Debug:
         lg.out(_DebugLevel, 'api.message_receive "%s"' % consumer_id)
     return ret
@@ -3846,7 +3846,7 @@ def dht_node_find(node_id_64=None):
             return ret.callback(ERROR(exc, api_method='dht_node_find'))
 
     def _eb(err):
-        lg.err(str(err))
+        lg.err(err)
         ret.callback(ERROR(err, api_method='dht_node_find'))
         return None
 

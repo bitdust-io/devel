@@ -99,6 +99,19 @@ class KeysStorageService(LocalService):
         self._do_synchronize_keys()
 
     def _on_key_erased(self, evt):
+        from interface import api
+        from userid import global_id
+        from userid import my_id
+        if evt.data['is_private']:
+            remote_path_for_key = '.keys/%s.private' % evt.data['key_id']
+        else:
+            remote_path_for_key = '.keys/%s.public' % evt.data['key_id']
+        global_key_path = global_id.MakeGlobalID(
+            key_alias='master',
+            customer=my_id.getGlobalID(),
+            path=remote_path_for_key,
+        )
+        api.file_delete(global_key_path)
         self._do_synchronize_keys()
 
     def _do_synchronize_keys(self):
