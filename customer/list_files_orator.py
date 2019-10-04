@@ -60,6 +60,10 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+import time
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -90,7 +94,12 @@ _ReceivedListFilesCounter = 0
 def is_synchronized():
     if not A():
         return False
-    return A().state == 'SAW_FILES'
+    if A().state == 'SAW_FILES':
+        return True
+    if A().state in ['LOCAL_FILES', 'REMOTE_FILES', ]:
+        if A().last_time_saw_files > 0 and time.time() - A().last_time_saw_files < 20:
+            return True
+    return False
 
 #------------------------------------------------------------------------------
 
@@ -137,6 +146,7 @@ class ListFilesOrator(automat.Automat):
     }
 
     def init(self):
+        self.last_time_saw_files = -1
         self.ping_required = True
         events.add_subscriber(self._on_my_identity_rotated, 'my-identity-rotated')
         events.add_subscriber(self._on_supplier_connected, 'supplier-connected')
@@ -151,7 +161,16 @@ class ListFilesOrator(automat.Automat):
             from storage import backup_monitor
             backup_monitor.A('list_files_orator.state', newstate)
         if newstate == 'SAW_FILES' and oldstate != newstate:
-            events.send('my-list-files-refreshed', data={})
+            if A().last_time_saw_files > 0 and time.time() - A().last_time_saw_files < 20:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'already saw files %r seconds ago' % (time.time() - A().last_time_saw_files))
+            else:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'saw files just now, raising "my-list-files-refreshed" event')
+                events.send('my-list-files-refreshed', data={})
+            self.last_time_saw_files = time.time()
+        if newstate == 'NO_FILES':
+            self.last_time_saw_files = -1
 
     def A(self, event, *args, **kwargs):
         #---NO_FILES---

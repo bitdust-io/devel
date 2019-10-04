@@ -90,6 +90,10 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
+import time
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
@@ -128,7 +132,12 @@ _IndexSynchronizer = None
 def is_synchronized():
     if not A():
         return False
-    return A().state == 'IN_SYNC!'
+    if A().state == 'IN_SYNC!':
+        return True
+    if A().state in ['REQUEST?', 'SENDING', ]:
+        if A().last_time_in_sync > 0 and time.time() - A().last_time_in_sync < 30:
+            return True
+    return False
 
 #------------------------------------------------------------------------------
 
@@ -176,6 +185,7 @@ class IndexSynchronizer(automat.Automat):
         self.requested_suppliers_number = 0
         self.sending_suppliers = set()
         self.sent_suppliers_number = 0
+        self.last_time_in_sync = -1
         self.PushAgain = False
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
@@ -184,11 +194,20 @@ class IndexSynchronizer(automat.Automat):
         changed.
         """
         if newstate == 'IN_SYNC!' and oldstate != newstate:
-            events.send('my-backup-index-synchronized', data={})
+            if A().last_time_in_sync > 0 and time.time() - A().last_time_in_sync < 30:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'backup index already synchronized %r seconds ago' % (time.time() - A().last_time_in_sync))
+            else:
+                if _Debug:
+                    lg.dbg(_DebugLevel, 'backup index just synchronized, sending "my-backup-index-synchronized" event')
+                events.send('my-backup-index-synchronized', data={})
+            self.last_time_in_sync = time.time()
             if self.PushAgain:
                 self.automat('instant')
         if newstate == 'NO_INFO' and oldstate in ['REQUEST?', 'SENDING', ]:
             events.send('my-backup-index-out-of-sync', data={})
+        if newstate == 'NO_INFO':
+            self.last_time_in_sync = -1
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
