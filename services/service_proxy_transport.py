@@ -72,20 +72,17 @@ class ProxyTransportService(LocalService):
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
-        conf().addCallback('services/proxy-transport/enabled',
-                           self._on_enabled_disabled)
-        conf().addCallback('services/proxy-transport/sending-enabled',
-                           self._on_sending_enabled_disabled)
-        conf().addCallback('services/proxy-transport/receiving-enabled',
-                           self._on_receiving_enabled_disabled)
+        conf().addConfigNotifier('services/proxy-transport/enabled', self._on_enabled_disabled)
+        conf().addConfigNotifier('services/proxy-transport/sending-enabled', self._on_sending_enabled_disabled)
+        conf().addConfigNotifier('services/proxy-transport/receiving-enabled', self._on_receiving_enabled_disabled)
         return self.starting_deferred
 
     def stop(self):
         from twisted.internet.defer import succeed
         from main.config import conf
-        conf().removeCallback('services/proxy-transport/enabled')
-        conf().removeCallback('services/proxy-transport/sending-enabled')
-        conf().removeCallback('services/proxy-transport/receiving-enabled')
+        conf().removeConfigNotifier('services/proxy-transport/enabled')
+        conf().removeConfigNotifier('services/proxy-transport/sending-enabled')
+        conf().removeConfigNotifier('services/proxy-transport/receiving-enabled')
         t = self.transport
         self.transport = None
         t.automat('shutdown')

@@ -58,25 +58,33 @@ class IdentityPropagateService(LocalService):
     def start(self):
         from logs import lg
         from userid import my_id
+        from main.config import conf
         my_id.loadLocalIdentity()
         if my_id._LocalIdentity is None:
             lg.warn('Loading local identity failed - need to create an identity first')
             return False
         from contacts import identitycache
-        identitycache.init()
-        from contacts import contactsdb
-        d = contactsdb.init()
-        from p2p import propagate
-        propagate.init()
         from userid import known_servers
+        from p2p import propagate
+        from contacts import contactsdb
+        identitycache.init()
+        d = contactsdb.init()
+        propagate.init()
+        conf().addConfigNotifier('services/identity-propagate/known-servers', self._on_known_servers_changed)
         lg.info('known ID servers are : %r' % known_servers.by_host())
         return d
 
     def stop(self):
+        from main.config import conf
         from p2p import propagate
-        propagate.shutdown()
         from contacts import contactsdb
-        contactsdb.shutdown()
         from contacts import identitycache
+        conf().removeConfigNotifier('services/identity-propagate/known-servers')
+        propagate.shutdown()
+        contactsdb.shutdown()
         identitycache.shutdown()
         return True
+
+    def _on_known_servers_changed(self, path, value, oldvalue, result):
+        from userid import known_servers
+        known_servers._KnownServers = None

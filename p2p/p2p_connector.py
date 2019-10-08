@@ -71,11 +71,18 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
+import time
+
+from twisted.internet.task import LoopingCall  #@UnresolvedImport
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from system import bpio
 
 from main import settings
+from main import config
 
 from lib import net_misc
 from lib import strng
@@ -90,11 +97,12 @@ from transport import callback
 
 from services import driver
 
-from userid import my_id
-
 from p2p import propagate
 from p2p import ratings
 from p2p import network_connector
+
+from userid import identity
+from userid import my_id
 
 #------------------------------------------------------------------------------
 
@@ -190,6 +198,13 @@ class P2PConnector(automat.Automat):
         global_state.set_global_state('P2P ' + newstate)
         if newstate == 'INCOMMING?':
             self.automat('instant')
+        if oldstate != newstate:
+            if newstate == 'CONNECTED':
+                self.health_check_task = LoopingCall(self._do_id_server_health_check)
+                self.health_check_task.start(config.conf().getInt('services/identity-propagate/health-check-interval-seconds'), now=False)
+            else:
+                self.health_check_task.stop()
+                self.health_check_task = None
 
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
@@ -494,9 +509,8 @@ class P2PConnector(automat.Automat):
             d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
             d.addErrback(lg.errback)
 
-        def _on_propagate_failed(**kw):
-            import pdb; pdb.set_trace();
-            lg.err('')
+        def _on_propagate_failed(err):
+            lg.err('failed propagate my identity: %r' % err)
 
         def _do_update(check_rotate_result):
             if _Debug:
@@ -528,5 +542,40 @@ class P2PConnector(automat.Automat):
             d = id_rotator.check()
             d.addCallback(_do_rotate)
             d.addErrback(lambda _: _do_rotate(False))
-                
+
         _do_check(None)
+
+    def _do_id_server_health_check(self):
+        my_idurl = my_id.getLocalIdentity().getIDURL(as_original=True)
+        if _Debug:
+            lg.args(_DebugLevel, my_idurl=my_idurl)
+
+        def _verify(xmlsrc=None):
+            if not xmlsrc:
+                lg.err('my current identity server not healthy')
+                self.NeedPropagate = True
+                self.automat('check-synchronize')
+                return
+            remote_ident = identity.identity(xmlsrc=xmlsrc)
+            if not remote_ident.isCorrect() or not remote_ident.Valid():
+                lg.warn('my current identity server responded with bad identity file')
+                self.NeedPropagate = True
+                self.automat('check-synchronize')
+                return
+            if remote_ident.getIDURL(as_original=True) != my_idurl:
+                lg.warn('my current identity server responded with unknown identity')
+                self.NeedPropagate = True
+                self.automat('check-synchronize')
+                return
+            if _Debug:
+                lg.dbg(_DebugLevel, 'my current identity server is healthy')
+
+        last_time = identitycache.last_time_cached(my_idurl)
+        if last_time and time.time() - last_time < config.conf().getInt('services/identity-propagate/health-check-interval-seconds'):
+            if _Debug:
+                lg.dbg(_DebugLevel, 'skip health check of my current identity server, last time cached %d seconds ago' % (time.time() - last_time))
+            return
+
+        d = identitycache.immediatelyCaching(my_idurl, try_other_sources=False)
+        d.addCallback(_verify)
+        d.addErrback(lambda _: _verify())

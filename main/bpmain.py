@@ -80,7 +80,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     if not options or options.debug is None:
         lg.set_debug_level(settings.getDebugLevel())
     from main import config
-    config.conf().addCallback('logs/debug-level',
+    config.conf().addConfigNotifier('logs/debug-level',
                               lambda p, value, o, r: lg.set_debug_level(value))
 
     #---USE_TRAY_ICON---
@@ -215,7 +215,7 @@ def shutdown():
     else:
         lg.out(2, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
 
-    config.conf().removeCallback('logs/debug-level')
+    config.conf().removeConfigNotifier('logs/debug-level')
 
     lg.out(2, 'bpmain.shutdown currently %d threads running:' % len(threading.enumerate()))
     for t in threading.enumerate():

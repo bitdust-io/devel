@@ -63,16 +63,16 @@ class TCPTransportService(LocalService):
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
-        conf().addCallback('services/tcp-transport/enabled',
+        conf().addConfigNotifier('services/tcp-transport/enabled',
                            self._on_enabled_disabled)
-        conf().addCallback('services/tcp-transport/receiving-enabled',
+        conf().addConfigNotifier('services/tcp-transport/receiving-enabled',
                            self._on_receiving_enabled_disabled)
         return self.starting_deferred
 
     def stop(self):
         from main.config import conf
-        conf().removeCallback('services/tcp-transport/enabled')
-        conf().removeCallback('services/tcp-transport/receiving-enabled')
+        conf().removeConfigNotifier('services/tcp-transport/enabled')
+        conf().removeConfigNotifier('services/tcp-transport/receiving-enabled')
         t = self.transport
         self.transport = None
         t.automat('shutdown')

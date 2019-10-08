@@ -25,7 +25,7 @@ RUN_ALL=.run_all
 # PYTHON_VERSION=2.7.15
 
 # TODO: keep that list up to date with docker-compose links
-ALL_NODES=identity-server identity-server-a identity-server-b stun_1 stun_2 dht_seed_0 dht_seed_1 dht_seed_2 dht_seed_3 dht_seed_4 supplier_1 proxy_server_1 proxy_server_2 supplier_2 supplier_3 supplier_4 supplier_5 supplier_6 customer_1 customer_2 customer_3 customer_4 customer_5 customer_6 customer_backup customer_restore
+ALL_NODES=identity-server identity-server-a identity-server-b identity-server-dead stun_1 stun_2 dht_seed_0 dht_seed_1 dht_seed_2 dht_seed_3 dht_seed_4 supplier_1 proxy_server_1 proxy_server_2 supplier_2 supplier_3 supplier_4 supplier_5 supplier_6 customer_1 customer_2 customer_3 customer_4 customer_5 customer_6 customer_backup customer_restore customer_7
 
 
 .PHONY: test

@@ -24,6 +24,7 @@ ARG  PYTHON_VERSION=2.7.15
 
 FROM python:${PYTHON_VERSION}
 
+ENV BITDUST_LOG_USE_COLORS=0
 
 
 RUN apt-get update && apt-get install -y \

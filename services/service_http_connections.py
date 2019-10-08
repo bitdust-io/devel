@@ -50,12 +50,12 @@ class HTTPConnectionsService(LocalService):
 
     def start(self):
         from main.config import conf
-        conf().addCallback('services/http-connections/http-port', self._on_http_port_modified)
+        conf().addConfigNotifier('services/http-connections/http-port', self._on_http_port_modified)
         return True
 
     def stop(self):
         from main.config import conf
-        conf().removeCallback('services/http-connections/http-port')
+        conf().removeConfigNotifier('services/http-connections/http-port')
         return True
 
     def _on_http_port_modified(self, path, value, oldvalue, result):

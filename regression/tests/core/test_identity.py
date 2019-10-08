@@ -25,13 +25,16 @@ import pytest
 import time
 import shutil
 import requests
+import base64
+import threading
 
 from ..testsupport import tunnel_url, run_ssh_command_and_wait, create_identity, connect_network, stop_daemon
 
 from ..keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
-    supplier_list_v1, config_set_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
+    supplier_list_v1, transfer_list_v1, packet_list_v1, file_list_all_v1, supplier_list_dht_v1, \
     user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1, share_create_v1, share_open_v1, \
-    supplier_switch_v1, file_sync_v1, friend_add_v1, friend_list_v1
+    supplier_switch_v1, file_sync_v1, friend_add_v1, friend_list_v1, message_send_v1, message_receive_v1, \
+    config_set_v1, network_reconnect_v1
 
 
 def test_identity_recover_from_customer_backup_to_customer_restore():
@@ -220,7 +223,7 @@ def test_identity_recover_from_customer_backup_to_customer_restore():
 
     # TODO:
     # test my keys also recovered
-    # test my message history also recovered
+    # test my message history also recovered (not implemented yet)
 
 
 
@@ -245,6 +248,17 @@ def test_identity_rotate_customer_6():
     user_ping_v1('customer_2', old_global_id)
     user_ping_v1('supplier_1', old_global_id)
     user_ping_v1('supplier_2', old_global_id)
+
+    # test customer_1 can chat with customer_6 before identity get rotated
+    service_info_v1('customer_1', 'service_private_messages', 'ON')
+    service_info_v1('customer_6', 'service_private_messages', 'ON')
+    random_string = base64.b32encode(os.urandom(20)).decode()
+    random_message = {
+        'random_message': random_string,
+    }
+    t = threading.Timer(2.0, message_send_v1, ['customer_1', 'master$%s' % old_global_id, random_message, ])
+    t.start()
+    message_receive_v1('customer_6', expected_data=random_message)
 
     # create one share and upload one file for customer_6
     share_id_customer_6 = share_create_v1('customer_6')
@@ -354,6 +368,17 @@ def test_identity_rotate_customer_6():
     assert new_idurl in new_friends
     assert old_idurl not in new_friends
 
+    # test customer_1 can still chat with customer_6 after identity rotated
+    service_info_v1('customer_1', 'service_private_messages', 'ON')
+    service_info_v1('customer_6', 'service_private_messages', 'ON')
+    random_string = base64.b32encode(os.urandom(20)).decode()
+    random_message = {
+        'random_message': random_string,
+    }
+    t = threading.Timer(1.0, message_send_v1, ['customer_1', 'master$%s' % new_global_id, random_message, ])
+    t.start()
+    message_receive_v1('customer_6', expected_data=random_message)
+
 
 
 def test_identity_rotate_supplier_6_with_customer_3():
@@ -450,3 +475,33 @@ def test_identity_rotate_supplier_6_with_customer_3():
     stop_daemon('supplier_6')
 
     time.sleep(2)
+
+
+def test_identity_rotate_customer_7_when_id_server_is_dead():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+
+    service_info_v1('customer_7', 'service_customer', 'ON')
+
+    supplier_list_v1('customer_7', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    service_info_v1('customer_7', 'service_shared_data', 'ON')
+
+    r = identity_get_v1('customer_7')
+    old_idurl = r['result'][0]['idurl']
+
+    config_set_v1('customer_7', 'services/identity-propagate/automatic-rotate-enabled', 'true')
+
+    config_set_v1('customer_7', 'services/identity-propagate/known-servers',
+                  'identity-server-dead:8084:6661,identity-server-a:8084:6661,identity-server-b:8084:6661')
+
+    stop_daemon('identity-server-dead')
+
+    for i in range(20):
+        r = identity_get_v1('customer_7')
+        new_idurl = r['result'][0]['idurl']
+        if new_idurl != old_idurl:
+            break
+        time.sleep(5)
+    else:
+        assert False, 'customer_7 automatic identity rotate did not happen after many attempts'

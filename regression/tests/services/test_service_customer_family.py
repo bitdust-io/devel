@@ -26,25 +26,6 @@ import pytest
 from ..keywords import supplier_list_dht_v1, config_set_v1, supplier_list_v1, service_info_v1
 
 
-def test_customer_family_published_for_customer_1():
-    if os.environ.get('RUN_TESTS', '1') == '0':
-        return pytest.skip()  # @UndefinedVariable
-
-    supplier_list_v1('customer_1', expected_min_suppliers=2, expected_max_suppliers=2)
-    supplier_list_dht_v1(
-        customer_node='customer_1',
-        observer_node='customer_1',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-    supplier_list_dht_v1(
-        customer_node='customer_1',
-        observer_node='customer_2',
-        expected_ecc_map='ecc/2x2',
-        expected_suppliers_number=2,
-    )
-
-
 def test_customer_family_increase_for_customer_4():
     if os.environ.get('RUN_TESTS', '1') == '0':
         return pytest.skip()  # @UndefinedVariable

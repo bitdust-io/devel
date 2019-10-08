@@ -66,3 +66,4 @@ def test_customer_1_replace_supplier_at_position_0():
     response = requests.post(tunnel_url('customer_1', '/supplier/replace/v1'), json={'position': '0'})
 
     # time.sleep(15)
+    # TODO: ...
