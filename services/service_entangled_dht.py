@@ -55,7 +55,7 @@ class EntangledDHTService(LocalService):
         from main import settings
         from main.config import conf
         from userid import my_id
-        conf().addCallback('services/entangled-dht/udp-port', self._on_udp_port_modified)
+        conf().addConfigNotifier('services/entangled-dht/udp-port', self._on_udp_port_modified)
         dht_service.init(udp_port=settings.getDHTPort(), db_file_path=settings.DHTDBFile())
         known_seeds = known_nodes.nodes()
         lg.info('DHT known seed nodes are : %r' % known_seeds)
@@ -71,7 +71,7 @@ class EntangledDHTService(LocalService):
         from main.config import conf
         dht_service.node().remove_rpc_callback('request')
         dht_service.node().remove_rpc_callback('store')
-        conf().removeCallback('services/entangled-dht/udp-port')
+        conf().removeConfigNotifier('services/entangled-dht/udp-port')
         dht_service.disconnect()
         dht_service.shutdown()
         return True

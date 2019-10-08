@@ -55,8 +55,8 @@ from twisted.internet.defer import maybeDeferred
 
 #------------------------------------------------------------------------------
 
-_Debug = False
-_DebugLevel = 6
+_Debug = True
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 

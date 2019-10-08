@@ -70,16 +70,16 @@ class HTTPTransportService(LocalService):
         self.transport.automat('init',
                                (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
-        conf().addCallback('services/http-transport/enabled',
+        conf().addConfigNotifier('services/http-transport/enabled',
                            self._on_enabled_disabled)
-        conf().addCallback('services/http-transport/receiving-enabled',
+        conf().addConfigNotifier('services/http-transport/receiving-enabled',
                            self._on_receiving_enabled_disabled)
         return self.starting_deferred
 
     def stop(self):
         from main.config import conf
-        conf().removeCallback('services/http-transport/enabled')
-        conf().removeCallback('services/http-transport/receiving-enabled')
+        conf().removeConfigNotifier('services/http-transport/enabled')
+        conf().removeConfigNotifier('services/http-transport/receiving-enabled')
         t = self.transport
         self.transport = None
         t.automat('shutdown')

@@ -45,6 +45,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import sys
+import time
 
 from twisted.internet.defer import Deferred
 
@@ -71,6 +72,7 @@ from p2p import p2p_stats
 #------------------------------------------------------------------------------
 
 _CachingTasks = {}
+_LastTimeCached = {}
 _OverriddenIdentities = {}
 
 #-------------------------------------------------------------------------------
@@ -376,12 +378,20 @@ def scheduleForCaching(idurl, timeout=0):
 
 #------------------------------------------------------------------------------
 
+def last_time_cached(idurl):
+    global _LastTimeCached
+    idurl = id_url.to_original(idurl)
+    if not idurl:
+        return None
+    return _LastTimeCached.get(idurl, None)
+
 
 def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
     """
     A smart method to cache some identity and get results in callbacks.
     """
     global _CachingTasks
+    global _LastTimeCached
     idurl = id_url.to_original(idurl)
     if not idurl:
         raise Exception('can not cache, idurl is empty')
@@ -396,6 +406,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
 
     def _success(src, idurl):
         global _CachingTasks
+        global _LastTimeCached
         idurl = id_url.to_original(idurl)
         result = _CachingTasks.pop(idurl, None)
         if not result:
@@ -405,6 +416,7 @@ def immediatelyCaching(idurl, timeout=10, try_other_sources=True):
                 result.callback(src)
             lg.out(_DebugLevel, '[cached] %s' % idurl)
             p2p_stats.count_identity_cache(idurl, len(src))
+            _LastTimeCached[idurl] = time.time()
         else:
             if result:
                 result.errback(Exception(src))

@@ -63,22 +63,22 @@ class UDPTransportService(LocalService):
         self.transport.automat(
             'init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')  # @UndefinedVariable
-        conf().addCallback('services/udp-transport/enabled',
+        conf().addConfigNotifier('services/udp-transport/enabled',
                            self._on_enabled_disabled)
-        conf().addCallback('services/udp-transport/receiving-enabled',
+        conf().addConfigNotifier('services/udp-transport/receiving-enabled',
                            self._on_receiving_enabled_disabled)
-        conf().addCallback('services/network/receive-limit',
+        conf().addConfigNotifier('services/network/receive-limit',
                            self._on_network_receive_limit_modified)
-        conf().addCallback('services/network/send-limit',
+        conf().addConfigNotifier('services/network/send-limit',
                            self._on_network_send_limit_modified)
         return self.starting_deferred
 
     def stop(self):
         from main.config import conf
-        conf().removeCallback('services/udp-transport/enabled')
-        conf().removeCallback('services/udp-transport/receiving-enabled')
-        conf().removeCallback('services/network/receive-limit')
-        conf().removeCallback('services/network/send-limit')
+        conf().removeConfigNotifier('services/udp-transport/enabled')
+        conf().removeConfigNotifier('services/udp-transport/receiving-enabled')
+        conf().removeConfigNotifier('services/network/receive-limit')
+        conf().removeConfigNotifier('services/network/send-limit')
         t = self.transport
         self.transport = None
         t.automat('shutdown')

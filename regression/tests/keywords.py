@@ -512,6 +512,14 @@ def identity_rotate_v1(node):
     return response.json()
 
 
+def network_reconnect_v1(node):
+    response = requests.get(url=tunnel_url(node, 'network/reconnect/v1'))
+    assert response.status_code == 200
+    print('\nnetwork/reconnect/v1 [%s] : %s\n' % (node, pprint.pformat(response.json()), ))
+    assert response.json()['status'] == 'OK', response.json()
+    return response.json()
+
+
 def key_list_v1(node):
     response = requests.get(url=tunnel_url(node, 'key/list/v1'))
     assert response.status_code == 200

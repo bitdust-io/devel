@@ -254,7 +254,7 @@ def init():
         if _Debug:
             lg.out(_DebugLevel, '%s initialized' % name)
     build_order()
-    config.conf().addCallback('services/', on_service_enabled_disabled)
+    config.conf().addConfigNotifier('services/', on_service_enabled_disabled)
 
 
 def shutdown():
@@ -262,7 +262,7 @@ def shutdown():
     """
     if _Debug:
         lg.out(_DebugLevel, 'driver.shutdown')
-    config.conf().removeCallback('services/')
+    config.conf().removeConfigNotifier('services/')
     while len(services()):
         name, svc = services().popitem()
         if _Debug:

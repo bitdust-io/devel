@@ -66,9 +66,9 @@ class BackupsService(LocalService):
         backup_matrix.SetLocalFilesNotifyCallback(control.on_read_local_files)
         backup_monitor.A('init')
         backup_monitor.A('restart')
-        conf().addCallback('services/backups/keep-local-copies-enabled',
+        conf().addConfigNotifier('services/backups/keep-local-copies-enabled',
                            self._on_keep_local_copies_modified)
-        conf().addCallback('services/backups/wait-suppliers-enabled',
+        conf().addConfigNotifier('services/backups/wait-suppliers-enabled',
                            self._on_wait_suppliers_modified)
         p2p_connector.A().addStateChangedCallback(
             self._on_p2p_connector_state_changed, 'INCOMMING?', 'CONNECTED')
@@ -95,7 +95,7 @@ class BackupsService(LocalService):
         backup_monitor.Destroy()
         backup_fs.shutdown()
         backup_control.shutdown()
-        conf().removeCallback('services/backups/keep-local-copies-enabled')
+        conf().removeConfigNotifier('services/backups/keep-local-copies-enabled')
         return True
 
     def health_check(self):

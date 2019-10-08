@@ -336,7 +336,7 @@ class NotifiableConfig(DefaultsConfig):
         super(NotifiableConfig, self).__init__(configDir)
         self.callbacks = {}
 
-    def addCallback(self, mask, cb):
+    def addConfigNotifier(self, mask, cb):
         """
         You can add a callback to catch a moment when some particular option
         were modified. Mask is a string which is used to compared in this way:
@@ -347,20 +347,26 @@ class NotifiableConfig(DefaultsConfig):
 
             cb(entryPath, newValue, oldValue, result)
         """
-        self.callbacks[mask] = cb
+        if mask not in self.callbacks:
+            self.callbacks[mask] = []
+        self.callbacks[mask].append(cb)
 
-    def removeCallback(self, mask):
+    def removeConfigNotifier(self, mask, cb=None):
         """
         Remove existing callback.
         """
-        self.callbacks.pop(mask, None)
+        if cb and mask in self.callbacks:
+            self.callbacks[mask].remove(cb)
+        else:
+            self.callbacks.pop(mask, None)
 
     def _set(self, entryPath, newValue):
         oldValue = self._get(entryPath)
         result = BaseConfig._set(self, entryPath, newValue)
-        for mask, cb in self.callbacks.items():
+        for mask, cb_list in self.callbacks.items():
             if entryPath.startswith(mask):
-                cb(entryPath, newValue, oldValue, result)
+                for cb in cb_list:
+                    cb(entryPath, newValue, oldValue, result)
         return result
 
 #------------------------------------------------------------------------------

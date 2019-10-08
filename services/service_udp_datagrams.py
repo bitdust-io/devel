@@ -54,7 +54,7 @@ class UDPDatagramsService(LocalService):
         from main import settings
         from main.config import conf
         udp_port = settings.getUDPPort()
-        conf().addCallback('services/udp-datagrams/udp-port',
+        conf().addConfigNotifier('services/udp-datagrams/udp-port',
                            self._on_udp_port_modified)
         if not udp.proto(udp_port):
             try:
@@ -71,7 +71,7 @@ class UDPDatagramsService(LocalService):
         udp_port = settings.getUDPPort()
         if udp.proto(udp_port):
             udp.close(udp_port)
-        conf().removeCallback('services/udp-datagrams/udp-port')
+        conf().removeConfigNotifier('services/udp-datagrams/udp-port')
         return True
 
     def _on_udp_port_modified(self, path, value, oldvalue, result):

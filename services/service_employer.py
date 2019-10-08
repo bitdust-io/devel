@@ -63,8 +63,8 @@ class EmployerService(LocalService):
         eccmap.Update()
         fire_hire.A('init')
         fire_hire.A().addStateChangedCallback(self._on_fire_hire_ready, None, 'READY')
-        conf().addCallback('services/customer/suppliers-number', self._on_suppliers_number_modified)
-        conf().addCallback('services/customer/needed-space', self._on_needed_space_modified)
+        conf().addConfigNotifier('services/customer/suppliers-number', self._on_suppliers_number_modified)
+        conf().addConfigNotifier('services/customer/needed-space', self._on_needed_space_modified)
         events.add_subscriber(self._on_supplier_modified, 'supplier-modified')
         if fire_hire.IsAllHired():
             self.starting_deferred.callback(True)
@@ -80,8 +80,8 @@ class EmployerService(LocalService):
         from customer import fire_hire
         fire_hire.A().removeStateChangedCallback(self._on_fire_hire_ready)
         events.remove_subscriber(self._on_supplier_modified, 'supplier-modified')
-        conf().removeCallback('services/customer/suppliers-number')
-        conf().removeCallback('services/customer/needed-space')
+        conf().removeConfigNotifier('services/customer/suppliers-number')
+        conf().removeConfigNotifier('services/customer/needed-space')
         fire_hire.Destroy()
         return True
 

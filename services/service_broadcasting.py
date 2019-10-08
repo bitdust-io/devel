@@ -76,7 +76,7 @@ class BroadcastingService(LocalService):
             broadcast_listener.A().addStateChangedCallback(
                 self._on_broadcast_listener_switched)
             broadcast_listener.A('connect', self.scope)
-        conf().addCallback(
+        conf().addConfigNotifier(
             'services/broadcasting/routing-enabled',
             self._on_broadcast_routing_enabled_disabled
         )
@@ -96,7 +96,7 @@ class BroadcastingService(LocalService):
             broadcast_listener.A().removeStateChangedCallback(
                 self._on_broadcast_listener_switched)
             broadcast_listener.A('shutdown')
-        conf().removeCallback('services/broadcasting/routing-enabled')
+        conf().removeConfigNotifier('services/broadcasting/routing-enabled')
         return True
 
     def request(self, json_payload, newpacket, info):

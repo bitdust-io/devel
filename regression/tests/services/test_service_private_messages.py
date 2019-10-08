@@ -23,7 +23,7 @@
 import os
 import pytest
 import base64
-from threading import Timer
+import threading
 
 from ..keywords import message_send_v1, message_receive_v1, service_info_v1
 
@@ -33,12 +33,14 @@ def test_customer_1_send_message_to_customer_2():
         return pytest.skip()  # @UndefinedVariable
 
     service_info_v1('customer_1', 'service_private_messages', 'ON')
+    service_info_v1('customer_2', 'service_private_messages', 'ON')
 
     random_string = base64.b32encode(os.urandom(20)).decode()
     random_message = {
         'random_message': random_string,
     }
+
     # send message in different thread to get one in blocked `receive` call
-    t = Timer(2.0, message_send_v1, ['customer_1', 'master$customer_2@is_8084', random_message, ])
+    t = threading.Timer(1.0, message_send_v1, ['customer_1', 'master$customer_2@is_8084', random_message, ])
     t.start()
     message_receive_v1('customer_2', expected_data=random_message)
