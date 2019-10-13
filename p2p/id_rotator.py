@@ -89,7 +89,6 @@ from main import events
 from userid import identity
 from userid import my_id
 from userid import known_servers
-from userid import id_url
 
 #------------------------------------------------------------------------------
 

@@ -761,7 +761,8 @@ class OnlineStatus(automat.Automat):
             lg.args(_DebugLevel, idurl=self.idurl, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
-                cb.callback(None)
+                if not cb.called:
+                    cb.callback(None)
             else:
                 cb(None)
         self.handshake_callbacks = []
@@ -775,7 +776,8 @@ class OnlineStatus(automat.Automat):
             lg.args(_DebugLevel, idurl=self.idurl, err=err, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
-                cb.errback(err)
+                if not cb.called:
+                    cb.errback(err)
             else:
                 cb(err)
         self.handshake_callbacks = []
@@ -789,7 +791,8 @@ class OnlineStatus(automat.Automat):
             lg.args(_DebugLevel, idurl=self.idurl, response=response, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
-                cb.callback(response)
+                if not cb.called:
+                    cb.callback(response)
             else:
                 cb(response)
         self.handshake_callbacks = []

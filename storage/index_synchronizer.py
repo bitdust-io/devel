@@ -208,7 +208,7 @@ class IndexSynchronizer(automat.Automat):
                 events.send('my-backup-index-synchronized', data={})
             self.last_time_in_sync = time.time()
             if self.PushAgain:
-                self.automat('instant')
+                reactor.callLater(0, self.automat, 'instant')  # @UndefinedVariable
         if newstate == 'NO_INFO' and oldstate in ['REQUEST?', 'SENDING', ]:
             events.send('my-backup-index-out-of-sync', data={})
         if newstate == 'NO_INFO':

@@ -176,6 +176,7 @@ class RestoreWorker(automat.Automat):
         self.MyDeferred = Deferred()
         self.packetInCallback = None
         self.blockRestoredCallback = None
+        self.Attempts = 0
 
         super(RestoreWorker, self).__init__(
             name='restore_worker_%s' % self.version,
@@ -491,7 +492,7 @@ class RestoreWorker(automat.Automat):
         else:
             if not already_requested:
                 lg.warn('no requests made for block %d' % self.block_number)
-                self.automat('request-failed', None)
+                reactor.callLater(0, self.automat, 'request-failed', None)  # @UndefinedVariable
             else:
                 if _Debug:
                     lg.out(_DebugLevel, "        found %d already requested packets for block %d" % (
@@ -500,7 +501,7 @@ class RestoreWorker(automat.Automat):
                     all_counts = sorted(self.AlreadyRequestedCounts.values())
                     if all_counts[0] > 100:
                         lg.warn('too much requests made for block %d' % self.block_number)
-                        self.automat('request-failed', None)
+                        reactor.callLater(0, self.automat, 'request-failed', None)  # @UndefinedVariable
 
     def doSavePacket(self, *args, **kwargs):
         """
@@ -687,18 +688,18 @@ class RestoreWorker(automat.Automat):
         elif result == 'failed':
             if strng.is_string(NewPacketOrPacketID):
                 self.RequestFails.append(NewPacketOrPacketID)
-                self.automat('request-failed', NewPacketOrPacketID)
+                reactor.callLater(0, self.automat, 'request-failed', NewPacketOrPacketID)  # @UndefinedVariable
             else:
                 self.RequestFails.append(getattr(NewPacketOrPacketID, 'PacketID', None))
-                self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
+                reactor.callLater(0, self.automat, 'request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))  # @UndefinedVariable
         else:
             lg.warn('packet %s got not recognized result: %s' % (NewPacketOrPacketID, result, ))
             if strng.is_string(NewPacketOrPacketID):
                 self.RequestFails.append(NewPacketOrPacketID)
-                self.automat('request-failed', NewPacketOrPacketID)
+                reactor.callLater(0, self.automat, 'request-failed', NewPacketOrPacketID)  # @UndefinedVariable
             else:
                 self.RequestFails.append(getattr(NewPacketOrPacketID, 'PacketID', None))
-                self.automat('request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))
+                reactor.callLater(0, self.automat, 'request-failed', getattr(NewPacketOrPacketID, 'PacketID', None))  # @UndefinedVariable
 
     def _on_data_receiver_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if newstate == 'RECEIVING' and oldstate != 'RECEIVING':

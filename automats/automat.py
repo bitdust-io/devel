@@ -496,19 +496,19 @@ class Automat(object):
         if self.post:
             try:
                 new_state = self.A(event_string, *args, **kwargs)
-            except:
+            except Exception as exc:
                 if _Debug:
-                    self.exc('Exception in {}:{} automat, state is {}, event="{}"'.format(
-                        self.id, self.name, self.state, event_string))
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
+                        self.id, self.name, self.state, event_string, exc))
                 return self
             self.state = new_state
         else:
             try:
                 self.A(event_string, *args, **kwargs)
-            except:
+            except Exception as exc:
                 if _Debug:
-                    self.exc('Exception in {}:{} automat, state is {}, event="{}"'.format(
-                        self.id, self.name, self.state, event_string))
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}" : {}'.format(
+                        self.id, self.name, self.state, event_string, exc))
                 return self
             new_state = self.state
         if old_state != new_state:
@@ -535,9 +535,7 @@ class Automat(object):
             if name in self.timers and self.state in self.timers[name][1]:
                 self.automat(name)
             else:
-                self.log(
-                    max(_DebugLevel, self.debug_level),
-                    '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
+                self.log(max(_DebugLevel, self.debug_level), '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
         except Exception as exc:
             self.exc(str(exc))
 
