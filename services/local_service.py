@@ -82,6 +82,8 @@ class LocalService(automat.Automat):
     state machine.
     """
 
+    fast = False
+
     service_name = ''
     config_path = ''
 

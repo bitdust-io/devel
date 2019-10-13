@@ -344,8 +344,8 @@ def start(services_list=[]):
         d = Deferred()
         dl.append(d)
         svc.automat('start', d)
-    # if len(dl) == 0:
-    #     return succeed(1)
+    if len(dl) == 0:
+        return succeed(1)
     _StartingDeferred = DeferredList(dl)
     _StartingDeferred.addCallback(on_started_all_services)
     _StartingDeferred.addErrback(on_services_failed_to_start, services_list)
@@ -445,7 +445,8 @@ def restart(service_name, wait_timeout=None):
 
     def _on_wait_timeout(err):
         if _Debug:
-            lg.out(_DebugLevel, 'driver.restart._on_wait_timeout %s : %s' % (service_name, err))
+            lg.out(_DebugLevel, 'driver.restart._on_wait_timeout %s : %s' % (service_name, err.getErrorMessage()))
+        # restart_result.errback(failure.Failure(Exception('timeout')))
         return None
 
     dl = []
@@ -646,7 +647,7 @@ def do_finish_stoping():
 
 def on_started_all_services(results):
     if _Debug:
-        lg.out(_DebugLevel, 'driver.on_started_all_services results=%r' % results)
+        lg.out(_DebugLevel, 'driver.on_started_all_services results=%d' % len(results))
     reactor.callLater(0, do_finish_starting)  # @UndefinedVariable
     return results
 
@@ -660,7 +661,7 @@ def on_services_failed_to_start(err, services_list):
 
 def on_stopped_all_services(results):
     if _Debug:
-        lg.out(_DebugLevel, 'driver.on_stopped_all_services')
+        lg.out(_DebugLevel, 'driver.on_stopped_all_services results=%d' % len(results))
     reactor.callLater(0, do_finish_stoping)  # @UndefinedVariable
     return results
 

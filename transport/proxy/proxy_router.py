@@ -156,6 +156,11 @@ class ProxyRouter(automat.Automat):
         """
         Method to catch the moment when proxy_router() state were changed.
         """
+        if oldstate == 'STOPPED' and newstate == 'TRANSPORTS?':
+            if network_connector.A().state == 'CONNECTED':
+                reactor.callLater(0, self.automat, 'network-connected')  # @UndefinedVariable
+            elif network_connector.A().state == 'DISCONNECTED':
+                reactor.callLater(0, self.automat, 'network-disconnected')  # @UndefinedVariable
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """

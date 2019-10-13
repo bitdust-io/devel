@@ -3499,6 +3499,8 @@ def network_connected(wait_timeout=5):
         return ERROR('service_p2p_hookups() is disabled', extra_fields={'reason': 'service_p2p_hookups_disabled'})
 
     def _do_p2p_connector_test():
+        if _Debug:
+            lg.dbg(_DebugLevel, 'checking p2p_connector')
         try:
             p2p_connector_lookup = automat.find('p2p_connector')
             if not p2p_connector_lookup:
@@ -3523,6 +3525,8 @@ def network_connected(wait_timeout=5):
         return None
 
     def _do_service_proxy_transport_test():
+        if _Debug:
+            lg.dbg(_DebugLevel, 'checking proxy_transport')
         if not driver.is_enabled('service_proxy_transport'):
             ret.callback(OK({
                 'service_network': 'started',
@@ -3560,6 +3564,8 @@ def network_connected(wait_timeout=5):
         return None
 
     def _on_service_restarted(resp, service_name):
+        if _Debug:
+            lg.args(_DebugLevel, resp=resp, service_name=service_name)
         if service_name == 'service_network':
             _do_service_test('service_gateway')
         elif service_name == 'service_gateway':
@@ -3569,6 +3575,8 @@ def network_connected(wait_timeout=5):
         return resp
 
     def _do_service_restart(service_name):
+        if _Debug:
+            lg.args(_DebugLevel, service_name=service_name)
         d = service_restart(service_name, wait_timeout=wait_timeout)
         d.addCallback(_on_service_restarted, service_name)
         d.addErrback(lambda err: ret.callback(dict(
@@ -3576,6 +3584,8 @@ def network_connected(wait_timeout=5):
         return None
 
     def _do_service_test(service_name):
+        if _Debug:
+            lg.args(_DebugLevel, service_name=service_name)
         try:
             svc_info = service_info(service_name)
             svc_state = svc_info['result'][0]['state']
