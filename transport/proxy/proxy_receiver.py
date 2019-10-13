@@ -45,6 +45,7 @@ EVENTS:
     * :red:`request-timeout`
     * :red:`router-disconnected`
     * :red:`router-id-received`
+    * :red:`sending-failed`
     * :red:`service-accepted`
     * :red:`service-refused`
     * :red:`shutdown`
@@ -71,6 +72,8 @@ _PacketLogFileEnabled = False
 import re
 import time
 import random
+
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -260,7 +263,10 @@ class ProxyReceiver(automat.Automat):
             elif event == 'stop':
                 self.state = 'OFFLINE'
                 self.doNotifyFailed(*args, **kwargs)
-            elif event == 'ack-timeout' or event == 'fail-received':
+            elif event == 'sending-failed':
+                self.Retries+=1
+                self.doSendMyIdentity(*args, **kwargs)
+            elif ( event == 'sending-failed' and self.Retries>3 ) or event == 'ack-timeout' or event == 'fail-received':
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---LISTEN---
@@ -290,6 +296,7 @@ class ProxyReceiver(automat.Automat):
             if event == 'found-one-node':
                 self.state = 'ACK?'
                 self.doRememberNode(*args, **kwargs)
+                self.Retries=0
                 self.doSendMyIdentity(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
@@ -318,6 +325,7 @@ class ProxyReceiver(automat.Automat):
             if event == 'start' and self.isCurrentRouterExist(*args, **kwargs):
                 self.state = 'ACK?'
                 self.doLoadRouterInfo(*args, **kwargs)
+                self.Retries=0
                 self.doSendMyIdentity(*args, **kwargs)
             elif event == 'start' and not self.isCurrentRouterExist(*args, **kwargs):
                 self.state = 'FIND_NODE?'
@@ -365,12 +373,12 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self._do_send_identity_to_router(my_id.getLocalIdentity().serialize(), failed_event='fail-received')
+        reactor.callLater(0, self._do_send_identity_to_router, my_id.getLocalIdentity().serialize(), failed_event='fail-received')  # @UndefinedVariable
         identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if identity_source:
             if _Debug:
                 lg.out(_DebugLevel, '    also sending identity loaded from "my-original-identity" config')
-            self._do_send_identity_to_router(identity_source, failed_event='fail-received')
+            reactor.callLater(0, self._do_send_identity_to_router, identity_source, failed_event='fail-received')  # @UndefinedVariable
 
     def doRememberNode(self, *args, **kwargs):
         """
@@ -666,16 +674,6 @@ class ProxyReceiver(automat.Automat):
             lg.out(_DebugLevel, 'proxy_receiver._do_send_identity_to_router to %s' % self.router_idurl)
             lg.out(_DebugLevel, '        contacts=%r, sources=%r' % (
                 identity_obj.contacts, identity_obj.getSources(as_originals=True)))
-#         from p2p import holler
-#         d = holler.ping(
-#             idurl=self.router_idurl,
-#             force_cache=False,
-#             skip_outbox=True,
-#             fake_identity=identity_obj,
-#             channel='proxy_receiver',
-#         )
-#         d.addCallback(lambda resp_tuple: self.automat('ack-received', (resp_tuple[0], resp_tuple[1])))
-#         d.addErrback(lambda err: self.automat(failed_event, err))
         newpacket = signed.Packet(
             Command=commands.Identity(),
             OwnerID=my_id.getLocalID(),
@@ -691,6 +689,7 @@ class ProxyReceiver(automat.Automat):
                 commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
                 commands.Fail(): lambda x: self.automat(failed_event),
                 None: lambda pkt_out: self.automat('ack-timeout', pkt_out),
+                'failed': lambda pkt_out, error_message: self.automat('sending-failed', (pkt_out, error_message)),
             },
             keep_alive=True,
             response_timeout=30,

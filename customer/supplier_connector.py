@@ -61,6 +61,8 @@ _DebugLevel = 10
 import os
 import math
 
+from twisted.internet import reactor  # @UnresolvedImport
+
 #------------------------------------------------------------------------------
 
 from logs import lg
@@ -452,7 +454,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if not self.queue_subscribe:
-            self.automat('queue-skip')
+            reactor.callLater(0, self.automat, 'queue-skip')  # @UndefinedVariable
             return
         service_info = {
             'items': [{
@@ -633,7 +635,7 @@ class SupplierConnector(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
                     self.supplier_idurl, oldstate, newstate))
-            self.automat('connect')
+            reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
 
     def _do_request_supplier_service(self, ecc_map, family_position, family_snapshot):
         if _Debug:

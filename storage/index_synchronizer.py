@@ -93,6 +93,8 @@ _DebugLevel = 6
 
 import time
 
+from twisted.internet import reactor  # @UnresolvedImport
+
 #------------------------------------------------------------------------------
 
 from logs import lg
