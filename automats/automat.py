@@ -298,7 +298,7 @@ class Automat(object):
     See method self.startTimers().
     """
 
-    fast = False
+    fast = True
     """
     By default, a state machine is called like this::
 

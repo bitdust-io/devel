@@ -2408,6 +2408,10 @@ def _checkStaticDirectories():
     """
     Check existance of static data folders.
     """
+    if not os.path.exists(BaseDir()):
+        if _Debug:
+            lg.out(_DebugLevel, 'settings.init want to create folder: ' + BaseDir())
+        os.makedirs(BaseDir())
     if not os.path.exists(TempDir()):
         if _Debug:
             lg.out(_DebugLevel, 'settings.init want to create folder: ' + TempDir())

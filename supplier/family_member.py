@@ -707,7 +707,7 @@ class FamilyMember(automat.Automat):
         current_request_expected_suppliers_count = None
         if current_request['ecc_map']:
             current_request_expected_suppliers_count = eccmap.GetEccMapSuppliersNumber(current_request['ecc_map'])
-        if current_request_expected_suppliers_count and current_request['position'] >= current_request_expected_suppliers_count:
+        if current_request_expected_suppliers_count and current_request.get('position') and current_request['position'] >= current_request_expected_suppliers_count:
             lg.warn('"family-join" request is not valid, supplier position %d greater than expected suppliers count %d for %s' % (
                 current_request['position'], current_request_expected_suppliers_count, current_request['ecc_map']))
             return None
@@ -828,7 +828,7 @@ class FamilyMember(automat.Automat):
             lg.warn('"family-refresh" request failed because my info is not valid, supplier position greater than expected suppliers count')
             return None
 
-        if len(merged_info['suppliers']) != my_expected_suppliers_count:
+        if my_expected_suppliers_count and len(merged_info['suppliers']) != my_expected_suppliers_count:
             lg.warn('number of suppliers not expected during processing of "family-refresh" request')
             if len(merged_info['suppliers']) < my_expected_suppliers_count:
                 merged_info['suppliers'] += [b'', ] * (my_expected_suppliers_count - len(merged_info['suppliers']))

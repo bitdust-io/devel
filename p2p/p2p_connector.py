@@ -192,6 +192,7 @@ class P2PConnector(automat.Automat):
     }
 
     def init(self):
+        self.health_check_task = None
         self.log_transitions = _Debug
 
     def state_changed(self, oldstate, newstate, event, *args, **kwargs):
@@ -203,8 +204,9 @@ class P2PConnector(automat.Automat):
                 self.health_check_task = LoopingCall(self._do_id_server_health_check)
                 self.health_check_task.start(config.conf().getInt('services/identity-propagate/health-check-interval-seconds'), now=False)
             else:
-                self.health_check_task.stop()
-                self.health_check_task = None
+                if self.health_check_task:
+                    self.health_check_task.stop()
+                    self.health_check_task = None
 
     def A(self, event, *args, **kwargs):
         #---AT_STARTUP---
@@ -305,17 +307,17 @@ class P2PConnector(automat.Automat):
         """
         return len(contactsdb.contacts_remote()) > 0
 
-    def doSendMyIdentity(self, *args, **kwargs):
-        """
-        Action method.
-        """
-        propagate.single(args[0], wide=True)
-
     def doInit(self, *args, **kwargs):
         version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         if _Debug:
             lg.out(_DebugLevel - 6, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
         callback.append_inbox_callback(inbox)
+
+    def doSendMyIdentity(self, *args, **kwargs):
+        """
+        Action method.
+        """
+        propagate.single(args[0], wide=True)
 
     def doUpdateMyIdentity(self, *args, **kwargs):
         if _Debug:

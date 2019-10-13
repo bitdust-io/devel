@@ -123,6 +123,8 @@ class KeysSynchronizer(automat.Automat):
     This class implements all the functionality of ``keys_synchronizer()`` state machine.
     """
 
+    fast = False
+
     def init(self):
         """
         Method to initialize additional variables and flags

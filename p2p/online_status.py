@@ -214,7 +214,7 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=Fa
     """
     idurl = strng.to_bin(idurl)
     if _Debug:
-        lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel)
+        lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
     result = Deferred()
     if id_url.is_empty(idurl):
         result.errback(Exception('empty idurl provided'))
