@@ -384,8 +384,10 @@ class SupplierConnector(automat.Automat):
         newpacket = args[0]
         if strng.to_text(newpacket.Payload).startswith('accepted'):
             if _Debug:
-                lg.out(6, 'supplier_connector.isServiceAccepted !!! supplier %s connected' % self.supplier_idurl)
+                lg.dbg(_DebugLevel, 'supplier %s accepted my request and will be connected' % self.supplier_idurl)
             return True
+        if _Debug:
+            lg.dbg(_DebugLevel, 'supplier %s refused my request' % self.supplier_idurl)
         return False
 
     def isServiceCancelled(self, *args, **kwargs):
@@ -588,6 +590,12 @@ class SupplierConnector(automat.Automat):
         self.destroy()
 
     def _supplier_acked(self, response, info):
+        if not self.request_packet_id:
+            lg.warn('received "old" response : %r' % response)
+            return
+        if response.PacketID != self.request_packet_id:
+            lg.warn('received "unexpected" response : %r' % response)
+            return
         if _Debug:
             lg.out(_DebugLevel, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
@@ -609,7 +617,8 @@ class SupplierConnector(automat.Automat):
 
     def _do_request_supplier_service(self, ecc_map, family_position, family_snapshot):
         if _Debug:
-            lg.args(_DebugLevel, ecc_map=ecc_map, family_position=family_position, family_snapshot=family_snapshot)
+            lg.args(_DebugLevel, supplier_idurl=self.supplier_idurl, ecc_map=ecc_map,
+                    family_position=family_position, family_snapshot=family_snapshot)
         if not self.supplier_idurl:
             lg.warn('supplier idurl is empty, SKIP sending supplier_service request')
             return
