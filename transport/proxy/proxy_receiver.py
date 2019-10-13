@@ -36,11 +36,13 @@ BitDust proxy_receiver(at_startup) Automat
 
 EVENTS:
     * :red:`ack-received`
+    * :red:`ack-timeout`
     * :red:`fail-received`
     * :red:`found-one-node`
     * :red:`inbox-packet`
     * :red:`init`
     * :red:`nodes-not-found`
+    * :red:`request-timeout`
     * :red:`router-disconnected`
     * :red:`router-id-received`
     * :red:`service-accepted`
@@ -49,9 +51,7 @@ EVENTS:
     * :red:`start`
     * :red:`stop`
     * :red:`timer-10sec`
-    * :red:`timer-20sec`
-    * :red:`timer-3sec`
-    * :red:`timer-5sec`
+    * :red:`timer-30sec`
 """
 
 #------------------------------------------------------------------------------
@@ -187,7 +187,7 @@ def A(event=None, *args, **kwargs):
             name='proxy_receiver',
             state='AT_STARTUP',
             debug_level=_DebugLevel,
-            log_events=(_Debug and _DebugLevel>12),
+            log_events=False,
             log_transitions=_Debug,
         )
     if event is not None:
@@ -204,10 +204,8 @@ class ProxyReceiver(automat.Automat):
     """
 
     timers = {
-        'timer-3sec': (3.0, ['ACK?']),
-        'timer-10sec': (10.0, ['ACK?', 'LISTEN']),
-        'timer-20sec': (20.0, ['FIND_NODE?']),
-        'timer-5sec': (5.0, ['SERVICE?']),
+        'timer-30sec': (30.0, ['FIND_NODE?']),
+        'timer-10sec': (10.0, ['LISTEN']),
     }
 
     def init(self):
@@ -262,9 +260,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'stop':
                 self.state = 'OFFLINE'
                 self.doNotifyFailed(*args, **kwargs)
-            elif event == 'timer-3sec':
-                self.doSendMyIdentity(*args, **kwargs)
-            elif event == 'timer-10sec' or event == 'fail-received':
+            elif event == 'ack-timeout' or event == 'fail-received':
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---LISTEN---
@@ -298,7 +294,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'stop' or event == 'nodes-not-found' or event == 'timer-20sec':
+            elif event == 'stop' or event == 'nodes-not-found' or event == 'timer-30sec':
                 self.state = 'OFFLINE'
                 self.doNotifyFailed(*args, **kwargs)
         #---SERVICE?---
@@ -314,7 +310,7 @@ class ProxyReceiver(automat.Automat):
                 self.state = 'OFFLINE'
                 self.doSendCancelService(*args, **kwargs)
                 self.doNotifyFailed(*args, **kwargs)
-            elif event == 'timer-5sec' or event == 'service-refused':
+            elif event == 'request-timeout' or event == 'service-refused':
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(*args, **kwargs)
         #---OFFLINE---
@@ -384,7 +380,6 @@ class ProxyReceiver(automat.Automat):
         self.router_idurl = id_url.field(args[0])
         self.router_identity = None
         self.router_proto_host = None
-        self.request_service_packet_id = []
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver.doRememberNode %r' % self.router_idurl)
 
@@ -442,7 +437,8 @@ class ProxyReceiver(automat.Automat):
         previous_identity = ReadMyOriginalIdentitySource()
         if previous_identity:
             lg.warn('my original identity is not empty, SKIP overwriting')
-            lg.out(2, '\nPREVIOUS ORIGINAL IDENTITY:\n%s\n' % current_identity)
+            if _Debug:
+                lg.out(_DebugLevel, '\nPREVIOUS ORIGINAL IDENTITY:\n%s\n' % current_identity)
         else:
             WriteMyOriginalIdentitySource(current_identity)
             lg.warn('current identity was stored as my-original-identity')
@@ -483,7 +479,7 @@ class ProxyReceiver(automat.Automat):
         else:
             lg.err('active connection with proxy router at %s:%s was not found' % (info.proto, info.host, ))
         if _Debug:
-            lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
+            lg.out(_DebugLevel, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
                 self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
 
     def doStopListening(self, *args, **kwargs):
@@ -512,7 +508,7 @@ class ProxyReceiver(automat.Automat):
         self.router_connection_info = None
         my_id.rebuildLocalIdentity()
         if _Debug:
-            lg.out(2, 'proxy_receiver.doStopListening')
+            lg.out(_DebugLevel, 'proxy_receiver.doStopListening')
 
     def doUpdateRouterID(self, *args, **kwargs):
         """
@@ -684,7 +680,7 @@ class ProxyReceiver(automat.Automat):
             Command=commands.Identity(),
             OwnerID=my_id.getLocalID(),
             CreatorID=my_id.getLocalID(),
-            PacketID=('proxy_receiver:%s' % packetid.UniqueID()),  # commands.Identity(),
+            PacketID=('proxy_receiver:%s' % packetid.UniqueID()),
             Payload=identity_obj.serialize(),
             RemoteID=self.router_idurl,
         )
@@ -694,12 +690,14 @@ class ProxyReceiver(automat.Automat):
             callbacks={
                 commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
                 commands.Fail(): lambda x: self.automat(failed_event),
+                None: lambda pkt_out: self.automat('ack-timeout', pkt_out),
             },
             keep_alive=True,
+            response_timeout=30,
         )
 
     def _do_send_request_service(self, *args, **kwargs):
-        if len(self.request_service_packet_id) >= 3:
+        if len(self.request_service_packet_id) >= 10:
             if _Debug:
                 lg.warn('too many service requests to %r' % self.router_idurl)
             self.automat('service-refused', *args, **kwargs)
@@ -721,10 +719,16 @@ class ProxyReceiver(automat.Automat):
             serialization.DictToBytes(service_info, values_to_text=True),
             self.router_idurl,
         )
-        packet_out.create(newpacket, wide=False, callbacks={
-            commands.Ack(): self._on_request_service_ack,
-            commands.Fail(): self._on_request_service_fail,
-        },)
+        packet_out.create(
+            newpacket,
+            wide=False,
+            callbacks={
+                commands.Ack(): self._on_request_service_ack,
+                commands.Fail(): self._on_request_service_fail,
+                None: lambda pkt_out: self.automat('request-timeout', pkt_out),
+            },
+            response_timeout=30,
+        )
         self.request_service_packet_id.append(newpacket.PacketID)
 
     def _on_nodes_lookup_finished(self, idurls):
@@ -773,7 +777,7 @@ class ProxyReceiver(automat.Automat):
 
     def _on_request_service_ack(self, response, info):
         if response.PacketID not in self.request_service_packet_id:
-            lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
+            lg.warn('wrong PacketID in response: %s, but outgoing was : %s' % (
                 response.PacketID, str(self.request_service_packet_id)))
             self.automat('service-refused', (response, info))
             return
@@ -791,7 +795,7 @@ class ProxyReceiver(automat.Automat):
 
     def _on_request_service_fail(self, response, info):
         if response.PacketID not in self.request_service_packet_id:
-            lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
+            lg.warn('wrong PacketID in response: %s, but outgoing was : %s' % (
                 response.PacketID, str(self.request_service_packet_id)))
         else:
             self.request_service_packet_id.remove(response.PacketID)
