@@ -450,12 +450,12 @@ class IndexSynchronizer(automat.Automat):
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
         self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
-            self.automat('index-file-received', (newpacket, supplier_revision, ))
+            reactor.callLater(0, self.automat, 'index-file-received', (newpacket, supplier_revision, ))  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, pending: %d, total: %d' % (
                 newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
-            self.automat('all-responded')
+            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
     def _on_supplier_fail(self, newpacket, info):
         if _Debug:
@@ -466,7 +466,7 @@ class IndexSynchronizer(automat.Automat):
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (
                 newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
-            self.automat('all-responded')
+            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
@@ -479,7 +479,7 @@ class IndexSynchronizer(automat.Automat):
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
                 newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
         if len(self.sending_suppliers) == 0:
-            self.automat('all-acked')
+            reactor.callLater(0, self.automat, 'all-acked')  # @UndefinedVariable
 
     def _do_retrieve(self, x=None):
         packetID = global_id.MakeGlobalID(

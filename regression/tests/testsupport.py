@@ -373,7 +373,7 @@ async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay
     async with aiohttp.ClientSession(loop=loop) as client:
         for i in range(attempts):
             response = await client.get(url=tunnel_url(node, 'packet/list/v1'), timeout=20)
-            assert response.status_code == 200
+            assert response.status == 200
             response_json = await response.json()
             print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
             assert response_json['status'] == 'OK', response_json

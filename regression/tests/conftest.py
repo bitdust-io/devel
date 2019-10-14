@@ -34,7 +34,6 @@ from .testsupport import open_one_tunnel_async, clean_one_node_async, clean_one_
 
 #------------------------------------------------------------------------------
 
-# DHT_SEED_NODES = 'dht_seed_0:14441, dht_seed_1:14441, dht_seed_2:14441, dht_seed_3:14441, dht_seed_4:14441, stun_1:14441, stun_2:14441'
 DHT_SEED_NODES = 'dht_seed_0:14441'
 
 OTHER_KNOWN_ID_SERVERS = [
@@ -61,8 +60,6 @@ ALL_NODES = [
     'supplier_6',
     'proxy_server_1',
     'proxy_server_2',
-#     'proxy_server_3',
-#     'proxy_server_4',
     'stun_1',
     'stun_2',
     'is',
@@ -72,8 +69,6 @@ ALL_NODES = [
     'dht_seed_0',
     'dht_seed_1',
     'dht_seed_2',
-#     'dht_seed_3',
-#     'dht_seed_4',
 ]
 
 # TODO: keep this list up to date with docker-compose links
@@ -82,8 +77,6 @@ ALL_ROLES = {
         {'name': 'dht_seed_0', 'other_seeds': 'genesis', },
         {'name': 'dht_seed_1', 'other_seeds': 'dht_seed_0:14441', },
         {'name': 'dht_seed_2', 'other_seeds': 'dht_seed_0:14441', },
-        # {'name': 'dht_seed_3', 'other_seeds': 'dht_seed_0:14441', },
-        # {'name': 'dht_seed_4', 'other_seeds': 'dht_seed_0:14441', },
     ],
     'identity-servers': [
         'is',
@@ -98,8 +91,6 @@ ALL_ROLES = {
     'proxy-servers': [
         'proxy_server_1',
         'proxy_server_2',
-#         'proxy_server_3',
-#         'proxy_server_4',
     ],
     'suppliers': [
         {'name': 'supplier_1', 'preferred_routers': 'http://is:8084/proxy_server_1.xml', },
@@ -124,7 +115,8 @@ ALL_ROLES = {
          'preferred_routers': 'http://is:8084/proxy_server_2.xml', },
         {'name': 'customer_6', 'join_network': True, 'num_suppliers': 2,
          'known_servers': OTHER_KNOWN_ID_SERVERS, 'max_servers': 2, 'min_servers': 2,
-         'preferred_routers': 'http://is:8084/proxy_server_2.xml', },
+         'preferred_routers': 'http://is:8084/proxy_server_2.xml',
+         'supplier_candidates': 'http://is:8084/supplier_1.xml,http://is:8084/supplier_2.xml', },
         {'name': 'customer_backup', 'join_network': True, 'num_suppliers': 2,
          'preferred_routers': 'http://is:8084/proxy_server_1.xml', },
         {'name': 'customer_restore', 'join_network': False, 'num_suppliers': 2,

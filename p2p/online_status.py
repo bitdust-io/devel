@@ -84,6 +84,7 @@ except:
 
 from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -771,9 +772,13 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
-        err = args[0] if (args and args[0]) else Exception('user is offline')
+        err = args[0] if (args and args[0]) else Failure(Exception('user is offline'))
+        try:
+            err_msg = err.getErrorMessage()
+        except:
+            err_msg = repr(err)
         if _Debug:
-            lg.args(_DebugLevel, idurl=self.idurl, err=err, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
+            lg.args(_DebugLevel, idurl=self.idurl, err=err_msg, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 if not cb.called:
