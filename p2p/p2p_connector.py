@@ -187,6 +187,8 @@ class P2PConnector(automat.Automat):
     """
     """
 
+    fast = False
+
     timers = {
         'timer-20sec': (20.0, ['INCOMMING?']),
     }
