@@ -49,7 +49,6 @@ ALL_NODES = [
     'customer_2',
     'customer_3',
     'customer_4',
-    'customer_5',
     'customer_6',
     'customer_backup',
     'customer_restore',
@@ -123,9 +122,6 @@ ALL_ROLES = {
         {'name': 'customer_4', 'join_network': True, 'num_suppliers': 2,
          'supplier_candidates': 'http://is:8084/supplier_3.xml,http://is:8084/supplier_4.xml',
          'preferred_routers': 'http://is:8084/proxy_server_2.xml', },
-        {'name': 'customer_5', 'join_network': True, 'num_suppliers': 4,
-         'supplier_candidates': 'http://is:8084/supplier_2.xml,http://is:8084/supplier_3.xml,http://is:8084/supplier_4.xml,http://is:8084/supplier_5.xml',
-         'preferred_routers': 'http://is:8084/proxy_server_1.xml', },
         {'name': 'customer_6', 'join_network': True, 'num_suppliers': 2,
          'known_servers': OTHER_KNOWN_ID_SERVERS, 'max_servers': 2, 'min_servers': 2,
          'preferred_routers': 'http://is:8084/proxy_server_2.xml', },
@@ -198,7 +194,7 @@ def start_all_nodes(event_loop):
     print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_customer_async(customer, event_loop, i*5) for i, customer in enumerate(ALL_ROLES['customers'])
+        start_one_customer_async(customer, event_loop, i * 10) for i, customer in enumerate(ALL_ROLES['customers'])
     ]))
     print(f'\nALL CUSTOMERS STARTED\n')
 

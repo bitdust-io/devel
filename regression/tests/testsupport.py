@@ -26,7 +26,7 @@ import datetime
 import subprocess
 import asyncio
 import json
-
+import pprint
 
 #------------------------------------------------------------------------------
 
@@ -34,32 +34,6 @@ import aiohttp  # @UnresolvedImport
 import requests
 
 PROXY_ROUTERS = 'http://is:8084/proxy_server_1.xml http://is:8084/proxy_server_2.xml'
-
-# DHT_NODE_ID_FIXED = {
-#     'customer_1': 'fe17ab2a747f2ee22c7c12c23f8d0cd15fe17192',
-#     'customer_2': '0be14989d69952f119c2e6f94f55e020683684a4',
-#     'customer_3': '88a4bac84daef4970479642db209402ed159265e',
-#     'customer_4': '19154e94a71272a3a2a42d5de279e43ccd6e99c5',
-#     'customer_5': '2fbc3d5cf34cec61076487dfdc107874d3a5a0b0',
-#     'customer_6': '',
-#     'customer_backup': 'c5e6cc9f4d33dc85d7e647de8f3d1c438e4d68e7',
-#     'customer_restore': '091cbb6347cfefa2415002f025188023d1152716',
-#     'supplier_1': '351a6b828070083fd8d44548582e5e2ddb27914f',
-#     'supplier_2': '4629c27d522d3cfe97ea92dbf32f035934d059e1',
-#     'supplier_3': '7fa93c8ea767025ad150cf730315fc87ec7ff8cd',
-#     'supplier_4': '6ba864949abafd72694c1f13c176154b92714305',
-#     'supplier_5': 'b4f1eb21b099e0293b2e47598acfb61e142fabd7',
-#     'supplier_6': '67769d079fbe20d12eb7e0a5368a4e7eb286058f',
-#     'proxy_server_1': 'be7fcaa1b790a1e8257626d6bf511bd9d5593921',
-#     'proxy_server_2': 'ec9b62caab90248f4e83cd0ebcf859ef99039d1c',
-#     'stun_1': '9bb9c59bde1ed349aabce88fe8e07ab9cf105f22',
-#     'stun_2': 'd5f33226b760204914540a1091d23221d63ee4b3',
-#     'dht_seed_0': '8d7083855601d429e7308dfef12bd3ff3a6a12fc',
-#     'dht_seed_1': '6c5497b446f80ad48bde62dc5c46d26fac394ffe',
-#     'dht_seed_2': '53bf998cbf3daabba40f477bbec2e060b8eb3d47',
-#     'dht_seed_3': '4e0bd5387b1d99c28784908eb38ab453766ca994',
-#     'dht_seed_4': 'f0fe69f05734f933d95b6d5727e575123d2e5517',
-# }
 
 _SSHTunnels = {}
 _NodeTunnelPort = {} 
@@ -373,6 +347,42 @@ async def connect_network_async(node, loop):
             print(f"connect_network_async {node}: FAILED\n")
             assert False
 
+
+async def service_started_async(node, service_name, loop, expected_state='ON', attempts=60, delay=3):
+    async with aiohttp.ClientSession(loop=loop) as client:
+        current_state = None
+        count = 0
+        while current_state is None or current_state != expected_state:
+            response = await client.get(tunnel_url(node, f'service/info/{service_name}/v1'))
+            assert response.status == 200
+            response_json = await response.json()
+            assert response_json['status'] == 'OK', response_json
+            current_state = response_json['result'][0]['state']
+            print(f'\nservice/info/{service_name}/v1 [{node}] : %s' % pprint.pformat(response_json))
+            if current_state == expected_state:
+                break
+            count += 1
+            if count >= attempts:
+                assert False, f"service {service_name} is not {expected_state} after {attempts} attempts"
+                return
+            await asyncio.sleep(delay)
+        print(f'service/info/{service_name}/v1 [{node}] : OK\n')
+
+
+async def packet_list_async(node, loop, wait_all_finish=True, attempts=60, delay=3):
+    async with aiohttp.ClientSession(loop=loop) as client:
+        for i in range(attempts):
+            response = await client.get(url=tunnel_url(node, 'packet/list/v1'), timeout=20)
+            assert response.status_code == 200
+            response_json = await response.json()
+            print('\npacket/list/v1 [%s] : %s\n' % (node, pprint.pformat(response_json), ))
+            assert response_json['status'] == 'OK', response_json
+            if len(response_json['result']) == 0 or not wait_all_finish:
+                break
+            await asyncio.sleep(delay)
+        else:
+            assert False, 'some packets are still have in/out progress on [%s]' % node
+
 #------------------------------------------------------------------------------
 
 def stop_daemon(node, skip_checks=False):
@@ -602,6 +612,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     if join_network:
         await create_identity_async(node, identity_name, loop)
         await connect_network_async(node, loop)
+        await service_started_async(node, 'service_shared_data', loop)
+        await packet_list_async(node, loop)
     print(f'\nSTARTED CUSTOMER [{node}]\n')
 
 #------------------------------------------------------------------------------

@@ -33,7 +33,6 @@ VALIDATORS_NODES = [
     'customer_2',
     'customer_3',
     'customer_4',
-    'customer_5',
     'customer_6',
     'supplier_1',
     'supplier_2',
