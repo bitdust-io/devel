@@ -49,6 +49,7 @@ class CustomerSupportService(LocalService):
         ]
 
     def start(self):
+        from twisted.internet import reactor  # @UnresolvedImport
         from userid import id_url
         from main import events
         from supplier import customer_assistant
@@ -58,13 +59,14 @@ class CustomerSupportService(LocalService):
             if id_url.is_cached(customer_idurl):
                 if customer_idurl and not customer_assistant.by_idurl(customer_idurl):
                     ca = customer_assistant.create(customer_idurl)
-                    ca.automat('init')
+                    reactor.callLater(0, ca.automat, 'init')  # @UndefinedVariable
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.add_outbox_callback(self._on_outbox_packet_sent)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         return True
 
     def stop(self):
+        from twisted.internet import reactor  # @UnresolvedImport
         from main import events
         from supplier import customer_assistant
         from transport import callback
@@ -72,13 +74,14 @@ class CustomerSupportService(LocalService):
         callback.remove_outbox_callback(self._on_outbox_packet_sent)
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         for ca in customer_assistant.assistants().values():
-            ca.automat('shutdown')
+            reactor.callLater(0, ca.automat, 'shutdown')  # @UndefinedVariable
         return True
 
     def health_check(self):
         return True
 
     def _on_outbox_packet_sent(self, pkt_out):
+        from twisted.internet import reactor  # @UnresolvedImport
         from p2p import commands
         from contacts import contactsdb
         from supplier import customer_assistant
@@ -86,10 +89,11 @@ class CustomerSupportService(LocalService):
             if contactsdb.is_customer(pkt_out.outpacket.RemoteID):
                 ca = customer_assistant.by_idurl(pkt_out.outpacket.RemoteID)
                 if ca:
-                    ca.automat('propagate', pkt_out)
+                    reactor.callLater(0, ca.automat, 'propagate', pkt_out)  # @UndefinedVariable
         return False
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        from twisted.internet import reactor  # @UnresolvedImport
         from p2p import commands
         from contacts import contactsdb
         from supplier import customer_assistant
@@ -97,11 +101,12 @@ class CustomerSupportService(LocalService):
             if contactsdb.is_customer(newpacket.OwnerID):
                 ca = customer_assistant.by_idurl(newpacket.OwnerID)
                 if ca:
-                    ca.automat(newpacket.Command.lower(), newpacket)
+                    reactor.callLater(0, ca.automat, newpacket.Command.lower(), newpacket)  # @UndefinedVariable
                     return True
         return False
 
     def _on_identity_url_changed(self, evt):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from userid import id_url
         from supplier import customer_assistant
@@ -110,4 +115,4 @@ class CustomerSupportService(LocalService):
                 customer_idurl.refresh(replace_original=True)
                 ca.customer_idurl.refresh(replace_original=True)
                 lg.info('found %r to be refreshed after rotated identity: %r' % (ca, customer_idurl, ))
-                ca.automat('connect')
+                reactor.callLater(0, ca.automat, 'connect')  # @UndefinedVariable

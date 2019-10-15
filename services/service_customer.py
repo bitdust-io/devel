@@ -78,7 +78,7 @@ class CustomerService(LocalService):
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         for sc in supplier_connector.connectors(my_id.getLocalID()).values():
-            reactor.callLater(0, sc.automat, 'shutdown')  # @UnresolvedImport
+            reactor.callLater(0, sc.automat, 'shutdown')  # @UndefinedVariable
         # TODO: disconnect other suppliers
         return True
 
