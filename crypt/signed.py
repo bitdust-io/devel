@@ -264,7 +264,7 @@ class Packet(object):
         """
         return self.Signature is not None
 
-    def Valid(self):
+    def Valid(self, raise_signature_invalid=False):
         """
         ``Valid()`` should check every one of packet header fields: 1) that
         command is one of the legal commands 2) signature is good (which means
@@ -281,6 +281,8 @@ class Packet(object):
             lg.warn("signed.Valid bad Command " + str(self.Command))
             return False
         if not self.SignatureChecksOut():
+            if raise_signature_invalid:
+                raise Exception('signature is not valid for %r' % self)
             lg.warn("signed.Valid Signature IS NOT VALID!!!")
             return False
         return True

@@ -64,12 +64,12 @@ from lib import strng
 MIN_PROCESS_STREAMS_DELAY = 0.1
 MAX_PROCESS_STREAMS_DELAY = 1
 
-MAX_SIMULTANEOUS_OUTGOING_FILES = 10
+MAX_SIMULTANEOUS_OUTGOING_FILES = 20
 
 #------------------------------------------------------------------------------
 
 _LastFileID = None
-_ProcessStreamsDelay = 0.01
+_ProcessStreamsDelay = 0.1
 _ProcessStreamsTask = None
 _StreamCounter = 0
 

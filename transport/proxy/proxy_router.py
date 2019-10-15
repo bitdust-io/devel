@@ -70,7 +70,8 @@ import time
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import DeferredList
+from twisted.internet.defer import DeferredList  #@UnresolvedImport
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -156,6 +157,11 @@ class ProxyRouter(automat.Automat):
         """
         Method to catch the moment when proxy_router() state were changed.
         """
+        if oldstate != 'TRANSPORTS?' and newstate == 'TRANSPORTS?':
+            if network_connector.A().state == 'CONNECTED':
+                reactor.callLater(0, self.automat, 'network-connected')  # @UndefinedVariable
+            elif network_connector.A().state == 'DISCONNECTED':
+                reactor.callLater(0, self.automat, 'network-disconnected')  # @UndefinedVariable
 
     def state_not_changed(self, curstate, event, *args, **kwargs):
         """
@@ -168,8 +174,20 @@ class ProxyRouter(automat.Automat):
         The state machine code, generated using `visio2python
         <http://code.google.com/p/visio2python/>`_ tool.
         """
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'init':
+                self.state = 'STOPPED'
+                self.doInit(*args, **kwargs)
+        #---STOPPED---
+        elif self.state == 'STOPPED':
+            if event == 'start':
+                self.state = 'TRANSPORTS?'
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(*args, **kwargs)
         #---LISTEN---
-        if self.state == 'LISTEN':
+        elif self.state == 'LISTEN':
             if event == 'routed-inbox-packet-received':
                 self.doForwardInboxPacket(*args, **kwargs)
                 self.doCountIncomingTraffic(*args, **kwargs)
@@ -195,11 +213,6 @@ class ProxyRouter(automat.Automat):
                 self.doProcessRequest(*args, **kwargs)
             elif event == 'routed-session-disconnected':
                 self.doUnregisterRoute(*args, **kwargs)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'init':
-                self.state = 'STOPPED'
-                self.doInit(*args, **kwargs)
         #---TRANSPORTS?---
         elif self.state == 'TRANSPORTS?':
             if event == 'shutdown':
@@ -209,13 +222,6 @@ class ProxyRouter(automat.Automat):
                 self.state = 'STOPPED'
             elif event == 'network-connected':
                 self.state = 'LISTEN'
-        #---STOPPED---
-        elif self.state == 'STOPPED':
-            if event == 'start':
-                self.state = 'TRANSPORTS?'
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(*args, **kwargs)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -650,7 +656,7 @@ class ProxyRouter(automat.Automat):
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return
         routed_packet = signed.Unserialize(routed_data)
-        if not routed_packet or not routed_packet.Valid():
+        if not routed_packet or not routed_packet.Valid(raise_signature_invalid=True):
             lg.err('failed to unserialize packet from %s' % newpacket.RemoteID)
             p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
             return

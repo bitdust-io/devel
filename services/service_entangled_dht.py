@@ -53,6 +53,7 @@ class EntangledDHTService(LocalService):
         from dht import dht_service
         from dht import known_nodes
         from main import settings
+        from main import events
         from main.config import conf
         from userid import my_id
         conf().addConfigNotifier('services/entangled-dht/udp-port', self._on_udp_port_modified)
@@ -64,11 +65,14 @@ class EntangledDHTService(LocalService):
         d.addErrback(self._on_connect_failed)
         if my_id.getLocalID():
             dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
+        events.add_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         return d
 
     def stop(self):
         from dht import dht_service
+        from main import events
         from main.config import conf
+        events.remove_subscriber(self._on_my_identity_url_changed, 'my-identity-url-changed')
         dht_service.node().remove_rpc_callback('request')
         dht_service.node().remove_rpc_callback('store')
         conf().removeConfigNotifier('services/entangled-dht/udp-port')
@@ -78,6 +82,12 @@ class EntangledDHTService(LocalService):
 
     def health_check(self):
         return True
+
+    def _on_my_identity_url_changed(self, evt):
+        from dht import dht_service
+        from userid import my_id
+        if my_id.getLocalID():
+            dht_service.set_node_data('idurl', my_id.getLocalID().to_text())
 
     def _on_connected(self, nodes):
         from dht import dht_service

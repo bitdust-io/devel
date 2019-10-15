@@ -122,7 +122,7 @@ class GateInterface():
         """
         """
         if _Debug:
-            lg.out(4, 'tcp_interface.connect %s' % str(options))
+            lg.out(4, 'tcp_interface.connect %r' % options)
         tcp_node.start_streams()
         return tcp_node.receive(options)
 

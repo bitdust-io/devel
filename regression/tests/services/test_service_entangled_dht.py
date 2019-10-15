@@ -33,7 +33,6 @@ VALIDATORS_NODES = [
     'customer_2',
     'customer_3',
     'customer_4',
-    'customer_5',
     'customer_6',
     'supplier_1',
     'supplier_2',
@@ -48,8 +47,6 @@ VALIDATORS_NODES = [
     'dht_seed_0',
     'dht_seed_1',
     'dht_seed_2',
-    # 'dht_seed_3',
-    # 'dht_seed_4',
 ]
 
 

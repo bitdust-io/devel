@@ -39,6 +39,9 @@ EVENTS:
     * :red:`connect`
     * :red:`disconnect`
     * :red:`fail`
+    * :red:`queue-ack`
+    * :red:`queue-fail`
+    * :red:`queue-skip`
     * :red:`shutdown`
     * :red:`timer-10sec`
     * :red:`timer-30sec`
@@ -57,6 +60,8 @@ _DebugLevel = 10
 
 import os
 import math
+
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -183,6 +188,7 @@ class SupplierConnector(automat.Automat):
             diskspace.MakeStringFromBytes(self.needed_bytes).replace(' ', ''),
         )
         self.request_packet_id = None
+        self.request_queue_packet_id = None
         self.callbacks = {}
         try:
             st = bpio.ReadTextFile(settings.SupplierServiceFilename(
@@ -365,16 +371,16 @@ class SupplierConnector(automat.Automat):
         elif self.state == 'QUEUE?':
             if event == 'disconnect':
                 self.GoDisconnect=True
-            elif self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
-                self.state = 'REFUSE'
-                self.doCancelServiceQueue(*args, **kwargs)
-                self.doCancelService(*args, **kwargs)
-            elif not self.GoDisconnect and ( event == 'ack' or event == 'fail' or event == 'timer-10sec' ):
-                self.state = 'CONNECTED'
-                self.doReportConnect(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(*args, **kwargs)
+            elif self.GoDisconnect and ( event == 'queue-ack' or event == 'queue-fail' or event == 'queue-skip' or event == 'timer-10sec' ):
+                self.state = 'REFUSE'
+                self.doCancelServiceQueue(*args, **kwargs)
+                self.doCancelService(*args, **kwargs)
+            elif not self.GoDisconnect and ( event == 'queue-ack' or event == 'queue-fail' or event == 'queue-skip' or event == 'timer-10sec' ):
+                self.state = 'CONNECTED'
+                self.doReportConnect(*args, **kwargs)
         return None
 
     def isServiceAccepted(self, *args, **kwargs):
@@ -384,8 +390,10 @@ class SupplierConnector(automat.Automat):
         newpacket = args[0]
         if strng.to_text(newpacket.Payload).startswith('accepted'):
             if _Debug:
-                lg.out(6, 'supplier_connector.isServiceAccepted !!! supplier %s connected' % self.supplier_idurl)
+                lg.dbg(_DebugLevel, 'supplier %s accepted my request and will be connected' % self.supplier_idurl)
             return True
+        if _Debug:
+            lg.dbg(_DebugLevel, 'supplier %s refused my request' % self.supplier_idurl)
         return False
 
     def isServiceCancelled(self, *args, **kwargs):
@@ -435,8 +443,8 @@ class SupplierConnector(automat.Automat):
             service_name='service_supplier',
             json_payload=service_info,
             callbacks={
-                commands.Ack(): self._supplier_acked,
-                commands.Fail(): self._supplier_failed,
+                commands.Ack(): self._supplier_service_acked,
+                commands.Fail(): self._supplier_service_failed,
             },
         )
         self.request_packet_id = request.PacketID
@@ -446,7 +454,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if not self.queue_subscribe:
-            self.automat('fail')
+            reactor.callLater(0, self.automat, 'queue-skip')  # @UndefinedVariable
             return
         service_info = {
             'items': [{
@@ -469,15 +477,16 @@ class SupplierConnector(automat.Automat):
                 ),
             }, ],
         }
-        p2p_service.SendRequestService(
+        request = p2p_service.SendRequestService(
             remote_idurl=self.supplier_idurl,
             service_name='service_p2p_notifications',
             json_payload=service_info,
             callbacks={
-                commands.Ack(): self._supplier_acked,
-                commands.Fail(): self._supplier_failed,
+                commands.Ack(): self._supplier_queue_acked,
+                commands.Fail(): self._supplier_queue_failed,
             },
         )
+        self.request_queue_packet_id = request.PacketID
 
     def doCancelServiceQueue(self, *args, **kwargs):
         """
@@ -509,8 +518,8 @@ class SupplierConnector(automat.Automat):
             service_name='service_p2p_notifications',
             json_payload=service_info,
             callbacks={
-                commands.Ack(): self._supplier_acked,
-                commands.Fail(): self._supplier_failed,
+                commands.Ack(): self._supplier_queue_acked,
+                commands.Fail(): self._supplier_queue_failed,
             },
         )
 
@@ -519,6 +528,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         self.request_packet_id = None
+        self.request_queue_packet_id = None
 
     def doReportNoService(self, *args, **kwargs):
         """
@@ -582,34 +592,55 @@ class SupplierConnector(automat.Automat):
         #     contact_peer.removeStateChangedCallback(self._on_contact_status_state_changed)
         connectors(self.customer_idurl).pop(self.supplier_idurl)
         self.request_packet_id = None
+        self.request_queue_packet_id = None
         self.supplier_idurl = None
         self.customer_idurl = None
         self.queue_subscribe = None
         self.destroy()
 
-    def _supplier_acked(self, response, info):
+    def _supplier_service_acked(self, response, info):
+        if not self.request_packet_id:
+            lg.warn('received "old" response : %r' % response)
+            return
+        if response.PacketID != self.request_packet_id:
+            lg.warn('received "unexpected" response : %r' % response)
+            return
         if _Debug:
-            lg.out(_DebugLevel, 'supplier_connector._supplier_acked %r %r' % (response, info))
-        self.automat(response.Command.lower(), response)
+            lg.args(_DebugLevel, response=response, info=info)
+        self.automat('ack', response)
 
-    def _supplier_failed(self, response, info):
+    def _supplier_service_failed(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'supplier_connector._supplier_failed %r %r' % (response, info))
-        if response:
-            self.automat(response.Command.lower(), response)
-        else:
-            self.automat('fail', None)
+            lg.args(_DebugLevel, response=response, info=info)
+        self.automat('fail', response or None)
+
+    def _supplier_queue_acked(self, response, info):
+        if _Debug:
+            lg.args(_DebugLevel, response=response, info=info)
+        if not self.request_queue_packet_id:
+            lg.warn('received "old" queue response : %r' % response)
+            return
+        if response.PacketID != self.request_queue_packet_id:
+            lg.warn('received "unexpected" queue response : %r' % response)
+            return
+        self.automat('queue-ack', response)
+
+    def _supplier_queue_failed(self, response, info):
+        if _Debug:
+            lg.args(_DebugLevel, response=response, info=info)
+        self.automat('queue-fail', response or None)
 
     def _on_online_status_state_changed(self, oldstate, newstate, event_string, *args, **kwargs):
         if oldstate != newstate and newstate in ['CONNECTED', 'OFFLINE', ]:
             if _Debug:
                 lg.out(_DebugLevel, 'supplier_connector._on_online_status_state_changed %s : %s->%s, reconnecting now' % (
                     self.supplier_idurl, oldstate, newstate))
-            self.automat('connect')
+            reactor.callLater(0, self.automat, 'connect')  # @UndefinedVariable
 
     def _do_request_supplier_service(self, ecc_map, family_position, family_snapshot):
         if _Debug:
-            lg.args(_DebugLevel, ecc_map=ecc_map, family_position=family_position, family_snapshot=family_snapshot)
+            lg.args(_DebugLevel, supplier_idurl=self.supplier_idurl, ecc_map=ecc_map,
+                    family_position=family_position, family_snapshot=family_snapshot)
         if not self.supplier_idurl:
             lg.warn('supplier idurl is empty, SKIP sending supplier_service request')
             return
@@ -639,8 +670,8 @@ class SupplierConnector(automat.Automat):
             service_name='service_supplier',
             json_payload=service_info,
             callbacks={
-                commands.Ack(): self._supplier_acked,
-                commands.Fail(): self._supplier_failed,
+                commands.Ack(): self._supplier_service_acked,
+                commands.Fail(): self._supplier_service_failed,
             },
         )
         self.request_packet_id = request.PacketID

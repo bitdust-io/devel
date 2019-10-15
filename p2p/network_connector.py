@@ -148,6 +148,8 @@ class NetworkConnector(automat.Automat):
     Class to monitor Internet connection and reconnect when needed.
     """
 
+    fast = False
+
     timers = {
         'timer-1hour': (3600, ['DISCONNECTED']),
         'timer-5sec': (5.0, ['DISCONNECTED', 'CONNECTED']),

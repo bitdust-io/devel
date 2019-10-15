@@ -279,7 +279,7 @@ class SupplierQueue:
         # all sends we'll hold on to, only several will be active,
         # but will hold onto the next ones to be sent
         # active files
-        self.fileSendMaxLength = config.conf().getInt('services/data-motion/supplier-sending-queue-size', 4)
+        self.fileSendMaxLength = config.conf().getInt('services/data-motion/supplier-sending-queue-size', 8)
         # an array of packetId, preserving first in first out,
         # of which the first maxLength are the "active" sends
         self.fileSendQueue = []
@@ -290,7 +290,7 @@ class SupplierQueue:
         # all requests we'll hold on to,
         # only several will be active, but will hold onto the next ones to be sent
         # active requests
-        self.fileRequestMaxLength = config.conf().getInt('services/data-motion/supplier-request-queue-size', 4)
+        self.fileRequestMaxLength = config.conf().getInt('services/data-motion/supplier-request-queue-size', 8)
         # an array of PacketIDs, preserving first in first out
         self.fileRequestQueue = []
         # FileDown's, indexed by PacketIDs

@@ -828,6 +828,9 @@ class PacketOut(automat.Automat):
         except:
             msg = 'failed'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
+        if 'failed' in self.callbacks:
+            for cb in self.callbacks['failed']:
+                cb(self, msg)
         if _PacketLogFileEnabled:
             lg.out(0, '\033[0;49;91mOUT FAILED %s(%s) with %s bytes from %s to %s TID:%r : %s\033[0m' % (
                 self.outpacket.Command, self.outpacket.PacketID, self.filesize or '?',

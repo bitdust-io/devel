@@ -152,7 +152,7 @@ def on_identity_packet_outbox_status(pkt_out, status, error):
     if remote_idurl in _RunningHandshakers:
         inst = _RunningHandshakers[remote_idurl]['instance']
         if status == 'finished':
-            inst.automat('identity-sent')
+            inst.automat('identity-sent', pkt_out)
         else:
             inst.automat('outbox-failed', status, error)
 

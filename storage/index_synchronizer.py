@@ -74,6 +74,7 @@ EVENTS:
     * :red:`pull`
     * :red:`push`
     * :red:`shutdown`
+    * :red:`timer-10sec`
     * :red:`timer-15sec`
     * :red:`timer-1min`
     * :red:`timer-5min`
@@ -91,6 +92,8 @@ _DebugLevel = 6
 #------------------------------------------------------------------------------
 
 import time
+
+from twisted.internet import reactor  # @UnresolvedImport
 
 #------------------------------------------------------------------------------
 
@@ -118,6 +121,8 @@ from main import events
 from crypt import encrypted
 from crypt import signed
 from crypt import key
+
+from transport import packet_out
 
 from services import driver
 
@@ -168,10 +173,13 @@ class IndexSynchronizer(automat.Automat):
     state machine.
     """
 
+    fast = False
+
     timers = {
         'timer-1min': (60, ['NO_INFO']),
-        'timer-5min': (300, ['IN_SYNC!']),
+        'timer-10sec': (10.0, ['REQUEST?']),
         'timer-15sec': (15.0, ['REQUEST?', 'SENDING']),
+        'timer-5min': (300, ['IN_SYNC!']),
     }
 
     def init(self):
@@ -182,6 +190,7 @@ class IndexSynchronizer(automat.Automat):
         self.latest_supplier_revision = -1
         self.current_local_revision = -1
         self.requesting_suppliers = set()
+        self.requests_packets_sent = []
         self.requested_suppliers_number = 0
         self.sending_suppliers = set()
         self.sent_suppliers_number = 0
@@ -203,7 +212,7 @@ class IndexSynchronizer(automat.Automat):
                 events.send('my-backup-index-synchronized', data={})
             self.last_time_in_sync = time.time()
             if self.PushAgain:
-                self.automat('instant')
+                reactor.callLater(0, self.automat, 'instant')  # @UndefinedVariable
         if newstate == 'NO_INFO' and oldstate in ['REQUEST?', 'SENDING', ]:
             events.send('my-backup-index-out-of-sync', data={})
         if newstate == 'NO_INFO':
@@ -244,9 +253,6 @@ class IndexSynchronizer(automat.Automat):
                 self.state = 'CLOSED'
                 self.doCancelRequests(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
-            elif event == 'timer-15sec' and not self.isSomeResponded(*args, **kwargs):
-                self.state = 'NO_INFO'
-                self.doCancelRequests(*args, **kwargs)
             elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs) ) ) and self.isVersionChanged(*args, **kwargs):
                 self.state = 'SENDING'
                 self.doCancelRequests(*args, **kwargs)
@@ -257,6 +263,9 @@ class IndexSynchronizer(automat.Automat):
                 self.doCheckVersion(*args, **kwargs)
             elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(*args, **kwargs) ) ) and not self.isVersionChanged(*args, **kwargs):
                 self.state = 'IN_SYNC!'
+                self.doCancelRequests(*args, **kwargs)
+            elif event == 'timer-10sec' and not self.isSomeResponded(*args, **kwargs) and self.isAllTimedOut(*args, **kwargs):
+                self.state = 'NO_INFO'
                 self.doCancelRequests(*args, **kwargs)
         #---SENDING---
         elif self.state == 'SENDING':
@@ -311,6 +320,20 @@ class IndexSynchronizer(automat.Automat):
             return True
         return self.current_local_revision != self.latest_supplier_revision
 
+    def isAllTimedOut(self, *args, **kwargs):
+        """
+        Condition method.
+        """
+        for packetID, supplierIDURL in self.requests_packets_sent:
+            pkts_out = packet_out.search_many(
+                command=commands.Retrieve(),
+                remote_idurl=supplierIDURL,
+                packet_id=packetID,
+            )
+            if pkts_out:
+                return False
+        return True
+
     def doInit(self, *args, **kwargs):
         """
         Action method.
@@ -331,6 +354,7 @@ class IndexSynchronizer(automat.Automat):
         self.latest_supplier_revision = -1
         self.requesting_suppliers.clear()
         self.requested_suppliers_number = 0
+        self.requests_packets_sent = []
         if self.ping_required:
             propagate.ping_suppliers().addBoth(self._do_retrieve)
             self.ping_required = False
@@ -428,12 +452,12 @@ class IndexSynchronizer(automat.Automat):
         supplier_revision = backup_control.IncomingSupplierBackupIndex(wrapped_packet)
         self.requesting_suppliers.discard(supplier_idurl)
         if supplier_revision is not None:
-            self.automat('index-file-received', (newpacket, supplier_revision, ))
+            reactor.callLater(0, self.automat, 'index-file-received', (newpacket, supplier_revision, ))  # @UndefinedVariable
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s from %r, pending: %d, total: %d' % (
                 newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
-            self.automat('all-responded')
+            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
     def _on_supplier_fail(self, newpacket, info):
         if _Debug:
@@ -444,7 +468,7 @@ class IndexSynchronizer(automat.Automat):
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_fail %s from %r, pending: %d, total: %d' % (
                 newpacket, supplier_idurl, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
-            self.automat('all-responded')
+            reactor.callLater(0, self.automat, 'all-responded')  # @UndefinedVariable
 
     def _on_supplier_acked(self, newpacket, info):
         self.sending_suppliers.discard(newpacket.OwnerID)
@@ -457,7 +481,7 @@ class IndexSynchronizer(automat.Automat):
             lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
                 newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
         if len(self.sending_suppliers) == 0:
-            self.automat('all-acked')
+            reactor.callLater(0, self.automat, 'all-acked')  # @UndefinedVariable
 
     def _do_retrieve(self, x=None):
         packetID = global_id.MakeGlobalID(
@@ -483,6 +507,7 @@ class IndexSynchronizer(automat.Automat):
             if pkt_out:
                 self.requesting_suppliers.add(supplierId)
                 self.requested_suppliers_number += 1
+                self.requests_packets_sent.append((packetID, supplierId))
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
                        (pkt_out, nameurl.GetName(supplierId)))

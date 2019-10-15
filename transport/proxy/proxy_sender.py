@@ -103,8 +103,13 @@ def A(event=None, *args, **kwargs):
         return _ProxySender
     if _ProxySender is None:
         # set automat name and starting state here
-        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP',
-                                   debug_level=_DebugLevel, log_events=_Debug, log_transitions=_Debug, )
+        _ProxySender = ProxySender(
+            name='proxy_sender',
+            state='AT_STARTUP',
+            debug_level=_DebugLevel,
+            log_events=False,
+            log_transitions=_Debug,
+        )
     if event is not None:
         _ProxySender.automat(event, *args, **kwargs)
     return _ProxySender
@@ -383,9 +388,10 @@ class ProxySender(automat.Automat):
             lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
         if _PacketLogFileEnabled:
-            lg.out(0, '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s\033[0m' % (
+            lg.out(0, '\033[0;49;36mRELAY OUT %s(%s) with %s bytes from %s to %s via %s\033[0m' % (
                 outpacket.Command, outpacket.PacketID, len(raw_bytes),
-                global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID),),
+                global_id.UrlToGlobalID(outpacket.CreatorID), global_id.UrlToGlobalID(outpacket.RemoteID),
+                global_id.UrlToGlobalID(router_idurl), ),
                 log_name='packet', showtime=True,)
         del raw_bytes
         del block

@@ -1,9 +1,9 @@
+#!/usr/bin/python
+# api_web_socket.py
 #
-# Dockerfile
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
-# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
-#
-# This file (Dockerfile) is part of BitDust Software.
+# This file (api_web_socket.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -19,19 +19,28 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+#
+#
+#
+#
 
-FROM python:3.6
+"""
+..
 
-RUN apt-get update -y && apt-get install -y mosh openssh-client curl nano && rm -rf /var/lib/apt/lists/*
+module:: api_web_socket
+"""
 
-COPY ./regression/requirements-test.txt /requirements-test.txt
+#------------------------------------------------------------------------------
 
-RUN pip install -r /requirements-test.txt
+from __future__ import absolute_import
 
-WORKDIR /app
+#------------------------------------------------------------------------------
 
-ADD ./regression/ssh/ /app/ssh
+_Debug = True
+_DebugLevel = 6
 
-COPY ./regression/tests/ /app/tests
+#------------------------------------------------------------------------------
 
-CMD /app/ssh/sshcli.sh
+import os
+
+#------------------------------------------------------------------------------

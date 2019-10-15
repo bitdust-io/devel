@@ -50,17 +50,15 @@ class SupplierRelationsService(LocalService):
         ]
 
     def start(self):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from main import events
         from contacts import contactsdb
         from userid import id_url
         from supplier import family_member
         from transport import callback
-        # TODO: check all imports.! my_id must be loaded latest as possible!
         from userid import my_id
-
         callback.append_inbox_callback(self._on_inbox_packet_received)
-
         for customer_idurl in contactsdb.customers():
             if not customer_idurl:
                 continue
@@ -74,13 +72,12 @@ class SupplierRelationsService(LocalService):
                 fm = family_member.create_family(customer_idurl)
             fm.automat('init')
             local_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
-            fm.automat('family-join', {
+            reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
                 'supplier_idurl': my_id.getLocalID().to_bin(),
                 'ecc_map': local_customer_meta_info.get('ecc_map'),
                 'position': local_customer_meta_info.get('position', -1),
                 'family_snapshot': id_url.to_bin_list(local_customer_meta_info.get('family_snapshot')),
             })
-
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
@@ -88,6 +85,7 @@ class SupplierRelationsService(LocalService):
         return True
 
     def stop(self):
+        from twisted.internet import reactor  # @UnresolvedImport
         from main import events
         from supplier import family_member
         events.remove_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
@@ -95,10 +93,11 @@ class SupplierRelationsService(LocalService):
         events.remove_subscriber(self._on_existing_customer_terminated, 'existing-customer-terminated')
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         for fm in family_member.families().values():
-            fm.automat('shutdown')
+            reactor.callLater(0, fm.automat, 'shutdown')  # @UndefinedVariable
         return True
 
     def _on_new_customer_accepted(self, evt):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from userid import my_id
         from userid import id_url
@@ -110,7 +109,7 @@ class SupplierRelationsService(LocalService):
             fm.automat('init')
         else:
             lg.warn('family_member() instance already exists, but new customer just accepted %s' % customer_idurl)
-        fm.automat('family-join', {
+        reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
             'supplier_idurl': my_id.getLocalID().to_bin(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position', -1),
@@ -118,6 +117,7 @@ class SupplierRelationsService(LocalService):
         })
 
     def _on_existing_customer_accepted(self, evt):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from supplier import family_member
         from userid import id_url
@@ -133,7 +133,7 @@ class SupplierRelationsService(LocalService):
         if not fm:
             lg.err('family_member() instance was not found for existing customer %s' % customer_idurl)
             return
-        fm.automat('family-join', {
+        reactor.callLater(0, fm.automat, 'family-join', {  # @UndefinedVariable
             'supplier_idurl': my_id.getLocalID().to_bin(),
             'ecc_map': evt.data.get('ecc_map'),
             'position': evt.data.get('position'),
@@ -141,6 +141,7 @@ class SupplierRelationsService(LocalService):
         })
 
     def _on_existing_customer_terminated(self, evt):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from supplier import family_member
         from userid import my_id
@@ -152,11 +153,12 @@ class SupplierRelationsService(LocalService):
         if not fm:
             lg.err('family_member() instance not found for existing customer %s' % customer_idurl)
             return
-        fm.automat('family-leave', {
+        reactor.callLater(0, fm.automat, 'family-leave', {  # @UndefinedVariable
             'supplier_idurl': my_id.getLocalID().to_bin(),
         })
 
     def _on_incoming_contacts_packet(self, newpacket, info):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from lib import serialization
         from lib import strng
@@ -186,12 +188,15 @@ class SupplierRelationsService(LocalService):
             if customer_idurl.to_bin() == my_id.getLocalID().to_bin():
                 lg.warn('received contacts for my own customer family')
                 return False
+            if not id_url.is_cached(customer_idurl):
+                lg.warn('received contacts from unknown user: %r' % customer_idurl)
+                return False
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
                 lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
                     newpacket, info, customer_idurl, ))
                 return False
-            fm.automat('contacts-received', {
+            reactor.callLater(0, fm.automat, 'contacts-received', {  # @UndefinedVariable
                 'type': contacts_type,
                 'packet': newpacket,
                 'customer_idurl': customer_idurl,
@@ -219,7 +224,7 @@ class SupplierRelationsService(LocalService):
                 lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
                     newpacket, info, customer_idurl, ))
                 return False
-            fm.automat('contacts-received', {
+            reactor.callLater(0, fm.automat, 'contacts-received', {  # @UndefinedVariable
                 'type': contacts_type,
                 'packet': newpacket,
                 'customer_idurl': customer_idurl,
@@ -239,6 +244,7 @@ class SupplierRelationsService(LocalService):
         return False
 
     def _on_identity_url_changed(self, evt):
+        from twisted.internet import reactor  # @UnresolvedImport
         from logs import lg
         from userid import id_url
         from supplier import family_member
@@ -247,4 +253,4 @@ class SupplierRelationsService(LocalService):
                 customer_idurl.refresh(replace_original=True)
                 fm.customer_idurl.refresh(replace_original=True)
                 lg.info('found %r for customer with rotated identity and refreshed: %r' % (fm, customer_idurl, ))
-                fm.automat('family-refresh')
+                reactor.callLater(0, fm.automat, 'family-refresh')  # @UndefinedVariable

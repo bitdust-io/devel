@@ -233,6 +233,8 @@ class FireHire(automat.Automat):
     machine.
     """
 
+    fast = False
+
     timers = {
         'timer-15sec': (15.0, ['FIRE_MANY', 'SUPPLIERS?']),
     }

@@ -425,7 +425,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         except:
             lg.exc()
             return False
-        self.automat('data-sent', data)
+        # self.automat('data-sent', data)
         return True
 
     def stringReceived(self, data):

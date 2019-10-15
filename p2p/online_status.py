@@ -84,6 +84,7 @@ except:
 
 from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
 
 #------------------------------------------------------------------------------
 
@@ -214,7 +215,7 @@ def handshake(idurl, channel=None, ack_timeout=20, ping_retries=2, keep_alive=Fa
     """
     idurl = strng.to_bin(idurl)
     if _Debug:
-        lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel)
+        lg.args(_DebugLevel, idurl=idurl, keep_alive=keep_alive, channel=channel, ack_timeout=ack_timeout, ping_retries=ping_retries)
     result = Deferred()
     if id_url.is_empty(idurl):
         result.errback(Exception('empty idurl provided'))
@@ -761,7 +762,8 @@ class OnlineStatus(automat.Automat):
             lg.args(_DebugLevel, idurl=self.idurl, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
-                cb.callback(None)
+                if not cb.called:
+                    cb.callback(None)
             else:
                 cb(None)
         self.handshake_callbacks = []
@@ -770,12 +772,17 @@ class OnlineStatus(automat.Automat):
         """
         Action method.
         """
-        err = args[0] if (args and args[0]) else Exception('user is offline')
+        err = args[0] if (args and args[0]) else Failure(Exception('user is offline'))
+        try:
+            err_msg = err.getErrorMessage()
+        except:
+            err_msg = repr(err)
         if _Debug:
-            lg.args(_DebugLevel, idurl=self.idurl, err=err, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
+            lg.args(_DebugLevel, idurl=self.idurl, err=err_msg, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
-                cb.errback(err)
+                if not cb.called:
+                    cb.errback(err)
             else:
                 cb(err)
         self.handshake_callbacks = []
@@ -789,7 +796,8 @@ class OnlineStatus(automat.Automat):
             lg.args(_DebugLevel, idurl=self.idurl, response=response, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
-                cb.callback(response)
+                if not cb.called:
+                    cb.callback(response)
             else:
                 cb(response)
         self.handshake_callbacks = []
