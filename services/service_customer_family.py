@@ -190,6 +190,9 @@ class SupplierRelationsService(LocalService):
             if customer_idurl.to_bin() == my_id.getLocalID().to_bin():
                 lg.warn('received contacts for my own customer family')
                 return False
+            if not id_url.is_cached(customer_idurl):
+                lg.warn('received contacts from unknown user: %r' % customer_idurl)
+                return False
             fm = family_member.by_customer_idurl(customer_idurl)
             if not fm:
                 lg.warn('family_member() instance not found for incoming %s from %s for customer %r' % (
