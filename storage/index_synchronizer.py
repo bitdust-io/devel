@@ -173,6 +173,8 @@ class IndexSynchronizer(automat.Automat):
     state machine.
     """
 
+    fast = False
+
     timers = {
         'timer-1min': (60, ['NO_INFO']),
         'timer-10sec': (10.0, ['REQUEST?']),
