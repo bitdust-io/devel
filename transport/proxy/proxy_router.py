@@ -656,7 +656,7 @@ class ProxyRouter(automat.Automat):
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return
         routed_packet = signed.Unserialize(routed_data)
-        if not routed_packet or not routed_packet.Valid():
+        if not routed_packet or not routed_packet.Valid(raise_signature_invalid=True):
             lg.err('failed to unserialize packet from %s' % newpacket.RemoteID)
             p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
             return

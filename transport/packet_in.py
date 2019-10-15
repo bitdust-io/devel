@@ -244,7 +244,7 @@ def handle(newpacket, info):
     from transport import packet_out
     handled = False
     # check that signed by a contact of ours
-    if not newpacket.Valid():
+    if not newpacket.Valid(raise_signature_invalid=True):
         if _Debug:
             lg.args(_DebugLevel,
                     PacketID=newpacket.PacketID,

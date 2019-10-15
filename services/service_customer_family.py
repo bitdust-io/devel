@@ -78,7 +78,6 @@ class SupplierRelationsService(LocalService):
                 'position': local_customer_meta_info.get('position', -1),
                 'family_snapshot': id_url.to_bin_list(local_customer_meta_info.get('family_snapshot')),
             })
-
         events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.add_subscriber(self._on_existing_customer_accepted, 'existing-customer-accepted')
         events.add_subscriber(self._on_new_customer_accepted, 'new-customer-accepted')
@@ -95,7 +94,6 @@ class SupplierRelationsService(LocalService):
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         for fm in family_member.families().values():
             reactor.callLater(0, fm.automat, 'shutdown')  # @UndefinedVariable
-            
         return True
 
     def _on_new_customer_accepted(self, evt):
