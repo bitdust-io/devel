@@ -71,13 +71,14 @@ class CustomerService(LocalService):
         return True
 
     def stop(self):
+        from twisted.internet import reactor  # @UnresolvedImport
         from customer import supplier_connector
         from userid import my_id
         from main import events
         events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         events.remove_subscriber(self._on_my_keys_synchronized, 'my-keys-synchronized')
         for sc in supplier_connector.connectors(my_id.getLocalID()).values():
-            sc.automat('shutdown')
+            reactor.callLater(0, sc.automat, 'shutdown')  # @UnresolvedImport
         # TODO: disconnect other suppliers
         return True
 
