@@ -251,7 +251,8 @@ def handle(newpacket, info):
                     OwnerID=newpacket.OwnerID,
                     CreatorID=newpacket.CreatorID,
                     RemoteID=newpacket.RemoteID, )
-        lg.exc('new packet from %s://%s is NOT VALID: %r' % (info.proto, info.host, newpacket))
+        lg.exc('new packet from %s://%s is NOT VALID:\n\n%r\n' % (
+            info.proto, info.host, newpacket.Serialize()))
         return None
     try:
         for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
