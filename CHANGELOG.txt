@@ -2,6 +2,16 @@ Change Log
 ==========
 
 
+2019-10-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* starting with WebSocket API interface
+* IDURL bug fix in proxy_router() (#429)
+* rebuilding regression tests with a new approach (#427)
+* set fast=True for all automats by default (#426)
+* automatic identity rotate when my main ID server is down (#424)
+
+
+
 2019-10-05 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * more smart events in list_files_orator() and index_synchronizer() (#422)
