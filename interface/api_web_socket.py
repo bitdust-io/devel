@@ -44,3 +44,40 @@ _DebugLevel = 6
 import os
 
 #------------------------------------------------------------------------------
+
+from twisted.internet.protocol import Protocol, Factory
+from twisted.application.strports import listen
+
+#------------------------------------------------------------------------------
+
+from lib import txws
+
+#------------------------------------------------------------------------------
+
+_WebSocketListener = None
+
+#------------------------------------------------------------------------------
+
+def init():
+    """
+    """
+    global _WebSocketListener
+    _WebSocketListener = listen("tcp:5600", txws.WebSocketFactory(EchoFactory()))
+
+
+def shutdown():
+    """
+    """
+    global _WebSocketListener
+    _WebSocketListener
+
+#------------------------------------------------------------------------------
+
+class EchoProtocol(Protocol):
+    def dataReceived(self, data):
+        self.transport.write(data)
+
+class EchoFactory(Factory):
+    protocol = EchoProtocol
+
+#------------------------------------------------------------------------------

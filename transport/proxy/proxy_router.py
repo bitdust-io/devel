@@ -380,7 +380,7 @@ class ProxyRouter(automat.Automat):
 #                     return
                 identitycache.UpdateAfterChecking(cached_ident.getIDURL().original(), idsrc)
                 oldnew = ''
-                if user_idurl.original() not in list(self.routes.keys()):
+                if user_idurl.original() not in list(self.routes.keys()) and user_idurl.to_bin() not in list(self.routes.keys()):
                     # accept new route
                     oldnew = 'NEW'
                     self.routes[user_idurl.original()] = {}
@@ -435,14 +435,16 @@ class ProxyRouter(automat.Automat):
                 self.acks[out_ack.PacketID] = out_ack.RemoteID
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %r  contacts=%s' % (
-                        oldnew.upper(), user_idurl, self.routes[user_idurl.original()]['contacts'], ))
+                        oldnew.upper(), user_idurl, self.routes.get(user_idurl.original(), {}).get('contacts'), ))
         #--- commands.CancelService()
         elif request.Command == commands.CancelService():
-            if user_idurl.original() in list(self.routes.keys()):
+            if user_idurl.original() in list(self.routes.keys()) or user_idurl.to_bin() in list(self.routes.keys()):
                 # cancel existing route
                 # self._remove_route(user_idurl)
-                self.routes.pop(user_idurl.original())
+                self.routes.pop(user_idurl.original(), None)
+                self.routes.pop(user_idurl.to_bin(), None)
                 identitycache.StopOverridingIdentity(user_idurl.original())
+                identitycache.StopOverridingIdentity(user_idurl.to_bin())
                 p2p_service.SendAck(request, 'accepted', wide=True)
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %r' % user_idurl.original())
@@ -462,12 +464,16 @@ class ProxyRouter(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket, info=info, receiver_idurl=receiver_idurl, route_info=route_info, )
         if not route_info:
+            route_info = self.routes.get(receiver_idurl.to_bin(), None)
+        if not route_info:
             lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
             return
         connection_info = route_info.get('connection_info', {})
         active_user_session_machine = None
         if not connection_info or not connection_info.get('index'):
-            active_user_sessions = gateway.find_active_session(info.proto, idurl=receiver_idurl.to_original())
+            active_user_sessions = gateway.find_active_session(info.proto, idurl=receiver_idurl.original())
+            if not active_user_sessions:
+                active_user_sessions = gateway.find_active_session(info.proto, idurl=receiver_idurl.to_bin())
             if not active_user_sessions:
                 lg.warn('route with %s found but no active sessions found with %s://%s, fire "routed-session-disconnected" event' % (
                     receiver_idurl, info.proto, info.host, ))
@@ -482,12 +488,12 @@ class ProxyRouter(automat.Automat):
             }
             active_user_session_machine = automat.objects().get(user_connection_info['index'], None)
             if active_user_session_machine:
-                self.routes[receiver_idurl.original()]['connection_info'] = user_connection_info
-#                 active_user_session_machine.addStateChangedCallback(
-#                     lambda o, n, e, a: self._on_user_session_disconnected(user_idurl, o, n, e, a),
-#                     oldstate='CONNECTED',
-#                 )
-                lg.info('found and remember active connection info: %r' % user_connection_info)
+                if receiver_idurl.original() in self.routes:
+                    self.routes[receiver_idurl.original()]['connection_info'] = user_connection_info
+                    lg.info('found and remember active connection info: %r' % user_connection_info)
+                if receiver_idurl.to_bin() in self.routes:
+                    self.routes[receiver_idurl.to_bin()]['connection_info'] = user_connection_info
+                    lg.info('found and remember active connection info (for latest IDURL): %r' % user_connection_info)
         if not active_user_session_machine:
             if connection_info.get('index'):
                 active_user_session_machine = automat.objects().get(connection_info['index'], None)
@@ -652,12 +658,19 @@ class ProxyRouter(automat.Automat):
         if _Debug:
             lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'])
         if not route:
-            lg.warn('route with %s not found' % (sender_idurl))
+            route = self.routes.get(sender_idurl.to_bin(), None)
+        if not route:
+            lg.warn('route with %s not exist' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return
         routed_packet = signed.Unserialize(routed_data)
-        if not routed_packet or not routed_packet.Valid(raise_signature_invalid=True):
-            lg.err('failed to unserialize packet from %s' % newpacket.RemoteID)
+        if not routed_packet:
+            lg.err('failed to unserialize incoming packet from %s' % newpacket.RemoteID)
+            p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
+            return
+        if not routed_packet.Valid(raise_signature_invalid=True):
+            lg.err('new packet from %s is NOT VALID:\n\n%r\n\n\n%r\n' % (
+                sender_idurl, routed_data, routed_packet.Serialize()))
             p2p_service.SendFail(newpacket, 'invalid packet', remote_idurl=sender_idurl)
             return
         if receiver_idurl == my_id.getLocalID():

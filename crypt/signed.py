@@ -282,7 +282,7 @@ class Packet(object):
             return False
         if not self.SignatureChecksOut():
             if raise_signature_invalid:
-                raise Exception('signature is not valid for %r' % self)
+                raise Exception('signature is not valid for %r:\n\n%r' % (self, self.Serialize()))
             lg.warn("signed.Valid Signature IS NOT VALID!!!")
             return False
         return True
