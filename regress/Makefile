@@ -95,3 +95,4 @@ test_identity_rotate_supplier:
 
 test: test_customer_family test_identity_rotate_customer test_identity_rotate_supplier
 
+full_test: build_app build_tester test
