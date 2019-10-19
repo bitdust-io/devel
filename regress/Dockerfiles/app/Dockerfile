@@ -35,7 +35,7 @@ RUN mkdir /var/run/sshd \
     && sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 
-ENV COVERAGE_PROCESS_START=1
+ENV COVERAGE_PROCESS_START=/app/bitdust/.coverage_config
 
 ENV BITDUST_LOG_USE_COLORS=0
 
@@ -50,6 +50,10 @@ RUN python /app/bitdust/bitdust.py install
 RUN echo '#!/bin/sh\n /root/.bitdust/venv/bin/python /app/bitdust/bitdust.py "$@"' > /bin/bitdust
 
 RUN chmod +x /bin/bitdust
+
+RUN /root/.bitdust/venv/bin/pip install coverage
+
+RUN echo 'import coverage; coverage.process_startup();' > /app/bitdust/sitecustomize.py
 
 ADD ./regress/ssh /app/ssh
 
