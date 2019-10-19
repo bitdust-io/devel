@@ -23,18 +23,20 @@
 
 # PYTHON_VERSION=2.7.15
 
+ALL_TESTS := $(patsubst tests/%,%,$(wildcard tests/*))
+
 
 .PHONY: test
 
 
 stop_all:
-	@docker stop $$(docker ps -a -q)
+	@docker stop $$(docker ps -a -q) || exit 0
 
 clean_all:
-	@docker rm $$(docker ps -a -q)
+	@docker rm $$(docker ps -a -q) || exit 0
 
 remove_all:
-	@docker rmi -f $$(docker images -a -q)
+	@docker rmi -f $$(docker images -a -q) || exit 0
 
 prune:
 	@docker system prune
@@ -46,25 +48,25 @@ build_app:
 	@docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION) app_image
 
 _one_prepare:
-	@python3 prepare_test.py ${TEST_NAME};
+	@echo "PREPARE ${TEST_NAME}"; python3 prepare_test.py ${TEST_NAME};
 
 _one_up:
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d;
+	@echo "UP ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester && docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d > /dev/null
 
 _one_down:
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1;
+	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 > /dev/null;
 
 _one_test:
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/testds/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || $(error test ${TEST_NAME} failed)
+	@echo "TEST ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/testss/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log
 
 _one_log:
-	@/bin/bash fetch_logs.sh ${TEST_NAME}
+	@echo "LOG ${TEST_NAME}"; /bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
 
 _one_up_test_down:
-	@$(MAKE) _one_up; $(MAKE) _one_test; $(MAKE) _one_down; 
+	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_down
 
 _one_up_test_log_down:
-	@$(MAKE) _one_up; $(MAKE) _one_test; $(MAKE) _one_log; $(MAKE) _one_down;
+	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log && $(MAKE) _one_down
 
 up/%:
 	@$(MAKE) TEST_NAME=$* _one_up
@@ -84,15 +86,7 @@ run/%:
 run_and_log/%:
 	@$(MAKE) TEST_NAME=$* _one_up_test_log_down
 
-test_customer_family:
-	@$(MAKE) TEST_NAME=customer_family _one_up_test_down;
+run_all:
+	@echo "$(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done
 
-test_identity_rotate_customer:
-	@$(MAKE) TEST_NAME=identity_rotate_customer _one_up_test_down;
-
-test_identity_rotate_supplier:
-	@$(MAKE) TEST_NAME=identity_rotate_supplier _one_up_test_down;
-
-test: test_customer_family test_identity_rotate_customer test_identity_rotate_supplier
-
-full_test: build_app build_tester test
+test: build_app build_tester run_all

@@ -109,7 +109,7 @@ regression_test:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
 
 regress_test:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ full_test
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ test
 
 regression_build:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ build
