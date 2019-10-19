@@ -181,7 +181,7 @@ def tunnel_url(node, endpoint):
 def start_daemon(node):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
-    bitdust_daemon = run_ssh_command_and_wait(node, 'BITDUST_LOG_USE_COLORS=0 bitdust daemon')
+    bitdust_daemon = run_ssh_command_and_wait(node, 'bitdust daemon')
     print('\n' + bitdust_daemon[0].strip())
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
@@ -192,7 +192,7 @@ def start_daemon(node):
 async def start_daemon_async(node, loop):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     await run_ssh_command_and_wait_async(node, 'echo "docker" > /root/.bitdust/metadata/networkname', loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'BITDUST_LOG_USE_COLORS=0 bitdust daemon', loop)
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'bitdust daemon', loop)
     print('\n' + bitdust_daemon[0].strip())
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or

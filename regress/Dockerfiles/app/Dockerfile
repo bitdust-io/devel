@@ -20,7 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-ARG  PYTHON_VERSION=2.7.15
+ARG PYTHON_VERSION=2.7.15
 
 FROM python:${PYTHON_VERSION}
 
@@ -34,6 +34,10 @@ RUN mkdir /var/run/sshd \
     && sed -i 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' /etc/pam.d/sshd \
     && sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
+
+ENV COVERAGE_PROCESS_START=1
+
+ENV BITDUST_LOG_USE_COLORS=0
 
 WORKDIR /app
 

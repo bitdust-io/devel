@@ -57,7 +57,7 @@ _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 2> /dev/null
 
 _one_test:
-	@echo "TEST ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/testss/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log
+	@echo "TEST ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log
 
 _one_log:
 	@echo "LOG ${TEST_NAME}"; /bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
