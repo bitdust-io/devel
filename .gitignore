@@ -33,5 +33,5 @@ devops/main_net.txt
 .idea
 
 # skip coverage data and report files
-.coverage
+.coverage.*
 .coverage_report
