@@ -21,7 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
-PYTHON_VERSION=2.7.15
+# PYTHON_VERSION=2.7.15
 
 
 .PHONY: test
@@ -55,7 +55,7 @@ _one_down:
 	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1;
 
 _one_test:
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log
+	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/testds/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || $(error test ${TEST_NAME} failed)
 
 _one_log:
 	@/bin/bash fetch_logs.sh ${TEST_NAME}

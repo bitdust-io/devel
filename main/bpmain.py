@@ -278,6 +278,18 @@ def parser():
                      dest='verbose',
                      action='store_true',
                      help='verbose mode, print more messages',)
+    group.add_option('--coverage',
+                     dest='coverage',
+                     action='store_true',
+                     help='record code coverage',)
+    group.add_option('--coverage_config',
+                     dest='coverage_config',
+                     type='string',
+                     help='coverage configuration file path')
+    group.add_option('--coverage_report',
+                     dest='coverage_report',
+                     type='string',
+                     help='file path to be used to store coverage report')
     group.add_option('-n', '--no-logs',
                      dest='no_logs',
                      action='store_true',
@@ -543,6 +555,12 @@ def main(executable_path=None, start_reactor=True):
 
     pars = parser()
     (opts, args) = pars.parse_args()
+
+    if opts.coverage:
+        import coverage  # @UnresolvedImport
+        cov = coverage.Coverage(config_file=opts.coverage_config)
+        cov.start()
+
     overDict = override_options(opts, args)
 
     cmd = ''
@@ -679,6 +697,13 @@ def main(executable_path=None, start_reactor=True):
             lg.exc()
             ret = 1
         bpio.shutdown()
+
+        if opts.coverage:
+            cov.stop()
+            cov.save()
+            if opts.coverage_report:
+                cov.report(file=open(opts.coverage_report, 'w'))
+
         return ret
 
     #---daemon---
@@ -687,6 +712,11 @@ def main(executable_path=None, start_reactor=True):
         if len(appList) > 0:
             lg.out(0, 'main BitDust process already started: %s\n' % str(appList))
             bpio.shutdown()
+            if opts.coverage:
+                cov.stop()
+                cov.save()
+                if opts.coverage_report:
+                    cov.report(file=open(opts.coverage_report, 'w'))
             return 0
         from lib import misc
         lg.out(0, 'new BitDust process will be started in daemon mode\n')
@@ -704,6 +734,11 @@ def main(executable_path=None, start_reactor=True):
                     result = result.pid
                 except:
                     pass
+        if opts.coverage:
+            cov.stop()
+            cov.save()
+            if opts.coverage_report:
+                cov.report(file=open(opts.coverage_report, 'w'))
         return 0
 
     #---restart---
@@ -754,10 +789,20 @@ def main(executable_path=None, start_reactor=True):
                 d.addErrback(failed)
                 reactor.run()  # @UndefinedVariable
                 bpio.shutdown()
+                if opts.coverage:
+                    cov.stop()
+                    cov.save()
+                    if opts.coverage_report:
+                        cov.report(file=open(opts.coverage_report, 'w'))
                 return 0
             except:
                 lg.exc()
                 bpio.shutdown()
+                if opts.coverage:
+                    cov.stop()
+                    cov.save()
+                    if opts.coverage_report:
+                        cov.report(file=open(opts.coverage_report, 'w'))
                 return 1
         else:
             ui = ''
@@ -769,6 +814,11 @@ def main(executable_path=None, start_reactor=True):
                 lg.exc()
                 ret = 1
             bpio.shutdown()
+            if opts.coverage:
+                cov.stop()
+                cov.save()
+                if opts.coverage_report:
+                    cov.report(file=open(opts.coverage_report, 'w'))
             return ret
 
     #---show---
@@ -819,11 +869,21 @@ def main(executable_path=None, start_reactor=True):
                 from interface import cmd_line_json
                 cmd_line_json.call_jsonrpc_method('stop').addBoth(_stopped)
                 reactor.run()  # @UndefinedVariable
+                if opts.coverage:
+                    cov.stop()
+                    cov.save()
+                    if opts.coverage_report:
+                        cov.report(file=open(opts.coverage_report, 'w'))
                 return 0
             except:
                 lg.exc()
                 ret = kill()
                 bpio.shutdown()
+                if opts.coverage:
+                    cov.stop()
+                    cov.save()
+                    if opts.coverage_report:
+                        cov.report(file=open(opts.coverage_report, 'w'))
                 return ret
         else:
             appListAllChilds = bpio.find_main_process(
@@ -833,10 +893,20 @@ def main(executable_path=None, start_reactor=True):
             if len(appListAllChilds) > 0:
                 lg.out(0, 'BitDust child processes found: %r, performing "kill process" actions ...\n' % appListAllChilds, '')
                 ret = kill()
+                if opts.coverage:
+                    cov.stop()
+                    cov.save()
+                    if opts.coverage_report:
+                        cov.report(file=open(opts.coverage_report, 'w'))
                 return ret
 
             lg.out(0, 'BitDust is not running at the moment\n')
             bpio.shutdown()
+            if opts.coverage:
+                cov.stop()
+                cov.save()
+                if opts.coverage_report:
+                    cov.report(file=open(opts.coverage_report, 'w'))
             return 0
 
     #---command_line---
@@ -845,6 +915,11 @@ def main(executable_path=None, start_reactor=True):
     if ret == 2:
         print(usage_text())
     bpio.shutdown()
+    if opts.coverage:
+        cov.stop()
+        cov.save()
+        if opts.coverage_report:
+            cov.report(file=open(opts.coverage_report, 'w'))
     return ret
 
 #------------------------------------------------------------------------------
