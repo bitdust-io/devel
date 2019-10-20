@@ -1,6 +1,7 @@
 [run]
+branch = True
 source =
-    .
+    /app/bitdust/
 omit =
     */site-packages/
 parallel=True

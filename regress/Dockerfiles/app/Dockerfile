@@ -43,6 +43,8 @@ WORKDIR /app
 
 COPY . /app/bitdust
 
+COPY ./regress/.coverage_config /app/bitdust/
+
 # RUN find /app/bitdust -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +
 
 RUN python /app/bitdust/bitdust.py install
@@ -51,9 +53,7 @@ RUN echo '#!/bin/sh\n /root/.bitdust/venv/bin/python /app/bitdust/bitdust.py "$@
 
 RUN chmod +x /bin/bitdust
 
-RUN /root/.bitdust/venv/bin/pip install coverage
-
-RUN echo 'import coverage; coverage.process_startup();' > /app/bitdust/sitecustomize.py
+RUN /root/.bitdust/venv/bin/pip install coverage coverage-enable-subprocess
 
 ADD ./regress/ssh /app/ssh
 

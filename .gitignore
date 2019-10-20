@@ -31,7 +31,3 @@ devops/main_net.txt
 
 # IDE specific
 .idea
-
-# skip coverage data and report files
-.coverage.*
-.coverage_report

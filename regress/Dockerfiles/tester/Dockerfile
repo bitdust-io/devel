@@ -38,4 +38,6 @@ COPY ./testsupport.py /app/
 COPY ./keywords.py /app/
 COPY ./tests/ /app/tests/
 
+RUN mkdir /app/coverage/
+
 CMD /app/ssh/sshcli.sh

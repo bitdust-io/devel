@@ -59,11 +59,14 @@ _one_down:
 _one_test:
 	@echo "TEST ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log
 
+_one_coverage:
+	@echo "COVERAGE ${TEST_NAME}"; mkdir -p ./coverage/${TEST_NAME}/; docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
+
 _one_log:
 	@echo "LOG ${TEST_NAME}"; /bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
 
-_one_up_test_down:
-	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_down
+_one_up_test_coverage_down:
+	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_down
 
 _one_up_test_log_down:
 	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log && $(MAKE) _one_down
@@ -77,16 +80,19 @@ down/%:
 test/%:
 	@$(MAKE) TEST_NAME=$* _one_test
 
+cover/%:
+	@$(MAKE) TEST_NAME=$* _one_coverage
+
 log/%:
 	@$(MAKE) TEST_NAME=$* _one_log
 
 run/%:
-	@$(MAKE) TEST_NAME=$* _one_up_test_down
+	@$(MAKE) TEST_NAME=$* _one_up_test_coverage_down
 
 run_and_log/%:
 	@$(MAKE) TEST_NAME=$* _one_up_test_log_down
 
 run_all:
-	@echo "$(ALL_TESTS)"; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done
+	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf coverage/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done
 
 test: build_app build_tester run_all

@@ -744,3 +744,12 @@ async def clean_one_node_async(node, event_loop):
 
 async def clean_one_customer_async(node, event_loop):
     await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
+
+
+async def collect_coverage_one_node_async(node, event_loop):
+    await run_ssh_command_and_wait_async('localhost', ['mkdir', '-p', '/app/coverage/%s' % node, ], event_loop)
+    await run_ssh_command_and_wait_async(
+        'localhost',
+        ['scp', '-o', 'StrictHostKeyChecking=no', '-P', '22', 'root@%s:/app/bitdust/.coverage.*' % node, '/app/coverage/%s/.' % node, ],
+        event_loop,
+    )
