@@ -35,4 +35,6 @@ before_install:
 script:
   - make test_unit
   - make regression_test
-  - make regress_test
+  - make regress_prepare
+  - make -j2 regress_run
+  - make regress_report

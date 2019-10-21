@@ -104,6 +104,10 @@ run_all:
 run_all_log:
 	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
-test: build_app build_tester run_all coverage_combine coverage_report
+prepare: build_app build_tester
 
-test_log: build_app build_tester run_all_log
+report: coverage_combine coverage_report
+
+test_log: prepare run_all_log
+
+test: prepare run_all report

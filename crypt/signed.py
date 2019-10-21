@@ -227,11 +227,13 @@ class Packet(object):
         """
         CreatorIdentity = contactsdb.get_contact_identity(self.CreatorID)
         if CreatorIdentity is None:
-            OwnerIdentity = contactsdb.get_contact_identity(self.OwnerID)
-            if OwnerIdentity is None:
-                lg.err("could not get Identity for %s so returning False" % self.CreatorID.to_text())
-                return False
-            CreatorIdentity = OwnerIdentity
+            # OwnerIdentity = contactsdb.get_contact_identity(self.OwnerID)
+            # if OwnerIdentity is None:
+            #     lg.err("could not get Identity for %s so returning False" % self.CreatorID.to_text())
+            #     return False
+            # CreatorIdentity = OwnerIdentity
+            lg.err("could not get Identity for %r so returning False" % self.CreatorID)
+            return False
 
         if _Debug:
             if _LogSignVerify:
@@ -451,6 +453,14 @@ if __name__ == '__main__':
     from main import settings
     settings.init()
     key.InitMyKey()
+    from userid import identity
+    from contacts import identitycache
+    if len(sys.argv) > 2:
+        creator_ident = identity.identity(xmlsrc=bpio.ReadTextFile(sys.argv[2]))
+        identitycache.UpdateAfterChecking(idurl=creator_ident.getIDURL(), xml_src=creator_ident.serialize())
+    if len(sys.argv) > 3:
+        owner_ident = identity.identity(xmlsrc=bpio.ReadTextFile(sys.argv[3]))
+        identitycache.UpdateAfterChecking(idurl=owner_ident.getIDURL(), xml_src=owner_ident.serialize())
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
     print(p.Valid())
     print(p)
