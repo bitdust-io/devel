@@ -1,7 +1,31 @@
 [run]
-branch = True
+branch = False
+data_file = /tmp/.coverage
 source =
-    /app/bitdust/
+    .
 omit =
     */site-packages/
 parallel=True
+
+[report]
+exclude_lines =
+    # Have to re-enable the standard pragma
+    \#.*pragma:\s*no.?cover
+
+    # we can't get coverage for functions that don't return:
+    \#.*never returns
+    \#.*doesn't return
+
+    # Don't complain if tests don't hit defensive assertion code:
+    ^\s*raise Impossible\b
+    ^\s*raise AssertionError\b
+    ^\s*raise NotImplementedError\b
+    ^\s*return NotImplemented\b
+
+    # Don't complain if tests don't hit re-raise of unexpected errors:
+    ^\s*raise$
+
+    # if main is covered, we're good:
+    ^\s*exit\(main\(\)\)$
+
+show_missing = True

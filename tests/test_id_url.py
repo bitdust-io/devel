@@ -1,4 +1,5 @@
 import tempfile
+import unittest
 from unittest import TestCase
 
 from logs import lg
@@ -499,3 +500,7 @@ class TestIDURL(TestCase):
         self.assertEqual(id_url.field(hans1).original(), strng.to_bin(hans1))
         self.assertEqual(id_url.field(hans2).original(), strng.to_bin(hans2))
         self.assertEqual(id_url.field(hans3).original(), strng.to_bin(hans3))
+
+
+if __name__ == "__main__":
+    unittest.main()

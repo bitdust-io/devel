@@ -188,12 +188,16 @@ def global_wrapper(event_loop):
  
     yield
 
-    # stop_all_nodes(event_loop)
+    print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
+
+    # TODO: use ENV variables to control stop / coverage / report / cleanup
+
+    stop_all_nodes(event_loop)
     collect_coverage_all_nodes(event_loop)
     report_all_nodes(event_loop)
-    # TODO: use ENV variables to control cleanup
+
     # clean_all_nodes()
     # close_all_tunnels()
     # kill_all_nodes()
 
-    print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
+    print('\nAll done in %5.3f seconds\n' % (time.time() - _begin))

@@ -181,7 +181,7 @@ def tunnel_url(node, endpoint):
 def start_daemon(node):
     run_ssh_command_and_wait(node, 'mkdir -pv /root/.bitdust/metadata/')
     run_ssh_command_and_wait(node, 'echo "docker" > /root/.bitdust/metadata/networkname')
-    bitdust_daemon = run_ssh_command_and_wait(node, 'bitdust daemon')
+    bitdust_daemon = run_ssh_command_and_wait(node, 'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon')
     print('\n' + bitdust_daemon[0].strip())
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
@@ -192,7 +192,7 @@ def start_daemon(node):
 async def start_daemon_async(node, loop):
     await run_ssh_command_and_wait_async(node, 'mkdir -pv /root/.bitdust/metadata/', loop)
     await run_ssh_command_and_wait_async(node, 'echo "docker" > /root/.bitdust/metadata/networkname', loop)
-    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'bitdust daemon', loop)
+    bitdust_daemon = await run_ssh_command_and_wait_async(node, 'COVERAGE_PROCESS_START=/app/bitdust/.coverage_config bitdust daemon', loop)
     print('\n' + bitdust_daemon[0].strip())
     assert (
         bitdust_daemon[0].strip().startswith('main BitDust process already started') or
@@ -746,10 +746,13 @@ async def clean_one_customer_async(node, event_loop):
     await run_ssh_command_and_wait_async(node, 'rm -rf /%s/*' % node, event_loop)
 
 
-async def collect_coverage_one_node_async(node, event_loop):
+async def collect_coverage_one_node_async(node, event_loop, wait_before=3):
+    if wait_before:
+        # make sure all coverage files are written before collecting them
+        await asyncio.sleep(wait_before)
     await run_ssh_command_and_wait_async('localhost', ['mkdir', '-p', '/app/coverage/%s' % node, ], event_loop)
     await run_ssh_command_and_wait_async(
         'localhost',
-        ['scp', '-o', 'StrictHostKeyChecking=no', '-P', '22', 'root@%s:/app/bitdust/.coverage.*' % node, '/app/coverage/%s/.' % node, ],
+        ['scp', '-o', 'StrictHostKeyChecking=no', '-P', '22', 'root@%s:/tmp/.coverage.*' % node, '/app/coverage/%s/.' % node, ],
         event_loop,
     )

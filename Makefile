@@ -39,6 +39,7 @@ CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
 PYTHON_NEW="${VENV}/bin/python"
+COVERAGE_NEW="${VENV}/bin/coverage"
 TOX_PY_LIST="$(shell $(TOX) -l | grep ^py | xargs | sed -e 's/ /,/g')"
 
 REQUIREMENTS_TEST:=requirements/requirements-testing.txt
@@ -53,8 +54,8 @@ VENV_TEST=${VENV}/.venv_test
 .PHONY: install
 
 install:
-	@echo "Building BitDust environment and installing requirements"
-	@if [ "$(VENV_PYTHON_VERSION)" = "python2.7" ]; then python bitdust.py install; else python3 bitdust.py install; fi
+	@echo "Building BitDust environment and installing requirements";
+	@if [ "$(VENV_PYTHON_VERSION)" = "python2.7" ]; then python bitdust.py install; else python3 bitdust.py install; fi;
 
 venv_install: install
 
@@ -97,7 +98,7 @@ test_tox/%: venv_install pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
 
 test_unit: $(VENV_TEST)
-	$(PYTHON_NEW) -m unittest discover -s tests/ -v
+	PYTHONPATH=. $(COVERAGE_NEW) run -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest tests.test_raid_worker

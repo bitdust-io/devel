@@ -38,8 +38,6 @@ def main():
 
     from main.bpmain import main
     ret = main(executable_path)
-
-    os._exit(ret)
     return ret
 
 
