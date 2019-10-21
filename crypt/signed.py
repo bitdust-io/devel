@@ -282,7 +282,14 @@ class Packet(object):
             return False
         if not self.SignatureChecksOut():
             if raise_signature_invalid:
-                raise Exception('signature is not valid for %r:\n\n%r' % (self, self.Serialize()))
+                creator_xml = contactsdb.get_contact_identity(self.CreatorID)
+                if creator_xml:
+                    creator_xml = creator_xml.serialize(as_text=True)
+                owner_xml = contactsdb.get_contact_identity(self.OwnerID)
+                if owner_xml:
+                    owner_xml = owner_xml.serialize(as_text=True)
+                raise Exception('signature is not valid for %r:\n\n%r\n\ncreator:\n\n%r\n\nowner:\n\n%r' % (
+                    self, self.Serialize(), creator_xml, owner_xml))
             lg.warn("signed.Valid Signature IS NOT VALID!!!")
             return False
         return True
@@ -445,4 +452,5 @@ if __name__ == '__main__':
     settings.init()
     key.InitMyKey()
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
+    print(p.Valid())
     print(p)
