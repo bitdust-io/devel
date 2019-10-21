@@ -101,4 +101,4 @@ coverage_report:
 run_all:
 	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf coverage/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
 
-test: build_app build_tester run_all coverage_all coverage_combine coverage_report
+test: build_app build_tester run_all coverage_combine coverage_report
