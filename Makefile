@@ -98,7 +98,7 @@ test_tox/%: venv_install pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
 
 test_unit: $(VENV_TEST)
-	PYTHONPATH=. $(COVERAGE_NEW) run -m unittest discover -s tests/ -v
+	PYTHONPATH=. $(COVERAGE_NEW) run --omit=*/site-packages/* -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest tests.test_raid_worker
@@ -111,6 +111,9 @@ regression_test:
 
 regress_test:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ test
+
+regress_test_log:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ test_log
 
 regression_build:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ build

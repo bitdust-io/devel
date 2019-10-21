@@ -68,8 +68,8 @@ _one_log:
 _one_up_test_coverage_down:
 	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_down
 
-_one_up_test_coverage_log:
-	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_log
+_one_up_test_log_down:
+	@$(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log && $(MAKE) _one_down
 
 up/%:
 	@$(MAKE) TEST_NAME=$* _one_up
@@ -90,15 +90,20 @@ run/%:
 	@$(MAKE) TEST_NAME=$* _one_up_test_coverage_down
 
 run_log/%:
-	@$(MAKE) TEST_NAME=$* _one_up_test_coverage_log
+	@$(MAKE) TEST_NAME=$* _one_up_test_log_down
 
 coverage_combine:
-	@echo "COVERAGE COMBINE"; mkdir -p ./coverage_all/; rm -rf ./coverage_all/*; for ONE_TEST in $(ALL_TESTS); do cp -r -v ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/; done; mv -f ../.coverage ./coverage_all/.coverage_unit_tests; ~/.bitdust/venv/bin/python -m pip install coverage; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);" cd regress/;
+	@echo "COVERAGE COMBINE"; mkdir -p ./coverage_all/; rm -rf ./coverage_all/*; for ONE_TEST in $(ALL_TESTS); do cp -r -v ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/; done; mv -f -v ../.coverage ./coverage_all/.coverage_unit_tests; ~/.bitdust/venv/bin/python -m pip install coverage; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);" cd regress/;
 
 coverage_report:
-	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report; cd regress;
+	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i; cd regress;
 
 run_all:
-	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf coverage/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
+	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
+
+run_all_log:
+	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
 test: build_app build_tester run_all coverage_combine coverage_report
+
+test_log: build_app build_tester run_all_log
