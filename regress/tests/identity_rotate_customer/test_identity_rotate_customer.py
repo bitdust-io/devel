@@ -107,7 +107,7 @@ def test_identity_rotate_customer_1():
     assert f'customer${old_global_id}' in old_keys
 
     # make customer-1 and customer-3 friends to each other
-    friend_add_v1('customer-1', 'http://id-b:8084/customer-3.xml', 'friend2')
+    friend_add_v1('customer-1', 'http://id-a:8084/customer-3.xml', 'friend2')
     friend_add_v1('customer-3', old_idurl, 'friend1')
     old_friends = friend_list_v1('customer-3', extract_idurls=True)
     assert old_idurl in old_friends
