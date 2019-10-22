@@ -54,19 +54,18 @@ def test_identity_rotate_customer_1():
     old_idurl = r['result'][0]['idurl']
 
     # test other nodes able to talk to customer-1 before identity get rotated
-    user_ping_v1('customer-2', old_global_id)
     user_ping_v1('customer-3', old_global_id)
     user_ping_v1('supplier-1', old_global_id)
     user_ping_v1('supplier-2', old_global_id)
 
-    # test customer-2 can chat with customer-1 before identity get rotated
-    service_info_v1('customer-2', 'service_private_messages', 'ON')
+    # test customer-3 can chat with customer-1 before identity get rotated
+    service_info_v1('customer-3', 'service_private_messages', 'ON')
     service_info_v1('customer-1', 'service_private_messages', 'ON')
     random_string = base64.b32encode(os.urandom(20)).decode()
     random_message = {
         'random_message': random_string,
     }
-    t = threading.Timer(2.0, message_send_v1, ['customer-2', 'master$%s' % old_global_id, random_message, ])
+    t = threading.Timer(2.0, message_send_v1, ['customer-3', 'master$%s' % old_global_id, random_message, ])
     t.start()
     message_receive_v1('customer-1', expected_data=random_message)
 
@@ -107,10 +106,10 @@ def test_identity_rotate_customer_1():
     assert f'messages${old_global_id}' in old_keys
     assert f'customer${old_global_id}' in old_keys
 
-    # make customer-1 and customer-2 friends to each other
-    friend_add_v1('customer-1', 'http://id-b:8084/customer-2.xml', 'friend2')
-    friend_add_v1('customer-2', old_idurl, 'friend1')
-    old_friends = friend_list_v1('customer-2', extract_idurls=True)
+    # make customer-1 and customer-3 friends to each other
+    friend_add_v1('customer-1', 'http://id-b:8084/customer-3.xml', 'friend2')
+    friend_add_v1('customer-3', old_idurl, 'friend1')
+    old_friends = friend_list_v1('customer-3', extract_idurls=True)
     assert old_idurl in old_friends
 
     # rotate identity sources
@@ -137,7 +136,6 @@ def test_identity_rotate_customer_1():
     service_info_v1('customer-1', 'service_shared_data', 'ON')
 
     # test other nodes able to talk to customer-1 again on new IDURL
-    user_ping_v1('customer-2', new_global_id)
     user_ping_v1('customer-3', new_global_id)
     user_ping_v1('supplier-1', new_global_id)
     user_ping_v1('supplier-2', new_global_id)
@@ -185,19 +183,19 @@ def test_identity_rotate_customer_1():
     assert new_folder_second_supplier != ''
     print(f'second supplier {second_supplier} :\n', new_folder_second_supplier)
 
-    # test that friend1 idurl changed for customer-2
-    new_friends = friend_list_v1('customer-2', extract_idurls=True)
+    # test that friend1 idurl changed for customer-3
+    new_friends = friend_list_v1('customer-3', extract_idurls=True)
     assert new_idurl in new_friends
     assert old_idurl not in new_friends
 
-    # test customer-2 can still chat with customer-1 after identity rotated
-    service_info_v1('customer-2', 'service_private_messages', 'ON')
+    # test customer-3 can still chat with customer-1 after identity rotated
+    service_info_v1('customer-3', 'service_private_messages', 'ON')
     service_info_v1('customer-1', 'service_private_messages', 'ON')
     random_string = base64.b32encode(os.urandom(20)).decode()
     random_message = {
         'random_message': random_string,
     }
-    t = threading.Timer(1.0, message_send_v1, ['customer-2', 'master$%s' % new_global_id, random_message, ])
+    t = threading.Timer(1.0, message_send_v1, ['customer-3', 'master$%s' % new_global_id, random_message, ])
     t.start()
     message_receive_v1('customer-1', expected_data=random_message)
 
