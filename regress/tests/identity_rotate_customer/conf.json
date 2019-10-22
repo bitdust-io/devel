@@ -23,6 +23,13 @@
                 "name": "id-c"
             }
         },
+        "id-dead": {
+            "ports": "10004:22",
+            "node": {
+                "role": "identity-server",
+                "name": "id-dead"
+            }
+        },
         "dht-1": {
             "ports": "10011:22",
             "node": {
@@ -89,7 +96,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10031:22",
             "node": {
@@ -108,7 +116,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10032:22",
             "node": {
@@ -127,7 +136,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10041:22",
             "node": {
@@ -147,7 +157,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10042:22",
             "node": {
@@ -167,7 +178,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10043:22",
             "node": {
@@ -187,7 +199,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10044:22",
             "node": {
@@ -207,7 +220,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10051:22",
             "volumes": [
@@ -235,7 +249,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10052:22",
             "volumes": [
@@ -247,7 +262,7 @@
                 "join_network": true,
                 "num_suppliers": 2,
                 "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml",
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-dead:8084:6661",
                 "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441",
                 "preferred_routers": "http://id-b:8084/proxy-2.xml"
             }
@@ -261,7 +276,8 @@
                 "stun-2",
                 "id-a",
                 "id-b",
-                "id-c"
+                "id-c",
+                "id-dead"
             ],
             "ports": "10053:22",
             "volumes": [
@@ -293,6 +309,7 @@
         "id-a",
         "id-b",
         "id-c",
+        "id-dead",
         "supplier-1",
         "supplier-2",
         "supplier-3",

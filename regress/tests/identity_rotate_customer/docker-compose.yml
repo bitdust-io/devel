@@ -41,6 +41,11 @@ services:
     ports:
       - "10103:22"
 
+  id-dead:
+    image: bitdust/app
+    ports:
+      - "10104:22"
+
   dht-1:
     image: bitdust/app
     ports:
@@ -92,6 +97,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   proxy-2:
     image: bitdust/app
@@ -106,6 +112,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   supplier-1:
     image: bitdust/app
@@ -120,6 +127,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   supplier-2:
     image: bitdust/app
@@ -134,6 +142,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   supplier-3:
     image: bitdust/app
@@ -148,6 +157,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   supplier-4:
     image: bitdust/app
@@ -162,6 +172,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   customer-1:
     image: bitdust/app
@@ -178,6 +189,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   customer-2:
     image: bitdust/app
@@ -194,6 +206,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
   customer-3:
     image: bitdust/app
@@ -210,6 +223,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
 
 
 
@@ -229,6 +243,7 @@ services:
       - id-a
       - id-b
       - id-c
+      - id-dead
       - supplier-1
       - supplier-2
       - supplier-3

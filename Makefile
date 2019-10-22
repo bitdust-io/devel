@@ -100,7 +100,7 @@ test_tox/%: venv_install pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
 
 test_unit: $(VENV_TEST)
-	PYTHONPATH=. $(COVERAGE_NEW) run --omit=*/site-packages/*,*CodernityDB*,*transport/http/ -m unittest discover -s tests/ -v
+	PYTHONPATH=. $(COVERAGE_NEW) run --omit=*/site-packages/*,*CodernityDB*,*transport/http/* -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest tests.test_raid_worker

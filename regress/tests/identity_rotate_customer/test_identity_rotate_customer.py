@@ -27,10 +27,10 @@ import time
 import base64
 import threading
 
-from testsupport import run_ssh_command_and_wait
+from testsupport import run_ssh_command_and_wait, stop_daemon
 
 from keywords import service_info_v1, file_create_v1, file_upload_start_v1, file_download_start_v1, \
-    supplier_list_v1, transfer_list_v1, packet_list_v1, \
+    supplier_list_v1, transfer_list_v1, packet_list_v1, config_set_v1, \
     user_ping_v1, identity_get_v1, identity_rotate_v1, key_list_v1, share_create_v1, share_open_v1, \
     friend_add_v1, friend_list_v1, message_send_v1, message_receive_v1
 
@@ -164,7 +164,13 @@ def test_identity_rotate_customer_1():
     assert local_file_src == downloaded_file_src, "source file and received file content is not equal after identity rotate"
     assert new_downloaded_file_src == downloaded_file_src, "received file content before identity rotate is not equal to received file after identity rotate"
 
+    # check again current suppliers of customer-1
+    customer_1_suppliers = supplier_list_v1('customer-1', expected_min_suppliers=2, expected_max_suppliers=2, extract_suppliers=True)
+    first_supplier = customer_1_suppliers[0].replace('http://id-a:8084/', '').replace('http://id-b:8084/', '').replace('.xml', '')
+    second_supplier = customer_1_suppliers[1].replace('http://id-a:8084/', '').replace('http://id-b:8084/', '').replace('.xml', '')
+
     # verify files on first supplier were moved to correct sub folder
+    print(f'checking customer-1 files on {first_supplier}')
     old_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{old_global_id}/')[0].strip()
     new_folder_first_supplier = run_ssh_command_and_wait(first_supplier, f'ls -la ~/.bitdust/customers/{new_global_id}/')[0].strip()
     assert old_folder_first_supplier == ''
@@ -172,6 +178,7 @@ def test_identity_rotate_customer_1():
     print(f'first supplier {first_supplier} :\n', new_folder_first_supplier)
 
     # verify files on second supplier were moved to correct sub folder
+    print(f'checking customer-1 files on {second_supplier}')
     old_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{old_global_id}/')[0].strip()
     new_folder_second_supplier = run_ssh_command_and_wait(second_supplier, f'ls -la ~/.bitdust/customers/{new_global_id}/')[0].strip()
     assert old_folder_second_supplier == ''
@@ -193,4 +200,35 @@ def test_identity_rotate_customer_1():
     t = threading.Timer(1.0, message_send_v1, ['customer-2', 'master$%s' % new_global_id, random_message, ])
     t.start()
     message_receive_v1('customer-1', expected_data=random_message)
+
+
+
+def test_identity_rotate_customer_2_when_id_server_is_dead():
+    if os.environ.get('RUN_TESTS', '1') == '0':
+        return pytest.skip()  # @UndefinedVariable
+
+    service_info_v1('customer-2', 'service_customer', 'ON')
+
+    supplier_list_v1('customer-2', expected_min_suppliers=2, expected_max_suppliers=2)
+
+    service_info_v1('customer-2', 'service_shared_data', 'ON')
+
+    r = identity_get_v1('customer-2')
+    old_idurl = r['result'][0]['idurl']
+
+    config_set_v1('customer-2', 'services/identity-propagate/automatic-rotate-enabled', 'true')
+
+    config_set_v1('customer-2', 'services/identity-propagate/known-servers',
+                  'id-dead:8084:6661,id-a:8084:6661,id-b:8084:6661,id-c:8084:6661')
+
+    stop_daemon('id-dead')
+
+    for i in range(20):
+        r = identity_get_v1('customer-2')
+        new_idurl = r['result'][0]['idurl']
+        if new_idurl != old_idurl:
+            break
+        time.sleep(5)
+    else:
+        assert False, 'customer-2 automatic identity rotate did not happen after many attempts'
 
