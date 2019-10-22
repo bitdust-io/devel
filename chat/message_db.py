@@ -197,7 +197,7 @@ def recreate_db(chat_history_dir):
     try:
         dbs.open()
         source_opened = True
-    except:
+    except Exception as exc:
         lg.warn('failed open local storage : %r' % exc)
     # patch_flush_fsync(dbs)
     dbt.create()
