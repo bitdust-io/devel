@@ -122,6 +122,9 @@ regress_prepare:
 regress_run:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all
 
+regress_run_log:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all_log
+
 regress_report:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ report
 
