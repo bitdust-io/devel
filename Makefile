@@ -105,6 +105,11 @@ test_unit: $(VENV_TEST)
 test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest tests.test_raid_worker
 
+
+
+regress_stop:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ stop_all
+
 regress_test:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ test
 
