@@ -528,7 +528,7 @@ async def start_supplier_async(node, identity_name, loop, join_network=True,
     if known_servers:
         cmd += f'bitdust set services/identity-propagate/known-servers "{known_servers}";'
     if preferred_servers:
-        cmd += f'bitdust set services/identity-propagate/preferred-servers "{preferred_servers}"'
+        cmd += f'bitdust set services/identity-propagate/preferred-servers "{preferred_servers}";'
     # configure DHT udp port and node ID
     cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
     if dht_seeds:
@@ -574,6 +574,8 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         cmd += f'bitdust set services/identity-propagate/known-servers "{known_servers}";'
     if preferred_servers:
         cmd += f'bitdust set services/identity-propagate/preferred-servers "{preferred_servers}";'
+    if health_check_interval_seconds:
+        cmd += f'bitdust set services/identity-propagate/health-check-interval-seconds "{health_check_interval_seconds}";'
     # configure DHT udp and seed nodes
     cmd += 'bitdust set services/entangled-dht/udp-port "14441";'
     if dht_seeds:
@@ -581,8 +583,6 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
     # set desired Proxy router
     if preferred_routers:
         cmd += f'bitdust set services/proxy-transport/preferred-routers "{preferred_routers}";'
-    if health_check_interval_seconds:
-        cmd += f'bitdust set services/identity-propagate/health-check-interval-seconds "{health_check_interval_seconds}"'
     # enable customer service and prepare tests
     cmd += 'bitdust set services/customer/enabled true;'
     cmd += f'bitdust set services/customer/suppliers-number "{num_suppliers}";'
@@ -592,7 +592,7 @@ async def start_customer_async(node, identity_name, loop, join_network=True, num
         cmd += f'bitdust set services/employer/candidates "{supplier_candidates}";'
     # create randomized file to test files upload/download
     cmd += f'python -c "import os, base64; print(base64.b64encode(os.urandom(30000)).decode())" > /{node}/file_{node}.txt;'
-    cmd += f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt'
+    cmd += f'python -c "import os, base64; print(base64.b64encode(os.urandom(24)).decode())" > /{node}/second_file_{node}.txt;'
     await run_ssh_command_and_wait_async(node, cmd, loop)
     # start BitDust daemon and create new identity for supplier
     await start_daemon_async(node, loop)
