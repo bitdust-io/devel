@@ -201,7 +201,16 @@ class P2PHookupsService(LocalService):
                 p2p_connector.A('network_connector.state', newstate)
 
     def _on_identity_url_changed(self, evt):
+        from twisted.internet import reactor  # @UnresolvedImport
+        from logs import lg
+        from userid import id_url
+        from userid import global_id
         from p2p import online_status
-        inst = online_status.getInstance(evt.data['old_idurl'], autocreate=False)
-        if inst:
-            inst.automat('shutdown')
+        for idurl, inst in online_status.online_statuses().items():
+            if idurl == id_url.field(evt.data['old_idurl']):
+                idurl.refresh(replace_original=True)
+                inst.idurl.refresh(replace_original=True)
+                inst.name = 'online_%s' % global_id.UrlToGlobalID(idurl)
+                inst.automat('shook-up-hands')
+                reactor.callLater(0, inst.automat, 'ping-now')  # @UndefinedVariable
+                lg.info('found %r with rotated identity and refreshed: %r' % (inst, idurl, ))

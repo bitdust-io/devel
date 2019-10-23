@@ -99,10 +99,10 @@ coverage_report:
 	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i --omit="transport/http/*,transport/udp/*,tests/*,regress/*,regression/*,coins/*,broadcast/*,updates/os_windows_update.py,storage/filemanager_api.py,setup.py,setup_gen.py,raid/worker.py,storage/backup_schedule.py,parallelp/pp/*,main/install_wizard.py,lib/txrestapi/txrestapi/*,lib/schedule.py,lib/jsontemplate.py,lib/fastjsonrpc/*,interface/jsonrpc_client.py,interface/cmd_line_json.py,interface/cmd_line_json_templates.py,dht/entangled/dtuple.py,currency/*,chat/terminal_chat.py,CodernityDB/*,CodernityDB3/*"; cd regress;
 
 run_all:
-	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
+	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
 
 run_all_log:
-	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
+	@echo "$(ALL_TESTS)"; mkdir -p logs; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
 prepare: build_app build_tester
 

@@ -144,6 +144,17 @@ def is_running(idurl):
         return False
     return remote_idurl in _RunningHandshakers
 
+
+def get_info(idurl):
+    """
+    If there is a running handshake with given idurl will return its instance.
+    """
+    global _RunningHandshakers
+    remote_idurl = strng.to_bin(idurl)
+    if not remote_idurl:
+        return None
+    return _RunningHandshakers.get(remote_idurl)
+
 #------------------------------------------------------------------------------
 
 def on_identity_packet_outbox_status(pkt_out, status, error):
@@ -401,6 +412,7 @@ class Handshaker(automat.Automat):
         global _RunningHandshakers
         if self.remote_idurl in _RunningHandshakers:
             _RunningHandshakers[self.remote_idurl]['instance'] = None
+            _RunningHandshakers[self.remote_idurl]['results'] = []
             _RunningHandshakers.pop(self.remote_idurl)
         else:
             lg.warn('did not found my registered opened instance')

@@ -158,6 +158,11 @@ def shutdown():
 
 #------------------------------------------------------------------------------
 
+def online_statuses():
+    global _OnlineStatusDict
+    return _OnlineStatusDict
+
+
 def check_create(idurl, keep_alive=True):
     """
     Creates new instance of online_status() state machine and send "init" event to it.
@@ -622,6 +627,7 @@ class OnlineStatus(automat.Automat):
         elif self.state == 'PING?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doReportOffline(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'ping-failed' or event == 'timer-20sec':
                 self.state = 'OFFLINE'
@@ -639,6 +645,7 @@ class OnlineStatus(automat.Automat):
                 self.doReportOffline(*args, **kwargs)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doReportOffline(*args, **kwargs)
                 self.doDestroyMe(*args, **kwargs)
             elif event == 'timer-1min' and not self.isRecentInbox(*args, **kwargs):
                 self.doHandshake(event, *args, **kwargs)
@@ -779,11 +786,20 @@ class OnlineStatus(automat.Automat):
             err_msg = repr(err)
         if _Debug:
             lg.args(_DebugLevel, idurl=self.idurl, err=err_msg, keep_alive=self.keep_alive, handshake_callbacks=len(self.handshake_callbacks))
+        # running_handshake = handshaker.get_info(self.idurl.to_original())
+        # if not running_handshake:
+        #     running_handshake = handshaker.get_info(self.idurl.to_bin())
         for cb in self.handshake_callbacks:
             if isinstance(cb, Deferred):
                 if not cb.called:
+                    # if running_handshake:
+                    #     running_handshake['results'].append(cb)
+                    # else:
                     cb.errback(err)
             else:
+                # if running_handshake:
+                #     running_handshake['results'].append(lambda ret: cb(ret))
+                # else:
                 cb(err)
         self.handshake_callbacks = []
 
