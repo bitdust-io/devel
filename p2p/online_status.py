@@ -806,6 +806,8 @@ class OnlineStatus(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _OnlineStatusDict
+        _OnlineStatusDict.pop(self.idurl)
         self.idurl = None
         self.latest_inbox_time = None
         self.handshake_callbacks = None
