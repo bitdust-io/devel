@@ -301,10 +301,10 @@ def config_set_v1(node, key, value):
     return response.json()
 
 
-def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', retries=2, fallback_observer = 'supplier_1'):
+def dht_value_get_v1(node, key, expected_data, record_type='skip_validation', retries=2, fallback_observer=None):
     response = None
     for i in range(retries + 1):
-        if i == retries - 1:
+        if i == retries - 1 and fallback_observer:
             node = fallback_observer
         response = requests.get(tunnel_url(node, 'dht/value/get/v1?record_type=%s&key=%s' % (record_type, key, )), timeout=20)
         try:

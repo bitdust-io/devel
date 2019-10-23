@@ -76,6 +76,7 @@ def test_identity_rotate_customer_1():
     volume_customer_1 = '/customer_1'
     filepath_customer_1 = f'{volume_customer_1}/{filename}'
     run_ssh_command_and_wait('customer-1', f'echo customer_1 > {filepath_customer_1}')
+
     remote_path_customer_1 = f'{share_id_customer_1}:{virtual_filename}'
     downloaded_filepath = f'/tmp/{filename}'
     local_file_src = run_ssh_command_and_wait('customer-1', 'cat %s' % filepath_customer_1)[0].strip()
