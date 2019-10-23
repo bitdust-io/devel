@@ -32,7 +32,7 @@ import json
 from testsupport import open_one_tunnel_async, clean_one_node_async, clean_one_customer_async, \
     start_one_dht_seed, start_one_identity_server_async, start_one_stun_server_async, start_one_proxy_server_async, \
     start_one_supplier_async, start_one_customer_async, stop_daemon_async, run_ssh_command_and_wait, \
-    print_exceptions_one_node, report_one_node
+    print_exceptions_one_node, report_one_node, collect_coverage_one_node_async
 
 #------------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ def start_all_nodes(event_loop):
 
     for number, dhtseed in enumerate(ALL_ROLES['dht-seed']):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        start_one_dht_seed(dhtseed, wait_seconds=(15 if number > 0 else 0))
+        start_one_dht_seed(dhtseed, wait_seconds=(5 if number > 0 else 0))
     print('\nALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
@@ -146,6 +146,15 @@ def report_all_nodes(event_loop):
 
     assert not failed, 'found some critical errors'
 
+
+def collect_coverage_all_nodes(event_loop):
+    _begin = time.time()
+    print('\nCollecting coverage from all nodes')
+    event_loop.run_until_complete(asyncio.gather(*[
+        collect_coverage_one_node_async(node, event_loop=event_loop) for node in ALL_NODES
+    ]))
+    print('\n\nAll coverage files received in  %5.3f seconds\n' % (time.time() - _begin))
+
 #------------------------------------------------------------------------------
 
 @pytest.yield_fixture(scope='session')
@@ -179,11 +188,16 @@ def global_wrapper(event_loop):
  
     yield
 
-    # stop_all_nodes(event_loop)
+    print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
+
+    # TODO: use ENV variables to control stop / coverage / report / cleanup
+
+    stop_all_nodes(event_loop)
+    collect_coverage_all_nodes(event_loop)
     report_all_nodes(event_loop)
-    # TODO: use ENV variables to control cleanup
+
     # clean_all_nodes()
     # close_all_tunnels()
     # kill_all_nodes()
 
-    print('\nTest suite completed in %5.3f seconds\n' % (time.time() - _begin))
+    print('\nAll done in %5.3f seconds\n' % (time.time() - _begin))

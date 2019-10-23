@@ -1,9 +1,9 @@
+#!/usr/bin/env python
+# bitdust.py
 #
-# Dockerfile
+# Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
-# Copyright (C) 2008-2018 Stanislav Evseev, Veselin Penev  https://bitdust.io
-#
-# This file (Dockerfile) is part of BitDust Software.
+# This file (bitdust.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -19,25 +19,27 @@
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
+#
+#
+#
+#
 
-FROM python:3.6
+from __future__ import absolute_import
+import os
 
-RUN apt-get update -y && apt-get install -y mosh openssh-client curl nano && rm -rf /var/lib/apt/lists/*
 
-COPY ./requirements-test.txt /app/requirements-test.txt
+def main():
+    executable_path = os.getcwd()
 
-RUN pip install -r /app/requirements-test.txt
+    try:
+        os.chdir(os.path.dirname(__file__))
+    except:
+        pass
 
-WORKDIR /app/
+    from main.bpmain import main
+    ret = main(executable_path)
+    return ret
 
-ADD ./ssh/ /app/ssh/
 
-COPY ./conftest.py /app/
-COPY ./__init__.py /app/
-COPY ./testsupport.py /app/
-COPY ./keywords.py /app/
-COPY ./tests/ /app/tests/
-
-RUN mkdir /app/coverage/
-
-CMD /app/ssh/sshcli.sh
+if __name__ == "__main__":
+    main()

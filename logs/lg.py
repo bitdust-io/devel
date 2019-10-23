@@ -116,7 +116,7 @@ def out(level, msg, nl='\n', log_name='main', showtime=False):
             else:
                 tm_string += '/%02d:%02d' % (mn, sc)
         if _UseColors is None:
-            _UseColors = platform.uname()[0] != 'Windows'
+            _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
         if _UseColors:
             tm_string = '\033[2;32m%s\033[0m' % tm_string
         if level == 0:
@@ -203,7 +203,7 @@ def args(level, *args, **kwargs):
 def info(message):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
+        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
@@ -218,7 +218,7 @@ def info(message):
 def warn(message, level=2):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
+        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
@@ -233,7 +233,7 @@ def warn(message, level=2):
 def err(message, level=0):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
+        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
@@ -256,7 +256,7 @@ def err(message, level=0):
 def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None, **kwargs):
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
+        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
     if _UseColors:
         msg = '\033[1;31m%s\033[0m' % msg
     if msg:
@@ -281,7 +281,7 @@ def exception(level, maxTBlevel, exc_info):
     global _StoreExceptionsEnabled
     global _UseColors
     if _UseColors is None:
-        _UseColors = platform.uname()[0] != 'Windows'
+        _UseColors = platform.uname()[0] != 'Windows' and os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
     if exc_info is None:
         _, value, trbk = sys.exc_info()
     else:

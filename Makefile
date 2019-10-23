@@ -39,6 +39,7 @@ CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
 PYTHON_NEW="${VENV}/bin/python"
+COVERAGE_NEW="${VENV}/bin/coverage"
 TOX_PY_LIST="$(shell $(TOX) -l | grep ^py | xargs | sed -e 's/ /,/g')"
 
 REQUIREMENTS_TEST:=requirements/requirements-testing.txt
@@ -53,8 +54,8 @@ VENV_TEST=${VENV}/.venv_test
 .PHONY: install
 
 install:
-	@echo "Building BitDust environment and installing requirements"
-	@if [ "$(VENV_PYTHON_VERSION)" = "python2.7" ]; then python bitdust.py install; else python3 bitdust.py install; fi
+	@echo "Building BitDust environment and installing requirements";
+	@if [ "$(VENV_PYTHON_VERSION)" = "python2.7" ]; then python bitdust.py install; else python3 bitdust.py install; fi;
 
 venv_install: install
 
@@ -91,16 +92,43 @@ venv_off:
 	@$(PIP) install -U "pip>=7.0" -q
 	@$(PIP) install -r $(DEPS)
 
+
+
 test_tox: clean tox
 
 test_tox/%: venv_install pyclean
 	$(TOX) -e $(TOX_PY_LIST) -- $*
 
 test_unit: $(VENV_TEST)
-	$(PYTHON_NEW) -m unittest discover -s tests/ -v
+	PYTHONPATH=. $(COVERAGE_NEW) run --omit=*/site-packages/*,*CodernityDB*,*transport/http/* -m unittest discover -s tests/ -v
 
 test_raid: $(VENV_TEST)
 	$(PYTHON_NEW) -m unittest tests.test_raid_worker
+
+
+
+regress_stop:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ stop_all
+
+regress_test:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ test
+
+regress_test_log:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ test_log
+
+regress_prepare:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ prepare
+
+regress_run:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all
+
+regress_run_log:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ run_all_log
+
+regress_report:
+	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regress/ report
+
+
 
 test_regression:
 	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
@@ -161,6 +189,8 @@ regression_exceptions_all:
 regression_logs_fetch:
 	make -C regression/ logs_fetch
 
+
+
 dht_network_up:
 	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
 
@@ -181,6 +211,7 @@ dht_network_ssh_producer:
 
 dht_network_ssh_consumer:
 	docker-compose -f tests/dht/docker-compose.yml exec dht_consumer bash
+
 
 
 lint: venv_install

@@ -152,6 +152,8 @@ class BackupRebuilder(automat.Automat):
     A class to prepare and run rebuilding operations.
     """
 
+    fast = False
+
     timers = {
         'timer-1sec': (1.0, ['REQUEST']),
     }

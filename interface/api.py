@@ -2024,6 +2024,7 @@ def friend_add(idurl_or_global_id, alias=''):
     """
     from contacts import contactsdb
     from contacts import identitycache
+    from p2p import online_status
     from userid import global_id
     from userid import id_url
     idurl = idurl_or_global_id
@@ -2031,12 +2032,16 @@ def friend_add(idurl_or_global_id, alias=''):
         idurl = global_id.GlobalUserToIDURL(idurl_or_global_id, as_field=False)
     idurl = id_url.field(idurl)
     if not idurl:
-        return ERROR('you must specify the global IDURL address where your identity file was last located')
+        return ERROR('you must specify the global IDURL address of remote user')
 
     def _add():
+        added = False
         if not contactsdb.is_correspondent(idurl):
             contactsdb.add_correspondent(idurl, alias)
             contactsdb.save_correspondents()
+            added = True
+        online_status.handshake(idurl, channel='friend_add', keep_alive=True)
+        if added:
             return OK('new friend has been added', api_method='friend_add')
         return OK('this friend has been already added', api_method='friend_add')
 

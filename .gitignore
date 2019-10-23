@@ -28,6 +28,7 @@ tests/data/test_*
 devops/nodes.txt
 devops/development_net.txt
 devops/main_net.txt
+.coverage
 
 # IDE specific
 .idea

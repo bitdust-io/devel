@@ -12,15 +12,15 @@ ports_offset = int(conf.get('ports_offset', 0))
 
 tester_links_src = ''
 for link in conf['tester_links']:
-    tester_links_src +=  f'      - {link}\n'
+    tester_links_src +=  '      - %s\n' % link
 
 tester_volumes_src = ''
 for volume in conf.get('tester_volumes', []):
-    tester_volumes_src +=  f'      - {volume}\n'
+    tester_volumes_src +=  '      - %s\n' % volume
 
 containers_volumes_src = ''
 for volume in conf.get('containers_volumes', []):
-    containers_volumes_src +=  f'  {volume}\n'
+    containers_volumes_src +=  '  %s\n' % volume
 
 all_containers_src = ''  
 for container_name, container_info in conf['containers'].items():
@@ -29,23 +29,23 @@ for container_name, container_info in conf['containers'].items():
     container_ports = "%s:%s" % ((int(container_ports[0]) + ports_offset), container_ports[1])
     container_links = container_info.get('links')
     container_volumes = container_info.get('volumes')
-    container_src = f'''
-  {container_name}:
-    image: {container_image}
+    container_src = '''
+  %s:
+    image: %s
     ports:
-      - "{container_ports}"'''
+      - "%s"''' % (container_name, container_image, container_ports)
     if container_volumes:
         container_volumes_src = ''
         for volume in container_volumes:
-            container_volumes_src +=  f'\n      - {volume}'
-        container_src += f'''
-    volumes:{container_volumes_src}'''
+            container_volumes_src +=  '\n      - %s' % volume
+        container_src += '''
+    volumes:%s''' % container_volumes_src
     if container_links:
         container_links_src = ''
         for link in container_links:
-            container_links_src +=  f'\n      - {link}'
-        container_src += f'''
-    links:{container_links_src}'''
+            container_links_src +=  '\n      - %s' % link
+        container_src += '''
+    links:%s''' % container_links_src
     all_containers_src += (container_src + '\n')
 
 docker_compose_template = open('docker-compose.template').read()

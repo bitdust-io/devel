@@ -1080,29 +1080,28 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)  # @UndefinedVariable
 
-        else:
-            lg.out(2, "misc.DoRestart under Windows param=%s" % param)
-            lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
-            lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-            pypath = sys.executable
-            cmdargs = [sys.executable, ]
-            cmdargs.append(sys.argv[0])
-            cmdargs += sys.argv[1:]
-            if param != '' and not sys.argv.count(param):
-                cmdargs.append(param)
-            if cmdargs.count('restart'):
-                cmdargs.remove('restart')
-            if cmdargs.count('detach'):
-                cmdargs.remove('detach')
-            if cmdargs.count('daemon'):
-                cmdargs.remove('daemon')
-            if detach:
-                from system import child_process
-                cmdargs = [strng.to_text(a) for a in cmdargs]
-                lg.out(0, 'run : %r' % cmdargs)
-                return child_process.detach(cmdargs)
-            lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
-            return os.execvpe(pypath, cmdargs, os.environ)
+        lg.out(2, "misc.DoRestart under Windows param=%s" % param)
+        lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
+        lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+        pypath = sys.executable
+        cmdargs = [sys.executable, ]
+        cmdargs.append(sys.argv[0])
+        cmdargs += sys.argv[1:]
+        if param != '' and not sys.argv.count(param):
+            cmdargs.append(param)
+        if cmdargs.count('restart'):
+            cmdargs.remove('restart')
+        if cmdargs.count('detach'):
+            cmdargs.remove('detach')
+        if cmdargs.count('daemon'):
+            cmdargs.remove('daemon')
+        if detach:
+            from system import child_process
+            cmdargs = [strng.to_text(a) for a in cmdargs]
+            lg.out(0, 'run : %r' % cmdargs)
+            return child_process.detach(cmdargs)
+        lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
+        return os.execvpe(pypath, cmdargs, os.environ)
 
     lg.out(2, "misc.DoRestart under Linux param=%s" % param)
     lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
@@ -1130,6 +1129,12 @@ def DoRestart(param='', detach=False, std_out='/dev/null', std_err='/dev/null'):
         cmdargs.append('1>%s' % std_out)
         cmdargs.append('2>%s' % std_err)
         cmd = '/usr/bin/nohup ' + (' '.join(cmdargs)) + ' &'
+        COVERAGE_PROCESS_START = os.environ.get('COVERAGE_PROCESS_START')
+        if COVERAGE_PROCESS_START:
+            cmd = 'COVERAGE_PROCESS_START="%s" %s' % (COVERAGE_PROCESS_START, cmd, )
+        BITDUST_LOG_USE_COLORS = os.environ.get('BITDUST_LOG_USE_COLORS')
+        if BITDUST_LOG_USE_COLORS:
+            cmd = 'BITDUST_LOG_USE_COLORS="%s" %s' % (BITDUST_LOG_USE_COLORS, cmd, )
         return os.system(cmd)
     lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
     return os.execvpe(pypyth, cmdargs, os.environ)

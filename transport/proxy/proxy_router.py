@@ -655,14 +655,14 @@ class ProxyRouter(automat.Automat):
         sender_idurl = id_url.field(sender_idurl)
         receiver_idurl = id_url.field(receiver_idurl)
         route = self.routes.get(sender_idurl.original(), None)
-        if _Debug:
-            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'])
         if not route:
             route = self.routes.get(sender_idurl.to_bin(), None)
         if not route:
             lg.warn('route with %s not exist' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return
+        if _Debug:
+            lg.args(_DebugLevel, newpacket=newpacket, info=info, sender_idurl=sender_idurl, receiver_idurl=receiver_idurl, route_contacts=route['contacts'])
         routed_packet = signed.Unserialize(routed_data)
         if not routed_packet:
             lg.err('failed to unserialize incoming packet from %s' % newpacket.RemoteID)

@@ -1,33 +1,12 @@
 {
     "default_image": "bitdust/app",
-    "ports_offset": 100,
+    "ports_offset": 400,
     "containers": {
         "id-a": {
             "ports": "10001:22",
             "node": {
                 "role": "identity-server",
                 "name": "id-a"
-            }
-        },
-        "id-b": {
-            "ports": "10002:22",
-            "node": {
-                "role": "identity-server",
-                "name": "id-b"
-            }
-        },
-        "id-c": {
-            "ports": "10003:22",
-            "node": {
-                "role": "identity-server",
-                "name": "id-c"
-            }
-        },
-        "id-dead": {
-            "ports": "10004:22",
-            "node": {
-                "role": "identity-server",
-                "name": "id-dead"
             }
         },
         "dht-1": {
@@ -74,30 +53,13 @@
                 "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441"
             }
         },
-        "stun-2": {
-            "links": [
-                "dht-1",
-                "dht-2",
-                "dht-3"
-            ],
-            "ports": "10022:22",
-            "node": {
-                "role": "stun-server",
-                "name": "stun-2",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441"
-            }
-        },
         "proxy-1": {
             "links": [
                 "dht-1",
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10031:22",
             "node": {
@@ -113,17 +75,13 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10032:22",
             "node": {
                 "role": "proxy-server",
                 "name": "proxy-2",
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441"
             }
         },
@@ -133,11 +91,7 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10041:22",
             "node": {
@@ -154,19 +108,15 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10042:22",
             "node": {
                 "role": "supplier",
                 "name": "supplier-2",
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-b:8084/proxy-2.xml"
+                "preferred_routers": "http://id-a:8084/proxy-2.xml"
             }
         },
         "supplier-3": {
@@ -175,11 +125,7 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10043:22",
             "node": {
@@ -196,132 +142,85 @@
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10044:22",
             "node": {
                 "role": "supplier",
                 "name": "supplier-4",
-                "known_id_servers": "id-b:8084:6661",
+                "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-b:8084/proxy-2.xml"
+                "preferred_routers": "http://id-a:8084/proxy-2.xml"
             }
         },
-        "customer-1": {
+        "customer-backup": {
             "links": [
                 "dht-1",
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10051:22",
             "volumes": [
-                "customer_1:/customer_1"
+                "customer_backup:/customer_backup"
             ],
             "node": {
                 "role": "customer",
-                "name": "customer-1",
+                "name": "customer-backup",
                 "block_size": "10 KB",
                 "join_network": true,
                 "num_suppliers": 2,
                 "min_servers": 2,
                 "max_servers": 2,
-                "known_id_servers": "id-a:8084:6661,id-b:8084:6661,id-c:8084:6661",
+                "known_id_servers": "id-a:8084:6661",
                 "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml,http://id-b:8084/proxy-2.xml"
+                "preferred_routers": "http://id-a:8084/proxy-1.xml",
+                "supplier_candidates": "http://id-a:8084/supplier-1.xml,http://id-a:8084/supplier-2.xml"
             }
         },
-        "customer-2": {
+        "customer-restore": {
             "links": [
                 "dht-1",
                 "dht-2",
                 "dht-3",
                 "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
+                "id-a"
             ],
             "ports": "10052:22",
             "volumes": [
-                "customer_2:/customer_2"
+                "customer_restore:/customer_restore"
             ],
             "node": {
                 "role": "customer",
-                "name": "customer-2",
-                "join_network": true,
+                "name": "customer-restore",
+                "join_network": false,
                 "num_suppliers": 2,
-                "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml",
-                "known_id_servers": "id-dead:8084:6661",
-                "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml,http://id-b:8084/proxy-2.xml"
-            }
-        },
-        "customer-3": {
-            "links": [
-                "dht-1",
-                "dht-2",
-                "dht-3",
-                "stun-1",
-                "stun-2",
-                "id-a",
-                "id-b",
-                "id-c",
-                "id-dead"
-            ],
-            "ports": "10053:22",
-            "volumes": [
-                "customer_3:/customer_3"
-            ],
-            "node": {
-                "role": "customer",
-                "name": "customer-3",
-                "join_network": true,
-                "num_suppliers": 2,
-                "supplier_candidates": "http://id-a:8084/supplier-3.xml,http://id-b:8084/supplier-4.xml",
                 "known_id_servers": "id-a:8084:6661",
-                "health_check_interval_seconds": 5,
                 "known_dht_seeds": "dht-1:14441,dht-2:14441,dht-3:14441",
-                "preferred_routers": "http://id-a:8084/proxy-1.xml"
+                "preferred_routers": "http://id-a:8084/proxy-2.xml"
             }
         }
     },
     "containers_volumes": [
-        "customer_1:",
-        "customer_2:",
-        "customer_3:"
+        "customer_backup:",
+        "customer_restore:"
     ],
     "tester_links": [
         "dht-1",
         "dht-2",
         "dht-3",
         "stun-1",
-        "stun-2",
         "id-a",
-        "id-b",
-        "id-c",
-        "id-dead",
         "supplier-1",
         "supplier-2",
         "supplier-3",
         "supplier-4",
-        "customer-1",
-        "customer-2",
-        "customer-3"
+        "customer-backup",
+        "customer-restore"
     ],
     "tester_volumes": [
-        "customer_1:/customer_1",
-        "customer_2:/customer_2",
-        "customer_3:/customer_3"
+        "customer_backup:/customer_backup",
+        "customer_restore:/customer_restore"
     ]
 }

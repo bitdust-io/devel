@@ -67,7 +67,7 @@ class SuperLock(type):
         return type.__new__(cls, classname, bases, new_attr)
 
 
-class SuperThreadSafeDatabase(Database, metaclass=SuperLock):
+class SuperThreadSafeDatabase(Database, metaclass=SuperLock):  # pragma: no cover
     """
     Thread safe version that always allows single thread to use db.
     It adds the same lock for all methods, so only one operation can be

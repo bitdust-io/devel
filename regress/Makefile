@@ -21,20 +21,22 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
-PYTHON_VERSION=2.7.15
+# PYTHON_VERSION=2.7.15
+
+ALL_TESTS := $(patsubst tests/%,%,$(wildcard tests/*))
 
 
 .PHONY: test
 
 
 stop_all:
-	@docker stop $$(docker ps -a -q)
+	@docker stop $$(docker ps -a -q) || exit 0
 
 clean_all:
-	@docker rm $$(docker ps -a -q)
+	@docker rm $$(docker ps -a -q) || exit 0
 
 remove_all:
-	@docker rmi -f $$(docker images -a -q)
+	@docker rmi -f $$(docker images -a -q) || exit 0
 
 prune:
 	@docker system prune
@@ -46,25 +48,28 @@ build_app:
 	@docker-compose build --build-arg PYTHON_VERSION=$(PYTHON_VERSION) app_image
 
 _one_prepare:
-	@python3 prepare_test.py ${TEST_NAME};
+	@echo "PREPARE ${TEST_NAME}"; python3 prepare_test.py ${TEST_NAME};
 
 _one_up:
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d;
+	@echo "UP ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester && docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d 1> /dev/null 2> /dev/null
 
 _one_down:
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1;
+	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
 
 _one_test:
-	@docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log
+	@echo "TEST ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log || exit 1)
+
+_one_coverage:
+	@echo "COVERAGE ${TEST_NAME}"; mkdir -p ./coverage/${TEST_NAME}/; docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
 
 _one_log:
-	@/bin/bash fetch_logs.sh ${TEST_NAME}
+	@echo "LOG ${TEST_NAME}"; /bin/bash fetch_logs.sh ${TEST_NAME} > /dev/null;
 
-_one_up_test_down:
-	@$(MAKE) _one_up; $(MAKE) _one_test; $(MAKE) _one_down; 
+_one_up_test_coverage_down:
+	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_coverage && $(MAKE) _one_down
 
 _one_up_test_log_down:
-	@$(MAKE) _one_up; $(MAKE) _one_test; $(MAKE) _one_log; $(MAKE) _one_down;
+	@$(MAKE) _one_prepare && $(MAKE) _one_up && $(MAKE) _one_test && $(MAKE) _one_log && $(MAKE) _one_down
 
 up/%:
 	@$(MAKE) TEST_NAME=$* _one_up
@@ -75,23 +80,34 @@ down/%:
 test/%:
 	@$(MAKE) TEST_NAME=$* _one_test
 
+cover/%:
+	@$(MAKE) TEST_NAME=$* _one_coverage
+
 log/%:
 	@$(MAKE) TEST_NAME=$* _one_log
 
 run/%:
-	@$(MAKE) TEST_NAME=$* _one_up_test_down
+	@$(MAKE) TEST_NAME=$* _one_up_test_coverage_down
 
-run_and_log/%:
+run_log/%:
 	@$(MAKE) TEST_NAME=$* _one_up_test_log_down
 
-test_customer_family:
-	@$(MAKE) TEST_NAME=customer_family _one_up_test_down;
+coverage_combine:
+	@echo "COVERAGE COMBINE"; mkdir -p ./coverage_all/; rm -rf ./coverage_all/*; for ONE_TEST in $(ALL_TESTS); do cp -r -v ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/; done; mv -f -v ../.coverage ./coverage_all/.coverage_unit_tests; ~/.bitdust/venv/bin/python -m pip install coverage; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);" cd regress/;
 
-test_identity_rotate_customer:
-	@$(MAKE) TEST_NAME=identity_rotate_customer _one_up_test_down;
+coverage_report:
+	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i --omit="transport/http/*,transport/udp/*,tests/*,regress/*,regression/*,coins/*,broadcast/*,updates/os_windows_update.py,storage/filemanager_api.py,setup.py,setup_gen.py,raid/worker.py,storage/backup_schedule.py,parallelp/pp/*,main/install_wizard.py,lib/txrestapi/txrestapi/*,lib/schedule.py,lib/jsontemplate.py,lib/fastjsonrpc/*,interface/jsonrpc_client.py,interface/cmd_line_json.py,interface/cmd_line_json_templates.py,dht/entangled/dtuple.py,currency/*,chat/terminal_chat.py,CodernityDB/*,CodernityDB3/*"; cd regress;
 
-test_identity_rotate_supplier:
-	@$(MAKE) TEST_NAME=identity_rotate_supplier _one_up_test_down;
+run_all:
+	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
 
-test: test_customer_family test_identity_rotate_customer test_identity_rotate_supplier
+run_all_log:
+	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
+prepare: build_app build_tester
+
+report: coverage_combine coverage_report
+
+test_log: prepare run_all_log
+
+test: prepare run_all report

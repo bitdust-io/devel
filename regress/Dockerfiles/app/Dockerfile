@@ -20,7 +20,7 @@
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-ARG  PYTHON_VERSION=2.7.15
+ARG PYTHON_VERSION=2.7.15
 
 FROM python:${PYTHON_VERSION}
 
@@ -35,9 +35,16 @@ RUN mkdir /var/run/sshd \
     && sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 
+ENV COVERAGE_PROCESS_START=/app/bitdust/.coverage_config
+
+ENV BITDUST_LOG_USE_COLORS=0
+
 WORKDIR /app
 
 COPY . /app/bitdust
+
+COPY ./regress/.coverage_config /app/bitdust/
+COPY ./regress/bitdust.py /app/bitdust/
 
 # RUN find /app/bitdust -type f -name "*.py" -exec sed -i -e 's/_Debug = True/_Debug = False/g' {} +
 
@@ -46,6 +53,8 @@ RUN python /app/bitdust/bitdust.py install
 RUN echo '#!/bin/sh\n /root/.bitdust/venv/bin/python /app/bitdust/bitdust.py "$@"' > /bin/bitdust
 
 RUN chmod +x /bin/bitdust
+
+RUN /root/.bitdust/venv/bin/pip install coverage coverage-enable-subprocess
 
 ADD ./regress/ssh /app/ssh
 
