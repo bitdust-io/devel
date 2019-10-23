@@ -490,6 +490,16 @@ class FireHire(automat.Automat):
         from customer import supplier_connector
         from p2p import online_status
         # take any actions only if I am connected to the network
+        if not p2p_connector.A() or not network_connector.A():
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    p2p_connector() is not ready yet, SKIP')
+            self.automat('made-decision', [])
+            return
+        if not network_connector.A():
+            if _Debug:
+                lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    network_connector() is not ready yet, SKIP')
+            self.automat('made-decision', [])
+            return
         if p2p_connector.A().state is not 'CONNECTED' or network_connector.A().state is not 'CONNECTED':
             if _Debug:
                 lg.out(_DebugLevel, 'fire_hire.doDecideToDismiss    p2p/network is not connected at the moment, SKIP')

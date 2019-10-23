@@ -56,12 +56,13 @@ class P2PHookupsService(LocalService):
         return depends
 
     def start(self):
+        from twisted.internet.defer import Deferred
         from transport import callback
+        from main import events
         from p2p import online_status
         from p2p import p2p_service
         from p2p import p2p_connector
         from p2p import network_connector
-        from twisted.internet.defer import Deferred
         p2p_service.init()
         online_status.init()
         self._starting_defer = Deferred()
@@ -72,14 +73,17 @@ class P2PHookupsService(LocalService):
             self._on_network_connector_switched)
         callback.append_inbox_callback(self._on_inbox_packet_received)
         callback.append_inbox_callback(p2p_service.inbox)
+        events.add_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         return True
 
     def stop(self):
         from transport import callback
+        from main import events
         from p2p import online_status
         from p2p import p2p_service
         from p2p import p2p_connector
         from p2p import network_connector
+        events.remove_subscriber(self._on_identity_url_changed, 'identity-url-changed')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_inbox_callback(p2p_service.inbox)
         if network_connector.A():
@@ -201,3 +205,9 @@ class P2PHookupsService(LocalService):
             if newstate == 'CONNECTED' or newstate == 'DISCONNECTED':
                 p2p_connector.A('network_connector.state', newstate)
                 # tray_icon.state_changed(newstate, p2p_connector.A().state)
+
+    def _on_identity_url_changed(self, evt):
+        from p2p import online_status
+        inst = online_status.getInstance(evt.data['old_idurl'], autocreate=False)
+        if inst:
+            inst.automat('shutdown')

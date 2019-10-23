@@ -121,7 +121,7 @@ def A(event=None, *args, **kwargs):
     Access method to interact with the state machine.
     """
     global _NetworkConnector
-    if event is None and not args:
+    if event is None:
         return _NetworkConnector
     if _NetworkConnector is None:
         _NetworkConnector = NetworkConnector(

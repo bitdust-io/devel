@@ -216,7 +216,7 @@ class Packet(object):
                     lg.exc()
         return signature
 
-    def SignatureChecksOut(self):
+    def SignatureChecksOut(self, raise_signature_invalid=False):
         """
         This check correctness of signature, uses ``crypt.key.Verify``. To
         verify we need 3 things:
@@ -232,6 +232,8 @@ class Packet(object):
             #     lg.err("could not get Identity for %s so returning False" % self.CreatorID.to_text())
             #     return False
             # CreatorIdentity = OwnerIdentity
+            if raise_signature_invalid:
+                raise Exception('can not verify signed packet, unknown identity %r' % self.CreatorID)
             lg.err("could not get Identity for %r so returning False" % self.CreatorID)
             return False
 
@@ -282,7 +284,7 @@ class Packet(object):
         if not commands.IsCommand(self.Command):
             lg.warn("signed.Valid bad Command " + str(self.Command))
             return False
-        if not self.SignatureChecksOut():
+        if not self.SignatureChecksOut(raise_signature_invalid=raise_signature_invalid):
             if raise_signature_invalid:
                 creator_xml = contactsdb.get_contact_identity(self.CreatorID)
                 if creator_xml:
