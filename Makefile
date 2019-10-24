@@ -23,9 +23,10 @@
 
 # This Makefile requires the following commands to be available:
 # * virtualenv
-# * python2.7
+# * python2.7 or python3
 # * docker
 # * docker-compose
+
 
 DEPS:=requirements.txt
 DOCKER_COMPOSE=$(shell which docker-compose)
