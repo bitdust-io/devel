@@ -7,7 +7,6 @@ omit =
     /app/bitdust/transport/http/
     /app/bitdust/tests/
     /app/bitdust/regress/
-    /app/bitdust/regression/
     /app/bitdust/lib/txrestapi/txrestapi/
     /app/bitdust/coins/
     /app/bitdust/broadcast/

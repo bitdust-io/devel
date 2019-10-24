@@ -140,52 +140,5 @@
             }
         ],
         "repository": "https://github.com/bitdust-io/devel.git"
-    },
-    "docker": {
-        "description": "BitDust Docker network for regression tests",
-        "dht-constants": {
-            "bucket_size": 8,
-            "default_age": 43200,
-            "max_age": 86400,
-            "parallel_calls": 4,
-            "refresh_timeout": 600,
-            "rpc_timeout": 10
-        },
-        "dht-seeds": [
-            {
-                "host": "dht_seed_0",
-                "maintainer": "Docker",
-                "udp_port": 14441
-            },
-            {
-                "host": "dht_seed_1",
-                "maintainer": "Docker",
-                "udp_port": 14441
-            },
-            {
-                "host": "dht_seed_2",
-                "maintainer": "Docker",
-                "udp_port": 14441
-            },
-            {
-                "host": "dht_seed_3",
-                "maintainer": "Docker",
-                "udp_port": 14441
-            },
-            {
-                "host": "dht_seed_4",
-                "maintainer": "Docker",
-                "udp_port": 14441
-            }
-        ],
-        "identity-servers": [
-            {
-                "host": "is",
-                "http_port": 8084,
-                "maintainer": "Docker",
-                "tcp_port": 6661
-            }
-        ],
-        "repository": null
     }
 }

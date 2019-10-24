@@ -131,67 +131,6 @@ regress_report:
 
 
 
-test_regression:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
-
-regression_test:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test
-
-regression_build:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ build
-
-regression_run:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ run
-
-regression_prepare:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ prepare
-
-regression_try:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ try
-
-regression_test_one/%:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ test_one/$*
-
-regression_try_one/%:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ try_one/$*
-
-regression_clean:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean
-
-regression_clean_orphans:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean_orphans
-
-regression_clean_unused:
-	PYTHON_VERSION=$(REGRESSION_PY_VER) make -C regression/ clean_unused_images
-
-regression_log_one/%:
-	@echo "### [identity-server] #########################################################################"
-	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/stdout.log
-
-regression_states_one/%:
-	@echo "### [identity-server] #########################################################################"
-	docker-compose -f regression/docker-compose.yml exec $* cat /root/.bitdust/logs/automats.log
-
-regression_logs_all:
-	make -C regression/ logs_all_stdout
-
-regression_errors_all:
-	make -C regression/ logs_all_stderr
-
-regression_states_all:
-	make -C regression/ logs_all_states
-
-regression_events_all:
-	make -C regression/ logs_all_events
-
-regression_exceptions_all:
-	@make -C regression/ logs_all_exceptions
-
-regression_logs_fetch:
-	make -C regression/ logs_fetch
-
-
-
 dht_network_up:
 	docker-compose -f tests/dht/docker-compose.yml up --force-recreate --build
 
