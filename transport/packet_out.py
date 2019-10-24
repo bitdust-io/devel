@@ -876,6 +876,7 @@ class PacketOut(automat.Automat):
                 size=len(self.outpacket.Payload),
                 remote_id=self.outpacket.RemoteID,
             ))
+        queue().remove(self)
         if self not in self.outpacket.Packets:
             lg.warn('packet_out not connected to the packet')
         else:
@@ -886,7 +887,6 @@ class PacketOut(automat.Automat):
             self.caching_deferred.cancel()
         self.caching_deferred = None
         self.callbacks.clear()
-        queue().remove(self)
         self.destroy()
 
     def _on_remote_identity_cached(self, xmlsrc):
