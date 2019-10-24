@@ -1,5 +1,0 @@
-six
-pytest
-requests
-aiohttp
-
