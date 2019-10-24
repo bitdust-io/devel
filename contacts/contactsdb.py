@@ -823,12 +823,12 @@ def get_contact_identity(idurl):
     idurl = id_url.field(idurl)
     if idurl.to_bin() == my_id.getLocalID().to_bin():
         return my_id.getLocalIdentity()
-    if is_supplier(idurl):
-        return identitycache.FromCache(idurl)
-    if is_customer(idurl):
-        return identitycache.FromCache(idurl)
-    if is_correspondent(idurl):
-        return identitycache.FromCache(idurl)
+#     if is_supplier(idurl):
+#         return identitycache.FromCache(idurl)
+#     if is_customer(idurl):
+#         return identitycache.FromCache(idurl)
+#     if is_correspondent(idurl):
+#         return identitycache.FromCache(idurl)
     if identitycache.HasKey(idurl):
         # lg.warn("who is %s ?" % nameurl.GetName(idurl))
         return identitycache.FromCache(idurl)
