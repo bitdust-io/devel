@@ -43,9 +43,11 @@ _Debug = True
 _DebugLevel = 12
 
 _EventLogFileEnabled = True
+_EventLogUseColors = None
 
 #------------------------------------------------------------------------------
 
+import os
 import sys
 
 try:
@@ -153,6 +155,8 @@ def clear_subscribers(event_id='*'):
 def dispatch(evt):
     """
     """
+    global _EventLogFileEnabled
+    global _EventLogUseColors
     handled = 0
     if evt.event_id in subscribers():
         for subscriber_callback in subscribers()[evt.event_id]:
@@ -177,7 +181,12 @@ def dispatch(evt):
             lg.out(_DebugLevel, 'events.dispatch {} was handled by {} subscribers'.format(
                 evt.event_id, handled))
     if _EventLogFileEnabled:
-        lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
+        if _EventLogUseColors is None:
+            _EventLogUseColors = os.environ.get('BITDUST_LOG_USE_COLORS', '1') != '0'
+        if _EventLogUseColors:
+            lg.out(2, '\033[0;49;91m%s\033[0m  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
+        else:
+            lg.out(2, '%s  %r' % (evt.event_id, str(evt.data)), log_name='event', showtime=True)
     return handled
 
 

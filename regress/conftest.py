@@ -78,7 +78,7 @@ def start_all_nodes(event_loop):
 
     for number, dhtseed in enumerate(ALL_ROLES['dht-seed']):
         # first seed to be started immediately, all other seeds must wait a bit before start
-        start_one_dht_seed(dhtseed, wait_seconds=(5 if number > 0 else 0))
+        start_one_dht_seed(dhtseed, wait_seconds=(3 if number > 0 else 0))
     print('\nALL DHT SEEDS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
@@ -102,7 +102,7 @@ def start_all_nodes(event_loop):
     print(f'\nALL SUPPLIERS STARTED\n')
 
     event_loop.run_until_complete(asyncio.gather(*[
-        start_one_customer_async(customer, event_loop, sleep_before_start=i*10) for i, customer in enumerate(ALL_ROLES['customer'])
+        start_one_customer_async(customer, event_loop, sleep_before_start=i*3) for i, customer in enumerate(ALL_ROLES['customer'])
     ]))
     print(f'\nALL CUSTOMERS STARTED\n')
 

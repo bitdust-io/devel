@@ -57,7 +57,7 @@ _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
 
 _one_test:
-	@echo "TEST ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
+	@echo "TEST ${TEST_NAME}"; mkdir -p logs; docker-compose --file tests/${TEST_NAME}/docker-compose.yml exec tester sh -c "TEST_NAME=${TEST_NAME} python -u -m pytest /app/tests/${TEST_NAME}/ -v -s" > logs/tester.${TEST_NAME}.log || (cat logs/tester.${TEST_NAME}.log && exit 1)
 
 _one_coverage:
 	@echo "COVERAGE ${TEST_NAME}"; mkdir -p ./coverage/${TEST_NAME}/; docker cp $$(docker-compose --file tests/${TEST_NAME}/docker-compose.yml ps -q tester):/app/coverage/. ./coverage/${TEST_NAME}/
@@ -93,16 +93,16 @@ run_log/%:
 	@$(MAKE) TEST_NAME=$* _one_up_test_log_down
 
 coverage_combine:
-	@echo "COVERAGE COMBINE"; mkdir -p ./coverage_all/; rm -rf ./coverage_all/*; for ONE_TEST in $(ALL_TESTS); do cp -r -v ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/; done; mv -f -v ../.coverage ./coverage_all/.coverage_unit_tests; ~/.bitdust/venv/bin/python -m pip install coverage; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);" cd regress/;
+	@echo "COVERAGE COMBINE"; mkdir -p ./coverage_all/; rm -rf ./coverage_all/*; for ONE_TEST in $(ALL_TESTS); do cp -r ./coverage/$$ONE_TEST/*/.coverage* ./coverage_all/; done; mv -f ../.coverage ./coverage_all/.coverage_unit_tests; ~/.bitdust/venv/bin/python -m pip install coverage; cd coverage_all; ~/.bitdust/venv/bin/python -m coverage combine; cd ../../; python3 -c "import os; cur=os.path.abspath('.'); fin=open('regress/coverage_all/.coverage'); s=fin.read(); fin.close(); s=s.replace('/app/bitdust', cur); open('.coverage', 'w').write(s);" cd regress/;
 
 coverage_report:
 	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i --omit="transport/http/*,transport/udp/*,tests/*,regress/*,regression/*,coins/*,broadcast/*,updates/os_windows_update.py,storage/filemanager_api.py,setup.py,setup_gen.py,raid/worker.py,storage/backup_schedule.py,parallelp/pp/*,main/install_wizard.py,lib/txrestapi/txrestapi/*,lib/schedule.py,lib/jsontemplate.py,lib/fastjsonrpc/*,interface/jsonrpc_client.py,interface/cmd_line_json.py,interface/cmd_line_json_templates.py,dht/entangled/dtuple.py,currency/*,chat/terminal_chat.py,CodernityDB/*,CodernityDB3/*"; cd regress;
 
 run_all:
-	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
+	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
 
 run_all_log:
-	@echo "$(ALL_TESTS)"; mkdir -p logs; rm -rf logs/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
+	@echo "$(ALL_TESTS)"; mkdir -p logs; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
 
 prepare: build_app build_tester
 
