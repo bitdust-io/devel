@@ -668,7 +668,7 @@ class PacketOut(automat.Automat):
         except:
             lg.exc()
             self.packetdata = None
-            self.automat('write-error')
+            reactor.callLater(0, self.automat, 'write-error')  # @UndefinedVariable
 
     def doPushItems(self, *args, **kwargs):
         """
@@ -892,14 +892,14 @@ class PacketOut(automat.Automat):
     def _on_remote_identity_cached(self, xmlsrc):
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
-            self.automat('failed')
+            reactor.callLater(0, self.automat, 'failed')  # @UndefinedVariable
         else:
-            self.automat('remote-identity-on-hand')
+            reactor.callLater(0, self.automat, 'remote-identity-on-hand')  # @UndefinedVariable
         return xmlsrc
 
     def _on_remote_identity_cache_failed(self, err):
         if self.outpacket:
-            self.automat('failed')
+            reactor.callLater(0, self.automat, 'failed')  # @UndefinedVariable
             lg.warn('%s : %s' % (self.remote_idurl, str(err)))
         return None
 

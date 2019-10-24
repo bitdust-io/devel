@@ -199,10 +199,11 @@ class Packet(object):
         Call ``crypt.key.Sign`` to generate digital signature.
         """
         _hash_base = self.GenerateHash()
-        if not self.KeyID or self.KeyID == my_id.getGlobalID(key_alias='master'):
-            signature = key.Sign(_hash_base)
-        else:
-            signature = my_keys.sign(self.KeyID, _hash_base)
+        signature = key.Sign(_hash_base)
+        # if not self.KeyID or self.KeyID == my_id.getGlobalID(key_alias='master'):
+        #     signature = key.Sign(_hash_base)
+        # else:
+        #     signature = my_keys.sign(self.KeyID, _hash_base)
         if _Debug:
             if _LogSignVerify:
                 try:
