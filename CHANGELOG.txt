@@ -2,6 +2,17 @@ Change Log
 ==========
 
 
+2019-10-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* new regression test approach with better data isolation (#431)
+* automatic identity rotate, speed up automats, fixes
+* implemented coverage report in regression tests
+* added BITDUST_LOG_USE_COLORS environment variable
+* more bug fixes in several state machines
+* run a handshake when add a friend
+
+
+
 2019-10-17 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * starting with WebSocket API interface
