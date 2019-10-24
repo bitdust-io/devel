@@ -21,7 +21,12 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
-# PYTHON_VERSION=2.7.15
+# This Makefile requires the following commands to be available:
+# * virtualenv
+# * python2.7 or python3
+# * docker
+# * docker-compose
+
 
 ALL_TESTS := $(patsubst tests/%,%,$(wildcard tests/*))
 
