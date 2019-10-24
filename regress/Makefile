@@ -51,7 +51,7 @@ _one_prepare:
 	@echo "PREPARE ${TEST_NAME}"; python3 prepare_test.py ${TEST_NAME};
 
 _one_up:
-	@echo "UP ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester && docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d 1> /dev/null 2> /dev/null
+	@echo "UP ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d --no-deps --build tester 1> /dev/null 2> /dev/null && docker-compose --file tests/${TEST_NAME}/docker-compose.yml up -d 1> /dev/null 2> /dev/null
 
 _one_down:
 	@echo "DOWN ${TEST_NAME}"; docker-compose --file tests/${TEST_NAME}/docker-compose.yml down -v -t 1 1> /dev/null 2> /dev/null
@@ -87,7 +87,7 @@ log/%:
 	@$(MAKE) TEST_NAME=$* _one_log
 
 run/%:
-	@$(MAKE) TEST_NAME=$* _one_up_test_coverage_down
+	@$(MAKE) --no-print-directory TEST_NAME=$* _one_up_test_coverage_down
 
 run_log/%:
 	@$(MAKE) TEST_NAME=$* _one_up_test_log_down
@@ -99,7 +99,7 @@ coverage_report:
 	@echo "COVERAGE REPORT"; cd ..; ~/.bitdust/venv/bin/python -m coverage report -i --omit="transport/http/*,transport/udp/*,tests/*,regress/*,regression/*,coins/*,broadcast/*,updates/os_windows_update.py,storage/filemanager_api.py,setup.py,setup_gen.py,raid/worker.py,storage/backup_schedule.py,parallelp/pp/*,main/install_wizard.py,lib/txrestapi/txrestapi/*,lib/schedule.py,lib/jsontemplate.py,lib/fastjsonrpc/*,interface/jsonrpc_client.py,interface/cmd_line_json.py,interface/cmd_line_json_templates.py,dht/entangled/dtuple.py,currency/*,chat/terminal_chat.py,CodernityDB/*,CodernityDB3/*",lib/txws.py; cd regress;
 
 run_all:
-	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run/$$ONE_TEST || exit 1; done;
+	@echo "$(ALL_TESTS)"; rm -rf coverage/*; rm -rf coverage_all/*; for ONE_TEST in $(ALL_TESTS); do $(MAKE) --no-print-directory run/$$ONE_TEST || exit 1; done;
 
 run_all_log:
 	@echo "$(ALL_TESTS)"; mkdir -p logs; for ONE_TEST in $(ALL_TESTS); do $(MAKE) run_log/$$ONE_TEST || exit 1; done;
