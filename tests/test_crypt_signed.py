@@ -131,7 +131,15 @@ class Test(TestCase):
         self.assertTrue(my_id.loadLocalIdentity())
         self.bob_ident = identity.identity(xmlsrc=_another_identity_xml)
         identitycache.UpdateAfterChecking(idurl=self.bob_ident.getIDURL(), xml_src=_another_identity_xml)
-        
+
+    def tearDown(self):
+        key.ForgetMyKey()
+        my_id.forgetLocalIdentity()
+        if os.path.isfile('/tmp/_current_localidentity'):
+            os.rename('/tmp/_current_localidentity', settings.LocalIdentityFilename())
+        if os.path.isfile('/tmp/_current_priv_key'):
+            os.rename('/tmp/_current_priv_key', settings.KeyFileName())
+        os.remove('/tmp/_some_priv_key')
 
     def test_signed_packet(self):
         key.InitMyKey()

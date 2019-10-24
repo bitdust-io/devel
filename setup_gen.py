@@ -13,7 +13,7 @@ write_setup_py(
     author_email='bitdust.io@gmail.com',
     url='https://github.com/bitdust-io/public.git',
     install_requires=list_requirements('requirements.txt'),
-    packages=find_packages(exclude=['deploy*', 'icons*', 'release*', 'scripts*', 'devops*', 'regression*', 'requirements*', 'venv*', ]),
+    packages=find_packages(exclude=['deploy*', 'icons*', 'release*', 'scripts*', 'devops*', 'regress*', 'requirements*', 'venv*', ]),
     tests_require=[],
     include_package_data=True,
     zip_safe=False,
