@@ -2,6 +2,13 @@ Change Log
 ==========
 
 
+2019-10-29 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* moved local_tester from subprocess into thread (#438)
+* few networking bug fixes (#437)
+
+
+
 2019-10-24 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * new regression test approach with better data isolation (#431)
