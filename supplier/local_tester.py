@@ -27,44 +27,32 @@
 """
 .. module:: local_tester.
 
-Checks that customer packets on the local disk still have good signatures.
+Checks that customer packets on the local disk still have good signatures and are valid.
 
-These packets could be outgoing, cached, incoming, or stored for remote customers.
-
-Idea is to detect bit-rot and then either if there is a problem we can do different
-things depending on what type it is.
-
-So far:
-  1) If data we store for a remote customer:  ask for the packet again (he may call his scrubber)
-  2) If just cache of our personal data stored somewhere:  just delete bad packet from cache
-
-Also, after a system crash we need to check that things are ok and cleanup
-and partial stuff, like maybe backupid/outgoing/tmp where block was being
-converted to a bunch of packets but the conversion was not finished.
-
-So has to open/parse the ``packet`` but that code is part of signed.py
-
-The concept of "fail fast" is what we are after here.  If there is a failure we
-want to know about it fast, so we can fix it fast, so the chance of multiple
-failures at the same time is less.
-
-Right now this is an interface between ``bpmain`` and ``bptester`` child process.
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 4
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
-import time
-import string
+
+#------------------------------------------------------------------------------
 
 try:
     from twisted.internet import reactor  # @UnresolvedImport
 except:
-    sys.exit('Error initializing twisted.internet.reactor in localtester.py')
+    sys.exit('Error initializing twisted.internet.reactor in local_tester.py')
 
-from twisted.python.win32 import cmdLineQuote
-
-import subprocess
+from twisted.internet import threads
 
 #------------------------------------------------------------------------------
 
@@ -74,18 +62,11 @@ except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
 
-from logs import lg
-
 from system import bpio
-from system import nonblocking
 
 from main import settings
 
 #-------------------------------------------------------------------------------
-
-TesterUpdateCustomers = 'update_customers'
-TesterValidate = 'validate'
-TesterSpaceTime = 'space_time'
 
 _TesterQueue = []
 _CurrentProcess = None
@@ -96,149 +77,147 @@ _LoopSpaceTime = None
 
 #------------------------------------------------------------------------------
 
+TesterUpdateCustomers = 'update_customers'
+TesterValidate = 'validate'
+TesterSpaceTime = 'space_time'
+
+#------------------------------------------------------------------------------
 
 def init():
     global _Loop
-    global _LoopValidate
-    global _LoopUpdateCustomers
-    lg.out(4, 'localtester.init ')
-    _Loop = reactor.callLater(5, loop)
-    _LoopValidate = reactor.callLater(0, loop_validate)
-    _LoopUpdateCustomers = reactor.callLater(0, loop_update_customers)
-    _LoopSpaceTime = reactor.callLater(0, loop_space_time)
+    if _Debug:
+        lg.out(_DebugLevel, 'local_tester.init')
+    _Loop = reactor.callLater(5, loop)  # @UndefinedVariable
 
 
 def shutdown():
     global _Loop
-    global _LoopValidate
-    global _LoopUpdateCustomers
-    global _LoopSpaceTime
     global _CurrentProcess
-    lg.out(4, 'localtester.shutdown ')
+    if _Debug:
+        lg.out(_DebugLevel, 'local_tester.shutdown')
+
+    stop()
 
     if _Loop:
         if _Loop.active():
             _Loop.cancel()
+            _Loop = None
+
+    if alive():
+        # TODO: use some simple method to notify bptester thread to stop
+        # for example write to local file some simple "marker"
+        # bptester suppose to read that file every 1-2 seconds and check if "marker" is here
+        if _Debug:
+            lg.out(_DebugLevel, 'local_tester.shutdown is killing bptester')
+
+#------------------------------------------------------------------------------ 
+
+def start():
+    global _LoopValidate
+    global _LoopUpdateCustomers
+    global _LoopSpaceTime
+    if _Debug:
+        lg.out(_DebugLevel, 'local_tester.start')
+    _LoopValidate = reactor.callLater(0, loop_validate)  # @UndefinedVariable
+    _LoopUpdateCustomers = reactor.callLater(0, loop_update_customers)  # @UndefinedVariable
+    _LoopSpaceTime = reactor.callLater(0, loop_space_time)  # @UndefinedVariable
+
+
+def stop():
+    global _LoopValidate
+    global _LoopUpdateCustomers
+    global _LoopSpaceTime
+    if _Debug:
+        lg.out(_DebugLevel, 'local_tester.stop')
     if _LoopValidate:
         if _LoopValidate.active():
             _LoopValidate.cancel()
+            _LoopValidate = None
     if _LoopUpdateCustomers:
         if _LoopUpdateCustomers.active():
             _LoopUpdateCustomers.cancel()
+            _LoopUpdateCustomers = None
     if _LoopSpaceTime:
         if _LoopSpaceTime.active():
             _LoopSpaceTime.cancel()
-
-    if alive():
-        lg.out(4, 'localtester.shutdown is killing bptester')
-
-        try:
-            _CurrentProcess.kill()
-        except:
-            lg.warn('can not kill bptester')
-        del _CurrentProcess
-        _CurrentProcess = None
+            _LoopSpaceTime = None
 
 #------------------------------------------------------------------------------
 
-
-def _pushTester(Tester):
+def _pushTester(cmd):
     global _TesterQueue
-    if Tester in _TesterQueue:
+    if cmd in _TesterQueue:
         return
-    _TesterQueue.append(Tester)
+    _TesterQueue.append(cmd)
 
 
 def _popTester():
     global _TesterQueue
     if len(_TesterQueue) == 0:
         return None
-    Tester = _TesterQueue[0]
+    cmd = _TesterQueue[0]
     del _TesterQueue[0]
-    return Tester
+    return cmd
 
 #-------------------------------------------------------------------------------
 
-
-def run(Tester):
+def on_thread_finished(ret, cmd):
     global _CurrentProcess
-    # lg.out(8, 'localtester.run ' + str(Tester))
+    _CurrentProcess = None
+    if _Debug:
+        lg.out(_DebugLevel, 'local_tester.on_thread_finished %r with %r' % (cmd, ret))
 
-    if bpio.isFrozen() and bpio.Windows():
-        commandpath = 'bptester.exe'
-        cmdargs = [commandpath, Tester]
-    else:
-        commandpath = 'bptester.py'
-        cmdargs = [sys.executable, commandpath, Tester]
 
-    if not os.path.isfile(commandpath):
-        lg.out(1, 'localtester.run ERROR %s not found' % commandpath)
-        return None
+def run_in_thread(cmd):
+    global _CurrentProcess
+    from main import bptester
+    if _CurrentProcess:
+        raise Exception('another thread already started')
+    _CurrentProcess = cmd
+    command = {
+        TesterUpdateCustomers: bptester.UpdateCustomers,
+        TesterValidate: bptester.Validate,
+        TesterSpaceTime: bptester.SpaceTime,
+    }[cmd]
+    d = threads.deferToThread(command)  # @UndefinedVariable
+    d.addBoth(on_thread_finished, cmd)
+    if _Debug:
+        lg.out(_DebugLevel, 'local_tester.run_in_thread started %r' % cmd)
 
-    lg.out(14, 'localtester.run execute: %s' % cmdargs)
-
-    try:
-        if bpio.Windows():
-            import win32process
-            _CurrentProcess = nonblocking.Popen(
-                cmdargs,
-                shell=False,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=False,
-                creationflags=win32process.CREATE_NO_WINDOW,)
-        else:
-            _CurrentProcess = nonblocking.Popen(
-                cmdargs,
-                shell=False,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=False,)
-    except:
-        lg.out(1, 'localtester.run ERROR executing: %s' % str(cmdargs))
-        lg.exc()
-        return None
-    return _CurrentProcess
-
+#------------------------------------------------------------------------------
 
 def alive():
     global _CurrentProcess
     if _CurrentProcess is None:
         return False
-    try:
-        p = _CurrentProcess.poll()
-    except:
-        return False
-    return p is None
+    return True
 
 
 def loop():
     global _Loop
     if not alive():
-        Tester = _popTester()
-        if Tester:
-            run(Tester)
-    _Loop = reactor.callLater(settings.DefaultLocaltesterLoop(), loop)
+        cmd = _popTester()
+        if cmd:
+            run_in_thread(cmd)
+    _Loop = reactor.callLater(settings.DefaultLocaltesterLoop(), loop)  # @UndefinedVariable
 
 
 def loop_validate():
     global _LoopValidate
     TestValid()
-    _LoopValidate = reactor.callLater(settings.DefaultLocaltesterValidateTimeout(), loop_validate)
+    _LoopValidate = reactor.callLater(settings.DefaultLocaltesterValidateTimeout(), loop_validate)  # @UndefinedVariable
 
 
 def loop_update_customers():
     global _LoopUpdateCustomers
     TestUpdateCustomers()
-    _LoopUpdateCustomers = reactor.callLater(settings.DefaultLocaltesterUpdateCustomersTimeout(), loop_update_customers)
+    _LoopUpdateCustomers = reactor.callLater(settings.DefaultLocaltesterUpdateCustomersTimeout(), loop_update_customers)  # @UndefinedVariable
 
 
 def loop_space_time():
     global _LoopSpaceTime
     TestSpaceTime()
-    _LoopSpaceTime = reactor.callLater(settings.DefaultLocaltesterSpaceTimeTimeout(), loop_space_time)
+    _LoopSpaceTime = reactor.callLater(settings.DefaultLocaltesterSpaceTimeTimeout(), loop_space_time)  # @UndefinedVariable
 
 #-------------------------------------------------------------------------------
 
@@ -261,4 +240,4 @@ if __name__ == "__main__":
     bpio.init()
     settings.init()
     init()
-    reactor.run()
+    reactor.run()  # @UndefinedVariable

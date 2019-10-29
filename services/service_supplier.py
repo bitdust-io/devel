@@ -67,7 +67,7 @@ class SupplierService(LocalService):
         events.add_subscriber(self._on_customer_accepted, 'new-customer-accepted')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-denied')
         events.add_subscriber(self._on_customer_terminated, 'existing-customer-terminated')
-        space_dict, free_space = accounting.read_customers_quotas()
+        space_dict, _ = accounting.read_customers_quotas()
         for customer_idurl in contactsdb.customers():
             known_customer_meta_info = contactsdb.get_customer_meta_info(customer_idurl)
             events.send('existing-customer-accepted', data=dict(
@@ -780,6 +780,7 @@ class SupplierService(LocalService):
         from contacts import contactsdb
         from storage import accounting
         from system import bpio
+        from supplier import local_tester
         from main import settings
         old_idurl = id_url.field(evt.data['old_idurl'])
         # update customer idurl in "space" file
@@ -818,19 +819,6 @@ class SupplierService(LocalService):
                         latest_customer_idurl_bin, customer_idurl_bin, ))
         if space_changed:
             accounting.write_customers_quotas(space_dict, free_space)
-        # update customer idurl in "spaceused" file
-        used_space_dict = accounting.read_customers_usage()
-        usage_changed = False
-        for customer_idurl_bin in list(used_space_dict.keys()):
-            if id_url.field(customer_idurl_bin) == old_idurl:
-                latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
-                if latest_customer_idurl_bin != customer_idurl_bin:
-                    used_space_dict[latest_customer_idurl_bin] = used_space_dict.pop(customer_idurl_bin)
-                    usage_changed = True
-                    lg.info('found customer idurl rotated in customer usage dictionary : %r -> %r' % (
-                        latest_customer_idurl_bin, customer_idurl_bin, ))
-        if usage_changed:
-            accounting.update_customers_usage(used_space_dict)
         # rename customer folder where I store all his files
         old_customer_dirname = str(global_id.UrlToGlobalID(evt.data['old_idurl']))
         new_customer_dirname = str(global_id.UrlToGlobalID(evt.data['new_idurl']))
@@ -846,3 +834,5 @@ class SupplierService(LocalService):
                     lg.warn('removed %r' % old_owner_dir)
             except:
                 lg.exc()
+        # update customer idurl in "spaceused" file
+        local_tester.TestSpaceTime()

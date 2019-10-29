@@ -39,6 +39,10 @@ Various methods to keep track of:
 #------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
+_Debug = True
 _DebugLevel = 4
 
 #------------------------------------------------------------------------------
@@ -68,7 +72,8 @@ from storage import backup_fs
 
 
 def init():
-    lg.out(_DebugLevel, 'accounting.init')
+    if _Debug:
+        lg.out(_DebugLevel, 'accounting.init')
 
 #------------------------------------------------------------------------------
 

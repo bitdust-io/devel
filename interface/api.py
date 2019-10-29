@@ -2371,14 +2371,14 @@ def customer_reject(idurl_or_global_id):
     if not contactsdb.is_customer(customer_idurl):
         return ERROR('customer not found')
     # send packet to notify about service from us was rejected
-    # TODO - this is not yet handled on other side
+    # TODO: - this is not yet handled on other side
     p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
     # remove from customers list
     current_customers = contactsdb.customers()
     current_customers.remove(customer_idurl)
     contactsdb.remove_customer_meta_info(customer_idurl)
     # remove records for this customers from quotas info
-    space_dict, free_space = accounting.read_customers_quotas()
+    space_dict, _ = accounting.read_customers_quotas()
     consumed_by_cutomer = space_dict.pop(customer_idurl, 0)
     consumed_space = accounting.count_consumed_space(space_dict)
     new_free_space = settings.getDonatedBytes() - int(consumed_space)
