@@ -40,6 +40,9 @@ Inspired from examples here:
 * `http://docs.python.org/lib/tar-examples.html`
 * `http://code.activestate.com/recipes/299412`
 
+This is also working without creating a subprocess:
+you can use fileobj input parameter in writetar() method.
+
 TODO:
 If we kept track of how far we were through a list of files, and broke off
 new blocks at file boundaries, we could restart a backup and continue
@@ -219,13 +222,15 @@ def writetar_filter(tarinfo, sourcepath):
 
 #------------------------------------------------------------------------------
 
-def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None):
+def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encoding=None, fileobj=None):
     """
     Create a tar archive from given ``sourcepath`` location.
     """
     global _ExcludeFunction
     printlog('WRITE: %s arcname=%s, subdirs=%s, compression=%s, encoding=%s\n' % (
         sourcepath, arcname, subdirs, compression, encoding))
+    if not fileobj:
+        fileobj = sys.stdout
     mode = 'w|'
     if compression != 'none':
         mode += compression
@@ -235,7 +240,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
-    tar = tarfile.open('', mode, fileobj=sys.stdout, encoding=encoding)
+    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding)
     tar.add(
         name=sourcepath,
         arcname=arcname,
@@ -256,7 +261,6 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     tar.close()
 
 #------------------------------------------------------------------------------
-
 
 def readtar(archivepath, outputdir, encoding=None):
     """

@@ -164,6 +164,19 @@ def extracttar(tarfile, outdir):
     p = child_process.pipe(cmdargs)
     return p
 
+#------------------------------------------------------------------------------
+
+def backuptarfile_thread(filepath, arcname=None, compress=None):
+    from main import bppipe
+    bppipe.writetar(
+        sourcepath=filepath,
+        arcname=arcname,
+        subdirs=False,
+        compression=compress or 'none',
+        encoding='utf-8',
+        fileobj=None,
+    )
+    return
 
 #------------------------------------------------------------------------------
 
