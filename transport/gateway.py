@@ -961,7 +961,8 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
                 proto, host, os.path.basename(filename)))
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
-    control.request_update([('packet', pkt_out.outpacket.PacketID)])
+    if pkt_out.outpacket:
+        control.request_update([('packet', pkt_out.outpacket.PacketID)])
     if _Debug:
         lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
             os.path.basename(filename), proto, host, error_message))

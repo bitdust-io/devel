@@ -100,8 +100,8 @@ class NetworkService(LocalService):
             self.current_network_interfaces = known_interfaces
             lg.info('current network interfaces on START UP: %r' % self.current_network_interfaces)
         else:
-            if self.current_network_interfaces != known_interfaces:
+            if self.current_network_interfaces != known_interfaces and known_interfaces:
                 lg.info('need to reconnect, recognized changes in network interfaces: %r -> %r' % (
                     self.current_network_interfaces, known_interfaces))
                 self.current_network_interfaces = known_interfaces
-                network_connector.A('check-reconnect')
+                network_connector.A('reconnect')

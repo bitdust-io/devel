@@ -69,6 +69,10 @@ import time
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
 from logs import lg
 
 from automats import automat
