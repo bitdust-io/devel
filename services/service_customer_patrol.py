@@ -56,12 +56,14 @@ class CustomerPatrolService(LocalService):
         conf().addConfigNotifier('services/supplier/donated-space',
                            self._on_donated_space_modified)
         local_tester.init()
+        local_tester.start()
         return True
 
     def stop(self):
         from supplier import customers_rejector
         from main.config import conf
         from supplier import local_tester
+        local_tester.stop()
         local_tester.shutdown()
         conf().removeConfigNotifier('services/supplier/donated-space')
         customers_rejector.Destroy()

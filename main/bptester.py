@@ -36,7 +36,12 @@ In case some of customers do not play fair - need to stop this.:
     * check all packets to be valid
 """
 
+#------------------------------------------------------------------------------
+
 from __future__ import absolute_import
+
+#------------------------------------------------------------------------------
+
 import os
 import sys
 import time
@@ -47,7 +52,6 @@ from io import open
 AppData = ''
 
 #------------------------------------------------------------------------------
-
 
 def sharedPath(filename, subdir='logs'):
     global AppData
@@ -74,10 +78,6 @@ def logfilepath():
     has permissions for, Such as the customer data directory.  Possibly
     move to temp directory?
     """
-#    logspath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs')
-#    if not os.path.isdir(logspath):
-#        return 'tester.log'
-#    return os.path.join(logspath, 'tester.log')
     return sharedPath('bptester.log')
 
 
@@ -91,30 +91,22 @@ def printlog(txt):
 
 #------------------------------------------------------------------------------
 
-# if __name__ == "__main__":
-#     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-#     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-#     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+from logs import lg
 
+from system import bpio
 
-try:
-    from logs import lg
-    from system import bpio
-    from lib import misc
-    from storage import accounting
-    from userid import global_id
-    from main import settings
-    from contacts import contactsdb
-    from p2p import commands
-    from crypt import signed
-    from userid import id_url
-except:
-    import traceback
-    printlog(traceback.format_exc())
-    sys.exit(2)
+from lib import misc
+
+from crypt import signed
+
+from storage import accounting
+
+from main import settings
+
+from userid import global_id
+from userid import id_url
 
 #-------------------------------------------------------------------------------
-
 
 def SpaceTime():
     """
@@ -124,14 +116,14 @@ def SpaceTime():
     old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space, free_space = accounting.read_customers_quotas()
+    space, _ = accounting.read_customers_quotas()
     if space is None:
         printlog('SpaceTime ERROR customers quotas file can not be read or it is empty, skip')
-        return
+        return False
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
-        printlog('SpaceTime ERROR customers folder not exist')
-        return
+        printlog('SpaceTime ERROR customers folder not exist: %r' % customers_dir)
+        return False
     remove_list = {}
     used_space = accounting.read_customers_usage()
     for customer_filename in os.listdir(customers_dir):
@@ -162,6 +154,7 @@ def SpaceTime():
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
             sizedict[path] = stats.st_size
+            return False
 
         for key_alias in os.listdir(onecustdir):
             if not misc.ValidKeyAlias(key_alias):
@@ -177,14 +170,22 @@ def SpaceTime():
                     continue
                 try:
                     os.remove(path)
-                    printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)))
+                    printlog('SpaceTime %r file removed (cur:%s, max: %s)' % (path, str(currentV), str(maxspaceV)))
                 except:
-                    printlog('SpaceTime ERROR removing ' + path)
+                    printlog('SpaceTime ERROR removing %r' % path)
                 # time.sleep(0.01)
 
         used_space[idurl.to_bin()] = str(currentV)
         timedict.clear()
         sizedict.clear()
+
+    for customer_idurl_bin in list(used_space.keys()):
+        if not id_url.field(customer_idurl_bin).is_latest():
+            latest_customer_idurl_bin = id_url.field(customer_idurl_bin).to_bin()
+            if latest_customer_idurl_bin != customer_idurl_bin:
+                used_space[latest_customer_idurl_bin] = used_space.pop(customer_idurl_bin)
+                printlog('found customer idurl rotated in customer usage dictionary : %r -> %r' % (
+                    latest_customer_idurl_bin, customer_idurl_bin, ))
 
     for path in remove_list.keys():
         if not os.path.exists(path):
@@ -192,7 +193,7 @@ def SpaceTime():
         if os.path.isdir(path):
             try:
                 bpio._dir_remove(path)
-                printlog('SpaceTime ' + path + ' dir removed (%s)' % (remove_list[path]))
+                printlog('SpaceTime %r dir removed (%s)' % (path, remove_list[path]))
             except:
                 printlog('SpaceTime ERROR removing ' + path)
             continue
@@ -203,27 +204,30 @@ def SpaceTime():
             pass
         try:
             os.remove(path)
-            printlog('SpaceTime ' + path + ' file removed (%s)' % (remove_list[path]))
+            printlog('SpaceTime %r file removed (%s)' % (path, remove_list[path]))
         except:
             printlog('SpaceTime ERROR removing ' + path)
     del remove_list
+
     accounting.update_customers_usage(used_space)
 
-#------------------------------------------------------------------------------
+    return True
 
+#------------------------------------------------------------------------------
 
 def UpdateCustomers():
     """
     Test packets after list of customers was changed.
     """
-    space, free_space = accounting.read_customers_quotas()
+    space, _ = accounting.read_customers_quotas()
     if space is None:
         printlog('UpdateCustomers ERROR space file can not be read')
-        return
+        return False
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         printlog('UpdateCustomers ERROR customers folder not exist')
-        return
+        return False
+
     remove_list = {}
     for customer_filename in os.listdir(customers_dir):
         onecustdir = os.path.join(customers_dir, customer_filename)
@@ -239,6 +243,7 @@ def UpdateCustomers():
         if curspace is None:
             remove_list[onecustdir] = 'is not a customer'
             continue
+
     for path in remove_list.keys():
         if not os.path.exists(path):
             continue
@@ -260,6 +265,8 @@ def UpdateCustomers():
         except:
             printlog('UpdateCustomers ERROR removing ' + path)
     printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
+    
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -269,11 +276,10 @@ def Validate():
     Check all packets to be valid.
     """
     printlog('Validate ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    contactsdb.init()
-    commands.init()
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
-        return
+        return False
+
     for customer_filename in os.listdir(customers_dir):
         onecustdir = os.path.join(customers_dir, customer_filename)
         if not os.path.isdir(onecustdir):
@@ -284,12 +290,8 @@ def Validate():
                 continue
 
             def cb(path, subpath, name):
-                #             if not os.access(path, os.R_OK | os.W_OK):
-                #                 return False
                 if not os.path.isfile(path):
                     return True
-    #             if name in [settings.BackupIndexFileName(),]:
-    #                 return False
                 packetsrc = bpio.ReadBinaryFile(path)
                 if not packetsrc:
                     try:
@@ -318,7 +320,10 @@ def Validate():
                         return False
                 time.sleep(0.1)
                 return False
+
             bpio.traverse_dir_recursive(cb, onekeydir)
+
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -345,8 +350,6 @@ def main():
         printlog('ERROR wrong command: ' + str(sys.argv))
         return
     cmd()
-#    bpio.stdout_stop_redirecting()
-#    bpio.CloseLogFile()
 
 #------------------------------------------------------------------------------
 

@@ -30,7 +30,6 @@
 BitDust executes periodically several slaves:
     - bppipe
     - bptester
-    - bpgui
 
 They are started as a separated processes and managed from the main process: bpmain
 """
@@ -51,8 +50,8 @@ from twisted.internet import protocol
 
 from logs import lg
 
-from . import bpio
-from . import nonblocking
+from system import bpio
+from system import nonblocking
 
 #------------------------------------------------------------------------------
 
