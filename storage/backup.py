@@ -82,7 +82,7 @@ from io import BytesIO
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -292,13 +292,47 @@ class backup(automat.Automat):
         """
         Action method.
         """
+        def readChunkFromThread():
+            size = self.blockSize - self.currentBlockSize
+            if size < 0:
+                if _Debug:
+                    lg.args(_DebugLevel,
+                        eccmap_nodes=self.eccmap.nodes(), block_size=self.blockSize,
+                        current_block_size=self.currentBlockSize, )
+                raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
+            elif size == 0:
+                return b''
+            if self.pipe is None:
+                raise Exception('backup.pipe is None')
+            if self.pipe.is_closed():
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup.readChunkInThread the state is PIPE_CLOSED in %r' % self)
+                return b''
+            if self.pipe.is_empty():
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup.readChunkInThread the state is PIPE_EMPTY in %r' % self)
+                return b''
+            try:
+                inputtext = self.pipe.read(size)
+                newchunk = strng.to_bin(inputtext)
+            except:
+                lg.err('pipe.read() failed')
+                lg.exc()
+            if newchunk:
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup.readChunkInThread pipe.recv() returned %d bytes' % len(newchunk))
+            else:
+                if _Debug:
+                    lg.out(_DebugLevel, 'backup.readChunkInThread pipe.recv() returned empty string')
+            return newchunk
 
         def readChunk():
             size = self.blockSize - self.currentBlockSize
             if size < 0:
-                lg.out(1, "backup.readChunk ERROR eccmap.nodes=" + str(self.eccmap.nodes()))
-                lg.out(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
-                lg.out(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
+                if _Debug:
+                    lg.args(_DebugLevel,
+                        eccmap_nodes=self.eccmap.nodes(), block_size=self.blockSize,
+                        current_block_size=self.currentBlockSize, )
                 raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
             elif size == 0:
                 return b''
@@ -326,7 +360,8 @@ class backup(automat.Automat):
                     if _Debug:
                         lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned empty string')
                 return newchunk
-            lg.out(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
+            if _Debug:
+                lg.out(_DebugLevel, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
             raise Exception('backup.pipe.state is ' + str(self.pipe.state()))
 
         def readDone(data):
@@ -341,7 +376,7 @@ class backup(automat.Automat):
             if not data:
                 self.stateEOF = True
             if _Debug:
-                lg.out(_DebugLevel + 4, 'backup.readDone %d bytes' % len(data))
+                lg.out(_DebugLevel, 'backup.readDone %d bytes' % len(data))
             reactor.callLater(0, self.automat, 'read-success')  # @UndefinedVariable
             return data
 
@@ -351,7 +386,10 @@ class backup(automat.Automat):
             return None
 
         self.stateReading = True
-        d = maybeDeferred(readChunk)
+        if self.pipe and hasattr(self.pipe, 'read'):
+            d = readChunkFromThread(readChunk)
+        else:
+            d = maybeDeferred(readChunk)
         d.addCallback(readDone)
         d.addErrback(readFailed)
 
@@ -393,12 +431,14 @@ class backup(automat.Automat):
         if newblock is None:
             self.abort()
             self.automat('fail')
-            lg.out(_DebugLevel, 'backup.doBlockPushAndRaid ERROR newblock is empty, terminating=%s' % self.terminating)
+            if _Debug:
+                lg.out(_DebugLevel, 'backup.doBlockPushAndRaid ERROR newblock is empty, terminating=%s' % self.terminating)
             lg.warn('failed to encrypt block, ABORTING')
             return
         if self.terminating:
             self.automat('block-raid-done', (newblock.BlockNumber, None))
-            lg.out(_DebugLevel, 'backup.doBlockPushAndRaid SKIP, terminating=True')
+            if _Debug:
+                lg.out(_DebugLevel, 'backup.doBlockPushAndRaid SKIP, terminating=True')
             return
         fileno, filename = tmpfile.make('raid', extension='.raid')
         serializedblock = newblock.Serialize()

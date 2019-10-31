@@ -93,7 +93,6 @@ from contacts import identitycache
 
 from storage import backup_fs
 from storage import backup_matrix
-from storage import backup_tar
 from storage import backup
 
 #------------------------------------------------------------------------------
@@ -700,11 +699,19 @@ class Task():
             return OnTaskFailed(self.backupID, err)
         compress_mode = 'bz2'  # 'none' # 'gz'
         arcname = os.path.basename(sourcePath)
+        from storage import backup_tar
         if bpio.pathIsDir(self.localPath):
-            backupPipe = backup_tar.backuptardir(self.localPath, arcname=arcname, compress=compress_mode)
+            if True:
+                backupPipe = backup_tar.backuptardir_thread(self.localPath, arcname=arcname, compress=compress_mode)
+            else:
+                backupPipe = backup_tar.backuptardir(self.localPath, arcname=arcname, compress=compress_mode)
+                backupPipe.make_nonblocking()
         else:
-            backupPipe = backup_tar.backuptarfile(self.localPath, arcname=arcname, compress=compress_mode)
-        backupPipe.make_nonblocking()
+            if True:
+                backupPipe = backup_tar.backuptarfile_thread(self.localPath, arcname=arcname, compress=compress_mode)
+            else:
+                backupPipe = backup_tar.backuptarfile(self.localPath, arcname=arcname, compress=compress_mode)
+                backupPipe.make_nonblocking()
         job = backup.backup(
             self.backupID,
             backupPipe,

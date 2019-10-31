@@ -53,6 +53,10 @@ from io import open
 
 #------------------------------------------------------------------------------
 
+from twisted.internet import reactor  # @UnresolvedImport
+
+#------------------------------------------------------------------------------
+
 if __name__ == "__main__":
     import os.path as _p
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
@@ -166,21 +170,83 @@ def extracttar(tarfile, outdir):
 
 #------------------------------------------------------------------------------
 
-def backuptarfile_thread(filepath, arcname=None, compress=None):
-    from main import bppipe
-    bppipe.writetar(
-        sourcepath=filepath,
-        arcname=arcname,
-        subdirs=False,
-        compression=compress or 'none',
-        encoding='utf-8',
-        fileobj=None,
-    )
-    return
+class BytesLoop:
+
+    def __init__(self, s=b''):
+        self._closed = False
+        self._buffer = s
+
+    def read(self, n=-1):
+        chunk = self._buffer[:n]
+        self._buffer = self._buffer[n:]
+        return chunk
+
+    def write(self, s):
+        self._buffer += s
+
+    def close(self):
+        self._closed = True
+        self._buffer = b''
+
+    def is_empty(self):
+        return len(self._buffer) == 0
+
+    def is_closed(self):
+        return self._closed
 
 #------------------------------------------------------------------------------
 
-def main():
+def backuptarfile_thread(filepath, arcname=None, compress=None):
+    if not os.path.isfile(filepath):
+        lg.err('file %s not found' % filepath)
+        return None
+    if arcname is None:
+        arcname = os.path.basename(filepath)
+    from main import bppipe
+    p = BytesLoop()
+
+    def _run():
+        bppipe.writetar(
+            sourcepath=filepath,
+            arcname=arcname,
+            subdirs=False,
+            compression=compress or 'none',
+            encoding='utf-8',
+            fileobj=p,
+        )
+        p.close()
+
+    reactor.callInThread(_run)  # @UndefinedVariable
+    return p
+
+
+def backuptardir_thread(directorypath, arcname=None, recursive_subfolders=True, compress=None):
+    if not bpio.pathIsDir(directorypath):
+        lg.err('folder %s not found' % directorypath)
+        return None
+    if arcname is None:
+        arcname = os.path.basename(directorypath)
+    from main import bppipe
+    p = BytesLoop()
+
+    def _run():
+        bppipe.writetar(
+            sourcepath=directorypath,
+            arcname=arcname,
+            subdirs=recursive_subfolders,
+            compression=compress or 'none',
+            encoding='utf-8',
+            fileobj=p,
+        )
+        p.close()
+
+    reactor.callInThread(_run)  # @UndefinedVariable
+    return p
+
+
+#------------------------------------------------------------------------------
+
+def test_in_pipe():
     lg.set_debug_level(20)
     fout = open('out.tar', 'wb')
 
@@ -190,7 +256,7 @@ def main():
         if p.state() == nonblocking.PIPE_CLOSED:
             print('closed')
             fout.close()
-            reactor.stop()
+            reactor.stop()  # @UndefinedVariable
             return
         if p.state() == nonblocking.PIPE_READY2READ:
             v = p.recv(100)
@@ -198,19 +264,50 @@ def main():
             if v == '':
                 print('eof')
                 fout.close()
-                reactor.stop()
+                reactor.stop()  # @UndefinedVariable
                 return
-        reactor.callLater(0, _read, p)
+        reactor.callLater(0, _read, p)  # @UndefinedVariable
 
     def _go():
         p = backuptardir(sys.argv[1], arcname='asd')
         p.make_nonblocking()
         _read(p)
 
-    from twisted.internet import reactor  # @UnresolvedImport
     reactor.callLater(0, _go)  # @UndefinedVariable
     reactor.run()  # @UndefinedVariable
 
 
+def test_in_thread():
+    fout = open('out.tar', 'wb')
+
+    def _read(p):
+        if p.is_closed():
+            print('closed')
+            fout.close()
+            reactor.stop()  # @UndefinedVariable
+            return
+        if p.is_empty():
+            print('empty')
+            reactor.callLater(0, _read, p)  # @UndefinedVariable
+            return
+        chunk = p.read()
+        fout.write(chunk)
+        print(len(chunk))
+        if not chunk:
+            print('empty chunk')
+            fout.close()
+            reactor.stop()  # @UndefinedVariable
+            return
+        reactor.callLater(0, _read, p)  # @UndefinedVariable
+
+    def _go():
+        p = backuptarfile_thread(sys.argv[1], arcname='asd')
+        _read(p)
+
+    reactor.callLater(0, _go)  # @UndefinedVariable
+    reactor.run()  # @UndefinedVariable
+    
+
 if __name__ == "__main__":
-    main()
+    # test_in_pipe()
+    test_in_thread()
