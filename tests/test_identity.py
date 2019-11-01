@@ -1,6 +1,17 @@
 from unittest import TestCase
 import os
 
+from logs import lg
+
+from system import bpio
+
+from main import settings
+
+from crypt import key
+
+from userid import my_id
+
+
 
 _some_priv_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA/ZsJKyCakqA8vO2r0CTOG0qE2l+4y1dIqh7VC0oaVkXy0Cim
@@ -52,20 +63,20 @@ _some_identity_xml = """<?xml version="1.0" encoding="utf-8"?>
 class Test(TestCase):
 
     def setUp(self):
-        from logs import lg
-        from main import settings
-        from crypt import key
-        from userid import my_id
+        try:
+            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        except Exception:
+            pass
         lg.set_debug_level(30)
-        settings.init()
+        settings.init(base_dir='/tmp/.bitdust_tmp')
         self.my_current_key = None
-        if key.isMyKeyExists():
-            os.rename(settings.KeyFileName(), '/tmp/_current_priv_key')
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/metadata/')
+        except:
+            pass
         fout = open('/tmp/_some_priv_key', 'w')
         fout.write(_some_priv_key)
         fout.close()
-        if my_id.isLocalIdentityExists():
-            os.rename(settings.LocalIdentityFilename(), '/tmp/_current_localidentity')
         fout = open(settings.LocalIdentityFilename(), 'w')
         fout.write(_some_identity_xml)
         fout.close()
@@ -73,16 +84,10 @@ class Test(TestCase):
         self.assertTrue(my_id.loadLocalIdentity())
 
     def tearDown(self):
-        from main import settings
-        from crypt import key
-        from userid import my_id
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
-        if os.path.isfile('/tmp/_current_localidentity'):
-            os.rename('/tmp/_current_localidentity', settings.LocalIdentityFilename())
-        if os.path.isfile('/tmp/_current_priv_key'):
-            os.rename('/tmp/_current_priv_key', settings.KeyFileName())
         os.remove('/tmp/_some_priv_key')
+        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def test_identity_valid(self):
         from userid import identity

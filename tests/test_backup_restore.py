@@ -1,18 +1,27 @@
-from unittest import TestCase
 import os
 
-from system import bpio
+from twisted.trial.unittest import TestCase
+from twisted.internet import reactor  # @UnresolvedImport
+from twisted.internet.defer import Deferred
+from twisted.internet.base import DelayedCall
+DelayedCall.debug = True
+
 
 from logs import lg
 
 from main import settings
 
-from lib import jsn
-from lib import serialization
+from system import bpio
+from system import local_fs
+from system import tmpfile
 
 from crypt import key
-from crypt import signed
-from crypt import encrypted
+
+from raid import raid_worker
+
+from storage import backup_tar
+from storage import backup
+from storage import restore_worker
 
 from userid import my_id
 
@@ -73,15 +82,11 @@ class Test(TestCase):
             pass
         lg.set_debug_level(30)
         settings.init(base_dir='/tmp/.bitdust_tmp')
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/metadata')
+        except:
+            pass
         self.my_current_key = None
-        try:
-            os.makedirs('/tmp/.bitdust_tmp/metadata/')
-        except:
-            pass
-        try:
-            os.makedirs('/tmp/.bitdust_tmp/logs/')
-        except:
-            pass
         fout = open('/tmp/_some_priv_key', 'w')
         fout.write(_some_priv_key)
         fout.close()
@@ -90,68 +95,64 @@ class Test(TestCase):
         fout.close()
         self.assertTrue(key.LoadMyKey(keyfilename='/tmp/_some_priv_key'))
         self.assertTrue(my_id.loadLocalIdentity())
+        my_id.init()
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/logs')
+        except:
+            pass
+        local_fs.WriteTextFile('/tmp/.bitdust_tmp/logs/parallelp.log', '')
+        tmpfile.init(temp_dir_path='/tmp/.bitdust_tmp/tmp/')
+        os.makedirs('/tmp/.bitdust_tmp/backups/master$alice@127.0.0.1_8084/1/F1234')
 
     def tearDown(self):
+        tmpfile.shutdown()
         key.ForgetMyKey()
         my_id.forgetLocalIdentity()
         os.remove('/tmp/_some_priv_key')
         bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        os.remove('/tmp/random_file')
 
-    def test_jsn(self):
-        data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
-        raw = jsn.dumps(dct1, encoding='latin1')
-        dct2 = jsn.loads(raw, encoding='latin1')
-        data2 = dct2['d']['data']
-        self.assertEqual(data1, data2)
+    def test_backup_restore(self):
+        test_done = Deferred()
+        backupID = 'alice@127.0.0.1_8084:1/F1234'
+        outputLocation = '/tmp/'
+        with open('/tmp/.bitdust_tmp/random_file', 'wb') as fout:
+            fout.write(os.urandom(100*1024))
+        backupPipe = backup_tar.backuptarfile_thread('/tmp/.bitdust_tmp/random_file')
 
-    def test_serialization(self):
-        data1 = os.urandom(1024)
-        dct1 = {'d': {'data': data1, }, }
-        raw = serialization.DictToBytes(dct1, encoding='latin1')
-        dct2 = serialization.BytesToDict(raw, encoding='latin1')
-        data2 = dct2['d']['data']
-        self.assertEqual(data1, data2)
+        def _extract_done(retcode, backupID, source_filename, output_location):
+            assert retcode is True
+            assert bpio.ReadBinaryFile('/tmp/random_file') == bpio.ReadBinaryFile('/tmp/.bitdust_tmp/random_file')
+            reactor.callLater(0, raid_worker.A, 'shutdown')  # @UndefinedVariable
+            test_done.callback(True)
 
-    def test_signed_packet(self):
-        key.InitMyKey()
-        data1 = os.urandom(1024)
-        p1 = signed.Packet(
-            'Data',
-            my_id.getLocalID(),
-            my_id.getLocalID(),
-            'SomeID',
-            data1,
-            'RemoteID:abc',
-        )
-        self.assertTrue(p1.Valid())
-        raw1 = p1.Serialize()
+        def _restore_done(result, backupID, outfd, tarfilename, outputlocation):
+            assert result == 'done'
+            d = backup_tar.extracttar_thread(tarfilename, outputlocation)
+            d.addCallback(_extract_done, backupID, tarfilename, outputlocation)
+            return d
 
-        p2 = signed.Unserialize(raw1)
-        self.assertTrue(p2.Valid())
-        raw2 = p2.Serialize()
-        data2 = p2.Payload
-        self.assertEqual(data1, data2)
-        self.assertEqual(raw1, raw2)
+        def _restore():
+            outfd, outfilename = tmpfile.make(
+                'restore',
+                extension='.tar.gz',
+                prefix=backupID.replace('@', '_').replace('.', '_').replace('/', '_').replace(':', '_') + '_',
+            )
+            r = restore_worker.RestoreWorker(backupID, outfd, KeyID=None)
+            r.MyDeferred.addCallback(_restore_done, backupID, outfd, outfilename, outputLocation)
+            r.automat('init')
 
-    def test_encrypted_block(self):
-        key.InitMyKey()
-        data1 = os.urandom(1024)
-        b1 = encrypted.Block(
-            CreatorID=my_id.getLocalID(),
-            BackupID='BackupABC',
-            BlockNumber=123,
-            SessionKey=key.NewSessionKey(),
-            SessionKeyType=key.SessionKeyType(),
-            LastBlock=True,
-            Data=data1,
-        )
-        self.assertTrue(b1.Valid())
-        raw1 = b1.Serialize()
+        def _bk_done(bid, result):
+            assert result == 'done'
+    
+        def _bk_closed(job):
+            reactor.callLater(0.5, _restore)  # @UndefinedVariable
 
-        b2 = encrypted.Unserialize(raw1)
-        self.assertTrue(b2.Valid())
-        raw2 = b2.Serialize()
-        data2 = b2.Data()
-        self.assertEqual(data1, data2)
-        self.assertEqual(raw1, raw2)
+        reactor.callWhenRunning(raid_worker.A, 'init')  # @UndefinedVariable
+
+        job = backup.backup(backupID, backupPipe, blockSize=24*1024)
+        job.finishCallback = _bk_done
+        job.addStateChangedCallback(lambda *a, **k: _bk_closed(job), oldstate=None, newstate='DONE')
+        reactor.callLater(0.5, job.automat, 'start')  # @UndefinedVariable
+
+        return test_done

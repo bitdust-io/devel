@@ -1,6 +1,12 @@
+import os
 import tempfile
 import unittest
 from unittest import TestCase
+
+
+from main import settings
+
+from system import bpio
 
 from logs import lg
 
@@ -32,12 +38,26 @@ hans3 = 'http://third.org/hans.xml'
 class TestIDURL(TestCase):
 
     def setUp(self):
+        try:
+            bpio.rmdir_recursive('/tmp/.bitdust_tmp')
+        except Exception:
+            pass
         lg.set_debug_level(30)
+        settings.init(base_dir='/tmp/.bitdust_tmp')
         id_url._IdentityHistoryDir = tempfile.mkdtemp()
         id_url.init()
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/identitycache/')
+        except:
+            pass
+        try:
+            os.makedirs('/tmp/.bitdust_tmp/identityhistory/')
+        except:
+            pass
 
     def tearDown(self):
         id_url.shutdown()
+        bpio.rmdir_recursive('/tmp/.bitdust_tmp')
 
     def _cache_identity(self, idname='alice'):
         known = {

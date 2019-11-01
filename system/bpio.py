@@ -124,9 +124,6 @@ def InstallLocale():
 def ostype():
     """
     Return current platform: "Linux", "Windows", "Darwin".
-
-    MacOS is not supported yet. Don't print anything in ostype because
-    used in bppipe.py and stdout goes to tar file.
     """
     global PlatformInfo
     if PlatformInfo is None:

@@ -41,8 +41,6 @@ _DebugLevel = 10
 
 import os
 
-from twisted.internet import threads
-
 #------------------------------------------------------------------------------
 
 from logs import lg
@@ -125,6 +123,12 @@ def extract_done(retcode, backupID, source_filename, output_location, callback_m
 
 def extract_failed(err, backupID, source_filename, output_location, callback_method):
     lg.err('extract failed of %s with: %s' % (backupID, str(err)))
+    global OnRestoreDoneFunc
+    _WorkingBackupIDs.pop(backupID, None)
+    _WorkingRestoreProgress.pop(backupID, None)
+    tmpfile.throw_out(source_filename, 'file extract failed')
+    if OnRestoreDoneFunc is not None:
+        OnRestoreDoneFunc(backupID, 'extract failed')    
     if callback_method:
         try:
             callback_method(backupID, 'extract failed')
@@ -152,13 +156,10 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
     except:
         lg.exc()
     if result == 'done':
-        p = backup_tar.extracttar(tarfilename, outputlocation)
-        if p:
-            d = threads.deferToThread(p.wait)
-            d.addCallback(extract_done, backupID, tarfilename, outputlocation, callback_method)
-            d.addErrback(extract_failed, backupID, tarfilename, outputlocation, callback_method)
-            return d
-        result = 'extract failed'
+        d = backup_tar.extracttar_thread(tarfilename, outputlocation)
+        d.addCallback(extract_done, backupID, tarfilename, outputlocation, callback_method)
+        d.addErrback(extract_failed, backupID, tarfilename, outputlocation, callback_method)
+        return d
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
     tmpfile.throw_out(tarfilename, 'restore ' + result)
@@ -170,31 +171,6 @@ def restore_done(result, backupID, outfd, tarfilename, outputlocation, callback_
         except:
             lg.exc()
     return result
-
-
-# def restore_failed(x, tarfilename, callback):
-#     lg.out(4, 'restore_monitor.restore_failed ' + str(x))
-#     global _WorkingBackupIDs
-#     global _WorkingRestoreProgress
-#     global OnRestoreDoneFunc
-#     backupID = result = None
-#     try:
-#         if isinstance(x, Exception):
-#             backupID, result = x.getErrorMessage().split(' ')
-#         elif isinstance(x, six.text_type):
-#             backupID, result = x.split(' ')
-#     except:
-#         lg.exc()
-#     if not backupID:
-#         lg.warn('Unknown backupID: %s' % str(x))
-#         return
-#     _WorkingBackupIDs.pop(backupID, None)
-#     _WorkingRestoreProgress.pop(backupID, None)
-#     tmpfile.throw_out(tarfilename, 'restore ' + result)
-#     if OnRestoreDoneFunc is not None:
-#         OnRestoreDoneFunc(backupID, result)
-#     if callback:
-#         callback(backupID, result)
 
 #------------------------------------------------------------------------------
 
@@ -213,7 +189,6 @@ def Start(backupID, outputLocation, callback=None, keyID=None):
     from storage import restore_worker
     r = restore_worker.RestoreWorker(backupID, outfd, KeyID=keyID)
     r.MyDeferred.addCallback(restore_done, backupID, outfd, outfilename, outputLocation, callback)
-    # r.MyDeferred.addErrback(restore_failed, outfilename, callback)
     r.set_block_restored_callback(block_restored_callback)
     r.set_packet_in_callback(packet_in_callback)
     _WorkingBackupIDs[backupID] = r

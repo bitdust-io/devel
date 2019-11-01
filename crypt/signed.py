@@ -52,7 +52,7 @@ from __future__ import print_function
 _Debug = True
 _DebugLevel = 10
 
-_LogSignVerify = True
+_LogSignVerify = False
 
 #------------------------------------------------------------------------------
 
