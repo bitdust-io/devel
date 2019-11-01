@@ -27,11 +27,7 @@
 """
 .. module:: child_process.
 
-BitDust executes periodically several slaves:
-    - bppipe
-    - bptester
 
-They are started as a separated processes and managed from the main process: bpmain
 """
 
 from __future__ import absolute_import

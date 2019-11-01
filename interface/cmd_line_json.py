@@ -290,8 +290,6 @@ def kill():
             'BitDustNode.exe',
             'BitDustConsole.exe',
             'bpmain.py',
-            'bppipe.py',
-            'bptester.py',
         ])
         if len(appList) > 0:
             found = True
@@ -334,8 +332,6 @@ def wait_then_kill(x):
             'BitDustNode.exe',
             'BitDustConsole.exe',
             'bpmain.py',
-            'bppipe.py',
-            'bptester.py',
         ])
         if len(appList) == 0:
             print_text('DONE')

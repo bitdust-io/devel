@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2008-2019 Veselin Penev, https://bitdust.io
 #
-# This file (bppipe.py) is part of BitDust Software.
+# This file (tar_file.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -24,7 +24,7 @@
 #
 
 """
-.. module:: bppipe.
+.. module:: tar_file.
 
 This python code can be used to replace the Unix tar command
 and so be portable to non-unix machines.
@@ -138,10 +138,10 @@ def sharedPath(filename, subdir='logs'):
 
 def logfilepath():
     """
-    A method to detect where is placed the log file for ``bppipe`` child
+    A method to detect where is placed the log file for ``tar_file`` child
     process.
     """
-    return sharedPath('bppipe.log')
+    return sharedPath('tar_file.log')
 
 
 def printlog(txt, mode='a'):
@@ -240,7 +240,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
     else:
         arcname = to_text(arcname)
     # DEBUG: tar = tarfile.open('', mode, fileobj=open('out.tar', 'wb'), encoding=encoding)
-    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding)
+    tar = tarfile.open('', mode, fileobj=fileobj, encoding=encoding, bufsize=1024*1024)
     tar.add(
         name=sourcepath,
         arcname=arcname,
@@ -259,6 +259,7 @@ def writetar(sourcepath, arcname=None, subdirs=True, compression='none', encodin
                     filter=lambda tarinfo: writetar_filter(tarinfo, subpath),
                 )
     tar.close()
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -273,13 +274,14 @@ def readtar(archivepath, outputdir, encoding=None):
     tar = tarfile.open(archivepath, mode, encoding=encoding)
     tar.extractall(outputdir)
     tar.close()
+    return True
 
 #------------------------------------------------------------------------------
 
 
 def main():
     """
-    The entry point of the ``bppipe`` child process.
+    The entry point of the ``tar_file`` child process.
 
     Use command line arguments to get the command from ``bpmain``.
     """
@@ -300,8 +302,8 @@ def main():
             sys.stdout = sys.stdout.buffer
 
     if len(sys.argv) < 4:
-        printlog('bppipe extract <archive path> <output dir>\n')
-        printlog('bppipe <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n')
+        printlog('tar_file.py extract <archive path> <output dir>\n')
+        printlog('tar_file.py <subdirs / nosubdirs> <"none" / "bz2" / "gz"> <folder/file path> [archive filename]\n')
         return 2
 
     try:
